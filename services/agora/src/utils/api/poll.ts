@@ -6,12 +6,12 @@ import {
   type ApiV1PollSubmitResponsePostRequest,
 } from "src/api";
 import { useCommonApi } from "./common";
-import { useDialog } from "../ui/dialog";
+import { useNotify } from "../ui/notify";
 
 export function useBackendPollApi() {
   const { buildEncodedUcan } = useCommonApi();
 
-  const { showMessage } = useDialog();
+  const { showNotifyMessage } = useNotify();
 
   async function fetchUserPollResponse(postSlugIdList: string[]) {
     try {
@@ -41,7 +41,7 @@ export function useBackendPollApi() {
       return responseMap;
     } catch (e) {
       console.error(e);
-      showMessage("An error had occured", "Failed to submit poll response.");
+      showNotifyMessage("Failed to submit poll response.");
       return new Map<string, number>();
     }
   }
@@ -69,7 +69,7 @@ export function useBackendPollApi() {
       return true;
     } catch (e) {
       console.error(e);
-      showMessage("An error had occured", "Failed to submit poll response.");
+      showNotifyMessage("Failed to submit poll response.");
       return false;
     }
   }

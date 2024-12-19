@@ -1,8 +1,8 @@
-import { postContentTable, pollTable, pollResponseContentTable, postTable, organisationTable, userTable, pollResponseTable } from "@/schema.js";
+import { postContentTable, pollTable, postTable, organisationTable, userTable } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type { PostMetadata, ExtendedPostPayload, PollOptionWithResult, ExtendedPost } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, and, desc, SQL } from "drizzle-orm";
+import { eq, desc, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
@@ -62,8 +62,6 @@ export function useCommonPost() {
                 eq(organisationTable.id, userTable.organisationId)
             )
             .leftJoin(pollTable, eq(postContentTable.id, pollTable.postContentId))
-            .leftJoin(pollResponseTable, and(eq(postTable.id, pollResponseTable.postId), eq(userTable.id, pollResponseTable.authorId)))
-            .leftJoin(pollResponseContentTable, eq(pollResponseContentTable.id, pollResponseTable.currentContentId))
             .where(where)
             .orderBy(desc(postTable.createdAt))
             .limit(limit);

@@ -195,7 +195,7 @@ export function useBackendPostApi() {
         },
         interaction: {
           hasVoted: item.interaction.hasVoted,
-          votedIndex: item.interaction.votedIndex,
+          votedIndex: item.interaction.votedIndex - 1,
         },
       };
 
