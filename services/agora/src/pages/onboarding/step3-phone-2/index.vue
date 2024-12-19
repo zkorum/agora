@@ -1,18 +1,28 @@
 <template>
   <div>
     <form class="formStyle" @submit.prevent="">
-      <StepperLayout :submit-call-back="nextButtonClicked" :current-step="3.5" :total-steps="5"
-        :enable-next-button="verificationCode.length == 6" :show-next-button="true">
-
+      <StepperLayout
+        :submit-call-back="nextButtonClicked"
+        :current-step="3.5"
+        :total-steps="5"
+        :enable-next-button="verificationCode.length == 6"
+        :show-next-button="true"
+      >
         <template #header>
-          <InfoHeader title="Enter the 6-digit code" description="" icon-name="mdi-phone" />
+          <InfoHeader
+            title="Enter the 6-digit code"
+            description=""
+            icon-name="mdi-phone"
+          />
         </template>
 
         <template #body>
-
           <div class="instructions">
             Please enter the 6-digit code that was sent to
-            <span class="phoneNumberStyle">{{ verificationPhoneNumber.phoneNumber }}</span>.
+            <span class="phoneNumberStyle">{{
+              verificationPhoneNumber.phoneNumber
+            }}</span
+            >.
           </div>
 
           <div class="otpDiv">
@@ -20,23 +30,39 @@
               <InputOtp v-model="verificationCode" :length="6" integer-only />
             </div>
 
-            <div v-if="verificationCodeExpirySeconds != 0" class="weakColor codeExpiry">
+            <div
+              v-if="verificationCodeExpirySeconds != 0"
+              class="weakColor codeExpiry"
+            >
               Expires in {{ verificationCodeExpirySeconds }}s
             </div>
 
-            <div v-if="verificationCodeExpirySeconds == 0" class="weakColor codeExpiry">
+            <div
+              v-if="verificationCodeExpirySeconds == 0"
+              class="weakColor codeExpiry"
+            >
               Code expired
             </div>
           </div>
 
           <div class="optionButtons">
-            <ZKButton label="Change Number" text-color="blue" @click="changePhoneNumber()" />
+            <ZKButton
+              label="Change Number"
+              text-color="blue"
+              @click="changePhoneNumber()"
+            />
 
             <ZKButton
-              :label="verificationNextCodeSeconds > 0 ? 'Resend Code in ' + verificationNextCodeSeconds + 's' : 'Resend Code'"
-              :disabled="verificationNextCodeSeconds > 0" text-color="blue" @click="clickedResendButton()" />
+              :label="
+                verificationNextCodeSeconds > 0
+                  ? 'Resend Code in ' + verificationNextCodeSeconds + 's'
+                  : 'Resend Code'
+              "
+              :disabled="verificationNextCodeSeconds > 0"
+              text-color="blue"
+              @click="clickedResendButton()"
+            />
           </div>
-
         </template>
       </StepperLayout>
     </form>
@@ -104,7 +130,7 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
   const response = await requestCode({
     isRequestingNewCode: isRequestingNewCode,
     phoneNumber: verificationPhoneNumber.value.phoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode
+    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
   });
 
   if (response.isSuccessful) {
@@ -125,8 +151,9 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
   }
 }
 
-function processRequestCodeResponse(data: ApiV1AuthAuthenticatePost200Response | null) {
-
+function processRequestCodeResponse(
+  data: ApiV1AuthAuthenticatePost200Response | null
+) {
   if (data == null) {
     console.log("Null data from request code response");
     return;
@@ -176,7 +203,6 @@ function decrementNextCodeTimer() {
 function changePhoneNumber() {
   history.back();
 }
-
 </script>
 
 <style scoped lang="scss">
