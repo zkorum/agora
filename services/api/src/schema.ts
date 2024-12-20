@@ -564,6 +564,7 @@ export const userTable = pgTable("user", {
     username: varchar("username", { length: MAX_LENGTH_USERNAME })
         .notNull()
         .unique(),
+    isModerator: boolean("is_moderator").notNull().default(false),
     isAnonymous: boolean("is_anonymous").notNull().default(true),
     showFlaggedContent: boolean("show_flagged_content")
         .notNull()
@@ -1239,10 +1240,10 @@ export const reportTable = pgTable("report_table", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     postId: integer("post_id") //
         .references(() => postTable.id), // at least one or the other should be not null - add a check
-    commentId: integer("post_id") //
+    commentId: integer("comment_id") //
         .references(() => postTable.id), // at least one or the other should be not null - add a check
     reporterId: uuid("reporter_id").references(() => userTable.id), // null if reported by AI
-    reportReason: reportReasonEnum("reporter_reason").notNull(),
+    reportReason: reportReasonEnum("reporter_reason"),
     reportExplanation: varchar("report_explanation", {
         length: MAX_LENGTH_BODY,
     }),

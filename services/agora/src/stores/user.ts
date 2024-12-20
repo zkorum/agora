@@ -1,11 +1,11 @@
-import { useStorage } from "@vueuse/core";
 import { useBackendUserApi } from "src/utils/api/user";
 import type { ExtendedComment, ExtendedPost } from "src/shared/types/zod";
 import { defineStore } from "pinia";
+import { ref } from "vue";
 
 export const useUserStore = defineStore("user", () => {
-
-  const { fetchUserProfile, fetchUserPosts, fetchUserComments } = useBackendUserApi();
+  const { fetchUserProfile, fetchUserPosts, fetchUserComments } =
+    useBackendUserApi();
 
   interface UserProfile {
     activePostCount: number;
@@ -13,6 +13,7 @@ export const useUserStore = defineStore("user", () => {
     userName: string;
     userPostList: ExtendedPost[];
     userCommentList: ExtendedComment[];
+    isModerator: boolean;
   }
 
   const emptyProfile: UserProfile = {
@@ -20,10 +21,11 @@ export const useUserStore = defineStore("user", () => {
     createdAt: new Date(),
     userName: "",
     userPostList: [],
-    userCommentList: []
+    userCommentList: [],
+    isModerator: false,
   };
 
-  const profileData = useStorage("user-profile-data", emptyProfile);
+  const profileData = ref(emptyProfile);
 
   function clearProfileData() {
     profileData.value = emptyProfile;
@@ -33,15 +35,17 @@ export const useUserStore = defineStore("user", () => {
     const [userProfile, userPosts, userComments] = await Promise.all([
       fetchUserProfile(),
       fetchUserPosts(undefined),
-      fetchUserComments(undefined)]);
+      fetchUserComments(undefined),
+    ]);
 
     if (userProfile && userPosts && userComments) {
       profileData.value = {
         activePostCount: userProfile.activePostCount,
-        createdAt: userProfile.createdAt,
-        userName: String(userProfile.userName),
+        createdAt: new Date(userProfile.createdAt),
+        userName: String(userProfile.username),
         userPostList: userPosts,
-        userCommentList: userComments
+        userCommentList: userComments,
+        isModerator: userProfile.isModerator,
       };
     }
   }
@@ -49,7 +53,8 @@ export const useUserStore = defineStore("user", () => {
   async function loadMoreUserPosts() {
     let lastPostSlugId: undefined | string = undefined;
     if (profileData.value.userPostList.length > 0) {
-      lastPostSlugId = profileData.value.userPostList.at(-1).metadata.postSlugId;
+      lastPostSlugId =
+        profileData.value.userPostList.at(-1).metadata.postSlugId;
     }
 
     const userPosts = await fetchUserPosts(lastPostSlugId);
@@ -61,7 +66,8 @@ export const useUserStore = defineStore("user", () => {
   async function loadMoreUserComments() {
     let lastCommentSlugId: undefined | string = undefined;
     if (profileData.value.userCommentList.length > 0) {
-      lastCommentSlugId = profileData.value.userCommentList.at(-1).commentItem.commentSlugId;
+      lastCommentSlugId =
+        profileData.value.userCommentList.at(-1).commentItem.commentSlugId;
     }
 
     const userComments = await fetchUserComments(lastCommentSlugId);
@@ -70,7 +76,11 @@ export const useUserStore = defineStore("user", () => {
     return { reachedEndOfFeed: userComments.length == 0 };
   }
 
-  return { loadUserProfile, loadMoreUserPosts, loadMoreUserComments, clearProfileData, profileData };
-
+  return {
+    loadUserProfile,
+    loadMoreUserPosts,
+    loadMoreUserComments,
+    clearProfileData,
+    profileData,
+  };
 });
-

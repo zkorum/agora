@@ -233,8 +233,9 @@ CREATE TABLE IF NOT EXISTS "post_topic" (
 CREATE TABLE IF NOT EXISTS "report_table" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "report_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"post_id" integer,
+	"comment_id" integer,
 	"reporter_id" uuid,
-	"reporter_reason" "report_reason_enum" NOT NULL,
+	"reporter_reason" "report_reason_enum",
 	"report_explanation" varchar(260),
 	"moderation_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -268,6 +269,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organisation_id" integer,
 	"username" varchar(40) NOT NULL,
+	"is_moderator" boolean DEFAULT false NOT NULL,
 	"is_anonymous" boolean DEFAULT true NOT NULL,
 	"show_flagged_content" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
@@ -538,6 +540,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "report_table" ADD CONSTRAINT "report_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "report_table" ADD CONSTRAINT "report_table_comment_id_post_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -53,14 +53,14 @@ const routes: RouteRecordRaw[] = [
           {
             path: "posts",
             component: UserPostList,
-            name: "user-profile-posts"
+            name: "user-profile-posts",
           },
           {
             path: "comments",
             component: UserCommentList,
-            name: "user-profile-comments"
+            name: "user-profile-comments",
           },
-        ]
+        ],
       },
     ],
   },
@@ -89,6 +89,34 @@ const routes: RouteRecordRaw[] = [
           } as DefaultMenuBarProps,
         },
         name: "create-post",
+      },
+    ],
+  },
+  {
+    path: "/moderate",
+    component: MainLayout,
+    props: {
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: true,
+      reducedWidth: false,
+    } as MainLayoutProps,
+    children: [
+      {
+        path: "post/:postSlugId",
+        components: {
+          default: () => import("pages/moderate/post/index.vue"),
+          topmenubar: DefaultMenuBar,
+        },
+        props: {
+          topmenubar: {
+            hasBackButton: false,
+            hasSettingsButton: false,
+            hasCloseButton: true,
+            hasLoginButton: true,
+          } as DefaultMenuBarProps,
+        },
+        name: "moderate-post-page",
       },
     ],
   },
@@ -238,10 +266,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: "step1-login",
         components: {
-          default: () =>
-            import(
-              "src/pages/onboarding/step1-login/index.vue"
-            ),
+          default: () => import("src/pages/onboarding/step1-login/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -257,10 +282,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: "step1-signup",
         components: {
-          default: () =>
-            import(
-              "src/pages/onboarding/step1-signup/index.vue"
-            ),
+          default: () => import("src/pages/onboarding/step1-signup/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -276,10 +298,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: "step2-signup",
         components: {
-          default: () =>
-            import(
-              "src/pages/onboarding/step2-signup/index.vue"
-            ),
+          default: () => import("src/pages/onboarding/step2-signup/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -296,9 +315,7 @@ const routes: RouteRecordRaw[] = [
         path: "step3-passport",
         components: {
           default: () =>
-            import(
-              "src/pages/onboarding/step3-passport/index.vue"
-            ),
+            import("src/pages/onboarding/step3-passport/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -314,10 +331,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: "step3-phone-1",
         components: {
-          default: () =>
-            import(
-              "src/pages/onboarding/step3-phone-1/index.vue"
-            ),
+          default: () => import("src/pages/onboarding/step3-phone-1/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -333,10 +347,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: "step3-phone-2",
         components: {
-          default: () =>
-            import(
-              "src/pages/onboarding/step3-phone-2/index.vue"
-            ),
+          default: () => import("src/pages/onboarding/step3-phone-2/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -353,9 +364,7 @@ const routes: RouteRecordRaw[] = [
         path: "step4-username",
         components: {
           default: () =>
-            import(
-              "src/pages/onboarding/step4-username/index.vue"
-            ),
+            import("src/pages/onboarding/step4-username/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -372,9 +381,7 @@ const routes: RouteRecordRaw[] = [
         path: "step5-experience",
         components: {
           default: () =>
-            import(
-              "src/pages/onboarding/step5-preferences/index.vue"
-            ),
+            import("src/pages/onboarding/step5-preferences/index.vue"),
           topmenubar: DefaultMenuBar,
         },
         props: {
@@ -387,7 +394,7 @@ const routes: RouteRecordRaw[] = [
         },
         name: "onboarding-step5-preferences",
       },
-    ]
+    ],
   },
 
   // Always leave this as last one,

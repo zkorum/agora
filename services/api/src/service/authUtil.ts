@@ -4,6 +4,7 @@ import { and, eq, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { IsLoggedInResponse } from "@/shared/types/dto.js";
 import { nowZeroMs } from "@/shared/common/util.js";
+import { httpErrors } from "@fastify/sensible";
 
 interface InfoDevice {
     userAgent: string;
@@ -11,9 +12,32 @@ interface InfoDevice {
     sessionExpiry: Date;
 }
 
+interface IsModeratorProps {
+    db: PostgresDatabase;
+    userId: string;
+}
+
+export async function isModeratorAccount({
+    db,
+    userId,
+}: IsModeratorProps): Promise<boolean> {
+    const userTableResponse = await db
+        .select({ isModerator: userTable.isModerator })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    if (userTableResponse.length === 1) {
+        const userItem = userTableResponse[0];
+        return userItem.isModerator;
+    } else {
+        throw httpErrors.internalServerError(
+            "User table returned more than 1 response",
+        );
+    }
+}
+
 export async function isLoggedIn(
     db: PostgresDatabase,
-    didWrite: string
+    didWrite: string,
 ): Promise<IsLoggedInResponse> {
     const now = nowZeroMs();
     const resultDevice = await db
@@ -22,8 +46,8 @@ export async function isLoggedIn(
         .where(
             and(
                 eq(deviceTable.didWrite, didWrite),
-                gt(deviceTable.sessionExpiry, now)
-            )
+                gt(deviceTable.sessionExpiry, now),
+            ),
         );
     if (resultDevice.length === 0) {
         // device has never been registered OR device is logged out
@@ -33,10 +57,9 @@ export async function isLoggedIn(
     }
 }
 
-
 export async function getEmailsFromDidWrite(
     db: PostgresDatabase,
-    didWrite: string
+    didWrite: string,
 ): Promise<string[]> {
     const results = await db
         .select({ email: emailTable.email })
@@ -53,7 +76,7 @@ export async function getEmailsFromDidWrite(
 
 export async function getEmailsFromUserId(
     db: PostgresDatabase,
-    userId: string
+    userId: string,
 ): Promise<string[]> {
     const results = await db
         .select({ email: emailTable.email })
@@ -69,7 +92,7 @@ export async function getEmailsFromUserId(
 
 export async function getInfoFromDevice(
     db: PostgresDatabase,
-    didWrite: string
+    didWrite: string,
 ): Promise<InfoDevice> {
     const results = await db
         .select({
@@ -93,7 +116,7 @@ export async function getInfoFromDevice(
 export async function isEmailAssociatedWithDevice(
     db: PostgresDatabase,
     didWrite: string,
-    email: string
+    email: string,
 ): Promise<boolean> {
     const result = await db
         .select()
@@ -103,8 +126,8 @@ export async function isEmailAssociatedWithDevice(
         .where(
             and(
                 eq(emailTable.email, email),
-                eq(deviceTable.didWrite, didWrite)
-            )
+                eq(deviceTable.didWrite, didWrite),
+            ),
         );
     if (result.length !== 0) {
         return true;
@@ -113,10 +136,9 @@ export async function isEmailAssociatedWithDevice(
     }
 }
 
-
 export async function getUserIdFromDevice(
     db: PostgresDatabase,
-    didWrite: string
+    didWrite: string,
 ): Promise<string> {
     const results = await db
         .select({ userId: userTable.id })

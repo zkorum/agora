@@ -26,8 +26,8 @@ export const useBottomSheet = () => {
   function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
-    deleteCommentCallback: (deleted: boolean) => void) {
-
+    deleteCommentCallback: (deleted: boolean) => void
+  ) {
     const actionList = [];
 
     actionList.push({
@@ -72,10 +72,7 @@ export const useBottomSheet = () => {
       });
   }
 
-  function showPostOptionSelector(
-    postSlugId: string,
-    posterUserName: string) {
-
+  function showPostOptionSelector(postSlugId: string, posterUserName: string) {
     const actionList = [];
 
     actionList.push({
@@ -89,6 +86,14 @@ export const useBottomSheet = () => {
         label: "Delete",
         icon: "mdi-delete",
         id: "delete",
+      });
+    }
+
+    if (profileData.isModerator) {
+      actionList.push({
+        label: "Moderate",
+        icon: "mdi-sword",
+        id: "moderate",
       });
     }
 
@@ -111,6 +116,11 @@ export const useBottomSheet = () => {
               router.push({ name: "default-home-feed" });
             }
           }
+        } else if (action.id == "moderate") {
+          router.push({
+            name: "moderate-post-page",
+            params: { postSlugId: postSlugId },
+          });
         }
       })
       .onCancel(() => {
