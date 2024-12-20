@@ -1,8 +1,6 @@
 <template>
   <div>
-
     <div class="topBar">
-
       <UserAvatar :user-name="profileData.userName" :size="60" />
 
       <div class="userName">
@@ -10,10 +8,12 @@
       </div>
 
       <div class="profileMetadataBar">
-        <div>{{ profileData.activePostCount }} conservations <span class="dotPadding">•</span></div>
+        <div>
+          {{ profileData.activePostCount }} conservations
+          <span class="dotPadding">•</span>
+        </div>
         <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
       </div>
-
     </div>
 
     <Tabs :value="currentTab">
@@ -59,7 +59,6 @@ function applyCurrentTab() {
     currentTab.value = 1;
   }
 }
-
 </script>
 
 <style scoped lang="scss">
