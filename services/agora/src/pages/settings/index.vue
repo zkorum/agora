@@ -2,13 +2,17 @@
   <div>
     <div class="container">
       <div v-if="isAuthenticated">
-        <SettingsSection :settings-item-list="accountSettings" title="Account" />
+        <SettingsSection :settings-item-list="accountSettings" />
       </div>
 
-      <SettingsSection :settings-item-list="aboutSettings" title="About" />
+      <SettingsSection :settings-item-list="aboutSettings" />
 
       <div v-if="isAuthenticated">
-        <SettingsSection :settings-item-list="supportSettings" title="Support" />
+        <SettingsSection :settings-item-list="deleteAccountSettings" />
+      </div>
+
+      <div v-if="isAuthenticated">
+        <SettingsSection :settings-item-list="logoutSettings" />
       </div>
     </div>
   </div>
@@ -56,45 +60,53 @@ const accountSettings: SettingsInterface[] = [
   {
     icon: "mdi-account",
     label: "Profile",
-    action: () => { router.push({ name: "settings-account-profile" }) },
-    isWarning: false
-  },
-  {
-    icon: "mdi-logout",
-    label: "Log out",
-    action: logoutRequested,
-    isWarning: false
+    action: () => {
+      router.push({ name: "settings-account-profile" });
+    },
+    style: "none",
   },
 ];
 
 const aboutSettings: SettingsInterface[] = [
   {
     icon: "mdi-key",
-    label: "Privacy policy",
-    action: () => { router.push({ name: "privacy" }) },
-    isWarning: false
+    label: "Privacy Policy",
+    action: () => {
+      router.push({ name: "privacy" });
+    },
+    style: "none",
   },
   {
     icon: "mdi-file-document",
-    label: "Terms of service",
-    action: () => { router.push({ name: "terms" }) },
-    isWarning: false
+    label: "Terms of Service",
+    action: () => {
+      router.push({ name: "terms" });
+    },
+    style: "none",
   },
 ];
 
-const supportSettings: SettingsInterface[] = [
+const logoutSettings: SettingsInterface[] = [
+  {
+    icon: "mdi-logout",
+    label: "Log Out",
+    action: logoutRequested,
+    style: "warning",
+  },
+];
+
+const deleteAccountSettings: SettingsInterface[] = [
   {
     icon: "mdi-delete",
     label: "Delete Account",
     action: processDeleteAccount,
-    isWarning: true
+    style: "negative",
   },
 ];
 
 function processDeleteAccount() {
   showDeleteAccountDialog(logoutCleanup);
-};
-
+}
 </script>
 
 <style scoped lang="scss">

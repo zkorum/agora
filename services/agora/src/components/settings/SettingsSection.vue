@@ -1,26 +1,29 @@
 <template>
   <div>
     <div class="container">
-      <div class="titleStyle">
-        {{ title }}
-      </div>
-
       <ZKCard padding="0rem">
         <div class="flexStyle">
           <div v-for="(item, index) in settingsItemList" :key="item.icon">
             <ZKHoverEffect :enable-hover="true">
-              <div class="menuItem" :class="{ isWarningStyle: item.isWarning }" @click="item.action">
-                <div>
-                  <q-icon :name="item.icon" size="1.5rem" />
-                </div>
+              <div
+                class="menuItem"
+                :class="{
+                  isWarningStyle: item.style == 'warning',
+                  isNegativeStyle: item.style == 'negative',
+                }"
+                @click="item.action"
+              >
                 <div>
                   {{ item.label }}
+                </div>
+
+                <div>
+                  <q-icon name="mdi-chevron-right" size="2rem" />
                 </div>
               </div>
 
               <q-separator v-if="index != settingsItemList.length - 1" />
             </ZKHoverEffect>
-
           </div>
         </div>
       </ZKCard>
@@ -35,7 +38,6 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 
 defineProps<{
   settingsItemList: SettingsInterface[];
-  title: string;
 }>();
 </script>
 
@@ -44,6 +46,7 @@ defineProps<{
   display: flex;
   gap: 2rem;
   align-items: center;
+  justify-content: space-between;
   font-size: 1rem;
   cursor: pointer;
   padding: 1rem;
@@ -54,17 +57,15 @@ defineProps<{
   flex-direction: column;
 }
 
-.titleStyle {
-  font-size: 0.9rem;
-  font-weight: bold;
-  padding-bottom: 1rem;
-}
-
 .container {
   padding-bottom: 2rem;
 }
 
 .isWarningStyle {
-  color: #b91c1c;
+  color: $warning;
+}
+
+.isNegativeStyle {
+  color: $negative;
 }
 </style>
