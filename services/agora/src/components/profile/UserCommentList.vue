@@ -14,8 +14,16 @@
           }"
         >
           <div class="container">
-            <div class="postTitle">
-              {{ commentItem.postData.payload.title }}
+            <div class="topRowFlex">
+              <div class="postTitle">
+                {{ commentItem.postData.payload.title }}
+              </div>
+              <div>
+                <CommentActionOptions
+                  :comment-item="commentItem.commentItem"
+                  @deleted="commentDeleted()"
+                />
+              </div>
             </div>
 
             <div class="commentMetadata">
@@ -46,6 +54,7 @@ import { useUserStore } from "src/stores/user";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
+import CommentActionOptions from "../post/views/CommentActionOptions.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
@@ -78,6 +87,10 @@ watch(targetIsVisible, async () => {
     isExpandingPosts = false;
   }
 });
+
+async function commentDeleted() {
+  await loadUserProfile();
+}
 </script>
 
 <style scoped lang="scss">
@@ -107,5 +120,11 @@ watch(targetIsVisible, async () => {
 
 .commentBody {
   padding-top: 0.5rem;
+}
+
+.topRowFlex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 </style>
