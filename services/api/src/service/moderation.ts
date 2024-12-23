@@ -1,7 +1,8 @@
-import { moderationTable, reportTable } from "@/schema.js";
+import { moderationTable, postTable, reportTable } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import type { ModerationAction, ModerationReason } from "@/shared/types/zod.js";
+import { eq } from "drizzle-orm";
 
 interface SubmitModerationReportProps {
     postSlugId: string;
@@ -42,5 +43,12 @@ export async function moderateByPostSlugId({
             moderationReason: moderationReason,
             moderationExplanation: moderationExplanation,
         });
+
+        await tx
+            .update(postTable)
+            .set({
+                isHidden: true,
+            })
+            .where(eq(postTable.id, postDetails.id));
     });
 }

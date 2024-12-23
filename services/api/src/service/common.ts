@@ -1,6 +1,17 @@
-import { postContentTable, pollTable, postTable, organisationTable, userTable } from "@/schema.js";
+import {
+    postContentTable,
+    pollTable,
+    postTable,
+    organisationTable,
+    userTable,
+} from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
-import type { PostMetadata, ExtendedPostPayload, PollOptionWithResult, ExtendedPost } from "@/shared/types/zod.js";
+import type {
+    PostMetadata,
+    ExtendedPostPayload,
+    PollOptionWithResult,
+    ExtendedPost,
+} from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -8,7 +19,6 @@ import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
 
 export function useCommonPost() {
-
     interface FetchPostItemsProps {
         db: PostgresJsDatabase;
         limit: number;
@@ -19,9 +29,13 @@ export function useCommonPost() {
     }
 
     async function fetchPostItems({
-        db, limit, where, enableCompactBody, fetchPollResponse, userId
+        db,
+        limit,
+        where,
+        enableCompactBody,
+        fetchPollResponse,
+        userId,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
-
         const postItems = await db
             .select({
                 title: postContentTable.title,
@@ -51,56 +65,66 @@ export function useCommonPost() {
             .from(postTable)
             .innerJoin(
                 postContentTable,
-                eq(postContentTable.id, postTable.currentContentId)
+                eq(postContentTable.id, postTable.currentContentId),
             )
-            .innerJoin(
-                userTable,
-                eq(userTable.id, postTable.authorId)
-            )
+            .innerJoin(userTable, eq(userTable.id, postTable.authorId))
             .leftJoin(
                 organisationTable,
-                eq(organisationTable.id, userTable.organisationId)
+                eq(organisationTable.id, userTable.organisationId),
             )
-            .leftJoin(pollTable, eq(postContentTable.id, pollTable.postContentId))
+            .leftJoin(
+                pollTable,
+                eq(postContentTable.id, pollTable.postContentId),
+            )
+            // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(where)
             .orderBy(desc(postTable.createdAt))
             .limit(limit);
 
         const posts: ExtendedPost[] = [];
-        postItems.forEach(postItem => {
+        postItems.forEach((postItem) => {
             if (enableCompactBody && postItem.body != null) {
                 postItem.body = sanitizeHtml(postItem.body, {
                     allowedTags: ["b", "i", "strike", "u"],
                     allowedAttributes: {},
-                    textFilter: function (text) { // , tagName
+                    textFilter: function (text) {
+                        // , tagName
                         return text + " ";
-                    }
+                    },
                 });
             }
 
             const metadata: PostMetadata = {
-                    postSlugId: postItem.slugId,
-                    isHidden: postItem.isHidden,
-                    createdAt: postItem.createdAt,
-                    updatedAt: postItem.updatedAt,
-                    lastReactedAt: postItem.lastReactedAt,
-                    commentCount: postItem.commentCount,
-                    authorUsername: postItem.authorName,
-                    authorImagePath: toUnionUndefined(postItem.authorImagePath),
-                };
+                postSlugId: postItem.slugId,
+                isHidden: postItem.isHidden,
+                createdAt: postItem.createdAt,
+                updatedAt: postItem.updatedAt,
+                lastReactedAt: postItem.lastReactedAt,
+                commentCount: postItem.commentCount,
+                authorUsername: postItem.authorName,
+                authorImagePath: toUnionUndefined(postItem.authorImagePath),
+            };
 
             let payload: ExtendedPostPayload;
-            if (postItem.option1 !== null && postItem.option2 !== null && postItem.option1Response !== null && postItem.option2Response !== null) { // hasPoll
-                const pollList: PollOptionWithResult[] = [{
-                    optionNumber: 1,
-                    optionTitle: postItem.option1,
-                    numResponses: postItem.option1Response,
-                },
-                {
-                    optionNumber: 2,
-                    optionTitle: postItem.option2,
-                    numResponses: postItem.option2Response,
-                }];
+            if (
+                postItem.option1 !== null &&
+                postItem.option2 !== null &&
+                postItem.option1Response !== null &&
+                postItem.option2Response !== null
+            ) {
+                // hasPoll
+                const pollList: PollOptionWithResult[] = [
+                    {
+                        optionNumber: 1,
+                        optionTitle: postItem.option1,
+                        numResponses: postItem.option1Response,
+                    },
+                    {
+                        optionNumber: 2,
+                        optionTitle: postItem.option2,
+                        numResponses: postItem.option2Response,
+                    },
+                ];
                 if (postItem.option3 !== null) {
                     pollList.push({
                         optionNumber: 3,
@@ -145,17 +169,19 @@ export function useCommonPost() {
                 payload: payload,
                 interaction: {
                     hasVoted: false,
-                    votedIndex: 0
-                }
+                    votedIndex: 0,
+                },
             });
         });
 
         if (fetchPollResponse) {
             if (!userId) {
-                throw httpErrors.internalServerError("Missing author ID for fetching poll response");
+                throw httpErrors.internalServerError(
+                    "Missing author ID for fetching poll response",
+                );
             } else {
                 const postSlugIdList: string[] = [];
-                posts.forEach(post => {
+                posts.forEach((post) => {
                     postSlugIdList.push(post.metadata.postSlugId);
                 });
 
@@ -163,22 +189,21 @@ export function useCommonPost() {
                     db: db,
                     authorId: userId,
                     httpErrors: httpErrors,
-                    postSlugIdList: postSlugIdList
+                    postSlugIdList: postSlugIdList,
                 });
 
                 const responseMap = new Map<string, number>();
-                pollResponses.forEach(response => {
+                pollResponses.forEach((response) => {
                     responseMap.set(response.postSlugId, response.optionChosen);
                 });
 
-                posts.forEach(post => {
+                posts.forEach((post) => {
                     const voteIndex = responseMap.get(post.metadata.postSlugId);
                     post.interaction = {
                         hasVoted: voteIndex != undefined,
-                        votedIndex: voteIndex ?? 0
-                    }
+                        votedIndex: voteIndex ?? 0,
+                    };
                 });
-
             }
         }
 
@@ -195,8 +220,10 @@ export function useCommonPost() {
         postSlugId: string;
     }
 
-    async function getPostAndContentIdFromSlugId(
-        { db, postSlugId }: GetPostAndContentIdFromSlugIdProps): Promise<IdAndContentId> {
+    async function getPostAndContentIdFromSlugId({
+        db,
+        postSlugId,
+    }: GetPostAndContentIdFromSlugIdProps): Promise<IdAndContentId> {
         const postTableResponse = await db
             .select({
                 id: postTable.id,
@@ -206,9 +233,14 @@ export function useCommonPost() {
             .where(eq(postTable.slugId, postSlugId));
 
         if (postTableResponse.length == 1) {
-            return { contentId: postTableResponse[0].currentContentId, id: postTableResponse[0].id };
+            return {
+                contentId: postTableResponse[0].currentContentId,
+                id: postTableResponse[0].id,
+            };
         } else {
-            throw httpErrors.notFound("Post slugId does not exist, or incorrect response count from database")
+            throw httpErrors.notFound(
+                "Post slugId does not exist, or incorrect response count from database",
+            );
         }
     }
 
