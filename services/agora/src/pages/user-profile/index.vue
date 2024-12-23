@@ -39,8 +39,9 @@ import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
+import { storeToRefs } from "pinia";
 
-const { profileData } = useUserStore();
+const { profileData } = storeToRefs(useUserStore());
 
 const currentTab = ref(0);
 
