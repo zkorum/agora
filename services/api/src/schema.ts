@@ -1211,7 +1211,7 @@ export const voteContentTable = pgTable("vote_content", {
 });
 
 // illegal = glaring violation of law (scam, terrorism, threat, etc)
-const [firstReason, restReason] = [
+export const reportReasons = pgEnum("report_reason_enum", [
     "off-topic",
     "spam",
     "misleading",
@@ -1219,15 +1219,16 @@ const [firstReason, restReason] = [
     "sexual",
     "toxic",
     "illegal",
-];
-export const reportReasonEnum = pgEnum("report_reason_enum", [
-    firstReason,
-    ...restReason,
 ]);
-const restModeration = [...restReason, "nothing"];
-export const moderationReasonEnum = pgEnum("moderation_reason_enum", [
-    firstReason,
-    ...restModeration,
+export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
+    "off-topic",
+    "spam",
+    "misleading",
+    "privacy",
+    "sexual",
+    "toxic",
+    "illegal",
+    "nothing",
 ]);
 
 // todo: add suspend and ban
@@ -1243,7 +1244,7 @@ export const reportTable = pgTable("report_table", {
     commentId: integer("comment_id") //
         .references(() => postTable.id), // at least one or the other should be not null - add a check
     reporterId: uuid("reporter_id").references(() => userTable.id), // null if reported by AI
-    reportReason: reportReasonEnum("reporter_reason"),
+    reportReason: reportReasons("reporter_reason"),
     reportExplanation: varchar("report_explanation", {
         length: MAX_LENGTH_BODY,
     }),
@@ -1269,7 +1270,7 @@ export const moderationTable = pgTable("moderation_table", {
         .notNull(), // if moderation is not in reaction to a report, then create the report with the moderator userId before inserting data in this table
     moderatorId: uuid("moderator_id").references(() => userTable.id),
     moderationAction: moderationAction("moderation_action").notNull(), // add check
-    moderationReason: moderationReasonEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
+    moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
     moderationExplanation: varchar("moderation_explanation", {
         length: MAX_LENGTH_BODY,
     }),

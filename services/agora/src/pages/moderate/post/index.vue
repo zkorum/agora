@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import { ref } from "vue";
@@ -37,6 +37,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 const { moderatePost } = useBackendModerateApi();
 
 const route = useRoute();
+const router = useRouter();
 
 const moderationAction = ref<ModerationAction>("hide");
 const actions = ref([
@@ -58,18 +59,22 @@ const reasons = ref([
 
 const moderationExplanation = ref("");
 
-function clickedSubmit() {
+async function clickedSubmit() {
   const postSlugId = route.params.postSlugId;
   console.log(postSlugId);
   if (typeof postSlugId == "string") {
     console.log(moderationReason.value);
     console.log(moderationAction.value);
-    moderatePost(
+    const isSuccessful = await moderatePost(
       postSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
+
+    if (isSuccessful) {
+      router.go(-1);
+    }
   }
 }
 </script>

@@ -1,5 +1,5 @@
 {
-  "id": "f803e0a4-f70b-4f6e-8eb7-0d3dcdb4e812",
+  "id": "6dfb2472-ae74-4228-8139-a5ab164f4df1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2792,10 +2792,12 @@
       "schema": "public",
       "values": [
         "off-topic",
-        "s",
-        "p",
-        "a",
-        "m",
+        "spam",
+        "misleading",
+        "privacy",
+        "sexual",
+        "toxic",
+        "illegal",
         "nothing"
       ]
     },
@@ -3064,10 +3066,12 @@
       "schema": "public",
       "values": [
         "off-topic",
-        "s",
-        "p",
-        "a",
-        "m"
+        "spam",
+        "misleading",
+        "privacy",
+        "sexual",
+        "toxic",
+        "illegal"
       ]
     },
     "public.sex": {

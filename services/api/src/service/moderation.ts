@@ -32,7 +32,6 @@ export async function moderateByPostSlugId({
             .values({
                 postId: postDetails.id,
                 reporterId: userId,
-                reportReason: moderationReason,
             })
             .returning({ reportTableId: reportTable.id });
 

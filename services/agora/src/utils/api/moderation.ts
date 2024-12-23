@@ -40,6 +40,7 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
+      showNotifyMessage("Submitted report");
       return true;
     } catch (e) {
       console.error(e);
