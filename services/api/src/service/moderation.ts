@@ -44,11 +44,13 @@ export async function moderateByPostSlugId({
             moderationExplanation: moderationExplanation,
         });
 
-        await tx
-            .update(postTable)
-            .set({
-                isHidden: true,
-            })
-            .where(eq(postTable.id, postDetails.id));
+        if (moderationAction == "hide") {
+            await tx
+                .update(postTable)
+                .set({
+                    isHidden: true,
+                })
+                .where(eq(postTable.id, postDetails.id));
+        }
     });
 }
