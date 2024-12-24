@@ -1,19 +1,33 @@
 <template>
   <div>
-    <StepperLayout :submit-call-back="() => { }" :current-step="1" :total-steps="5" :enable-next-button="true"
-      :show-next-button="false">
-
+    <StepperLayout
+      :submit-call-back="() => {}"
+      :current-step="1"
+      :total-steps="5"
+      :enable-next-button="true"
+      :show-next-button="false"
+    >
       <template #header>
-        <InfoHeader title="Log In" :description="description" icon-name="mdi-login" />
+        <InfoHeader
+          title="Log In"
+          :description="description"
+          icon-name="mdi-login"
+        />
       </template>
 
       <template #body>
-        <ZKButton label="Log In with RariMe" color="primary" @click="goToPassportLogin()" />
+        <ZKButton
+          label="Log In with RariMe"
+          color="primary"
+          @click="goToPassportLogin()"
+        />
 
-        <ZKButton label="Login with my phone number" color="secondary" @click="goToPhoneLogin()" />
-
+        <ZKButton
+          label="Login with my phone number"
+          color="secondary"
+          @click="goToPhoneLogin()"
+        />
       </template>
-
     </StepperLayout>
   </div>
 </template>
@@ -35,7 +49,6 @@ function goToPassportLogin() {
 function goToPhoneLogin() {
   router.push({ name: "onboarding-step3-phone-1" });
 }
-
 </script>
 
 <style scoped lang="scss"></style>

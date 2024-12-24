@@ -4,19 +4,39 @@
       <q-form @submit="onSubmit()">
         <TopMenuWrapper :reveal="false">
           <div class="menuFlexGroup">
-            <ZKButton icon="mdi-close" text-color="color-text-strong" flat @click="router.back()" />
+            <ZKButton
+              icon="mdi-close"
+              text-color="color-text-strong"
+              flat
+              @click="router.back()"
+            />
           </div>
 
           <div class="menuFlexGroup">
             <HelpButton />
-            <ZKButton color="primary" label="Post" type="submit" :disable="exceededBodyWordCount" />
+            <ZKButton
+              color="primary"
+              label="Post"
+              type="submit"
+              :disable="exceededBodyWordCount"
+            />
           </div>
         </TopMenuWrapper>
 
         <div class="container">
-          <q-input v-model="postDraft.postTitle" borderless no-error-icon type="textarea" label="Title" lazy-rules
-            :rules="[(val) => val && val.length > 0]" class="titleStyle" autogrow :maxlength="MAX_LENGTH_TITLE"
-            required>
+          <q-input
+            v-model="postDraft.postTitle"
+            borderless
+            no-error-icon
+            type="textarea"
+            label="Title"
+            lazy-rules
+            :rules="[(val) => val && val.length > 0]"
+            class="titleStyle"
+            autogrow
+            :maxlength="MAX_LENGTH_TITLE"
+            required
+          >
           </q-input>
 
           <div class="wordCountDiv">
@@ -26,39 +46,85 @@
 
           <div>
             <div :class="{ editorPadding: !postDraft.enablePolling }">
-              <ZKEditor v-model="postDraft.postBody" placeholder="body text" min-height="5rem" :focus-editor="false"
-                :show-toolbar="true" @update:model-value="checkWordCount()" />
+              <ZKEditor
+                v-model="postDraft.postBody"
+                placeholder="body text"
+                min-height="5rem"
+                :focus-editor="false"
+                :show-toolbar="true"
+                @update:model-value="checkWordCount()"
+              />
 
               <div class="wordCountDiv">
-                <q-icon v-if="bodyWordCount > MAX_LENGTH_BODY" name="mdi-alert-circle" class="bodySizeWarningIcon" />
-                <span :class="{
-                  wordCountWarning: bodyWordCount > MAX_LENGTH_BODY,
-                }">{{ bodyWordCount }}
+                <q-icon
+                  v-if="bodyWordCount > MAX_LENGTH_BODY"
+                  name="mdi-alert-circle"
+                  class="bodySizeWarningIcon"
+                />
+                <span
+                  :class="{
+                    wordCountWarning: bodyWordCount > MAX_LENGTH_BODY,
+                  }"
+                  >{{ bodyWordCount }}
                 </span>
                 &nbsp; / {{ MAX_LENGTH_BODY }}
               </div>
             </div>
 
-            <ZKCard v-if="postDraft.enablePolling" padding="1rem" :style="{ marginTop: '1rem' }">
+            <ZKCard
+              v-if="postDraft.enablePolling"
+              padding="1rem"
+              :style="{ marginTop: '1rem' }"
+            >
               <div>
                 <div class="pollTopBar">
                   <div>Add a Poll</div>
-                  <ZKButton flat text-color="black" icon="mdi-close" @click="togglePolling()" />
+                  <ZKButton
+                    flat
+                    text-color="black"
+                    icon="mdi-close"
+                    @click="togglePolling()"
+                  />
                 </div>
                 <div ref="pollRef" class="pollingFlexStyle">
-                  <div v-for="index in postDraft.pollingOptionList.length" :key="index" class="pollingItem">
-                    <q-input v-model="postDraft.pollingOptionList[index - 1]" :rules="[(val) => val && val.length > 0]"
-                      type="text" :label="'Option ' + index" :style="{ width: '100%' }" :maxlength="MAX_LENGTH_OPTION"
-                      autogrow clearable />
-                    <div v-if="postDraft.pollingOptionList.length != 2" class="deletePollOptionDiv">
-                      <ZKButton flat round icon="mdi-delete" text-color="primary"
-                        @click="removePollOption(index - 1)" />
+                  <div
+                    v-for="index in postDraft.pollingOptionList.length"
+                    :key="index"
+                    class="pollingItem"
+                  >
+                    <q-input
+                      v-model="postDraft.pollingOptionList[index - 1]"
+                      :rules="[(val) => val && val.length > 0]"
+                      type="text"
+                      :label="'Option ' + index"
+                      :style="{ width: '100%' }"
+                      :maxlength="MAX_LENGTH_OPTION"
+                      autogrow
+                      clearable
+                    />
+                    <div
+                      v-if="postDraft.pollingOptionList.length != 2"
+                      class="deletePollOptionDiv"
+                    >
+                      <ZKButton
+                        flat
+                        round
+                        icon="mdi-delete"
+                        text-color="primary"
+                        @click="removePollOption(index - 1)"
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <ZKButton flat text-color="primary" icon="mdi-plus" label="Add Option"
-                      :disable="postDraft.pollingOptionList.length == 6" @click="addPollOption()" />
+                    <ZKButton
+                      flat
+                      text-color="primary"
+                      icon="mdi-plus"
+                      label="Add Option"
+                      :disable="postDraft.pollingOptionList.length == 6"
+                      @click="addPollOption()"
+                    />
                   </div>
                 </div>
               </div>
@@ -69,10 +135,20 @@
         <div ref="endOfForm"></div>
       </q-form>
 
-      <div class="addPollBar" :class="{ weakColor: postDraft.enablePolling }"
-        :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }">
-        <ZKButton unelevated rounded :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'" icon="mdi-poll"
-          color="grey-8" text-color="white" @click="togglePolling()" />
+      <div
+        class="addPollBar"
+        :class="{ weakColor: postDraft.enablePolling }"
+        :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
+      >
+        <ZKButton
+          unelevated
+          rounded
+          :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
+          icon="mdi-poll"
+          color="grey-8"
+          text-color="white"
+          @click="togglePolling()"
+        />
       </div>
 
       <q-dialog v-model="showExitDialog">
@@ -84,7 +160,12 @@
 
             <div class="dialogButtons">
               <ZKButton v-close-popup flat label="Cancel" />
-              <ZKButton v-close-popup label="Discard" text-color="warning" @click="leaveRoute()" />
+              <ZKButton
+                v-close-popup
+                label="Discard"
+                text-color="warning"
+                @click="leaveRoute()"
+              />
             </div>
           </div>
         </ZKCard>
@@ -157,7 +238,7 @@ window.onbeforeunload = function () {
 };
 
 onUnmounted(() => {
-  window.onbeforeunload = () => { };
+  window.onbeforeunload = () => {};
 });
 
 function checkWordCount() {

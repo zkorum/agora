@@ -1,21 +1,15 @@
 <template>
   <div class="container">
-    <div class="titleStyle">
-      Profile Settings
-    </div>
+    <div class="titleStyle">Profile Settings</div>
 
-    <div class="subtitleStyle">
-      Change username
-    </div>
+    <div class="subtitleStyle">Change username</div>
 
     <UsernameChange :show-submit-button="true" />
-
   </div>
 </template>
 
 <script setup lang="ts">
 import UsernameChange from "src/components/account/UsernameChange.vue";
-
 </script>
 
 <style scoped lang="scss">

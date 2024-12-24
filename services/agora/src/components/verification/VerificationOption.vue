@@ -14,7 +14,11 @@
             </div>
           </div>
 
-          <q-icon name="mdi-arrow-right" color="color-text-strong" size="2rem" />
+          <q-icon
+            name="mdi-arrow-right"
+            color="color-text-strong"
+            size="2rem"
+          />
         </div>
       </ZKCard>
     </RouterLink>

@@ -1,29 +1,53 @@
 <template>
   <div>
     <form @submit.prevent="">
-      <StepperLayout :submit-call-back="validateNumber" :current-step="3" :total-steps="5"
-        :enable-next-button="selectedCountryCode.code.length > 0 && inputNumber.length > 0" :show-next-button="true">
-
+      <StepperLayout
+        :submit-call-back="validateNumber"
+        :current-step="3"
+        :total-steps="5"
+        :enable-next-button="
+          selectedCountryCode.code.length > 0 && inputNumber.length > 0
+        "
+        :show-next-button="true"
+      >
         <template #header>
-          <InfoHeader title="Verify with phone number" :description="description" icon-name="mdi-phone" />
+          <InfoHeader
+            title="Verify with phone number"
+            :description="description"
+            icon-name="mdi-phone"
+          />
         </template>
 
         <template #body>
-
           <div class="container">
             <div>You will receive a 6-digit one-time code by SMS.</div>
 
-            <Select v-model="selectedCountryCode" filter :virtual-scroller-options="{
-              lazy: true,
-              itemSize: 40,
-              numToleratedItems: 10,
-            }" :options="countries" option-label="name" placeholder="Country Code">
+            <Select
+              v-model="selectedCountryCode"
+              filter
+              :virtual-scroller-options="{
+                lazy: true,
+                itemSize: 40,
+                numToleratedItems: 10,
+              }"
+              :options="countries"
+              option-label="name"
+              placeholder="Country Code"
+            >
               <template #value="slotProps">
-                <div v-if="slotProps.value.code != ''" class="flex items-center">
-                  <img :alt="slotProps.value.label" :src="'/feed/images/communities/flags/' +
-                    slotProps.value.country +
-                    '.svg'
-                    " class="flagImg" />
+                <div
+                  v-if="slotProps.value.code != ''"
+                  class="flex items-center"
+                >
+                  <img
+                    :alt="slotProps.value.label"
+                    :src="
+                      '/feed/images/communities/flags/' +
+                      slotProps.value.country +
+                      '.svg'
+                    "
+                    class="flagImg"
+                  />
                   <div>+ {{ slotProps.value.code }}</div>
                 </div>
                 <span v-else>
@@ -32,31 +56,43 @@
               </template>
               <template #option="slotProps">
                 <div class="innerOption">
-                  <img :src="'/feed/images/communities/flags/' +
-                    slotProps.option.country +
-                    '.svg'
-                    " class="flagImg" loading="lazy" />
+                  <img
+                    :src="
+                      '/feed/images/communities/flags/' +
+                      slotProps.option.country +
+                      '.svg'
+                    "
+                    class="flagImg"
+                    loading="lazy"
+                  />
                   <div>{{ slotProps.option.name }}</div>
                 </div>
               </template>
             </Select>
 
-            <InputText v-model="inputNumber" type="tel" placeholder="Phone number" required />
+            <InputText
+              v-model="inputNumber"
+              type="tel"
+              placeholder="Phone number"
+              required
+            />
 
             <div v-if="devAuthorizedNumbers.length > 0">
               <div class="developmentSection">
-                <div>
-                  Development Numbers:
-                </div>
+                <div>Development Numbers:</div>
 
-                <div v-for="authorizedNumber in devAuthorizedNumbers" :key="authorizedNumber.fullNumber">
-                  <ZKButton color="blue" :label="authorizedNumber.fullNumber"
-                    @click=injectDevelopmentNumber(authorizedNumber) />
+                <div
+                  v-for="authorizedNumber in devAuthorizedNumbers"
+                  :key="authorizedNumber.fullNumber"
+                >
+                  <ZKButton
+                    color="blue"
+                    :label="authorizedNumber.fullNumber"
+                    @click="injectDevelopmentNumber(authorizedNumber)"
+                  />
                 </div>
               </div>
-
             </div>
-
           </div>
         </template>
       </StepperLayout>
@@ -99,9 +135,7 @@ interface SelectItem {
 }
 const countries = ref<SelectItem[]>([]);
 
-const { verificationPhoneNumber } = storeToRefs(
-  phoneVerificationStore()
-);
+const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
 const countryList = getCountries();
 for (let i = 0; i < countryList.length; i++) {
@@ -132,12 +166,12 @@ function injectDevelopmentNumber(phoneItem: PhoneNumber) {
 function checkDevAuthorizedNumbers() {
   if (process.env.VITE_DEV_AUTHORIZED_PHONES) {
     const phoneList = process.env.VITE_DEV_AUTHORIZED_PHONES.split(",");
-    phoneList.forEach(number => {
+    phoneList.forEach((number) => {
       const parsedNumber = parsePhoneNumberFromString(number);
       console.log(parsedNumber.number);
       devAuthorizedNumbers.push({
         fullNumber: parsedNumber.number,
-        countryCallingCode: parsedNumber.countryCallingCode
+        countryCallingCode: parsedNumber.countryCallingCode,
       });
     });
   }
@@ -151,7 +185,7 @@ function validateNumber() {
     if (phoneNumber.isValid()) {
       verificationPhoneNumber.value = {
         defaultCallingCode: phoneNumber.countryCallingCode,
-        phoneNumber: phoneNumber.number
+        phoneNumber: phoneNumber.number,
       };
 
       // TODO: use phoneNumber and defaultCallingCode to send the OTP on click and add both to the store in case the user wants to resend in next page
@@ -167,7 +201,6 @@ function validateNumber() {
     );
   }
 }
-
 </script>
 
 <style scoped lang="scss">

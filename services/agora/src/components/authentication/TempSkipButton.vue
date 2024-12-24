@@ -1,5 +1,10 @@
 <template>
-  <ZKButton outline label="Verify" text-color="color-text-strong" @click="skipButton()" />
+  <ZKButton
+    outline
+    label="Verify"
+    text-color="color-text-strong"
+    @click="skipButton()"
+  />
 </template>
 
 <script setup lang="ts">

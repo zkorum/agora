@@ -4,18 +4,36 @@
       <!-- Show buttons for voting -->
       <div v-if="currentDisplayMode == DisplayModes.Vote">
         <div class="pollOptionList">
-          <ZKButton v-for="optionItem in localPollOptionList" :key="optionItem.index" outline :label="optionItem.option"
-            text-color="primary" @click.stop.prevent="voteCasted(optionItem.index)" />
+          <ZKButton
+            v-for="optionItem in localPollOptionList"
+            :key="optionItem.index"
+            outline
+            :label="optionItem.option"
+            text-color="primary"
+            @click.stop.prevent="voteCasted(optionItem.index)"
+          />
         </div>
       </div>
 
       <!-- Show the final result -->
-      <div v-if="currentDisplayMode == DisplayModes.Results" class="pollOptionList">
-        <option-view v-for="optionItem in localPollOptionList" :key="optionItem.index" :option="optionItem.option"
-          :voted-by-user="userVoteStatus.votedIndex == optionItem.index && userVoteStatus.hasVoted" :option-percentage="totalVoteCount === 0
-            ? 0
-            : Math.round((optionItem.numResponses * 100) / totalVoteCount)
-            " />
+      <div
+        v-if="currentDisplayMode == DisplayModes.Results"
+        class="pollOptionList"
+      >
+        <option-view
+          v-for="optionItem in localPollOptionList"
+          :key="optionItem.index"
+          :option="optionItem.option"
+          :voted-by-user="
+            userVoteStatus.votedIndex == optionItem.index &&
+            userVoteStatus.hasVoted
+          "
+          :option-percentage="
+            totalVoteCount === 0
+              ? 0
+              : Math.round((optionItem.numResponses * 100) / totalVoteCount)
+          "
+        />
       </div>
 
       <div class="actionButtonCluster">
@@ -24,11 +42,23 @@
         </div>
 
         <div v-if="!userVoteStatus.hasVoted">
-          <ZKButton v-if="currentDisplayMode == DisplayModes.Vote" outline text-color="primary" icon="mdi-chart-bar"
-            label="Results" @click.stop.prevent="showResultsInterface()" />
+          <ZKButton
+            v-if="currentDisplayMode == DisplayModes.Vote"
+            outline
+            text-color="primary"
+            icon="mdi-chart-bar"
+            label="Results"
+            @click.stop.prevent="showResultsInterface()"
+          />
 
-          <ZKButton v-if="currentDisplayMode == DisplayModes.Results && isAuthenticated" outline text-color="primary"
-            label="Vote" icon="mdi-vote" @click.stop.prevent="showVoteInterface()" />
+          <ZKButton
+            v-if="currentDisplayMode == DisplayModes.Results && isAuthenticated"
+            outline
+            text-color="primary"
+            label="Vote"
+            icon="mdi-vote"
+            @click.stop.prevent="showVoteInterface()"
+          />
         </div>
       </div>
     </div>
@@ -70,7 +100,7 @@ const currentDisplayMode = ref<DisplayModes>(
 
 const userVoteStatus = ref<UserInteraction>({
   hasVoted: false,
-  votedIndex: 0
+  votedIndex: 0,
 });
 
 const totalVoteCount = ref(0);
@@ -94,11 +124,11 @@ function incrementLocalPollIndex(targetIndex: number) {
 }
 
 function initializeLocalPoll() {
-  props.pollOptions?.forEach(pollOption => {
+  props.pollOptions?.forEach((pollOption) => {
     const localPollItem: DummyPollOptionFormat = {
       index: pollOption.optionNumber - 1,
       numResponses: pollOption.numResponses,
-      option: pollOption.optionTitle
+      option: pollOption.optionTitle,
     };
     localPollOptionList.value.push(localPollItem);
   });
@@ -106,19 +136,21 @@ function initializeLocalPoll() {
 
 async function fetchUserPollResponseData(loadFromRemote: boolean) {
   if (loadFromRemote) {
-    const response = await backendPollApi.fetchUserPollResponse([props.postSlugId]);
+    const response = await backendPollApi.fetchUserPollResponse([
+      props.postSlugId,
+    ]);
     const selectedOption = response.get(props.postSlugId);
     if (selectedOption) {
       userVoteStatus.value = {
         hasVoted: true,
-        votedIndex: selectedOption - 1
+        votedIndex: selectedOption - 1,
       };
       showResultsInterface();
     }
   } else {
     userVoteStatus.value = {
       hasVoted: props.userResponse.hasVoted,
-      votedIndex: props.userResponse.votedIndex
+      votedIndex: props.userResponse.votedIndex,
     };
 
     if (userVoteStatus.value.hasVoted) {

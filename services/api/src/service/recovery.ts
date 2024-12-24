@@ -15,7 +15,6 @@ interface LogoutAllDevicesButOneProps<
     sessionExpiry: Date;
 }
 
-
 export async function logoutAllDevicesButOne({
     db,
     didWrite,
@@ -36,8 +35,8 @@ export async function logoutAllDevicesButOne({
         .where(
             and(
                 eq(deviceTable.userId, userId),
-                ne(deviceTable.didWrite, didWrite)
-            )
+                ne(deviceTable.didWrite, didWrite),
+            ),
         );
     await db
         .update(deviceTable)

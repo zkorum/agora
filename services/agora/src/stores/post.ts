@@ -89,30 +89,35 @@ export const usePostStore = defineStore("post", () => {
       lastReactedAt: new Date(),
       postSlugId: "",
       updatedAt: new Date(),
-      authorImagePath: ""
+      authorImagePath: "",
     },
     payload: {
       title: "",
       body: "",
-      poll: []
+      poll: [],
     },
     interaction: {
       hasVoted: false,
-      votedIndex: 0
+      votedIndex: 0,
     },
     userInteraction: {
       commentRanking: {
         assignedRankingItems: [],
-        rankedCommentList: new Map<number, PossibleCommentRankingActions>
+        rankedCommentList: new Map<number, PossibleCommentRankingActions>(),
       },
       pollResponse: {
         hadResponded: false,
-        responseIndex: 0
-      }
-    }
+        responseIndex: 0,
+      },
+    },
   };
 
-  const masterPostDataList = ref<ExtendedPost[]>([emptyPost, emptyPost, emptyPost, emptyPost]);
+  const masterPostDataList = ref<ExtendedPost[]>([
+    emptyPost,
+    emptyPost,
+    emptyPost,
+    emptyPost,
+  ]);
 
   const lastSavedHomeFeedPosition = useStorage(
     "last-saved-home-feed-position",
@@ -151,15 +156,23 @@ export const usePostStore = defineStore("post", () => {
 
   function trimHomeFeedSize(targetPostSize: number) {
     if (masterPostDataList.value.length > targetPostSize) {
-      masterPostDataList.value = masterPostDataList.value.slice(masterPostDataList.value.length - targetPostSize);
+      masterPostDataList.value = masterPostDataList.value.slice(
+        masterPostDataList.value.length - targetPostSize
+      );
     }
   }
 
   async function hasNewPosts() {
     const response = await fetchRecentPost(undefined, isAuthenticated.value);
     if (response != null) {
-      if (response.postDataList.length > 0 && masterPostDataList.value.length > 0) {
-        if (new Date(response.postDataList[0].metadata.createdAt).getTime() != masterPostDataList.value[0].metadata.createdAt.getTime()) {
+      if (
+        response.postDataList.length > 0 &&
+        masterPostDataList.value.length > 0
+      ) {
+        if (
+          new Date(response.postDataList[0].metadata.createdAt).getTime() !=
+          masterPostDataList.value[0].metadata.createdAt.getTime()
+        ) {
           return true;
         } else {
           return false;
@@ -198,6 +211,6 @@ export const usePostStore = defineStore("post", () => {
     emptyPost,
     lastSavedHomeFeedPosition,
     dataReady,
-    endOfFeed
+    endOfFeed,
   };
 });

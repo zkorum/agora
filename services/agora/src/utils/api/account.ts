@@ -18,8 +18,10 @@ export function useBackendAccountApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function submitUsernameChange(username: string, profileUsername: string): Promise<boolean> {
-
+  async function submitUsernameChange(
+    username: string,
+    profileUsername: string
+  ): Promise<boolean> {
     const NAME_UPDATE_SUCCESS_MESSAGE = "Username updated";
 
     if (username == profileUsername) {
@@ -29,24 +31,23 @@ export function useBackendAccountApi() {
 
     try {
       const params: ApiV1AccountSubmitUsernameChangePostRequest = {
-        username: username
+        username: username,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AccountSubmitUsernameChangePost(params);
+        await DefaultApiAxiosParamCreator().apiV1AccountSubmitUsernameChangePost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1AccountSubmitUsernameChangePost(
-        params,
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
-      );
+      ).apiV1AccountSubmitUsernameChangePost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
       await loadPostData(false);
       await loadUserProfile();
       showNotifyMessage(NAME_UPDATE_SUCCESS_MESSAGE);
@@ -67,18 +68,18 @@ export function useBackendAccountApi() {
         undefined,
         undefined,
         api
-      ).apiV1AccountDeleteUserPost(
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
-      );
+      ).apiV1AccountDeleteUserPost({
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
       showNotifyMessage("Account deleted");
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to delete user account. Please contact support for further assistance.");
+      showNotifyMessage(
+        "Failed to delete user account. Please contact support for further assistance."
+      );
       return false;
     }
   }
@@ -86,8 +87,8 @@ export function useBackendAccountApi() {
   async function isUsernameInUse(username: string): Promise<boolean | null> {
     try {
       const params: ApiV1AccountSubmitUsernameChangePostRequest = {
-        username: username
-      }
+        username: username,
+      };
 
       const response = await DefaultApiFactory(
         undefined,
@@ -95,7 +96,6 @@ export function useBackendAccountApi() {
         api
       ).apiV1AccountIsUsernameInUsePost(params);
       return response.data;
-
     } catch (e) {
       console.error(e);
       showNotifyMessage("Error while checking if the username is in use.");
@@ -122,6 +122,6 @@ export function useBackendAccountApi() {
     deleteUserAccount,
     submitUsernameChange,
     isUsernameInUse,
-    generateUnusedRandomUsername
+    generateUnusedRandomUsername,
   };
 }

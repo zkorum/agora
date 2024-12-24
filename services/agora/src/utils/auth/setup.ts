@@ -4,7 +4,6 @@ import { usePostStore } from "src/stores/post";
 import { useUserStore } from "src/stores/user";
 
 export function useAuthSetup() {
-
   const { loadPostData } = usePostStore();
   const { loadUserProfile } = useUserStore();
   const { isAuthenticated } = storeToRefs(useAuthenticationStore());
@@ -15,5 +14,5 @@ export function useAuthSetup() {
     await loadUserProfile();
   }
 
-  return { userLogin }
+  return { userLogin };
 }

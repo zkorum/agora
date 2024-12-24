@@ -1,25 +1,31 @@
 <template>
   <div>
-    <StepperLayout :submit-call-back="goToNextRoute" :current-step="4" :total-steps="5"
-      :enable-next-button="isValidUsername" :show-next-button="true">
-
+    <StepperLayout
+      :submit-call-back="goToNextRoute"
+      :current-step="4"
+      :total-steps="5"
+      :enable-next-button="isValidUsername"
+      :show-next-button="true"
+    >
       <template #header>
-        <InfoHeader title="Choose your username" description="" icon-name="mdi-account-circle" />
+        <InfoHeader
+          title="Choose your username"
+          description=""
+          icon-name="mdi-account-circle"
+        />
       </template>
 
       <template #body>
         <div class="container">
-          <div>
-            How do you want to appear in Agora?
-          </div>
+          <div>How do you want to appear in Agora?</div>
 
-          <UsernameChange :show-submit-button="false" @is-valid-username="(value) => isValidUsername = value"
-            @user-name="(value) => userName = value" />
-
+          <UsernameChange
+            :show-submit-button="false"
+            @is-valid-username="(value) => (isValidUsername = value)"
+            @user-name="(value) => (userName = value)"
+          />
         </div>
-
       </template>
-
     </StepperLayout>
   </div>
 </template>
@@ -34,9 +40,7 @@ import { ref } from "vue";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 
-const {
-  submitUsernameChange,
-} = useBackendAccountApi();
+const { submitUsernameChange } = useBackendAccountApi();
 
 const isValidUsername = ref(true);
 const userName = ref("");
@@ -46,12 +50,14 @@ const router = useRouter();
 const { profileData } = storeToRefs(useUserStore());
 
 async function goToNextRoute() {
-  const isSuccessful = await submitUsernameChange(userName.value, profileData.value.userName);
+  const isSuccessful = await submitUsernameChange(
+    userName.value,
+    profileData.value.userName
+  );
   if (isSuccessful) {
     router.push({ name: "onboarding-step5-preferences" });
   }
 }
-
 </script>
 
 <style scoped lang="scss">

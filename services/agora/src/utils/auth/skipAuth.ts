@@ -3,7 +3,6 @@ import { useBackendPhoneVerification } from "../api/phoneVerification";
 import { storeToRefs } from "pinia";
 
 export function useSkipAuth() {
-
   const {
     isAuthenticated,
     verificationPhoneNumber,
@@ -37,6 +36,5 @@ export function useSkipAuth() {
     }
   }
 
-  return { skipEverything }
-
+  return { skipEverything };
 }

@@ -4,7 +4,6 @@
       <q-icon :name="iconName" size="2rem" />
 
       <div class="coreText">
-
         <div class="title">
           {{ title }}
         </div>
@@ -13,7 +12,6 @@
           {{ description }}
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -23,8 +21,7 @@ defineProps<{
   title: string;
   description: string;
   iconName: string;
-}>()
-
+}>();
 </script>
 
 <style scoped lang="scss">

@@ -1,8 +1,21 @@
 <template>
   <div>
-    <form autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false">
-      <q-editor ref="editorRef" v-model="commentText" :placeholder="placeholder" :min-height="minHeight" flat
-        :toolbar="showToolbar ? toolbarButtons : []" @paste="onPaste" @focus="editorFocused()" />
+    <form
+      autocorrect="off"
+      autocapitalize="off"
+      autocomplete="off"
+      spellcheck="false"
+    >
+      <q-editor
+        ref="editorRef"
+        v-model="commentText"
+        :placeholder="placeholder"
+        :min-height="minHeight"
+        flat
+        :toolbar="showToolbar ? toolbarButtons : []"
+        @paste="onPaste"
+        @focus="editorFocused()"
+      />
     </form>
   </div>
 </template>

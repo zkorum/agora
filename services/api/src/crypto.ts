@@ -50,12 +50,15 @@ export function generateSalt(length = 16): Uint8Array {
 
 interface HashWithSaltProps {
     value: string;
-    salt: Uint8Array
+    salt: Uint8Array;
 }
 
-export async function hashWithSalt({value, salt}: HashWithSaltProps): Promise<Uint8Array> {
+export async function hashWithSalt({
+    value,
+    salt,
+}: HashWithSaltProps): Promise<Uint8Array> {
     // Encode the value as a Uint8Array
-    const valueBytes = stringToBytes(value)
+    const valueBytes = stringToBytes(value);
 
     // Concatenate salt and value into a single Uint8Array
     const saltedValue = new Uint8Array(salt.length + valueBytes.length);
@@ -63,9 +66,8 @@ export async function hashWithSalt({value, salt}: HashWithSaltProps): Promise<Ui
     saltedValue.set(valueBytes, salt.length);
 
     // Hash the combined salt + value
-    const hashBuffer = await crypto.subtle.digest('SHA-256', saltedValue);
-    const hash = new Uint8Array(hashBuffer)
+    const hashBuffer = await crypto.subtle.digest("SHA-256", saltedValue);
+    const hash = new Uint8Array(hashBuffer);
 
     return hash;
 }
-

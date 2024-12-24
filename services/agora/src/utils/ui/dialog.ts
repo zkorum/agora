@@ -50,31 +50,36 @@ export const useDialog = () => {
   }
 
   function showDeleteAccountDialog(callbackSuccess: () => void) {
-    quasar.dialog({
-      title: "Are you sure?",
-      message: "To delete your account. Please confirm by typing DELETE into the box.",
-      prompt: {
-        model: "",
-        isValid: val => val == "DELETE",
-        type: "text", // optional
-        placeholder: "Type DELETE to confirm"
-      },
-      cancel: true,
-      persistent: false
-    }).onOk(async (data) => {
-      if (data == "DELETE") {
-        const isDeleted = await deleteUserAccount();
-        if (isDeleted) {
-          callbackSuccess();
+    quasar
+      .dialog({
+        title: "Are you sure?",
+        message:
+          "To delete your account. Please confirm by typing DELETE into the box.",
+        prompt: {
+          model: "",
+          isValid: (val) => val == "DELETE",
+          type: "text", // optional
+          placeholder: "Type DELETE to confirm",
+        },
+        cancel: true,
+        persistent: false,
+      })
+      .onOk(async (data) => {
+        if (data == "DELETE") {
+          const isDeleted = await deleteUserAccount();
+          if (isDeleted) {
+            callbackSuccess();
+          }
+        } else {
+          console.log("cancel");
         }
-      } else {
-        console.log("cancel");
-      }
-    }).onCancel(() => {
-      // console.log('>>>> Cancel')
-    }).onDismiss(() => {
-      // console.log('I am triggered on both OK and Cancel')
-    })
+      })
+      .onCancel(() => {
+        // console.log('>>>> Cancel')
+      })
+      .onDismiss(() => {
+        // console.log('I am triggered on both OK and Cancel')
+      });
   }
 
   return {
@@ -82,6 +87,6 @@ export const useDialog = () => {
     showContactUsSuccessfulDialog,
     showMessage,
     showLoginConfirmationDialog,
-    showDeleteAccountDialog
+    showDeleteAccountDialog,
   };
 };

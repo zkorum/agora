@@ -80,21 +80,20 @@ export function useBackendCommentApi() {
   async function deleteCommentBySlugId(commentSlugId: string) {
     try {
       const params: ApiV1CommentDeletePostRequest = {
-        commentSlugId: commentSlugId
+        commentSlugId: commentSlugId,
       };
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1CommentDeletePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1CommentDeletePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      await DefaultApiFactory(undefined, undefined, api).apiV1CommentDeletePost(
+        params,
+        {
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        }
+      );
       return true;
     } catch (e) {
       console.error(e);
@@ -106,6 +105,6 @@ export function useBackendCommentApi() {
   return {
     createNewComment,
     fetchCommentsForPost,
-    deleteCommentBySlugId
+    deleteCommentBySlugId,
   };
 }

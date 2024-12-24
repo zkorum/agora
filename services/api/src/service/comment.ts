@@ -1,5 +1,11 @@
 import { generateRandomSlugId } from "@/crypto.js";
-import { commentContentTable, commentTable, commentProofTable, postTable, userTable } from "@/schema.js";
+import {
+    commentContentTable,
+    commentTable,
+    commentProofTable,
+    postTable,
+    userTable,
+} from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { desc, eq, sql, and } from "drizzle-orm";
@@ -15,14 +21,17 @@ interface GetCommentSlugIdLastCreatedAtProps {
     db: PostgresJsDatabase;
 }
 
-export async function getCommentSlugIdLastCreatedAt({ lastSlugId, db }: GetCommentSlugIdLastCreatedAtProps) {
+export async function getCommentSlugIdLastCreatedAt({
+    lastSlugId,
+    db,
+}: GetCommentSlugIdLastCreatedAtProps) {
     let lastCreatedAt = new Date();
 
     if (lastSlugId) {
         const selectResponse = await db
             .select({ createdAt: commentTable.createdAt })
             .from(commentTable)
-            .where(eq(commentTable.slugId, lastSlugId))
+            .where(eq(commentTable.slugId, lastSlugId));
         if (selectResponse.length == 1) {
             lastCreatedAt = selectResponse[0].createdAt;
         } else {
@@ -35,8 +44,8 @@ export async function getCommentSlugIdLastCreatedAt({ lastSlugId, db }: GetComme
 
 export async function fetchCommentsByPostSlugId(
     db: PostgresJsDatabase,
-    postSlugId: SlugId): Promise<CommentItem[]> {
-
+    postSlugId: SlugId,
+): Promise<CommentItem[]> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
     const results = await db
         .select({
@@ -47,25 +56,17 @@ export async function fetchCommentsByPostSlugId(
             comment: commentContentTable.content,
             numLikes: commentTable.numLikes,
             numDislikes: commentTable.numDislikes,
-            username: userTable.username
+            username: userTable.username,
         })
         .from(commentTable)
-        .innerJoin(
-            postTable,
-            eq(postTable.id, postId)
-        )
+        .innerJoin(postTable, eq(postTable.id, postId))
         .innerJoin(
             commentContentTable,
-            eq(commentContentTable.id, commentTable.currentContentId)
+            eq(commentContentTable.id, commentTable.currentContentId),
         )
-        .innerJoin(
-            userTable,
-            eq(userTable.id, commentTable.authorId)
-        )
+        .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
         .orderBy(desc(commentTable.createdAt))
-        .where(
-            eq(commentTable.postId, postId)
-        );
+        .where(eq(commentTable.postId, postId));
 
     const commentItemList: CommentItem[] = [];
     results.map((commentResponse) => {
@@ -76,7 +77,7 @@ export async function fetchCommentsByPostSlugId(
             numDislikes: commentResponse.numDislikes,
             numLikes: commentResponse.numLikes,
             updatedAt: commentResponse.updatedAt,
-            username: commentResponse.username
+            username: commentResponse.username,
         };
         commentItemList.push(item);
     });
@@ -173,8 +174,8 @@ export async function fetchCommentsByPostSlugId(
 
 async function getPostIdFromPostSlugId(
     db: PostgresJsDatabase,
-    postSlugId: string): Promise<number> {
-
+    postSlugId: string,
+): Promise<number> {
     const postTableResponse = await db
         .select({
             id: postTable.id,
@@ -183,7 +184,7 @@ async function getPostIdFromPostSlugId(
         .where(eq(postTable.slugId, postSlugId));
     if (postTableResponse.length != 1) {
         throw httpErrors.notFound(
-            "Failed to locate post slug ID: " + postSlugId
+            "Failed to locate post slug ID: " + postSlugId,
         );
     }
 
@@ -192,13 +193,13 @@ async function getPostIdFromPostSlugId(
 }
 
 interface PostNewCommentProps {
-    db: PostgresJsDatabase,
-    commentBody: string,
-    postSlugId: string,
-    userId: string,
-    didWrite: string,
-    authHeader: string,
-    httpErrors: HttpErrors
+    db: PostgresJsDatabase;
+    commentBody: string;
+    postSlugId: string;
+    userId: string;
+    didWrite: string;
+    authHeader: string;
+    httpErrors: HttpErrors;
 }
 
 export async function postNewComment({
@@ -208,8 +209,8 @@ export async function postNewComment({
     userId,
     didWrite,
     authHeader,
-    httpErrors }: PostNewCommentProps): Promise<CreateCommentResponse> {
-
+    httpErrors,
+}: PostNewCommentProps): Promise<CreateCommentResponse> {
     try {
         commentBody = sanitizeHtmlBody(commentBody, MAX_LENGTH_COMMENT);
     } catch (error) {
@@ -220,56 +221,69 @@ export async function postNewComment({
         }
     }
 
-    const { id: postId, contentId: postContentId } = await useCommonPost().getPostAndContentIdFromSlugId({
-        db: db,
-        postSlugId: postSlugId,
-    });
+    const { id: postId, contentId: postContentId } =
+        await useCommonPost().getPostAndContentIdFromSlugId({
+            db: db,
+            postSlugId: postSlugId,
+        });
     if (postContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
     const commentSlugId = generateRandomSlugId();
 
     await db.transaction(async (tx) => {
-
-        const insertCommentResponse = await tx.insert(commentTable).values({
-            slugId: commentSlugId,
-            authorId: userId,
-            currentContentId: null,
-            isHidden: false,
-            postId: postId
-        }).returning({ commentId: commentTable.id });
+        const insertCommentResponse = await tx
+            .insert(commentTable)
+            .values({
+                slugId: commentSlugId,
+                authorId: userId,
+                currentContentId: null,
+                isHidden: false,
+                postId: postId,
+            })
+            .returning({ commentId: commentTable.id });
 
         const commentId = insertCommentResponse[0].commentId;
 
-        const insertProofResponse = await tx.insert(commentProofTable).values({
-            type: "creation",
-            commentId: commentId,
-            authorDid: didWrite,
-            proof: authHeader,
-            proofVersion: 1
-        }).returning({ proofId: commentProofTable.id });
+        const insertProofResponse = await tx
+            .insert(commentProofTable)
+            .values({
+                type: "creation",
+                commentId: commentId,
+                authorDid: didWrite,
+                proof: authHeader,
+                proofVersion: 1,
+            })
+            .returning({ proofId: commentProofTable.id });
 
         const proofId = insertProofResponse[0].proofId;
 
-        const commentContentTableResponse = await tx.insert(commentContentTable).values({
-            commentProofId: proofId,
-            commentId: commentId,
-            postContentId: postContentId,
-            parentId: null,
-            content: commentBody
-        }).returning({ commentContentTableId: commentContentTable.id });
+        const commentContentTableResponse = await tx
+            .insert(commentContentTable)
+            .values({
+                commentProofId: proofId,
+                commentId: commentId,
+                postContentId: postContentId,
+                parentId: null,
+                content: commentBody,
+            })
+            .returning({ commentContentTableId: commentContentTable.id });
 
-        const commentContentTableId = commentContentTableResponse[0].commentContentTableId;
+        const commentContentTableId =
+            commentContentTableResponse[0].commentContentTableId;
 
-        await tx.update(commentTable).set({
-            currentContentId: commentContentTableId,
-        }).where(eq(commentTable.id, commentId));
+        await tx
+            .update(commentTable)
+            .set({
+                currentContentId: commentContentTableId,
+            })
+            .where(eq(commentTable.id, commentId));
 
         // Update the post's comment count
         await tx
             .update(postTable)
             .set({
-                commentCount: sql`${postTable.commentCount} + 1`
+                commentCount: sql`${postTable.commentCount} + 1`,
             })
             .where(eq(postTable.slugId, postSlugId));
 
@@ -277,16 +291,14 @@ export async function postNewComment({
         await tx
             .update(userTable)
             .set({
-                totalCommentCount: sql`${userTable.totalCommentCount} + 1`
+                totalCommentCount: sql`${userTable.totalCommentCount} + 1`,
             })
             .where(eq(userTable.id, userId));
-
     });
 
     return {
-        commentSlugId: commentSlugId
+        commentSlugId: commentSlugId,
     };
-
 }
 
 interface DeleteCommentBySlugIdProps {
@@ -298,28 +310,40 @@ interface DeleteCommentBySlugIdProps {
 }
 
 export async function deleteCommentBySlugId({
-    db, commentSlugId, userId, authHeader, didWrite }: DeleteCommentBySlugIdProps): Promise<void> {
-
+    db,
+    commentSlugId,
+    userId,
+    authHeader,
+    didWrite,
+}: DeleteCommentBySlugIdProps): Promise<void> {
     try {
         await db.transaction(async (tx) => {
             const updatedCommentIdResponse = await tx
                 .update(commentTable)
                 .set({
-                    currentContentId: null
+                    currentContentId: null,
                 })
-                .where(and(eq(commentTable.authorId, userId), eq(commentTable.slugId, commentSlugId)))
+                .where(
+                    and(
+                        eq(commentTable.authorId, userId),
+                        eq(commentTable.slugId, commentSlugId),
+                    ),
+                )
                 .returning({
                     updateCommentId: commentTable.id,
-                    postId: commentTable.postId
+                    postId: commentTable.postId,
                 });
 
             if (updatedCommentIdResponse.length != 1) {
-                log.error("Invalid comment table update response length: " + updatedCommentIdResponse.length.toString());
+                log.error(
+                    "Invalid comment table update response length: " +
+                        updatedCommentIdResponse.length.toString(),
+                );
                 tx.rollback();
             }
 
             const commentId = updatedCommentIdResponse[0].updateCommentId;
-            
+
             await tx.insert(commentProofTable).values({
                 type: "deletion",
                 commentId: commentId,
@@ -336,12 +360,11 @@ export async function deleteCommentBySlugId({
                     commentCount: sql`${postTable.commentCount} - 1`,
                 })
                 .where(eq(postTable.id, postId));
-
         });
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
-            "Failed to delete comment by comment ID: " + commentSlugId
+            "Failed to delete comment by comment ID: " + commentSlugId,
         );
     }
 }

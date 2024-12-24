@@ -1,12 +1,14 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div v-if="deleted" class="deletedMessage">
-      Deleted
-    </div>
+    <div v-if="deleted" class="deletedMessage">Deleted</div>
     <div v-if="!deleted" class="contentLayout">
       <div class="metadata">
-        <UserAvatar :user-name="commentItem.username" :size="40" class="avatarIcon" />
+        <UserAvatar
+          :user-name="commentItem.username"
+          :size="40"
+          class="avatarIcon"
+        />
 
         <div class="userNameTime">
           <div>
@@ -17,7 +19,6 @@
             {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
           </div>
         </div>
-
       </div>
 
       <div>
@@ -26,8 +27,12 @@
         </div>
 
         <div class="actionBarPaddings">
-          <CommentActionBar :comment-item="commentItem" :post-slug-id="postSlugId"
-            :comment-slug-id-liked-map="commentSlugIdLikedMap" @deleted="deletedComment()" />
+          <CommentActionBar
+            :comment-item="commentItem"
+            :post-slug-id="postSlugId"
+            :comment-slug-id-liked-map="commentSlugIdLikedMap"
+            @deleted="deletedComment()"
+          />
         </div>
       </div>
     </div>
@@ -41,7 +46,7 @@ import { formatTimeAgo } from "@vueuse/core";
 import type { CommentItem } from "src/shared/types/zod";
 import { ref } from "vue";
 
-const emit = defineEmits(["deleted"])
+const emit = defineEmits(["deleted"]);
 
 defineProps<{
   commentItem: CommentItem;
@@ -53,10 +58,9 @@ defineProps<{
 const deleted = ref(false);
 
 function deletedComment() {
-  deleted.value = true
+  deleted.value = true;
   emit("deleted");
 }
-
 </script>
 
 <style scoped lang="scss">

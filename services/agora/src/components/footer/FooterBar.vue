@@ -2,28 +2,48 @@
   <div class="flexIcons">
     <RouterLink :to="{ name: 'default-home-feed' }">
       <div class="iconStyle">
-        <q-icon name="mdi-home" size="1.6rem" :color="route.name === 'default-home-feed'
-          ? 'color-highlight'
-          : 'color-text-weak'
-          " />
-        <div :class="'text-' +
-          (route.name === 'default-home-feed'
-            ? 'color-highlight'
-            : 'color-text-weak')
-          ">
+        <q-icon
+          name="mdi-home"
+          size="1.6rem"
+          :color="
+            route.name === 'default-home-feed'
+              ? 'color-highlight'
+              : 'color-text-weak'
+          "
+        />
+        <div
+          :class="
+            'text-' +
+            (route.name === 'default-home-feed'
+              ? 'color-highlight'
+              : 'color-text-weak')
+          "
+        >
           Home
         </div>
       </div>
     </RouterLink>
 
     <div class="iconStyle" @click="accessProfile()">
-      <q-icon name="mdi-account-circle" size="1.6rem" :color="route.name === 'user-profile-posts' || route.name === 'user-profile-comments' ? 'color-highlight' : 'color-text-weak'
-        " />
-      <div :class="'text-' +
-        (route.name === 'user-profile-posts' || route.name === 'user-profile-comments'
-          ? 'color-highlight'
-          : 'color-text-weak')
-        ">
+      <q-icon
+        name="mdi-account-circle"
+        size="1.6rem"
+        :color="
+          route.name === 'user-profile-posts' ||
+          route.name === 'user-profile-comments'
+            ? 'color-highlight'
+            : 'color-text-weak'
+        "
+      />
+      <div
+        :class="
+          'text-' +
+          (route.name === 'user-profile-posts' ||
+          route.name === 'user-profile-comments'
+            ? 'color-highlight'
+            : 'color-text-weak')
+        "
+      >
         Profile
       </div>
     </div>

@@ -8,13 +8,17 @@
       <slot name="body"></slot>
 
       <div v-if="showNextButton" class="nextButton">
-        <ZKButton icon="mdi-arrow-right" color="button-background-color" text-color="color-text-strong"
-          :disable="!enableNextButton" type="submit" @click="submitCallBack" />
+        <ZKButton
+          icon="mdi-arrow-right"
+          color="button-background-color"
+          text-color="color-text-strong"
+          :disable="!enableNextButton"
+          type="submit"
+          @click="submitCallBack"
+        />
       </div>
-
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -27,8 +31,7 @@ defineProps<{
   totalSteps: number;
   enableNextButton: boolean;
   showNextButton: boolean;
-}>()
-
+}>();
 </script>
 
 <style scoped lang="scss">

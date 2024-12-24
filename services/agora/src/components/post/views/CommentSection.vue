@@ -1,23 +1,39 @@
 <template>
   <div>
     <div class="container">
-      <CommentSortSelector @changed-algorithm="(value) => (commentSortPreference = value)" />
+      <CommentSortSelector
+        @changed-algorithm="(value) => (commentSortPreference = value)"
+      />
 
-      <div v-if="commentItems.length == 0 && commentSortPreference != 'clusters'" class="noCommentMessage">
+      <div
+        v-if="commentItems.length == 0 && commentSortPreference != 'clusters'"
+        class="noCommentMessage"
+      >
         There are no opinions in this conservation.
       </div>
 
       <div v-if="commentItems.length > 0" class="commentListFlex">
-        <div v-for="commentItem in commentItems" :id="commentItem.commentSlugId" :key="commentItem.commentSlugId">
-          <CommentSingle :comment-item="commentItem" :post-slug-id="postSlugId"
+        <div
+          v-for="commentItem in commentItems"
+          :id="commentItem.commentSlugId"
+          :key="commentItem.commentSlugId"
+        >
+          <CommentSingle
+            :comment-item="commentItem"
+            :post-slug-id="postSlugId"
             :highlight="initialCommentSlugId == commentItem.commentSlugId"
-            :comment-slug-id-liked-map="commentSlugIdLikedMap" @deleted="deletedComment()" />
+            :comment-slug-id-liked-map="commentSlugIdLikedMap"
+            @deleted="deletedComment()"
+          />
 
           <Divider :style="{ width: '100%' }" />
         </div>
       </div>
 
-      <div v-if="commentSortPreference == 'clusters'" :style="{ paddingTop: '1rem' }">
+      <div
+        v-if="commentSortPreference == 'clusters'"
+        :style="{ paddingTop: '1rem' }"
+      >
         <ZKCard padding="2rem">
           <div class="specialMessage">
             <img src="/development/polis/example.png" class="polisExampleImg" />
@@ -43,7 +59,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 
-const emit = defineEmits(["deleted"])
+const emit = defineEmits(["deleted"]);
 
 const props = defineProps<{
   postSlugId: string;
@@ -109,7 +125,9 @@ function scrollToComment() {
         block: "center",
       });
     } else {
-      console.log("Failed to locate comment slug ID: " + props.initialCommentSlugId);
+      console.log(
+        "Failed to locate comment slug ID: " + props.initialCommentSlugId
+      );
     }
   }
 }

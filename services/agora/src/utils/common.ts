@@ -3,7 +3,9 @@ import { z } from "zod";
 
 export function getDateString(dateObject: Date) {
   return dateObject.toLocaleDateString("en-US", {
-    year: "numeric", month: "long", day: "numeric"
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 }
 

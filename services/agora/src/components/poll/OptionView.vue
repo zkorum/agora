@@ -1,25 +1,27 @@
 <template>
   <div>
     <div class="container">
-
       <div class="absolutePosition">
-
-        <ProgressBar :value="optionPercentage" :show-value="false" :pt="{
-          root: {
-            style: {
-              'height': '3.5rem',
-              'background-color': '#f8fafc',
-              'border-style': 'solid',
-              'border-width': '1px',
-              'border-color': '#a5f3fc'
-            }
-          },
-          value: {
-            style: {
-              'background-color': '#a5f3fc'
-            }
-          }
-        }">
+        <ProgressBar
+          :value="optionPercentage"
+          :show-value="false"
+          :pt="{
+            root: {
+              style: {
+                height: '3.5rem',
+                'background-color': '#f8fafc',
+                'border-style': 'solid',
+                'border-width': '1px',
+                'border-color': '#a5f3fc',
+              },
+            },
+            value: {
+              style: {
+                'background-color': '#a5f3fc',
+              },
+            },
+          }"
+        >
         </ProgressBar>
 
         <div class="pollOverlay">
@@ -29,13 +31,9 @@
               <q-icon name="mdi-check-circle" color="secondary" size="1rem" />
             </span>
           </div>
-          <div>
-            {{ optionPercentage }}%
-          </div>
+          <div>{{ optionPercentage }}%</div>
         </div>
-
       </div>
-
     </div>
   </div>
 </template>

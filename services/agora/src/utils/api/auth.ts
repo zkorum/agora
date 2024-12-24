@@ -36,7 +36,6 @@ export function useBackendAuthApi() {
     defaultCallingCode,
     isRequestingNewCode,
   }: SendSmsCodeProps): Promise<AuthenticateReturn> {
-
     const params: ApiV1AuthAuthenticatePostRequest = {
       phoneNumber: phoneNumber,
       defaultCallingCode: defaultCallingCode,
@@ -50,14 +49,11 @@ export function useBackendAuthApi() {
         undefined,
         undefined,
         api
-      ).apiV1AuthAuthenticatePost(
-        params,
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
-      );
+      ).apiV1AuthAuthenticatePost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
       return { isSuccessful: true, data: otpDetails.data, error: "" };
     } catch (e) {
       if (axios.isAxiosError(e)) {

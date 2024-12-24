@@ -10,18 +10,21 @@
           information in the report.
         </div>
 
-        <Select v-model="selectedProblem"
+        <Select
+          v-model="selectedProblem"
           :options="problemList"
           option-label="name"
           placeholder="Select a problem to report"
         />
 
-        <Textarea v-model="description"
+        <Textarea
+          v-model="description"
           class="textAreaStyle"
           placeholder="Describe the problem"
         />
 
-        <Button label="Submit"
+        <Button
+          label="Submit"
           type="submit"
           :disabled="selectedProblem == '' || description.length == 0"
         />

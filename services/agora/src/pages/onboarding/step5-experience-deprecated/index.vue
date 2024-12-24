@@ -1,10 +1,18 @@
 <template>
   <div>
-    <StepperLayout :submit-call-back="goToNextRoute" :current-step="5" :total-steps="6" :enable-next-button="true"
-      :show-next-button="false">
-
+    <StepperLayout
+      :submit-call-back="goToNextRoute"
+      :current-step="5"
+      :total-steps="6"
+      :enable-next-button="true"
+      :show-next-button="false"
+    >
       <template #header>
-        <InfoHeader title="Choose how you want to experience Agora" :description="description" icon-name="mdi-image" />
+        <InfoHeader
+          title="Choose how you want to experience Agora"
+          :description="description"
+          icon-name="mdi-image"
+        />
       </template>
 
       <template #body>
@@ -12,14 +20,12 @@
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">
               <div class="optionWrapper">
-                <div class="optionTitle">
-                  Safe Space
-                </div>
+                <div class="optionTitle">Safe Space</div>
 
                 <div>
-                  Content flagged as antisocial (trolling or intolerance) is removed from my feed. If I want to see what
-                  was
-                  removed, I can check the post’s moderation history.
+                  Content flagged as antisocial (trolling or intolerance) is
+                  removed from my feed. If I want to see what was removed, I can
+                  check the post’s moderation history.
                 </div>
               </div>
             </ZKCard>
@@ -30,9 +36,7 @@
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">
               <div class="optionWrapper">
-                <div class="optionTitle">
-                  Brave Space
-                </div>
+                <div class="optionTitle">Brave Space</div>
 
                 <div>
                   Content flagged as antisocial is shown to me with a warning.
@@ -41,9 +45,7 @@
             </ZKCard>
           </ZKHoverEffect>
         </div>
-
       </template>
-
     </StepperLayout>
   </div>
 </template>
@@ -68,7 +70,6 @@ function selectedOption(option: "safe-space" | "brave-space") {
   console.log(option);
   goToNextRoute();
 }
-
 </script>
 
 <style scoped lang="scss">

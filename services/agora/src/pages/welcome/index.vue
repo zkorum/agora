@@ -4,9 +4,18 @@
     <div class="buttonFlex">
       <ZKButton label="Sign Up" color="primary" @click="gotoNextRoute(false)" />
 
-      <ZKButton label="Log In" color="white" text-color="primary" @click="gotoNextRoute(true)" />
+      <ZKButton
+        label="Log In"
+        color="white"
+        text-color="primary"
+        @click="gotoNextRoute(true)"
+      />
 
-      <ZKButton color="secondary" label="Skip Authentication" @click="skipAuthentication()" />
+      <ZKButton
+        color="secondary"
+        label="Skip Authentication"
+        @click="skipAuthentication()"
+      />
     </div>
   </div>
 </template>
@@ -34,7 +43,6 @@ function gotoNextRoute(isLogin: boolean) {
     router.push({ name: "onboarding-step1-signup" });
   }
 }
-
 </script>
 
 <style scoped>

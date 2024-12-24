@@ -208,21 +208,20 @@ export function useBackendPostApi() {
   async function deletePostBySlugId(postSlugId: string) {
     try {
       const params: ApiV1PostDeletePostRequest = {
-        postSlugId: postSlugId
+        postSlugId: postSlugId,
       };
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1PostDeletePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1PostDeletePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      await DefaultApiFactory(undefined, undefined, api).apiV1PostDeletePost(
+        params,
+        {
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        }
+      );
       return true;
     } catch (e) {
       console.error(e);
@@ -237,6 +236,6 @@ export function useBackendPostApi() {
     fetchPostBySlugId,
     createInternalPostData,
     composeInternalPostList,
-    deletePostBySlugId
+    deletePostBySlugId,
   };
 }

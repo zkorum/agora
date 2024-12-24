@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 export const phoneVerificationStore = defineStore("phoneVerification", () => {
-
   interface PhoneNumberInterface {
     phoneNumber: string;
     defaultCallingCode: string;
@@ -10,8 +9,8 @@ export const phoneVerificationStore = defineStore("phoneVerification", () => {
 
   const EMPTY_NUMBER: PhoneNumberInterface = {
     phoneNumber: "",
-    defaultCallingCode: ""
-  }
+    defaultCallingCode: "",
+  };
 
   const verificationPhoneNumber = ref(EMPTY_NUMBER);
 

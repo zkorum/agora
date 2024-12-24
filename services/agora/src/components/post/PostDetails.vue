@@ -4,69 +4,120 @@
     <ZKHoverEffect :enable-hover="compactMode">
       <div class="container postPadding">
         <div class="innerContainer">
-          <PostMetadata :poster-user-name="extendedPostData.metadata.authorUsername"
-            :created-at="new Date(extendedPostData.metadata.createdAt)" :is-compat-size="true"
-            :skeleton-mode="skeletonMode" :show-author="showAuthor" :display-absolute-time="displayAbsoluteTime"
-            :post-slug-id="extendedPostData.metadata.postSlugId" />
+          <PostMetadata
+            :poster-user-name="extendedPostData.metadata.authorUsername"
+            :created-at="new Date(extendedPostData.metadata.createdAt)"
+            :is-compat-size="true"
+            :skeleton-mode="skeletonMode"
+            :show-author="showAuthor"
+            :display-absolute-time="displayAbsoluteTime"
+            :post-slug-id="extendedPostData.metadata.postSlugId"
+          />
 
           <div class="postDiv">
             <div>
-              <div v-if="!skeletonMode" class="titleDiv extraTitleBottomPadding">
+              <div
+                v-if="!skeletonMode"
+                class="titleDiv extraTitleBottomPadding"
+              >
                 {{ extendedPostData.payload.title }}
               </div>
 
               <div v-if="skeletonMode" class="titleDiv">
-                <Skeleton width="100%" height="4rem" border-radius="16px"></Skeleton>
+                <Skeleton
+                  width="100%"
+                  height="4rem"
+                  border-radius="16px"
+                ></Skeleton>
               </div>
             </div>
 
-            <div v-if="extendedPostData.payload.body != undefined && extendedPostData.payload.body.length > 0"
-              class="bodyDiv">
-              <span :class="{ truncate: compactMode }" v-html="extendedPostData.payload.body"></span>
+            <div
+              v-if="
+                extendedPostData.payload.body != undefined &&
+                extendedPostData.payload.body.length > 0
+              "
+              class="bodyDiv"
+            >
+              <span
+                :class="{ truncate: compactMode }"
+                v-html="extendedPostData.payload.body"
+              ></span>
             </div>
           </div>
 
           <div v-if="extendedPostData.payload.poll" class="pollContainer">
-            <PollWrapper :poll-options="extendedPostData.payload.poll"
-              :post-slug-id="extendedPostData.metadata.postSlugId" :user-response="extendedPostData.interaction" />
+            <PollWrapper
+              :poll-options="extendedPostData.payload.poll"
+              :post-slug-id="extendedPostData.metadata.postSlugId"
+              :user-response="extendedPostData.interaction"
+            />
           </div>
 
           <div class="bottomButtons">
             <div class="leftButtonCluster">
               <div v-if="!skeletonMode">
-                <ZKButton text-color="color-text-weak" size="0.8rem" :label="(
-                  extendedPostData.metadata.commentCount + commentCountOffset
-                ).toString()
-                  " icon="mdi-comment-outline" @click.stop.prevent="clickedCommentButton()" />
+                <ZKButton
+                  text-color="color-text-weak"
+                  size="0.8rem"
+                  :label="
+                    (
+                      extendedPostData.metadata.commentCount +
+                      commentCountOffset
+                    ).toString()
+                  "
+                  icon="mdi-comment-outline"
+                  @click.stop.prevent="clickedCommentButton()"
+                />
               </div>
               <div v-if="skeletonMode">
-                <Skeleton width="3rem" height="2rem" border-radius="16px"></Skeleton>
+                <Skeleton
+                  width="3rem"
+                  height="2rem"
+                  border-radius="16px"
+                ></Skeleton>
               </div>
             </div>
 
             <div>
               <div v-if="!skeletonMode">
-                <ZKButton text-color="color-text-weak" size="0.8rem" icon="mdi-export-variant"
-                  @click.stop.prevent="shareClicked()" />
+                <ZKButton
+                  text-color="color-text-weak"
+                  size="0.8rem"
+                  icon="mdi-export-variant"
+                  @click.stop.prevent="shareClicked()"
+                />
               </div>
               <div v-if="skeletonMode">
-                <Skeleton width="3rem" height="2rem" border-radius="16px"></Skeleton>
+                <Skeleton
+                  width="3rem"
+                  height="2rem"
+                  border-radius="16px"
+                ></Skeleton>
               </div>
             </div>
           </div>
         </div>
 
         <div v-if="!compactMode" ref="commentSectionRef">
-          <CommentSection :key="commentCountOffset" :post-slug-id="extendedPostData.metadata.postSlugId"
-            :initial-comment-slug-id="commentSlugId" @deleted="decrementCommentCount()" />
+          <CommentSection
+            :key="commentCountOffset"
+            :post-slug-id="extendedPostData.metadata.postSlugId"
+            :initial-comment-slug-id="commentSlugId"
+            @deleted="decrementCommentCount()"
+          />
         </div>
       </div>
     </ZKHoverEffect>
 
     <FloatingBottomContainer v-if="!compactMode && isAuthenticated">
-      <CommentComposer :show-controls="focusCommentElement" :post-slug-id="extendedPostData.metadata.postSlugId"
-        @cancel-clicked="cancelledCommentComposor()" @submitted-comment="submittedComment()"
-        @editor-focused="focusCommentElement = true" />
+      <CommentComposer
+        :show-controls="focusCommentElement"
+        :post-slug-id="extendedPostData.metadata.postSlugId"
+        @cancel-clicked="cancelledCommentComposor()"
+        @submitted-comment="submittedComment()"
+        @editor-focused="focusCommentElement = true"
+      />
     </FloatingBottomContainer>
   </div>
 </template>
@@ -162,7 +213,9 @@ function clickedCommentButton() {
 
 function shareClicked() {
   const sharePostUrl =
-    window.location.origin + "/post/" + props.extendedPostData.metadata.postSlugId;
+    window.location.origin +
+    "/post/" +
+    props.extendedPostData.metadata.postSlugId;
   webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
     sharePostUrl

@@ -1,5 +1,6 @@
 <template>
-  <ZKButton icon="mdi-arrow-left"
+  <ZKButton
+    icon="mdi-arrow-left"
     text-color="color-text-strong"
     flat
     @click="buttonClicked()"

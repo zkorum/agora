@@ -1,7 +1,13 @@
 <template>
   <div>
-    <PostDetails v-if="dataLoaded" :extended-post-data="postData" :compact-mode="false" :skeleton-mode="false"
-      :show-author="true" :display-absolute-time="false" />
+    <PostDetails
+      v-if="dataLoaded"
+      :extended-post-data="postData"
+      :compact-mode="false"
+      :skeleton-mode="false"
+      :show-author="true"
+      :display-absolute-time="false"
+    />
   </div>
 </template>
 
@@ -26,7 +32,10 @@ const postData = ref<ExtendedPost>(emptyPost);
 const dataLoaded = ref(false);
 
 onMounted(async () => {
-  const response = await fetchPostBySlugId(props.postSlugId, isAuthenticated.value);
+  const response = await fetchPostBySlugId(
+    props.postSlugId,
+    isAuthenticated.value
+  );
   if (response != null) {
     postData.value = response;
   }

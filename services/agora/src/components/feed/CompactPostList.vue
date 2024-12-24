@@ -1,18 +1,20 @@
 <template>
   <div>
     <div class="container">
-      <div v-if="masterPostDataList.length == 0 && dataReady" class="emptyDivPadding">
+      <div
+        v-if="masterPostDataList.length == 0 && dataReady"
+        class="emptyDivPadding"
+      >
         <div class="centerMessage">
           <div>
             <q-icon name="mdi-account-group" size="4rem" />
           </div>
 
-          <div :style="{ fontSize: '1.3rem' }">
-            It is too quiet here...
-          </div>
+          <div :style="{ fontSize: '1.3rem' }">It is too quiet here...</div>
 
           <div>
-            Create a new conservation using the <q-icon name="mdi-plus-circle" /> button.
+            Create a new conservation using the
+            <q-icon name="mdi-plus-circle" /> button.
           </div>
         </div>
       </div>
@@ -20,42 +22,53 @@
       <q-pull-to-refresh @refresh="refreshPage">
         <div ref="postContainerRef">
           <div v-if="hasPendingNewPosts" class="floatingButton">
-            <ZKButton icon="mdi-arrow-up" label="New" color="secondary" @click="refreshPage(() => { })" />
+            <ZKButton
+              icon="mdi-arrow-up"
+              label="New"
+              color="secondary"
+              @click="refreshPage(() => {})"
+            />
           </div>
 
           <div v-if="masterPostDataList.length > 0" class="postListFlex">
-            <div v-for="postData in masterPostDataList" :key="postData.metadata.postSlugId">
-              <PostDetails :extended-post-data="postData" :compact-mode="true" :show-comment-section="false"
-                :skeleton-mode="!dataReady" class="showCursor" :show-author="true" :display-absolute-time="false"
-                @click="openPost(postData.metadata.postSlugId)" />
+            <div
+              v-for="postData in masterPostDataList"
+              :key="postData.metadata.postSlugId"
+            >
+              <PostDetails
+                :extended-post-data="postData"
+                :compact-mode="true"
+                :show-comment-section="false"
+                :skeleton-mode="!dataReady"
+                class="showCursor"
+                :show-author="true"
+                :display-absolute-time="false"
+                @click="openPost(postData.metadata.postSlugId)"
+              />
 
               <div class="seperator">
                 <q-separator :inset="false" />
               </div>
             </div>
           </div>
-
         </div>
       </q-pull-to-refresh>
 
-      <div ref="bottomOfPageDiv">
-      </div>
+      <div ref="bottomOfPageDiv"></div>
 
-      <div v-if="endOfFeed && masterPostDataList.length > 0" class="centerMessage">
+      <div
+        v-if="endOfFeed && masterPostDataList.length > 0"
+        class="centerMessage"
+      >
         <div>
           <q-icon name="mdi-check" size="4rem" />
         </div>
 
-        <div :style="{ fontSize: '1.3rem' }">
-          You're all caught up
-        </div>
+        <div :style="{ fontSize: '1.3rem' }">You're all caught up</div>
 
-        <div>
-          You have seen all the new conservations.
-        </div>
+        <div>You have seen all the new conservations.</div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -65,10 +78,16 @@ import { usePostStore } from "src/stores/post";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { onBeforeUnmount, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useDocumentVisibility, useElementSize, useElementVisibility, useWindowScroll } from "@vueuse/core";
+import {
+  useDocumentVisibility,
+  useElementSize,
+  useElementVisibility,
+  useWindowScroll,
+} from "@vueuse/core";
 import { useRouter } from "vue-router";
 
-const { masterPostDataList, dataReady, endOfFeed, lastSavedHomeFeedPosition } = storeToRefs(usePostStore());
+const { masterPostDataList, dataReady, endOfFeed, lastSavedHomeFeedPosition } =
+  storeToRefs(usePostStore());
 const { loadPostData, hasNewPosts } = usePostStore();
 
 const router = useRouter();
@@ -88,13 +107,16 @@ const postContainerRef = ref(null);
 const postContainerSize = useElementSize(postContainerRef);
 
 watch(windowScroll.y, async () => {
-  if (windowScroll.y.value > (postContainerSize.height.value - 1000) && !isExpandingPosts && !endOfFeed.value) {
+  if (
+    windowScroll.y.value > postContainerSize.height.value - 1000 &&
+    !isExpandingPosts &&
+    !endOfFeed.value
+  ) {
     isExpandingPosts = true;
     await loadPostData(true);
-    setTimeout(
-      function () {
-        isExpandingPosts = false;
-      }, 500);
+    setTimeout(function () {
+      isExpandingPosts = false;
+    }, 500);
   }
 });
 
@@ -119,7 +141,11 @@ onBeforeUnmount(() => {
 });
 
 async function newPostCheck() {
-  if (hasPendingNewPosts.value == false && dataReady.value && pageIsVisible.value == "visible") {
+  if (
+    hasPendingNewPosts.value == false &&
+    dataReady.value &&
+    pageIsVisible.value == "visible"
+  ) {
     hasPendingNewPosts.value = await hasNewPosts();
   }
 }
@@ -135,7 +161,7 @@ function refreshPage(done: () => void) {
 
   window.scrollTo({
     top: 0,
-    behavior: "instant"
+    behavior: "instant",
   });
 
   loadPostData(false);

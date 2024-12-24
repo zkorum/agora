@@ -3,7 +3,12 @@
     <div class="container">
       <div class="metadata">
         <div v-if="showAuthor">
-          <UserAvatar v-if="!skeletonMode" :user-name="posterUserName" :size="40" class="avatarIcon" />
+          <UserAvatar
+            v-if="!skeletonMode"
+            :user-name="posterUserName"
+            :size="40"
+            class="avatarIcon"
+          />
 
           <Skeleton v-if="skeletonMode" shape="circle" size="2.5rem">
           </Skeleton>
@@ -31,15 +36,23 @@
             <Skeleton v-if="skeletonMode" width="2rem"></Skeleton>
           </div>
         </div>
-
       </div>
 
       <div>
         <div v-if="!skeletonMode">
-          <ZKButton flat text-color="color-text-weak" icon="mdi-dots-vertical"
-            @click.stop.prevent="clickedMoreIcon()" />
+          <ZKButton
+            flat
+            text-color="color-text-weak"
+            icon="mdi-dots-vertical"
+            @click.stop.prevent="clickedMoreIcon()"
+          />
         </div>
-        <Skeleton v-if="skeletonMode" width="3rem" height="2rem" border-radius="16px"></Skeleton>
+        <Skeleton
+          v-if="skeletonMode"
+          width="3rem"
+          height="2rem"
+          border-radius="16px"
+        ></Skeleton>
       </div>
     </div>
   </div>

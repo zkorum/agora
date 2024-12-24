@@ -2,21 +2,36 @@
   <div>
     <WidthWrapper width="35rem">
       <div class="container">
-        <ZKEditor :key="resetKey" v-model="commentText" placeholder="Add a comment"
-          :min-height="innerFocus ? '6rem' : '2rem'" :focus-editor="showControls"
-          :show-toolbar="innerFocus || showControls" @update:model-value="checkWordCount()"
-          @manually-focused="editorFocused()" />
+        <ZKEditor
+          :key="resetKey"
+          v-model="commentText"
+          placeholder="Add a comment"
+          :min-height="innerFocus ? '6rem' : '2rem'"
+          :focus-editor="showControls"
+          :show-toolbar="innerFocus || showControls"
+          @update:model-value="checkWordCount()"
+          @manually-focused="editorFocused()"
+        />
         <div v-if="innerFocus || showControls" class="actionButtonCluster">
           <div v-if="characterProgress > 100">
             {{ MAX_COMMENT_CHARACTERS - characterCount }}
           </div>
 
-          <q-circular-progress :value="characterProgress" size="1.5rem" :thickness="0.3" />
+          <q-circular-progress
+            :value="characterProgress"
+            size="1.5rem"
+            :thickness="0.3"
+          />
 
           <q-separator vertical inset />
 
           <ZKButton label="Cancel" color="secondary" @click="cancelClicked()" />
-          <ZKButton label="Post" color="primary" :disable="characterProgress > 100" @click="postClicked()" />
+          <ZKButton
+            label="Post"
+            color="primary"
+            :disable="characterProgress > 100"
+            @click="postClicked()"
+          />
         </div>
       </div>
     </WidthWrapper>
@@ -53,7 +68,7 @@ const resetKey = ref(0);
 const emit = defineEmits({
   cancelClicked: null,
   submittedComment: null,
-  editorFocused: null
+  editorFocused: null,
 });
 
 watch(

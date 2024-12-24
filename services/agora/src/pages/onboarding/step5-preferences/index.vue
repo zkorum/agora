@@ -1,10 +1,18 @@
 <template>
   <div>
-    <StepperLayout :submit-call-back="() => { }" :current-step="6" :total-steps="6" :enable-next-button="true"
-      :show-next-button="false">
-
+    <StepperLayout
+      :submit-call-back="() => {}"
+      :current-step="6"
+      :total-steps="6"
+      :enable-next-button="true"
+      :show-next-button="false"
+    >
       <template #header>
-        <InfoHeader title="Content Preferences" description="" icon-name="mdi-star-box" />
+        <InfoHeader
+          title="Content Preferences"
+          description=""
+          icon-name="mdi-star-box"
+        />
       </template>
 
       <template #body>
@@ -15,7 +23,14 @@
 
         <div class="tagContainer">
           <div v-for="lang in languageList" :key="lang" class="tagWrapper">
-            <q-btn outline no-caps class="tagStyle" rounded size="small" text-color="primary">
+            <q-btn
+              outline
+              no-caps
+              class="tagStyle"
+              rounded
+              size="small"
+              text-color="primary"
+            >
               <div class="tagFlexContainer">
                 <div>
                   {{ lang }}
@@ -33,14 +48,21 @@
         </div>
 
         <div class="tagContainer">
-          <q-btn v-for="topic in topicList" :key="topic" outline no-caps :label="topic" class="tagStyle" rounded
-            size="small" text-color="primary" />
+          <q-btn
+            v-for="topic in topicList"
+            :key="topic"
+            outline
+            no-caps
+            :label="topic"
+            class="tagStyle"
+            rounded
+            size="small"
+            text-color="primary"
+          />
         </div>
 
         <ZKButton label="Save and Close" color="primary" @click="goToHome" />
-
       </template>
-
     </StepperLayout>
   </div>
 </template>
@@ -54,12 +76,11 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const languageList = ["English", "Spanish", "French", "Chinese"];
-const topicList = ["Technology", "Environment", "Politics"]
+const topicList = ["Technology", "Environment", "Politics"];
 
 function goToHome() {
   router.push({ name: "default-home-feed" });
 }
-
 </script>
 
 <style scoped lang="scss">

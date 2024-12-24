@@ -1,5 +1,6 @@
 <template>
-  <ZKButton icon="mdi-close"
+  <ZKButton
+    icon="mdi-close"
     text-color="color-text-strong"
     flat
     @click="buttonClicked()"

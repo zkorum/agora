@@ -1,12 +1,19 @@
 <template>
-  <q-input v-model="userName" label="Username" outlined :maxlength="MAX_LENGTH_USERNAME" :error="!isValidUsername"
-    :error-message="userNameInvalidMessage" no-error-icon @update:model-value="nameContainsValidCharacters">
+  <q-input
+    v-model="userName"
+    label="Username"
+    outlined
+    :maxlength="MAX_LENGTH_USERNAME"
+    :error="!isValidUsername"
+    :error-message="userNameInvalidMessage"
+    no-error-icon
+    @update:model-value="nameContainsValidCharacters"
+  >
     <template #append>
       <div class="inputButtons">
         <q-icon v-if="isValidUsername" name="mdi-check" text-color="red" />
         <ZKButton icon="mdi-dice-6" color="secondary" @click="refreshName()" />
       </div>
-
     </template>
 
     <template #error>
@@ -14,9 +21,13 @@
     </template>
   </q-input>
 
-  <ZKButton v-if="showSubmitButton" :disable="!isValidUsername" label="Update" color="primary"
-    @click="submitButtonClicked()" />
-
+  <ZKButton
+    v-if="showSubmitButton"
+    :disable="!isValidUsername"
+    label="Update"
+    color="primary"
+    @click="submitButtonClicked()"
+  />
 </template>
 
 <script setup lang="ts">
@@ -30,10 +41,10 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 
 defineProps<{
-  showSubmitButton: boolean
+  showSubmitButton: boolean;
 }>();
 
-const emit = defineEmits(["isValidUsername", "userName"])
+const emit = defineEmits(["isValidUsername", "userName"]);
 
 const { profileData } = storeToRefs(useUserStore());
 const { loadUserProfile } = useUserStore();
@@ -41,11 +52,8 @@ const { loadUserProfile } = useUserStore();
 const userNameInvalidMessage = ref("");
 const isValidUsername = ref(true);
 
-const {
-  isUsernameInUse,
-  generateUnusedRandomUsername,
-  submitUsernameChange
-} = useBackendAccountApi();
+const { isUsernameInUse, generateUnusedRandomUsername, submitUsernameChange } =
+  useBackendAccountApi();
 
 const validationMessage = ref("");
 
@@ -54,7 +62,7 @@ const userName = ref("");
 onMounted(async () => {
   await loadUserProfile();
   userName.value = profileData.value.userName;
-})
+});
 
 watch(userName, () => {
   emit("userName", userName.value);
@@ -80,7 +88,7 @@ async function nameContainsValidCharacters(): Promise<boolean> {
         return true;
       } else {
         isValidUsername.value = false;
-        userNameInvalidMessage.value = "This username is currently in use"
+        userNameInvalidMessage.value = "This username is currently in use";
         return false;
       }
     } else {
@@ -104,7 +112,6 @@ async function refreshName() {
     isValidUsername.value = true;
   }
 }
-
 </script>
 
 <style scoped lang="scss">
