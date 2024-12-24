@@ -18,7 +18,7 @@ export const validateDidWeb = (did: string) => {
 // https://github.com/ucan-wg/ts-ucan/blob/bf35b419fe3c6360e2fde32c00b8de06bca6d6b4/packages/default-plugins/src/p256/crypto.ts#L103-L114
 
 /** https://github.com/multiformats/multicodec/blob/e9ecf587558964715054a0afcc01f7ace220952c/table.csv#L141 */
-const P256_DID_PREFIX = new Uint8Array([0x80, 0x24])
+const P256_DID_PREFIX = new Uint8Array([0x80, 0x24]);
 
 // const didToPublicKey = (did: string): Uint8Array => {
 //   // The multiformats space (used by did:key) specifies that NIST P-256
@@ -29,9 +29,9 @@ const P256_DID_PREFIX = new Uint8Array([0x80, 0x24])
 // }
 
 export const publicKeyToDid = (publicKey: Uint8Array): string => {
-    const compressed = compressP256Pubkey(publicKey)
-    return didFromKeyBytes(compressed, P256_DID_PREFIX)
-}
+    const compressed = compressP256Pubkey(publicKey);
+    return didFromKeyBytes(compressed, P256_DID_PREFIX);
+};
 
 /**
  * Determines if a Uint8Array has a given indeterminate length-prefix.
@@ -55,10 +55,13 @@ export const publicKeyToDid = (publicKey: Uint8Array): string => {
 //   return bytes.slice(expectedPrefix.length)
 // }
 
-function didFromKeyBytes(publicKeyBytes: Uint8Array, prefix: Uint8Array): string {
-    const bytes = uint8arrays.concat([prefix, publicKeyBytes])
-    const base58Key = uint8arrays.toString(bytes, "base58btc")
-    return BASE58_DID_PREFIX + base58Key
+function didFromKeyBytes(
+    publicKeyBytes: Uint8Array,
+    prefix: Uint8Array,
+): string {
+    const bytes = uint8arrays.concat([prefix, publicKeyBytes]);
+    const base58Key = uint8arrays.toString(bytes, "base58btc");
+    return BASE58_DID_PREFIX + base58Key;
 }
 
 // https://github.com/ucan-wg/ts-ucan/blob/bf35b419fe3c6360e2fde32c00b8de06bca6d6b4/packages/default-plugins/src/p256/crypto.ts#L118-L195
@@ -72,20 +75,22 @@ function didFromKeyBytes(publicKeyBytes: Uint8Array, prefix: Uint8Array): string
 // Public key compression for NIST P-256
 const compressP256Pubkey = (pubkeyBytes: Uint8Array): Uint8Array => {
     if (pubkeyBytes.length !== 65) {
-        throw new Error(`Expected 65 byte pubkey ${pubkeyBytes.length.toString()}`)
+        throw new Error(
+            `Expected 65 byte pubkey ${pubkeyBytes.length.toString()}`,
+        );
     } else if (pubkeyBytes[0] !== 0x04) {
-        throw new Error("Expected first byte to be 0x04")
+        throw new Error("Expected first byte to be 0x04");
     }
     // first byte is a prefix
-    const x = pubkeyBytes.slice(1, 33)
-    const y = pubkeyBytes.slice(33, 65)
-    const out = new Uint8Array(x.length + 1)
+    const x = pubkeyBytes.slice(1, 33);
+    const y = pubkeyBytes.slice(33, 65);
+    const out = new Uint8Array(x.length + 1);
 
-    out[0] = 2 + (y[y.length - 1] & 1)
-    out.set(x, 1)
+    out[0] = 2 + (y[y.length - 1] & 1);
+    out.set(x, 1);
 
-    return out
-}
+    return out;
+};
 
 // Public key decompression for NIST P-256
 // const decompressP256Pubkey = (compressed: Uint8Array): Uint8Array => {
@@ -141,5 +146,3 @@ const compressP256Pubkey = (pubkeyBytes: Uint8Array): Uint8Array => {
 //   const publicKey = uint8arrays.concat([[0x04], x, yPadded])
 //   return publicKey
 // }
-
-
