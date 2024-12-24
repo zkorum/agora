@@ -58,6 +58,58 @@ export interface ApiV1AuthAuthenticatePost200Response {
 /**
  * 
  * @export
+ * @interface ApiV1AuthAuthenticatePost409Response
+ */
+export interface ApiV1AuthAuthenticatePost409Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthAuthenticatePost409Response
+     */
+    'reason': ApiV1AuthAuthenticatePost409ResponseReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthAuthenticatePost409Response
+     */
+    'userId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthAuthenticatePost409Response
+     */
+    'sessionExpiry': string;
+}
+
+export const ApiV1AuthAuthenticatePost409ResponseReasonEnum = {
+    AssociatedWithAnotherUser: 'associated_with_another_user'
+} as const;
+
+export type ApiV1AuthAuthenticatePost409ResponseReasonEnum = typeof ApiV1AuthAuthenticatePost409ResponseReasonEnum[keyof typeof ApiV1AuthAuthenticatePost409ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthAuthenticatePost409ResponseAnyOf
+ */
+export interface ApiV1AuthAuthenticatePost409ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthAuthenticatePost409ResponseAnyOf
+     */
+    'reason': ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum;
+}
+
+export const ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum = {
+    AssociatedWithAnotherUser: 'associated_with_another_user'
+} as const;
+
+export type ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum = typeof ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum[keyof typeof ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1AuthAuthenticatePostRequest
  */
 export interface ApiV1AuthAuthenticatePostRequest {
@@ -104,18 +156,6 @@ export interface ApiV1AuthCheckLoginStatusPost409Response {
      * @memberof ApiV1AuthCheckLoginStatusPost409Response
      */
     'sessionExpiry': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1AuthCheckLoginStatusPost409Response
-     */
-    'status': number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1AuthCheckLoginStatusPost409Response
-     */
-    'expose': boolean;
 }
 
 export const ApiV1AuthCheckLoginStatusPost409ResponseReasonEnum = {

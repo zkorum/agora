@@ -15,6 +15,6 @@ export default defineConfig({
 
     driver: "pglite",
     dbCredentials: {
-        url: config.CONNECTION_STRING
+        url: config.CONNECTION_STRING,
     },
 });

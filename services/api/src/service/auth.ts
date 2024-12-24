@@ -184,6 +184,7 @@ export async function throwIfAlreadyLoggedIn(
     if (deviceStatus !== undefined) {
         if (deviceStatus.isLoggedIn) {
             throw httpErrors.createError(409, "Conflict", {
+                // !WARNING: if you change that, don't forget to change the zod auth409 and alreadyLoggedIn409
                 reason: "already_logged_in",
                 userId: deviceStatus.userId,
                 sessionExpiry: deviceStatus.sessionExpiry,
@@ -597,9 +598,10 @@ export async function getAuthenticateType(
             userId: userId,
         };
     } else {
-        throw httpErrors.forbidden(
-            `The DID is associated with another phone number`,
-        );
+        throw httpErrors.createError(409, "Conflict", {
+            // !WARNING: if you change that, don't forget to change the zod auth409
+            reason: "associated_with_another_user",
+        });
     }
 }
 
@@ -937,7 +939,8 @@ export async function throttleByPhoneHash(
     }
 }
 
-// ! WARNING check should already been done that the device exists and is logged in
+// !WARNING: check should already been done that the device exists and is logged in
+// TODO: make sure the key cannot be reused, since we delete the key in our front? probably not
 export async function logout(db: PostgresDatabase, didWrite: string) {
     const now = nowZeroMs();
     return await db

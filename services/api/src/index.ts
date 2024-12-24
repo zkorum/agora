@@ -55,6 +55,7 @@ import {
 } from "./service/account.js";
 import { isModeratorAccount } from "@/service/authUtil.js";
 import { moderateByPostSlugId } from "./service/moderation.js";
+import { throwIfAlreadyLoggedIn } from "@/service/auth.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -299,7 +300,7 @@ server.after(() => {
         schema: {
             response: {
                 200: Dto.authenticateCheckLoginStatus,
-                409: Dto.auth409,
+                409: Dto.alreadyLoggedIn409, // WARNING: when changing alreadyLoggedIn409 - also change expected type in the services and frontend manually!
             },
         },
         handler: async (request) => {
@@ -376,7 +377,7 @@ server.after(() => {
             body: Dto.verifyOtpReqBody,
             response: {
                 200: Dto.verifyOtp200,
-                409: Dto.auth409, // WARNING when changing auth 409 - also change expected type in frontend manually!
+                409: Dto.alreadyLoggedIn409, // !WARNING: when changing alreadyLoggedIn409 - also change expected type in the services and frontend manually!
             },
         },
         handler: async (request) => {
@@ -1024,12 +1025,14 @@ server.after(() => {
         schema: {
             response: {
                 200: Dto.generateVerificationLink200,
+                409: Dto.alreadyLoggedIn409, // !WARNING: when changing auth 409 - also change expected type in the services and frontend manually!
             },
         },
         handler: async (request) => {
             const didWrite = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
+            await throwIfAlreadyLoggedIn(db, didWrite, server.httpErrors);
             const verificationLink = await generateVerificationLink({
                 didWrite,
                 axiosVerificatorSvc,

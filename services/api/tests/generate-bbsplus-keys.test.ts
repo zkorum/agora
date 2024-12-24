@@ -34,5 +34,5 @@ describeOrSkip(
             fs.writeFileSync("./private.dev.key", sk.hex);
             fs.writeFileSync("./public.dev.key", pk.hex);
         });
-    }
+    },
 );

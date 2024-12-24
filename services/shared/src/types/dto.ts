@@ -58,14 +58,27 @@ export class Dto {
             })
             .strict(),
     ]);
-    // WARNING when changing auth 409 - also change expected type in frontend manually!
-    static auth409 = z
+    // !WARNING: when changing 409s - also change expected type in the frontend and backend services manually!
+    static auth409 = z.discriminatedUnion("reason", [
+        z
+            .object({
+                reason: z.literal("already_logged_in"),
+                userId: zodUserId,
+                sessionExpiry: z.date(),
+            })
+            .strict(),
+        z
+            .object({
+                reason: z.literal("associated_with_another_user"),
+            })
+            .strict(),
+    ]);
+    // !WARNING: when changing 409s - also change expected type in the frontend and backend services manually!
+    static alreadyLoggedIn409 = z
         .object({
             reason: z.literal("already_logged_in"),
             userId: zodUserId,
             sessionExpiry: z.date(),
-            status: z.number(),
-            expose: z.boolean(),
         })
         .strict();
     static isLoggedInResponse = z.discriminatedUnion("isLoggedIn", [
@@ -256,6 +269,7 @@ export type AuthenticateRequestBody = z.infer<
 export type VerifyOtp200 = z.infer<typeof Dto.verifyOtp200>;
 export type VerifyOtpReqBody = z.infer<typeof Dto.verifyOtpReqBody>;
 export type Auth409 = z.infer<typeof Dto.auth409>;
+export type AlreadyLoggedIn409 = z.infer<typeof Dto.alreadyLoggedIn409>;
 export type IsLoggedInResponse = z.infer<typeof Dto.isLoggedInResponse>;
 export type GetDeviceStatusResp = z.infer<typeof Dto.getDeviceStatusResp>;
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;

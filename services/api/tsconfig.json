@@ -1,12 +1,6 @@
 {
-    "include": [
-        "src/**/*"
-    ],
-    "exclude": [
-        "**/*.spec.ts",
-        "node_modules",
-        "**/node_modules/*"
-    ],
+    "include": ["src/**/*"],
+    "exclude": ["**/*.spec.ts", "node_modules", "**/node_modules/*"],
     "compilerOptions": {
         /* Visit https://aka.ms/tsconfig to read more about this file */
         /* Projects */
@@ -38,9 +32,7 @@
         "moduleResolution": "Node16" /* Specify how TypeScript looks up a file from a given module specifier. */,
         "baseUrl": "src", // only work in dev mode, doesn't work when running production build, so must be kept in sync with `aliases` in package.json
         "paths": {
-            "@/*": [
-                "*"
-            ]
+            "@/*": ["*"]
         },
         // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
         // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */

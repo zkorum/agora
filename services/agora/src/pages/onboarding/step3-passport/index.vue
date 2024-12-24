@@ -139,7 +139,7 @@ import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
 import { useCommonApi } from "src/utils/api/common";
-import { api } from "src/boot/axios";
+import { axios, api } from "src/boot/axios";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted } from "vue";
@@ -198,6 +198,13 @@ onMounted(async () => {
 
     isDidLoggedInIntervalId = window.setInterval(isDidLoggedIn, 2000);
   } catch (e) {
+    if (axios.isAxiosError(e)) {
+      if (e.response?.status === 409) {
+        // already_logged_in
+        // WARNING: manually change this if you change backend
+        await completeVerification();
+      }
+    }
     console.error(e);
     showNotifyMessage(
       "Failed to fetch RariMe verification link: try refreshing the page"

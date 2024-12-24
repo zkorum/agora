@@ -51,20 +51,12 @@
                                         "sessionExpiry": {
                                             "type": "string",
                                             "format": "date-time"
-                                        },
-                                        "status": {
-                                            "type": "number"
-                                        },
-                                        "expose": {
-                                            "type": "boolean"
                                         }
                                     },
                                     "required": [
                                         "reason",
                                         "userId",
-                                        "sessionExpiry",
-                                        "status",
-                                        "expose"
+                                        "sessionExpiry"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -135,38 +127,49 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "reason": {
-                                            "type": "string",
-                                            "enum": [
-                                                "already_logged_in"
-                                            ]
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "already_logged_in"
+                                                    ]
+                                                },
+                                                "userId": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "minLength": 1
+                                                },
+                                                "sessionExpiry": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "reason",
+                                                "userId",
+                                                "sessionExpiry"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "userId": {
-                                            "type": "string",
-                                            "format": "uuid",
-                                            "minLength": 1
-                                        },
-                                        "sessionExpiry": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "status": {
-                                            "type": "number"
-                                        },
-                                        "expose": {
-                                            "type": "boolean"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "associated_with_another_user"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "reason",
-                                        "userId",
-                                        "sessionExpiry",
-                                        "status",
-                                        "expose"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -280,20 +283,12 @@
                                         "sessionExpiry": {
                                             "type": "string",
                                             "format": "date-time"
-                                        },
-                                        "status": {
-                                            "type": "number"
-                                        },
-                                        "expose": {
-                                            "type": "boolean"
                                         }
                                     },
                                     "required": [
                                         "reason",
                                         "userId",
-                                        "sessionExpiry",
-                                        "status",
-                                        "expose"
+                                        "sessionExpiry"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -1581,6 +1576,39 @@
                                     },
                                     "required": [
                                         "verificationLink"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "reason": {
+                                            "type": "string",
+                                            "enum": [
+                                                "already_logged_in"
+                                            ]
+                                        },
+                                        "userId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "minLength": 1
+                                        },
+                                        "sessionExpiry": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "required": [
+                                        "reason",
+                                        "userId",
+                                        "sessionExpiry"
                                     ],
                                     "additionalProperties": false
                                 }
