@@ -236,13 +236,11 @@ function shareClicked() {
 
 .titleDiv {
   font-size: 1.2rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .bodyDiv {
-  font-size: 0.9rem;
   padding-bottom: 1rem;
-  font-weight: 400;
 }
 
 .postDiv {

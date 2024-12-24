@@ -5,6 +5,7 @@
         <Tab
           v-for="alogrithmItem in algorithmList"
           :key="alogrithmItem"
+          class="tab"
           :value="alogrithmItem"
         >
           {{ alogrithmItem }}
@@ -31,4 +32,9 @@ watch(selectedTab, () => {
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+// TODO: implement the design-system based on Figma - don't put rem directly here...
+.tab {
+  font-size: 1rem;
+}
+</style>
