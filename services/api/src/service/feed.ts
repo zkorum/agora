@@ -10,14 +10,17 @@ interface GetPostSlugIdLastCreatedAtProps {
     db: PostgresDatabase;
 }
 
-export async function getPostSlugIdLastCreatedAt({ lastSlugId, db }: GetPostSlugIdLastCreatedAtProps) {
+export async function getPostSlugIdLastCreatedAt({
+    lastSlugId,
+    db,
+}: GetPostSlugIdLastCreatedAtProps) {
     let lastCreatedAt = new Date();
 
     if (lastSlugId) {
         const selectResponse = await db
             .select({ createdAt: postTable.createdAt })
             .from(postTable)
-            .where(eq(postTable.slugId, lastSlugId))
+            .where(eq(postTable.slugId, lastSlugId));
         if (selectResponse.length == 1) {
             lastCreatedAt = selectResponse[0].createdAt;
         } else {
@@ -43,12 +46,15 @@ export async function fetchFeed({
     limit,
     showHidden,
     fetchPollResponse,
-    userId
+    userId,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const defaultLimit = 10;
     const targetLimit = limit ?? defaultLimit;
 
-    const lastCreatedAt = await getPostSlugIdLastCreatedAt({ lastSlugId: lastSlugId, db: db });
+    const lastCreatedAt = await getPostSlugIdLastCreatedAt({
+        lastSlugId: lastSlugId,
+        db: db,
+    });
 
     let whereClause = showHidden ? undefined : eq(postTable.isHidden, false);
     if (lastSlugId) {
@@ -63,11 +69,11 @@ export async function fetchFeed({
         where: whereClause,
         enableCompactBody: true,
         fetchPollResponse: fetchPollResponse,
-        userId: userId
+        userId: userId,
     });
 
     let reachedEndOfFeed = true;
-    if (posts.length == (targetLimit + 1)) {
+    if (posts.length == targetLimit + 1) {
         posts.pop();
         reachedEndOfFeed = false;
     }

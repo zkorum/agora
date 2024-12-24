@@ -53,6 +53,8 @@ import {
     generateUnusedRandomUsername,
     submitUsernameChange,
 } from "./service/account.js";
+import { isModeratorAccount } from "@/service/authUtil.js";
+import { moderateByPostSlugId } from "./service/moderation.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -438,6 +440,43 @@ server.after(() => {
                     showHidden: request.body.showHidden,
                     lastSlugId: request.body.lastSlugId,
                     fetchPollResponse: false,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/moderate/report-post`,
+        schema: {
+            body: Dto.moderateReportPostRequest,
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "Device is not a moederator",
+                    );
+                }
+
+                await moderateByPostSlugId({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                    moderationReason: request.body.moderationReason,
+                    moderationAction: request.body.moderationAction,
+                    moderationExplanation: request.body.moderationExplanation,
+                    userId: status.userId,
                 });
             }
         },

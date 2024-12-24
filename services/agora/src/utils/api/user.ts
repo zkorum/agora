@@ -32,11 +32,7 @@ export function useBackendUserApi() {
         },
       });
 
-      return {
-        activePostCount: response.data.activePostCount,
-        createdAt: new Date(response.data.createdAt),
-        userName: response.data.username,
-      };
+      return response.data;
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user's personal profile.");

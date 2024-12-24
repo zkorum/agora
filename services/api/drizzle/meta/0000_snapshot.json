@@ -1,5 +1,5 @@
 {
-  "id": "9f823b04-f518-4c70-934c-3c4da48f39bb",
+  "id": "6dfb2472-ae74-4228-8139-a5ab164f4df1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1992,6 +1992,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "comment_id": {
+          "name": "comment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "reporter_id": {
           "name": "reporter_id",
           "type": "uuid",
@@ -2003,7 +2009,7 @@
           "type": "report_reason_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "report_explanation": {
           "name": "report_explanation",
@@ -2040,6 +2046,19 @@
           "tableTo": "post",
           "columnsFrom": [
             "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "report_table_comment_id_post_id_fk": {
+          "name": "report_table_comment_id_post_id_fk",
+          "tableFrom": "report_table",
+          "tableTo": "post",
+          "columnsFrom": [
+            "comment_id"
           ],
           "columnsTo": [
             "id"
@@ -2344,6 +2363,13 @@
           "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true
+        },
+        "is_moderator": {
+          "name": "is_moderator",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "is_anonymous": {
           "name": "is_anonymous",
@@ -2766,10 +2792,12 @@
       "schema": "public",
       "values": [
         "off-topic",
-        "s",
-        "p",
-        "a",
-        "m",
+        "spam",
+        "misleading",
+        "privacy",
+        "sexual",
+        "toxic",
+        "illegal",
         "nothing"
       ]
     },
@@ -3038,10 +3066,12 @@
       "schema": "public",
       "values": [
         "off-topic",
-        "s",
-        "p",
-        "a",
-        "m"
+        "spam",
+        "misleading",
+        "privacy",
+        "sexual",
+        "toxic",
+        "illegal"
       ]
     },
     "public.sex": {

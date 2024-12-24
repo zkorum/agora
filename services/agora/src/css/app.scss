@@ -1,1 +1,17 @@
 // app global css in SCSS form
+@font-face {
+    font-family: AlbertSans;
+    src: url(./fonts/albert-sans-v1-latin-regular.woff2);
+}
+
+body {
+  font-family: 'AlbertSans';
+  font-size: 1rem;
+  background-color: white;
+  color: rgb(24, 28, 31);
+}
+
+a {
+  color: rgb(24, 28, 31);
+  text-decoration: none;
+}

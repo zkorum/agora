@@ -1,22 +1,41 @@
 <template>
   <div>
     <div class="actionButtonCluster">
-      <ZKButton flat text-color="color-text-weak" icon="mdi-dots-horizontal" size="0.8rem"
-        @click.stop.prevent="optionButtonClicked()" />
+      <CommentActionOptions
+        :comment-item="props.commentItem"
+        @deleted="deletedComment()"
+      />
 
-      <ZKButton flat text-color="color-text-weak" icon="mdi-export-variant" size="0.8rem"
-        @click.stop.prevent="shareButtonClicked()" />
-      <ZKButton flat :text-color="downvoteIcon.color" :icon="downvoteIcon.icon" size="0.8rem" @click.stop.prevent="
-        castPersonalVote(props.commentItem.commentSlugId, false)
-        ">
+      <ZKButton
+        flat
+        text-color="color-text-weak"
+        icon="mdi-export-variant"
+        size="0.8rem"
+        @click.stop.prevent="shareButtonClicked()"
+      />
+      <ZKButton
+        flat
+        :text-color="downvoteIcon.color"
+        :icon="downvoteIcon.icon"
+        size="0.8rem"
+        @click.stop.prevent="
+          castPersonalVote(props.commentItem.commentSlugId, false)
+        "
+      >
         <div v-if="userCastedVote" class="voteCountLabel">
           {{ numDislikesLocal }}
         </div>
       </ZKButton>
 
-      <ZKButton flat :text-color="upvoteIcon.color" :icon="upvoteIcon.icon" size="0.8rem" @click.stop.prevent="
-        castPersonalVote(props.commentItem.commentSlugId, true)
-        ">
+      <ZKButton
+        flat
+        :text-color="upvoteIcon.color"
+        :icon="upvoteIcon.icon"
+        size="0.8rem"
+        @click.stop.prevent="
+          castPersonalVote(props.commentItem.commentSlugId, true)
+        "
+      >
         <div v-if="userCastedVote" class="voteCountLabel">
           {{ numLikesLocal }}
         </div>
@@ -26,7 +45,6 @@
 </template>
 
 <script setup lang="ts">
-import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useBackendVoteApi } from "src/utils/api/vote";
@@ -35,16 +53,15 @@ import { type CommentItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
+import CommentActionOptions from "./CommentActionOptions.vue";
 
-const emit = defineEmits(["deleted"])
+const emit = defineEmits(["deleted"]);
 
 const props = defineProps<{
   commentItem: CommentItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "like" | "dislike">;
 }>();
-
-const bottomSheet = useBottomSheet();
 
 const webShare = useWebShare();
 
@@ -112,17 +129,8 @@ function shareButtonClicked() {
   webShare.share("Agora Comment", sharePostUrl);
 }
 
-function optionButtonClicked() {
-  const deleteCommentCallback = (deleted: boolean) => {
-    if (deleted) {
-      emit("deleted");
-    }
-  }
-
-  bottomSheet.showCommentOptionSelector(
-    props.commentItem.commentSlugId,
-    props.commentItem.username,
-    deleteCommentCallback);
+function deletedComment() {
+  emit("deleted");
 }
 
 async function castPersonalVote(

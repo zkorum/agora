@@ -38,7 +38,7 @@ export async function getUserPollResponse({
       .from(pollResponseTable)
       .innerJoin(
         pollResponseContentTable,
-        eq(pollResponseContentTable.postContentId, postDetails.contentId)
+        eq(pollResponseContentTable.pollResponseId, pollResponseTable.id)
       )
       .where(
         and(

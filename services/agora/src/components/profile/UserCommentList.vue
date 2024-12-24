@@ -1,27 +1,42 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div v-for="commentItem in profileData.userCommentList" :key="commentItem.commentItem.commentSlugId">
+    <div
+      v-for="commentItem in profileData.userCommentList"
+      :key="commentItem.commentItem.commentSlugId"
+    >
       <ZKHoverEffect :enable-hover="true">
-        <RouterLink :to="{
-          name: 'single-post',
-          params: { postSlugId: commentItem.postData.metadata.postSlugId },
-          query: { commentSlugId: commentItem.commentItem.commentSlugId },
-        }">
+        <RouterLink
+          :to="{
+            name: 'single-post',
+            params: { postSlugId: commentItem.postData.metadata.postSlugId },
+            query: { commentSlugId: commentItem.commentItem.commentSlugId },
+          }"
+        >
           <div class="container">
-            <div class="postTitle">
-              {{ commentItem.postData.payload.title }}
+            <div class="topRowFlex">
+              <div class="postTitle">
+                {{ commentItem.postData.payload.title }}
+              </div>
+              <div>
+                <CommentActionOptions
+                  :comment-item="commentItem.commentItem"
+                  @deleted="commentDeleted()"
+                />
+              </div>
             </div>
 
             <div class="commentMetadata">
-              <span :style="{ fontWeight: 'bold' }">{{ commentItem.commentItem.username }}</span> commented
+              <span :style="{ fontWeight: 'bold' }">{{
+                commentItem.commentItem.username
+              }}</span>
+              commented
               {{ useTimeAgo(commentItem.commentItem.createdAt) }}
             </div>
 
             <div class="commentBody">
               <span v-html="commentItem.commentItem.comment"></span>
             </div>
-
           </div>
         </RouterLink>
       </ZKHoverEffect>
@@ -29,9 +44,7 @@
       <q-separator :inset="false" />
     </div>
 
-    <div ref="bottomOfPostDiv">
-    </div>
-
+    <div ref="bottomOfPostDiv"></div>
   </div>
 </template>
 
@@ -40,8 +53,11 @@ import { useElementVisibility, useTimeAgo } from "@vueuse/core";
 import { useUserStore } from "src/stores/user";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import CommentActionOptions from "../post/views/CommentActionOptions.vue";
 
-const { profileData, loadMoreUserComments, loadUserProfile } = useUserStore();
+const { loadMoreUserComments, loadUserProfile } = useUserStore();
+const { profileData } = storeToRefs(useUserStore());
 
 const endOfFeed = ref(false);
 let isExpandingPosts = false;
@@ -57,7 +73,12 @@ onMounted(async () => {
 });
 
 watch(targetIsVisible, async () => {
-  if (targetIsVisible.value && !isExpandingPosts && !endOfFeed.value && isLoaded) {
+  if (
+    targetIsVisible.value &&
+    !isExpandingPosts &&
+    !endOfFeed.value &&
+    isLoaded
+  ) {
     isExpandingPosts = true;
 
     const response = await loadMoreUserComments();
@@ -67,6 +88,9 @@ watch(targetIsVisible, async () => {
   }
 });
 
+async function commentDeleted() {
+  await loadUserProfile();
+}
 </script>
 
 <style scoped lang="scss">
@@ -96,5 +120,11 @@ watch(targetIsVisible, async () => {
 
 .commentBody {
   padding-top: 0.5rem;
+}
+
+.topRowFlex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 </style>

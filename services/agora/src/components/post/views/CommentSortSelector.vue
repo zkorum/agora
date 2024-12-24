@@ -1,121 +1,34 @@
 <template>
   <div>
-    <ZKCard padding="1rem">
-      <div>
-        <div class="descriptionLabel">
-          {{ description }}
-        </div>
-        <swiper-container ref="swipingElementRef" :slides-per-view="slidesPerView" :initial-slide="currentSlide"
-          :scrollbar="false" class="swiperClusterHover">
-          <swiper-slide v-for="sortOptionItem in getCommentSortOptions()" :key="sortOptionItem.value"
-            class="scrollPadding">
-            <CommentSortItem :is-selected="commentSortPreference == sortOptionItem.value" :sort-item="sortOptionItem"
-              @click="commentSortPreference = sortOptionItem.value" />
-          </swiper-slide>
-        </swiper-container>
-      </div>
-    </ZKCard>
+    <Tabs v-model:value="selectedTab">
+      <TabList>
+        <Tab
+          v-for="alogrithmItem in algorithmList"
+          :key="alogrithmItem"
+          :value="alogrithmItem"
+        >
+          {{ alogrithmItem }}
+        </Tab>
+      </TabList>
+    </Tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-import ZKCard from "src/components/ui-library/ZKCard.vue";
-import CommentSortItem from "./CommentSortItem.vue";
-import { onMounted, ref, watch } from "vue";
-import {
-  useCommentOptions,
-  type CommentSortingItemInterface,
-} from "src/utils/component/comments";
-import { useStorage, useWindowSize } from "@vueuse/core";
-import { type SwiperContainer } from "swiper/element";
+import Tab from "primevue/tab";
+import Tabs from "primevue/tabs";
+import TabList from "primevue/tablist";
+import { ref, watch } from "vue";
 
 const emit = defineEmits(["changedAlgorithm"]);
 
-const { getCommentSortOptions } = useCommentOptions();
+const selectedTab = ref("New");
 
-const slidesPerView = ref(4);
+const algorithmList = ["New", "Moderation History"];
 
-const currentSlide = ref(0);
-
-const description = ref("");
-
-const { width } = useWindowSize();
-
-const commentSortPreference = useStorage(
-  "comment-sort-preference-id",
-  "popular"
-);
-
-const swipingElementRef = ref<SwiperContainer | null>(null);
-
-onMounted(() => {
-  updateSlide(commentSortPreference.value);
-
-  initializeSlideCount();
+watch(selectedTab, () => {
+  emit("changedAlgorithm");
 });
-
-watch(width, () => {
-  initializeSlideCount();
-});
-
-watch(commentSortPreference, () => {
-  updateSlide(commentSortPreference.value);
-
-  emit("changedAlgorithm", commentSortPreference.value);
-});
-
-function updateSlide(sortId: string) {
-  const sortItem = getSortItem(sortId);
-  description.value = sortItem.description;
-  currentSlide.value = sortItem.index;
-
-  swipingElementRef.value?.swiper.slideTo(currentSlide.value);
-}
-
-function getSortItem(sortId: string): CommentSortingItemInterface {
-  const sortOptionList = getCommentSortOptions();
-  for (let i = 0; i < sortOptionList.length; i++) {
-    const sortItem = sortOptionList[i];
-    if (sortItem.value == sortId) {
-      return sortItem;
-    }
-  }
-
-  return {
-    label: "",
-    icon: "",
-    value: "",
-    description: "",
-    index: 0,
-  };
-}
-
-function initializeSlideCount() {
-  if (width.value < 300) {
-    slidesPerView.value = 2;
-  } else if (width.value < 400) {
-    slidesPerView.value = 2.5;
-  } else if (width.value < 500) {
-    slidesPerView.value = 3.5;
-  } else {
-    slidesPerView.value = 4;
-  }
-}
 </script>
 
-<style scoped lang="scss">
-.swiperClusterHover {
-  cursor: pointer;
-}
-
-.descriptionLabel {
-  text-align: left;
-  color: $color-text-weak;
-  font-size: 0.9rem;
-  padding-bottom: 0.5rem;
-}
-
-.scrollPadding {
-  padding-bottom: 0.5rem;
-}
-</style>
+<style scoped lang="scss"></style>

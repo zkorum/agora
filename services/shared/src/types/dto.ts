@@ -14,8 +14,11 @@ import {
     zodPollResponse,
     zodPhoneNumber,
     zodExtendedCommentData,
+    zodModerationAction,
+    zodModerationReason,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
+import { MAX_LENGTH_BODY } from "../shared.js";
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -172,6 +175,7 @@ export class Dto {
             activePostCount: z.number().gte(0),
             createdAt: z.date(),
             username: zodUsername,
+            isModerator: z.boolean(),
         })
         .strict();
     static fetchUserPostsRequest = z
@@ -202,6 +206,14 @@ export class Dto {
     static submitUsernameChangeRequest = z
         .object({
             username: zodUsername,
+        })
+        .strict();
+    static moderateReportPostRequest = z
+        .object({
+            postSlugId: zodSlugId,
+            moderationReason: zodModerationReason,
+            moderationAction: zodModerationAction,
+            moderationExplanation: z.string().max(MAX_LENGTH_BODY),
         })
         .strict();
     static checkUsernameInUseRequest = z

@@ -82,7 +82,12 @@ export const zodCommentCount = z.number().int().nonnegative();
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
-export const zodUsername = z.string().regex(usernameRegex, "Username may only contain lower-cased letters, numbers and \"_\"")
+export const zodUsername = z
+    .string()
+    .regex(
+        usernameRegex,
+        'Username may only contain lower-cased letters, numbers and "_"',
+    )
     .refine((val) => /(?=.*[a-z])/.test(val) || /(?=.*[0-9])/.test(val), {
         message: "Username must contain at least one character or number",
     })
@@ -138,6 +143,29 @@ export const zodExtendedCommentData = z
         commentItem: zodCommentItem,
     })
     .strict();
+export const zodReportReason = z.union([
+    z.literal("off-topic"),
+    z.literal("spam"),
+    z.literal("misleading"),
+    z.literal("privacy"),
+    z.literal("sexual"),
+    z.literal("toxic"),
+    z.literal("illegal"),
+]);
+export const zodModerationReason = z.union([
+    z.literal("off-topic"),
+    z.literal("spam"),
+    z.literal("misleading"),
+    z.literal("privacy"),
+    z.literal("sexual"),
+    z.literal("toxic"),
+    z.literal("illegal"),
+    z.literal("nothing"),
+]);
+export const zodModerationAction = z.union([
+    z.literal("hide"),
+    z.literal("nothing"),
+]);
 export const zodVotingOption = z.enum(["like", "dislike"]);
 export const zodVotingAction = z.enum(["like", "dislike", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
@@ -425,3 +453,5 @@ export type VotingAction = z.infer<typeof zodVotingAction>;
 export type PollList = z.infer<typeof zodPollList>;
 export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
+export type ModerationReason = z.infer<typeof zodModerationReason>;
+export type ModerationAction = z.infer<typeof zodModerationAction>;

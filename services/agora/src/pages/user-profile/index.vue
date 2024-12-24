@@ -1,8 +1,6 @@
 <template>
   <div>
-
     <div class="topBar">
-
       <UserAvatar :user-name="profileData.userName" :size="60" />
 
       <div class="userName">
@@ -10,10 +8,12 @@
       </div>
 
       <div class="profileMetadataBar">
-        <div>{{ profileData.activePostCount }} conservations <span class="dotPadding">•</span></div>
+        <div>
+          {{ profileData.activePostCount }} conservations
+          <span class="dotPadding">•</span>
+        </div>
         <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
       </div>
-
     </div>
 
     <Tabs :value="currentTab">
@@ -39,8 +39,9 @@ import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
+import { storeToRefs } from "pinia";
 
-const { profileData } = useUserStore();
+const { profileData } = storeToRefs(useUserStore());
 
 const currentTab = ref(0);
 
@@ -59,7 +60,6 @@ function applyCurrentTab() {
     currentTab.value = 1;
   }
 }
-
 </script>
 
 <style scoped lang="scss">

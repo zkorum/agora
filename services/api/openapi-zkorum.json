@@ -486,6 +486,110 @@
                 }
             }
         },
+        "/api/v1/moderate/report-post": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "moderationReason": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "off-topic"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "spam"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "misleading"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "privacy"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "sexual"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "toxic"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "illegal"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "nothing"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "moderationAction": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "hide"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "nothing"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "moderationExplanation": {
+                                        "type": "string",
+                                        "maxLength": 260
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId",
+                                    "moderationReason",
+                                    "moderationAction",
+                                    "moderationExplanation"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
         "/api/v1/user/fetch-user-profile": {
             "post": {
                 "responses": {
@@ -507,12 +611,16 @@
                                         "username": {
                                             "type": "string",
                                             "pattern": "^[a-z0-9_]*$"
+                                        },
+                                        "isModerator": {
+                                            "type": "boolean"
                                         }
                                     },
                                     "required": [
                                         "activePostCount",
                                         "createdAt",
-                                        "username"
+                                        "username",
+                                        "isModerator"
                                     ],
                                     "additionalProperties": false
                                 }

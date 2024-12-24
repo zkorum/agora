@@ -42,7 +42,6 @@ import { usePostStore, type DummyPollOptionFormat } from "src/stores/post";
 import { ref, watch } from "vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPollApi } from "src/utils/api/poll";
-import { useDialog } from "src/utils/ui/dialog";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 
@@ -58,7 +57,6 @@ initializeLocalPoll();
 const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
-const { showMessage } = useDialog();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { loadPostData } = usePostStore();
 
@@ -144,9 +142,7 @@ async function voteCasted(selectedIndex: number) {
     selectedIndex,
     props.postSlugId
   );
-  if (response == false) {
-    showMessage("Server error", "Failed to cast vote");
-  } else {
+  if (response == true) {
     loadPostData(false);
     fetchUserPollResponseData(true);
     incrementLocalPollIndex(selectedIndex);
