@@ -60,11 +60,6 @@ async function logoutRequested() {
   logoutCleanup();
 }
 
-async function logoutRequested() {
-  await backendAuth.logout();
-  logoutCleanup();
-}
-
 const accountSettings: SettingsInterface[] = [
   {
     icon: "mdi-account",
