@@ -33,6 +33,7 @@ services:
       CORS_ORIGIN_LIST: "http://localhost:9000,http://127.0.0.1:9000,http://172.19.0.1:9000,http://192.168.1.22:9000"
       PEPPERS: "fmgXvsChQsx9fAlq0DPiVg=="
       NODE_ENV: "production"
+      VERIFICATOR_SVC_BASE_URL: "http://verificator-svc:8000"
     expose:
       - "8080"
     restart: unless-stopped
