@@ -63,6 +63,7 @@
             <div class="leftButtonCluster">
               <div v-if="!skeletonMode">
                 <ZKButton
+                  :disable="extendedPostData.metadata.isLocked"
                   text-color="color-text-weak"
                   size="0.8rem"
                   :label="
@@ -109,13 +110,18 @@
             :key="commentCountOffset"
             :post-slug-id="extendedPostData.metadata.postSlugId"
             :initial-comment-slug-id="commentSlugId"
+            :is-post-locked="extendedPostData.metadata.isLocked"
             @deleted="decrementCommentCount()"
           />
         </div>
       </div>
     </ZKHoverEffect>
 
-    <FloatingBottomContainer v-if="!compactMode && isAuthenticated">
+    <FloatingBottomContainer
+      v-if="
+        !compactMode && isAuthenticated && !extendedPostData.metadata.isLocked
+      "
+    >
       <CommentComposer
         :show-controls="focusCommentElement"
         :post-slug-id="extendedPostData.metadata.postSlugId"

@@ -23,6 +23,7 @@
             :post-slug-id="postSlugId"
             :highlight="initialCommentSlugId == commentItem.commentSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
+            :is-post-locked="isPostLocked"
             @deleted="deletedComment()"
           />
 
@@ -64,6 +65,7 @@ const emit = defineEmits(["deleted"]);
 const props = defineProps<{
   postSlugId: string;
   initialCommentSlugId: string;
+  isPostLocked: boolean;
 }>();
 
 const commentSortPreference = ref("");

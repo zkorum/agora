@@ -71,7 +71,7 @@ export function useBackendUserApi() {
       return internalPostList;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch user's personal votes.");
+      showNotifyMessage("Failed to fetch user's personal posts.");
       return undefined;
     }
   }

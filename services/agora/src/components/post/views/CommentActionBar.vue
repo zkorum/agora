@@ -14,6 +14,7 @@
         @click.stop.prevent="shareButtonClicked()"
       />
       <ZKButton
+        :disable="isPostLocked"
         flat
         :text-color="downvoteIcon.color"
         :icon="downvoteIcon.icon"
@@ -28,6 +29,7 @@
       </ZKButton>
 
       <ZKButton
+        :disable="isPostLocked"
         flat
         :text-color="upvoteIcon.color"
         :icon="upvoteIcon.icon"
@@ -61,6 +63,7 @@ const props = defineProps<{
   commentItem: CommentItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "like" | "dislike">;
+  isPostLocked: boolean;
 }>();
 
 const webShare = useWebShare();
