@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "moderation_table" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"report_id" integer NOT NULL,
+	"report_id" integer,
 	"moderator_id" uuid,
 	"moderation_action" "moderation_action" NOT NULL,
 	"moderation_reason" "moderation_reason_enum" NOT NULL,
@@ -215,6 +215,7 @@ CREATE TABLE IF NOT EXISTS "post" (
 	"author_id" uuid NOT NULL,
 	"current_content_id" integer,
 	"is_hidden" boolean DEFAULT false NOT NULL,
+	"is_locked" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,

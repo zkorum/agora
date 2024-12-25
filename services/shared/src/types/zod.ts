@@ -104,6 +104,7 @@ export const zodPostMetadata = z
     .object({
         postSlugId: zodSlugId,
         isHidden: z.boolean(),
+        isLocked: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         lastReactedAt: z.date(),
@@ -163,6 +164,7 @@ export const zodModerationReason = z.union([
     z.literal("nothing"),
 ]);
 export const zodModerationAction = z.union([
+    z.literal("lock"),
     z.literal("hide"),
     z.literal("nothing"),
 ]);

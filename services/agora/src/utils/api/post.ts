@@ -187,6 +187,7 @@ export function useBackendPostApi() {
           updatedAt: new Date(item.metadata.updatedAt),
           authorImagePath: item.metadata.authorImagePath,
           isHidden: item.metadata.isHidden,
+          isLocked: item.metadata.isLocked,
         },
         payload: {
           title: item.payload.title,

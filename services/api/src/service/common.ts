@@ -55,6 +55,7 @@ export function useCommonPost() {
                 // metadata
                 slugId: postTable.slugId,
                 isHidden: postTable.isHidden,
+                isLocked: postTable.isLocked,
                 createdAt: postTable.createdAt,
                 updatedAt: postTable.updatedAt,
                 lastReactedAt: postTable.lastReactedAt,
@@ -97,6 +98,7 @@ export function useCommonPost() {
             const metadata: PostMetadata = {
                 postSlugId: postItem.slugId,
                 isHidden: postItem.isHidden,
+                isLocked: postItem.isLocked,
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.updatedAt,
                 lastReactedAt: postItem.lastReactedAt,

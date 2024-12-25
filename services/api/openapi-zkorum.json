@@ -358,6 +358,9 @@
                                                             "isHidden": {
                                                                 "type": "boolean"
                                                             },
+                                                            "isLocked": {
+                                                                "type": "boolean"
+                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -386,6 +389,7 @@
                                                         "required": [
                                                             "postSlugId",
                                                             "isHidden",
+                                                            "isLocked",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
@@ -550,6 +554,12 @@
                                             {
                                                 "type": "string",
                                                 "enum": [
+                                                    "lock"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
                                                     "hide"
                                                 ]
                                             },
@@ -663,6 +673,9 @@
                                                     "isHidden": {
                                                         "type": "boolean"
                                                     },
+                                                    "isLocked": {
+                                                        "type": "boolean"
+                                                    },
                                                     "createdAt": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -691,6 +704,7 @@
                                                 "required": [
                                                     "postSlugId",
                                                     "isHidden",
+                                                    "isLocked",
                                                     "createdAt",
                                                     "updatedAt",
                                                     "lastReactedAt",
@@ -817,6 +831,9 @@
                                                             "isHidden": {
                                                                 "type": "boolean"
                                                             },
+                                                            "isLocked": {
+                                                                "type": "boolean"
+                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -845,6 +862,7 @@
                                                         "required": [
                                                             "postSlugId",
                                                             "isHidden",
+                                                            "isLocked",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
@@ -1441,6 +1459,9 @@
                                                         "isHidden": {
                                                             "type": "boolean"
                                                         },
+                                                        "isLocked": {
+                                                            "type": "boolean"
+                                                        },
                                                         "createdAt": {
                                                             "type": "string",
                                                             "format": "date-time"
@@ -1469,6 +1490,7 @@
                                                     "required": [
                                                         "postSlugId",
                                                         "isHidden",
+                                                        "isLocked",
                                                         "createdAt",
                                                         "updatedAt",
                                                         "lastReactedAt",
