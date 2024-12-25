@@ -1,5 +1,5 @@
 {
-  "id": "ba2cda17-3b46-498e-8a10-4dec6cd3fe93",
+  "id": "9c73646a-befa-403e-9209-bbc3fd6e6c9f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2790,6 +2790,7 @@
       "name": "moderation_action",
       "schema": "public",
       "values": [
+        "lock",
         "hide",
         "nothing"
       ]

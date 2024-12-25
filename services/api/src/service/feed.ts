@@ -60,6 +60,7 @@ export async function fetchFeed({
     if (lastSlugId) {
         whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
     }
+    whereClause = and(whereClause, eq(postTable.isLocked, false));
 
     const { fetchPostItems } = useCommonPost();
 

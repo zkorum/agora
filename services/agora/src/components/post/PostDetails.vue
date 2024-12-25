@@ -44,6 +44,11 @@
                 v-html="extendedPostData.payload.body"
               ></span>
             </div>
+
+            <ZKCard v-if="extendedPostData.metadata.isLocked" padding="1rem">
+              <q-icon name="mdi-lock" class="lockIcon" size="1rem" />
+              Post locked. New opinions cannot be posted.
+            </ZKCard>
           </div>
 
           <div v-if="extendedPostData.payload.poll" class="pollContainer">
@@ -138,6 +143,7 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
 import type { ExtendedPost } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import ZKCard from "../ui-library/ZKCard.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedPost;
@@ -286,5 +292,10 @@ function shareClicked() {
 
 .extraTitleBottomPadding {
   padding-bottom: 0.5rem;
+}
+
+.lockIcon {
+  padding-bottom: 0.2rem;
+  padding-right: 0.2rem;
 }
 </style>
