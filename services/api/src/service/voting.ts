@@ -11,6 +11,7 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
+import { useCommonComment, useCommonPost } from "./common.js";
 
 interface GetCommentIdAndContentIdFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -67,6 +68,19 @@ export async function castVoteForCommentSlugId({
     authHeader,
     votingAction,
 }: CastVoteForCommentSlugIdProps) {
+    {
+        const postSlugId =
+            await useCommonComment().getPostSlugIdFromCommentSlugId({
+                commentSlugId: commentSlugId,
+                db: db,
+            });
+
+        await useCommonPost().throwIfPostSlugIdIsLocked({
+            db: db,
+            postSlugId: postSlugId,
+        });
+    }
+
     const commentData = await getCommentIdAndContentIdFromCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,

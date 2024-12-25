@@ -211,6 +211,11 @@ export async function postNewComment({
     authHeader,
     httpErrors,
 }: PostNewCommentProps): Promise<CreateCommentResponse> {
+    await useCommonPost().throwIfPostSlugIdIsLocked({
+        postSlugId: postSlugId,
+        db: db,
+    });
+
     try {
         commentBody = sanitizeHtmlBody(commentBody, MAX_LENGTH_COMMENT);
     } catch (error) {

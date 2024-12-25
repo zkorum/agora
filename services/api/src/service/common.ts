@@ -4,6 +4,7 @@ import {
     postTable,
     organisationTable,
     userTable,
+    commentTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -19,6 +20,34 @@ import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
 
 export function useCommonPost() {
+    interface IsPostLockedProps {
+        db: PostgresJsDatabase;
+        postSlugId: string;
+    }
+
+    async function throwIfPostSlugIdIsLocked({
+        db,
+        postSlugId,
+    }: IsPostLockedProps) {
+        const selectPostTableResponse = await db
+            .select({
+                isLocked: postTable.isLocked,
+            })
+            .from(postTable)
+            .where(eq(postTable.slugId, postSlugId));
+
+        if (selectPostTableResponse.length != 1) {
+            throw httpErrors.internalServerError(
+                "Failed to locate post slug ID for the lock check: " +
+                    postSlugId,
+            );
+        }
+
+        if (selectPostTableResponse[0].isLocked) {
+            throw httpErrors.forbidden("Post slug ID is locked: " + postSlugId);
+        }
+    }
+
     interface FetchPostItemsProps {
         db: PostgresJsDatabase;
         limit: number;
@@ -246,5 +275,40 @@ export function useCommonPost() {
         }
     }
 
-    return { fetchPostItems, getPostAndContentIdFromSlugId };
+    return {
+        fetchPostItems,
+        getPostAndContentIdFromSlugId,
+        throwIfPostSlugIdIsLocked,
+    };
+}
+
+export function useCommonComment() {
+    interface GetPostIdFromCommentSlugIdProps {
+        db: PostgresJsDatabase;
+        commentSlugId: string;
+    }
+
+    async function getPostSlugIdFromCommentSlugId({
+        db,
+        commentSlugId,
+    }: GetPostIdFromCommentSlugIdProps) {
+        const commentTableResponse = await db
+            .select({
+                postSlugId: postTable.slugId,
+            })
+            .from(commentTable)
+            .innerJoin(postTable, eq(postTable.id, commentTable.postId))
+            .where(eq(commentTable.slugId, commentSlugId));
+
+        if (commentTableResponse.length != 1) {
+            throw httpErrors.internalServerError(
+                "Failed to locate post slug ID from comment slug ID: " +
+                    commentSlugId,
+            );
+        }
+
+        return commentTableResponse[0].postSlugId;
+    }
+
+    return { getPostSlugIdFromCommentSlugId };
 }

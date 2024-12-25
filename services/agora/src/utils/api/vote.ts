@@ -6,14 +6,14 @@ import {
 } from "src/api";
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import { useDialog } from "../ui/dialog";
 import { useCommonApi } from "./common";
 import { type VotingAction } from "src/shared/types/zod";
+import { useNotify } from "../ui/notify";
 
 export function useBackendVoteApi() {
   const { buildEncodedUcan } = useCommonApi();
 
-  const { showMessage } = useDialog();
+  const { showNotifyMessage } = useNotify();
 
   async function castVoteForComment(
     commentSlugId: string,
@@ -41,10 +41,7 @@ export function useBackendVoteApi() {
       return true;
     } catch (e) {
       console.error(e);
-      showMessage(
-        "An error had occured",
-        "Failed to fetch user's personal votes."
-      );
+      showNotifyMessage("Failed to cast vote for the comment.");
       return false;
     }
   }
@@ -73,10 +70,7 @@ export function useBackendVoteApi() {
       return response.data;
     } catch (e) {
       console.error(e);
-      showMessage(
-        "An error had occured",
-        "Failed to fetch user's personal votes."
-      );
+      showNotifyMessage("Failed to fetch user's personal votes for the post.");
       return undefined;
     }
   }

@@ -31,6 +31,7 @@
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
+            :is-post-locked="isPostLocked"
             @deleted="deletedComment()"
           />
         </div>
@@ -53,6 +54,7 @@ defineProps<{
   postSlugId: string;
   highlight: boolean;
   commentSlugIdLikedMap: Map<string, "like" | "dislike">;
+  isPostLocked: boolean;
 }>();
 
 const deleted = ref(false);
