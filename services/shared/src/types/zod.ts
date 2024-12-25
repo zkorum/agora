@@ -5,9 +5,30 @@ import {
     MAX_LENGTH_OPTION,
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
+    MAX_LENGTH_BODY,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
+export const zodReportReason = z.union([
+    z.literal("off-topic"),
+    z.literal("spam"),
+    z.literal("misleading"),
+    z.literal("privacy"),
+    z.literal("sexual"),
+    z.literal("toxic"),
+    z.literal("illegal"),
+]);
+export const zodModerationReason = z.enum([
+    "off-topic",
+    "spam",
+    "misleading",
+    "privacy",
+    "sexual",
+    "toxic",
+    "illegal",
+    "nothing",
+]);
+export const zodModerationAction = z.enum(["lock", "hide", "nothing"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -43,6 +64,7 @@ export const zodDidWeb = z
             message: "Please use a valid DID formatted `did:web:...`",
         },
     );
+export const zodModerationExplanation = z.string().max(MAX_LENGTH_BODY);
 export const zodCode = z.coerce.number().min(0).max(999999);
 export const zodDigit = z.coerce.number().int().nonnegative().lte(9);
 export const zodUserId = z.string().uuid().min(1);
@@ -100,17 +122,24 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
+export const zodModerationProperties = z
+    .object({
+        isModerated: z.boolean(),
+        moderationAction: zodModerationAction.optional(),
+        moderationReason: zodModerationReason.optional(),
+        moderationExplanation: zodModerationExplanation.optional(),
+    })
+    .strict();
 export const zodPostMetadata = z
     .object({
         postSlugId: zodSlugId,
         isHidden: z.boolean(),
-        isLocked: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         lastReactedAt: z.date(),
         commentCount: zodCommentCount,
         authorUsername: zodUsername,
-        authorImagePath: z.string().url({ message: "Invalid url" }).optional(), // TODO: check if it accepts path segments for local dev
+        moderation: zodModerationProperties,
     })
     .strict();
 export const zodCommentContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
@@ -144,30 +173,6 @@ export const zodExtendedCommentData = z
         commentItem: zodCommentItem,
     })
     .strict();
-export const zodReportReason = z.union([
-    z.literal("off-topic"),
-    z.literal("spam"),
-    z.literal("misleading"),
-    z.literal("privacy"),
-    z.literal("sexual"),
-    z.literal("toxic"),
-    z.literal("illegal"),
-]);
-export const zodModerationReason = z.union([
-    z.literal("off-topic"),
-    z.literal("spam"),
-    z.literal("misleading"),
-    z.literal("privacy"),
-    z.literal("sexual"),
-    z.literal("toxic"),
-    z.literal("illegal"),
-    z.literal("nothing"),
-]);
-export const zodModerationAction = z.union([
-    z.literal("lock"),
-    z.literal("hide"),
-    z.literal("nothing"),
-]);
 export const zodVotingOption = z.enum(["like", "dislike"]);
 export const zodVotingAction = z.enum(["like", "dislike", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);

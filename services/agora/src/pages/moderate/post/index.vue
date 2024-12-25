@@ -18,7 +18,7 @@
 
     <InputText
       v-model="moderationExplanation"
-      placeholder="Moderation Explanation"
+      placeholder="Moderation Explanation (optional)"
     />
 
     <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
@@ -33,6 +33,10 @@ import InputText from "primevue/inputtext";
 import { ref } from "vue";
 import type { ModerationAction, ModerationReason } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import {
+  moderationActionMapping,
+  moderationReasonMapping,
+} from "src/utils/component/moderation";
 
 const { moderatePost } = useBackendModerateApi();
 
@@ -40,23 +44,10 @@ const route = useRoute();
 const router = useRouter();
 
 const moderationAction = ref<ModerationAction>("lock");
-const actions = ref([
-  { name: "Lock", code: "lock" },
-  { name: "Hide", code: "hide" },
-  { name: "Nothing", code: "nothing" },
-]);
+const actions = ref(moderationActionMapping);
 
 const moderationReason = ref<ModerationReason>("off-topic");
-const reasons = ref([
-  { name: "Off Topic", code: "off-topic" },
-  { name: "Spam", code: "spam" },
-  { name: "Misleading", code: "misleading" },
-  { name: "Privacy", code: "privacy" },
-  { name: "Sexual", code: "sexual" },
-  { name: "Toxic", code: "toxic" },
-  { name: "Illegal", code: "illegal" },
-  { name: "Nothing", code: "nothing" },
-]);
+const reasons = ref(moderationReasonMapping);
 
 const moderationExplanation = ref("");
 

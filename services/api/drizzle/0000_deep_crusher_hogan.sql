@@ -92,7 +92,9 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 CREATE TABLE IF NOT EXISTS "moderation_table" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"report_id" integer,
-	"moderator_id" uuid,
+	"post_id" integer,
+	"comment_id" integer,
+	"moderator_id" uuid NOT NULL,
 	"moderation_action" "moderation_action" NOT NULL,
 	"moderation_reason" "moderation_reason_enum" NOT NULL,
 	"moderation_explanation" varchar(260),
@@ -397,6 +399,18 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_report_id_report_table_id_fk" FOREIGN KEY ("report_id") REFERENCES "public"."report_table"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_comment_id_post_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

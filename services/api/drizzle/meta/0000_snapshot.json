@@ -1,5 +1,5 @@
 {
-  "id": "9c73646a-befa-403e-9209-bbc3fd6e6c9f",
+  "id": "dede4989-5244-4e80-9bd7-3aad1fc1b1e5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -731,11 +731,23 @@
           "primaryKey": false,
           "notNull": false
         },
+        "post_id": {
+          "name": "post_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comment_id": {
+          "name": "comment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "moderator_id": {
           "name": "moderator_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "moderation_action": {
           "name": "moderation_action",
@@ -780,6 +792,32 @@
           "tableTo": "report_table",
           "columnsFrom": [
             "report_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "moderation_table_post_id_post_id_fk": {
+          "name": "moderation_table_post_id_post_id_fk",
+          "tableFrom": "moderation_table",
+          "tableTo": "post",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "moderation_table_comment_id_post_id_fk": {
+          "name": "moderation_table_comment_id_post_id_fk",
+          "tableFrom": "moderation_table",
+          "tableTo": "post",
+          "columnsFrom": [
+            "comment_id"
           ],
           "columnsTo": [
             "id"

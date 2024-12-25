@@ -417,12 +417,6 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata {
     'isHidden': boolean;
     /**
      * 
-     * @type {boolean}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'isLocked': boolean;
-    /**
-     * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
      */
@@ -453,11 +447,63 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata {
     'authorUsername': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
      */
-    'authorImagePath'?: string;
+    'moderation': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration;
 }
+/**
+ * 
+ * @export
+ * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+ */
+export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+     */
+    'isModerated': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+     */
+    'moderationAction'?: ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+     */
+    'moderationReason'?: ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+     */
+    'moderationExplanation'?: string;
+}
+
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = {
+    Lock: 'lock',
+    Hide: 'hide',
+    Nothing: 'nothing'
+} as const;
+
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum];
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = {
+    OffTopic: 'off-topic',
+    Spam: 'spam',
+    Misleading: 'misleading',
+    Privacy: 'privacy',
+    Sexual: 'sexual',
+    Toxic: 'toxic',
+    Illegal: 'illegal',
+    Nothing: 'nothing'
+} as const;
+
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum];
+
 /**
  * 
  * @export
@@ -547,16 +593,16 @@ export interface ApiV1ModerateReportPostPostRequest {
     'postSlugId': string;
     /**
      * 
-     * @type {ApiV1ModerateReportPostPostRequestModerationReason}
+     * @type {string}
      * @memberof ApiV1ModerateReportPostPostRequest
      */
-    'moderationReason': ApiV1ModerateReportPostPostRequestModerationReason;
+    'moderationReason': ApiV1ModerateReportPostPostRequestModerationReasonEnum;
     /**
      * 
-     * @type {ApiV1ModerateReportPostPostRequestModerationAction}
+     * @type {string}
      * @memberof ApiV1ModerateReportPostPostRequest
      */
-    'moderationAction': ApiV1ModerateReportPostPostRequestModerationAction;
+    'moderationAction': ApiV1ModerateReportPostPostRequestModerationActionEnum;
     /**
      * 
      * @type {string}
@@ -564,20 +610,27 @@ export interface ApiV1ModerateReportPostPostRequest {
      */
     'moderationExplanation': string;
 }
-/**
- * 
- * @export
- * @interface ApiV1ModerateReportPostPostRequestModerationAction
- */
-export interface ApiV1ModerateReportPostPostRequestModerationAction {
-}
-/**
- * 
- * @export
- * @interface ApiV1ModerateReportPostPostRequestModerationReason
- */
-export interface ApiV1ModerateReportPostPostRequestModerationReason {
-}
+
+export const ApiV1ModerateReportPostPostRequestModerationReasonEnum = {
+    OffTopic: 'off-topic',
+    Spam: 'spam',
+    Misleading: 'misleading',
+    Privacy: 'privacy',
+    Sexual: 'sexual',
+    Toxic: 'toxic',
+    Illegal: 'illegal',
+    Nothing: 'nothing'
+} as const;
+
+export type ApiV1ModerateReportPostPostRequestModerationReasonEnum = typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum];
+export const ApiV1ModerateReportPostPostRequestModerationActionEnum = {
+    Lock: 'lock',
+    Hide: 'hide',
+    Nothing: 'nothing'
+} as const;
+
+export type ApiV1ModerateReportPostPostRequestModerationActionEnum = typeof ApiV1ModerateReportPostPostRequestModerationActionEnum[keyof typeof ApiV1ModerateReportPostPostRequestModerationActionEnum];
+
 /**
  * 
  * @export

@@ -45,9 +45,21 @@
               ></span>
             </div>
 
-            <ZKCard v-if="extendedPostData.metadata.isLocked" padding="1rem">
-              <q-icon name="mdi-lock" class="lockIcon" size="1rem" />
-              Post locked. New opinions cannot be posted.
+            <ZKCard
+              v-if="extendedPostData.metadata.moderation.isModerated"
+              padding="1rem"
+            >
+              <PostLockedMessage
+                :moderation-reason="
+                  extendedPostData.metadata.moderation.moderationReason
+                "
+                :moderation-explanation="
+                  extendedPostData.metadata.moderation.moderationExplanation
+                "
+                :moderation-action="
+                  extendedPostData.metadata.moderation.moderationAction
+                "
+              />
             </ZKCard>
           </div>
 
@@ -63,7 +75,7 @@
             <div class="leftButtonCluster">
               <div v-if="!skeletonMode">
                 <ZKButton
-                  :disable="extendedPostData.metadata.isLocked"
+                  :disable="extendedPostData.metadata.moderation.isModerated"
                   text-color="color-text-weak"
                   size="0.8rem"
                   :label="
@@ -110,7 +122,7 @@
             :key="commentCountOffset"
             :post-slug-id="extendedPostData.metadata.postSlugId"
             :initial-comment-slug-id="commentSlugId"
-            :is-post-locked="extendedPostData.metadata.isLocked"
+            :is-post-locked="extendedPostData.metadata.moderation.isModerated"
             @deleted="decrementCommentCount()"
           />
         </div>
@@ -119,7 +131,9 @@
 
     <FloatingBottomContainer
       v-if="
-        !compactMode && isAuthenticated && !extendedPostData.metadata.isLocked
+        !compactMode &&
+        isAuthenticated &&
+        !extendedPostData.metadata.moderation.isModerated
       "
     >
       <CommentComposer
@@ -150,6 +164,7 @@ import Skeleton from "primevue/skeleton";
 import type { ExtendedPost } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKCard from "../ui-library/ZKCard.vue";
+import PostLockedMessage from "./views/PostLockedMessage.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedPost;
@@ -298,10 +313,5 @@ function shareClicked() {
 
 .extraTitleBottomPadding {
   padding-bottom: 0.5rem;
-}
-
-.lockIcon {
-  padding-bottom: 0.2rem;
-  padding-right: 0.2rem;
 }
 </style>

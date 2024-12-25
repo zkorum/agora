@@ -1270,7 +1270,11 @@ export const moderationTable = pgTable("moderation_table", {
     reportId: integer("report_id").references(
         (): AnyPgColumn => reportTable.id,
     ),
-    moderatorId: uuid("moderator_id").references(() => userTable.id),
+    postId: integer("post_id").references(() => postTable.id),
+    commentId: integer("comment_id").references(() => postTable.id),
+    moderatorId: uuid("moderator_id")
+        .references(() => userTable.id)
+        .notNull(),
     moderationAction: moderationAction("moderation_action").notNull(), // add check
     moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
     moderationExplanation: varchar("moderation_explanation", {

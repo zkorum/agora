@@ -185,9 +185,14 @@ export function useBackendPostApi() {
           lastReactedAt: new Date(item.metadata.lastReactedAt),
           postSlugId: item.metadata.postSlugId,
           updatedAt: new Date(item.metadata.updatedAt),
-          authorImagePath: item.metadata.authorImagePath,
           isHidden: item.metadata.isHidden,
-          isLocked: item.metadata.isLocked,
+          moderation: {
+            isModerated: item.metadata.moderation.isModerated,
+            moderationAction: item.metadata.moderation.moderationAction,
+            moderationExplanation:
+              item.metadata.moderation.moderationExplanation,
+            moderationReason: item.metadata.moderation.moderationReason,
+          },
         },
         payload: {
           title: item.payload.title,
