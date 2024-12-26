@@ -16,10 +16,14 @@ export function useBackendCommentApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function fetchCommentsForPost(postSlugId: string) {
+  async function fetchCommentsForPost(
+    postSlugId: string,
+    showModeratedComments: boolean
+  ) {
     try {
       const params: ApiV1CommentFetchCommentsByPostSlugIdPostRequest = {
         postSlugId: postSlugId,
+        showModeratedComments: showModeratedComments,
       };
 
       const response = await DefaultApiFactory(
@@ -38,6 +42,12 @@ export function useBackendCommentApi() {
           numLikes: item.numLikes,
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
+          moderation: {
+            isModerated: item.moderation.isModerated,
+            moderationAction: item.moderation.moderationAction,
+            moderationExplanation: item.moderation.moderationExplanation,
+            moderationReason: item.moderation.moderationReason,
+          },
         });
       });
 

@@ -3,6 +3,8 @@
   <div>
     <div v-if="deleted" class="deletedMessage">Deleted</div>
     <div v-if="!deleted" class="contentLayout">
+      <div class="moderatedMessage">Response removed from feed</div>
+
       <div class="metadata">
         <UserAvatar
           :user-name="commentItem.username"
@@ -26,7 +28,10 @@
           <span v-html="commentItem.comment"></span>
         </div>
 
-        <div class="actionBarPaddings">
+        <div
+          v-if="!commentItem.moderation.isModerated"
+          class="actionBarPaddings"
+        >
           <CommentActionBar
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
@@ -34,6 +39,10 @@
             :is-post-locked="isPostLocked"
             @deleted="deletedComment()"
           />
+        </div>
+
+        <div v-if="commentItem.moderation.isModerated">
+          <ZKNextPage message="View Moderation Details" route-name="welcome" />
         </div>
       </div>
     </div>
@@ -46,6 +55,7 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import { formatTimeAgo } from "@vueuse/core";
 import type { CommentItem } from "src/shared/types/zod";
 import { ref } from "vue";
+import ZKNextPage from "src/components/ui-library/ZKNextPage.vue";
 
 const emit = defineEmits(["deleted"]);
 
@@ -104,5 +114,13 @@ function deletedComment() {
 .deletedMessage {
   display: flex;
   justify-content: center;
+}
+
+.moderatedMessage {
+  font-weight: 400;
+  font-style: italic;
+  color: #6d6a74;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 </style>

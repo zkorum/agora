@@ -439,6 +439,12 @@ export interface ApiV1CommentFetchCommentsByPostSlugIdPostRequest {
      * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
      */
     'createdAt'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
+     */
+    'showModeratedComments': boolean;
 }
 /**
  * 
@@ -990,6 +996,12 @@ export interface ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem {
      * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
      */
     'username': string;
+    /**
+     * 
+     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration}
+     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     */
+    'moderation': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration;
 }
 /**
  * 

@@ -152,6 +152,7 @@ export const zodCommentItem = z
         numLikes: z.number().int().nonnegative(),
         numDislikes: z.number().int().nonnegative(),
         username: zodUsername,
+        moderation: zodModerationProperties,
     })
     .strict();
 export const zodUserInteraction = z

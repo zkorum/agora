@@ -842,7 +842,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            return await fetchCommentsByPostSlugId(db, request.body.postSlugId);
+            return await fetchCommentsByPostSlugId({
+                db: db,
+                postSlugId: request.body.postSlugId,
+                showModeratedComments: request.body.showModeratedComments,
+            });
 
             /*
                 const authHeader = request.headers.authorization;

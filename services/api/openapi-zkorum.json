@@ -1113,6 +1113,43 @@
                                                     "username": {
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "moderation": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "isModerated": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "moderationAction": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lock",
+                                                                    "hide",
+                                                                    "nothing"
+                                                                ]
+                                                            },
+                                                            "moderationReason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "off-topic",
+                                                                    "spam",
+                                                                    "misleading",
+                                                                    "privacy",
+                                                                    "sexual",
+                                                                    "toxic",
+                                                                    "illegal",
+                                                                    "nothing"
+                                                                ]
+                                                            },
+                                                            "moderationExplanation": {
+                                                                "type": "string",
+                                                                "maxLength": 260
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "isModerated"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
@@ -1122,7 +1159,8 @@
                                                     "comment",
                                                     "numLikes",
                                                     "numDislikes",
-                                                    "username"
+                                                    "username",
+                                                    "moderation"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -1400,10 +1438,14 @@
                                     "createdAt": {
                                         "type": "string",
                                         "format": "date-time"
+                                    },
+                                    "showModeratedComments": {
+                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
-                                    "postSlugId"
+                                    "postSlugId",
+                                    "showModeratedComments"
                                 ],
                                 "additionalProperties": false
                             }
@@ -1448,6 +1490,43 @@
                                             "username": {
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "moderation": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "isModerated": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "moderationAction": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "lock",
+                                                            "hide",
+                                                            "nothing"
+                                                        ]
+                                                    },
+                                                    "moderationReason": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "off-topic",
+                                                            "spam",
+                                                            "misleading",
+                                                            "privacy",
+                                                            "sexual",
+                                                            "toxic",
+                                                            "illegal",
+                                                            "nothing"
+                                                        ]
+                                                    },
+                                                    "moderationExplanation": {
+                                                        "type": "string",
+                                                        "maxLength": 260
+                                                    }
+                                                },
+                                                "required": [
+                                                    "isModerated"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         },
                                         "required": [
@@ -1457,7 +1536,8 @@
                                             "comment",
                                             "numLikes",
                                             "numDislikes",
-                                            "username"
+                                            "username",
+                                            "moderation"
                                         ],
                                         "additionalProperties": false
                                     }
