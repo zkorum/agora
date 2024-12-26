@@ -413,7 +413,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_comment_id_post_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
