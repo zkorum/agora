@@ -22,9 +22,9 @@
       map-options
     />
 
-    <InputText
+    <q-input
       v-model="moderationExplanation"
-      placeholder="Moderation Explanation (optional)"
+      label="Moderation Explanation (optional)"
     />
 
     <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
@@ -34,7 +34,6 @@
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute } from "vue-router";
-import InputText from "primevue/inputtext";
 import { onMounted, ref } from "vue";
 import type { ModerationAction, ModerationReason } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -58,8 +57,8 @@ const moderationExplanation = ref("");
 const hasExistingReport = ref(false);
 
 let commentSlugId: string | null = null;
-if (typeof route.params.postSlugId == "string") {
-  commentSlugId = route.params.postSlugId;
+if (typeof route.params.commentSlugId == "string") {
+  commentSlugId = route.params.commentSlugId;
 }
 
 onMounted(async () => {
