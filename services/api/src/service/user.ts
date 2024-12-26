@@ -51,6 +51,8 @@ export async function getUserComments({
                 moderationAction: moderationTable.moderationAction,
                 moderationExplanation: moderationTable.moderationExplanation,
                 moderationReason: moderationTable.moderationReason,
+                moderationCreatedAt: moderationTable.createdAt,
+                moderationUpdatedAt: moderationTable.updatedAt,
             })
             .from(commentTable)
             .innerJoin(
@@ -93,6 +95,8 @@ export async function getUserComments({
                         commentResponse.moderationExplanation ?? undefined,
                     moderationReason:
                         commentResponse.moderationReason ?? undefined,
+                    createdAt: commentResponse.createdAt,
+                    updatedAt: commentResponse.updatedAt,
                 },
             };
 

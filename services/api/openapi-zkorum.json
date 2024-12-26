@@ -316,6 +316,14 @@
                                                                     "moderationExplanation": {
                                                                         "type": "string",
                                                                         "maxLength": 260
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -594,6 +602,14 @@
                                         "moderationExplanation": {
                                             "type": "string",
                                             "maxLength": 260
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updatedAt": {
+                                            "type": "string",
+                                            "format": "date-time"
                                         }
                                     },
                                     "required": [
@@ -664,6 +680,14 @@
                                         "moderationExplanation": {
                                             "type": "string",
                                             "maxLength": 260
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updatedAt": {
+                                            "type": "string",
+                                            "format": "date-time"
                                         }
                                     },
                                     "required": [
@@ -805,6 +829,14 @@
                                                             "moderationExplanation": {
                                                                 "type": "string",
                                                                 "maxLength": 260
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updatedAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             }
                                                         },
                                                         "required": [
@@ -993,6 +1025,14 @@
                                                                     "moderationExplanation": {
                                                                         "type": "string",
                                                                         "maxLength": 260
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -1144,6 +1184,14 @@
                                                             "moderationExplanation": {
                                                                 "type": "string",
                                                                 "maxLength": 260
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updatedAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             }
                                                         },
                                                         "required": [
@@ -1521,6 +1569,14 @@
                                                     "moderationExplanation": {
                                                         "type": "string",
                                                         "maxLength": 260
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updatedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
                                                     }
                                                 },
                                                 "required": [
@@ -1731,6 +1787,14 @@
                                                                 "moderationExplanation": {
                                                                     "type": "string",
                                                                     "maxLength": 260
+                                                                },
+                                                                "createdAt": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                },
+                                                                "updatedAt": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
                                                                 }
                                                             },
                                                             "required": [

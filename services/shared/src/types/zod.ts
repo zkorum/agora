@@ -128,6 +128,8 @@ export const zodModerationProperties = z
         moderationAction: zodModerationAction.optional(),
         moderationReason: zodModerationReason.optional(),
         moderationExplanation: zodModerationExplanation.optional(),
+        createdAt: z.date().optional(),
+        updatedAt: z.date().optional(),
     })
     .strict();
 export const zodPostMetadata = z

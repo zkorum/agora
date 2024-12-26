@@ -115,7 +115,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      return response.data;
+      return {
+        isModerated: response.data.isModerated,
+        moderationAction: response.data.moderationAction,
+        moderationExplanation: response.data.moderationExplanation,
+        moderationReason: response.data.moderationReason,
+        createdAt: new Date(response.data.createdAt),
+        updatedAt: new Date(response.data.updatedAt),
+      };
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch post moderation details");
@@ -147,7 +154,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      return response.data;
+      return {
+        isModerated: response.data.isModerated,
+        moderationAction: response.data.moderationAction,
+        moderationExplanation: response.data.moderationExplanation,
+        moderationReason: response.data.moderationReason,
+        createdAt: new Date(response.data.createdAt),
+        updatedAt: new Date(response.data.updatedAt),
+      };
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch comment moderation details");

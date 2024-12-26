@@ -594,6 +594,18 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
      */
     'moderationExplanation'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
+     */
+    'updatedAt'?: string;
 }
 
 export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = {
