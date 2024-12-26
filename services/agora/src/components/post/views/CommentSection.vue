@@ -6,43 +6,37 @@
         <q-tab name="moderation-history" label="Moderation History" />
       </q-tabs>
 
-      <div v-if="selectedTab == 'new'">
-        <div v-if="commentItems.length == 0" class="noCommentMessage">
-          There are no opinions in this conservation.
-        </div>
+      <CommentGroup
+        v-if="selectedTab == 'new'"
+        :comment-item-list="commentItemsUnmoderated"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="initialCommentSlugId"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+      />
 
-        <div v-if="commentItems.length > 0" class="commentListFlex">
-          <div
-            v-for="commentItem in commentItems"
-            :id="commentItem.commentSlugId"
-            :key="commentItem.commentSlugId"
-          >
-            <CommentSingle
-              :comment-item="commentItem"
-              :post-slug-id="postSlugId"
-              :highlight="initialCommentSlugId == commentItem.commentSlugId"
-              :comment-slug-id-liked-map="commentSlugIdLikedMap"
-              :is-post-locked="isPostLocked"
-              @deleted="deletedComment()"
-            />
-
-            <Divider :style="{ width: '100%' }" />
-          </div>
-        </div>
-      </div>
+      <CommentGroup
+        v-if="selectedTab == 'moderation-history'"
+        :comment-item-list="commentItemsModerated"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="initialCommentSlugId"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import CommentSingle from "./CommentSingle.vue";
 import { onMounted, ref } from "vue";
-import Divider from "primevue/divider";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
+import CommentGroup from "./CommentGroup.vue";
 
 const emit = defineEmits(["deleted"]);
 
@@ -59,11 +53,13 @@ const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const commentItems = ref<CommentItem[]>([]);
+const commentItemsUnmoderated = ref<CommentItem[]>([]);
+const commentItemsModerated = ref<CommentItem[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "like" | "dislike">>(new Map());
 
-fetchCommentList();
+fetchCommentList(false);
+fetchCommentList(true);
 
 onMounted(() => {
   fetchPersonalLikes();
@@ -88,12 +84,20 @@ async function fetchPersonalLikes() {
   }
 }
 
-async function fetchCommentList() {
+async function fetchCommentList(showModeratedComments: boolean) {
   if (props.postSlugId.length > 0) {
-    const response = await fetchCommentsForPost(props.postSlugId);
+    const response = await fetchCommentsForPost(
+      props.postSlugId,
+      showModeratedComments
+    );
 
     if (response != null) {
-      commentItems.value = response;
+      if (showModeratedComments) {
+        commentItemsModerated.value = response;
+      } else {
+        commentItemsUnmoderated.value = response;
+      }
+
       setTimeout(function () {
         scrollToComment();
       }, 1000);
@@ -124,22 +128,5 @@ function scrollToComment() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.noCommentMessage {
-  display: flex;
-  justify-content: center;
-  padding-top: 4rem;
-}
-
-.commentListFlex {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.specialText {
-  text-align: center;
-  width: min(15rem, 100%);
 }
 </style>

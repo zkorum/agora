@@ -9,7 +9,7 @@ import {
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and, isNull } from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull } from "drizzle-orm";
 import type { CommentItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
@@ -43,11 +43,23 @@ export async function getCommentSlugIdLastCreatedAt({
     return lastCreatedAt;
 }
 
-export async function fetchCommentsByPostSlugId(
-    db: PostgresJsDatabase,
-    postSlugId: SlugId,
-): Promise<CommentItem[]> {
+interface FetchCommentsByPostSlugIdProps {
+    db: PostgresJsDatabase;
+    postSlugId: SlugId;
+    showModeratedComments: boolean;
+}
+
+export async function fetchCommentsByPostSlugId({
+    db,
+    postSlugId,
+    showModeratedComments,
+}: FetchCommentsByPostSlugIdProps): Promise<CommentItem[]> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
+
+    const whereClause = showModeratedComments
+        ? and(eq(commentTable.postId, postId), isNotNull(moderationTable.id))
+        : and(eq(commentTable.postId, postId), isNull(moderationTable.id));
+
     const results = await db
         .select({
             // comment payload
@@ -58,6 +70,9 @@ export async function fetchCommentsByPostSlugId(
             numLikes: commentTable.numLikes,
             numDislikes: commentTable.numDislikes,
             username: userTable.username,
+            moderationAction: moderationTable.moderationAction,
+            moderationExplanation: moderationTable.moderationExplanation,
+            moderationReason: moderationTable.moderationReason,
         })
         .from(commentTable)
         .innerJoin(postTable, eq(postTable.id, postId))
@@ -71,9 +86,7 @@ export async function fetchCommentsByPostSlugId(
         )
         .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
         .orderBy(desc(commentTable.createdAt))
-        .where(
-            and(eq(commentTable.postId, postId), isNull(moderationTable.id)),
-        );
+        .where(whereClause);
 
     const commentItemList: CommentItem[] = [];
     results.map((commentResponse) => {
@@ -85,6 +98,13 @@ export async function fetchCommentsByPostSlugId(
             numLikes: commentResponse.numLikes,
             updatedAt: commentResponse.updatedAt,
             username: commentResponse.username,
+            moderation: {
+                isModerated: commentResponse.moderationAction ? true : false,
+                moderationAction: commentResponse.moderationAction ?? undefined,
+                moderationExplanation:
+                    commentResponse.moderationExplanation ?? undefined,
+                moderationReason: commentResponse.moderationReason ?? undefined,
+            },
         };
         commentItemList.push(item);
     });

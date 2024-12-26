@@ -2,6 +2,7 @@ import { log } from "@/app.js";
 import {
     commentContentTable,
     commentTable,
+    moderationTable,
     postTable,
     userTable,
 } from "@/schema.js";
@@ -47,6 +48,9 @@ export async function getUserComments({
                 numDislikes: commentTable.numDislikes,
                 username: userTable.username,
                 postSlugId: postTable.slugId,
+                moderationAction: moderationTable.moderationAction,
+                moderationExplanation: moderationTable.moderationExplanation,
+                moderationReason: moderationTable.moderationReason,
             })
             .from(commentTable)
             .innerJoin(
@@ -55,6 +59,10 @@ export async function getUserComments({
             )
             .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
             .innerJoin(postTable, eq(postTable.id, commentTable.postId))
+            .leftJoin(
+                moderationTable,
+                eq(moderationTable.commentId, commentTable.id),
+            )
             .where(
                 and(
                     eq(commentTable.authorId, userId),
@@ -75,6 +83,17 @@ export async function getUserComments({
                 numLikes: commentResponse.numLikes,
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
+                moderation: {
+                    isModerated: commentResponse.moderationAction
+                        ? true
+                        : false,
+                    moderationAction:
+                        commentResponse.moderationAction ?? undefined,
+                    moderationExplanation:
+                        commentResponse.moderationExplanation ?? undefined,
+                    moderationReason:
+                        commentResponse.moderationReason ?? undefined,
+                },
             };
 
             const postItem = await fetchPostBySlugId({

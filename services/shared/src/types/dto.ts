@@ -124,6 +124,7 @@ export class Dto {
         .object({
             postSlugId: zodSlugId, // z.object() does not exist :(
             createdAt: z.string().datetime().optional(),
+            showModeratedComments: z.boolean(),
         })
         .strict();
     static fetchCommentFeedResponse = z.array(zodCommentItem);
