@@ -1,48 +1,34 @@
 <template>
   <div>
     <div class="container">
-      <CommentSortSelector
-        @changed-algorithm="(value) => (commentSortPreference = value)"
-      />
+      <q-tabs v-model="selectedTab" inline-label no-caps>
+        <q-tab name="new" label="New" />
+        <q-tab name="moderation-history" label="Moderation History" />
+      </q-tabs>
 
-      <div
-        v-if="commentItems.length == 0 && commentSortPreference != 'clusters'"
-        class="noCommentMessage"
-      >
-        There are no opinions in this conservation.
-      </div>
-
-      <div v-if="commentItems.length > 0" class="commentListFlex">
-        <div
-          v-for="commentItem in commentItems"
-          :id="commentItem.commentSlugId"
-          :key="commentItem.commentSlugId"
-        >
-          <CommentSingle
-            :comment-item="commentItem"
-            :post-slug-id="postSlugId"
-            :highlight="initialCommentSlugId == commentItem.commentSlugId"
-            :comment-slug-id-liked-map="commentSlugIdLikedMap"
-            :is-post-locked="isPostLocked"
-            @deleted="deletedComment()"
-          />
-
-          <Divider :style="{ width: '100%' }" />
+      <div v-if="selectedTab == 'new'">
+        <div v-if="commentItems.length == 0" class="noCommentMessage">
+          There are no opinions in this conservation.
         </div>
-      </div>
 
-      <div
-        v-if="commentSortPreference == 'clusters'"
-        :style="{ paddingTop: '1rem' }"
-      >
-        <ZKCard padding="2rem">
-          <div class="specialMessage">
-            <img src="/development/polis/example.png" class="polisExampleImg" />
-            <div class="specialText">
-              This visualization is currently a work-in-progress!
-            </div>
+        <div v-if="commentItems.length > 0" class="commentListFlex">
+          <div
+            v-for="commentItem in commentItems"
+            :id="commentItem.commentSlugId"
+            :key="commentItem.commentSlugId"
+          >
+            <CommentSingle
+              :comment-item="commentItem"
+              :post-slug-id="postSlugId"
+              :highlight="initialCommentSlugId == commentItem.commentSlugId"
+              :comment-slug-id-liked-map="commentSlugIdLikedMap"
+              :is-post-locked="isPostLocked"
+              @deleted="deletedComment()"
+            />
+
+            <Divider :style="{ width: '100%' }" />
           </div>
-        </ZKCard>
+        </div>
       </div>
     </div>
   </div>
@@ -50,10 +36,8 @@
 
 <script setup lang="ts">
 import CommentSingle from "./CommentSingle.vue";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { onMounted, ref } from "vue";
 import Divider from "primevue/divider";
-import CommentSortSelector from "./CommentSortSelector.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -68,7 +52,7 @@ const props = defineProps<{
   isPostLocked: boolean;
 }>();
 
-const commentSortPreference = ref("");
+const selectedTab = ref("new");
 
 const { fetchCommentsForPost } = useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
@@ -148,22 +132,10 @@ function scrollToComment() {
   padding-top: 4rem;
 }
 
-.specialMessage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-}
-
 .commentListFlex {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.polisExampleImg {
-  width: 100%;
-  border-radius: 15px;
 }
 
 .specialText {
