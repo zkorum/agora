@@ -92,13 +92,15 @@ export async function deleteDid(platform: SupportedPlatform): Promise<void> {
 
   switch (platform) {
     case "mobile":
+      // TODO: test if this actually works:
       await SecureSigning.deleteKeyPair({
         prefixedKey: prefixedKey,
       });
       break;
     case "web":
       const cryptoStore = await getWebCryptoStore();
-      await cryptoStore.keystore.deleteKey(prefixedKey);
+      // TODO: understand why deleteKey(prefixedKey) doesn't work...
+      await cryptoStore.keystore.clearStore();
       break;
   }
 }
