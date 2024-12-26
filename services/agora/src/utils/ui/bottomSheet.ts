@@ -7,6 +7,7 @@ import { usePostStore } from "src/stores/post";
 import { useNotify } from "./notify";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendCommentApi } from "../api/comment";
+import { storeToRefs } from "pinia";
 
 export const useBottomSheet = () => {
   const quasar = useQuasar();
@@ -20,7 +21,8 @@ export const useBottomSheet = () => {
   const { deletePostBySlugId } = useBackendPostApi();
   const { deleteCommentBySlugId } = useBackendCommentApi();
 
-  const { profileData, loadUserProfile } = useUserStore();
+  const { profileData } = storeToRefs(useUserStore());
+  const { loadUserProfile } = useUserStore();
   const { loadPostData } = usePostStore();
 
   interface QuasarAction {
@@ -42,7 +44,7 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.userName == posterUserName) {
+    if (profileData.value.userName == posterUserName) {
       actionList.push({
         label: "Delete",
         icon: "mdi-delete",
@@ -50,7 +52,7 @@ export const useBottomSheet = () => {
       });
     }
 
-    if (profileData.isModerator) {
+    if (profileData.value.isModerator) {
       actionList.push({
         label: "Moderate",
         icon: "mdi-sword",
@@ -100,7 +102,7 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.userName == posterUserName) {
+    if (profileData.value.userName == posterUserName) {
       actionList.push({
         label: "Delete",
         icon: "mdi-delete",
@@ -108,7 +110,7 @@ export const useBottomSheet = () => {
       });
     }
 
-    if (profileData.isModerator) {
+    if (profileData.value.isModerator) {
       actionList.push({
         label: "Moderate",
         icon: "mdi-sword",

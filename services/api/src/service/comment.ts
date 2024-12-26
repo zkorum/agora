@@ -5,10 +5,11 @@ import {
     commentProofTable,
     postTable,
     userTable,
+    moderationTable,
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and } from "drizzle-orm";
+import { desc, eq, sql, and, isNull } from "drizzle-orm";
 import type { CommentItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
@@ -64,9 +65,15 @@ export async function fetchCommentsByPostSlugId(
             commentContentTable,
             eq(commentContentTable.id, commentTable.currentContentId),
         )
+        .leftJoin(
+            moderationTable,
+            eq(moderationTable.commentId, commentTable.id),
+        )
         .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
         .orderBy(desc(commentTable.createdAt))
-        .where(eq(commentTable.postId, postId));
+        .where(
+            and(eq(commentTable.postId, postId), isNull(moderationTable.id)),
+        );
 
     const commentItemList: CommentItem[] = [];
     results.map((commentResponse) => {
