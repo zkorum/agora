@@ -104,6 +104,8 @@ export async function fetchCommentsByPostSlugId({
                 moderationExplanation:
                     commentResponse.moderationExplanation ?? undefined,
                 moderationReason: commentResponse.moderationReason ?? undefined,
+                createdAt: commentResponse.createdAt,
+                updatedAt: commentResponse.updatedAt,
             },
         };
         commentItemList.push(item);

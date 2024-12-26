@@ -47,6 +47,8 @@ export function useBackendCommentApi() {
             moderationAction: item.moderation.moderationAction,
             moderationExplanation: item.moderation.moderationExplanation,
             moderationReason: item.moderation.moderationReason,
+            createdAt: new Date(item.moderation.createdAt),
+            updatedAt: new Date(item.moderation.updatedAt),
           },
         });
       });

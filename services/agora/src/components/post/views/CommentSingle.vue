@@ -5,9 +5,14 @@
       <ZKCard padding="1rem">
         <div class="moderationContainer">
           <div class="moderatedMessage">
-            <div class="moderatedFont">
-              Moderator flagged this response as
-              {{ commentItem.moderation.moderationReason }}.
+            <div class="moderatedFont moderatedItalic">
+              <span v-if="commentItem.moderation.moderationReason != 'nothing'">
+                Moderator flagged this response as
+                {{ commentItem.moderation.moderationReason }}.
+              </span>
+              <span v-if="commentItem.moderation.moderationReason == 'nothing'">
+                Moderator did not provide a reason for the removal.
+              </span>
             </div>
             <div
               v-if="commentItem.moderation.moderationExplanation.length > 0"
@@ -16,15 +21,27 @@
               "{{ commentItem.moderation.moderationExplanation }}"
             </div>
           </div>
-          <div v-if="profileData.isModerator">
-            <RouterLink
-              :to="{
-                name: 'moderate-comment-page',
-                params: { commentSlugId: commentItem.commentSlugId },
-              }"
-            >
-              <ZKButton label="Edit" color="primary" />
-            </RouterLink>
+
+          <div class="moderationTimeBox moderatedFont">
+            <div>
+              {{ useDateFormat(commentItem.moderation.createdAt, "HH:mm A") }}
+            </div>
+            <div>
+              {{
+                useDateFormat(commentItem.moderation.createdAt, "YYYY-MM-DD")
+              }}
+            </div>
+
+            <div v-if="profileData.isModerator" class="moderationEditButton">
+              <RouterLink
+                :to="{
+                  name: 'moderate-comment-page',
+                  params: { commentSlugId: commentItem.commentSlugId },
+                }"
+              >
+                <ZKButton label="Edit" color="primary" />
+              </RouterLink>
+            </div>
           </div>
         </div>
       </ZKCard>
@@ -69,7 +86,7 @@
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import { formatTimeAgo } from "@vueuse/core";
+import { formatTimeAgo, useDateFormat } from "@vueuse/core";
 import type { CommentItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
@@ -136,14 +153,17 @@ function deletedComment() {
 
 .moderatedFont {
   font-weight: 400;
-  font-style: italic;
   color: #6d6a74;
+}
+
+.moderatedItalic {
+  font-style: italic;
 }
 
 .moderatedMessage {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .moderationContainer {
@@ -153,5 +173,15 @@ function deletedComment() {
 
 .moderatedBox {
   padding-bottom: 1rem;
+}
+
+.moderationTimeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+}
+
+.moderationEditButton {
+  padding-top: 1rem;
 }
 </style>

@@ -7,6 +7,7 @@ import type {
     ModerationReason,
 } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
+import { nowZeroMs } from "@/shared/common/util.js";
 
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
@@ -103,6 +104,7 @@ export async function moderateByCommentSlugId({
                     moderationAction: moderationAction,
                     moderationReason: moderationReason,
                     moderationExplanation: moderationExplanation,
+                    updatedAt: nowZeroMs(),
                 })
                 .where(eq(moderationTable.commentId, commentId));
         } else {
@@ -138,6 +140,8 @@ export async function fetchPostModeration({
             moderationAction: moderationTable.moderationAction,
             moderationReason: moderationTable.moderationReason,
             moderationExplanation: moderationTable.moderationExplanation,
+            moderationCreatedAt: moderationTable.createdAt,
+            moderationUpdatedAt: moderationTable.updatedAt,
         })
         .from(moderationTable)
         .innerJoin(postTable, eq(postTable.id, moderationTable.postId))
@@ -149,6 +153,8 @@ export async function fetchPostModeration({
             moderationAction: undefined,
             moderationExplanation: undefined,
             moderationReason: undefined,
+            createdAt: undefined,
+            updatedAt: undefined,
         };
     } else {
         const response = moderationTableResponse[0];
@@ -157,6 +163,8 @@ export async function fetchPostModeration({
             moderationAction: response.moderationAction,
             moderationExplanation: response.moderationExplanation ?? undefined,
             moderationReason: response.moderationReason,
+            createdAt: response.moderationCreatedAt,
+            updatedAt: response.moderationUpdatedAt,
         };
     }
 }
