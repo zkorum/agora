@@ -463,3 +463,4 @@ export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
 export type ModerationReason = z.infer<typeof zodModerationReason>;
 export type ModerationAction = z.infer<typeof zodModerationAction>;
+export type ModerationProperties = z.infer<typeof zodModerationProperties>;

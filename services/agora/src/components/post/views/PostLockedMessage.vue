@@ -46,8 +46,8 @@ watch(
 
 function loadModerationreason() {
   for (let i = 0; i < moderationReasonMapping.length; i++) {
-    if (moderationReasonMapping[i].code == props.moderationReason) {
-      moderationReasonName.value = moderationReasonMapping[i].name;
+    if (moderationReasonMapping[i].value == props.moderationReason) {
+      moderationReasonName.value = moderationReasonMapping[i].label;
       break;
     }
   }

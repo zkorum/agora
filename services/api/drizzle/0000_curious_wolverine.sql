@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS "comment" (
 	"num_likes" integer DEFAULT 0 NOT NULL,
 	"num_dislikes" integer DEFAULT 0 NOT NULL,
 	"is_hidden" boolean DEFAULT false NOT NULL,
+	"is_locked" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -99,7 +100,9 @@ CREATE TABLE IF NOT EXISTS "moderation_table" (
 	"moderation_reason" "moderation_reason_enum" NOT NULL,
 	"moderation_explanation" varchar(260),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "moderation_table_post_id_unique" UNIQUE("post_id"),
+	CONSTRAINT "moderation_table_comment_id_unique" UNIQUE("comment_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "organisation" (

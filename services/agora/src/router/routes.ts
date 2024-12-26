@@ -118,6 +118,22 @@ const routes: RouteRecordRaw[] = [
         },
         name: "moderate-post-page",
       },
+      {
+        path: "comment/:commentSlugId",
+        components: {
+          default: () => import("pages/moderate/comment/index.vue"),
+          topmenubar: DefaultMenuBar,
+        },
+        props: {
+          topmenubar: {
+            hasBackButton: false,
+            hasSettingsButton: false,
+            hasCloseButton: true,
+            hasLoginButton: true,
+          } as DefaultMenuBarProps,
+        },
+        name: "moderate-comment-page",
+      },
     ],
   },
   {

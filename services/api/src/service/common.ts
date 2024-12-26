@@ -294,6 +294,32 @@ export function useCommonPost() {
 }
 
 export function useCommonComment() {
+    interface GetCommentIdFromCommentSlugIdProps {
+        db: PostgresJsDatabase;
+        commentSlugId: string;
+    }
+
+    async function getCommentIdFromCommentSlugId({
+        db,
+        commentSlugId,
+    }: GetCommentIdFromCommentSlugIdProps) {
+        const commentTableResponse = await db
+            .select({
+                commentId: commentTable.id,
+            })
+            .from(commentTable)
+            .where(eq(commentTable.slugId, commentSlugId));
+
+        if (commentTableResponse.length != 1) {
+            throw httpErrors.internalServerError(
+                "Failed to locate comment ID from comment slug ID: " +
+                    commentSlugId,
+            );
+        }
+
+        return commentTableResponse[0].commentId;
+    }
+
     interface GetPostIdFromCommentSlugIdProps {
         db: PostgresJsDatabase;
         commentSlugId: string;
@@ -321,5 +347,5 @@ export function useCommonComment() {
         return commentTableResponse[0].postSlugId;
     }
 
-    return { getPostSlugIdFromCommentSlugId };
+    return { getPostSlugIdFromCommentSlugId, getCommentIdFromCommentSlugId };
 }

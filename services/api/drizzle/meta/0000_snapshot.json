@@ -1,5 +1,5 @@
 {
-  "id": "dede4989-5244-4e80-9bd7-3aad1fc1b1e5",
+  "id": "2f23d4bd-6b1a-47ad-beaf-a698bb18194e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -402,6 +402,13 @@
         },
         "is_hidden": {
           "name": "is_hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_locked": {
+          "name": "is_locked",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -840,7 +847,22 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "moderation_table_post_id_unique": {
+          "name": "moderation_table_post_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "post_id"
+          ]
+        },
+        "moderation_table_comment_id_unique": {
+          "name": "moderation_table_comment_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "comment_id"
+          ]
+        }
+      },
       "checkConstraints": {}
     },
     "public.organisation": {
