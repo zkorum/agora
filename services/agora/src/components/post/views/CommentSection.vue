@@ -1,10 +1,18 @@
 <template>
   <div>
     <div class="container">
-      <q-tabs v-model="selectedTab" inline-label no-caps>
-        <q-tab name="new" label="New" />
-        <q-tab name="moderation-history" label="Moderation History" />
-      </q-tabs>
+      <div class="filterResponseBox">
+        <div>Filter responses by:</div>
+        <div class="filterButtonCluster">
+          <ZKButton
+            v-for="option in filterOptions"
+            :key="option.value"
+            :label="option.name"
+            :color="selectedTab == option.value ? 'primary' : 'secondary'"
+            @click="selectedTab = option.value"
+          />
+        </div>
+      </div>
 
       <CommentGroup
         v-if="selectedTab == 'new'"
@@ -37,6 +45,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const emit = defineEmits(["deleted"]);
 
@@ -57,6 +66,11 @@ const commentItemsUnmoderated = ref<CommentItem[]>([]);
 const commentItemsModerated = ref<CommentItem[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "like" | "dislike">>(new Map());
+
+const filterOptions = [
+  { name: "New", value: "new" },
+  { name: "Moderation History", value: "moderation-history" },
+];
 
 fetchCommentList(false);
 fetchCommentList(true);
@@ -128,5 +142,18 @@ function scrollToComment() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.filterResponseBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.filterButtonCluster {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 </style>
