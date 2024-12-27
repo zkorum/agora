@@ -9,15 +9,15 @@
             :key="option.value"
             :label="option.name"
             :color="
-              sortAlgorithm.sort == option.value ? 'primary' : 'secondary'
+              sortAlgorithm.view == option.value ? 'primary' : 'secondary'
             "
-            @click="sortAlgorithm.sort = option.value"
+            @click="sortAlgorithm.view = option.value"
           />
         </div>
       </div>
 
       <CommentGroup
-        v-if="sortAlgorithm.sort == 'new'"
+        v-if="sortAlgorithm.view == 'new'"
         :comment-item-list="commentItemsUnmoderated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
@@ -27,7 +27,7 @@
       />
 
       <CommentGroup
-        v-if="sortAlgorithm.sort == 'moderation-history'"
+        v-if="sortAlgorithm.view == 'moderation-history'"
         :comment-item-list="commentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
@@ -59,8 +59,8 @@ const props = defineProps<{
 }>();
 
 const sortAlgorithm = useUrlSearchParams("history");
-if (sortAlgorithm.sort != "new" && sortAlgorithm.sort != "moderation-history") {
-  sortAlgorithm.sort = "new";
+if (sortAlgorithm.view != "new" && sortAlgorithm.view != "moderation-history") {
+  sortAlgorithm.view = "new";
 }
 
 const { fetchCommentsForPost } = useBackendCommentApi();
