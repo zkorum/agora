@@ -1,87 +1,100 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div class="metadata">
-      <UserAvatar
-        :user-name="commentItem.username"
-        :size="40"
-        class="avatarIcon"
-      />
-
-      <div class="userNameTime">
-        <div>
-          {{ commentItem.username }}
-        </div>
-
-        <div>
-          {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div :class="{ highlightComment: highlight }">
-        <span v-html="commentItem.comment"></span>
-      </div>
-
-      <div v-if="commentItem.moderation.isModerated" class="moderatedBox">
-        <ZKCard padding="1rem">
-          <div class="moderationContainer">
-            <div class="moderatedMessage">
-              <div class="moderatedFont moderatedItalic">
-                <span
-                  v-if="commentItem.moderation.moderationReason != 'nothing'"
-                >
-                  Moderator flagged this response as
-                  {{ commentItem.moderation.moderationReason }}.
-                </span>
-                <span
-                  v-if="commentItem.moderation.moderationReason == 'nothing'"
-                >
-                  Moderator did not provide a reason for the removal.
-                </span>
-              </div>
-              <div
-                v-if="commentItem.moderation.moderationExplanation.length > 0"
-                class="moderatedFont"
-              >
-                "{{ commentItem.moderation.moderationExplanation }}"
-              </div>
-            </div>
-
-            <div class="moderationTimeBox moderatedFont">
-              <div>
-                {{ useDateFormat(commentItem.moderation.createdAt, "HH:mm A") }}
-              </div>
-              <div>
-                {{
-                  useDateFormat(commentItem.moderation.createdAt, "YYYY-MM-DD")
-                }}
-              </div>
-
-              <div v-if="profileData.isModerator" class="moderationEditButton">
-                <RouterLink
-                  :to="{
-                    name: 'moderate-comment-page',
-                    params: { commentSlugId: commentItem.commentSlugId },
-                  }"
-                >
-                  <ZKButton label="Edit" color="primary" />
-                </RouterLink>
-              </div>
-            </div>
-          </div>
-        </ZKCard>
-      </div>
-
-      <div v-if="!commentItem.moderation.isModerated" class="actionBarPaddings">
-        <CommentActionBar
-          :comment-item="commentItem"
-          :post-slug-id="postSlugId"
-          :comment-slug-id-liked-map="commentSlugIdLikedMap"
-          :is-post-locked="isPostLocked"
-          @deleted="deletedComment()"
+    <div class="container">
+      <div class="metadata">
+        <UserAvatar
+          :user-name="commentItem.username"
+          :size="40"
+          class="avatarIcon"
         />
+
+        <div class="userNameTime">
+          <div>
+            {{ commentItem.username }}
+          </div>
+
+          <div>
+            {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div :class="{ highlightComment: highlight }">
+          <span v-html="commentItem.comment"></span>
+        </div>
+
+        <div v-if="commentItem.moderation.isModerated" class="moderatedBox">
+          <ZKCard padding="1rem">
+            <div class="moderationContainer">
+              <div class="moderatedMessage">
+                <div class="moderatedFont moderatedItalic">
+                  <span
+                    v-if="commentItem.moderation.moderationReason != 'nothing'"
+                  >
+                    Moderator flagged this response as
+                    {{ commentItem.moderation.moderationReason }}.
+                  </span>
+                  <span
+                    v-if="commentItem.moderation.moderationReason == 'nothing'"
+                  >
+                    Moderator did not provide a reason for the removal.
+                  </span>
+                </div>
+                <div
+                  v-if="commentItem.moderation.moderationExplanation.length > 0"
+                  class="moderatedFont"
+                >
+                  "{{ commentItem.moderation.moderationExplanation }}"
+                </div>
+              </div>
+
+              <div class="moderationTimeBox moderatedFont">
+                <div>
+                  {{
+                    useDateFormat(commentItem.moderation.createdAt, "HH:mm A")
+                  }}
+                </div>
+                <div>
+                  {{
+                    useDateFormat(
+                      commentItem.moderation.createdAt,
+                      "YYYY-MM-DD"
+                    )
+                  }}
+                </div>
+
+                <div
+                  v-if="profileData.isModerator"
+                  class="moderationEditButton"
+                >
+                  <RouterLink
+                    :to="{
+                      name: 'moderate-comment-page',
+                      params: { commentSlugId: commentItem.commentSlugId },
+                    }"
+                  >
+                    <ZKButton label="Edit" color="primary" />
+                  </RouterLink>
+                </div>
+              </div>
+            </div>
+          </ZKCard>
+        </div>
+
+        <div
+          v-if="!commentItem.moderation.isModerated"
+          class="actionBarPaddings"
+        >
+          <CommentActionBar
+            :comment-item="commentItem"
+            :post-slug-id="postSlugId"
+            :comment-slug-id-liked-map="commentSlugIdLikedMap"
+            :is-post-locked="isPostLocked"
+            @deleted="deletedComment()"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -119,6 +132,10 @@ function deletedComment() {
 </script>
 
 <style scoped lang="scss">
+.container {
+  padding: 0.5rem;
+}
+
 .contentLayout {
   display: flex;
   flex-direction: column;
@@ -137,6 +154,7 @@ function deletedComment() {
 
 .actionBarPaddings {
   padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .highlightComment {

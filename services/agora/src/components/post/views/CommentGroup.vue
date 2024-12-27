@@ -19,7 +19,7 @@
           @deleted="deletedComment()"
         />
 
-        <Divider :style="{ width: '100%' }" />
+        <q-separator />
       </div>
     </div>
   </div>
@@ -28,7 +28,6 @@
 <script setup lang="ts">
 import type { CommentItem } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
-import Divider from "primevue/divider";
 
 const emit = defineEmits(["deleted"]);
 
