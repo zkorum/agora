@@ -111,6 +111,21 @@ export function useBackendUserApi() {
             numLikes: responseItem.commentItem.numLikes,
             updatedAt: new Date(responseItem.commentItem.updatedAt),
             username: String(responseItem.commentItem.username),
+            moderation: {
+              isModerated: responseItem.commentItem.moderation.isModerated,
+              moderationAction:
+                responseItem.commentItem.moderation.moderationAction,
+              moderationExplanation:
+                responseItem.commentItem.moderation.moderationExplanation,
+              moderationReason:
+                responseItem.commentItem.moderation.moderationReason,
+              createdAt: new Date(
+                responseItem.commentItem.moderation.createdAt
+              ),
+              updatedAt: new Date(
+                responseItem.commentItem.moderation.updatedAt
+              ),
+            },
           },
         };
         extendedCommentList.push(extendedComment);
