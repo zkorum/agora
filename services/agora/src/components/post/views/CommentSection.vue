@@ -8,14 +8,16 @@
             v-for="option in filterOptions"
             :key="option.value"
             :label="option.name"
-            :color="selectedTab == option.value ? 'primary' : 'secondary'"
-            @click="selectedTab = option.value"
+            :color="
+              sortAlgorithm.sort == option.value ? 'primary' : 'secondary'
+            "
+            @click="sortAlgorithm.sort = option.value"
           />
         </div>
       </div>
 
       <CommentGroup
-        v-if="selectedTab == 'new'"
+        v-if="sortAlgorithm.sort == 'new'"
         :comment-item-list="commentItemsUnmoderated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
@@ -25,7 +27,7 @@
       />
 
       <CommentGroup
-        v-if="selectedTab == 'moderation-history'"
+        v-if="sortAlgorithm.sort == 'moderation-history'"
         :comment-item-list="commentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
@@ -46,6 +48,7 @@ import { type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useUrlSearchParams } from "@vueuse/core";
 
 const emit = defineEmits(["deleted"]);
 
@@ -55,7 +58,10 @@ const props = defineProps<{
   isPostLocked: boolean;
 }>();
 
-const selectedTab = ref("new");
+const sortAlgorithm = useUrlSearchParams("history");
+if (sortAlgorithm.sort != "new" && sortAlgorithm.sort != "moderation-history") {
+  sortAlgorithm.sort = "new";
+}
 
 const { fetchCommentsForPost } = useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
@@ -147,7 +153,7 @@ function scrollToComment() {
 .filterResponseBox {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
   padding-bottom: 0.5rem;
 }
 
