@@ -201,6 +201,7 @@ function deletedComment() {
   display: flex;
   flex-direction: column;
   align-items: end;
+  width: 8rem;
 }
 
 .moderationEditButton {
