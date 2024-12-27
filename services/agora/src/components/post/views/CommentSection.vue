@@ -8,16 +8,14 @@
             v-for="option in filterOptions"
             :key="option.value"
             :label="option.name"
-            :color="
-              sortAlgorithm.view == option.value ? 'primary' : 'secondary'
-            "
-            @click="sortAlgorithm.view = option.value"
+            :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
+            @click="sortAlgorithm = option.value"
           />
         </div>
       </div>
 
       <CommentGroup
-        v-if="sortAlgorithm.view == 'new'"
+        v-if="sortAlgorithm == 'new'"
         :comment-item-list="commentItemsUnmoderated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
@@ -27,7 +25,7 @@
       />
 
       <CommentGroup
-        v-if="sortAlgorithm.view == 'moderation-history'"
+        v-if="sortAlgorithm == 'moderation-history'"
         :comment-item-list="commentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
@@ -48,7 +46,7 @@ import { type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useUrlSearchParams } from "@vueuse/core";
+import { useStorage } from "@vueuse/core";
 
 const emit = defineEmits(["deleted"]);
 
@@ -58,10 +56,7 @@ const props = defineProps<{
   isPostLocked: boolean;
 }>();
 
-const sortAlgorithm = useUrlSearchParams("history");
-if (sortAlgorithm.view != "new" && sortAlgorithm.view != "moderation-history") {
-  sortAlgorithm.view = "new";
-}
+const sortAlgorithm = useStorage("commentView", "new", sessionStorage);
 
 const { fetchCommentsForPost } = useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
