@@ -5,7 +5,7 @@ import {
     organisationTable,
     userTable,
     commentTable,
-    moderationTable,
+    moderationPostsTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -92,9 +92,10 @@ export function useCommonPost() {
                 commentCount: postTable.commentCount,
                 authorName: userTable.username,
                 // moderation
-                moderationAction: moderationTable.moderationAction,
-                moderationExplanation: moderationTable.moderationExplanation,
-                moderationReason: moderationTable.moderationReason,
+                moderationAction: moderationPostsTable.moderationAction,
+                moderationExplanation:
+                    moderationPostsTable.moderationExplanation,
+                moderationReason: moderationPostsTable.moderationReason,
             })
             .from(postTable)
             .innerJoin(
@@ -102,7 +103,10 @@ export function useCommonPost() {
                 eq(postContentTable.id, postTable.currentContentId),
             )
             .innerJoin(userTable, eq(userTable.id, postTable.authorId))
-            .leftJoin(moderationTable, eq(moderationTable.postId, postTable.id))
+            .leftJoin(
+                moderationPostsTable,
+                eq(moderationPostsTable.postId, postTable.id),
+            )
             .leftJoin(
                 organisationTable,
                 eq(organisationTable.id, userTable.organisationId),

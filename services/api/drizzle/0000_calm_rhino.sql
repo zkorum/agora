@@ -1,6 +1,7 @@
 CREATE TYPE "public"."auth_type" AS ENUM('register', 'login_known_device', 'login_new_device');--> statement-breakpoint
 CREATE TYPE "public"."email_type" AS ENUM('primary', 'backup', 'secondary', 'other');--> statement-breakpoint
-CREATE TYPE "public"."moderation_action" AS ENUM('lock', 'hide', 'nothing');--> statement-breakpoint
+CREATE TYPE "public"."moderation_action_comments" AS ENUM('lock', 'hide');--> statement-breakpoint
+CREATE TYPE "public"."moderation_action_posts" AS ENUM('lock');--> statement-breakpoint
 CREATE TYPE "public"."moderation_reason_enum" AS ENUM('off-topic', 'spam', 'misleading', 'privacy', 'sexual', 'toxic', 'illegal');--> statement-breakpoint
 CREATE TYPE "public"."phone_country_code" AS ENUM('AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW');--> statement-breakpoint
 CREATE TYPE "public"."proof_type" AS ENUM('creation', 'edit', 'deletion');--> statement-breakpoint
@@ -90,19 +91,28 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "moderation_table" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"report_id" integer,
-	"post_id" integer,
-	"comment_id" integer,
+CREATE TABLE IF NOT EXISTS "moderation_comments_table" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_comments_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"comment_id" integer NOT NULL,
 	"moderator_id" uuid NOT NULL,
-	"moderation_action" "moderation_action" NOT NULL,
+	"moderation_action" "moderation_action_comments" NOT NULL,
 	"moderation_reason" "moderation_reason_enum" NOT NULL,
 	"moderation_explanation" varchar(260),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "moderation_table_post_id_unique" UNIQUE("post_id"),
-	CONSTRAINT "moderation_table_comment_id_unique" UNIQUE("comment_id")
+	CONSTRAINT "moderation_comments_table_comment_id_unique" UNIQUE("comment_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "moderation_posts_table" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_posts_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"post_id" integer NOT NULL,
+	"moderator_id" uuid NOT NULL,
+	"moderation_action" "moderation_action_posts" NOT NULL,
+	"moderation_reason" "moderation_reason_enum" NOT NULL,
+	"moderation_explanation" varchar(260),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "moderation_posts_table_post_id_unique" UNIQUE("post_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "organisation" (
@@ -236,14 +246,22 @@ CREATE TABLE IF NOT EXISTS "post_topic" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "report_table" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "report_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"post_id" integer,
-	"comment_id" integer,
-	"reporter_id" uuid,
-	"reporter_reason" "report_reason_enum",
+CREATE TABLE IF NOT EXISTS "report_comments_table" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "report_comments_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"comment_id" integer NOT NULL,
+	"reporter_id" uuid NOT NULL,
+	"reporter_reason" "report_reason_enum" NOT NULL,
 	"report_explanation" varchar(260),
-	"moderation_id" integer,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "report_posts_table" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "report_posts_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"post_id" integer NOT NULL,
+	"reporter_id" uuid NOT NULL,
+	"reporter_reason" "report_reason_enum" NOT NULL,
+	"report_explanation" varchar(260),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
@@ -401,25 +419,25 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_report_id_report_table_id_fk" FOREIGN KEY ("report_id") REFERENCES "public"."report_table"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "moderation_comments_table" ADD CONSTRAINT "moderation_comments_table_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "moderation_comments_table" ADD CONSTRAINT "moderation_comments_table_moderator_id_user_id_fk" FOREIGN KEY ("moderator_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "moderation_posts_table" ADD CONSTRAINT "moderation_posts_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_moderator_id_user_id_fk" FOREIGN KEY ("moderator_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "moderation_posts_table" ADD CONSTRAINT "moderation_posts_table_moderator_id_user_id_fk" FOREIGN KEY ("moderator_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -557,25 +575,25 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "report_table" ADD CONSTRAINT "report_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "report_comments_table" ADD CONSTRAINT "report_comments_table_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "report_table" ADD CONSTRAINT "report_table_comment_id_post_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "report_comments_table" ADD CONSTRAINT "report_comments_table_reporter_id_user_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "report_table" ADD CONSTRAINT "report_table_reporter_id_user_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "report_posts_table" ADD CONSTRAINT "report_posts_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "report_table" ADD CONSTRAINT "report_table_moderation_id_moderation_table_id_fk" FOREIGN KEY ("moderation_id") REFERENCES "public"."moderation_table"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "report_posts_table" ADD CONSTRAINT "report_posts_table_reporter_id_user_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

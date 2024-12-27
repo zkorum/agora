@@ -30,8 +30,9 @@
             <div class="moderationContainer">
               <div class="moderatedMessage">
                 <div class="moderatedFont moderatedItalic">
-                  Moderator flagged this response as
-                  {{ commentItem.moderation.moderationReason }}.
+                  Moderator flagged this response as "{{
+                    commentItem.moderation.moderationReason
+                  }}".
                 </div>
                 <div
                   v-if="commentItem.moderation.moderationExplanation.length > 0"

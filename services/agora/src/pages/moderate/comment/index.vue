@@ -4,7 +4,9 @@
       Modify the existing comment report
     </div>
 
-    <div v-if="!hasExistingReport" class="title">Submit a new report</div>
+    <div v-if="!hasExistingReport" class="title">
+      Submit a new comment report
+    </div>
 
     <q-select
       v-model="moderationAction"
@@ -35,10 +37,13 @@
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute } from "vue-router";
 import { onMounted, ref } from "vue";
-import type { ModerationAction, ModerationReason } from "src/shared/types/zod";
+import type {
+  ModerationActionComments,
+  ModerationReason,
+} from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
-  moderationActionMapping,
+  moderationActionCommentsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderation";
 
@@ -46,8 +51,8 @@ const { moderateComment, fetchCommentModeration } = useBackendModerateApi();
 
 const route = useRoute();
 
-const moderationAction = ref<ModerationAction>("lock");
-const actionMapping = ref(moderationActionMapping);
+const moderationAction = ref<ModerationActionComments>("lock");
+const actionMapping = ref(moderationActionCommentsMapping);
 
 const moderationReason = ref<ModerationReason>("off-topic");
 const reasonMapping = ref(moderationReasonMapping);

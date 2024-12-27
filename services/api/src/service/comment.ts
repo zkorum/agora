@@ -5,11 +5,11 @@ import {
     commentProofTable,
     postTable,
     userTable,
-    moderationTable,
+    moderationCommentsTable,
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and, isNull, isNotNull } from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull, ne } from "drizzle-orm";
 import type { CommentItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
@@ -57,8 +57,15 @@ export async function fetchCommentsByPostSlugId({
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
 
     const whereClause = showModeratedComments
-        ? and(eq(commentTable.postId, postId), isNotNull(moderationTable.id))
-        : and(eq(commentTable.postId, postId), isNull(moderationTable.id));
+        ? and(
+              eq(commentTable.postId, postId),
+              isNotNull(moderationCommentsTable.id),
+              ne(moderationCommentsTable.moderationAction, "hide"),
+          )
+        : and(
+              eq(commentTable.postId, postId),
+              isNull(moderationCommentsTable.id),
+          );
 
     const results = await db
         .select({
@@ -70,9 +77,10 @@ export async function fetchCommentsByPostSlugId({
             numLikes: commentTable.numLikes,
             numDislikes: commentTable.numDislikes,
             username: userTable.username,
-            moderationAction: moderationTable.moderationAction,
-            moderationExplanation: moderationTable.moderationExplanation,
-            moderationReason: moderationTable.moderationReason,
+            moderationAction: moderationCommentsTable.moderationAction,
+            moderationExplanation:
+                moderationCommentsTable.moderationExplanation,
+            moderationReason: moderationCommentsTable.moderationReason,
         })
         .from(commentTable)
         .innerJoin(postTable, eq(postTable.id, postId))
@@ -81,8 +89,8 @@ export async function fetchCommentsByPostSlugId({
             eq(commentContentTable.id, commentTable.currentContentId),
         )
         .leftJoin(
-            moderationTable,
-            eq(moderationTable.commentId, commentTable.id),
+            moderationCommentsTable,
+            eq(moderationCommentsTable.commentId, commentTable.id),
         )
         .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
         .orderBy(desc(commentTable.createdAt))

@@ -23,12 +23,15 @@
 </template>
 
 <script setup lang="ts">
-import type { ModerationAction, ModerationReason } from "src/shared/types/zod";
+import type {
+  ModerationActionPosts,
+  ModerationReason,
+} from "src/shared/types/zod";
 import { moderationReasonMapping } from "src/utils/component/moderation";
 import { ref, watch } from "vue";
 
 const props = defineProps<{
-  moderationAction: ModerationAction;
+  moderationAction: ModerationActionPosts;
   moderationReason: ModerationReason;
   moderationExplanation: string;
 }>();

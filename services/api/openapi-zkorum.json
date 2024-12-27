@@ -387,9 +387,7 @@
                                                                     "moderationAction": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "lock",
-                                                                            "hide",
-                                                                            "nothing"
+                                                                            "lock"
                                                                         ]
                                                                     },
                                                                     "moderationReason": {
@@ -549,9 +547,7 @@
                                     "moderationAction": {
                                         "type": "string",
                                         "enum": [
-                                            "lock",
-                                            "hide",
-                                            "nothing"
+                                            "lock"
                                         ]
                                     },
                                     "moderationExplanation": {
@@ -606,8 +602,7 @@
                                         "type": "string",
                                         "enum": [
                                             "lock",
-                                            "hide",
-                                            "nothing"
+                                            "hide"
                                         ]
                                     },
                                     "moderationExplanation": {
@@ -670,9 +665,7 @@
                                         "moderationAction": {
                                             "type": "string",
                                             "enum": [
-                                                "lock",
-                                                "hide",
-                                                "nothing"
+                                                "lock"
                                             ]
                                         },
                                         "moderationReason": {
@@ -748,8 +741,7 @@
                                             "type": "string",
                                             "enum": [
                                                 "lock",
-                                                "hide",
-                                                "nothing"
+                                                "hide"
                                             ]
                                         },
                                         "moderationReason": {
@@ -895,9 +887,7 @@
                                                             "moderationAction": {
                                                                 "type": "string",
                                                                 "enum": [
-                                                                    "lock",
-                                                                    "hide",
-                                                                    "nothing"
+                                                                    "lock"
                                                                 ]
                                                             },
                                                             "moderationReason": {
@@ -1090,9 +1080,7 @@
                                                                     "moderationAction": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "lock",
-                                                                            "hide",
-                                                                            "nothing"
+                                                                            "lock"
                                                                         ]
                                                                     },
                                                                     "moderationReason": {
@@ -1249,8 +1237,7 @@
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "lock",
-                                                                    "hide",
-                                                                    "nothing"
+                                                                    "hide"
                                                                 ]
                                                             },
                                                             "moderationReason": {
@@ -1633,8 +1620,7 @@
                                                         "type": "string",
                                                         "enum": [
                                                             "lock",
-                                                            "hide",
-                                                            "nothing"
+                                                            "hide"
                                                         ]
                                                     },
                                                     "moderationReason": {
@@ -1849,9 +1835,7 @@
                                                                 "moderationAction": {
                                                                     "type": "string",
                                                                     "enum": [
-                                                                        "lock",
-                                                                        "hide",
-                                                                        "nothing"
+                                                                        "lock"
                                                                     ]
                                                                 },
                                                                 "moderationReason": {

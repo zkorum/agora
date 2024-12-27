@@ -1,10 +1,17 @@
-import { commentTable, moderationTable, postTable } from "@/schema.js";
+import {
+    commentTable,
+    moderationCommentsTable,
+    moderationPostsTable,
+    postTable,
+} from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import type {
-    ModerationAction,
-    ModerationProperties,
+    ModerationActionComments,
+    ModerationActionPosts,
+    ModerationPropertiesPosts,
     ModerationReason,
+    zodModerationPropertiesComments,
 } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/common/util.js";
@@ -12,7 +19,7 @@ import { nowZeroMs } from "@/shared/common/util.js";
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
     db: PostgresJsDatabase;
-    moderationAction: ModerationAction;
+    moderationAction: ModerationActionPosts;
     moderationReason: ModerationReason;
     moderationExplanation: string;
     userId: string;
@@ -40,16 +47,16 @@ export async function moderateByPostSlugId({
     await db.transaction(async (tx) => {
         if (moderationStatus.isModerated) {
             await tx
-                .update(moderationTable)
+                .update(moderationPostsTable)
                 .set({
                     moderatorId: userId,
                     moderationAction: moderationAction,
                     moderationReason: moderationReason,
                     moderationExplanation: moderationExplanation,
                 })
-                .where(eq(moderationTable.postId, postDetails.id));
+                .where(eq(moderationPostsTable.postId, postDetails.id));
         } else {
-            await tx.insert(moderationTable).values({
+            await tx.insert(moderationPostsTable).values({
                 postId: postDetails.id,
                 moderatorId: userId,
                 moderationAction: moderationAction,
@@ -70,7 +77,7 @@ export async function moderateByPostSlugId({
 interface moderateByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
-    moderationAction: ModerationAction;
+    moderationAction: ModerationActionComments;
     moderationReason: ModerationReason;
     moderationExplanation: string;
     userId: string;
@@ -98,7 +105,7 @@ export async function moderateByCommentSlugId({
     await db.transaction(async (tx) => {
         if (moderationStatus.isModerated) {
             await tx
-                .update(moderationTable)
+                .update(moderationCommentsTable)
                 .set({
                     moderatorId: userId,
                     moderationAction: moderationAction,
@@ -106,9 +113,9 @@ export async function moderateByCommentSlugId({
                     moderationExplanation: moderationExplanation,
                     updatedAt: nowZeroMs(),
                 })
-                .where(eq(moderationTable.commentId, commentId));
+                .where(eq(moderationCommentsTable.commentId, commentId));
         } else {
-            await tx.insert(moderationTable).values({
+            await tx.insert(moderationCommentsTable).values({
                 commentId: commentId,
                 moderatorId: userId,
                 moderationAction: moderationAction,
@@ -134,20 +141,20 @@ interface FetchPostModerationProps {
 export async function fetchPostModeration({
     db,
     postSlugId,
-}: FetchPostModerationProps): Promise<ModerationProperties> {
-    const moderationTableResponse = await db
+}: FetchPostModerationProps): Promise<ModerationPropertiesPosts> {
+    const moderationPostsTableResponse = await db
         .select({
-            moderationAction: moderationTable.moderationAction,
-            moderationReason: moderationTable.moderationReason,
-            moderationExplanation: moderationTable.moderationExplanation,
-            moderationCreatedAt: moderationTable.createdAt,
-            moderationUpdatedAt: moderationTable.updatedAt,
+            moderationAction: moderationPostsTable.moderationAction,
+            moderationReason: moderationPostsTable.moderationReason,
+            moderationExplanation: moderationPostsTable.moderationExplanation,
+            moderationCreatedAt: moderationPostsTable.createdAt,
+            moderationUpdatedAt: moderationPostsTable.updatedAt,
         })
-        .from(moderationTable)
-        .innerJoin(postTable, eq(postTable.id, moderationTable.postId))
+        .from(moderationPostsTable)
+        .innerJoin(postTable, eq(postTable.id, moderationPostsTable.postId))
         .where(eq(postTable.slugId, postSlugId));
 
-    if (moderationTableResponse.length != 1) {
+    if (moderationPostsTableResponse.length != 1) {
         return {
             isModerated: false,
             moderationAction: undefined,
@@ -157,7 +164,7 @@ export async function fetchPostModeration({
             updatedAt: undefined,
         };
     } else {
-        const response = moderationTableResponse[0];
+        const response = moderationPostsTableResponse[0];
         return {
             isModerated: true,
             moderationAction: response.moderationAction,
@@ -177,15 +184,19 @@ interface FetchCommentModerationProps {
 export async function fetchCommentModeration({
     db,
     commentSlugId,
-}: FetchCommentModerationProps): Promise<ModerationProperties> {
+}: FetchCommentModerationProps): Promise<zodModerationPropertiesComments> {
     const moderationTableResponse = await db
         .select({
-            moderationAction: moderationTable.moderationAction,
-            moderationReason: moderationTable.moderationReason,
-            moderationExplanation: moderationTable.moderationExplanation,
+            moderationAction: moderationCommentsTable.moderationAction,
+            moderationReason: moderationCommentsTable.moderationReason,
+            moderationExplanation:
+                moderationCommentsTable.moderationExplanation,
         })
-        .from(moderationTable)
-        .innerJoin(commentTable, eq(commentTable.id, moderationTable.commentId))
+        .from(moderationCommentsTable)
+        .innerJoin(
+            commentTable,
+            eq(commentTable.id, moderationCommentsTable.commentId),
+        )
         .where(eq(commentTable.slugId, commentSlugId));
 
     if (moderationTableResponse.length != 1) {

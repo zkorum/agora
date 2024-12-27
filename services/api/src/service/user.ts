@@ -2,7 +2,7 @@ import { log } from "@/app.js";
 import {
     commentContentTable,
     commentTable,
-    moderationTable,
+    moderationCommentsTable,
     postTable,
     userTable,
 } from "@/schema.js";
@@ -48,11 +48,12 @@ export async function getUserComments({
                 numDislikes: commentTable.numDislikes,
                 username: userTable.username,
                 postSlugId: postTable.slugId,
-                moderationAction: moderationTable.moderationAction,
-                moderationExplanation: moderationTable.moderationExplanation,
-                moderationReason: moderationTable.moderationReason,
-                moderationCreatedAt: moderationTable.createdAt,
-                moderationUpdatedAt: moderationTable.updatedAt,
+                moderationAction: moderationCommentsTable.moderationAction,
+                moderationExplanation:
+                    moderationCommentsTable.moderationExplanation,
+                moderationReason: moderationCommentsTable.moderationReason,
+                moderationCreatedAt: moderationCommentsTable.createdAt,
+                moderationUpdatedAt: moderationCommentsTable.updatedAt,
             })
             .from(commentTable)
             .innerJoin(
@@ -62,8 +63,8 @@ export async function getUserComments({
             .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
             .innerJoin(postTable, eq(postTable.id, commentTable.postId))
             .leftJoin(
-                moderationTable,
-                eq(moderationTable.commentId, commentTable.id),
+                moderationCommentsTable,
+                eq(moderationCommentsTable.commentId, commentTable.id),
             )
             .where(
                 and(

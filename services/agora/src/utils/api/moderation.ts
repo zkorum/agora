@@ -11,9 +11,11 @@ import {
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import type {
-  ModerationAction,
-  ModerationProperties,
+  ModerationActionComments,
+  ModerationActionPosts,
+  ModerationPropertiesPosts,
   ModerationReason,
+  zodModerationPropertiesComments,
 } from "src/shared/types/zod";
 
 export function useBackendModerateApi() {
@@ -23,7 +25,7 @@ export function useBackendModerateApi() {
 
   async function moderatePost(
     postSlugId: string,
-    moderationAction: ModerationAction,
+    moderationAction: ModerationActionPosts,
     moderationReason: ModerationReason,
     moderationExplanation: string
   ) {
@@ -58,7 +60,7 @@ export function useBackendModerateApi() {
 
   async function moderateComment(
     commentSlugId: string,
-    moderationAction: ModerationAction,
+    moderationAction: ModerationActionComments,
     moderationReason: ModerationReason,
     moderationExplanation: string
   ) {
@@ -95,7 +97,7 @@ export function useBackendModerateApi() {
 
   async function fetchPostModeration(
     postSlugId: string
-  ): Promise<ModerationProperties> {
+  ): Promise<ModerationPropertiesPosts> {
     try {
       const params: ApiV1ModerateFetchPostReportPostRequest = {
         postSlugId: postSlugId,
@@ -134,7 +136,7 @@ export function useBackendModerateApi() {
 
   async function fetchCommentModeration(
     commentSlugId: string
-  ): Promise<ModerationProperties> {
+  ): Promise<zodModerationPropertiesComments> {
     try {
       const params: ApiV1ModerateFetchCommentReportPostRequest = {
         commentSlugId: commentSlugId,

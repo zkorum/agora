@@ -15,10 +15,12 @@ import {
     zodPollResponse,
     zodPhoneNumber,
     zodExtendedCommentData,
-    zodModerationAction,
     zodModerationReason,
     zodModerationExplanation,
-    zodModerationProperties,
+    zodModerationActionPosts,
+    zodModerationActionComments,
+    zodModerationPropertiesPosts,
+    zodModerationPropertiesComments,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -227,7 +229,7 @@ export class Dto {
         .object({
             postSlugId: zodSlugId,
             moderationReason: zodModerationReason,
-            moderationAction: zodModerationAction,
+            moderationAction: zodModerationActionPosts,
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
@@ -235,7 +237,7 @@ export class Dto {
         .object({
             commentSlugId: zodSlugId,
             moderationReason: zodModerationReason,
-            moderationAction: zodModerationAction,
+            moderationAction: zodModerationActionComments,
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
@@ -252,11 +254,11 @@ export class Dto {
     static fetchPostModerationRequest = z.object({
         postSlugId: zodSlugId,
     });
-    static fetchPostModerationResponse = zodModerationProperties;
+    static fetchPostModerationResponse = zodModerationPropertiesPosts;
     static fetchCommentModerationRequest = z.object({
         commentSlugId: zodSlugId,
     });
-    static fetchCommentModerationResponse = zodModerationProperties;
+    static fetchCommentModerationResponse = zodModerationPropertiesComments;
     static checkUsernameInUseRequest = z
         .object({
             username: zodUsername,
