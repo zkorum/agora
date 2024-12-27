@@ -37,6 +37,8 @@
             <div class="commentBody">
               <span v-html="commentItem.commentItem.comment"></span>
             </div>
+
+            <CommentModeration :comment-item="commentItem.commentItem" />
           </div>
         </RouterLink>
       </ZKHoverEffect>
@@ -55,6 +57,7 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import CommentActionOptions from "../post/views/CommentActionOptions.vue";
+import CommentModeration from "../post/views/CommentModeration.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
