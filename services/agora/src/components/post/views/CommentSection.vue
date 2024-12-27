@@ -46,7 +46,6 @@ import { type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useStorage } from "@vueuse/core";
 
 const emit = defineEmits(["deleted"]);
 
@@ -56,7 +55,7 @@ const props = defineProps<{
   isPostLocked: boolean;
 }>();
 
-const sortAlgorithm = useStorage("commentView", "new", sessionStorage);
+const sortAlgorithm = ref("new");
 
 const { fetchCommentsForPost } = useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
