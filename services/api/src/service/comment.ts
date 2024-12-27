@@ -9,7 +9,7 @@ import {
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and, isNull, isNotNull, ne } from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull } from "drizzle-orm";
 import type { CommentItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
@@ -59,11 +59,12 @@ export async function fetchCommentsByPostSlugId({
     const whereClause = showModeratedComments
         ? and(
               eq(commentTable.postId, postId),
+              eq(commentTable.isHidden, false),
               isNotNull(moderationCommentsTable.id),
-              ne(moderationCommentsTable.moderationAction, "hide"),
           )
         : and(
               eq(commentTable.postId, postId),
+              eq(commentTable.isHidden, false),
               isNull(moderationCommentsTable.id),
           );
 

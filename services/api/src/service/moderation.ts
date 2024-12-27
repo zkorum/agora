@@ -124,12 +124,23 @@ export async function moderateByCommentSlugId({
             });
         }
 
-        await tx
-            .update(commentTable)
-            .set({
-                isLocked: true,
-            })
-            .where(eq(commentTable.id, commentId));
+        if (moderationAction == "lock") {
+            await tx
+                .update(commentTable)
+                .set({
+                    isLocked: true,
+                })
+                .where(eq(commentTable.id, commentId));
+        }
+
+        if (moderationAction == "hide") {
+            await tx
+                .update(commentTable)
+                .set({
+                    isHidden: true,
+                })
+                .where(eq(commentTable.id, commentId));
+        }
     });
 }
 
