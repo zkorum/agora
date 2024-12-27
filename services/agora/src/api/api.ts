@@ -503,8 +503,7 @@ export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerat
     Privacy: 'privacy',
     Sexual: 'sexual',
     Toxic: 'toxic',
-    Illegal: 'illegal',
-    Nothing: 'nothing'
+    Illegal: 'illegal'
 } as const;
 
 export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum];
@@ -649,8 +648,7 @@ export const ApiV1ModerateReportCommentPostRequestModerationReasonEnum = {
     Privacy: 'privacy',
     Sexual: 'sexual',
     Toxic: 'toxic',
-    Illegal: 'illegal',
-    Nothing: 'nothing'
+    Illegal: 'illegal'
 } as const;
 
 export type ApiV1ModerateReportCommentPostRequestModerationReasonEnum = typeof ApiV1ModerateReportCommentPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportCommentPostRequestModerationReasonEnum];
@@ -701,8 +699,7 @@ export const ApiV1ModerateReportPostPostRequestModerationReasonEnum = {
     Privacy: 'privacy',
     Sexual: 'sexual',
     Toxic: 'toxic',
-    Illegal: 'illegal',
-    Nothing: 'nothing'
+    Illegal: 'illegal'
 } as const;
 
 export type ApiV1ModerateReportPostPostRequestModerationReasonEnum = typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum];

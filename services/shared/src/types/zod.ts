@@ -26,7 +26,6 @@ export const zodModerationReason = z.enum([
     "sexual",
     "toxic",
     "illegal",
-    "nothing",
 ]);
 export const zodModerationAction = z.enum(["lock", "hide", "nothing"]);
 export const zodPhoneNumber = z

@@ -1,5 +1,5 @@
 {
-  "id": "77e4ef7a-e666-41e9-a7df-1d4229f4169b",
+  "id": "9deb03fe-1c18-4f5d-ac35-39922580e21e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2865,8 +2865,7 @@
         "privacy",
         "sexual",
         "toxic",
-        "illegal",
-        "nothing"
+        "illegal"
       ]
     },
     "public.phone_country_code": {
