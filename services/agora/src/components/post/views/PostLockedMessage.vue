@@ -27,6 +27,7 @@
         <ModerationTime :created-at="moderationProperty.createdAt" />
 
         <ZKButton
+          v-if="profileData.isModerator"
           label="Edit"
           color="primary"
           @click.stop.prevent="openModerationPage()"
@@ -43,6 +44,7 @@ import { ref, watch } from "vue";
 import ModerationTime from "./moderation/ModerationTime.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
+import { useUserStore } from "src/stores/user";
 
 const props = defineProps<{
   moderationProperty: ModerationPropertiesPosts;
@@ -52,6 +54,8 @@ const props = defineProps<{
 const moderationReasonName = ref("");
 
 const router = useRouter();
+
+const { profileData } = useUserStore();
 
 loadModerationreason();
 
