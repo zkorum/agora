@@ -15,7 +15,7 @@ import type {
     ExtendedPost,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL } from "drizzle-orm";
+import { eq, desc, SQL, and } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
@@ -30,22 +30,28 @@ export function useCommonPost() {
         db,
         postSlugId,
     }: IsPostLockedProps) {
-        const selectPostTableResponse = await db
+        const { getPostAndContentIdFromSlugId } = useCommonPost();
+        const postDetails = await getPostAndContentIdFromSlugId({
+            db: db,
+            postSlugId: postSlugId,
+        });
+
+        const moderationPostsTableResponse = await db
             .select({
-                isLocked: postTable.isLocked,
+                moderationAction: moderationPostsTable.moderationAction,
             })
-            .from(postTable)
-            .where(eq(postTable.slugId, postSlugId));
-
-        if (selectPostTableResponse.length != 1) {
-            throw httpErrors.internalServerError(
-                "Failed to locate post slug ID for the lock check: " +
-                    postSlugId,
+            .from(moderationPostsTable)
+            .where(
+                and(
+                    eq(moderationPostsTable.postId, postDetails.id),
+                    eq(moderationPostsTable.moderationAction, "lock"),
+                ),
             );
-        }
 
-        if (selectPostTableResponse[0].isLocked) {
-            throw httpErrors.forbidden("Post slug ID is locked: " + postSlugId);
+        if (moderationPostsTableResponse.length == 1) {
+            throw httpErrors.internalServerError(
+                "Post slug ID is locked: " + postSlugId,
+            );
         }
     }
 
@@ -84,8 +90,6 @@ export function useCommonPost() {
                 option6Response: pollTable.option6Response,
                 // metadata
                 slugId: postTable.slugId,
-                isHidden: postTable.isHidden,
-                isLocked: postTable.isLocked,
                 createdAt: postTable.createdAt,
                 updatedAt: postTable.updatedAt,
                 lastReactedAt: postTable.lastReactedAt,
@@ -135,7 +139,6 @@ export function useCommonPost() {
 
             const metadata: PostMetadata = {
                 postSlugId: postItem.slugId,
-                isHidden: postItem.isHidden,
                 moderation: {
                     isModerated:
                         postItem.moderationAction == null ? false : true,

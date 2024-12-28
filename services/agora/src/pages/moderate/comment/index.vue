@@ -30,6 +30,13 @@
     />
 
     <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
+
+    <ZKButton
+      v-if="hasExistingReport"
+      label="Withdraw Report"
+      color="secondary"
+      @click="clickedCancel()"
+    />
   </div>
 </template>
 
@@ -47,7 +54,11 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderation";
 
-const { moderateComment, fetchCommentModeration } = useBackendModerateApi();
+const {
+  moderateComment,
+  fetchCommentModeration,
+  cancelModerationCommentReport,
+} = useBackendModerateApi();
 
 const route = useRoute();
 
@@ -67,14 +78,27 @@ if (typeof route.params.commentSlugId == "string") {
 }
 
 onMounted(async () => {
+  await initializeData();
+});
+
+async function initializeData() {
   const response = await fetchCommentModeration(commentSlugId);
   hasExistingReport.value = response.isModerated;
   if (response.isModerated) {
     moderationAction.value = response.moderationAction;
     moderationExplanation.value = response.moderationExplanation;
     moderationReason.value = response.moderationReason;
+  } else {
+    moderationAction.value = "lock";
+    moderationExplanation.value = "";
+    moderationReason.value = "off-topic";
   }
-});
+}
+
+async function clickedCancel() {
+  await cancelModerationCommentReport(commentSlugId);
+  initializeData();
+}
 
 async function clickedSubmit() {
   if (commentSlugId) {

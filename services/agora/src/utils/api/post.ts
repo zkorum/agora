@@ -5,7 +5,7 @@ import {
   DefaultApiFactory,
   type ApiV1FeedFetchRecentPost200ResponsePostDataListInner,
   type ApiV1FeedFetchRecentPostRequest,
-  type ApiV1ModerateFetchPostReportPostRequest,
+  type ApiV1ModerateCancelPostReportPostRequest,
   type ApiV1PostCreatePostRequest,
   type ApiV1PostFetchPostBySlugIdPostRequest,
 } from "src/api";
@@ -97,7 +97,6 @@ export function useBackendPostApi() {
   ) {
     try {
       const params: ApiV1FeedFetchRecentPostRequest = {
-        showHidden: false,
         lastSlugId: lastSlugId,
         isAuthenticatedRequest: loadUserPollData,
       };
@@ -185,7 +184,6 @@ export function useBackendPostApi() {
           lastReactedAt: new Date(item.metadata.lastReactedAt),
           postSlugId: item.metadata.postSlugId,
           updatedAt: new Date(item.metadata.updatedAt),
-          isHidden: item.metadata.isHidden,
           moderation: {
             isModerated: item.metadata.moderation.isModerated,
             moderationAction: item.metadata.moderation.moderationAction,
@@ -213,7 +211,7 @@ export function useBackendPostApi() {
 
   async function deletePostBySlugId(postSlugId: string) {
     try {
-      const params: ApiV1ModerateFetchPostReportPostRequest = {
+      const params: ApiV1ModerateCancelPostReportPostRequest = {
         postSlugId: postSlugId,
       };
 

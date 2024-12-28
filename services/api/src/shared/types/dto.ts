@@ -103,7 +103,6 @@ export class Dto {
         .optional();
     static fetchFeedRequest = z
         .object({
-            showHidden: z.boolean(),
             lastSlugId: z.string().optional(),
             isAuthenticatedRequest: z.boolean(),
         })
@@ -242,12 +241,12 @@ export class Dto {
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
-    static moderateCancelPostRequest = z
+    static moderateCancelPostReportRequest = z
         .object({
             postSlugId: zodSlugId,
         })
         .strict();
-    static moderateCancelCommentRequest = z
+    static moderateCancelCommentReportRequest = z
         .object({
             commentSlugId: zodSlugId,
         })

@@ -315,9 +315,6 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "showHidden": {
-                                        "type": "boolean"
-                                    },
                                     "lastSlugId": {
                                         "type": "string"
                                     },
@@ -326,7 +323,6 @@
                                     }
                                 },
                                 "required": [
-                                    "showHidden",
                                     "isAuthenticatedRequest"
                                 ],
                                 "additionalProperties": false
@@ -354,9 +350,6 @@
                                                             "postSlugId": {
                                                                 "type": "string",
                                                                 "maxLength": 10
-                                                            },
-                                                            "isHidden": {
-                                                                "type": "boolean"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -423,7 +416,6 @@
                                                         },
                                                         "required": [
                                                             "postSlugId",
-                                                            "isHidden",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
@@ -615,6 +607,64 @@
                                     "moderationReason",
                                     "moderationAction",
                                     "moderationExplanation"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderate/cancel-post-report": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderate/cancel-comment-report": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -855,9 +905,6 @@
                                                         "type": "string",
                                                         "maxLength": 10
                                                     },
-                                                    "isHidden": {
-                                                        "type": "boolean"
-                                                    },
                                                     "createdAt": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -923,7 +970,6 @@
                                                 },
                                                 "required": [
                                                     "postSlugId",
-                                                    "isHidden",
                                                     "createdAt",
                                                     "updatedAt",
                                                     "lastReactedAt",
@@ -1048,9 +1094,6 @@
                                                                 "type": "string",
                                                                 "maxLength": 10
                                                             },
-                                                            "isHidden": {
-                                                                "type": "boolean"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -1116,7 +1159,6 @@
                                                         },
                                                         "required": [
                                                             "postSlugId",
-                                                            "isHidden",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
@@ -1803,9 +1845,6 @@
                                                             "type": "string",
                                                             "maxLength": 10
                                                         },
-                                                        "isHidden": {
-                                                            "type": "boolean"
-                                                        },
                                                         "createdAt": {
                                                             "type": "string",
                                                             "format": "date-time"
@@ -1871,7 +1910,6 @@
                                                     },
                                                     "required": [
                                                         "postSlugId",
-                                                        "isHidden",
                                                         "createdAt",
                                                         "updatedAt",
                                                         "lastReactedAt",

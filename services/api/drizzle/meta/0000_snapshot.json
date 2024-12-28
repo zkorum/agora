@@ -1,5 +1,5 @@
 {
-  "id": "5c0bd95b-b95e-4ce0-92fb-5388f67e7d5d",
+  "id": "e559696a-d200-4132-81a0-ef93c190c441",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -399,20 +399,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "is_hidden": {
-          "name": "is_hidden",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "is_locked": {
-          "name": "is_locked",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -1957,20 +1943,6 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_hidden": {
-          "name": "is_hidden",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "is_locked": {
-          "name": "is_locked",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
