@@ -89,7 +89,7 @@ export const usePostStore = defineStore("post", () => {
       postSlugId: "",
       updatedAt: new Date(),
       moderation: {
-        isModerated: "unmoderated",
+        moderationStatus: "unmoderated",
       },
     },
     payload: {

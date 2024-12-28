@@ -376,7 +376,7 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "isModerated": {
+                                                                            "moderationStatus": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "moderated"
@@ -414,7 +414,7 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "isModerated",
+                                                                            "moderationStatus",
                                                                             "moderationAction",
                                                                             "moderationReason",
                                                                             "moderationExplanation",
@@ -426,7 +426,7 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "isModerated": {
+                                                                            "moderationStatus": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "unmoderated"
@@ -434,7 +434,7 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "isModerated"
+                                                                            "moderationStatus"
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
@@ -738,7 +738,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "isModerated": {
+                                                "moderationStatus": {
                                                     "type": "string",
                                                     "enum": [
                                                         "moderated"
@@ -776,7 +776,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "isModerated",
+                                                "moderationStatus",
                                                 "moderationAction",
                                                 "moderationReason",
                                                 "moderationExplanation",
@@ -788,7 +788,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "isModerated": {
+                                                "moderationStatus": {
                                                     "type": "string",
                                                     "enum": [
                                                         "unmoderated"
@@ -796,7 +796,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "isModerated"
+                                                "moderationStatus"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -840,7 +840,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "isModerated": {
+                                                "moderationStatus": {
                                                     "type": "string",
                                                     "enum": [
                                                         "moderated"
@@ -879,7 +879,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "isModerated",
+                                                "moderationStatus",
                                                 "moderationAction",
                                                 "moderationReason",
                                                 "moderationExplanation",
@@ -891,7 +891,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "isModerated": {
+                                                "moderationStatus": {
                                                     "type": "string",
                                                     "enum": [
                                                         "unmoderated"
@@ -899,7 +899,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "isModerated"
+                                                "moderationStatus"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -1011,7 +1011,7 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "isModerated": {
+                                                                    "moderationStatus": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "moderated"
@@ -1049,7 +1049,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "isModerated",
+                                                                    "moderationStatus",
                                                                     "moderationAction",
                                                                     "moderationReason",
                                                                     "moderationExplanation",
@@ -1061,7 +1061,7 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "isModerated": {
+                                                                    "moderationStatus": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "unmoderated"
@@ -1069,7 +1069,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "isModerated"
+                                                                    "moderationStatus"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -1227,7 +1227,7 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "isModerated": {
+                                                                            "moderationStatus": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "moderated"
@@ -1265,7 +1265,7 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "isModerated",
+                                                                            "moderationStatus",
                                                                             "moderationAction",
                                                                             "moderationReason",
                                                                             "moderationExplanation",
@@ -1277,7 +1277,7 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "isModerated": {
+                                                                            "moderationStatus": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "unmoderated"
@@ -1285,7 +1285,7 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "isModerated"
+                                                                            "moderationStatus"
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
@@ -1409,7 +1409,7 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "isModerated": {
+                                                                    "moderationStatus": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "moderated"
@@ -1448,7 +1448,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "isModerated",
+                                                                    "moderationStatus",
                                                                     "moderationAction",
                                                                     "moderationReason",
                                                                     "moderationExplanation",
@@ -1460,7 +1460,7 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "isModerated": {
+                                                                    "moderationStatus": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "unmoderated"
@@ -1468,7 +1468,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "isModerated"
+                                                                    "moderationStatus"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -1819,7 +1819,7 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "isModerated": {
+                                                            "moderationStatus": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "moderated"
@@ -1858,7 +1858,7 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "isModerated",
+                                                            "moderationStatus",
                                                             "moderationAction",
                                                             "moderationReason",
                                                             "moderationExplanation",
@@ -1870,7 +1870,7 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "isModerated": {
+                                                            "moderationStatus": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "unmoderated"
@@ -1878,7 +1878,7 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "isModerated"
+                                                            "moderationStatus"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -2059,7 +2059,7 @@
                                                                 {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "isModerated": {
+                                                                        "moderationStatus": {
                                                                             "type": "string",
                                                                             "enum": [
                                                                                 "moderated"
@@ -2097,7 +2097,7 @@
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "isModerated",
+                                                                        "moderationStatus",
                                                                         "moderationAction",
                                                                         "moderationReason",
                                                                         "moderationExplanation",
@@ -2109,7 +2109,7 @@
                                                                 {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "isModerated": {
+                                                                        "moderationStatus": {
                                                                             "type": "string",
                                                                             "enum": [
                                                                                 "unmoderated"
@@ -2117,7 +2117,7 @@
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "isModerated"
+                                                                        "moderationStatus"
                                                                     ],
                                                                     "additionalProperties": false
                                                                 }
