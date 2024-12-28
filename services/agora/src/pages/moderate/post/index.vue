@@ -39,8 +39,9 @@ const { moderatePost } = useBackendModerateApi();
 const route = useRoute();
 const router = useRouter();
 
-const moderationAction = ref<ModerationAction>("hide");
+const moderationAction = ref<ModerationAction>("lock");
 const actions = ref([
+  { name: "Lock", code: "lock" },
   { name: "Hide", code: "hide" },
   { name: "Nothing", code: "nothing" },
 ]);

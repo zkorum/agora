@@ -957,6 +957,7 @@ export const postTable = pgTable("post", {
         .references((): AnyPgColumn => postContentTable.id)
         .unique(), // null if post was deleted
     isHidden: boolean("is_hidden").notNull().default(false),
+    isLocked: boolean("is_locked").notNull().default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1233,6 +1234,7 @@ export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
 
 // todo: add suspend and ban
 export const moderationAction = pgEnum("moderation_action", [
+    "lock",
     "hide",
     "nothing",
 ]);
@@ -1265,9 +1267,9 @@ export const reportTable = pgTable("report_table", {
 
 export const moderationTable = pgTable("moderation_table", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    reportId: integer("report_id")
-        .references((): AnyPgColumn => reportTable.id)
-        .notNull(), // if moderation is not in reaction to a report, then create the report with the moderator userId before inserting data in this table
+    reportId: integer("report_id").references(
+        (): AnyPgColumn => reportTable.id,
+    ),
     moderatorId: uuid("moderator_id").references(() => userTable.id),
     moderationAction: moderationAction("moderation_action").notNull(), // add check
     moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here

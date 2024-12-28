@@ -536,6 +536,12 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata {
     'isHidden': boolean;
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
+     */
+    'isLocked': boolean;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
      */

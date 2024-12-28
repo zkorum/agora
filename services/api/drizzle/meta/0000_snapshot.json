@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "id": "0cf3a251-45be-41b2-93b6-beff34548d74",
+=======
+  "id": "ba2cda17-3b46-498e-8a10-4dec6cd3fe93",
+>>>>>>> 871991d7 (Add locking for posts)
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -729,7 +733,7 @@
           "name": "report_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "moderator_id": {
           "name": "moderator_id",
@@ -1748,6 +1752,13 @@
         },
         "is_hidden": {
           "name": "is_hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_locked": {
+          "name": "is_locked",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
