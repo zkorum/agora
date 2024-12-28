@@ -54,9 +54,14 @@ const props = defineProps<{
   postSlugId: string;
   initialCommentSlugId: string;
   isPostLocked: boolean;
+  targetFilter: string;
 }>();
 
 const sortAlgorithm = ref("new");
+
+if (props.targetFilter.length > 0) {
+  sortAlgorithm.value = props.targetFilter;
+}
 
 const { fetchCommentsForPost } = useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();

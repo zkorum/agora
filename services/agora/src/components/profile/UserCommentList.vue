@@ -6,41 +6,42 @@
       :key="commentItem.commentItem.commentSlugId"
     >
       <ZKHoverEffect :enable-hover="true">
-        <RouterLink
-          :to="{
-            name: 'single-post',
-            params: { postSlugId: commentItem.postData.metadata.postSlugId },
-            query: { commentSlugId: commentItem.commentItem.commentSlugId },
-          }"
+        <div
+          class="container"
+          @click="
+            openComment(
+              commentItem.postData.metadata.postSlugId,
+              commentItem.commentItem.commentSlugId,
+              commentItem.commentItem.moderation.isModerated == 'moderated'
+            )
+          "
         >
-          <div class="container">
-            <div class="topRowFlex">
-              <div class="postTitle">
-                {{ commentItem.postData.payload.title }}
-              </div>
-              <div>
-                <CommentActionOptions
-                  :comment-item="commentItem.commentItem"
-                  @deleted="commentDeleted()"
-                />
-              </div>
+          <div class="topRowFlex">
+            <div class="postTitle">
+              {{ commentItem.postData.payload.title }}
             </div>
-
-            <div class="commentMetadata">
-              <span :style="{ fontWeight: 'bold' }">{{
-                commentItem.commentItem.username
-              }}</span>
-              commented
-              {{ useTimeAgo(commentItem.commentItem.createdAt) }}
+            <div>
+              <CommentActionOptions
+                :comment-item="commentItem.commentItem"
+                @deleted="commentDeleted()"
+              />
             </div>
-
-            <div class="commentBody">
-              <span v-html="commentItem.commentItem.comment"></span>
-            </div>
-
-            <CommentModeration :comment-item="commentItem.commentItem" />
           </div>
-        </RouterLink>
+
+          <div class="commentMetadata">
+            <span :style="{ fontWeight: 'bold' }">{{
+              commentItem.commentItem.username
+            }}</span>
+            commented
+            {{ useTimeAgo(commentItem.commentItem.createdAt) }}
+          </div>
+
+          <div class="commentBody">
+            <span v-html="commentItem.commentItem.comment"></span>
+          </div>
+
+          <CommentModeration :comment-item="commentItem.commentItem" />
+        </div>
       </ZKHoverEffect>
 
       <q-separator :inset="false" />
@@ -58,6 +59,7 @@ import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import CommentActionOptions from "../post/views/CommentActionOptions.vue";
 import CommentModeration from "../post/views/CommentModeration.vue";
+import { useRouter } from "vue-router";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
@@ -69,6 +71,8 @@ const bottomOfPostDiv = ref(null);
 const targetIsVisible = useElementVisibility(bottomOfPostDiv);
 
 let isLoaded = false;
+
+const router = useRouter();
 
 onMounted(async () => {
   await loadUserProfile();
@@ -90,6 +94,21 @@ watch(targetIsVisible, async () => {
     isExpandingPosts = false;
   }
 });
+
+function openComment(
+  postSlugId: string,
+  commentSlugId: string,
+  isModerated: boolean
+) {
+  router.push({
+    name: "single-post",
+    params: { postSlugId: postSlugId },
+    query: {
+      commentSlugId: commentSlugId,
+      targetFilter: isModerated ? "moderation-history" : "",
+    },
+  });
+}
 
 async function commentDeleted() {
   await loadUserProfile();
