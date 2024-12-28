@@ -68,6 +68,7 @@ export async function fetchFeed({
         enableCompactBody: true,
         fetchPollResponse: fetchPollResponse,
         userId: userId,
+        removeLocked: true,
     });
 
     let reachedEndOfFeed = true;

@@ -156,6 +156,7 @@ export async function getUserPosts({
             enableCompactBody: true,
             fetchPollResponse: true,
             userId: userId,
+            removeLocked: false,
         });
 
         return posts;
