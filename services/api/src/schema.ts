@@ -1230,7 +1230,6 @@ export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
     "sexual",
     "toxic",
     "illegal",
-    "nothing",
 ]);
 
 // todo: add suspend and ban

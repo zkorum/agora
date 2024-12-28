@@ -6,7 +6,6 @@ export const moderationReasonMapping = [
   { label: "Sexual", value: "sexual" },
   { label: "Toxic", value: "toxic" },
   { label: "Illegal", value: "illegal" },
-  { label: "Nothing", value: "nothing" },
 ];
 
 export const moderationActionMapping = [

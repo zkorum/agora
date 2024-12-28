@@ -240,6 +240,16 @@ export class Dto {
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
+    static moderateCancelPostRequest = z
+        .object({
+            postSlugId: zodSlugId,
+        })
+        .strict();
+    static moderateCancelCommentRequest = z
+        .object({
+            commentSlugId: zodSlugId,
+        })
+        .strict();
     static fetchPostModerationRequest = z.object({
         postSlugId: zodSlugId,
     });

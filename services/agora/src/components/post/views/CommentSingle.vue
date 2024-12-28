@@ -30,17 +30,8 @@
             <div class="moderationContainer">
               <div class="moderatedMessage">
                 <div class="moderatedFont moderatedItalic">
-                  <span
-                    v-if="commentItem.moderation.moderationReason != 'nothing'"
-                  >
-                    Moderator flagged this response as
-                    {{ commentItem.moderation.moderationReason }}.
-                  </span>
-                  <span
-                    v-if="commentItem.moderation.moderationReason == 'nothing'"
-                  >
-                    Moderator did not provide a reason for the removal.
-                  </span>
+                  Moderator flagged this response as
+                  {{ commentItem.moderation.moderationReason }}.
                 </div>
                 <div
                   v-if="commentItem.moderation.moderationExplanation.length > 0"
@@ -83,10 +74,7 @@
           </ZKCard>
         </div>
 
-        <div
-          v-if="!commentItem.moderation.isModerated"
-          class="actionBarPaddings"
-        >
+        <div class="actionBarPaddings">
           <CommentActionBar
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
