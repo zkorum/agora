@@ -62,7 +62,6 @@ import {
     moderationCancelCommentReport,
     moderationCancelPostReport,
 } from "./service/moderation.js";
-import { throwIfAlreadyLoggedIn } from "@/service/auth.js";
 import { nowZeroMs } from "./shared/common/util.js";
 
 server.register(fastifySensible);
