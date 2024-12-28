@@ -12,7 +12,10 @@ import {
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
-import type { ExtendedPost } from "src/shared/types/zod";
+import type {
+  ExtendedPost,
+  moderationStatusOptionsType,
+} from "src/shared/types/zod";
 import type { DummyPollOptionFormat } from "src/stores/post";
 
 export function useBackendPostApi() {
@@ -174,8 +177,10 @@ export function useBackendPostApi() {
     incomingPostList: ApiV1FeedFetchRecentPost200ResponsePostDataListInner[]
   ): ExtendedPost[] {
     const parsedList: ExtendedPost[] = [];
-
     incomingPostList.forEach((item) => {
+      const isModerated = item.metadata.moderation
+        .isModerated as moderationStatusOptionsType;
+
       const newPost: ExtendedPost = {
         metadata: {
           authorUsername: String(item.metadata.authorUsername),
@@ -185,11 +190,11 @@ export function useBackendPostApi() {
           postSlugId: item.metadata.postSlugId,
           updatedAt: new Date(item.metadata.updatedAt),
           moderation: {
-            isModerated: item.metadata.moderation.isModerated,
+            isModerated: isModerated,
             moderationAction: item.metadata.moderation.moderationAction,
+            moderationReason: item.metadata.moderation.moderationReason,
             moderationExplanation:
               item.metadata.moderation.moderationExplanation,
-            moderationReason: item.metadata.moderation.moderationReason,
             createdAt: new Date(item.metadata.moderation.createdAt),
             updatedAt: new Date(item.metadata.moderation.updatedAt),
           },

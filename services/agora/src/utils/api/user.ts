@@ -7,7 +7,11 @@ import {
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
-import type { ExtendedComment, ExtendedPost } from "src/shared/types/zod";
+import type {
+  ExtendedComment,
+  ExtendedPost,
+  moderationStatusOptionsType,
+} from "src/shared/types/zod";
 import { useBackendPostApi } from "./post";
 import { useNotify } from "../ui/notify";
 
@@ -101,6 +105,10 @@ export function useBackendUserApi() {
 
       const extendedCommentList: ExtendedComment[] = [];
       response.data.forEach((responseItem) => {
+        // Patch OpenAPI bug on discriminatedUnion
+        const isModerated = responseItem.commentItem.moderation
+          .isModerated as moderationStatusOptionsType;
+
         const extendedComment: ExtendedComment = {
           postData: createInternalPostData(responseItem.postData),
           commentItem: {
@@ -112,7 +120,7 @@ export function useBackendUserApi() {
             updatedAt: new Date(responseItem.commentItem.updatedAt),
             username: String(responseItem.commentItem.username),
             moderation: {
-              isModerated: responseItem.commentItem.moderation.isModerated,
+              isModerated: isModerated,
               moderationAction:
                 responseItem.commentItem.moderation.moderationAction,
               moderationExplanation:

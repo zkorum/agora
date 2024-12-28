@@ -122,26 +122,49 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
-export const zodModerationPropertiesPosts = z
-    .object({
-        isModerated: z.boolean(),
-        moderationAction: zodModerationActionPosts.optional(),
-        moderationReason: zodModerationReason.optional(),
-        moderationExplanation: zodModerationExplanation.optional(),
-        createdAt: z.date().optional(),
-        updatedAt: z.date().optional(),
-    })
-    .strict();
-export const zodModerationPropertiesComments = z
-    .object({
-        isModerated: z.boolean(),
-        moderationAction: zodModerationActionComments.optional(),
-        moderationReason: zodModerationReason.optional(),
-        moderationExplanation: zodModerationExplanation.optional(),
-        createdAt: z.date().optional(),
-        updatedAt: z.date().optional(),
-    })
-    .strict();
+export type moderationStatusOptionsType = "moderated" | "unmoderated";
+export const zodModerationPropertiesPosts = z.discriminatedUnion(
+    "isModerated",
+    [
+        z
+            .object({
+                isModerated: z.literal("moderated"),
+                moderationAction: zodModerationActionPosts,
+                moderationReason: zodModerationReason,
+                moderationExplanation: zodModerationExplanation,
+                createdAt: z.date(),
+                updatedAt: z.date(),
+            })
+            .strict(),
+        z
+            .object({
+                isModerated: z.literal("unmoderated"),
+            })
+            .strict(),
+    ],
+);
+
+export const zodModerationPropertiesComments = z.discriminatedUnion(
+    "isModerated",
+    [
+        z
+            .object({
+                isModerated: z.literal("moderated"),
+                moderationAction: zodModerationActionComments,
+                moderationReason: zodModerationReason,
+                moderationExplanation: zodModerationExplanation,
+                createdAt: z.date(),
+                updatedAt: z.date(),
+            })
+            .strict(),
+        z
+            .object({
+                isModerated: z.literal("unmoderated"),
+            })
+            .strict(),
+    ],
+);
+
 export const zodPostMetadata = z
     .object({
         postSlugId: zodSlugId,
@@ -480,6 +503,6 @@ export type ModerationActionComments = z.infer<
 export type ModerationPropertiesPosts = z.infer<
     typeof zodModerationPropertiesPosts
 >;
-export type zodModerationPropertiesComments = z.infer<
+export type ModerationPropertiesComments = z.infer<
     typeof zodModerationPropertiesComments
 >;

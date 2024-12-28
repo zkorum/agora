@@ -9,9 +9,9 @@ import { useCommonComment, useCommonPost } from "./common.js";
 import type {
     ModerationActionComments,
     ModerationActionPosts,
+    ModerationPropertiesComments,
     ModerationPropertiesPosts,
     ModerationReason,
-    zodModerationPropertiesComments,
 } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/common/util.js";
@@ -45,7 +45,7 @@ export async function moderateByPostSlugId({
         postSlugId: postSlugId,
     });
 
-    if (moderationStatus.isModerated) {
+    if (moderationStatus.isModerated == "moderated") {
         await db
             .update(moderationPostsTable)
             .set({
@@ -95,7 +95,7 @@ export async function moderateByCommentSlugId({
     });
 
     await db.transaction(async (tx) => {
-        if (moderationStatus.isModerated) {
+        if (moderationStatus.isModerated == "moderated") {
             await tx
                 .update(moderationCommentsTable)
                 .set({
@@ -141,19 +141,14 @@ export async function fetchPostModeration({
 
     if (moderationPostsTableResponse.length != 1) {
         return {
-            isModerated: false,
-            moderationAction: undefined,
-            moderationExplanation: undefined,
-            moderationReason: undefined,
-            createdAt: undefined,
-            updatedAt: undefined,
+            isModerated: "unmoderated",
         };
     } else {
         const response = moderationPostsTableResponse[0];
         return {
-            isModerated: true,
+            isModerated: "moderated",
             moderationAction: response.moderationAction,
-            moderationExplanation: response.moderationExplanation ?? undefined,
+            moderationExplanation: response.moderationExplanation ?? "",
             moderationReason: response.moderationReason,
             createdAt: response.moderationCreatedAt,
             updatedAt: response.moderationUpdatedAt,
@@ -169,13 +164,15 @@ interface FetchCommentModerationProps {
 export async function fetchCommentModeration({
     db,
     commentSlugId,
-}: FetchCommentModerationProps): Promise<zodModerationPropertiesComments> {
+}: FetchCommentModerationProps): Promise<ModerationPropertiesComments> {
     const moderationTableResponse = await db
         .select({
             moderationAction: moderationCommentsTable.moderationAction,
             moderationReason: moderationCommentsTable.moderationReason,
             moderationExplanation:
                 moderationCommentsTable.moderationExplanation,
+            moderationCreatedAt: moderationCommentsTable.createdAt,
+            moderationUpdatedAt: moderationCommentsTable.updatedAt,
         })
         .from(moderationCommentsTable)
         .innerJoin(
@@ -186,18 +183,17 @@ export async function fetchCommentModeration({
 
     if (moderationTableResponse.length != 1) {
         return {
-            isModerated: false,
-            moderationAction: undefined,
-            moderationExplanation: undefined,
-            moderationReason: undefined,
+            isModerated: "unmoderated",
         };
     } else {
         const response = moderationTableResponse[0];
         return {
-            isModerated: true,
+            isModerated: "moderated",
             moderationAction: response.moderationAction,
-            moderationExplanation: response.moderationExplanation ?? undefined,
+            moderationExplanation: response.moderationExplanation ?? "",
             moderationReason: response.moderationReason,
+            createdAt: response.moderationCreatedAt,
+            updatedAt: response.moderationUpdatedAt,
         };
     }
 }
@@ -254,4 +250,64 @@ export async function moderationCancelCommentReport({
             "Failed to delete report for comment slug ID: " + commentSlugId,
         );
     }
+}
+
+export function createPostModerationPropertyObject(
+    moderationAction: ModerationActionPosts | null,
+    moderationExplanation: string | null,
+    moderationReason: ModerationReason | null,
+    moderationCreatedAt: Date | null,
+    moderationUpdatedAt: Date | null,
+) {
+    let moderationProperties: ModerationPropertiesPosts = {
+        isModerated: "unmoderated",
+    };
+
+    if (
+        moderationAction != null &&
+        moderationExplanation != null &&
+        moderationReason != null &&
+        moderationCreatedAt != null &&
+        moderationUpdatedAt != null
+    ) {
+        moderationProperties = {
+            isModerated: "moderated",
+            moderationAction: moderationAction,
+            moderationExplanation: moderationExplanation,
+            moderationReason: moderationReason,
+            createdAt: moderationCreatedAt,
+            updatedAt: moderationUpdatedAt,
+        };
+    }
+    return moderationProperties;
+}
+
+export function createCommentModerationPropertyObject(
+    moderationAction: ModerationActionComments | null,
+    moderationExplanation: string | null,
+    moderationReason: ModerationReason | null,
+    moderationCreatedAt: Date | null,
+    moderationUpdatedAt: Date | null,
+) {
+    let moderationProperties: ModerationPropertiesComments = {
+        isModerated: "unmoderated",
+    };
+
+    if (
+        moderationAction != null &&
+        moderationExplanation != null &&
+        moderationReason != null &&
+        moderationCreatedAt != null &&
+        moderationUpdatedAt != null
+    ) {
+        moderationProperties = {
+            isModerated: "moderated",
+            moderationAction: moderationAction,
+            moderationExplanation: moderationExplanation,
+            moderationReason: moderationReason,
+            createdAt: moderationCreatedAt,
+            updatedAt: moderationUpdatedAt,
+        };
+    }
+    return moderationProperties;
 }

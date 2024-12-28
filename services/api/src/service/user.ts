@@ -19,6 +19,7 @@ import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCreatedAt } from "./feed.js";
 import { getCommentSlugIdLastCreatedAt } from "./comment.js";
 import { fetchPostBySlugId } from "./post.js";
+import { createCommentModerationPropertyObject } from "./moderation.js";
 
 interface GetUserCommentsProps {
     db: PostgresJsDatabase;
@@ -78,6 +79,14 @@ export async function getUserComments({
         const extendedCommentList: ExtendedComment[] = [];
 
         for (const commentResponse of commentResponseList) {
+            const moderationProperties = createCommentModerationPropertyObject(
+                commentResponse.moderationAction,
+                commentResponse.moderationExplanation,
+                commentResponse.moderationReason,
+                commentResponse.moderationCreatedAt,
+                commentResponse.moderationUpdatedAt,
+            );
+
             const commentItem: CommentItem = {
                 comment: commentResponse.comment,
                 commentSlugId: commentResponse.commentSlugId,
@@ -86,19 +95,7 @@ export async function getUserComments({
                 numLikes: commentResponse.numLikes,
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
-                moderation: {
-                    isModerated: commentResponse.moderationAction
-                        ? true
-                        : false,
-                    moderationAction:
-                        commentResponse.moderationAction ?? undefined,
-                    moderationExplanation:
-                        commentResponse.moderationExplanation ?? undefined,
-                    moderationReason:
-                        commentResponse.moderationReason ?? undefined,
-                    createdAt: commentResponse.createdAt,
-                    updatedAt: commentResponse.updatedAt,
-                },
+                moderation: moderationProperties,
             };
 
             const postItem = await fetchPostBySlugId({

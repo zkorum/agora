@@ -13,9 +13,10 @@ import { useNotify } from "../ui/notify";
 import type {
   ModerationActionComments,
   ModerationActionPosts,
+  ModerationPropertiesComments,
   ModerationPropertiesPosts,
   ModerationReason,
-  zodModerationPropertiesComments,
+  moderationStatusOptionsType,
 } from "src/shared/types/zod";
 
 export function useBackendModerateApi() {
@@ -117,8 +118,12 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
+
+      const isModerated = response.data
+        .isModerated as moderationStatusOptionsType;
+
       return {
-        isModerated: response.data.isModerated,
+        isModerated: isModerated,
         moderationAction: response.data.moderationAction,
         moderationExplanation: response.data.moderationExplanation,
         moderationReason: response.data.moderationReason,
@@ -129,14 +134,14 @@ export function useBackendModerateApi() {
       console.error(e);
       showNotifyMessage("Failed to fetch post moderation details");
       return {
-        isModerated: false,
+        isModerated: "unmoderated",
       };
     }
   }
 
   async function fetchCommentModeration(
     commentSlugId: string
-  ): Promise<zodModerationPropertiesComments> {
+  ): Promise<ModerationPropertiesComments> {
     try {
       const params: ApiV1ModerateCancelCommentReportPostRequest = {
         commentSlugId: commentSlugId,
@@ -156,8 +161,12 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
+
+      const isModerated = response.data
+        .isModerated as moderationStatusOptionsType;
+
       return {
-        isModerated: response.data.isModerated,
+        isModerated: isModerated,
         moderationAction: response.data.moderationAction,
         moderationExplanation: response.data.moderationExplanation,
         moderationReason: response.data.moderationReason,
@@ -168,7 +177,7 @@ export function useBackendModerateApi() {
       console.error(e);
       showNotifyMessage("Failed to fetch comment moderation details");
       return {
-        isModerated: false,
+        isModerated: "unmoderated",
       };
     }
   }

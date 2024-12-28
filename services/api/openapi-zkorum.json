@@ -280,46 +280,73 @@
                                                                 "pattern": "^[a-z0-9_]*$"
                                                             },
                                                             "moderation": {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "isModerated": {
-                                                                        "type": "boolean"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "isModerated": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "moderated"
+                                                                                ]
+                                                                            },
+                                                                            "moderationAction": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "lock"
+                                                                                ]
+                                                                            },
+                                                                            "moderationReason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "off-topic",
+                                                                                    "spam",
+                                                                                    "misleading",
+                                                                                    "privacy",
+                                                                                    "sexual",
+                                                                                    "toxic",
+                                                                                    "illegal"
+                                                                                ]
+                                                                            },
+                                                                            "moderationExplanation": {
+                                                                                "type": "string",
+                                                                                "maxLength": 260
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "isModerated",
+                                                                            "moderationAction",
+                                                                            "moderationReason",
+                                                                            "moderationExplanation",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "additionalProperties": false
                                                                     },
-                                                                    "moderationAction": {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "lock"
-                                                                        ]
-                                                                    },
-                                                                    "moderationReason": {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "off-topic",
-                                                                            "spam",
-                                                                            "misleading",
-                                                                            "privacy",
-                                                                            "sexual",
-                                                                            "toxic",
-                                                                            "illegal"
-                                                                        ]
-                                                                    },
-                                                                    "moderationExplanation": {
-                                                                        "type": "string",
-                                                                        "maxLength": 260
-                                                                    },
-                                                                    "createdAt": {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    "updatedAt": {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "isModerated": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "unmoderated"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "isModerated"
+                                                                        ],
+                                                                        "additionalProperties": false
                                                                     }
-                                                                },
-                                                                "required": [
-                                                                    "isModerated"
-                                                                ],
-                                                                "additionalProperties": false
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -615,46 +642,73 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "isModerated": {
-                                            "type": "boolean"
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "isModerated": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "moderated"
+                                                    ]
+                                                },
+                                                "moderationAction": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "lock"
+                                                    ]
+                                                },
+                                                "moderationReason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "off-topic",
+                                                        "spam",
+                                                        "misleading",
+                                                        "privacy",
+                                                        "sexual",
+                                                        "toxic",
+                                                        "illegal"
+                                                    ]
+                                                },
+                                                "moderationExplanation": {
+                                                    "type": "string",
+                                                    "maxLength": 260
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "isModerated",
+                                                "moderationAction",
+                                                "moderationReason",
+                                                "moderationExplanation",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "moderationAction": {
-                                            "type": "string",
-                                            "enum": [
-                                                "lock"
-                                            ]
-                                        },
-                                        "moderationReason": {
-                                            "type": "string",
-                                            "enum": [
-                                                "off-topic",
-                                                "spam",
-                                                "misleading",
-                                                "privacy",
-                                                "sexual",
-                                                "toxic",
-                                                "illegal"
-                                            ]
-                                        },
-                                        "moderationExplanation": {
-                                            "type": "string",
-                                            "maxLength": 260
-                                        },
-                                        "createdAt": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "updatedAt": {
-                                            "type": "string",
-                                            "format": "date-time"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "isModerated": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "unmoderated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "isModerated"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "isModerated"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -690,47 +744,74 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "isModerated": {
-                                            "type": "boolean"
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "isModerated": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "moderated"
+                                                    ]
+                                                },
+                                                "moderationAction": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "lock",
+                                                        "hide"
+                                                    ]
+                                                },
+                                                "moderationReason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "off-topic",
+                                                        "spam",
+                                                        "misleading",
+                                                        "privacy",
+                                                        "sexual",
+                                                        "toxic",
+                                                        "illegal"
+                                                    ]
+                                                },
+                                                "moderationExplanation": {
+                                                    "type": "string",
+                                                    "maxLength": 260
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "isModerated",
+                                                "moderationAction",
+                                                "moderationReason",
+                                                "moderationExplanation",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "moderationAction": {
-                                            "type": "string",
-                                            "enum": [
-                                                "lock",
-                                                "hide"
-                                            ]
-                                        },
-                                        "moderationReason": {
-                                            "type": "string",
-                                            "enum": [
-                                                "off-topic",
-                                                "spam",
-                                                "misleading",
-                                                "privacy",
-                                                "sexual",
-                                                "toxic",
-                                                "illegal"
-                                            ]
-                                        },
-                                        "moderationExplanation": {
-                                            "type": "string",
-                                            "maxLength": 260
-                                        },
-                                        "createdAt": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "updatedAt": {
-                                            "type": "string",
-                                            "format": "date-time"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "isModerated": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "unmoderated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "isModerated"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "isModerated"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -834,46 +915,73 @@
                                                         "pattern": "^[a-z0-9_]*$"
                                                     },
                                                     "moderation": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "isModerated": {
-                                                                "type": "boolean"
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "isModerated": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "moderated"
+                                                                        ]
+                                                                    },
+                                                                    "moderationAction": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lock"
+                                                                        ]
+                                                                    },
+                                                                    "moderationReason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "off-topic",
+                                                                            "spam",
+                                                                            "misleading",
+                                                                            "privacy",
+                                                                            "sexual",
+                                                                            "toxic",
+                                                                            "illegal"
+                                                                        ]
+                                                                    },
+                                                                    "moderationExplanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 260
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "isModerated",
+                                                                    "moderationAction",
+                                                                    "moderationReason",
+                                                                    "moderationExplanation",
+                                                                    "createdAt",
+                                                                    "updatedAt"
+                                                                ],
+                                                                "additionalProperties": false
                                                             },
-                                                            "moderationAction": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "lock"
-                                                                ]
-                                                            },
-                                                            "moderationReason": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "off-topic",
-                                                                    "spam",
-                                                                    "misleading",
-                                                                    "privacy",
-                                                                    "sexual",
-                                                                    "toxic",
-                                                                    "illegal"
-                                                                ]
-                                                            },
-                                                            "moderationExplanation": {
-                                                                "type": "string",
-                                                                "maxLength": 260
-                                                            },
-                                                            "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
-                                                            },
-                                                            "updatedAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "isModerated": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "unmoderated"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "isModerated"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
-                                                        },
-                                                        "required": [
-                                                            "isModerated"
-                                                        ],
-                                                        "additionalProperties": false
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
@@ -1023,46 +1131,73 @@
                                                                 "pattern": "^[a-z0-9_]*$"
                                                             },
                                                             "moderation": {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "isModerated": {
-                                                                        "type": "boolean"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "isModerated": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "moderated"
+                                                                                ]
+                                                                            },
+                                                                            "moderationAction": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "lock"
+                                                                                ]
+                                                                            },
+                                                                            "moderationReason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "off-topic",
+                                                                                    "spam",
+                                                                                    "misleading",
+                                                                                    "privacy",
+                                                                                    "sexual",
+                                                                                    "toxic",
+                                                                                    "illegal"
+                                                                                ]
+                                                                            },
+                                                                            "moderationExplanation": {
+                                                                                "type": "string",
+                                                                                "maxLength": 260
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "isModerated",
+                                                                            "moderationAction",
+                                                                            "moderationReason",
+                                                                            "moderationExplanation",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "additionalProperties": false
                                                                     },
-                                                                    "moderationAction": {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "lock"
-                                                                        ]
-                                                                    },
-                                                                    "moderationReason": {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "off-topic",
-                                                                            "spam",
-                                                                            "misleading",
-                                                                            "privacy",
-                                                                            "sexual",
-                                                                            "toxic",
-                                                                            "illegal"
-                                                                        ]
-                                                                    },
-                                                                    "moderationExplanation": {
-                                                                        "type": "string",
-                                                                        "maxLength": 260
-                                                                    },
-                                                                    "createdAt": {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    "updatedAt": {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "isModerated": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "unmoderated"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "isModerated"
+                                                                        ],
+                                                                        "additionalProperties": false
                                                                     }
-                                                                },
-                                                                "required": [
-                                                                    "isModerated"
-                                                                ],
-                                                                "additionalProperties": false
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -1178,47 +1313,74 @@
                                                         "pattern": "^[a-z0-9_]*$"
                                                     },
                                                     "moderation": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "isModerated": {
-                                                                "type": "boolean"
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "isModerated": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "moderated"
+                                                                        ]
+                                                                    },
+                                                                    "moderationAction": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lock",
+                                                                            "hide"
+                                                                        ]
+                                                                    },
+                                                                    "moderationReason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "off-topic",
+                                                                            "spam",
+                                                                            "misleading",
+                                                                            "privacy",
+                                                                            "sexual",
+                                                                            "toxic",
+                                                                            "illegal"
+                                                                        ]
+                                                                    },
+                                                                    "moderationExplanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 260
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "isModerated",
+                                                                    "moderationAction",
+                                                                    "moderationReason",
+                                                                    "moderationExplanation",
+                                                                    "createdAt",
+                                                                    "updatedAt"
+                                                                ],
+                                                                "additionalProperties": false
                                                             },
-                                                            "moderationAction": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "lock",
-                                                                    "hide"
-                                                                ]
-                                                            },
-                                                            "moderationReason": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "off-topic",
-                                                                    "spam",
-                                                                    "misleading",
-                                                                    "privacy",
-                                                                    "sexual",
-                                                                    "toxic",
-                                                                    "illegal"
-                                                                ]
-                                                            },
-                                                            "moderationExplanation": {
-                                                                "type": "string",
-                                                                "maxLength": 260
-                                                            },
-                                                            "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
-                                                            },
-                                                            "updatedAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "isModerated": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "unmoderated"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "isModerated"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
-                                                        },
-                                                        "required": [
-                                                            "isModerated"
-                                                        ],
-                                                        "additionalProperties": false
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
@@ -1561,47 +1723,74 @@
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
                                             "moderation": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "isModerated": {
-                                                        "type": "boolean"
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "isModerated": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "moderated"
+                                                                ]
+                                                            },
+                                                            "moderationAction": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lock",
+                                                                    "hide"
+                                                                ]
+                                                            },
+                                                            "moderationReason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "off-topic",
+                                                                    "spam",
+                                                                    "misleading",
+                                                                    "privacy",
+                                                                    "sexual",
+                                                                    "toxic",
+                                                                    "illegal"
+                                                                ]
+                                                            },
+                                                            "moderationExplanation": {
+                                                                "type": "string",
+                                                                "maxLength": 260
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updatedAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "isModerated",
+                                                            "moderationAction",
+                                                            "moderationReason",
+                                                            "moderationExplanation",
+                                                            "createdAt",
+                                                            "updatedAt"
+                                                        ],
+                                                        "additionalProperties": false
                                                     },
-                                                    "moderationAction": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "lock",
-                                                            "hide"
-                                                        ]
-                                                    },
-                                                    "moderationReason": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "off-topic",
-                                                            "spam",
-                                                            "misleading",
-                                                            "privacy",
-                                                            "sexual",
-                                                            "toxic",
-                                                            "illegal"
-                                                        ]
-                                                    },
-                                                    "moderationExplanation": {
-                                                        "type": "string",
-                                                        "maxLength": 260
-                                                    },
-                                                    "createdAt": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updatedAt": {
-                                                        "type": "string",
-                                                        "format": "date-time"
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "isModerated": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "unmoderated"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "isModerated"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
-                                                },
-                                                "required": [
-                                                    "isModerated"
-                                                ],
-                                                "additionalProperties": false
+                                                ]
                                             }
                                         },
                                         "required": [
@@ -1774,46 +1963,73 @@
                                                             "pattern": "^[a-z0-9_]*$"
                                                         },
                                                         "moderation": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "isModerated": {
-                                                                    "type": "boolean"
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "isModerated": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "moderated"
+                                                                            ]
+                                                                        },
+                                                                        "moderationAction": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "lock"
+                                                                            ]
+                                                                        },
+                                                                        "moderationReason": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "off-topic",
+                                                                                "spam",
+                                                                                "misleading",
+                                                                                "privacy",
+                                                                                "sexual",
+                                                                                "toxic",
+                                                                                "illegal"
+                                                                            ]
+                                                                        },
+                                                                        "moderationExplanation": {
+                                                                            "type": "string",
+                                                                            "maxLength": 260
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "format": "date-time"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "format": "date-time"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "isModerated",
+                                                                        "moderationAction",
+                                                                        "moderationReason",
+                                                                        "moderationExplanation",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "additionalProperties": false
                                                                 },
-                                                                "moderationAction": {
-                                                                    "type": "string",
-                                                                    "enum": [
-                                                                        "lock"
-                                                                    ]
-                                                                },
-                                                                "moderationReason": {
-                                                                    "type": "string",
-                                                                    "enum": [
-                                                                        "off-topic",
-                                                                        "spam",
-                                                                        "misleading",
-                                                                        "privacy",
-                                                                        "sexual",
-                                                                        "toxic",
-                                                                        "illegal"
-                                                                    ]
-                                                                },
-                                                                "moderationExplanation": {
-                                                                    "type": "string",
-                                                                    "maxLength": 260
-                                                                },
-                                                                "createdAt": {
-                                                                    "type": "string",
-                                                                    "format": "date-time"
-                                                                },
-                                                                "updatedAt": {
-                                                                    "type": "string",
-                                                                    "format": "date-time"
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "isModerated": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "unmoderated"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "isModerated"
+                                                                    ],
+                                                                    "additionalProperties": false
                                                                 }
-                                                            },
-                                                            "required": [
-                                                                "isModerated"
-                                                            ],
-                                                            "additionalProperties": false
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
