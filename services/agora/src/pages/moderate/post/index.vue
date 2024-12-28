@@ -90,8 +90,11 @@ async function initializeData() {
 }
 
 async function clickedCancel() {
-  await cancelModerationPostReport(postSlugId);
-  initializeData();
+  const isSuccessful = await cancelModerationPostReport(postSlugId);
+  if (isSuccessful) {
+    initializeData();
+    loadPostData(false);
+  }
 }
 
 async function clickedSubmit() {
