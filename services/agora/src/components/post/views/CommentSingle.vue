@@ -1,49 +1,66 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div v-if="deleted" class="deletedMessage">Deleted</div>
-    <div v-if="!deleted" class="contentLayout">
-      <div class="moderatedMessage">Response removed from feed</div>
-
-      <div class="metadata">
-        <UserAvatar
-          :user-name="commentItem.username"
-          :size="40"
-          class="avatarIcon"
-        />
-
-        <div class="userNameTime">
-          <div>
-            {{ commentItem.username }}
+    <div v-if="commentItem.moderation.isModerated" class="moderatedBox">
+      <ZKCard padding="1rem">
+        <div class="moderationContainer">
+          <div class="moderatedMessage">
+            <div class="moderatedFont">
+              Moderator flagged this response as
+              {{ commentItem.moderation.moderationReason }}.
+            </div>
+            <div
+              v-if="commentItem.moderation.moderationExplanation.length > 0"
+              class="moderatedFont"
+            >
+              "{{ commentItem.moderation.moderationExplanation }}"
+            </div>
           </div>
-
-          <div>
-            {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
+          <div v-if="profileData.isModerator">
+            <RouterLink
+              :to="{
+                name: 'moderate-comment-page',
+                params: { commentSlugId: commentItem.commentSlugId },
+              }"
+            >
+              <ZKButton label="Edit" color="primary" />
+            </RouterLink>
           </div>
+        </div>
+      </ZKCard>
+    </div>
+
+    <div class="metadata">
+      <UserAvatar
+        :user-name="commentItem.username"
+        :size="40"
+        class="avatarIcon"
+      />
+
+      <div class="userNameTime">
+        <div>
+          {{ commentItem.username }}
+        </div>
+
+        <div>
+          {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
         </div>
       </div>
+    </div>
 
-      <div>
-        <div :class="{ highlightComment: highlight }">
-          <span v-html="commentItem.comment"></span>
-        </div>
+    <div>
+      <div :class="{ highlightComment: highlight }">
+        <span v-html="commentItem.comment"></span>
+      </div>
 
-        <div
-          v-if="!commentItem.moderation.isModerated"
-          class="actionBarPaddings"
-        >
-          <CommentActionBar
-            :comment-item="commentItem"
-            :post-slug-id="postSlugId"
-            :comment-slug-id-liked-map="commentSlugIdLikedMap"
-            :is-post-locked="isPostLocked"
-            @deleted="deletedComment()"
-          />
-        </div>
-
-        <div v-if="commentItem.moderation.isModerated">
-          <ZKNextPage message="View Moderation Details" route-name="welcome" />
-        </div>
+      <div v-if="!commentItem.moderation.isModerated" class="actionBarPaddings">
+        <CommentActionBar
+          :comment-item="commentItem"
+          :post-slug-id="postSlugId"
+          :comment-slug-id-liked-map="commentSlugIdLikedMap"
+          :is-post-locked="isPostLocked"
+          @deleted="deletedComment()"
+        />
       </div>
     </div>
   </div>
@@ -55,7 +72,10 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import { formatTimeAgo } from "@vueuse/core";
 import type { CommentItem } from "src/shared/types/zod";
 import { ref } from "vue";
-import ZKNextPage from "src/components/ui-library/ZKNextPage.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useUserStore } from "src/stores/user";
+import { storeToRefs } from "pinia";
 
 const emit = defineEmits(["deleted"]);
 
@@ -66,6 +86,8 @@ defineProps<{
   commentSlugIdLikedMap: Map<string, "like" | "dislike">;
   isPostLocked: boolean;
 }>();
+
+const { profileData } = storeToRefs(useUserStore());
 
 const deleted = ref(false);
 
@@ -89,6 +111,7 @@ function deletedComment() {
   align-items: center;
   font-size: 0.9rem;
   color: $color-text-weak;
+  padding-bottom: 1rem;
 }
 
 .actionBarPaddings {
@@ -111,16 +134,24 @@ function deletedComment() {
   flex-direction: column;
 }
 
-.deletedMessage {
-  display: flex;
-  justify-content: center;
-}
-
-.moderatedMessage {
+.moderatedFont {
   font-weight: 400;
   font-style: italic;
   color: #6d6a74;
-  padding-top: 1rem;
+}
+
+.moderatedMessage {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.moderationContainer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.moderatedBox {
   padding-bottom: 1rem;
 }
 </style>

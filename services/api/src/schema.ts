@@ -1275,7 +1275,7 @@ export const moderationTable = pgTable("moderation_table", {
         .references(() => postTable.id)
         .unique(),
     commentId: integer("comment_id") // one moderation action per comment
-        .references(() => postTable.id)
+        .references(() => commentTable.id)
         .unique(),
     moderatorId: uuid("moderator_id")
         .references(() => userTable.id)

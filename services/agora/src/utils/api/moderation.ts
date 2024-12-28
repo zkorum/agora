@@ -88,7 +88,7 @@ export function useBackendModerateApi() {
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to submit moderation report for post");
+      showNotifyMessage("Failed to submit moderation report for comment");
       return false;
     }
   }
