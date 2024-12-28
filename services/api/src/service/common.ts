@@ -102,6 +102,8 @@ export function useCommonPost() {
                 moderationExplanation:
                     moderationPostsTable.moderationExplanation,
                 moderationReason: moderationPostsTable.moderationReason,
+                moderationCreatedAt: moderationPostsTable.createdAt,
+                moderationUpdatedAt: moderationPostsTable.updatedAt,
             })
             .from(postTable)
             .innerJoin(
@@ -148,6 +150,8 @@ export function useCommonPost() {
                     moderationExplanation:
                         postItem.moderationExplanation ?? undefined,
                     moderationReason: postItem.moderationReason ?? undefined,
+                    createdAt: postItem.moderationCreatedAt ?? undefined,
+                    updatedAt: postItem.moderationUpdatedAt ?? undefined,
                 },
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.updatedAt,
