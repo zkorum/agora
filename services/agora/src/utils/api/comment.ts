@@ -3,7 +3,7 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
   type ApiV1CommentCreatePostRequest,
   type ApiV1CommentFetchCommentsByPostSlugIdPostRequest,
-  type ApiV1ModerateFetchCommentReportPostRequest,
+  type ApiV1ModerateCancelCommentReportPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -91,7 +91,7 @@ export function useBackendCommentApi() {
 
   async function deleteCommentBySlugId(commentSlugId: string) {
     try {
-      const params: ApiV1ModerateFetchCommentReportPostRequest = {
+      const params: ApiV1ModerateCancelCommentReportPostRequest = {
         commentSlugId: commentSlugId,
       };
 

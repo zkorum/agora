@@ -50,15 +50,7 @@
               padding="1rem"
             >
               <PostLockedMessage
-                :moderation-reason="
-                  extendedPostData.metadata.moderation.moderationReason
-                "
-                :moderation-explanation="
-                  extendedPostData.metadata.moderation.moderationExplanation
-                "
-                :moderation-action="
-                  extendedPostData.metadata.moderation.moderationAction
-                "
+                :moderation-property="extendedPostData.metadata.moderation"
               />
             </ZKCard>
           </div>

@@ -1,8 +1,8 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
-  type ApiV1ModerateFetchCommentReportPostRequest,
-  type ApiV1ModerateFetchPostReportPostRequest,
+  type ApiV1ModerateCancelCommentReportPostRequest,
+  type ApiV1ModerateCancelPostReportPostRequest,
   type ApiV1ModerateReportCommentPostRequest,
   type ApiV1ModerateReportPostPostRequest,
   DefaultApiAxiosParamCreator,
@@ -99,7 +99,7 @@ export function useBackendModerateApi() {
     postSlugId: string
   ): Promise<ModerationPropertiesPosts> {
     try {
-      const params: ApiV1ModerateFetchPostReportPostRequest = {
+      const params: ApiV1ModerateCancelPostReportPostRequest = {
         postSlugId: postSlugId,
       };
 
@@ -138,7 +138,7 @@ export function useBackendModerateApi() {
     commentSlugId: string
   ): Promise<zodModerationPropertiesComments> {
     try {
-      const params: ApiV1ModerateFetchCommentReportPostRequest = {
+      const params: ApiV1ModerateCancelCommentReportPostRequest = {
         commentSlugId: commentSlugId,
       };
 
@@ -173,10 +173,72 @@ export function useBackendModerateApi() {
     }
   }
 
+  async function cancelModerationPostReport(
+    postSlugId: string
+  ): Promise<boolean> {
+    try {
+      const params: ApiV1ModerateCancelPostReportPostRequest = {
+        postSlugId: postSlugId,
+      };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1ModerateCancelPostReportPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1ModerateCancelPostReportPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to fetch comment moderation details");
+      return false;
+    }
+  }
+
+  async function cancelModerationCommentReport(
+    commentSlugId: string
+  ): Promise<boolean> {
+    try {
+      const params: ApiV1ModerateCancelCommentReportPostRequest = {
+        commentSlugId: commentSlugId,
+      };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1ModerateCancelCommentReportPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1ModerateCancelCommentReportPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to fetch comment moderation details");
+      return false;
+    }
+  }
+
   return {
     moderatePost,
     moderateComment,
     fetchPostModeration,
     fetchCommentModeration,
+    cancelModerationPostReport,
+    cancelModerationCommentReport,
   };
 }

@@ -62,7 +62,6 @@ export async function createNewPost({
                     slugId: postSlugId,
                     commentCount: 0,
                     currentContentId: null,
-                    isHidden: false,
                     lastReactedAt: new Date(),
                 })
                 .returning({ postId: postTable.id });

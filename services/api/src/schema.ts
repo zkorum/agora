@@ -956,8 +956,6 @@ export const postTable = pgTable("post", {
     currentContentId: integer("current_content_id")
         .references((): AnyPgColumn => postContentTable.id)
         .unique(), // null if post was deleted
-    isHidden: boolean("is_hidden").notNull().default(false),
-    isLocked: boolean("is_locked").notNull().default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1093,8 +1091,6 @@ export const commentTable = pgTable("comment", {
     ), // null if comment was deleted
     numLikes: integer("num_likes").notNull().default(0),
     numDislikes: integer("num_dislikes").notNull().default(0),
-    isHidden: boolean("is_hidden").notNull().default(false),
-    isLocked: boolean("is_locked").notNull().default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,

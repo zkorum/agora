@@ -15,6 +15,7 @@ import type {
 } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/common/util.js";
+import { httpErrors } from "@fastify/sensible";
 
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
@@ -44,34 +45,25 @@ export async function moderateByPostSlugId({
         postSlugId: postSlugId,
     });
 
-    await db.transaction(async (tx) => {
-        if (moderationStatus.isModerated) {
-            await tx
-                .update(moderationPostsTable)
-                .set({
-                    moderatorId: userId,
-                    moderationAction: moderationAction,
-                    moderationReason: moderationReason,
-                    moderationExplanation: moderationExplanation,
-                })
-                .where(eq(moderationPostsTable.postId, postDetails.id));
-        } else {
-            await tx.insert(moderationPostsTable).values({
-                postId: postDetails.id,
+    if (moderationStatus.isModerated) {
+        await db
+            .update(moderationPostsTable)
+            .set({
                 moderatorId: userId,
                 moderationAction: moderationAction,
                 moderationReason: moderationReason,
                 moderationExplanation: moderationExplanation,
-            });
-        }
-
-        await tx
-            .update(postTable)
-            .set({
-                isLocked: true,
             })
-            .where(eq(postTable.id, postDetails.id));
-    });
+            .where(eq(moderationPostsTable.postId, postDetails.id));
+    } else {
+        await db.insert(moderationPostsTable).values({
+            postId: postDetails.id,
+            moderatorId: userId,
+            moderationAction: moderationAction,
+            moderationReason: moderationReason,
+            moderationExplanation: moderationExplanation,
+        });
+    }
 }
 
 interface moderateByCommentSlugIdProps {
@@ -122,24 +114,6 @@ export async function moderateByCommentSlugId({
                 moderationReason: moderationReason,
                 moderationExplanation: moderationExplanation,
             });
-        }
-
-        if (moderationAction == "lock") {
-            await tx
-                .update(commentTable)
-                .set({
-                    isLocked: true,
-                })
-                .where(eq(commentTable.id, commentId));
-        }
-
-        if (moderationAction == "hide") {
-            await tx
-                .update(commentTable)
-                .set({
-                    isHidden: true,
-                })
-                .where(eq(commentTable.id, commentId));
         }
     });
 }
@@ -225,5 +199,59 @@ export async function fetchCommentModeration({
             moderationExplanation: response.moderationExplanation ?? undefined,
             moderationReason: response.moderationReason,
         };
+    }
+}
+
+interface ModerationCancelPostReportProps {
+    postSlugId: string;
+    db: PostgresJsDatabase;
+}
+
+export async function moderationCancelPostReport({
+    db,
+    postSlugId,
+}: ModerationCancelPostReportProps) {
+    const { getPostAndContentIdFromSlugId } = useCommonPost();
+    const postDetails = await getPostAndContentIdFromSlugId({
+        db: db,
+        postSlugId: postSlugId,
+    });
+
+    const moderationPostTableResponse = await db
+        .delete(moderationPostsTable)
+        .where(eq(moderationPostsTable.postId, postDetails.id))
+        .returning();
+
+    if (moderationPostTableResponse.length != 1) {
+        throw httpErrors.notFound(
+            "Failed to delete report for post slug ID: " + postSlugId,
+        );
+    }
+}
+
+interface ModerationCancelCommentReportProps {
+    commentSlugId: string;
+    db: PostgresJsDatabase;
+}
+
+export async function moderationCancelCommentReport({
+    db,
+    commentSlugId,
+}: ModerationCancelCommentReportProps) {
+    const { getCommentIdFromCommentSlugId } = useCommonComment();
+    const commentId = await getCommentIdFromCommentSlugId({
+        db: db,
+        commentSlugId: commentSlugId,
+    });
+
+    const moderationCommentsTableResponse = await db
+        .delete(moderationCommentsTable)
+        .where(eq(moderationCommentsTable.commentId, commentId))
+        .returning();
+
+    if (moderationCommentsTableResponse.length != 1) {
+        throw httpErrors.notFound(
+            "Failed to delete report for comment slug ID: " + commentSlugId,
+        );
     }
 }

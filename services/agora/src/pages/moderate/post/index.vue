@@ -28,6 +28,13 @@
     />
 
     <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
+
+    <ZKButton
+      v-if="hasExistingReport"
+      label="Withdraw Report"
+      color="secondary"
+      @click="clickedCancel()"
+    />
   </div>
 </template>
 
@@ -44,10 +51,14 @@ import {
   moderationActionPostsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderation";
+import { usePostStore } from "src/stores/post";
 
-const { moderatePost, fetchPostModeration } = useBackendModerateApi();
+const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
+  useBackendModerateApi();
 
 const route = useRoute();
+
+const { loadPostData } = usePostStore();
 
 const moderationAction = ref<ModerationActionPosts>("lock");
 const actionMapping = ref(moderationActionPostsMapping);
@@ -65,6 +76,10 @@ if (typeof route.params.postSlugId == "string") {
 }
 
 onMounted(async () => {
+  await initializeData();
+});
+
+async function initializeData() {
   const response = await fetchPostModeration(postSlugId);
   hasExistingReport.value = response.isModerated;
   if (response.isModerated) {
@@ -72,16 +87,25 @@ onMounted(async () => {
     moderationExplanation.value = response.moderationExplanation;
     moderationReason.value = response.moderationReason;
   }
-});
+}
+
+async function clickedCancel() {
+  await cancelModerationPostReport(postSlugId);
+  initializeData();
+}
 
 async function clickedSubmit() {
   if (postSlugId) {
-    await moderatePost(
+    const isSuccessful = await moderatePost(
       postSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
+
+    if (isSuccessful) {
+      loadPostData(false);
+    }
   }
 }
 </script>

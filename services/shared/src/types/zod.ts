@@ -145,7 +145,6 @@ export const zodModerationPropertiesComments = z
 export const zodPostMetadata = z
     .object({
         postSlugId: zodSlugId,
-        isHidden: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         lastReactedAt: z.date(),

@@ -18,14 +18,7 @@
           </div>
 
           <div class="moderationTimeBox moderatedFont">
-            <div>
-              {{ useDateFormat(commentItem.moderation.createdAt, "HH:mm A") }}
-            </div>
-            <div>
-              {{
-                useDateFormat(commentItem.moderation.createdAt, "YYYY-MM-DD")
-              }}
-            </div>
+            <ModerationTime :created-at="commentItem.moderation.createdAt" />
 
             <div v-if="profileData.isModerator" class="moderationEditButton">
               <RouterLink
@@ -45,12 +38,12 @@
 </template>
 
 <script setup lang="ts">
-import { useDateFormat } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import type { CommentItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ModerationTime from "./moderation/ModerationTime.vue";
 
 defineProps<{
   commentItem: CommentItem;
