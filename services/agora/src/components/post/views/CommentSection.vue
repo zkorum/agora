@@ -9,6 +9,7 @@
             :key="option.value"
             :label="option.name"
             :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
+            :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
             @click="sortAlgorithm = option.value"
           />
         </div>
