@@ -12,7 +12,7 @@
     <template #append>
       <div class="inputButtons">
         <q-icon v-if="isValidUsername" name="mdi-check" text-color="red" />
-        <ZKButton icon="mdi-dice-6" color="secondary" @click="refreshName()" />
+        <ZKButton icon="mdi-dice-6" color="black" flat @click="refreshName()" />
       </div>
     </template>
 

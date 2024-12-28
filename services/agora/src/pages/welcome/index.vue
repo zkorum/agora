@@ -12,6 +12,7 @@
       />
 
       <ZKButton
+        text-color="black"
         color="secondary"
         label="Skip Authentication"
         @click="skipAuthentication()"
