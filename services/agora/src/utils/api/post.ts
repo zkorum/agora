@@ -190,6 +190,8 @@ export function useBackendPostApi() {
             moderationExplanation:
               item.metadata.moderation.moderationExplanation,
             moderationReason: item.metadata.moderation.moderationReason,
+            createdAt: new Date(item.metadata.moderation.createdAt),
+            updatedAt: new Date(item.metadata.moderation.updatedAt),
           },
         },
         payload: {
