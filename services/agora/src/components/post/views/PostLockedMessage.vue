@@ -23,7 +23,15 @@
         </div>
       </div>
 
-      <ModerationTime :created-at="moderationProperty.createdAt" />
+      <div class="rightColumn">
+        <ModerationTime :created-at="moderationProperty.createdAt" />
+
+        <ZKButton
+          label="Edit"
+          color="primary"
+          @click.stop.prevent="openModerationPage()"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -33,12 +41,17 @@ import type { ModerationPropertiesPosts } from "src/shared/types/zod";
 import { moderationReasonMapping } from "src/utils/component/moderation";
 import { ref, watch } from "vue";
 import ModerationTime from "./moderation/ModerationTime.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   moderationProperty: ModerationPropertiesPosts;
+  postSlugId: string;
 }>();
 
 const moderationReasonName = ref("");
+
+const router = useRouter();
 
 loadModerationreason();
 
@@ -59,6 +72,13 @@ function loadModerationreason() {
       break;
     }
   }
+}
+
+function openModerationPage() {
+  router.push({
+    name: "moderate-post-page",
+    params: { postSlugId: props.postSlugId },
+  });
 }
 </script>
 
@@ -89,5 +109,12 @@ function loadModerationreason() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 1rem;
 }
 </style>

@@ -51,6 +51,7 @@
             >
               <PostLockedMessage
                 :moderation-property="extendedPostData.metadata.moderation"
+                :post-slug-id="extendedPostData.metadata.postSlugId"
               />
             </ZKCard>
           </div>
