@@ -123,6 +123,7 @@
             :is-post-locked="
               extendedPostData.metadata.moderation.isModerated == 'moderated'
             "
+            :target-filter="targetFilter"
             @deleted="decrementCommentCount()"
           />
         </div>
@@ -173,6 +174,7 @@ const props = defineProps<{
 const { isAuthenticated } = useAuthenticationStore();
 
 const commentSlugId = useRouteQuery("commentSlugId", "", { transform: String });
+const targetFilter = useRouteQuery("targetFilter", "", { transform: String });
 
 const commentCountOffset = ref(0);
 
