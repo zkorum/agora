@@ -62,6 +62,7 @@ export function useCommonPost() {
         enableCompactBody: boolean;
         fetchPollResponse: boolean;
         userId?: string;
+        removeLocked: boolean;
     }
 
     async function fetchPostItems({
@@ -71,6 +72,7 @@ export function useCommonPost() {
         enableCompactBody,
         fetchPollResponse,
         userId,
+        removeLocked,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
         const postItems = await db
             .select({
@@ -213,14 +215,19 @@ export function useCommonPost() {
                     body: toUnionUndefined(postItem.body),
                 };
             }
-            posts.push({
-                metadata: metadata,
-                payload: payload,
-                interaction: {
-                    hasVoted: false,
-                    votedIndex: 0,
-                },
-            });
+
+            if (removeLocked && postItem.moderationAction == "lock") {
+                // Skip
+            } else {
+                posts.push({
+                    metadata: metadata,
+                    payload: payload,
+                    interaction: {
+                        hasVoted: false,
+                        votedIndex: 0,
+                    },
+                });
+            }
         });
 
         if (fetchPollResponse) {
