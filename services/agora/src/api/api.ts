@@ -609,9 +609,7 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
 }
 
 export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = {
-    Lock: 'lock',
-    Hide: 'hide',
-    Nothing: 'nothing'
+    Lock: 'lock'
 } as const;
 
 export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum];
@@ -705,6 +703,68 @@ export interface ApiV1FeedFetchRecentPostRequest {
 /**
  * 
  * @export
+ * @interface ApiV1ModerateFetchCommentReportPost200Response
+ */
+export interface ApiV1ModerateFetchCommentReportPost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ModerateFetchCommentReportPost200Response
+     */
+    'isModerated': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerateFetchCommentReportPost200Response
+     */
+    'moderationAction'?: ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerateFetchCommentReportPost200Response
+     */
+    'moderationReason'?: ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerateFetchCommentReportPost200Response
+     */
+    'moderationExplanation'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerateFetchCommentReportPost200Response
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerateFetchCommentReportPost200Response
+     */
+    'updatedAt'?: string;
+}
+
+export const ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum = {
+    Lock: 'lock',
+    Hide: 'hide'
+} as const;
+
+export type ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum = typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum[keyof typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum];
+export const ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum = {
+    OffTopic: 'off-topic',
+    Spam: 'spam',
+    Misleading: 'misleading',
+    Privacy: 'privacy',
+    Sexual: 'sexual',
+    Toxic: 'toxic',
+    Illegal: 'illegal'
+} as const;
+
+export type ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum = typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum[keyof typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1ModerateFetchCommentReportPostRequest
  */
 export interface ApiV1ModerateFetchCommentReportPostRequest {
@@ -773,8 +833,7 @@ export const ApiV1ModerateReportCommentPostRequestModerationReasonEnum = {
 export type ApiV1ModerateReportCommentPostRequestModerationReasonEnum = typeof ApiV1ModerateReportCommentPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportCommentPostRequestModerationReasonEnum];
 export const ApiV1ModerateReportCommentPostRequestModerationActionEnum = {
     Lock: 'lock',
-    Hide: 'hide',
-    Nothing: 'nothing'
+    Hide: 'hide'
 } as const;
 
 export type ApiV1ModerateReportCommentPostRequestModerationActionEnum = typeof ApiV1ModerateReportCommentPostRequestModerationActionEnum[keyof typeof ApiV1ModerateReportCommentPostRequestModerationActionEnum];
@@ -823,9 +882,7 @@ export const ApiV1ModerateReportPostPostRequestModerationReasonEnum = {
 
 export type ApiV1ModerateReportPostPostRequestModerationReasonEnum = typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum];
 export const ApiV1ModerateReportPostPostRequestModerationActionEnum = {
-    Lock: 'lock',
-    Hide: 'hide',
-    Nothing: 'nothing'
+    Lock: 'lock'
 } as const;
 
 export type ApiV1ModerateReportPostPostRequestModerationActionEnum = typeof ApiV1ModerateReportPostPostRequestModerationActionEnum[keyof typeof ApiV1ModerateReportPostPostRequestModerationActionEnum];
@@ -1007,10 +1064,10 @@ export interface ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem {
     'username': string;
     /**
      * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration}
+     * @type {ApiV1ModerateFetchCommentReportPost200Response}
      * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
      */
-    'moderation': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration;
+    'moderation': ApiV1ModerateFetchCommentReportPost200Response;
 }
 /**
  * 
@@ -2366,7 +2423,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerateFetchCommentReportPost(apiV1ModerateFetchCommentReportPostRequest: ApiV1ModerateFetchCommentReportPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration>> {
+        async apiV1ModerateFetchCommentReportPost(apiV1ModerateFetchCommentReportPostRequest: ApiV1ModerateFetchCommentReportPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ModerateFetchCommentReportPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerateFetchCommentReportPost(apiV1ModerateFetchCommentReportPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerateFetchCommentReportPost']?.[localVarOperationServerIndex]?.url;
@@ -2663,7 +2720,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerateFetchCommentReportPost(apiV1ModerateFetchCommentReportPostRequest: ApiV1ModerateFetchCommentReportPostRequest, options?: any): AxiosPromise<ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration> {
+        apiV1ModerateFetchCommentReportPost(apiV1ModerateFetchCommentReportPostRequest: ApiV1ModerateFetchCommentReportPostRequest, options?: any): AxiosPromise<ApiV1ModerateFetchCommentReportPost200Response> {
             return localVarFp.apiV1ModerateFetchCommentReportPost(apiV1ModerateFetchCommentReportPostRequest, options).then((request) => request(axios, basePath));
         },
         /**

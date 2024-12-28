@@ -28,7 +28,8 @@ export const zodModerationReason = z.enum([
     "toxic",
     "illegal",
 ]);
-export const zodModerationAction = z.enum(["lock", "hide", "nothing"]);
+export const zodModerationActionPosts = z.enum(["lock"]);
+export const zodModerationActionComments = z.enum(["lock", "hide"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -122,10 +123,20 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
-export const zodModerationProperties = z
+export const zodModerationPropertiesPosts = z
     .object({
         isModerated: z.boolean(),
-        moderationAction: zodModerationAction.optional(),
+        moderationAction: zodModerationActionPosts.optional(),
+        moderationReason: zodModerationReason.optional(),
+        moderationExplanation: zodModerationExplanation.optional(),
+        createdAt: z.date().optional(),
+        updatedAt: z.date().optional(),
+    })
+    .strict();
+export const zodModerationPropertiesComments = z
+    .object({
+        isModerated: z.boolean(),
+        moderationAction: zodModerationActionComments.optional(),
         moderationReason: zodModerationReason.optional(),
         moderationExplanation: zodModerationExplanation.optional(),
         createdAt: z.date().optional(),
@@ -141,7 +152,7 @@ export const zodPostMetadata = z
         lastReactedAt: z.date(),
         commentCount: zodCommentCount,
         authorUsername: zodUsername,
-        moderation: zodModerationProperties,
+        moderation: zodModerationPropertiesPosts,
     })
     .strict();
 export const zodCommentContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
@@ -154,7 +165,7 @@ export const zodCommentItem = z
         numLikes: z.number().int().nonnegative(),
         numDislikes: z.number().int().nonnegative(),
         username: zodUsername,
-        moderation: zodModerationProperties,
+        moderation: zodModerationPropertiesComments,
     })
     .strict();
 export const zodUserInteraction = z
@@ -464,5 +475,13 @@ export type PollList = z.infer<typeof zodPollList>;
 export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
 export type ModerationReason = z.infer<typeof zodModerationReason>;
-export type ModerationAction = z.infer<typeof zodModerationAction>;
-export type ModerationProperties = z.infer<typeof zodModerationProperties>;
+export type ModerationActionPosts = z.infer<typeof zodModerationActionPosts>;
+export type ModerationActionComments = z.infer<
+    typeof zodModerationActionComments
+>;
+export type ModerationPropertiesPosts = z.infer<
+    typeof zodModerationPropertiesPosts
+>;
+export type zodModerationPropertiesComments = z.infer<
+    typeof zodModerationPropertiesComments
+>;
