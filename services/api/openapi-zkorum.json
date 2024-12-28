@@ -266,9 +266,6 @@
                                                             "isHidden": {
                                                                 "type": "boolean"
                                                             },
-                                                            "isLocked": {
-                                                                "type": "boolean"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -289,20 +286,53 @@
                                                                 "type": "string",
                                                                 "pattern": "^[a-z0-9_]*$"
                                                             },
-                                                            "authorImagePath": {
-                                                                "type": "string",
-                                                                "format": "uri"
+                                                            "moderation": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "isModerated": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "moderationAction": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lock",
+                                                                            "hide",
+                                                                            "nothing"
+                                                                        ]
+                                                                    },
+                                                                    "moderationReason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "off-topic",
+                                                                            "spam",
+                                                                            "misleading",
+                                                                            "privacy",
+                                                                            "sexual",
+                                                                            "toxic",
+                                                                            "illegal",
+                                                                            "nothing"
+                                                                        ]
+                                                                    },
+                                                                    "moderationExplanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 260
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "isModerated"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
                                                             "postSlugId",
                                                             "isHidden",
-                                                            "isLocked",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
                                                             "commentCount",
-                                                            "authorUsername"
+                                                            "authorUsername",
+                                                            "moderation"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -406,77 +436,24 @@
                                         "maxLength": 10
                                     },
                                     "moderationReason": {
-                                        "anyOf": [
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "off-topic"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "spam"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "misleading"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "privacy"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "sexual"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "toxic"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "illegal"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "nothing"
-                                                ]
-                                            }
+                                        "type": "string",
+                                        "enum": [
+                                            "off-topic",
+                                            "spam",
+                                            "misleading",
+                                            "privacy",
+                                            "sexual",
+                                            "toxic",
+                                            "illegal",
+                                            "nothing"
                                         ]
                                     },
                                     "moderationAction": {
-                                        "anyOf": [
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "lock"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "hide"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "nothing"
-                                                ]
-                                            }
+                                        "type": "string",
+                                        "enum": [
+                                            "lock",
+                                            "hide",
+                                            "nothing"
                                         ]
                                     },
                                     "moderationExplanation": {
@@ -581,9 +558,6 @@
                                                     "isHidden": {
                                                         "type": "boolean"
                                                     },
-                                                    "isLocked": {
-                                                        "type": "boolean"
-                                                    },
                                                     "createdAt": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -604,20 +578,53 @@
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
                                                     },
-                                                    "authorImagePath": {
-                                                        "type": "string",
-                                                        "format": "uri"
+                                                    "moderation": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "isModerated": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "moderationAction": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lock",
+                                                                    "hide",
+                                                                    "nothing"
+                                                                ]
+                                                            },
+                                                            "moderationReason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "off-topic",
+                                                                    "spam",
+                                                                    "misleading",
+                                                                    "privacy",
+                                                                    "sexual",
+                                                                    "toxic",
+                                                                    "illegal",
+                                                                    "nothing"
+                                                                ]
+                                                            },
+                                                            "moderationExplanation": {
+                                                                "type": "string",
+                                                                "maxLength": 260
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "isModerated"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
                                                     "postSlugId",
                                                     "isHidden",
-                                                    "isLocked",
                                                     "createdAt",
                                                     "updatedAt",
                                                     "lastReactedAt",
                                                     "commentCount",
-                                                    "authorUsername"
+                                                    "authorUsername",
+                                                    "moderation"
                                                 ],
                                                 "additionalProperties": false
                                             },
@@ -739,9 +746,6 @@
                                                             "isHidden": {
                                                                 "type": "boolean"
                                                             },
-                                                            "isLocked": {
-                                                                "type": "boolean"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -762,20 +766,53 @@
                                                                 "type": "string",
                                                                 "pattern": "^[a-z0-9_]*$"
                                                             },
-                                                            "authorImagePath": {
-                                                                "type": "string",
-                                                                "format": "uri"
+                                                            "moderation": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "isModerated": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "moderationAction": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lock",
+                                                                            "hide",
+                                                                            "nothing"
+                                                                        ]
+                                                                    },
+                                                                    "moderationReason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "off-topic",
+                                                                            "spam",
+                                                                            "misleading",
+                                                                            "privacy",
+                                                                            "sexual",
+                                                                            "toxic",
+                                                                            "illegal",
+                                                                            "nothing"
+                                                                        ]
+                                                                    },
+                                                                    "moderationExplanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 260
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "isModerated"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
                                                             "postSlugId",
                                                             "isHidden",
-                                                            "isLocked",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
                                                             "commentCount",
-                                                            "authorUsername"
+                                                            "authorUsername",
+                                                            "moderation"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -1367,9 +1404,6 @@
                                                         "isHidden": {
                                                             "type": "boolean"
                                                         },
-                                                        "isLocked": {
-                                                            "type": "boolean"
-                                                        },
                                                         "createdAt": {
                                                             "type": "string",
                                                             "format": "date-time"
@@ -1390,20 +1424,53 @@
                                                             "type": "string",
                                                             "pattern": "^[a-z0-9_]*$"
                                                         },
-                                                        "authorImagePath": {
-                                                            "type": "string",
-                                                            "format": "uri"
+                                                        "moderation": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "isModerated": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "moderationAction": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "lock",
+                                                                        "hide",
+                                                                        "nothing"
+                                                                    ]
+                                                                },
+                                                                "moderationReason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "off-topic",
+                                                                        "spam",
+                                                                        "misleading",
+                                                                        "privacy",
+                                                                        "sexual",
+                                                                        "toxic",
+                                                                        "illegal",
+                                                                        "nothing"
+                                                                    ]
+                                                                },
+                                                                "moderationExplanation": {
+                                                                    "type": "string",
+                                                                    "maxLength": 260
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "isModerated"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [
                                                         "postSlugId",
                                                         "isHidden",
-                                                        "isLocked",
                                                         "createdAt",
                                                         "updatedAt",
                                                         "lastReactedAt",
                                                         "commentCount",
-                                                        "authorUsername"
+                                                        "authorUsername",
+                                                        "moderation"
                                                     ],
                                                     "additionalProperties": false
                                                 },

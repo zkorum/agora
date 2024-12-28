@@ -5,6 +5,7 @@ import {
     organisationTable,
     userTable,
     commentTable,
+    moderationTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -90,7 +91,10 @@ export function useCommonPost() {
                 lastReactedAt: postTable.lastReactedAt,
                 commentCount: postTable.commentCount,
                 authorName: userTable.username,
-                authorImagePath: organisationTable.imageUrl,
+                // moderation
+                moderationAction: moderationTable.moderationAction,
+                moderationExplanation: moderationTable.moderationExplanation,
+                moderationReason: moderationTable.moderationReason,
             })
             .from(postTable)
             .innerJoin(
@@ -98,6 +102,7 @@ export function useCommonPost() {
                 eq(postContentTable.id, postTable.currentContentId),
             )
             .innerJoin(userTable, eq(userTable.id, postTable.authorId))
+            .leftJoin(moderationTable, eq(moderationTable.postId, postTable.id))
             .leftJoin(
                 organisationTable,
                 eq(organisationTable.id, userTable.organisationId),
@@ -127,13 +132,19 @@ export function useCommonPost() {
             const metadata: PostMetadata = {
                 postSlugId: postItem.slugId,
                 isHidden: postItem.isHidden,
-                isLocked: postItem.isLocked,
+                moderation: {
+                    isModerated:
+                        postItem.moderationAction == null ? false : true,
+                    moderationAction: postItem.moderationAction ?? undefined,
+                    moderationExplanation:
+                        postItem.moderationExplanation ?? undefined,
+                    moderationReason: postItem.moderationReason ?? undefined,
+                },
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.updatedAt,
                 lastReactedAt: postItem.lastReactedAt,
                 commentCount: postItem.commentCount,
                 authorUsername: postItem.authorName,
-                authorImagePath: toUnionUndefined(postItem.authorImagePath),
             };
 
             let payload: ExtendedPostPayload;

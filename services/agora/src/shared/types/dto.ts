@@ -1,4 +1,5 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
+/* eslint-disable @typescript-eslint/no-extraneous-class */
 import { z } from "zod";
 import {
     zodExtendedPostData,
@@ -17,11 +18,10 @@ import {
     zodExtendedCommentData,
     zodModerationAction,
     zodModerationReason,
+    zodModerationExplanation,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
-import { MAX_LENGTH_BODY } from "../shared.js";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static authenticateCheckLoginStatus = z.object({}).strict();
     static authenticateRequestBody = z
@@ -227,7 +227,7 @@ export class Dto {
             postSlugId: zodSlugId,
             moderationReason: zodModerationReason,
             moderationAction: zodModerationAction,
-            moderationExplanation: z.string().max(MAX_LENGTH_BODY),
+            moderationExplanation: zodModerationExplanation,
         })
         .strict();
     static checkUsernameInUseRequest = z

@@ -29,6 +29,7 @@ export async function moderateByPostSlugId({
 
     await db.transaction(async (tx) => {
         await tx.insert(moderationTable).values({
+            postId: postDetails.id,
             moderatorId: userId,
             moderationAction: moderationAction,
             moderationReason: moderationReason,

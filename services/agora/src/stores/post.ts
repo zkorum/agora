@@ -89,7 +89,9 @@ export const usePostStore = defineStore("post", () => {
       lastReactedAt: new Date(),
       postSlugId: "",
       updatedAt: new Date(),
-      authorImagePath: "",
+      moderation: {
+        isModerated: false,
+      },
     },
     payload: {
       title: "",
