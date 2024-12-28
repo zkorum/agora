@@ -22,7 +22,7 @@ export function useWebShare() {
 
   async function share(title: string, url: string) {
     if (isSupportedSharePlatform()) {
-      webShare.share({
+      await webShare.share({
         title: title,
         text: url,
         url: url,

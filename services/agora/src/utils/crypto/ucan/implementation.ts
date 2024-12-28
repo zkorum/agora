@@ -53,7 +53,7 @@ export type Implementation = {
       string,
       {
         magicBytes: Uint8Array;
-        verify: (args: VerifyArgs) => Promise<boolean>;
+        verify: (args: VerifyArgs) => Promise<boolean> | boolean;
       }
     >;
   };

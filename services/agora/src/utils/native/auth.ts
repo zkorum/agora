@@ -38,8 +38,8 @@ export async function nativeAuthenticate() {
               `Biometrics authentication failed: ${error.code} - ${error.message}`
             ),
             ok: i18n.global.t("Exit app"),
-          }).onOk(() => {
-            App.exitApp();
+          }).onOk(async () => {
+            await App.exitApp();
           });
         }
       } else {

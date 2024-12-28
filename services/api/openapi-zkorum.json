@@ -29,39 +29,6 @@
                                 }
                             }
                         }
-                    },
-                    "409": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "reason": {
-                                            "type": "string",
-                                            "enum": [
-                                                "already_logged_in"
-                                            ]
-                                        },
-                                        "userId": {
-                                            "type": "string",
-                                            "format": "uuid",
-                                            "minLength": 1
-                                        },
-                                        "sessionExpiry": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        }
-                                    },
-                                    "required": [
-                                        "reason",
-                                        "userId",
-                                        "sessionExpiry"
-                                    ],
-                                    "additionalProperties": false
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -102,69 +69,52 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "codeExpiry": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "nextCodeSoonestTime": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        }
-                                    },
-                                    "required": [
-                                        "codeExpiry",
-                                        "nextCodeSoonestTime"
-                                    ],
-                                    "additionalProperties": false
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
                                     "anyOf": [
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "reason": {
-                                                    "type": "string",
+                                                "success": {
+                                                    "type": "boolean",
                                                     "enum": [
-                                                        "already_logged_in"
+                                                        true
                                                     ]
                                                 },
-                                                "userId": {
+                                                "codeExpiry": {
                                                     "type": "string",
-                                                    "format": "uuid",
-                                                    "minLength": 1
+                                                    "format": "date-time"
                                                 },
-                                                "sessionExpiry": {
+                                                "nextCodeSoonestTime": {
                                                     "type": "string",
                                                     "format": "date-time"
                                                 }
                                             },
                                             "required": [
-                                                "reason",
-                                                "userId",
-                                                "sessionExpiry"
+                                                "success",
+                                                "codeExpiry",
+                                                "nextCodeSoonestTime"
                                             ],
                                             "additionalProperties": false
                                         },
                                         {
                                             "type": "object",
                                             "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "associated_with_another_user"
+                                                        "already_logged_in",
+                                                        "associated_with_another_user",
+                                                        "throttled"
                                                     ]
                                                 }
                                             },
                                             "required": [
+                                                "success",
                                                 "reason"
                                             ],
                                             "additionalProperties": false
@@ -177,7 +127,7 @@
                 }
             }
         },
-        "/api/v1/auth/verifyOtp": {
+        "/api/v1/auth/verify-phone-otp": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -215,21 +165,10 @@
                                                     "enum": [
                                                         true
                                                     ]
-                                                },
-                                                "userId": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "minLength": 1
-                                                },
-                                                "sessionExpiry": {
-                                                    "type": "string",
-                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
-                                                "success",
-                                                "userId",
-                                                "sessionExpiry"
+                                                "success"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -247,7 +186,9 @@
                                                     "enum": [
                                                         "expired_code",
                                                         "wrong_guess",
-                                                        "too_many_wrong_guess"
+                                                        "too_many_wrong_guess",
+                                                        "already_logged_in",
+                                                        "associated_with_another_user"
                                                     ]
                                                 }
                                             },
@@ -258,39 +199,6 @@
                                             "additionalProperties": false
                                         }
                                     ]
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "reason": {
-                                            "type": "string",
-                                            "enum": [
-                                                "already_logged_in"
-                                            ]
-                                        },
-                                        "userId": {
-                                            "type": "string",
-                                            "format": "uuid",
-                                            "minLength": 1
-                                        },
-                                        "sessionExpiry": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        }
-                                    },
-                                    "required": [
-                                        "reason",
-                                        "userId",
-                                        "sessionExpiry"
-                                    ],
-                                    "additionalProperties": false
                                 }
                             }
                         }
@@ -1559,7 +1467,7 @@
                 }
             }
         },
-        "/api/v1/rarimo/generate-verification-link": {
+        "/api/v1/auth/zkp/generate-verification-link": {
             "post": {
                 "responses": {
                     "200": {
@@ -1567,50 +1475,51 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "verificationLink": {
-                                            "type": "string",
-                                            "format": "uri"
-                                        }
-                                    },
-                                    "required": [
-                                        "verificationLink"
-                                    ],
-                                    "additionalProperties": false
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "reason": {
-                                            "type": "string",
-                                            "enum": [
-                                                "already_logged_in"
-                                            ]
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "verificationLink": {
+                                                    "type": "string",
+                                                    "format": "uri"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "verificationLink"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "userId": {
-                                            "type": "string",
-                                            "format": "uuid",
-                                            "minLength": 1
-                                        },
-                                        "sessionExpiry": {
-                                            "type": "string",
-                                            "format": "date-time"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "already_logged_in",
+                                                        "associated_with_another_user"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "reason",
-                                        "userId",
-                                        "sessionExpiry"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -1618,7 +1527,7 @@
                 }
             }
         },
-        "/api/v1/rarimo/verify-user-status-and-authenticate": {
+        "/api/v1/auth/zkp/verify-user-status-and-authenticate": {
             "post": {
                 "responses": {
                     "200": {
@@ -1626,22 +1535,56 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "rarimoStatus": {
-                                            "type": "string",
-                                            "enum": [
-                                                "not_verified",
-                                                "verified",
-                                                "failed_verification",
-                                                "uniqueness_check_failed"
-                                            ]
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "rarimoStatus": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_verified",
+                                                        "verified",
+                                                        "failed_verification",
+                                                        "uniqueness_check_failed"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "rarimoStatus"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "already_logged_in",
+                                                        "associated_with_another_user"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "rarimoStatus"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }

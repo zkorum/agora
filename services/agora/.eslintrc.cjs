@@ -10,6 +10,7 @@ module.exports = {
   parserOptions: {
     parser: require.resolve("@typescript-eslint/parser"),
     extraFileExtensions: [".vue"],
+    // project: true,
   },
 
   env: {
@@ -26,7 +27,7 @@ module.exports = {
     // https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin#usage
     // ESLint typescript rules
     "plugin:@typescript-eslint/recommended",
-
+    // "plugin:@typescript-eslint/recommended-type-checked",
     // Uncomment any of the lines below to choose desired strictness,
     // but leave only one uncommented!
     // See https://eslint.vuejs.org/rules/#available-rules
@@ -103,5 +104,19 @@ module.exports = {
     ],
 
     "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    //
+    // // useful to know, but too verbose https://stackoverflow.com/a/63488201/11046178
+    // "@typescript-eslint/no-floating-promises": [
+    //   "error",
+    //   {
+    //     ignoreVoid: true,
+    //   },
+    // ],
+    // "@typescript-eslint/no-misused-promises": [
+    //   "error",
+    //   {
+    //     checksVoidReturn: false,
+    //   },
+    // ],
   },
 };

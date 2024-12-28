@@ -7,17 +7,18 @@ import {
 import {
     authAttemptPhoneTable,
     deviceTable,
-    passportTable,
+    zkPassportTable,
     phoneTable,
     userTable,
 } from "@/schema.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 import type {
     AuthenticateRequestBody,
+    AuthenticateResponse,
     GetDeviceStatusResp,
     VerifyOtp200,
 } from "@/shared/types/dto.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { base64 } from "@/shared/common/index.js";
 import parsePhoneNumberFromString, {
@@ -27,6 +28,7 @@ import { log } from "@/app.js";
 import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
 import type { HttpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
+import { isLoggedIn } from "./authUtil.js";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
@@ -50,7 +52,7 @@ interface RegisterWithPhoneNumberProps {
     sessionExpiry: Date;
 }
 
-interface RegisterWithRarimoProps {
+interface RegisterWithZKPProps {
     db: PostgresDatabase;
     didWrite: string;
     citizenship: string;
@@ -59,7 +61,6 @@ interface RegisterWithRarimoProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
-    username: string;
 }
 
 interface LoginProps {
@@ -78,7 +79,7 @@ interface LoginNewDeviceProps {
     sessionExpiry: Date;
 }
 
-interface LoginNewDeviceRarimoProps {
+interface LoginNewDeviceWithZKPProps {
     db: PostgresDatabase;
     didWrite: string;
     userAgent: string;
@@ -88,14 +89,31 @@ interface LoginNewDeviceRarimoProps {
 
 interface AuthTypeAndUserId {
     userId: string;
-    type: AuthenticateType;
+    type: AuthenticateType | "associated_with_another_user";
+}
+
+interface GetPhoneAuthenticationTypeByNumber {
+    db: PostgresDatabase;
+    phoneNumber: string;
+    didWrite: string;
+    peppers: string[];
+}
+
+interface GetPhoneAuthenticationTypeByHash {
+    db: PostgresDatabase;
+    phoneHash: string;
+    didWrite: string;
+}
+
+interface GetZKPAuthenticationType {
+    db: PostgresDatabase;
+    nullifier: string;
+    didWrite: string;
 }
 
 interface AuthenticateAttemptProps {
     db: PostgresDatabase;
-    type: AuthenticateType;
     authenticateRequestBody: AuthenticateRequestBody;
-    userId: string;
     minutesBeforeSmsCodeExpiry: number;
     didWrite: string;
     userAgent: string;
@@ -146,16 +164,11 @@ interface InsertAuthAttemptCodeProps {
 //     otp: number;
 // }
 
-interface AuthenticateOtp {
-    codeExpiry: Date;
-    nextCodeSoonestTime: Date;
-}
-
 export async function getDeviceStatus(
     db: PostgresDatabase,
     didWrite: string,
+    now: Date,
 ): Promise<GetDeviceStatusResp> {
-    const now = nowZeroMs();
     const resultDevice = await db
         .select({
             userId: deviceTable.userId,
@@ -175,33 +188,21 @@ export async function getDeviceStatus(
     }
 }
 
-export async function throwIfAlreadyLoggedIn(
-    db: PostgresDatabase,
-    didWrite: string,
-    httpErrors: HttpErrors,
-): Promise<GetDeviceStatusResp> {
-    const deviceStatus = await getDeviceStatus(db, didWrite);
-    if (deviceStatus !== undefined) {
-        if (deviceStatus.isLoggedIn) {
-            throw httpErrors.createError(409, "Conflict", {
-                // !WARNING: if you change that, don't forget to change the zod auth409 and alreadyLoggedIn409
-                reason: "already_logged_in",
-                userId: deviceStatus.userId,
-                sessionExpiry: deviceStatus.sessionExpiry,
-            });
-        }
-    }
-    return deviceStatus;
-}
-
-export async function verifyOtp({
+export async function verifyPhoneOtp({
     db,
     maxAttempt,
     didWrite,
     code,
     httpErrors,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
-    await throwIfAlreadyLoggedIn(db, didWrite, httpErrors);
+    const now = nowZeroMs();
+    const status = await isLoggedIn(db, didWrite);
+    if (status.isLoggedIn) {
+        return {
+            success: false,
+            reason: "already_logged_in",
+        };
+    }
     const resultOtp = await db
         .select({
             userId: authAttemptPhoneTable.userId,
@@ -223,13 +224,34 @@ export async function verifyOtp({
             "Device has never made an authentication attempt",
         );
     }
-    const now = nowZeroMs();
+    // we recalculate type and userId for security reasons
+    const { type, userId } = await getPhoneAuthenticationTypeByHash({
+        db,
+        phoneHash: resultOtp[0].phoneHash,
+        didWrite,
+    });
+    if (resultOtp[0].authType !== type) {
+        log.warn(
+            `User was initially identified as trying to "${resultOtp[0].authType}" but is now going to "${type}"`,
+        );
+    }
+    if (resultOtp[0].userId !== userId) {
+        log.warn(
+            `User was initially identified as "${resultOtp[0].userId}" but is now "${userId}"`,
+        );
+    }
+    if (type === "associated_with_another_user") {
+        return {
+            success: false,
+            reason: type,
+        };
+    }
     if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
     } else if (resultOtp[0].code === code) {
         const loginSessionExpiry = new Date(now);
         loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
-        switch (resultOtp[0].authType) {
+        switch (type) {
             case "register": {
                 await registerWithPhoneNumber({
                     db,
@@ -242,14 +264,12 @@ export async function verifyOtp({
                     phoneHash: resultOtp[0].phoneHash,
                     pepperVersion: resultOtp[0].pepperVersion,
                     userAgent: resultOtp[0].userAgent,
-                    userId: resultOtp[0].userId,
+                    userId: userId,
                     now,
                     sessionExpiry: loginSessionExpiry,
                 });
                 return {
                     success: true,
-                    userId: resultOtp[0].userId,
-                    sessionExpiry: loginSessionExpiry,
                 };
             }
             case "login_known_device": {
@@ -261,8 +281,6 @@ export async function verifyOtp({
                 });
                 return {
                     success: true,
-                    userId: resultOtp[0].userId,
-                    sessionExpiry: loginSessionExpiry,
                 };
             }
             case "login_new_device": {
@@ -270,14 +288,12 @@ export async function verifyOtp({
                     db,
                     didWrite,
                     userAgent: resultOtp[0].userAgent,
-                    userId: resultOtp[0].userId,
+                    userId: userId,
                     now,
                     sessionExpiry: loginSessionExpiry,
                 });
                 return {
                     success: true,
-                    userId: resultOtp[0].userId,
-                    sessionExpiry: loginSessionExpiry,
                 };
             }
         }
@@ -372,7 +388,7 @@ export async function registerWithPhoneNumber({
     });
 }
 
-export async function registerWithRarimo({
+export async function registerWithZKP({
     db,
     didWrite,
     citizenship,
@@ -381,12 +397,11 @@ export async function registerWithRarimo({
     userAgent,
     userId,
     sessionExpiry,
-    username,
-}: RegisterWithRarimoProps): Promise<void> {
-    log.info("Register with Rarimo");
+}: RegisterWithZKPProps): Promise<void> {
+    log.info("Register with ZKP");
     await db.transaction(async (tx) => {
         await tx.insert(userTable).values({
-            username: username,
+            username: await generateUnusedRandomUsername({ db: db }),
             id: userId,
         });
         await tx.insert(deviceTable).values({
@@ -395,7 +410,7 @@ export async function registerWithRarimo({
             userAgent: userAgent,
             sessionExpiry: sessionExpiry,
         });
-        await tx.insert(passportTable).values({
+        await tx.insert(zkPassportTable).values({
             userId: userId,
             citizenship: citizenship,
             nullifier: nullifier,
@@ -432,14 +447,14 @@ export async function loginNewDevice({
 }
 
 // ! WARN we assume the OTP was verified for login new device at this point
-export async function loginNewDeviceRarimo({
+export async function loginNewDeviceWithZKP({
     db,
     didWrite,
     userId,
     userAgent,
     sessionExpiry,
-}: LoginNewDeviceRarimoProps) {
-    log.info("Logging-in new device with Rarimo");
+}: LoginNewDeviceWithZKPProps) {
+    log.info("Logging-in new device with ZKP");
     await db.insert(deviceTable).values({
         userId: userId,
         didWrite: didWrite,
@@ -475,13 +490,13 @@ export async function loginKnownDevice({
 }
 
 // ! WARN we assume the OTP was verified and the device is already syncing
-export async function loginKnownDeviceRarimo({
+export async function loginKnownDeviceWithZKP({
     db,
     didWrite,
     now,
     sessionExpiry,
 }: LoginProps) {
-    log.info("Logging-in known device with Rarimo");
+    log.info("Logging-in known device with ZKP");
     await db
         .update(deviceTable)
         .set({
@@ -491,13 +506,12 @@ export async function loginKnownDeviceRarimo({
         .where(eq(deviceTable.didWrite, didWrite));
 }
 
-// should be up to date with DB value
+// !WARNING: manually update DB enum value if changing this
 // TODO: automatically sync them - use one type only
-export enum AuthenticateType {
-    REGISTER = "register",
-    LOGIN_KNOWN_DEVICE = "login_known_device",
-    LOGIN_NEW_DEVICE = "login_new_device",
-}
+export type AuthenticateType =
+    | "register"
+    | "login_known_device"
+    | "login_new_device";
 
 export async function isPhoneNumberAvailable(
     db: PostgresDatabase,
@@ -514,14 +528,14 @@ export async function isPhoneNumberAvailable(
     }
 }
 
-export async function isDidWriteAvailable(
+export async function isNullifierAvailable(
     db: PostgresDatabase,
-    didWrite: string,
+    nullifier: string,
 ): Promise<boolean> {
     const result = await db
         .select()
-        .from(deviceTable)
-        .where(eq(deviceTable.didWrite, didWrite));
+        .from(zkPassportTable)
+        .where(eq(zkPassportTable.nullifier, nullifier));
     if (result.length === 0) {
         return true;
     } else {
@@ -529,29 +543,101 @@ export async function isDidWriteAvailable(
     }
 }
 
-export async function getOrGenerateUserId(
+type DidAssociationStatus = "does_not_exist" | "associated" | "not_associated";
+
+interface GetDidWriteAssociationWithPhoneProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    phoneHash: string;
+}
+
+interface GetDidWriteAssociationWithNullifierProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    nullifier: string;
+}
+
+export async function getDidWriteAssociationWithPhone({
+    db,
+    didWrite,
+    phoneHash,
+}: GetDidWriteAssociationWithPhoneProps): Promise<DidAssociationStatus> {
+    const result = await db
+        .select({
+            phoneHash: phoneTable.phoneHash,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            phoneTable,
+            and(
+                eq(phoneTable.userId, deviceTable.userId),
+                eq(phoneTable.phoneHash, phoneHash),
+            ),
+        )
+        .where(eq(deviceTable.didWrite, didWrite));
+    if (result.length === 0) {
+        return "does_not_exist";
+    }
+    const didAssociatedWithPhone = result.filter((r) => r.phoneHash !== null);
+    if (didAssociatedWithPhone.length !== 0) {
+        return "associated";
+    } else {
+        // This didWrite could be associated with another phone, or with a nullifer, or it could very well be dangling, though this is not permitted and enforced using checks in the DB.
+        // This status cannot be known to the frontend unless the user owns the didWrite corresponding private key, because otherwise the HTTP request would return a 401 already.
+        // The didWrite being public, this is an important privacy consideration: this mechanism protects against enumeration attacks.
+        return "not_associated";
+    }
+}
+
+export async function getDidWriteAssociationWithNullifier({
+    db,
+    didWrite,
+    nullifier,
+}: GetDidWriteAssociationWithNullifierProps): Promise<DidAssociationStatus> {
+    const result = await db
+        .select({
+            nullifier: zkPassportTable.nullifier,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            zkPassportTable,
+            and(
+                eq(zkPassportTable.userId, deviceTable.userId),
+                eq(zkPassportTable.nullifier, nullifier),
+            ),
+        )
+        .where(eq(deviceTable.didWrite, didWrite));
+    if (result.length === 0) {
+        return "does_not_exist";
+    }
+    const didAssociatedWithNullifier = result.filter(
+        (r) => r.nullifier !== null,
+    );
+    if (didAssociatedWithNullifier.length !== 0) {
+        return "associated";
+    } else {
+        // This didWrite could be associated with another nullifier, or with a phone, or it could very well be dangling, though this is not permitted and enforced using checks in the DB.
+        // There is no need for specific protection against enumeration attacks here, since the nullifier itself is privacy-preserving, and publicly associated with the didWrite.
+        return "not_associated";
+    }
+}
+
+export async function getOrGenerateUserIdFromPhoneHash(
     db: PostgresDatabase,
-    phoneNumber: string,
-    peppers: string[],
+    phoneHash: string,
 ): Promise<string> {
-    const pepper = base64.base64Decode(peppers[0]); // for now we only support one unique app-wide pepper - we'll see when rotating
-    const calculatedPhoneHash = await hashWithSalt({
-        value: phoneNumber,
-        salt: pepper,
-    });
-    const expectedPhoneHash = base64.base64Encode(calculatedPhoneHash);
     const result = await db
         .select({ userId: userTable.id })
         .from(userTable)
         .leftJoin(phoneTable, eq(phoneTable.userId, userTable.id))
-        .where(eq(phoneTable.phoneHash, expectedPhoneHash));
+        .where(eq(phoneTable.phoneHash, phoneHash));
     if (result.length === 0) {
         // The phone number is not associated with any existing user
         // But maybe it was already used to attempt a register
         const resultAttempt = await db
             .select({ userId: authAttemptPhoneTable.userId })
             .from(authAttemptPhoneTable)
-            .where(eq(authAttemptPhoneTable.phoneHash, expectedPhoneHash));
+            .where(eq(authAttemptPhoneTable.phoneHash, phoneHash));
         if (resultAttempt.length === 0) {
             // this email has never been used to attempt a register
             return generateUUID();
@@ -564,52 +650,106 @@ export async function getOrGenerateUserId(
     }
 }
 
-export async function getAuthenticateType(
+export async function getOrGenerateUserIdFromNullifier(
     db: PostgresDatabase,
-    authenticateBody: AuthenticateRequestBody,
-    didWrite: string,
-    peppers: string[],
-    httpErrors: HttpErrors,
-): Promise<AuthTypeAndUserId> {
-    const phoneHash = await generatePhoneHash({
-        phoneNumber: authenticateBody.phoneNumber,
-        peppers: peppers,
-        pepperVersion: PEPPER_VERSION,
-    });
+    nullifier: string,
+): Promise<string> {
+    const result = await db
+        .select({ userId: userTable.id })
+        .from(userTable)
+        .leftJoin(zkPassportTable, eq(zkPassportTable.userId, userTable.id))
+        .where(eq(zkPassportTable.nullifier, nullifier));
+    if (result.length === 0) {
+        return generateUUID();
+    } else {
+        return result[0].userId;
+    }
+}
 
+export async function getPhoneAuthenticationTypeByHash({
+    db,
+    phoneHash,
+    didWrite,
+}: GetPhoneAuthenticationTypeByHash): Promise<AuthTypeAndUserId> {
     const isPhoneNumberAvailableVal = await isPhoneNumberAvailable(
         db,
         phoneHash,
     );
-    const isDidWriteAvailableVal = await isDidWriteAvailable(db, didWrite);
-    const userId = await getOrGenerateUserId(
-        db,
-        authenticateBody.phoneNumber,
-        peppers,
-    );
-    if (isPhoneNumberAvailableVal && isDidWriteAvailableVal) {
-        return { type: AuthenticateType.REGISTER, userId: userId };
-    } else if (!isPhoneNumberAvailableVal && isDidWriteAvailableVal) {
-        return { type: AuthenticateType.LOGIN_NEW_DEVICE, userId: userId };
-    } else if (!isPhoneNumberAvailableVal && !isDidWriteAvailableVal) {
-        await throwIfAlreadyLoggedIn(db, didWrite, httpErrors);
-        return {
-            type: AuthenticateType.LOGIN_KNOWN_DEVICE,
-            userId: userId,
-        };
-    } else {
-        throw httpErrors.createError(409, "Conflict", {
-            // !WARNING: if you change that, don't forget to change the zod auth409
-            reason: "associated_with_another_user",
+    const didWriteAssociationWithPhoneStatus: DidAssociationStatus =
+        await getDidWriteAssociationWithPhone({
+            db,
+            didWrite,
+            phoneHash,
         });
+    const userId = await getOrGenerateUserIdFromPhoneHash(db, phoneHash);
+    switch (didWriteAssociationWithPhoneStatus) {
+        case "does_not_exist":
+            if (isPhoneNumberAvailableVal) {
+                return { type: "register", userId: userId };
+            } else {
+                return { type: "login_new_device", userId: userId };
+            }
+        case "associated":
+            return {
+                type: "login_known_device",
+                userId: userId,
+            };
+        case "not_associated":
+            return { type: "associated_with_another_user", userId: userId };
+    }
+}
+
+export async function getPhoneAuthenticationTypeByNumber({
+    db,
+    phoneNumber,
+    didWrite,
+    peppers,
+}: GetPhoneAuthenticationTypeByNumber): Promise<AuthTypeAndUserId> {
+    const phoneHash = await generatePhoneHash({
+        phoneNumber: phoneNumber,
+        peppers: peppers,
+        pepperVersion: PEPPER_VERSION,
+    });
+    return getPhoneAuthenticationTypeByHash({
+        db,
+        phoneHash,
+        didWrite,
+    });
+}
+
+export async function getZKPAuthenticationType({
+    db,
+    nullifier,
+    didWrite,
+}: GetZKPAuthenticationType): Promise<AuthTypeAndUserId> {
+    const isNullifierAvailableVal = await isNullifierAvailable(db, nullifier);
+    const didWriteAssociationWithNullifierStatus: DidAssociationStatus =
+        await getDidWriteAssociationWithNullifier({
+            db,
+            didWrite,
+            nullifier,
+        });
+    const userId = await getOrGenerateUserIdFromNullifier(db, nullifier);
+    switch (didWriteAssociationWithNullifierStatus) {
+        case "does_not_exist":
+            if (isNullifierAvailableVal) {
+                return { type: "register", userId: userId };
+            } else {
+                return { type: "login_new_device", userId: userId };
+            }
+        case "associated":
+            return {
+                type: "login_known_device",
+                userId: userId,
+            };
+        case "not_associated":
+            return { type: "associated_with_another_user", userId: userId };
     }
 }
 
 export async function authenticateAttempt({
     db,
-    type,
     authenticateRequestBody,
-    userId,
     minutesBeforeSmsCodeExpiry,
     didWrite,
     userAgent,
@@ -619,8 +759,29 @@ export async function authenticateAttempt({
     doUseTestCode,
     doSend,
     peppers,
-}: AuthenticateAttemptProps): Promise<AuthenticateOtp> {
+}: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
     const now = nowZeroMs();
+    // TODO: move this check to verifyUCAN directly in the controller:
+    const status = await isLoggedIn(db, didWrite);
+    if (status.isLoggedIn) {
+        return {
+            success: false,
+            reason: "already_logged_in",
+        };
+    }
+
+    const { type, userId } = await getPhoneAuthenticationTypeByNumber({
+        db,
+        phoneNumber: authenticateRequestBody.phoneNumber,
+        didWrite,
+        peppers,
+    });
+    if (type === "associated_with_another_user") {
+        return {
+            success: false,
+            reason: type,
+        };
+    }
     const resultHasAttempted = await db
         .select({
             codeExpiry: authAttemptPhoneTable.codeExpiry,
@@ -671,6 +832,7 @@ export async function authenticateAttempt({
             nextCodeSoonestTime.getMinutes() + throttleSmsMinutesInterval,
         );
         return {
+            success: true,
             codeExpiry: resultHasAttempted[0].codeExpiry,
             nextCodeSoonestTime: nextCodeSoonestTime,
         };
@@ -735,7 +897,7 @@ export async function insertAuthAttemptCode({
     doUseTestCode,
     doSend,
     peppers, // awsMailConf,
-}: InsertAuthAttemptCodeProps): Promise<AuthenticateOtp> {
+}: InsertAuthAttemptCodeProps): Promise<AuthenticateResponse> {
     if (doUseTestCode && doSend) {
         throw httpErrors.badRequest("Test code shall not be sent via sms");
     }
@@ -744,13 +906,18 @@ export async function insertAuthAttemptCode({
         peppers: peppers,
         pepperVersion: PEPPER_VERSION,
     });
-    await throttleByPhoneHash(
+    const isThrottled = await isThrottledByPhoneHash(
         db,
         phoneHash,
         throttleSmsMinutesInterval,
         minutesBeforeSmsCodeExpiry,
-        httpErrors,
     );
+    if (isThrottled) {
+        return {
+            success: false,
+            reason: "throttled",
+        };
+    }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
@@ -805,6 +972,7 @@ export async function insertAuthAttemptCode({
         nextCodeSoonestTime.getMinutes() + throttleSmsMinutesInterval,
     );
     return {
+        success: true,
         codeExpiry: codeExpiry,
         nextCodeSoonestTime: nextCodeSoonestTime,
     };
@@ -824,7 +992,7 @@ export async function updateAuthAttemptCode({
     doUseTestCode,
     testCode,
     peppers,
-}: UpdateAuthAttemptCodeProps): Promise<AuthenticateOtp> {
+}: UpdateAuthAttemptCodeProps): Promise<AuthenticateResponse> {
     if (doUseTestCode && doSend) {
         throw httpErrors.badRequest("Test code shall not be sent via sms");
     }
@@ -835,13 +1003,18 @@ export async function updateAuthAttemptCode({
         salt: pepper,
     });
     const phoneHash = base64.base64Encode(hash);
-    await throttleByPhoneHash(
+    const isThrottled = await isThrottledByPhoneHash(
         db,
         phoneHash,
         throttleSmsMinutesInterval,
         minutesBeforeSmsCodeExpiry,
-        httpErrors,
     );
+    if (isThrottled) {
+        return {
+            success: false,
+            reason: "throttled",
+        };
+    }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
@@ -898,19 +1071,19 @@ export async function updateAuthAttemptCode({
         nextCodeSoonestTime.getMinutes() + throttleSmsMinutesInterval,
     );
     return {
+        success: true,
         codeExpiry: codeExpiry,
         nextCodeSoonestTime: nextCodeSoonestTime,
     };
 }
 
 // minutesInterval: "3" in "we allow one sms every 3 minutes"
-export async function throttleByPhoneHash(
+export async function isThrottledByPhoneHash(
     db: PostgresDatabase,
     phoneHash: string,
     minutesInterval: number,
     minutesBeforeSmsCodeExpiry: number,
-    httpErrors: HttpErrors,
-) {
+): Promise<boolean> {
     const now = nowZeroMs();
     // now - 3 minutes if minutesInterval == 3
     const minutesIntervalAgo = new Date(now);
@@ -934,9 +1107,10 @@ export async function throttleByPhoneHash(
             result.lastOtpSentAt.getTime() >= minutesIntervalAgo.getTime() &&
             expectedExpiryTime.getTime() === result.codeExpiry.getTime() // code hasn't been guessed, because otherwise it would have been manually expired before the normal expiry time
         ) {
-            throw httpErrors.tooManyRequests("Throttling amount of sms sent");
+            return true;
         }
     }
+    return false;
 }
 
 // !WARNING: check should already been done that the device exists and is logged in

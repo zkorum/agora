@@ -110,17 +110,6 @@ CREATE TABLE IF NOT EXISTS "organisation" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "passport" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "passport_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"user_id" uuid NOT NULL,
-	"citizenship" varchar(10) NOT NULL,
-	"nullifier" text NOT NULL,
-	"sex" varchar(50) NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "passport_nullifier_unique" UNIQUE("nullifier")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "phone" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "phone_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_id" uuid NOT NULL,
@@ -310,6 +299,17 @@ CREATE TABLE IF NOT EXISTS "vote" (
 	CONSTRAINT "vote_author_id_comment_id_unique" UNIQUE("author_id","comment_id")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "zk_passport" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "zk_passport_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_id" uuid NOT NULL,
+	"citizenship" varchar(10) NOT NULL,
+	"nullifier" text NOT NULL,
+	"sex" varchar(50) NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "zk_passport_nullifier_unique" UNIQUE("nullifier")
+);
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "comment_content" ADD CONSTRAINT "comment_content_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
@@ -402,12 +402,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "moderation_table" ADD CONSTRAINT "moderation_table_moderator_id_user_id_fk" FOREIGN KEY ("moderator_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "passport" ADD CONSTRAINT "passport_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -636,6 +630,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "vote" ADD CONSTRAINT "vote_current_content_id_vote_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."vote_content"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "zk_passport" ADD CONSTRAINT "zk_passport_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

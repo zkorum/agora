@@ -689,7 +689,7 @@ export const organisationTable = pgTable("organisation", {
         .notNull(),
 });
 
-export const passportTable = pgTable("passport", {
+export const zkPassportTable = pgTable("zk_passport", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     userId: uuid("user_id")
         .references(() => userTable.id)
@@ -823,7 +823,7 @@ export const idProofTable = pgTable("id_proof", {
         .notNull(),
 });
 
-// this contains a tuple that cannot easily be mapped to enum AuthenticateType
+// !WARNING: this contains a tuple that cannot easily be mapped to enum AuthenticateType. Change both manually.
 // TODO: use zod or something to maintain one set of type only
 export const authType = pgEnum("auth_type", [
     "register",

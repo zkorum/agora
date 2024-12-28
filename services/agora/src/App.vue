@@ -14,8 +14,8 @@ swiperElement.register();
 
 const authenticationStore = useBackendAuthApi();
 
-onMounted(() => {
-  authenticationStore.initializeAuthState();
+onMounted(async () => {
+  await authenticationStore.initializeAuthState();
 });
 </script>
 

@@ -138,8 +138,8 @@ import { onMounted, ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
-import { useCommonApi } from "src/utils/api/common";
-import { axios, api } from "src/boot/axios";
+import { useCommonApi, type KeyAction } from "src/utils/api/common";
+import { api } from "src/boot/axios";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted } from "vue";
@@ -158,7 +158,7 @@ const { share } = useWebShare();
 const { buildEncodedUcan } = useCommonApi();
 const { showNotifyMessage } = useNotify();
 
-let isDidLoggedInIntervalId: number | undefined = undefined;
+let isDeviceLoggedInIntervalId: number | undefined = undefined;
 const verificationLink = ref("");
 
 const qrcode = useQRCode(verificationLink);
@@ -180,42 +180,48 @@ if (quasar.platform.is.android) {
   rarimeStoreLink.value = "https://rarime.com/";
 }
 
-onMounted(async () => {
+async function generateVerificationLink(keyAction?: KeyAction) {
   try {
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1RarimoGenerateVerificationLinkPost();
-    const encodedUcan = await buildEncodedUcan(url, options);
+      await DefaultApiAxiosParamCreator().apiV1AuthZkpGenerateVerificationLinkPost();
+    const encodedUcan = await buildEncodedUcan(url, options, keyAction);
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1RarimoGenerateVerificationLinkPost({
+    ).apiV1AuthZkpGenerateVerificationLinkPost({
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },
     });
-    verificationLink.value = response.data.verificationLink;
-
-    isDidLoggedInIntervalId = window.setInterval(isDidLoggedIn, 2000);
-  } catch (e) {
-    if (axios.isAxiosError(e)) {
-      if (e.response?.status === 409) {
-        // already_logged_in
-        // WARNING: manually change this if you change backend
-        await completeVerification();
+    if (response.data.success) {
+      verificationLink.value = response.data.verificationLink;
+      isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
+    } else {
+      switch (response.data.reason) {
+        case "already_logged_in":
+          showNotifyMessage("Verification successful 🎉");
+          await completeVerification();
+          break;
+        case "associated_with_another_user":
+          await generateVerificationLink("overwrite");
+          break;
       }
     }
-    console.error(e);
-    showNotifyMessage(
-      "Failed to fetch RariMe verification link: try refreshing the page"
-    );
+  } catch (e) {
+    console.error("Error while fetching Rarimo verification link", e);
+    showNotifyMessage("Oops! Unexpected error—try refreshing the page");
     verificationLinkGenerationFailed.value = true;
   }
+}
+
+onMounted(async () => {
+  await generateVerificationLink();
 });
 
 onUnmounted(() => {
-  if (isDidLoggedInIntervalId !== undefined) {
-    clearInterval(isDidLoggedInIntervalId);
+  if (isDeviceLoggedInIntervalId !== undefined) {
+    clearInterval(isDeviceLoggedInIntervalId);
   }
 });
 
@@ -223,27 +229,59 @@ function copyVerificationLink() {
   share("Verification Link", verificationLink.value);
 }
 
-async function isDidLoggedIn() {
+async function isDeviceLoggedIn() {
   try {
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1RarimoVerifyUserStatusAndAuthenticatePost();
+      await DefaultApiAxiosParamCreator().apiV1AuthZkpVerifyUserStatusAndAuthenticatePost();
     const encodedUcan = await buildEncodedUcan(url, options);
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1RarimoVerifyUserStatusAndAuthenticatePost({
+    ).apiV1AuthZkpVerifyUserStatusAndAuthenticatePost({
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },
     });
-    if (response.data.rarimoStatus === "verified") {
-      await completeVerification();
+    if (response.data.success) {
+      switch (response.data.rarimoStatus) {
+        case "not_verified":
+          break;
+        case "verified":
+          await completeVerification();
+          break;
+        case "failed_verification":
+          console.error(
+            "Verification failed while verifying proof",
+            response.data
+          );
+          break;
+        case "uniqueness_check_failed":
+          console.error(
+            "Uniqueness-check failed while verifying proof",
+            response.data
+          );
+          break;
+      }
     } else {
-      console.log(response.data.rarimoStatus);
+      switch (response.data.reason) {
+        case "already_logged_in":
+          await completeVerification();
+          break;
+        case "associated_with_another_user":
+          // This did:key belongs to another phone number / nullifier.
+          // Something wrong probably happened during keystore eviction on log out.
+          // Retry, and this time overwrite the existing key with a new one.
+          await generateVerificationLink("overwrite");
+          showNotifyMessage(
+            "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!"
+          );
+          break;
+      }
     }
   } catch (e) {
-    console.error(e);
+    // TODO: handle connection error with just ONE app-wide meaningful "verify"
+    console.error("Error while verifying proof", e);
     showNotifyMessage("Failed to verify identity proof");
   }
 }

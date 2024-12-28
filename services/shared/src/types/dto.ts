@@ -33,18 +33,27 @@ export class Dto {
     static verifyOtpReqBody = z.object({
         code: zodCode,
     });
-    static authenticateResponse = z
-        .object({
-            codeExpiry: z.date(),
-            nextCodeSoonestTime: z.date(),
-        })
-        .strict();
+    static authenticate200 = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                codeExpiry: z.date(),
+                nextCodeSoonestTime: z.date(),
+            })
+            .strict(),
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_logged_in",
+                "associated_with_another_user",
+                "throttled",
+            ]),
+        }),
+    ]);
     static verifyOtp200 = z.discriminatedUnion("success", [
         z
             .object({
                 success: z.literal(true),
-                userId: zodUserId,
-                sessionExpiry: z.date(),
             })
             .strict(),
         z
@@ -54,33 +63,12 @@ export class Dto {
                     "expired_code",
                     "wrong_guess",
                     "too_many_wrong_guess",
+                    "already_logged_in",
+                    "associated_with_another_user",
                 ]),
             })
             .strict(),
     ]);
-    // !WARNING: when changing 409s - also change expected type in the frontend and backend services manually!
-    static auth409 = z.discriminatedUnion("reason", [
-        z
-            .object({
-                reason: z.literal("already_logged_in"),
-                userId: zodUserId,
-                sessionExpiry: z.date(),
-            })
-            .strict(),
-        z
-            .object({
-                reason: z.literal("associated_with_another_user"),
-            })
-            .strict(),
-    ]);
-    // !WARNING: when changing 409s - also change expected type in the frontend and backend services manually!
-    static alreadyLoggedIn409 = z
-        .object({
-            reason: z.literal("already_logged_in"),
-            userId: zodUserId,
-            sessionExpiry: z.date(),
-        })
-        .strict();
     static isLoggedInResponse = z.discriminatedUnion("isLoggedIn", [
         z.object({ isLoggedIn: z.literal(true), userId: zodUserId }).strict(),
         z
@@ -213,9 +201,21 @@ export class Dto {
             commentSlugId: zodSlugId,
         })
         .strict();
-    static generateVerificationLink200 = z.object({
-        verificationLink: z.string().url(),
-    });
+    static generateVerificationLink200 = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                verificationLink: z.string().url(),
+            })
+            .strict(),
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_logged_in",
+                "associated_with_another_user",
+            ]),
+        }),
+    ]);
     static submitUsernameChangeRequest = z
         .object({
             username: zodUsername,
@@ -256,20 +256,32 @@ export class Dto {
     //             .strict(),
     //     ],
     // );
-    static verifyUserStatusAndAuthenticate200 = z
-        .object({
-            rarimoStatus: zodRarimoStatusAttributes,
-        })
-        .strict();
+    static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    rarimoStatus: zodRarimoStatusAttributes,
+                })
+                .strict(),
+            z.object({
+                success: z.literal(false),
+                reason: z.enum([
+                    "already_logged_in",
+                    "associated_with_another_user",
+                ]),
+            }),
+        ],
+    );
 }
 
 export type AuthenticateRequestBody = z.infer<
     typeof Dto.authenticateRequestBody
 >;
+export type AuthenticateResponse = z.infer<typeof Dto.authenticate200>;
 export type VerifyOtp200 = z.infer<typeof Dto.verifyOtp200>;
 export type VerifyOtpReqBody = z.infer<typeof Dto.verifyOtpReqBody>;
-export type Auth409 = z.infer<typeof Dto.auth409>;
-export type AlreadyLoggedIn409 = z.infer<typeof Dto.alreadyLoggedIn409>;
 export type IsLoggedInResponse = z.infer<typeof Dto.isLoggedInResponse>;
 export type GetDeviceStatusResp = z.infer<typeof Dto.getDeviceStatusResp>;
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
@@ -292,6 +304,9 @@ export type FetchUserProfileResponse = z.infer<
     typeof Dto.fetchUserProfileResponse
 >;
 export type FetchUserPostsResponse = z.infer<typeof Dto.fetchUserPostsResponse>;
+export type GenerateVerificationLink200 = z.infer<
+    typeof Dto.generateVerificationLink200
+>;
 export type VerifyUserStatusAndAuthenticate200 = z.infer<
     typeof Dto.verifyUserStatusAndAuthenticate200
 >;

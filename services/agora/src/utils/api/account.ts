@@ -25,7 +25,6 @@ export function useBackendAccountApi() {
     const NAME_UPDATE_SUCCESS_MESSAGE = "Username updated";
 
     if (username == profileUsername) {
-      showNotifyMessage(NAME_UPDATE_SUCCESS_MESSAGE);
       return true;
     }
 

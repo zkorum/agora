@@ -23,12 +23,18 @@ export const useBottomSheet = () => {
   const { profileData, loadUserProfile } = useUserStore();
   const { loadPostData } = usePostStore();
 
+  interface QuasarAction {
+    label: string;
+    icon: string;
+    id: string;
+  }
+
   function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
     deleteCommentCallback: (deleted: boolean) => void
   ) {
-    const actionList = [];
+    const actionList: QuasarAction[] = [];
 
     actionList.push({
       label: "Report",
@@ -50,7 +56,7 @@ export const useBottomSheet = () => {
         grid: false,
         actions: actionList,
       })
-      .onOk(async (action) => {
+      .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
           showStandardReportSelector("comment");
@@ -73,7 +79,7 @@ export const useBottomSheet = () => {
   }
 
   function showPostOptionSelector(postSlugId: string, posterUserName: string) {
-    const actionList = [];
+    const actionList: QuasarAction[] = [];
 
     actionList.push({
       label: "Report",
@@ -103,7 +109,7 @@ export const useBottomSheet = () => {
         grid: false,
         actions: actionList,
       })
-      .onOk(async (action) => {
+      .onOk(async (action: QuasarAction) => {
         if (action.id == "report") {
           showStandardReportSelector("post");
         } else if (action.id == "delete") {
@@ -113,11 +119,11 @@ export const useBottomSheet = () => {
             await loadPostData(false);
             await loadUserProfile();
             if (route.name == "single-post") {
-              router.push({ name: "default-home-feed" });
+              await router.push({ name: "default-home-feed" });
             }
           }
         } else if (action.id == "moderate") {
-          router.push({
+          await router.push({
             name: "moderate-post-page",
             params: { postSlugId: postSlugId },
           });
@@ -132,7 +138,7 @@ export const useBottomSheet = () => {
   }
 
   function showStandardReportSelector(itemName: "post" | "comment") {
-    const actionList = [];
+    const actionList: QuasarAction[] = [];
 
     const icon = "mdi-circle-small";
 
@@ -180,7 +186,7 @@ export const useBottomSheet = () => {
         grid: false,
         actions: actionList,
       })
-      .onOk((action) => {
+      .onOk((action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         dialog.showReportDialog(itemName);
       })
@@ -193,7 +199,7 @@ export const useBottomSheet = () => {
   }
 
   function showCommentRankingReportSelector(reportReasonId: Ref<string>) {
-    const actionList = [];
+    const actionList: QuasarAction[] = [];
 
     const icon = "mdi-circle-small";
 
@@ -242,7 +248,7 @@ export const useBottomSheet = () => {
         grid: false,
         actions: actionList,
       })
-      .onOk((action) => {
+      .onOk((action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         reportReasonId.value = action.id;
       })

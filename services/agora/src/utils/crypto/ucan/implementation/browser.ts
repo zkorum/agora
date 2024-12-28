@@ -109,11 +109,11 @@ export const did: Implementation["did"] = {
   },
 };
 
-export async function ed25519Verify({
+export function ed25519Verify({
   message,
   publicKey,
   signature,
-}: VerifyArgs): Promise<boolean> {
+}: VerifyArgs): boolean {
   return tweetnacl.sign.detached.verify(message, signature, publicKey);
 }
 

@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
+import { axios } from "src/boot/axios";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { usePostStore } from "src/stores/post";
@@ -56,8 +57,21 @@ async function logoutCleanup() {
 }
 
 async function logoutRequested() {
-  await backendAuth.logout();
-  logoutCleanup();
+  try {
+    await backendAuth.logout();
+    logoutCleanup();
+  } catch (e) {
+    if (axios.isAxiosError(e)) {
+      if (e.response?.status !== 401 && e.response?.status !== 403) {
+        console.error("Unexpected status when logging out", e);
+      }
+    } else {
+      if (e.response?.status !== 401 && e.response?.status !== 403) {
+        console.error("Unexpected error when logging out", e);
+      }
+    }
+  }
+  // logoutCleanup();
 }
 
 const accountSettings: SettingsInterface[] = [

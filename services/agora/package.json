@@ -37,7 +37,7 @@
     "@vueuse/integrations": "^11.1.0",
     "@vueuse/router": "^11.0.0",
     "@zkorum/capacitor-secure-signing": "^1.4.0",
-    "@zkorum/keystore-idb": "^0.18.0",
+    "@zkorum/keystore-idb": "^0.18.1",
     "axios": "^1.7.7",
     "buffer": "^6.0.3",
     "cborg": "^4.2.0",

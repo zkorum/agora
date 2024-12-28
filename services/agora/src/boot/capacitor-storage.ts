@@ -19,8 +19,8 @@ export default defineBoot(async (/* { app } */) => {
       title: i18n.global.t("boot.capacitorStorage.title"),
       message: i18n.global.t("boot.capacitorStorage.message"),
       ok: i18n.global.t("boot.capacitorStorage.ok"),
-    }).onOk(() => {
-      App.exitApp();
+    }).onOk(async () => {
+      await App.exitApp();
     });
   }
 });

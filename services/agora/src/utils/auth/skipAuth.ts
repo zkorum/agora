@@ -19,17 +19,17 @@ export function useSkipAuth() {
       phoneNumber: verificationPhoneNumber.value,
       defaultCallingCode: verificationDefaultCallingCode.value,
     });
-    if (requestCodeResponse.isSuccessful) {
+    if (requestCodeResponse.success) {
       await phoneVerification.submitCode(0);
       isAuthenticated.value = true;
       return true;
     } else {
       console.log("Failed to request code");
-      if (requestCodeResponse.error == "already_logged_in") {
+      if (requestCodeResponse.reason == "already_logged_in") {
         console.log("Already logged in");
         isAuthenticated.value = true;
         return true;
-      } else if (requestCodeResponse.error == "throttled") {
+      } else if (requestCodeResponse.reason == "throttled") {
         console.log("Throttled please try again later");
         return false;
       }

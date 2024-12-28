@@ -44,6 +44,12 @@ export interface ApiV1AccountSubmitUsernameChangePostRequest {
 export interface ApiV1AuthAuthenticatePost200Response {
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1AuthAuthenticatePost200Response
+     */
+    'success': boolean;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1AuthAuthenticatePost200Response
      */
@@ -54,58 +60,74 @@ export interface ApiV1AuthAuthenticatePost200Response {
      * @memberof ApiV1AuthAuthenticatePost200Response
      */
     'nextCodeSoonestTime': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1AuthAuthenticatePost409Response
- */
-export interface ApiV1AuthAuthenticatePost409Response {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AuthAuthenticatePost409Response
+     * @memberof ApiV1AuthAuthenticatePost200Response
      */
-    'reason': ApiV1AuthAuthenticatePost409ResponseReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthAuthenticatePost409Response
-     */
-    'userId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthAuthenticatePost409Response
-     */
-    'sessionExpiry': string;
+    'reason': ApiV1AuthAuthenticatePost200ResponseReasonEnum;
 }
 
-export const ApiV1AuthAuthenticatePost409ResponseReasonEnum = {
-    AssociatedWithAnotherUser: 'associated_with_another_user'
+export const ApiV1AuthAuthenticatePost200ResponseReasonEnum = {
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user',
+    Throttled: 'throttled'
 } as const;
 
-export type ApiV1AuthAuthenticatePost409ResponseReasonEnum = typeof ApiV1AuthAuthenticatePost409ResponseReasonEnum[keyof typeof ApiV1AuthAuthenticatePost409ResponseReasonEnum];
+export type ApiV1AuthAuthenticatePost200ResponseReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1AuthAuthenticatePost409ResponseAnyOf
+ * @interface ApiV1AuthAuthenticatePost200ResponseAnyOf
  */
-export interface ApiV1AuthAuthenticatePost409ResponseAnyOf {
+export interface ApiV1AuthAuthenticatePost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthAuthenticatePost200ResponseAnyOf
+     */
+    'success': boolean;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AuthAuthenticatePost409ResponseAnyOf
+     * @memberof ApiV1AuthAuthenticatePost200ResponseAnyOf
      */
-    'reason': ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum;
+    'codeExpiry': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthAuthenticatePost200ResponseAnyOf
+     */
+    'nextCodeSoonestTime': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthAuthenticatePost200ResponseAnyOf1
+ */
+export interface ApiV1AuthAuthenticatePost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthAuthenticatePost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthAuthenticatePost200ResponseAnyOf1
+     */
+    'reason': ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum;
 }
 
-export const ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum = {
-    AssociatedWithAnotherUser: 'associated_with_another_user'
+export const ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum = {
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user',
+    Throttled: 'throttled'
 } as const;
 
-export type ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum = typeof ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum[keyof typeof ApiV1AuthAuthenticatePost409ResponseAnyOfReasonEnum];
+export type ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum];
 
 /**
  * 
@@ -135,141 +157,238 @@ export interface ApiV1AuthAuthenticatePostRequest {
 /**
  * 
  * @export
- * @interface ApiV1AuthCheckLoginStatusPost409Response
+ * @interface ApiV1AuthVerifyPhoneOtpPost200Response
  */
-export interface ApiV1AuthCheckLoginStatusPost409Response {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthCheckLoginStatusPost409Response
-     */
-    'reason': ApiV1AuthCheckLoginStatusPost409ResponseReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthCheckLoginStatusPost409Response
-     */
-    'userId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthCheckLoginStatusPost409Response
-     */
-    'sessionExpiry': string;
-}
-
-export const ApiV1AuthCheckLoginStatusPost409ResponseReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in'
-} as const;
-
-export type ApiV1AuthCheckLoginStatusPost409ResponseReasonEnum = typeof ApiV1AuthCheckLoginStatusPost409ResponseReasonEnum[keyof typeof ApiV1AuthCheckLoginStatusPost409ResponseReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1AuthVerifyOtpPost200Response
- */
-export interface ApiV1AuthVerifyOtpPost200Response {
+export interface ApiV1AuthVerifyPhoneOtpPost200Response {
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1AuthVerifyOtpPost200Response
+     * @memberof ApiV1AuthVerifyPhoneOtpPost200Response
      */
     'success': boolean;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AuthVerifyOtpPost200Response
+     * @memberof ApiV1AuthVerifyPhoneOtpPost200Response
      */
-    'userId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthVerifyOtpPost200Response
-     */
-    'sessionExpiry': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthVerifyOtpPost200Response
-     */
-    'reason': ApiV1AuthVerifyOtpPost200ResponseReasonEnum;
+    'reason': ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum;
 }
 
-export const ApiV1AuthVerifyOtpPost200ResponseReasonEnum = {
+export const ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
-    TooManyWrongGuess: 'too_many_wrong_guess'
+    TooManyWrongGuess: 'too_many_wrong_guess',
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
-export type ApiV1AuthVerifyOtpPost200ResponseReasonEnum = typeof ApiV1AuthVerifyOtpPost200ResponseReasonEnum[keyof typeof ApiV1AuthVerifyOtpPost200ResponseReasonEnum];
+export type ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum = typeof ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum[keyof typeof ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1AuthVerifyOtpPost200ResponseAnyOf
+ * @interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf
  */
-export interface ApiV1AuthVerifyOtpPost200ResponseAnyOf {
+export interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf {
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1AuthVerifyOtpPost200ResponseAnyOf
+     * @memberof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf
+     */
+    'success': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1
+ */
+export interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1
      */
     'success': boolean;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AuthVerifyOtpPost200ResponseAnyOf
+     * @memberof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1
      */
-    'userId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthVerifyOtpPost200ResponseAnyOf
-     */
-    'sessionExpiry': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1AuthVerifyOtpPost200ResponseAnyOf1
- */
-export interface ApiV1AuthVerifyOtpPost200ResponseAnyOf1 {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1AuthVerifyOtpPost200ResponseAnyOf1
-     */
-    'success': boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AuthVerifyOtpPost200ResponseAnyOf1
-     */
-    'reason': ApiV1AuthVerifyOtpPost200ResponseAnyOf1ReasonEnum;
+    'reason': ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum;
 }
 
-export const ApiV1AuthVerifyOtpPost200ResponseAnyOf1ReasonEnum = {
+export const ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
-    TooManyWrongGuess: 'too_many_wrong_guess'
+    TooManyWrongGuess: 'too_many_wrong_guess',
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
-export type ApiV1AuthVerifyOtpPost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthVerifyOtpPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthVerifyOtpPost200ResponseAnyOf1ReasonEnum];
+export type ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1AuthVerifyOtpPostRequest
+ * @interface ApiV1AuthVerifyPhoneOtpPostRequest
  */
-export interface ApiV1AuthVerifyOtpPostRequest {
+export interface ApiV1AuthVerifyPhoneOtpPostRequest {
     /**
      * 
      * @type {number}
-     * @memberof ApiV1AuthVerifyOtpPostRequest
+     * @memberof ApiV1AuthVerifyPhoneOtpPostRequest
      */
     'code': number;
 }
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthZkpGenerateVerificationLinkPost200Response
+ */
+export interface ApiV1AuthZkpGenerateVerificationLinkPost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200Response
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200Response
+     */
+    'verificationLink': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200Response
+     */
+    'reason': ApiV1AuthZkpGenerateVerificationLinkPost200ResponseReasonEnum;
+}
+
+export const ApiV1AuthZkpGenerateVerificationLinkPost200ResponseReasonEnum = {
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user'
+} as const;
+
+export type ApiV1AuthZkpGenerateVerificationLinkPost200ResponseReasonEnum = typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseReasonEnum[keyof typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf
+ */
+export interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf
+     */
+    'verificationLink': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1
+ */
+export interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1
+     */
+    'reason': ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1ReasonEnum;
+}
+
+export const ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1ReasonEnum = {
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user'
+} as const;
+
+export type ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1ReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
+ */
+export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
+     */
+    'rarimoStatus': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
+     */
+    'reason': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum;
+}
+
+export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = {
+    NotVerified: 'not_verified',
+    Verified: 'verified',
+    FailedVerification: 'failed_verification',
+    UniquenessCheckFailed: 'uniqueness_check_failed'
+} as const;
+
+export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum];
+export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum = {
+    AlreadyLoggedIn: 'already_logged_in',
+    AssociatedWithAnotherUser: 'associated_with_another_user'
+} as const;
+
+export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
+ */
+export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
+     */
+    'rarimoStatus': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum;
+}
+
+export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = {
+    NotVerified: 'not_verified',
+    Verified: 'verified',
+    FailedVerification: 'failed_verification',
+    UniquenessCheckFailed: 'uniqueness_check_failed'
+} as const;
+
+export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum];
+
 /**
  * 
  * @export
@@ -693,42 +812,6 @@ export interface ApiV1PostFetchPostBySlugIdPostRequest {
      */
     'isAuthenticatedRequest': boolean;
 }
-/**
- * 
- * @export
- * @interface ApiV1RarimoGenerateVerificationLinkPost200Response
- */
-export interface ApiV1RarimoGenerateVerificationLinkPost200Response {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1RarimoGenerateVerificationLinkPost200Response
-     */
-    'verificationLink': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1RarimoVerifyUserStatusAndAuthenticatePost200Response
- */
-export interface ApiV1RarimoVerifyUserStatusAndAuthenticatePost200Response {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1RarimoVerifyUserStatusAndAuthenticatePost200Response
-     */
-    'rarimoStatus': ApiV1RarimoVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum;
-}
-
-export const ApiV1RarimoVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = {
-    NotVerified: 'not_verified',
-    Verified: 'verified',
-    FailedVerification: 'failed_verification',
-    UniquenessCheckFailed: 'uniqueness_check_failed'
-} as const;
-
-export type ApiV1RarimoVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = typeof ApiV1RarimoVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum[keyof typeof ApiV1RarimoVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum];
-
 /**
  * 
  * @export
@@ -1180,14 +1263,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AuthVerifyOtpPostRequest} apiV1AuthVerifyOtpPostRequest 
+         * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthVerifyOtpPost: async (apiV1AuthVerifyOtpPostRequest: ApiV1AuthVerifyOtpPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AuthVerifyOtpPostRequest' is not null or undefined
-            assertParamExists('apiV1AuthVerifyOtpPost', 'apiV1AuthVerifyOtpPostRequest', apiV1AuthVerifyOtpPostRequest)
-            const localVarPath = `/api/v1/auth/verifyOtp`;
+        apiV1AuthVerifyPhoneOtpPost: async (apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthVerifyPhoneOtpPostRequest' is not null or undefined
+            assertParamExists('apiV1AuthVerifyPhoneOtpPost', 'apiV1AuthVerifyPhoneOtpPostRequest', apiV1AuthVerifyPhoneOtpPostRequest)
+            const localVarPath = `/api/v1/auth/verify-phone-otp`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1210,7 +1293,73 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthVerifyOtpPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthVerifyPhoneOtpPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthZkpGenerateVerificationLinkPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/auth/zkp/generate-verification-link`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthZkpVerifyUserStatusAndAuthenticatePost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/auth/zkp/verify-user-status-and-authenticate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1607,72 +1756,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1RarimoGenerateVerificationLinkPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/rarimo/generate-verification-link`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1RarimoVerifyUserStatusAndAuthenticatePost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/rarimo/verify-user-status-and-authenticate`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1948,14 +2031,36 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1AuthVerifyOtpPostRequest} apiV1AuthVerifyOtpPostRequest 
+         * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthVerifyOtpPost(apiV1AuthVerifyOtpPostRequest: ApiV1AuthVerifyOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthVerifyOtpPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthVerifyOtpPost(apiV1AuthVerifyOtpPostRequest, options);
+        async apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthVerifyPhoneOtpPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthVerifyOtpPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthVerifyPhoneOtpPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthZkpGenerateVerificationLinkPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthZkpGenerateVerificationLinkPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthZkpGenerateVerificationLinkPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthZkpGenerateVerificationLinkPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthZkpVerifyUserStatusAndAuthenticatePost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthZkpVerifyUserStatusAndAuthenticatePost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthZkpVerifyUserStatusAndAuthenticatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2076,28 +2181,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PostFetchPostBySlugIdPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1RarimoGenerateVerificationLinkPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RarimoGenerateVerificationLinkPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RarimoGenerateVerificationLinkPost(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RarimoGenerateVerificationLinkPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1RarimoVerifyUserStatusAndAuthenticatePost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1RarimoVerifyUserStatusAndAuthenticatePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1RarimoVerifyUserStatusAndAuthenticatePost(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1RarimoVerifyUserStatusAndAuthenticatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2230,12 +2313,28 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1AuthVerifyOtpPostRequest} apiV1AuthVerifyOtpPostRequest 
+         * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthVerifyOtpPost(apiV1AuthVerifyOtpPostRequest: ApiV1AuthVerifyOtpPostRequest, options?: any): AxiosPromise<ApiV1AuthVerifyOtpPost200Response> {
-            return localVarFp.apiV1AuthVerifyOtpPost(apiV1AuthVerifyOtpPostRequest, options).then((request) => request(axios, basePath));
+        apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options?: any): AxiosPromise<ApiV1AuthVerifyPhoneOtpPost200Response> {
+            return localVarFp.apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthZkpGenerateVerificationLinkPost(options?: any): AxiosPromise<ApiV1AuthZkpGenerateVerificationLinkPost200Response> {
+            return localVarFp.apiV1AuthZkpGenerateVerificationLinkPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthZkpVerifyUserStatusAndAuthenticatePost(options?: any): AxiosPromise<ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response> {
+            return localVarFp.apiV1AuthZkpVerifyUserStatusAndAuthenticatePost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -2326,22 +2425,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: any): AxiosPromise<ApiV1PostFetchPostBySlugIdPost200Response> {
             return localVarFp.apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1RarimoGenerateVerificationLinkPost(options?: any): AxiosPromise<ApiV1RarimoGenerateVerificationLinkPost200Response> {
-            return localVarFp.apiV1RarimoGenerateVerificationLinkPost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1RarimoVerifyUserStatusAndAuthenticatePost(options?: any): AxiosPromise<ApiV1RarimoVerifyUserStatusAndAuthenticatePost200Response> {
-            return localVarFp.apiV1RarimoVerifyUserStatusAndAuthenticatePost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -2472,13 +2555,33 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1AuthVerifyOtpPostRequest} apiV1AuthVerifyOtpPostRequest 
+     * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AuthVerifyOtpPost(apiV1AuthVerifyOtpPostRequest: ApiV1AuthVerifyOtpPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AuthVerifyOtpPost(apiV1AuthVerifyOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1AuthZkpGenerateVerificationLinkPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthZkpGenerateVerificationLinkPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1AuthZkpVerifyUserStatusAndAuthenticatePost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthZkpVerifyUserStatusAndAuthenticatePost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2589,26 +2692,6 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1RarimoGenerateVerificationLinkPost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1RarimoGenerateVerificationLinkPost(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1RarimoVerifyUserStatusAndAuthenticatePost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1RarimoVerifyUserStatusAndAuthenticatePost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

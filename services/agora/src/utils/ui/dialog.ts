@@ -38,8 +38,8 @@ export const useDialog = () => {
         cancel: true,
         persistent: false,
       })
-      .onOk(() => {
-        router.push({ name: "welcome" });
+      .onOk(async () => {
+        await router.push({ name: "welcome" });
       })
       .onCancel(() => {
         // console.log('>>>> Cancel')

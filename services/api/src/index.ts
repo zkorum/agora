@@ -55,7 +55,7 @@ import {
 } from "./service/account.js";
 import { isModeratorAccount } from "@/service/authUtil.js";
 import { moderateByPostSlugId } from "./service/moderation.js";
-import { throwIfAlreadyLoggedIn } from "@/service/auth.js";
+import { nowZeroMs } from "./shared/common/util.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -164,6 +164,7 @@ const db = drizzle(client, {
 });
 
 interface ExpectedDeviceStatus {
+    now: Date;
     userId?: string;
     isLoggedIn?: boolean;
 }
@@ -203,6 +204,7 @@ async function verifyUCAN(
     request: FastifyRequest,
     options: OptionsVerifyUcan = {
         expectedDeviceStatus: {
+            now: nowZeroMs(),
             isLoggedIn: true,
         },
     },
@@ -253,6 +255,7 @@ async function verifyUCAN(
         const deviceStatus = await authService.getDeviceStatus(
             db,
             rootIssuerDid,
+            options.expectedDeviceStatus.now,
         );
         if (deviceStatus === undefined) {
             if (options.expectedDeviceStatus.isLoggedIn !== undefined) {
@@ -300,13 +303,14 @@ server.after(() => {
         schema: {
             response: {
                 200: Dto.authenticateCheckLoginStatus,
-                409: Dto.alreadyLoggedIn409, // WARNING: when changing alreadyLoggedIn409 - also change expected type in the services and frontend manually!
             },
         },
         handler: async (request) => {
+            const now = nowZeroMs();
             await verifyUCAN(db, request, {
                 expectedDeviceStatus: {
                     isLoggedIn: true,
+                    now: now,
                 },
             });
             return;
@@ -318,53 +322,37 @@ server.after(() => {
         url: `/api/${apiVersion}/auth/authenticate`,
         schema: {
             body: Dto.authenticateRequestBody,
-            response: { 200: Dto.authenticateResponse, 409: Dto.auth409 },
+            response: { 200: Dto.authenticate200 },
         },
         handler: async (request) => {
             // This endpoint is accessible without being logged in
             // this endpoint could be especially subject to attacks such as DDoS or man-in-the-middle (to associate their own DID instead of the legitimate user's ones for example)
             const didWrite = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+                expectedDeviceStatus: undefined, // TODO: return already_logged_in here instead of doing it inside the function below
             });
-            const { type, userId } = await authService.getAuthenticateType(
-                db,
-                request.body,
-                didWrite,
-                config.PEPPERS,
-                server.httpErrors,
-            );
             const userAgent = request.headers["user-agent"] ?? "Unknown device";
 
-            return await authService
-                .authenticateAttempt({
-                    db,
-                    type,
-                    doSend: config.NODE_ENV === "production",
-                    doUseTestCode:
-                        config.NODE_ENV !== "production" &&
-                        speciallyAuthorizedPhones.includes(
-                            request.body.phoneNumber,
-                        ),
-                    testCode: config.TEST_CODE,
-                    authenticateRequestBody: request.body,
-                    userId,
-                    minutesBeforeSmsCodeExpiry:
-                        config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
-                    didWrite,
-                    throttleSmsMinutesInterval:
-                        config.THROTTLE_SMS_MINUTES_INTERVAL,
-                    httpErrors: server.httpErrors,
-                    // awsMailConf: awsMailConf,
-                    userAgent: userAgent,
-                    peppers: config.PEPPERS,
-                })
-                .then(({ codeExpiry, nextCodeSoonestTime }) => {
-                    // backend intentionally does NOT send whether it is a register or a login, and does not send the address the email is sent to - in order to protect privacy and give no information to potential attackers
-                    return {
-                        codeExpiry: codeExpiry,
-                        nextCodeSoonestTime: nextCodeSoonestTime,
-                    };
-                });
+            // backend intentionally does NOT say whether it is a register or a login - in order to protect privacy and give no information to potential attackers
+            return await authService.authenticateAttempt({
+                db,
+                doSend: config.NODE_ENV === "production",
+                doUseTestCode:
+                    config.NODE_ENV !== "production" &&
+                    speciallyAuthorizedPhones.includes(
+                        request.body.phoneNumber,
+                    ),
+                testCode: config.TEST_CODE,
+                authenticateRequestBody: request.body,
+                minutesBeforeSmsCodeExpiry:
+                    config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
+                didWrite,
+                throttleSmsMinutesInterval:
+                    config.THROTTLE_SMS_MINUTES_INTERVAL,
+                httpErrors: server.httpErrors,
+                // awsMailConf: awsMailConf,
+                userAgent: userAgent,
+                peppers: config.PEPPERS,
+            });
         },
     });
 
@@ -372,19 +360,18 @@ server.after(() => {
     // TODO: for now there is no way to communicate "isTrusted", it's set to true automatically - but it will change
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/auth/verifyOtp`,
+        url: `/api/${apiVersion}/auth/verify-phone-otp`,
         schema: {
             body: Dto.verifyOtpReqBody,
             response: {
                 200: Dto.verifyOtp200,
-                409: Dto.alreadyLoggedIn409, // !WARNING: when changing alreadyLoggedIn409 - also change expected type in the services and frontend manually!
             },
         },
         handler: async (request) => {
             const didWrite = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
-            return await authService.verifyOtp({
+            return await authService.verifyPhoneOtp({
                 db,
                 maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
                 didWrite,
@@ -397,9 +384,11 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/auth/logout`,
         handler: async (request) => {
+            const now = nowZeroMs();
             const didWrite = await verifyUCAN(db, request, {
                 expectedDeviceStatus: {
                     isLoggedIn: true,
+                    now: now,
                 },
             });
             await authService.logout(db, didWrite);
@@ -792,7 +781,9 @@ server.after(() => {
             body: Dto.deletePostBySlugIdRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, undefined);
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
 
             const status = await authUtilService.isLoggedIn(db, didWrite);
             if (!status.isLoggedIn) {
@@ -820,8 +811,9 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, undefined);
-            // const canCreatePost = await authUtilService.canCreatePost(db, didWrite)
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
 
             const status = await authUtilService.isLoggedIn(db, didWrite);
             if (!status.isLoggedIn) {
@@ -1021,31 +1013,27 @@ server.after(() => {
     });
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/rarimo/generate-verification-link`,
+        url: `/api/${apiVersion}/auth/zkp/generate-verification-link`, // there will be another subroute like /auth to _attach_ verified identifier to *already_logged_in accounts*.
         schema: {
             response: {
                 200: Dto.generateVerificationLink200,
-                409: Dto.alreadyLoggedIn409, // !WARNING: when changing auth 409 - also change expected type in the services and frontend manually!
             },
         },
         handler: async (request) => {
             const didWrite = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
-            await throwIfAlreadyLoggedIn(db, didWrite, server.httpErrors);
-            const verificationLink = await generateVerificationLink({
+            return await generateVerificationLink({
+                db,
                 didWrite,
                 axiosVerificatorSvc,
                 baseEventId: config.BASE_EVENT_ID,
             });
-            return {
-                verificationLink: verificationLink,
-            };
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/rarimo/verify-user-status-and-authenticate`,
+        url: `/api/${apiVersion}/auth/zkp/verify-user-status-and-authenticate`, // there will be another subroute like /auth to _attach_ verified identifier to *already_logged_in accounts*.
         schema: {
             response: {
                 200: Dto.verifyUserStatusAndAuthenticate200,
@@ -1062,7 +1050,6 @@ server.after(() => {
                     didWrite: didWrite,
                     axiosVerificatorSvc,
                     userAgent,
-                    httpErrors: server.httpErrors,
                 });
             return verificationStatusAndNullifier;
         },
@@ -1074,9 +1061,7 @@ server.after(() => {
         schema: {},
         handler: async (request) => {
             const didWrite = await verifyUCAN(db, request, {
-                expectedDeviceStatus: {
-                    isLoggedIn: undefined,
-                },
+                expectedDeviceStatus: undefined,
             });
 
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1102,9 +1087,7 @@ server.after(() => {
         },
         handler: async (request) => {
             const didWrite = await verifyUCAN(db, request, {
-                expectedDeviceStatus: {
-                    isLoggedIn: undefined,
-                },
+                expectedDeviceStatus: undefined,
             });
 
             const status = await authUtilService.isLoggedIn(db, didWrite);

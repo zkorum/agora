@@ -1,5 +1,5 @@
 {
-  "id": "6dfb2472-ae74-4228-8139-a5ab164f4df1",
+  "id": "0cf3a251-45be-41b2-93b6-beff34548d74",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -869,94 +869,6 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "public.passport": {
-      "name": "passport",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "passport_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "citizenship": {
-          "name": "citizenship",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "nullifier": {
-          "name": "nullifier",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sex": {
-          "name": "sex",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "passport_user_id_user_id_fk": {
-          "name": "passport_user_id_user_id_fk",
-          "tableFrom": "passport",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "passport_nullifier_unique": {
-          "name": "passport_nullifier_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "nullifier"
-          ]
-        }
-      },
       "checkConstraints": {}
     },
     "public.phone": {
@@ -2753,6 +2665,94 @@
           "columns": [
             "author_id",
             "comment_id"
+          ]
+        }
+      },
+      "checkConstraints": {}
+    },
+    "public.zk_passport": {
+      "name": "zk_passport",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "zk_passport_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "citizenship": {
+          "name": "citizenship",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nullifier": {
+          "name": "nullifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sex": {
+          "name": "sex",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "zk_passport_user_id_user_id_fk": {
+          "name": "zk_passport_user_id_user_id_fk",
+          "tableFrom": "zk_passport",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "zk_passport_nullifier_unique": {
+          "name": "zk_passport_nullifier_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "nullifier"
           ]
         }
       },

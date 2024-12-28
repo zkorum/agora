@@ -1049,10 +1049,10 @@
   resolved "https://registry.yarnpkg.com/@zkorum/capacitor-secure-signing/-/capacitor-secure-signing-1.4.0.tgz#1200d9df09ede4b400589067a0383c585b6920cb"
   integrity sha512-ngdBujxHivyk9xJUMUWriNEvoUQ9Ahw2xiwfRK/p+jKBv2BRS7yBdKEo8VYApsEO9Oiq8h0k6u+A5Ig1dN17pw==
 
-"@zkorum/keystore-idb@^0.18.0":
-  version "0.18.0"
-  resolved "https://registry.yarnpkg.com/@zkorum/keystore-idb/-/keystore-idb-0.18.0.tgz#380a8b7dd42f8ae960cd4097b289efe9f8bbf53f"
-  integrity sha512-PRYUeZDXhox+nBW3euMe/XRDD8uWP9SFk4qVGg+L6PF1+oaLM4G6Z0kEO1xpmaQW+xWZLvFtDM4COhsR78B4Rg==
+"@zkorum/keystore-idb@^0.18.1":
+  version "0.18.1"
+  resolved "https://registry.yarnpkg.com/@zkorum/keystore-idb/-/keystore-idb-0.18.1.tgz#b0fd2bda3223fd62578cc1510b6af66a41a9ae10"
+  integrity sha512-0lrlmn3sCypGap3SgH5HCJ/h3PTe7AnRUDI4Jgea+S0xjr6PBiEXVFOrTj5i+gfppbZdNgv2nztdtCBgVugNTg==
   dependencies:
     localforage "^1.10.0"
     one-webcrypto "^1.0.3"

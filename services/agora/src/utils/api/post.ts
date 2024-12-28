@@ -81,7 +81,7 @@ export function useBackendPostApi() {
       if (axios.isAxiosError(error)) {
         if (error.status == 400) {
           showNotifyMessage("Post resource not found.");
-          router.push({ name: "default-home-feed" });
+          await router.push({ name: "default-home-feed" });
         }
       } else {
         showNotifyMessage("Failed to fetch post by slug ID.");

@@ -31,14 +31,14 @@
             </div>
 
             <div
-              v-if="verificationCodeExpirySeconds != 0"
+              v-if="verificationCodeExpirySeconds > 0"
               class="weakColor codeExpiry"
             >
               Expires in {{ verificationCodeExpirySeconds }}s
             </div>
 
             <div
-              v-if="verificationCodeExpirySeconds == 0"
+              v-if="verificationCodeExpirySeconds <= 0"
               class="weakColor codeExpiry"
             >
               Code expired
@@ -79,10 +79,18 @@ import InputOtp from "primevue/inputotp";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { useBackendPhoneVerification } from "src/utils/api/phoneVerification";
-import { useDialog } from "src/utils/ui/dialog";
-import type { ApiV1AuthAuthenticatePost200Response } from "src/api";
+import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import type { KeyAction } from "src/utils/api/common";
+import { useNotify } from "src/utils/ui/notify";
+import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
+import { useQuasar } from "quasar";
+import { getPlatform } from "src/utils/common";
+
+const $q = useQuasar();
+let platform: "mobile" | "web" = "web";
+platform = getPlatform($q.platform);
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
@@ -92,13 +100,14 @@ const verificationNextCodeSeconds = ref(0);
 const verificationCodeExpirySeconds = ref(0);
 
 const router = useRouter();
-const dialog = useDialog();
 
 const { userLogin } = useAuthSetup();
 
 const { requestCode, submitCode } = useBackendPhoneVerification();
 
 const { onboardingMode } = onboardingFlowStore();
+
+const { showNotifyMessage } = useNotify();
 
 onMounted(() => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
@@ -114,51 +123,100 @@ function clickedResendButton() {
 }
 
 async function nextButtonClicked() {
-  const response = await submitCode(Number(verificationCode.value));
-  if (response) {
-    if (onboardingMode == "LOGIN") {
-      router.push({ name: "default-home-feed" });
+  try {
+    const response = await submitCode(Number(verificationCode.value));
+    if (response.success) {
+      showNotifyMessage("Verification successful 🎉");
+      await userLogin();
+      if (onboardingMode == "LOGIN") {
+        await router.push({ name: "default-home-feed" });
+      } else {
+        await router.push({ name: "onboarding-step4-username" });
+      }
     } else {
-      router.push({ name: "onboarding-step4-username" });
+      switch (response.reason) {
+        case "expired_code":
+          codeExpired();
+          showNotifyMessage("Code expired—resend a new code");
+          break;
+        case "wrong_guess":
+          showNotifyMessage("Wrong code—try again");
+          break;
+        case "too_many_wrong_guess":
+          codeExpired();
+          showNotifyMessage("Code expired—resend a new code");
+          break;
+        case "already_logged_in":
+          showNotifyMessage("Verification successful 🎉");
+          await userLogin();
+          if (onboardingMode == "LOGIN") {
+            await router.push({ name: "default-home-feed" });
+          } else {
+            await router.push({ name: "onboarding-step4-username" });
+          }
+          break;
+        case "associated_with_another_user": {
+          showNotifyMessage("Oops! Sync hiccup detected—resend a new code");
+          // overwrite key but don't send a request
+          await createDidOverwriteIfAlreadyExists(platform);
+        }
+      }
     }
-  } else {
-    dialog.showMessage("Authentication", "Invalid code");
+  } catch (e) {
+    console.error("Error while verifying code", e);
+    showNotifyMessage("Oops! Something is wrong");
   }
 }
 
-async function requestCodeClicked(isRequestingNewCode: boolean) {
-  const response = await requestCode({
-    isRequestingNewCode: isRequestingNewCode,
-    phoneNumber: verificationPhoneNumber.value.phoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
-  });
-
-  if (response.isSuccessful) {
-    processRequestCodeResponse(response.data);
-  } else {
-    if (response.error == "already_logged_in") {
-      await userLogin();
-      router.push({ name: "default-home-feed" });
-    } else if (response.error == "throttled") {
-      processRequestCodeResponse(response.data);
-      dialog.showMessage(
-        "Authentication",
-        "Too many attempts. Please wait before requesting a new code"
-      );
+async function requestCodeClicked(
+  isRequestingNewCode: boolean,
+  keyAction?: KeyAction
+) {
+  try {
+    const response = await requestCode({
+      isRequestingNewCode: isRequestingNewCode,
+      phoneNumber: verificationPhoneNumber.value.phoneNumber,
+      defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+      keyAction: keyAction,
+    });
+    if (response.success) {
+      processRequestCodeResponse(response);
     } else {
-      // do nothing
+      switch (response.reason) {
+        case "already_logged_in":
+          showNotifyMessage("Verification successful 🎉");
+          await userLogin();
+          if (onboardingMode == "LOGIN") {
+            await router.push({ name: "default-home-feed" });
+          } else {
+            await router.push({ name: "onboarding-step4-username" });
+          }
+          break;
+        case "associated_with_another_user":
+          // retry by overwriting key
+          await requestCodeClicked(isRequestingNewCode, "overwrite");
+          break;
+        case "throttled":
+          processRequestCodeResponse(response);
+          showNotifyMessage(
+            "Too many attempts—please wait before requesting a new code"
+          );
+          break;
+      }
     }
+  } catch (e) {
+    console.error("Error while requesting a code", e);
+    showNotifyMessage("Oops! Something is wrong");
   }
+}
+
+function codeExpired() {
+  verificationCodeExpirySeconds.value = 0;
 }
 
 function processRequestCodeResponse(
-  data: ApiV1AuthAuthenticatePost200Response | null
+  data: ApiV1AuthAuthenticatePost200Response
 ) {
-  if (data == null) {
-    console.log("Null data from request code response");
-    return;
-  }
-
   {
     const nextCodeSoonestTime = new Date(data.nextCodeSoonestTime);
     const now = new Date();
@@ -184,7 +242,7 @@ function processRequestCodeResponse(
 
 function decrementCodeExpiryTimer() {
   verificationCodeExpirySeconds.value -= 1;
-  if (verificationCodeExpirySeconds.value != 0) {
+  if (verificationCodeExpirySeconds.value > 0) {
     setTimeout(function () {
       decrementCodeExpiryTimer();
     }, 1000);

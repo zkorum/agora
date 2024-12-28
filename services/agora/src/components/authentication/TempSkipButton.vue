@@ -31,18 +31,21 @@ async function skipButton() {
     phoneNumber: verificationPhoneNumber.value,
     defaultCallingCode: verificationDefaultCallingCode.value,
   });
-  if (requestCodeResponse.isSuccessful) {
+  if (requestCodeResponse.success) {
     await phoneVerification.submitCode(0);
     isAuthenticated.value = true;
     router.push({ name: "verification-successful" });
   } else {
     console.log("Failed to request code");
-    if (requestCodeResponse.error == "already_logged_in") {
-      console.log("Already logged in");
-      isAuthenticated.value = true;
-      router.push({ name: "verification-successful" });
-    } else if (requestCodeResponse.error == "throttled") {
-      console.log("Throttled please try again later");
+    switch (requestCodeResponse.reason) {
+      case "already_logged_in":
+        console.log("Already logged in");
+        isAuthenticated.value = true;
+        router.push({ name: "verification-successful" });
+        break;
+      case "throttled":
+        console.log("Throttled please try again later");
+        break;
     }
   }
 }
