@@ -25,7 +25,12 @@
 
           <q-separator vertical inset />
 
-          <ZKButton label="Cancel" color="secondary" @click="cancelClicked()" />
+          <ZKButton
+            label="Cancel"
+            color="white"
+            text-color="primary"
+            @click="cancelClicked()"
+          />
           <ZKButton
             label="Post"
             color="primary"

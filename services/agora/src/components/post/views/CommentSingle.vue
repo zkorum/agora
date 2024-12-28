@@ -13,10 +13,6 @@
           <div>
             {{ commentItem.username }}
           </div>
-
-          <div>
-            {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
-          </div>
         </div>
       </div>
 
@@ -44,7 +40,6 @@
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import { formatTimeAgo } from "@vueuse/core";
 import type { CommentItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
