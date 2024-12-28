@@ -54,7 +54,13 @@ import {
     submitUsernameChange,
 } from "./service/account.js";
 import { isModeratorAccount } from "@/service/authUtil.js";
-import { moderateByPostSlugId } from "./service/moderation.js";
+import {
+    fetchCommentModeration,
+    fetchPostModeration,
+    moderateByCommentSlugId,
+    moderateByPostSlugId,
+} from "./service/moderation.js";
+import { throwIfAlreadyLoggedIn } from "@/service/auth.js";
 import { nowZeroMs } from "./shared/common/util.js";
 
 server.register(fastifySensible);
@@ -456,7 +462,7 @@ server.after(() => {
 
                 if (!isModerator) {
                     throw server.httpErrors.unauthorized(
-                        "Device is not a moederator",
+                        "User is not a moderator",
                     );
                 }
 
@@ -467,6 +473,115 @@ server.after(() => {
                     moderationAction: request.body.moderationAction,
                     moderationExplanation: request.body.moderationExplanation,
                     userId: status.userId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/moderate/report-comment`,
+        schema: {
+            body: Dto.moderateReportCommentRequest,
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await moderateByCommentSlugId({
+                    db: db,
+                    commentSlugId: request.body.commentSlugId,
+                    moderationReason: request.body.moderationReason,
+                    moderationAction: request.body.moderationAction,
+                    moderationExplanation: request.body.moderationExplanation,
+                    userId: status.userId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/moderate/fetch-post-report`,
+        schema: {
+            body: Dto.fetchPostModerationRequest,
+            response: {
+                200: Dto.fetchPostModerationResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                return await fetchPostModeration({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/moderate/fetch-comment-report`,
+        schema: {
+            body: Dto.fetchCommentModerationRequest,
+            response: {
+                200: Dto.fetchCommentModerationResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                return await fetchCommentModeration({
+                    db: db,
+                    commentSlugId: request.body.commentSlugId,
                 });
             }
         },

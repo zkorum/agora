@@ -50,6 +50,14 @@ export const useBottomSheet = () => {
       });
     }
 
+    if (profileData.isModerator) {
+      actionList.push({
+        label: "Moderate",
+        icon: "mdi-sword",
+        id: "moderate",
+      });
+    }
+
     quasar
       .bottomSheet({
         message: "Select an action for this comment",
@@ -68,6 +76,11 @@ export const useBottomSheet = () => {
           } else {
             deleteCommentCallback(false);
           }
+        } else if (action.id == "moderate") {
+          router.push({
+            name: "moderate-comment-page",
+            params: { commentSlugId: commentSlugId },
+          });
         }
       })
       .onCancel(() => {

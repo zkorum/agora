@@ -1,16 +1,16 @@
 export const moderationReasonMapping = [
-  { name: "Off Topic", code: "off-topic" },
-  { name: "Spam", code: "spam" },
-  { name: "Misleading", code: "misleading" },
-  { name: "Privacy", code: "privacy" },
-  { name: "Sexual", code: "sexual" },
-  { name: "Toxic", code: "toxic" },
-  { name: "Illegal", code: "illegal" },
-  { name: "Nothing", code: "nothing" },
+  { label: "Off Topic", value: "off-topic" },
+  { label: "Spam", value: "spam" },
+  { label: "Misleading", value: "misleading" },
+  { label: "Privacy", value: "privacy" },
+  { label: "Sexual", value: "sexual" },
+  { label: "Toxic", value: "toxic" },
+  { label: "Illegal", value: "illegal" },
+  { label: "Nothing", value: "nothing" },
 ];
 
 export const moderationActionMapping = [
-  { name: "Lock", code: "lock" },
-  { name: "Hide", code: "hide" },
-  { name: "Nothing", code: "nothing" },
+  { label: "Lock", value: "lock" },
+  { label: "Hide", value: "hide" },
+  { label: "Nothing", value: "nothing" },
 ];

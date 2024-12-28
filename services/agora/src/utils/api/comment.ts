@@ -2,8 +2,8 @@ import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
   type ApiV1CommentCreatePostRequest,
-  type ApiV1CommentDeletePostRequest,
   type ApiV1CommentFetchCommentsByPostSlugIdPostRequest,
+  type ApiV1ModerateFetchCommentReportPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -79,7 +79,7 @@ export function useBackendCommentApi() {
 
   async function deleteCommentBySlugId(commentSlugId: string) {
     try {
-      const params: ApiV1CommentDeletePostRequest = {
+      const params: ApiV1ModerateFetchCommentReportPostRequest = {
         commentSlugId: commentSlugId,
       };
 

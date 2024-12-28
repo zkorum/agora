@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div v-if="hasExistingReport" class="title">
-      Modify the existing post report
+      Modify the existing comment report
     </div>
 
     <div v-if="!hasExistingReport" class="title">Submit a new report</div>
@@ -22,9 +22,9 @@
       map-options
     />
 
-    <q-input
+    <InputText
       v-model="moderationExplanation"
-      label="Moderation Explanation (optional)"
+      placeholder="Moderation Explanation (optional)"
     />
 
     <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute } from "vue-router";
+import InputText from "primevue/inputtext";
 import { onMounted, ref } from "vue";
 import type { ModerationAction, ModerationReason } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -42,7 +43,7 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderation";
 
-const { moderatePost, fetchPostModeration } = useBackendModerateApi();
+const { moderateComment, fetchCommentModeration } = useBackendModerateApi();
 
 const route = useRoute();
 
@@ -56,13 +57,13 @@ const moderationExplanation = ref("");
 
 const hasExistingReport = ref(false);
 
-let postSlugId: string | null = null;
+let commentSlugId: string | null = null;
 if (typeof route.params.postSlugId == "string") {
-  postSlugId = route.params.postSlugId;
+  commentSlugId = route.params.postSlugId;
 }
 
 onMounted(async () => {
-  const response = await fetchPostModeration(postSlugId);
+  const response = await fetchCommentModeration(commentSlugId);
   hasExistingReport.value = response.isModerated;
   if (response.isModerated) {
     moderationAction.value = response.moderationAction;
@@ -72,9 +73,9 @@ onMounted(async () => {
 });
 
 async function clickedSubmit() {
-  if (postSlugId) {
-    await moderatePost(
-      postSlugId,
+  if (commentSlugId) {
+    await moderateComment(
+      commentSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value

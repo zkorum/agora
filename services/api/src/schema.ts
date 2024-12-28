@@ -1094,6 +1094,7 @@ export const commentTable = pgTable("comment", {
     numLikes: integer("num_likes").notNull().default(0),
     numDislikes: integer("num_dislikes").notNull().default(0),
     isHidden: boolean("is_hidden").notNull().default(false),
+    isLocked: boolean("is_locked").notNull().default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1270,8 +1271,12 @@ export const moderationTable = pgTable("moderation_table", {
     reportId: integer("report_id").references(
         (): AnyPgColumn => reportTable.id,
     ),
-    postId: integer("post_id").references(() => postTable.id),
-    commentId: integer("comment_id").references(() => postTable.id),
+    postId: integer("post_id") // one moderation action per post
+        .references(() => postTable.id)
+        .unique(),
+    commentId: integer("comment_id") // one moderation action per comment
+        .references(() => postTable.id)
+        .unique(),
     moderatorId: uuid("moderator_id")
         .references(() => userTable.id)
         .notNull(),

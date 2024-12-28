@@ -480,6 +480,203 @@
                 }
             }
         },
+        "/api/v1/moderate/report-comment": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "moderationReason": {
+                                        "type": "string",
+                                        "enum": [
+                                            "off-topic",
+                                            "spam",
+                                            "misleading",
+                                            "privacy",
+                                            "sexual",
+                                            "toxic",
+                                            "illegal",
+                                            "nothing"
+                                        ]
+                                    },
+                                    "moderationAction": {
+                                        "type": "string",
+                                        "enum": [
+                                            "lock",
+                                            "hide",
+                                            "nothing"
+                                        ]
+                                    },
+                                    "moderationExplanation": {
+                                        "type": "string",
+                                        "maxLength": 260
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId",
+                                    "moderationReason",
+                                    "moderationAction",
+                                    "moderationExplanation"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderate/fetch-post-report": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "isModerated": {
+                                            "type": "boolean"
+                                        },
+                                        "moderationAction": {
+                                            "type": "string",
+                                            "enum": [
+                                                "lock",
+                                                "hide",
+                                                "nothing"
+                                            ]
+                                        },
+                                        "moderationReason": {
+                                            "type": "string",
+                                            "enum": [
+                                                "off-topic",
+                                                "spam",
+                                                "misleading",
+                                                "privacy",
+                                                "sexual",
+                                                "toxic",
+                                                "illegal",
+                                                "nothing"
+                                            ]
+                                        },
+                                        "moderationExplanation": {
+                                            "type": "string",
+                                            "maxLength": 260
+                                        }
+                                    },
+                                    "required": [
+                                        "isModerated"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/moderate/fetch-comment-report": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "isModerated": {
+                                            "type": "boolean"
+                                        },
+                                        "moderationAction": {
+                                            "type": "string",
+                                            "enum": [
+                                                "lock",
+                                                "hide",
+                                                "nothing"
+                                            ]
+                                        },
+                                        "moderationReason": {
+                                            "type": "string",
+                                            "enum": [
+                                                "off-topic",
+                                                "spam",
+                                                "misleading",
+                                                "privacy",
+                                                "sexual",
+                                                "toxic",
+                                                "illegal",
+                                                "nothing"
+                                            ]
+                                        },
+                                        "moderationExplanation": {
+                                            "type": "string",
+                                            "maxLength": 260
+                                        }
+                                    },
+                                    "required": [
+                                        "isModerated"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/fetch-user-profile": {
             "post": {
                 "responses": {

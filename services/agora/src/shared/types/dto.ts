@@ -19,6 +19,7 @@ import {
     zodModerationAction,
     zodModerationReason,
     zodModerationExplanation,
+    zodModerationProperties,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -230,6 +231,22 @@ export class Dto {
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
+    static moderateReportCommentRequest = z
+        .object({
+            commentSlugId: zodSlugId,
+            moderationReason: zodModerationReason,
+            moderationAction: zodModerationAction,
+            moderationExplanation: zodModerationExplanation,
+        })
+        .strict();
+    static fetchPostModerationRequest = z.object({
+        postSlugId: zodSlugId,
+    });
+    static fetchPostModerationResponse = zodModerationProperties;
+    static fetchCommentModerationRequest = z.object({
+        commentSlugId: zodSlugId,
+    });
+    static fetchCommentModerationResponse = zodModerationProperties;
     static checkUsernameInUseRequest = z
         .object({
             username: zodUsername,

@@ -5,8 +5,8 @@ import {
   DefaultApiFactory,
   type ApiV1FeedFetchRecentPost200ResponsePostDataListInner,
   type ApiV1FeedFetchRecentPostRequest,
+  type ApiV1ModerateFetchPostReportPostRequest,
   type ApiV1PostCreatePostRequest,
-  type ApiV1PostDeletePostRequest,
   type ApiV1PostFetchPostBySlugIdPostRequest,
 } from "src/api";
 import { useCommonApi } from "./common";
@@ -213,7 +213,7 @@ export function useBackendPostApi() {
 
   async function deletePostBySlugId(postSlugId: string) {
     try {
-      const params: ApiV1PostDeletePostRequest = {
+      const params: ApiV1ModerateFetchPostReportPostRequest = {
         postSlugId: postSlugId,
       };
 

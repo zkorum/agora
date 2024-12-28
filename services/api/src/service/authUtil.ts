@@ -30,7 +30,7 @@ export async function isModeratorAccount({
         return userItem.isModerator;
     } else {
         throw httpErrors.internalServerError(
-            "User table returned more than 1 response",
+            "User table returned more than 1 response while checking if a user is a moderator",
         );
     }
 }
