@@ -16,6 +16,7 @@ import { useCommonPost } from "./common.js";
 import { MAX_LENGTH_COMMENT } from "@/shared/shared.js";
 import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
+import { createCommentModerationPropertyObject } from "./moderation.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -98,6 +99,14 @@ export async function fetchCommentsByPostSlugId({
 
     const commentItemList: CommentItem[] = [];
     results.map((commentResponse) => {
+        const moderationProperties = createCommentModerationPropertyObject(
+            commentResponse.moderationAction,
+            commentResponse.moderationExplanation,
+            commentResponse.moderationReason,
+            commentResponse.createdAt,
+            commentResponse.updatedAt,
+        );
+
         const item: CommentItem = {
             comment: commentResponse.comment,
             commentSlugId: commentResponse.commentSlugId,
@@ -106,15 +115,7 @@ export async function fetchCommentsByPostSlugId({
             numLikes: commentResponse.numLikes,
             updatedAt: commentResponse.updatedAt,
             username: commentResponse.username,
-            moderation: {
-                isModerated: commentResponse.moderationAction ? true : false,
-                moderationAction: commentResponse.moderationAction ?? undefined,
-                moderationExplanation:
-                    commentResponse.moderationExplanation ?? undefined,
-                moderationReason: commentResponse.moderationReason ?? undefined,
-                createdAt: commentResponse.createdAt,
-                updatedAt: commentResponse.updatedAt,
-            },
+            moderation: moderationProperties,
         };
         commentItemList.push(item);
     });

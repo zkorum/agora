@@ -8,7 +8,10 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import { useCommonApi } from "./common";
-import { type CommentItem } from "src/shared/types/zod";
+import {
+  type CommentItem,
+  type moderationStatusOptionsType,
+} from "src/shared/types/zod";
 import { useNotify } from "../ui/notify";
 
 export function useBackendCommentApi() {
@@ -34,6 +37,9 @@ export function useBackendCommentApi() {
 
       const postList: CommentItem[] = [];
       response.data.forEach((item) => {
+        const isModerated = item.moderation
+          .isModerated as moderationStatusOptionsType;
+
         postList.push({
           comment: item.comment,
           commentSlugId: item.commentSlugId,
@@ -43,7 +49,7 @@ export function useBackendCommentApi() {
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
           moderation: {
-            isModerated: item.moderation.isModerated,
+            isModerated: isModerated,
             moderationAction: item.moderation.moderationAction,
             moderationExplanation: item.moderation.moderationExplanation,
             moderationReason: item.moderation.moderationReason,

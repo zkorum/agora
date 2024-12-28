@@ -33,6 +33,7 @@
       v-if="hasExistingReport"
       label="Withdraw Report"
       color="secondary"
+      text-color="primary"
       @click="clickedCancel()"
     />
   </div>
@@ -81,8 +82,8 @@ onMounted(async () => {
 
 async function initializeData() {
   const response = await fetchPostModeration(postSlugId);
-  hasExistingReport.value = response.isModerated;
-  if (response.isModerated) {
+  hasExistingReport.value = response.isModerated == "moderated";
+  if (response.isModerated == "moderated") {
     moderationAction.value = response.moderationAction;
     moderationExplanation.value = response.moderationExplanation;
     moderationReason.value = response.moderationReason;

@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div v-if="commentItem.moderation?.isModerated" class="moderatedBox">
+    <div
+      v-if="commentItem.moderation?.isModerated == 'moderated'"
+      class="moderatedBox"
+    >
       <ZKCard padding="1rem">
         <div class="moderationContainer">
           <div class="moderatedMessage">

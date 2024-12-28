@@ -46,7 +46,9 @@
             </div>
 
             <ZKCard
-              v-if="extendedPostData.metadata.moderation.isModerated"
+              v-if="
+                extendedPostData.metadata.moderation.isModerated == 'moderated'
+              "
               padding="1rem"
             >
               <PostLockedMessage
@@ -68,7 +70,10 @@
             <div class="leftButtonCluster">
               <div v-if="!skeletonMode">
                 <ZKButton
-                  :disable="extendedPostData.metadata.moderation.isModerated"
+                  :disable="
+                    extendedPostData.metadata.moderation.isModerated ==
+                    'moderated'
+                  "
                   text-color="color-text-weak"
                   size="0.8rem"
                   :label="
@@ -115,7 +120,9 @@
             :key="commentCountOffset"
             :post-slug-id="extendedPostData.metadata.postSlugId"
             :initial-comment-slug-id="commentSlugId"
-            :is-post-locked="extendedPostData.metadata.moderation.isModerated"
+            :is-post-locked="
+              extendedPostData.metadata.moderation.isModerated == 'moderated'
+            "
             @deleted="decrementCommentCount()"
           />
         </div>
@@ -123,11 +130,7 @@
     </ZKHoverEffect>
 
     <FloatingBottomContainer
-      v-if="
-        !compactMode &&
-        isAuthenticated &&
-        !extendedPostData.metadata.moderation.isModerated
-      "
+      v-if="!compactMode && isAuthenticated && !isLocked"
     >
       <CommentComposer
         :show-controls="focusCommentElement"
@@ -148,7 +151,7 @@ import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
 import { usePostStore } from "src/stores/post";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRoute, useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
@@ -194,6 +197,15 @@ onMounted(() => {
       scrollToCommentSection();
     }, 100);
   }
+});
+
+const isLocked = computed(() => {
+  if (props.extendedPostData.metadata.moderation.isModerated == "moderated") {
+    if (props.extendedPostData.metadata.moderation.moderationAction == "lock") {
+      return true;
+    }
+  }
+  return false;
 });
 
 function decrementCommentCount() {

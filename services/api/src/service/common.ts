@@ -19,6 +19,7 @@ import { eq, desc, SQL, and } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
+import { createPostModerationPropertyObject } from "./moderation.js";
 
 export function useCommonPost() {
     interface IsPostLockedProps {
@@ -141,18 +142,17 @@ export function useCommonPost() {
                 });
             }
 
+            const moderationProperties = createPostModerationPropertyObject(
+                postItem.moderationAction,
+                postItem.moderationExplanation,
+                postItem.moderationReason,
+                postItem.moderationCreatedAt,
+                postItem.moderationUpdatedAt,
+            );
+
             const metadata: PostMetadata = {
                 postSlugId: postItem.slugId,
-                moderation: {
-                    isModerated:
-                        postItem.moderationAction == null ? false : true,
-                    moderationAction: postItem.moderationAction ?? undefined,
-                    moderationExplanation:
-                        postItem.moderationExplanation ?? undefined,
-                    moderationReason: postItem.moderationReason ?? undefined,
-                    createdAt: postItem.moderationCreatedAt ?? undefined,
-                    updatedAt: postItem.moderationUpdatedAt ?? undefined,
-                },
+                moderation: moderationProperties,
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.updatedAt,
                 lastReactedAt: postItem.lastReactedAt,
