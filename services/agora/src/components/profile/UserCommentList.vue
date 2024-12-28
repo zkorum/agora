@@ -12,7 +12,7 @@
             openComment(
               commentItem.postData.metadata.postSlugId,
               commentItem.commentItem.commentSlugId,
-              commentItem.commentItem.moderation.isModerated == 'moderated'
+              commentItem.commentItem.moderation.moderationStatus == 'moderated'
             )
           "
         >

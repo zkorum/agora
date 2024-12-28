@@ -124,11 +124,11 @@ export const zodUsername = z
     });
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
 export const zodModerationPropertiesPosts = z.discriminatedUnion(
-    "isModerated",
+    "moderationStatus",
     [
         z
             .object({
-                isModerated: z.literal("moderated"),
+                moderationStatus: z.literal("moderated"),
                 moderationAction: zodModerationActionPosts,
                 moderationReason: zodModerationReason,
                 moderationExplanation: zodModerationExplanation,
@@ -138,18 +138,18 @@ export const zodModerationPropertiesPosts = z.discriminatedUnion(
             .strict(),
         z
             .object({
-                isModerated: z.literal("unmoderated"),
+                moderationStatus: z.literal("unmoderated"),
             })
             .strict(),
     ],
 );
 
 export const zodModerationPropertiesComments = z.discriminatedUnion(
-    "isModerated",
+    "moderationStatus",
     [
         z
             .object({
-                isModerated: z.literal("moderated"),
+                moderationStatus: z.literal("moderated"),
                 moderationAction: zodModerationActionComments,
                 moderationReason: zodModerationReason,
                 moderationExplanation: zodModerationExplanation,
@@ -159,7 +159,7 @@ export const zodModerationPropertiesComments = z.discriminatedUnion(
             .strict(),
         z
             .object({
-                isModerated: z.literal("unmoderated"),
+                moderationStatus: z.literal("unmoderated"),
             })
             .strict(),
     ],

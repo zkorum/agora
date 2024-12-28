@@ -37,8 +37,8 @@ export function useBackendCommentApi() {
 
       const postList: CommentItem[] = [];
       response.data.forEach((item) => {
-        const isModerated = item.moderation
-          .isModerated as moderationStatusOptionsType;
+        const moderationStatus = item.moderation
+          .moderationStatus as moderationStatusOptionsType;
 
         postList.push({
           comment: item.comment,
@@ -49,7 +49,7 @@ export function useBackendCommentApi() {
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
           moderation: {
-            isModerated: isModerated,
+            moderationStatus: moderationStatus,
             moderationAction: item.moderation.moderationAction,
             moderationExplanation: item.moderation.moderationExplanation,
             moderationReason: item.moderation.moderationReason,

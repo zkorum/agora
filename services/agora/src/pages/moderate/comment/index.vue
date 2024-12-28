@@ -84,8 +84,8 @@ onMounted(async () => {
 
 async function initializeData() {
   const response = await fetchCommentModeration(commentSlugId);
-  hasExistingReport.value = response.isModerated == "moderated";
-  if (response.isModerated == "moderated") {
+  hasExistingReport.value = response.moderationStatus == "moderated";
+  if (response.moderationStatus == "moderated") {
     moderationAction.value = response.moderationAction;
     moderationExplanation.value = response.moderationExplanation;
     moderationReason.value = response.moderationReason;

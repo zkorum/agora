@@ -45,7 +45,7 @@ export async function moderateByPostSlugId({
         postSlugId: postSlugId,
     });
 
-    if (moderationStatus.isModerated == "moderated") {
+    if (moderationStatus.moderationStatus == "moderated") {
         await db
             .update(moderationPostsTable)
             .set({
@@ -95,7 +95,7 @@ export async function moderateByCommentSlugId({
     });
 
     await db.transaction(async (tx) => {
-        if (moderationStatus.isModerated == "moderated") {
+        if (moderationStatus.moderationStatus == "moderated") {
             await tx
                 .update(moderationCommentsTable)
                 .set({
@@ -141,12 +141,12 @@ export async function fetchPostModeration({
 
     if (moderationPostsTableResponse.length != 1) {
         return {
-            isModerated: "unmoderated",
+            moderationStatus: "unmoderated",
         };
     } else {
         const response = moderationPostsTableResponse[0];
         return {
-            isModerated: "moderated",
+            moderationStatus: "moderated",
             moderationAction: response.moderationAction,
             moderationExplanation: response.moderationExplanation ?? "",
             moderationReason: response.moderationReason,
@@ -183,12 +183,12 @@ export async function fetchCommentModeration({
 
     if (moderationTableResponse.length != 1) {
         return {
-            isModerated: "unmoderated",
+            moderationStatus: "unmoderated",
         };
     } else {
         const response = moderationTableResponse[0];
         return {
-            isModerated: "moderated",
+            moderationStatus: "moderated",
             moderationAction: response.moderationAction,
             moderationExplanation: response.moderationExplanation ?? "",
             moderationReason: response.moderationReason,
@@ -260,7 +260,7 @@ export function createPostModerationPropertyObject(
     moderationUpdatedAt: Date | null,
 ) {
     let moderationProperties: ModerationPropertiesPosts = {
-        isModerated: "unmoderated",
+        moderationStatus: "unmoderated",
     };
 
     if (
@@ -271,7 +271,7 @@ export function createPostModerationPropertyObject(
         moderationUpdatedAt != null
     ) {
         moderationProperties = {
-            isModerated: "moderated",
+            moderationStatus: "moderated",
             moderationAction: moderationAction,
             moderationExplanation: moderationExplanation,
             moderationReason: moderationReason,
@@ -290,7 +290,7 @@ export function createCommentModerationPropertyObject(
     moderationUpdatedAt: Date | null,
 ) {
     let moderationProperties: ModerationPropertiesComments = {
-        isModerated: "unmoderated",
+        moderationStatus: "unmoderated",
     };
 
     if (
@@ -301,7 +301,7 @@ export function createCommentModerationPropertyObject(
         moderationUpdatedAt != null
     ) {
         moderationProperties = {
-            isModerated: "moderated",
+            moderationStatus: "moderated",
             moderationAction: moderationAction,
             moderationExplanation: moderationExplanation,
             moderationReason: moderationReason,

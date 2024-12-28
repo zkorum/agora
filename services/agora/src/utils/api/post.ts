@@ -178,8 +178,8 @@ export function useBackendPostApi() {
   ): ExtendedPost[] {
     const parsedList: ExtendedPost[] = [];
     incomingPostList.forEach((item) => {
-      const isModerated = item.metadata.moderation
-        .isModerated as moderationStatusOptionsType;
+      const moderationStatus = item.metadata.moderation
+        .moderationStatus as moderationStatusOptionsType;
 
       const newPost: ExtendedPost = {
         metadata: {
@@ -190,7 +190,7 @@ export function useBackendPostApi() {
           postSlugId: item.metadata.postSlugId,
           updatedAt: new Date(item.metadata.updatedAt),
           moderation: {
-            isModerated: isModerated,
+            moderationStatus: moderationStatus,
             moderationAction: item.metadata.moderation.moderationAction,
             moderationReason: item.metadata.moderation.moderationReason,
             moderationExplanation:

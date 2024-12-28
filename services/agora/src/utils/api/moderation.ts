@@ -119,11 +119,11 @@ export function useBackendModerateApi() {
         },
       });
 
-      const isModerated = response.data
-        .isModerated as moderationStatusOptionsType;
+      const moderationStatus = response.data
+        .moderationStatus as moderationStatusOptionsType;
 
       return {
-        isModerated: isModerated,
+        moderationStatus: moderationStatus,
         moderationAction: response.data.moderationAction,
         moderationExplanation: response.data.moderationExplanation,
         moderationReason: response.data.moderationReason,
@@ -134,7 +134,7 @@ export function useBackendModerateApi() {
       console.error(e);
       showNotifyMessage("Failed to fetch post moderation details");
       return {
-        isModerated: "unmoderated",
+        moderationStatus: "unmoderated",
       };
     }
   }
@@ -162,11 +162,11 @@ export function useBackendModerateApi() {
         },
       });
 
-      const isModerated = response.data
-        .isModerated as moderationStatusOptionsType;
+      const moderationStatus = response.data
+        .moderationStatus as moderationStatusOptionsType;
 
       return {
-        isModerated: isModerated,
+        moderationStatus: moderationStatus,
         moderationAction: response.data.moderationAction,
         moderationExplanation: response.data.moderationExplanation,
         moderationReason: response.data.moderationReason,
@@ -177,7 +177,7 @@ export function useBackendModerateApi() {
       console.error(e);
       showNotifyMessage("Failed to fetch comment moderation details");
       return {
-        isModerated: "unmoderated",
+        moderationStatus: "unmoderated",
       };
     }
   }
