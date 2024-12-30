@@ -125,7 +125,7 @@ const upvoteIcon = computed<IconObject>(() => {
 function shareButtonClicked() {
   let moderatedParameter = "";
   if (props.commentItem.moderation.moderationStatus == "moderated") {
-    moderatedParameter = "&targetFilter=moderation-history";
+    moderatedParameter = "&filter=moderation-history";
   }
 
   const sharePostUrl =

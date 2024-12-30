@@ -105,7 +105,7 @@ function openComment(
     params: { postSlugId: postSlugId },
     query: {
       commentSlugId: commentSlugId,
-      targetFilter: isModerated ? "moderation-history" : "",
+      filter: isModerated ? "moderation-history" : "",
     },
   });
 }
