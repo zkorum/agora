@@ -61,10 +61,12 @@ const route = useRoute();
 
 const { loadPostData } = usePostStore();
 
-const moderationAction = ref<ModerationActionPosts>("lock");
+const DEFAULT_MODERATION_ACTION = "lock";
+const moderationAction = ref<ModerationActionPosts>(DEFAULT_MODERATION_ACTION);
 const actionMapping = ref(moderationActionPostsMapping);
 
-const moderationReason = ref<ModerationReason>("off-topic");
+const DEFAULT_MODERATION_REASON = "misleading";
+const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
 const reasonMapping = ref(moderationReasonMapping);
 
 const moderationExplanation = ref("");
@@ -87,6 +89,10 @@ async function initializeData() {
     moderationAction.value = response.moderationAction;
     moderationExplanation.value = response.moderationExplanation;
     moderationReason.value = response.moderationReason;
+  } else {
+    moderationAction.value = DEFAULT_MODERATION_ACTION;
+    moderationExplanation.value = "";
+    moderationReason.value = DEFAULT_MODERATION_REASON;
   }
 }
 

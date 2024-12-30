@@ -19,13 +19,12 @@ export const zodReportReason = z.union([
     z.literal("illegal"),
 ]);
 export const zodModerationReason = z.enum([
-    "off-topic",
-    "spam",
     "misleading",
-    "privacy",
-    "sexual",
-    "toxic",
+    "antisocial",
     "illegal",
+    "doxing",
+    "sexual",
+    "spam",
 ]);
 export const zodModerationActionPosts = z.enum(["lock"]);
 export const zodModerationActionComments = z.enum(["lock", "hide"]);

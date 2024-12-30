@@ -299,13 +299,12 @@
                                                                             "moderationReason": {
                                                                                 "type": "string",
                                                                                 "enum": [
-                                                                                    "off-topic",
-                                                                                    "spam",
                                                                                     "misleading",
-                                                                                    "privacy",
+                                                                                    "antisocial",
+                                                                                    "illegal",
+                                                                                    "doxing",
                                                                                     "sexual",
-                                                                                    "toxic",
-                                                                                    "illegal"
+                                                                                    "spam"
                                                                                 ]
                                                                             },
                                                                             "moderationExplanation": {
@@ -462,13 +461,12 @@
                                     "moderationReason": {
                                         "type": "string",
                                         "enum": [
-                                            "off-topic",
-                                            "spam",
                                             "misleading",
-                                            "privacy",
+                                            "antisocial",
+                                            "illegal",
+                                            "doxing",
                                             "sexual",
-                                            "toxic",
-                                            "illegal"
+                                            "spam"
                                         ]
                                     },
                                     "moderationAction": {
@@ -516,13 +514,12 @@
                                     "moderationReason": {
                                         "type": "string",
                                         "enum": [
-                                            "off-topic",
-                                            "spam",
                                             "misleading",
-                                            "privacy",
+                                            "antisocial",
+                                            "illegal",
+                                            "doxing",
                                             "sexual",
-                                            "toxic",
-                                            "illegal"
+                                            "spam"
                                         ]
                                     },
                                     "moderationAction": {
@@ -661,13 +658,12 @@
                                                 "moderationReason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "off-topic",
-                                                        "spam",
                                                         "misleading",
-                                                        "privacy",
+                                                        "antisocial",
+                                                        "illegal",
+                                                        "doxing",
                                                         "sexual",
-                                                        "toxic",
-                                                        "illegal"
+                                                        "spam"
                                                     ]
                                                 },
                                                 "moderationExplanation": {
@@ -764,13 +760,12 @@
                                                 "moderationReason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "off-topic",
-                                                        "spam",
                                                         "misleading",
-                                                        "privacy",
+                                                        "antisocial",
+                                                        "illegal",
+                                                        "doxing",
                                                         "sexual",
-                                                        "toxic",
-                                                        "illegal"
+                                                        "spam"
                                                     ]
                                                 },
                                                 "moderationExplanation": {
@@ -934,13 +929,12 @@
                                                                     "moderationReason": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "off-topic",
-                                                                            "spam",
                                                                             "misleading",
-                                                                            "privacy",
+                                                                            "antisocial",
+                                                                            "illegal",
+                                                                            "doxing",
                                                                             "sexual",
-                                                                            "toxic",
-                                                                            "illegal"
+                                                                            "spam"
                                                                         ]
                                                                     },
                                                                     "moderationExplanation": {
@@ -1150,13 +1144,12 @@
                                                                             "moderationReason": {
                                                                                 "type": "string",
                                                                                 "enum": [
-                                                                                    "off-topic",
-                                                                                    "spam",
                                                                                     "misleading",
-                                                                                    "privacy",
+                                                                                    "antisocial",
+                                                                                    "illegal",
+                                                                                    "doxing",
                                                                                     "sexual",
-                                                                                    "toxic",
-                                                                                    "illegal"
+                                                                                    "spam"
                                                                                 ]
                                                                             },
                                                                             "moderationExplanation": {
@@ -1333,13 +1326,12 @@
                                                                     "moderationReason": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "off-topic",
-                                                                            "spam",
                                                                             "misleading",
-                                                                            "privacy",
+                                                                            "antisocial",
+                                                                            "illegal",
+                                                                            "doxing",
                                                                             "sexual",
-                                                                            "toxic",
-                                                                            "illegal"
+                                                                            "spam"
                                                                         ]
                                                                     },
                                                                     "moderationExplanation": {
@@ -1743,13 +1735,12 @@
                                                             "moderationReason": {
                                                                 "type": "string",
                                                                 "enum": [
-                                                                    "off-topic",
-                                                                    "spam",
                                                                     "misleading",
-                                                                    "privacy",
+                                                                    "antisocial",
+                                                                    "illegal",
+                                                                    "doxing",
                                                                     "sexual",
-                                                                    "toxic",
-                                                                    "illegal"
+                                                                    "spam"
                                                                 ]
                                                             },
                                                             "moderationExplanation": {
@@ -1982,13 +1973,12 @@
                                                                         "moderationReason": {
                                                                             "type": "string",
                                                                             "enum": [
-                                                                                "off-topic",
-                                                                                "spam",
                                                                                 "misleading",
-                                                                                "privacy",
+                                                                                "antisocial",
+                                                                                "illegal",
+                                                                                "doxing",
                                                                                 "sexual",
-                                                                                "toxic",
-                                                                                "illegal"
+                                                                                "spam"
                                                                             ]
                                                                         },
                                                                         "moderationExplanation": {

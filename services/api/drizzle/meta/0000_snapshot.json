@@ -1,5 +1,5 @@
 {
-  "id": "d1cb3a04-c513-47ea-8d5b-beea6a97018d",
+  "id": "e8cb498a-daa6-4e28-9c13-ad7333d63dce",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2957,13 +2957,12 @@
       "name": "moderation_reason_enum",
       "schema": "public",
       "values": [
-        "off-topic",
-        "spam",
         "misleading",
-        "privacy",
+        "antisocial",
+        "illegal",
+        "doxing",
         "sexual",
-        "toxic",
-        "illegal"
+        "spam"
       ]
     },
     "public.phone_country_code": {

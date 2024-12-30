@@ -1219,13 +1219,12 @@ export const reportReasons = pgEnum("report_reason_enum", [
     "illegal",
 ]);
 export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
-    "off-topic",
-    "spam",
     "misleading",
-    "privacy",
-    "sexual",
-    "toxic",
+    "antisocial",
     "illegal",
+    "doxing",
+    "sexual",
+    "spam",
 ]);
 
 // todo: add suspend and ban

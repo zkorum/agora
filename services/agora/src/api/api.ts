@@ -613,13 +613,12 @@ export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerat
 
 export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum];
 export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = {
-    OffTopic: 'off-topic',
-    Spam: 'spam',
     Misleading: 'misleading',
-    Privacy: 'privacy',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
     Sexual: 'sexual',
-    Toxic: 'toxic',
-    Illegal: 'illegal'
+    Spam: 'spam'
 } as const;
 
 export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum];
@@ -679,13 +678,12 @@ export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerat
 
 export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum];
 export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum = {
-    OffTopic: 'off-topic',
-    Spam: 'spam',
     Misleading: 'misleading',
-    Privacy: 'privacy',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
     Sexual: 'sexual',
-    Toxic: 'toxic',
-    Illegal: 'illegal'
+    Spam: 'spam'
 } as const;
 
 export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum];
@@ -861,13 +859,12 @@ export const ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum 
 
 export type ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum = typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum[keyof typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationActionEnum];
 export const ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum = {
-    OffTopic: 'off-topic',
-    Spam: 'spam',
     Misleading: 'misleading',
-    Privacy: 'privacy',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
     Sexual: 'sexual',
-    Toxic: 'toxic',
-    Illegal: 'illegal'
+    Spam: 'spam'
 } as const;
 
 export type ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum = typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum[keyof typeof ApiV1ModerateFetchCommentReportPost200ResponseModerationReasonEnum];
@@ -928,13 +925,12 @@ export const ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationAction
 
 export type ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationActionEnum = typeof ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationActionEnum[keyof typeof ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationActionEnum];
 export const ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationReasonEnum = {
-    OffTopic: 'off-topic',
-    Spam: 'spam',
     Misleading: 'misleading',
-    Privacy: 'privacy',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
     Sexual: 'sexual',
-    Toxic: 'toxic',
-    Illegal: 'illegal'
+    Spam: 'spam'
 } as const;
 
 export type ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationReasonEnum = typeof ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationReasonEnum[keyof typeof ApiV1ModerateFetchCommentReportPost200ResponseAnyOfModerationReasonEnum];
@@ -972,13 +968,12 @@ export interface ApiV1ModerateReportCommentPostRequest {
 }
 
 export const ApiV1ModerateReportCommentPostRequestModerationReasonEnum = {
-    OffTopic: 'off-topic',
-    Spam: 'spam',
     Misleading: 'misleading',
-    Privacy: 'privacy',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
     Sexual: 'sexual',
-    Toxic: 'toxic',
-    Illegal: 'illegal'
+    Spam: 'spam'
 } as const;
 
 export type ApiV1ModerateReportCommentPostRequestModerationReasonEnum = typeof ApiV1ModerateReportCommentPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportCommentPostRequestModerationReasonEnum];
@@ -1022,13 +1017,12 @@ export interface ApiV1ModerateReportPostPostRequest {
 }
 
 export const ApiV1ModerateReportPostPostRequestModerationReasonEnum = {
-    OffTopic: 'off-topic',
-    Spam: 'spam',
     Misleading: 'misleading',
-    Privacy: 'privacy',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
     Sexual: 'sexual',
-    Toxic: 'toxic',
-    Illegal: 'illegal'
+    Spam: 'spam'
 } as const;
 
 export type ApiV1ModerateReportPostPostRequestModerationReasonEnum = typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum[keyof typeof ApiV1ModerateReportPostPostRequestModerationReasonEnum];

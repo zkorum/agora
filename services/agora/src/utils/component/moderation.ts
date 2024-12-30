@@ -1,11 +1,10 @@
 export const moderationReasonMapping = [
-  { label: "Off Topic", value: "off-topic" },
-  { label: "Spam", value: "spam" },
   { label: "Misleading", value: "misleading" },
-  { label: "Privacy", value: "privacy" },
-  { label: "Sexual", value: "sexual" },
-  { label: "Toxic", value: "toxic" },
+  { label: "Antisocial", value: "antisocial" },
   { label: "Illegal", value: "illegal" },
+  { label: "Doxing", value: "doxing" },
+  { label: "Sexual", value: "sexual" },
+  { label: "Spam", value: "spam" },
 ];
 
 export const moderationActionPostsMapping = [{ label: "Lock", value: "lock" }];
