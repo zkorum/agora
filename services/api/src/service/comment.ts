@@ -82,6 +82,8 @@ export async function fetchCommentsByPostSlugId({
             moderationExplanation:
                 moderationCommentsTable.moderationExplanation,
             moderationReason: moderationCommentsTable.moderationReason,
+            moderationCreatedAt: moderationCommentsTable.createdAt,
+            moderationUpdatedAt: moderationCommentsTable.updatedAt,
         })
         .from(commentTable)
         .innerJoin(postTable, eq(postTable.id, postId))
@@ -103,8 +105,8 @@ export async function fetchCommentsByPostSlugId({
             commentResponse.moderationAction,
             commentResponse.moderationExplanation,
             commentResponse.moderationReason,
-            commentResponse.createdAt,
-            commentResponse.updatedAt,
+            commentResponse.moderationCreatedAt,
+            commentResponse.moderationUpdatedAt,
         );
 
         const item: CommentItem = {

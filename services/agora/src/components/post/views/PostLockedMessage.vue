@@ -23,7 +23,10 @@
       </div>
 
       <div class="rightColumn">
-        <ModerationTime :created-at="moderationProperty.createdAt" />
+        <ModerationTime
+          :created-at="moderationProperty.createdAt"
+          :updated-at="moderationProperty.updatedAt"
+        />
 
         <ZKButton
           v-if="profileData.isModerator"

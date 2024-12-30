@@ -53,6 +53,7 @@ export async function moderateByPostSlugId({
                 moderationAction: moderationAction,
                 moderationReason: moderationReason,
                 moderationExplanation: moderationExplanation,
+                updatedAt: nowZeroMs(),
             })
             .where(eq(moderationPostsTable.postId, postDetails.id));
     } else {

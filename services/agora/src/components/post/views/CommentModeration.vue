@@ -21,7 +21,10 @@
           </div>
 
           <div class="moderationTimeBox moderatedFont">
-            <ModerationTime :created-at="commentItem.moderation.createdAt" />
+            <ModerationTime
+              :created-at="commentItem.moderation.createdAt"
+              :updated-at="commentItem.moderation.updatedAt"
+            />
 
             <div v-if="profileData.isModerator" class="moderationEditButton">
               <RouterLink

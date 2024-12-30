@@ -2,11 +2,13 @@
   <div>
     <div class="container">
       <div>
-        {{ useDateFormat(createdAt, "HH:mm A") }}
+        {{ displayDateString("HH:mm A") }}
       </div>
       <div>
-        {{ useDateFormat(createdAt, "YYYY-MM-DD") }}
+        {{ displayDateString("YYYY-MM-DD") }}
       </div>
+
+      <div v-if="isModerationEdited" class="editedMessage">(edited)</div>
     </div>
   </div>
 </template>
@@ -14,9 +16,18 @@
 <script setup lang="ts">
 import { useDateFormat } from "@vueuse/core";
 
-defineProps<{
+const props = defineProps<{
   createdAt: Date;
+  updatedAt: Date;
 }>();
+
+const isModerationEdited =
+  props.createdAt.getTime() === props.updatedAt.getTime() ? false : true;
+const displayDate = isModerationEdited ? props.updatedAt : props.createdAt;
+
+function displayDateString(format: string) {
+  return useDateFormat(displayDate, format);
+}
 </script>
 
 <style lang="scss" scoped>
@@ -24,5 +35,9 @@ defineProps<{
   display: flex;
   flex-direction: column;
   align-items: end;
+}
+
+.editedMessage {
+  font-size: 0.8rem;
 }
 </style>
