@@ -252,7 +252,7 @@ function clickedCommentButton() {
 function shareClicked() {
   const sharePostUrl =
     window.location.origin +
-    "/post/" +
+    "/feed/post/" +
     props.extendedPostData.metadata.postSlugId;
   webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
