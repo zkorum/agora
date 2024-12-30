@@ -123,12 +123,18 @@ const upvoteIcon = computed<IconObject>(() => {
 });
 
 function shareButtonClicked() {
+  let moderatedParameter = "";
+  if (props.commentItem.moderation.moderationStatus == "moderated") {
+    moderatedParameter = "&targetFilter=moderation-history";
+  }
+
   const sharePostUrl =
     window.location.origin +
-    "/post/" +
+    "/feed/post/" +
     props.postSlugId +
     "?commentSlugId=" +
-    props.commentItem.commentSlugId;
+    props.commentItem.commentSlugId +
+    moderatedParameter;
   webShare.share("Agora Comment", sharePostUrl);
 }
 
