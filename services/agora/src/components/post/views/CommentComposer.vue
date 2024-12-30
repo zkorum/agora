@@ -5,7 +5,7 @@
         <ZKEditor
           :key="resetKey"
           v-model="commentText"
-          placeholder="Add your own response"
+          placeholder="Add your own opinion"
           :min-height="innerFocus ? '6rem' : '2rem'"
           :focus-editor="showControls"
           :show-toolbar="innerFocus || showControls"
