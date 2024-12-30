@@ -59,8 +59,8 @@ import {
     fetchPostModeration,
     moderateByCommentSlugId,
     moderateByPostSlugId,
-    moderationCancelCommentReport,
-    moderationCancelPostReport,
+    withdrawModerationReportByCommentSlugId,
+    withdrawModerationReportByPostSlugId,
 } from "./service/moderation.js";
 import { nowZeroMs } from "./shared/common/util.js";
 
@@ -539,7 +539,7 @@ server.after(() => {
                     );
                 }
 
-                await moderationCancelPostReport({
+                await withdrawModerationReportByPostSlugId({
                     db: db,
                     postSlugId: request.body.postSlugId,
                 });
@@ -572,7 +572,7 @@ server.after(() => {
                     );
                 }
 
-                await moderationCancelCommentReport({
+                await withdrawModerationReportByCommentSlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                 });

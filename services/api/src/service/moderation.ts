@@ -199,15 +199,15 @@ export async function fetchCommentModeration({
     }
 }
 
-interface ModerationCancelPostReportProps {
+interface WithdrawModerationReportByPostSlugIdProps {
     postSlugId: string;
     db: PostgresJsDatabase;
 }
 
-export async function moderationCancelPostReport({
+export async function withdrawModerationReportByPostSlugId({
     db,
     postSlugId,
-}: ModerationCancelPostReportProps) {
+}: WithdrawModerationReportByPostSlugIdProps) {
     const { getPostAndContentIdFromSlugId } = useCommonPost();
     const postDetails = await getPostAndContentIdFromSlugId({
         db: db,
@@ -226,15 +226,15 @@ export async function moderationCancelPostReport({
     }
 }
 
-interface ModerationCancelCommentReportProps {
+interface WithdrawModerationReportByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
 }
 
-export async function moderationCancelCommentReport({
+export async function withdrawModerationReportByCommentSlugId({
     db,
     commentSlugId,
-}: ModerationCancelCommentReportProps) {
+}: WithdrawModerationReportByCommentSlugIdProps) {
     const { getCommentIdFromCommentSlugId } = useCommonComment();
     const commentId = await getCommentIdFromCommentSlugId({
         db: db,
