@@ -1,6 +1,9 @@
 <template>
-  <div class="container">
-    <img src="/feed/images/onboarding/brand.webp" class="welcomeImage" />
+  <div
+    class="container"
+    :style="{ backgroundImage: 'url(' + welcomeBackgroundImagePath + ')' }"
+  >
+    <img :src="brandImagePath" class="welcomeImage" />
     <div class="buttonFlex">
       <ZKButton label="Sign Up" color="primary" @click="gotoNextRoute(false)" />
 
@@ -28,6 +31,12 @@ import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
+
+const brandImagePath =
+  process.env.VITE_PUBLIC_DIR + "/images/onboarding/brand.webp";
+
+const welcomeBackgroundImagePath =
+  process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
 
 const { onboardingMode } = storeToRefs(onboardingFlowStore());
 
@@ -65,7 +74,6 @@ function gotoNextRoute(isLogin: boolean) {
   justify-content: center;
   gap: 3rem;
   height: 100vh;
-  background-image: url("/feed/images/onboarding/background.webp");
   background-size: cover;
 }
 </style>

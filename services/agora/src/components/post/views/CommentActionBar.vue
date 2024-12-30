@@ -130,7 +130,8 @@ function shareButtonClicked() {
 
   const sharePostUrl =
     window.location.origin +
-    "/feed/post/" +
+    process.env.VITE_PUBLIC_DIR +
+    "/post/" +
     props.postSlugId +
     "?commentSlugId=" +
     props.commentItem.commentSlugId +

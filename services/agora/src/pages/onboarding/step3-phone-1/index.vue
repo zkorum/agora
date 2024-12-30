@@ -41,11 +41,7 @@
                 >
                   <img
                     :alt="slotProps.value.label"
-                    :src="
-                      '/feed/images/communities/flags/' +
-                      slotProps.value.country +
-                      '.svg'
-                    "
+                    :src="getFlagLink(slotProps.value.country)"
                     class="flagImg"
                   />
                   <div>+ {{ slotProps.value.code }}</div>
@@ -57,11 +53,7 @@
               <template #option="slotProps">
                 <div class="innerOption">
                   <img
-                    :src="
-                      '/feed/images/communities/flags/' +
-                      slotProps.option.country +
-                      '.svg'
-                    "
+                    :src="getFlagLink(slotProps.option.country)"
                     class="flagImg"
                     loading="lazy"
                   />
@@ -190,6 +182,15 @@ interface PhoneNumber {
 
 const devAuthorizedNumbers: PhoneNumber[] = [];
 checkDevAuthorizedNumbers();
+
+function getFlagLink(country: string) {
+  return (
+    process.env.VITE_PUBLIC_DIR +
+    "/images/communities/flags/" +
+    country +
+    ".svg"
+  );
+}
 
 function injectDevelopmentNumber(phoneItem: PhoneNumber) {
   inputNumber.value = phoneItem.fullNumber;

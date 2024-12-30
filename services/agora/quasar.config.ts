@@ -1,5 +1,4 @@
 /* eslint-env node */
-
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
@@ -9,6 +8,8 @@ import { defineConfig } from "#q-app/wrappers";
 import "dotenv/config";
 
 export default defineConfig((ctx) => {
+  const publicDir = "/feed";
+
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -66,7 +67,7 @@ export default defineConfig((ctx) => {
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
       // publicPath: ctx.dev ? "/" : "/feed/",
-      publicPath: "/feed/", // we serve this behind a global nginx configured to serve the app at /feed/
+      publicPath: publicDir + "/", // we serve this behind a global nginx configured to serve the app at /feed/
       // extendViteConf(viteConf, _params) {
       //   viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
       // },
@@ -76,6 +77,7 @@ export default defineConfig((ctx) => {
       // https://github.com/quasarframework/quasar/discussions/15303#discussioncomment-5904464
       // https://vite.dev/config/
       env: {
+        VITE_PUBLIC_DIR: publicDir,
         VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
         VITE_BACK_DID: process.env.VITE_BACK_DID,
         VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,

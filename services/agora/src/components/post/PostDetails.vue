@@ -250,9 +250,12 @@ function clickedCommentButton() {
 }
 
 function shareClicked() {
+  console.log(process.env.VITE_PUBLIC_DIR);
+
   const sharePostUrl =
     window.location.origin +
-    "/feed/post/" +
+    process.env.VITE_PUBLIC_DIR +
+    "/post/" +
     props.extendedPostData.metadata.postSlugId;
   webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
