@@ -446,7 +446,7 @@
                 }
             }
         },
-        "/api/v1/moderation/post/report": {
+        "/api/v1/moderation/post/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -499,7 +499,7 @@
                 }
             }
         },
-        "/api/v1/moderation/comment/report": {
+        "/api/v1/moderation/comment/create": {
             "post": {
                 "requestBody": {
                     "content": {

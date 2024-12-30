@@ -1,9 +1,9 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
-  type ApiV1ModerationCommentReportPostRequest,
+  type ApiV1ModerationCommentCreatePostRequest,
   type ApiV1ModerationCommentWithdrawPostRequest,
-  type ApiV1ModerationPostReportPostRequest,
+  type ApiV1ModerationPostCreatePostRequest,
   type ApiV1ModerationPostWithdrawPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
@@ -31,7 +31,7 @@ export function useBackendModerateApi() {
     moderationExplanation: string
   ) {
     try {
-      const params: ApiV1ModerationPostReportPostRequest = {
+      const params: ApiV1ModerationPostCreatePostRequest = {
         postSlugId: postSlugId,
         moderationAction: moderationAction,
         moderationExplanation: moderationExplanation,
@@ -39,7 +39,7 @@ export function useBackendModerateApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerationPostReportPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationPostCreatePost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -47,7 +47,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerationPostReportPost(params, {
+      ).apiV1ModerationPostCreatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -68,7 +68,7 @@ export function useBackendModerateApi() {
     moderationExplanation: string
   ) {
     try {
-      const params: ApiV1ModerationCommentReportPostRequest = {
+      const params: ApiV1ModerationCommentCreatePostRequest = {
         commentSlugId: commentSlugId,
         moderationAction: moderationAction,
         moderationExplanation: moderationExplanation,
@@ -76,7 +76,7 @@ export function useBackendModerateApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerationCommentReportPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationCommentCreatePost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -84,7 +84,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerationCommentReportPost(params, {
+      ).apiV1ModerationCommentCreatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },

@@ -442,7 +442,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/post/report`,
+        url: `/api/${apiVersion}/moderation/post/create`,
         schema: {
             body: Dto.moderateReportPostRequest,
         },
@@ -479,7 +479,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/comment/report`,
+        url: `/api/${apiVersion}/moderation/comment/create`,
         schema: {
             body: Dto.moderateReportCommentRequest,
         },
