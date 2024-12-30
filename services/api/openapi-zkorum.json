@@ -446,7 +446,7 @@
                 }
             }
         },
-        "/api/v1/moderate/report-post": {
+        "/api/v1/moderation/post/report": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -499,7 +499,7 @@
                 }
             }
         },
-        "/api/v1/moderate/report-comment": {
+        "/api/v1/moderation/comment/report": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -553,7 +553,7 @@
                 }
             }
         },
-        "/api/v1/moderate/cancel-post-report": {
+        "/api/v1/moderation/post/withdraw": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -582,7 +582,7 @@
                 }
             }
         },
-        "/api/v1/moderate/cancel-comment-report": {
+        "/api/v1/moderation/comment/withdraw": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -611,7 +611,7 @@
                 }
             }
         },
-        "/api/v1/moderate/fetch-post-report": {
+        "/api/v1/moderation/post/fetch-report": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -712,7 +712,7 @@
                 }
             }
         },
-        "/api/v1/moderate/fetch-comment-report": {
+        "/api/v1/moderation/comment/fetch-report": {
             "post": {
                 "requestBody": {
                     "content": {

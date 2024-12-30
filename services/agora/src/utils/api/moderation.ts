@@ -1,10 +1,10 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
-  type ApiV1ModerateCancelCommentReportPostRequest,
-  type ApiV1ModerateCancelPostReportPostRequest,
-  type ApiV1ModerateReportCommentPostRequest,
-  type ApiV1ModerateReportPostPostRequest,
+  type ApiV1ModerationCommentReportPostRequest,
+  type ApiV1ModerationCommentWithdrawPostRequest,
+  type ApiV1ModerationPostReportPostRequest,
+  type ApiV1ModerationPostWithdrawPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -31,7 +31,7 @@ export function useBackendModerateApi() {
     moderationExplanation: string
   ) {
     try {
-      const params: ApiV1ModerateReportPostPostRequest = {
+      const params: ApiV1ModerationPostReportPostRequest = {
         postSlugId: postSlugId,
         moderationAction: moderationAction,
         moderationExplanation: moderationExplanation,
@@ -39,13 +39,15 @@ export function useBackendModerateApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerateReportPostPost(params);
+        await DefaultApiAxiosParamCreator().apiV1ModerationPostReportPost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1ModerateReportPostPost(params, {
+      ).apiV1ModerationPostReportPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -66,7 +68,7 @@ export function useBackendModerateApi() {
     moderationExplanation: string
   ) {
     try {
-      const params: ApiV1ModerateReportCommentPostRequest = {
+      const params: ApiV1ModerationCommentReportPostRequest = {
         commentSlugId: commentSlugId,
         moderationAction: moderationAction,
         moderationExplanation: moderationExplanation,
@@ -74,7 +76,7 @@ export function useBackendModerateApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerateReportCommentPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationCommentReportPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -82,7 +84,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerateReportCommentPost(params, {
+      ).apiV1ModerationCommentReportPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -100,12 +102,12 @@ export function useBackendModerateApi() {
     postSlugId: string
   ): Promise<ModerationPropertiesPosts> {
     try {
-      const params: ApiV1ModerateCancelPostReportPostRequest = {
+      const params: ApiV1ModerationPostWithdrawPostRequest = {
         postSlugId: postSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerateFetchPostReportPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationPostFetchReportPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -113,7 +115,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerateFetchPostReportPost(params, {
+      ).apiV1ModerationPostFetchReportPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -143,12 +145,12 @@ export function useBackendModerateApi() {
     commentSlugId: string
   ): Promise<ModerationPropertiesComments> {
     try {
-      const params: ApiV1ModerateCancelCommentReportPostRequest = {
+      const params: ApiV1ModerationCommentWithdrawPostRequest = {
         commentSlugId: commentSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerateFetchCommentReportPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationCommentFetchReportPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -156,7 +158,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerateFetchCommentReportPost(params, {
+      ).apiV1ModerationCommentFetchReportPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -186,12 +188,12 @@ export function useBackendModerateApi() {
     postSlugId: string
   ): Promise<boolean> {
     try {
-      const params: ApiV1ModerateCancelPostReportPostRequest = {
+      const params: ApiV1ModerationPostWithdrawPostRequest = {
         postSlugId: postSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerateCancelPostReportPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationPostWithdrawPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -199,7 +201,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerateCancelPostReportPost(params, {
+      ).apiV1ModerationPostWithdrawPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -216,12 +218,12 @@ export function useBackendModerateApi() {
     commentSlugId: string
   ): Promise<boolean> {
     try {
-      const params: ApiV1ModerateCancelCommentReportPostRequest = {
+      const params: ApiV1ModerationCommentWithdrawPostRequest = {
         commentSlugId: commentSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ModerateCancelCommentReportPost(
+        await DefaultApiAxiosParamCreator().apiV1ModerationCommentWithdrawPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -229,7 +231,7 @@ export function useBackendModerateApi() {
         undefined,
         undefined,
         api
-      ).apiV1ModerateCancelCommentReportPost(params, {
+      ).apiV1ModerationCommentWithdrawPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },

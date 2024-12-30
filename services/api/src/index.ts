@@ -442,7 +442,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderate/report-post`,
+        url: `/api/${apiVersion}/moderation/post/report`,
         schema: {
             body: Dto.moderateReportPostRequest,
         },
@@ -479,7 +479,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderate/report-comment`,
+        url: `/api/${apiVersion}/moderation/comment/report`,
         schema: {
             body: Dto.moderateReportCommentRequest,
         },
@@ -516,7 +516,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderate/cancel-post-report`,
+        url: `/api/${apiVersion}/moderation/post/withdraw`,
         schema: {
             body: Dto.moderateCancelPostReportRequest,
         },
@@ -549,7 +549,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderate/cancel-comment-report`,
+        url: `/api/${apiVersion}/moderation/comment/withdraw`,
         schema: {
             body: Dto.moderateCancelCommentReportRequest,
         },
@@ -582,7 +582,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderate/fetch-post-report`,
+        url: `/api/${apiVersion}/moderation/post/fetch-report`,
         schema: {
             body: Dto.fetchPostModerationRequest,
             response: {
@@ -618,7 +618,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderate/fetch-comment-report`,
+        url: `/api/${apiVersion}/moderation/comment/fetch-report`,
         schema: {
             body: Dto.fetchCommentModerationRequest,
             response: {
