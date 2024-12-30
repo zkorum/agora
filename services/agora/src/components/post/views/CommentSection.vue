@@ -1,18 +1,15 @@
 <template>
   <div>
     <div class="container">
-      <div class="filterResponseBox">
-        <div>Filter responses by:</div>
-        <div class="filterButtonCluster">
-          <ZKButton
-            v-for="option in filterOptions"
-            :key="option.value"
-            :label="option.name"
-            :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
-            :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
-            @click="sortAlgorithm = option.value"
-          />
-        </div>
+      <div class="filterButtonCluster">
+        <ZKButton
+          v-for="option in filterOptions"
+          :key="option.value"
+          :label="option.name"
+          :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
+          :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
+          @click="sortAlgorithm = option.value"
+        />
       </div>
 
       <CommentGroup
@@ -148,13 +145,6 @@ function scrollToComment() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.filterResponseBox {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-bottom: 0.5rem;
 }
 
 .filterButtonCluster {
