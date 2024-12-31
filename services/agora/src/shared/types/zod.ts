@@ -101,6 +101,7 @@ export const zodPollResponse = z
     .strict();
 export const zodSlugId = z.string().max(10);
 export const zodCommentCount = z.number().int().nonnegative();
+export const zodCommentFeedFilter = z.enum(["moderated", "new"]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
@@ -506,3 +507,4 @@ export type ModerationPropertiesPosts = z.infer<
 export type ModerationPropertiesComments = z.infer<
     typeof zodModerationPropertiesComments
 >;
+export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;

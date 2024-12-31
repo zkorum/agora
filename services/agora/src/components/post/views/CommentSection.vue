@@ -14,7 +14,7 @@
 
       <CommentGroup
         v-if="sortAlgorithm == 'new'"
-        :comment-item-list="commentItemsUnmoderated"
+        :comment-item-list="commentItemsNew"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -23,8 +23,18 @@
       />
 
       <CommentGroup
-        v-if="sortAlgorithm == 'moderation-history'"
+        v-if="sortAlgorithm == 'moderated'"
         :comment-item-list="commentItemsModerated"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="initialCommentSlugId"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+      />
+
+      <CommentGroup
+        v-if="sortAlgorithm == 'hidden'"
+        :comment-item-list="commentItemsHidden"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="initialCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -36,14 +46,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { type CommentItem } from "src/shared/types/zod";
+import { type CommentFeedFilter, type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useUserStore } from "src/stores/user";
+
+type CommentFilterOptions = "new" | "moderated" | "hidden";
 
 const emit = defineEmits(["deleted"]);
 
@@ -51,36 +64,56 @@ const props = defineProps<{
   postSlugId: string;
   initialCommentSlugId: string;
   isPostLocked: boolean;
-  commentFilter: string;
+  commentFilter: CommentFilterOptions;
 }>();
 
-const sortAlgorithm = ref("new");
+const sortAlgorithm = ref<CommentFilterOptions>("new");
+sortAlgorithm.value = props.commentFilter;
 
-if (props.commentFilter.length > 0) {
-  sortAlgorithm.value = props.commentFilter;
-}
-
-const { fetchCommentsForPost } = useBackendCommentApi();
+const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
+  useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const commentItemsUnmoderated = ref<CommentItem[]>([]);
-const commentItemsModerated = ref<CommentItem[]>([]);
+const { profileData } = storeToRefs(useUserStore());
+
+let commentItemsNew = ref<CommentItem[]>([]);
+let commentItemsModerated = ref<CommentItem[]>([]);
+let commentItemsHidden = ref<CommentItem[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "like" | "dislike">>(new Map());
 
-const filterOptions = [
+const baseFilters: { name: string; value: CommentFilterOptions }[] = [
   { name: "New", value: "new" },
-  { name: "Moderation History", value: "moderation-history" },
+  { name: "Moderation History", value: "moderated" },
 ];
+const filterOptions = ref(baseFilters);
 
-fetchCommentList(false);
-fetchCommentList(true);
+fetchCommentList("new");
+fetchCommentList("moderated");
+initializeModeratorMenu();
 
 onMounted(() => {
   fetchPersonalLikes();
 });
+
+watch(profileData, () => {
+  initializeModeratorMenu();
+});
+
+function initializeModeratorMenu() {
+  if (profileData.value.isModerator) {
+    filterOptions.value = baseFilters.concat([
+      {
+        name: "Hidden",
+        value: "hidden",
+      },
+    ]);
+
+    fetchHiddenComments();
+  }
+}
 
 function deletedComment() {
   emit("deleted");
@@ -101,18 +134,25 @@ async function fetchPersonalLikes() {
   }
 }
 
-async function fetchCommentList(showModeratedComments: boolean) {
+async function fetchHiddenComments() {
   if (props.postSlugId.length > 0) {
-    const response = await fetchCommentsForPost(
-      props.postSlugId,
-      showModeratedComments
-    );
+    const response = await fetchHiddenCommentsForPost(props.postSlugId);
 
     if (response != null) {
-      if (showModeratedComments) {
+      commentItemsHidden.value = response;
+    }
+  }
+}
+
+async function fetchCommentList(filter: CommentFeedFilter) {
+  if (props.postSlugId.length > 0) {
+    const response = await fetchCommentsForPost(props.postSlugId, filter);
+
+    if (response != null) {
+      if (filter == "moderated") {
         commentItemsModerated.value = response;
       } else {
-        commentItemsUnmoderated.value = response;
+        commentItemsNew.value = response;
       }
 
       setTimeout(function () {

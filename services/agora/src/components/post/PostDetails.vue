@@ -120,12 +120,12 @@
           <CommentSection
             :key="commentCountOffset"
             :post-slug-id="extendedPostData.metadata.postSlugId"
-            :initial-comment-slug-id="commentSlugId"
+            :initial-comment-slug-id="commentSlugIdQuery"
             :is-post-locked="
               extendedPostData.metadata.moderation.moderationStatus ==
               'moderated'
             "
-            :comment-filter="commentFilter"
+            :comment-filter="parsedCommentFilter"
             @deleted="decrementCommentCount()"
           />
         </div>
@@ -175,8 +175,24 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuthenticationStore();
 
-const commentSlugId = useRouteQuery("commentSlugId", "", { transform: String });
-const commentFilter = useRouteQuery("filter", "", { transform: String });
+const commentSlugIdQuery = useRouteQuery("commentSlugId", "", {
+  transform: String,
+});
+const commentFilterQuery = useRouteQuery("commentFilterQuery", "", {
+  transform: String,
+});
+
+const parsedCommentFilter = computed<"new" | "moderated" | "hidden">(() => {
+  if (
+    commentFilterQuery.value == "new" ||
+    commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "hidden"
+  ) {
+    return commentFilterQuery.value;
+  } else {
+    return "new";
+  }
+});
 
 const commentCountOffset = ref(0);
 

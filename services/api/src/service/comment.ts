@@ -9,7 +9,7 @@ import {
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and, isNull, isNotNull, ne } from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type { CommentItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
@@ -47,26 +47,33 @@ export async function getCommentSlugIdLastCreatedAt({
 interface FetchCommentsByPostSlugIdProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
-    showModeratedComments: boolean;
+    fetchTarget: "moderated" | "new" | "hidden";
 }
 
 export async function fetchCommentsByPostSlugId({
     db,
     postSlugId,
-    showModeratedComments,
+    fetchTarget,
 }: FetchCommentsByPostSlugIdProps): Promise<CommentItem[]> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
 
-    const whereClause = showModeratedComments
-        ? and(
-              eq(commentTable.postId, postId),
-              ne(moderationCommentsTable.moderationAction, "hide"),
-              isNotNull(moderationCommentsTable.id),
-          )
-        : and(
-              eq(commentTable.postId, postId),
-              isNull(moderationCommentsTable.id),
-          );
+    let whereClause: SQL | undefined = eq(commentTable.postId, postId);
+
+    if (fetchTarget == "moderated") {
+        whereClause = and(
+            whereClause,
+            ne(moderationCommentsTable.moderationAction, "hide"),
+            isNotNull(moderationCommentsTable.id),
+        );
+    } else if (fetchTarget == "new") {
+        whereClause = and(whereClause, isNull(moderationCommentsTable.id));
+    } else {
+        whereClause = and(
+            whereClause,
+            eq(moderationCommentsTable.moderationAction, "hide"),
+            isNotNull(moderationCommentsTable.id),
+        );
+    }
 
     const results = await db
         .select({

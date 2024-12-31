@@ -3,12 +3,15 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
   type ApiV1CommentCreatePostRequest,
   type ApiV1CommentFetchCommentsByPostSlugIdPostRequest,
+  type ApiV1CommentFetchHiddenCommentsPostRequest,
   type ApiV1ModerationCommentWithdrawPostRequest,
+  type ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
 import { useCommonApi } from "./common";
 import {
+  type CommentFeedFilter,
   type CommentItem,
   type moderationStatusOptionsType,
 } from "src/shared/types/zod";
@@ -19,21 +22,60 @@ export function useBackendCommentApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function fetchCommentsForPost(
-    postSlugId: string,
-    showModeratedComments: boolean
-  ) {
+  function createLocalCommentObject(
+    webCommentItemList: ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem[]
+  ): CommentItem[] {
+    const parsedCommentItemList: CommentItem[] = [];
+
+    webCommentItemList.forEach((item) => {
+      const moderationStatus = item.moderation
+        .moderationStatus as moderationStatusOptionsType;
+
+      parsedCommentItemList.push({
+        comment: item.comment,
+        commentSlugId: item.commentSlugId,
+        createdAt: new Date(item.createdAt),
+        numDislikes: item.numDislikes,
+        numLikes: item.numLikes,
+        updatedAt: new Date(item.updatedAt),
+        username: String(item.username),
+        moderation: {
+          moderationStatus: moderationStatus,
+          moderationAction: item.moderation.moderationAction,
+          moderationExplanation: item.moderation.moderationExplanation,
+          moderationReason: item.moderation.moderationReason,
+          createdAt: new Date(item.moderation.createdAt),
+          updatedAt: new Date(item.moderation.updatedAt),
+        },
+      });
+    });
+
+    return parsedCommentItemList;
+  }
+
+  async function fetchHiddenCommentsForPost(
+    postSlugId: string
+  ): Promise<CommentItem[]> {
     try {
-      const params: ApiV1CommentFetchCommentsByPostSlugIdPostRequest = {
+      const params: ApiV1CommentFetchHiddenCommentsPostRequest = {
         postSlugId: postSlugId,
-        showModeratedComments: showModeratedComments,
       };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1CommentFetchHiddenCommentsPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
 
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1CommentFetchCommentsByPostSlugIdPost(params, {});
+      ).apiV1CommentFetchHiddenCommentsPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
 
       const postList: CommentItem[] = [];
       response.data.forEach((item) => {
@@ -60,6 +102,30 @@ export function useBackendCommentApi() {
       });
 
       return postList;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to fetch comments for post: " + postSlugId);
+      return null;
+    }
+  }
+
+  async function fetchCommentsForPost(
+    postSlugId: string,
+    filter: CommentFeedFilter
+  ): Promise<CommentItem[]> {
+    try {
+      const params: ApiV1CommentFetchCommentsByPostSlugIdPostRequest = {
+        postSlugId: postSlugId,
+        filter: filter,
+      };
+
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1CommentFetchCommentsByPostSlugIdPost(params, {});
+
+      return createLocalCommentObject(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch comments for post: " + postSlugId);
@@ -123,6 +189,7 @@ export function useBackendCommentApi() {
   return {
     createNewComment,
     fetchCommentsForPost,
+    fetchHiddenCommentsForPost,
     deleteCommentBySlugId,
   };
 }

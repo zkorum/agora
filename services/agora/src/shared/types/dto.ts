@@ -22,6 +22,7 @@ import {
     zodModerationActionComments,
     zodModerationPropertiesPosts,
     zodModerationPropertiesComments,
+    zodCommentFeedFilter,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -114,10 +115,17 @@ export class Dto {
         .object({
             postSlugId: zodSlugId, // z.object() does not exist :(
             createdAt: z.string().datetime().optional(),
-            showModeratedComments: z.boolean(),
+            filter: zodCommentFeedFilter,
         })
         .strict();
     static fetchCommentFeedResponse = z.array(zodCommentItem);
+    static fetchHiddenCommentRequest = z
+        .object({
+            postSlugId: zodSlugId, // z.object() does not exist :(
+            createdAt: z.string().datetime().optional(),
+        })
+        .strict();
+    static fetchHiddenCommentResponse = z.array(zodCommentItem);
     static createNewPostRequest = z
         .object({
             postTitle: zodPostTitle,

@@ -1662,13 +1662,170 @@
                                         "type": "string",
                                         "format": "date-time"
                                     },
-                                    "showModeratedComments": {
-                                        "type": "boolean"
+                                    "filter": {
+                                        "type": "string",
+                                        "enum": [
+                                            "moderated",
+                                            "new"
+                                        ]
                                     }
                                 },
                                 "required": [
                                     "postSlugId",
-                                    "showModeratedComments"
+                                    "filter"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "commentSlugId": {
+                                                "type": "string",
+                                                "maxLength": 10
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updatedAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "comment": {
+                                                "type": "string",
+                                                "minLength": 1
+                                            },
+                                            "numLikes": {
+                                                "type": "integer",
+                                                "minimum": 0
+                                            },
+                                            "numDislikes": {
+                                                "type": "integer",
+                                                "minimum": 0
+                                            },
+                                            "username": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "moderation": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "moderationStatus": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "moderated"
+                                                                ]
+                                                            },
+                                                            "moderationAction": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lock",
+                                                                    "hide"
+                                                                ]
+                                                            },
+                                                            "moderationReason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "misleading",
+                                                                    "antisocial",
+                                                                    "illegal",
+                                                                    "doxing",
+                                                                    "sexual",
+                                                                    "spam"
+                                                                ]
+                                                            },
+                                                            "moderationExplanation": {
+                                                                "type": "string",
+                                                                "maxLength": 260
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updatedAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "moderationStatus",
+                                                            "moderationAction",
+                                                            "moderationReason",
+                                                            "moderationExplanation",
+                                                            "createdAt",
+                                                            "updatedAt"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "moderationStatus": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "unmoderated"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "moderationStatus"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "commentSlugId",
+                                            "createdAt",
+                                            "updatedAt",
+                                            "comment",
+                                            "numLikes",
+                                            "numDislikes",
+                                            "username",
+                                            "moderation"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/comment/fetch-hidden-comments": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId"
                                 ],
                                 "additionalProperties": false
                             }

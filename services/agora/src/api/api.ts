@@ -441,10 +441,37 @@ export interface ApiV1CommentFetchCommentsByPostSlugIdPostRequest {
     'createdAt'?: string;
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
      */
-    'showModeratedComments': boolean;
+    'filter': ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum;
+}
+
+export const ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum = {
+    Moderated: 'moderated',
+    New: 'new'
+} as const;
+
+export type ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum = typeof ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum[keyof typeof ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1CommentFetchHiddenCommentsPostRequest
+ */
+export interface ApiV1CommentFetchHiddenCommentsPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1CommentFetchHiddenCommentsPostRequest
+     */
+    'postSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1CommentFetchHiddenCommentsPostRequest
+     */
+    'createdAt'?: string;
 }
 /**
  * 
@@ -1819,6 +1846,45 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1CommentFetchHiddenCommentsPost: async (apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1CommentFetchHiddenCommentsPostRequest' is not null or undefined
+            assertParamExists('apiV1CommentFetchHiddenCommentsPost', 'apiV1CommentFetchHiddenCommentsPostRequest', apiV1CommentFetchHiddenCommentsPostRequest)
+            const localVarPath = `/api/v1/comment/fetch-hidden-comments`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1CommentFetchHiddenCommentsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2630,6 +2696,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1CommentFetchHiddenCommentsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2954,6 +3032,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options?: any): AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem>> {
+            return localVarFp.apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3249,6 +3336,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest: ApiV1CommentFetchCommentsByPostSlugIdPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

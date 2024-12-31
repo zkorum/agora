@@ -910,51 +910,45 @@ server.after(() => {
             return await fetchCommentsByPostSlugId({
                 db: db,
                 postSlugId: request.body.postSlugId,
-                showModeratedComments: request.body.showModeratedComments,
+                fetchTarget: request.body.filter,
             });
+        },
+    });
 
-            /*
-                const authHeader = request.headers.authorization;
-                if (!authHeader?.startsWith("Bearer ")) {
-                    // unauthorized user
-                    const comments = await postService.fetchCommentsByPostSlugId({
-                        db: db,
-                        postSlugId: request.body.postSlugId,
-                        order: "recent",
-                        showHidden: true,
-                        createdAt:
-                            request.body.createdAt !== undefined
-                                ? new Date(request.body.createdAt)
-                                : undefined,
-                    });
-                    return { comments };
-                } else {
-                    const didWrite = await verifyUCAN(db, request, {
-                        expectedDeviceStatus: {
-                            isLoggedIn: undefined,
-                        },
-                    });
-                    const status = await authUtilService.isLoggedIn(db, didWrite);
-                    if (!status.isLoggedIn) {
-                        throw server.httpErrors.unauthorized("Device is not logged in");
-                    } else {
-                        // logged-in user request
-                        const { userId } = status;
-                        const comments = await postService.fetchCommentsByPostSlugId({
-                            db: db,
-                            postSlugId: request.body.postSlugId,
-                            userId: userId,
-                            order: "recent",
-                            showHidden: true,
-                            createdAt:
-                                request.body.createdAt !== undefined
-                                    ? new Date(request.body.createdAt)
-                                    : undefined,
-                        });
-                        return { comments };
-                    }
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/comment/fetch-hidden-comments`,
+        schema: {
+            body: Dto.fetchHiddenCommentRequest,
+            response: {
+                200: Dto.fetchHiddenCommentResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
                 }
-                */
+
+                return await fetchCommentsByPostSlugId({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                    fetchTarget: "hidden",
+                });
+            }
         },
     });
 
@@ -1016,140 +1010,6 @@ server.after(() => {
             }
         },
     });
-    // server
-    //     .withTypeProvider<ZodTypeProvider>()
-    //     .post(`/api/${apiVersion}/poll/respond`, {
-    //         schema: {
-    //             body: Dto.respondPollRequest,
-    //             // response: {
-    //             //     200: Dto.pollRespond200,
-    //             // },
-    //         },
-    //         handler: async (request, _reply) => {
-    //             const didWrite = await verifyUCAN(db, request, {
-    //                 expectedDeviceStatus: {
-    //                     isLoggedIn: true,
-    //                 },
-    //             });
-    //             //TODO
-    //         },
-    //     });
-    // server
-    //     .withTypeProvider<ZodTypeProvider>()
-    //     .post(`/api/${apiVersion}/moderation/hidePost`, {
-    //         schema: {
-    //             body: Dto.moderatePostRequest,
-    //         },
-    //         handler: async (request, _reply) => {
-    //             const didWrite = await verifyUCAN(db, request, {
-    //                 expectedDeviceStatus: {
-    //                     isLoggedIn: true,
-    //                 },
-    //             });
-    //             // const isAdmin = await authUtilService.isAdmin(db, didWrite);
-    //             // if (isAdmin !== true) {
-    //             //     throw server.httpErrors.forbidden(
-    //             //         "Only admin can moderate content"
-    //             //     );
-    //             // }
-    //             // await Service.hidePost({
-    //             //     db: db,
-    //             //     pollUid: request.body.pollUid,
-    //             // });
-    //         },
-    //     });
-    // server
-    //     .withTypeProvider<ZodTypeProvider>()
-    //     .post(`/api/${apiVersion}/moderation/unhidePost`, {
-    //         schema: {
-    //             body: Dto.moderatePostRequest,
-    //         },
-    //         handler: async (request, _reply) => {
-    //             const didWrite = await verifyUCAN(db, request, {
-    //                 expectedDeviceStatus: {
-    //                     isLoggedIn: true,
-    //                 },
-    //             });
-    //             // const isAdmin = await authUtilService.isAdmin(db, didWrite);
-    //             // if (isAdmin !== true) {
-    //             //     throw server.httpErrors.forbidden(
-    //             //         "Only admin can moderate content"
-    //             //     );
-    //             // }
-    //             // await Service.unhidePost({
-    //             //     db: db,
-    //             //     pollUid: request.body.pollUid,
-    //             // });
-    //         },
-    //     });
-    // server
-    //     .withTypeProvider<ZodTypeProvider>()
-    //     .post(`/api/${apiVersion}/moderation/hideComment`, {
-    //         schema: {
-    //             body: Dto.moderateCommentRequest,
-    //         },
-    //         handler: async (request, _reply) => {
-    //             const didWrite = await verifyUCAN(db, request, {
-    //                 expectedDeviceStatus: {
-    //                     isLoggedIn: true,
-    //                 },
-    //             });
-    //             // const canModeratePost = await authUtilService.canModeratePost(db, didWrite, request.body.postSlugId);
-    //             // if (canModeratePost !== true) {
-    //             //     throw server.httpErrors.forbidden(
-    //             //         "User cannot moderate this post"
-    //             //     );
-    //             // }
-    //             // await Service.hideComment({
-    //             //     db: db,
-    //             //     commentSlugId: request.body.commentSlugId,
-    //             // });
-    //         },
-    //     });
-    // server
-    //     .withTypeProvider<ZodTypeProvider>()
-    //     .post(`/api/${apiVersion}/moderation/unhideComment`, {
-    //         schema: {
-    //             body: Dto.moderateCommentRequest,
-    //         },
-    //         handler: async (request, _reply) => {
-    //             const didWrite = await verifyUCAN(db, request, {
-    //                 expectedDeviceStatus: {
-    //                     isLoggedIn: true,
-    //                 },
-    //             });
-    //             // const canModeratePost = await authUtilService.canModeratePost(db, didWrite, request.body.postSlugId);
-    //             // if (canModeratePost !== true) {
-    //             //     throw server.httpErrors.forbidden(
-    //             //         "User cannot moderate this post"
-    //             //     );
-    //             // }
-    //             // await Service.unhideComment({
-    //             //     db: db,
-    //             //     commentSlugId: request.body.commentSlugId,
-    //             // });
-    //         },
-    //     });
-    // server
-    //     .withTypeProvider<ZodTypeProvider>()
-    //     .post(`/api/${apiVersion}/comment/create`, {
-    //         schema: {
-    //             body: Dto.commentRequest,
-    //         },
-    //         handler: async (request, _reply) => {
-    //             const didWrite = await verifyUCAN(db, request, {
-    //                 expectedDeviceStatus: {
-    //                     isLoggedIn: true,
-    //                 },
-    //             });
-    //             // await Service.createComment({
-    //             //     db: db,
-    //             //     payload: request.body.payload,
-    //             //     httpErrors: server.httpErrors,
-    //             //     nlpBaseUrl: config.NLP_BASE_URL,
-    //             // });
-    //         },
-    //     });
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/post/fetch-post-by-slug-id`,
