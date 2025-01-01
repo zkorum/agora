@@ -45,7 +45,7 @@ export async function moderateByPostSlugId({
         postSlugId: postSlugId,
     });
 
-    if (moderationStatus.moderationStatus == "moderated") {
+    if (moderationStatus.status == "moderated") {
         await db
             .update(moderationPostsTable)
             .set({
@@ -96,7 +96,7 @@ export async function moderateByCommentSlugId({
     });
 
     await db.transaction(async (tx) => {
-        if (moderationStatus.moderationStatus == "moderated") {
+        if (moderationStatus.status == "moderated") {
             await tx
                 .update(moderationCommentsTable)
                 .set({
@@ -142,15 +142,15 @@ export async function fetchPostModeration({
 
     if (moderationPostsTableResponse.length != 1) {
         return {
-            moderationStatus: "unmoderated",
+            status: "unmoderated",
         };
     } else {
         const response = moderationPostsTableResponse[0];
         return {
-            moderationStatus: "moderated",
-            moderationAction: response.moderationAction,
-            moderationExplanation: response.moderationExplanation ?? "",
-            moderationReason: response.moderationReason,
+            status: "moderated",
+            action: response.moderationAction,
+            explanation: response.moderationExplanation ?? "",
+            reason: response.moderationReason,
             createdAt: response.moderationCreatedAt,
             updatedAt: response.moderationUpdatedAt,
         };
@@ -184,15 +184,15 @@ export async function fetchCommentModeration({
 
     if (moderationTableResponse.length != 1) {
         return {
-            moderationStatus: "unmoderated",
+            status: "unmoderated",
         };
     } else {
         const response = moderationTableResponse[0];
         return {
-            moderationStatus: "moderated",
-            moderationAction: response.moderationAction,
-            moderationExplanation: response.moderationExplanation ?? "",
-            moderationReason: response.moderationReason,
+            status: "moderated",
+            action: response.moderationAction,
+            explanation: response.moderationExplanation ?? "",
+            reason: response.moderationReason,
             createdAt: response.moderationCreatedAt,
             updatedAt: response.moderationUpdatedAt,
         };
@@ -261,7 +261,7 @@ export function createPostModerationPropertyObject(
     moderationUpdatedAt: Date | null,
 ) {
     let moderationProperties: ModerationPropertiesPosts = {
-        moderationStatus: "unmoderated",
+        status: "unmoderated",
     };
 
     if (
@@ -272,10 +272,10 @@ export function createPostModerationPropertyObject(
         moderationUpdatedAt != null
     ) {
         moderationProperties = {
-            moderationStatus: "moderated",
-            moderationAction: moderationAction,
-            moderationExplanation: moderationExplanation,
-            moderationReason: moderationReason,
+            status: "moderated",
+            action: moderationAction,
+            explanation: moderationExplanation,
+            reason: moderationReason,
             createdAt: moderationCreatedAt,
             updatedAt: moderationUpdatedAt,
         };
@@ -291,7 +291,7 @@ export function createCommentModerationPropertyObject(
     moderationUpdatedAt: Date | null,
 ) {
     let moderationProperties: ModerationPropertiesComments = {
-        moderationStatus: "unmoderated",
+        status: "unmoderated",
     };
 
     if (
@@ -302,10 +302,10 @@ export function createCommentModerationPropertyObject(
         moderationUpdatedAt != null
     ) {
         moderationProperties = {
-            moderationStatus: "moderated",
-            moderationAction: moderationAction,
-            moderationExplanation: moderationExplanation,
-            moderationReason: moderationReason,
+            status: "moderated",
+            action: moderationAction,
+            explanation: moderationExplanation,
+            reason: moderationReason,
             createdAt: moderationCreatedAt,
             updatedAt: moderationUpdatedAt,
         };

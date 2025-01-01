@@ -85,11 +85,11 @@ onMounted(async () => {
 async function initializeData() {
   if (postSlugId != null) {
     const response = await fetchPostModeration(postSlugId);
-    hasExistingReport.value = response.moderationStatus == "moderated";
-    if (response.moderationStatus == "moderated") {
-      moderationAction.value = response.moderationAction;
-      moderationExplanation.value = response.moderationExplanation;
-      moderationReason.value = response.moderationReason;
+    hasExistingReport.value = response.status == "moderated";
+    if (response.status == "moderated") {
+      moderationAction.value = response.action;
+      moderationExplanation.value = response.explanation;
+      moderationReason.value = response.reason;
     } else {
       moderationAction.value = DEFAULT_MODERATION_ACTION;
       moderationExplanation.value = "";

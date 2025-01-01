@@ -46,10 +46,7 @@
             </div>
 
             <ZKCard
-              v-if="
-                extendedPostData.metadata.moderation.moderationStatus ==
-                'moderated'
-              "
+              v-if="extendedPostData.metadata.moderation.status == 'moderated'"
               padding="1rem"
             >
               <PostLockedMessage
@@ -72,8 +69,7 @@
               <div v-if="!skeletonMode">
                 <ZKButton
                   :disable="
-                    extendedPostData.metadata.moderation.moderationStatus ==
-                    'moderated'
+                    extendedPostData.metadata.moderation.status == 'moderated'
                   "
                   text-color="color-text-weak"
                   size="0.8rem"
@@ -122,8 +118,7 @@
             :post-slug-id="extendedPostData.metadata.postSlugId"
             :initial-comment-slug-id="commentSlugIdQuery"
             :is-post-locked="
-              extendedPostData.metadata.moderation.moderationStatus ==
-              'moderated'
+              extendedPostData.metadata.moderation.status == 'moderated'
             "
             :comment-filter="parsedCommentFilter"
             @deleted="decrementCommentCount()"
@@ -220,10 +215,8 @@ onMounted(() => {
 });
 
 const isLocked = computed(() => {
-  if (
-    props.extendedPostData.metadata.moderation.moderationStatus == "moderated"
-  ) {
-    if (props.extendedPostData.metadata.moderation.moderationAction == "lock") {
+  if (props.extendedPostData.metadata.moderation.status == "moderated") {
+    if (props.extendedPostData.metadata.moderation.action == "lock") {
       return true;
     }
   }

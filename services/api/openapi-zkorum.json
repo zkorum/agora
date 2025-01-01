@@ -284,19 +284,19 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "moderationStatus": {
+                                                                            "status": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "moderated"
                                                                                 ]
                                                                             },
-                                                                            "moderationAction": {
+                                                                            "action": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "lock"
                                                                                 ]
                                                                             },
-                                                                            "moderationReason": {
+                                                                            "reason": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "misleading",
@@ -307,7 +307,7 @@
                                                                                     "spam"
                                                                                 ]
                                                                             },
-                                                                            "moderationExplanation": {
+                                                                            "explanation": {
                                                                                 "type": "string",
                                                                                 "maxLength": 260
                                                                             },
@@ -321,10 +321,10 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "moderationStatus",
-                                                                            "moderationAction",
-                                                                            "moderationReason",
-                                                                            "moderationExplanation",
+                                                                            "status",
+                                                                            "action",
+                                                                            "reason",
+                                                                            "explanation",
                                                                             "createdAt",
                                                                             "updatedAt"
                                                                         ],
@@ -333,7 +333,7 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "moderationStatus": {
+                                                                            "status": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "unmoderated"
@@ -341,7 +341,7 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "moderationStatus"
+                                                                            "status"
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
@@ -643,19 +643,19 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "moderationStatus": {
+                                                "status": {
                                                     "type": "string",
                                                     "enum": [
                                                         "moderated"
                                                     ]
                                                 },
-                                                "moderationAction": {
+                                                "action": {
                                                     "type": "string",
                                                     "enum": [
                                                         "lock"
                                                     ]
                                                 },
-                                                "moderationReason": {
+                                                "reason": {
                                                     "type": "string",
                                                     "enum": [
                                                         "misleading",
@@ -666,7 +666,7 @@
                                                         "spam"
                                                     ]
                                                 },
-                                                "moderationExplanation": {
+                                                "explanation": {
                                                     "type": "string",
                                                     "maxLength": 260
                                                 },
@@ -680,10 +680,10 @@
                                                 }
                                             },
                                             "required": [
-                                                "moderationStatus",
-                                                "moderationAction",
-                                                "moderationReason",
-                                                "moderationExplanation",
+                                                "status",
+                                                "action",
+                                                "reason",
+                                                "explanation",
                                                 "createdAt",
                                                 "updatedAt"
                                             ],
@@ -692,7 +692,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "moderationStatus": {
+                                                "status": {
                                                     "type": "string",
                                                     "enum": [
                                                         "unmoderated"
@@ -700,7 +700,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "moderationStatus"
+                                                "status"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -744,20 +744,20 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "moderationStatus": {
+                                                "status": {
                                                     "type": "string",
                                                     "enum": [
                                                         "moderated"
                                                     ]
                                                 },
-                                                "moderationAction": {
+                                                "action": {
                                                     "type": "string",
                                                     "enum": [
                                                         "lock",
                                                         "hide"
                                                     ]
                                                 },
-                                                "moderationReason": {
+                                                "reason": {
                                                     "type": "string",
                                                     "enum": [
                                                         "misleading",
@@ -768,7 +768,7 @@
                                                         "spam"
                                                     ]
                                                 },
-                                                "moderationExplanation": {
+                                                "explanation": {
                                                     "type": "string",
                                                     "maxLength": 260
                                                 },
@@ -782,10 +782,10 @@
                                                 }
                                             },
                                             "required": [
-                                                "moderationStatus",
-                                                "moderationAction",
-                                                "moderationReason",
-                                                "moderationExplanation",
+                                                "status",
+                                                "action",
+                                                "reason",
+                                                "explanation",
                                                 "createdAt",
                                                 "updatedAt"
                                             ],
@@ -794,7 +794,7 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "moderationStatus": {
+                                                "status": {
                                                     "type": "string",
                                                     "enum": [
                                                         "unmoderated"
@@ -802,7 +802,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "moderationStatus"
+                                                "status"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -914,19 +914,19 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "moderationStatus": {
+                                                                    "status": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "moderated"
                                                                         ]
                                                                     },
-                                                                    "moderationAction": {
+                                                                    "action": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "lock"
                                                                         ]
                                                                     },
-                                                                    "moderationReason": {
+                                                                    "reason": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "misleading",
@@ -937,7 +937,7 @@
                                                                             "spam"
                                                                         ]
                                                                     },
-                                                                    "moderationExplanation": {
+                                                                    "explanation": {
                                                                         "type": "string",
                                                                         "maxLength": 260
                                                                     },
@@ -951,10 +951,10 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "moderationStatus",
-                                                                    "moderationAction",
-                                                                    "moderationReason",
-                                                                    "moderationExplanation",
+                                                                    "status",
+                                                                    "action",
+                                                                    "reason",
+                                                                    "explanation",
                                                                     "createdAt",
                                                                     "updatedAt"
                                                                 ],
@@ -963,7 +963,7 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "moderationStatus": {
+                                                                    "status": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "unmoderated"
@@ -971,7 +971,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "moderationStatus"
+                                                                    "status"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -1129,19 +1129,19 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "moderationStatus": {
+                                                                            "status": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "moderated"
                                                                                 ]
                                                                             },
-                                                                            "moderationAction": {
+                                                                            "action": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "lock"
                                                                                 ]
                                                                             },
-                                                                            "moderationReason": {
+                                                                            "reason": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "misleading",
@@ -1152,7 +1152,7 @@
                                                                                     "spam"
                                                                                 ]
                                                                             },
-                                                                            "moderationExplanation": {
+                                                                            "explanation": {
                                                                                 "type": "string",
                                                                                 "maxLength": 260
                                                                             },
@@ -1166,10 +1166,10 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "moderationStatus",
-                                                                            "moderationAction",
-                                                                            "moderationReason",
-                                                                            "moderationExplanation",
+                                                                            "status",
+                                                                            "action",
+                                                                            "reason",
+                                                                            "explanation",
                                                                             "createdAt",
                                                                             "updatedAt"
                                                                         ],
@@ -1178,7 +1178,7 @@
                                                                     {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "moderationStatus": {
+                                                                            "status": {
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "unmoderated"
@@ -1186,7 +1186,7 @@
                                                                             }
                                                                         },
                                                                         "required": [
-                                                                            "moderationStatus"
+                                                                            "status"
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
@@ -1310,20 +1310,20 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "moderationStatus": {
+                                                                    "status": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "moderated"
                                                                         ]
                                                                     },
-                                                                    "moderationAction": {
+                                                                    "action": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "lock",
                                                                             "hide"
                                                                         ]
                                                                     },
-                                                                    "moderationReason": {
+                                                                    "reason": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "misleading",
@@ -1334,7 +1334,7 @@
                                                                             "spam"
                                                                         ]
                                                                     },
-                                                                    "moderationExplanation": {
+                                                                    "explanation": {
                                                                         "type": "string",
                                                                         "maxLength": 260
                                                                     },
@@ -1348,10 +1348,10 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "moderationStatus",
-                                                                    "moderationAction",
-                                                                    "moderationReason",
-                                                                    "moderationExplanation",
+                                                                    "status",
+                                                                    "action",
+                                                                    "reason",
+                                                                    "explanation",
                                                                     "createdAt",
                                                                     "updatedAt"
                                                                 ],
@@ -1360,7 +1360,7 @@
                                                             {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "moderationStatus": {
+                                                                    "status": {
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "unmoderated"
@@ -1368,7 +1368,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "moderationStatus"
+                                                                    "status"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -1763,20 +1763,20 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "moderationStatus": {
+                                                            "status": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "moderated"
                                                                 ]
                                                             },
-                                                            "moderationAction": {
+                                                            "action": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "lock",
                                                                     "hide"
                                                                 ]
                                                             },
-                                                            "moderationReason": {
+                                                            "reason": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "misleading",
@@ -1787,7 +1787,7 @@
                                                                     "spam"
                                                                 ]
                                                             },
-                                                            "moderationExplanation": {
+                                                            "explanation": {
                                                                 "type": "string",
                                                                 "maxLength": 260
                                                             },
@@ -1801,10 +1801,10 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "moderationStatus",
-                                                            "moderationAction",
-                                                            "moderationReason",
-                                                            "moderationExplanation",
+                                                            "status",
+                                                            "action",
+                                                            "reason",
+                                                            "explanation",
                                                             "createdAt",
                                                             "updatedAt"
                                                         ],
@@ -1813,7 +1813,7 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "moderationStatus": {
+                                                            "status": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "unmoderated"
@@ -1821,7 +1821,7 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "moderationStatus"
+                                                            "status"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -1916,20 +1916,20 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "moderationStatus": {
+                                                            "status": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "moderated"
                                                                 ]
                                                             },
-                                                            "moderationAction": {
+                                                            "action": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "lock",
                                                                     "hide"
                                                                 ]
                                                             },
-                                                            "moderationReason": {
+                                                            "reason": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "misleading",
@@ -1940,7 +1940,7 @@
                                                                     "spam"
                                                                 ]
                                                             },
-                                                            "moderationExplanation": {
+                                                            "explanation": {
                                                                 "type": "string",
                                                                 "maxLength": 260
                                                             },
@@ -1954,10 +1954,10 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "moderationStatus",
-                                                            "moderationAction",
-                                                            "moderationReason",
-                                                            "moderationExplanation",
+                                                            "status",
+                                                            "action",
+                                                            "reason",
+                                                            "explanation",
                                                             "createdAt",
                                                             "updatedAt"
                                                         ],
@@ -1966,7 +1966,7 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "moderationStatus": {
+                                                            "status": {
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "unmoderated"
@@ -1974,7 +1974,7 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "moderationStatus"
+                                                            "status"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -2155,19 +2155,19 @@
                                                                 {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "moderationStatus": {
+                                                                        "status": {
                                                                             "type": "string",
                                                                             "enum": [
                                                                                 "moderated"
                                                                             ]
                                                                         },
-                                                                        "moderationAction": {
+                                                                        "action": {
                                                                             "type": "string",
                                                                             "enum": [
                                                                                 "lock"
                                                                             ]
                                                                         },
-                                                                        "moderationReason": {
+                                                                        "reason": {
                                                                             "type": "string",
                                                                             "enum": [
                                                                                 "misleading",
@@ -2178,7 +2178,7 @@
                                                                                 "spam"
                                                                             ]
                                                                         },
-                                                                        "moderationExplanation": {
+                                                                        "explanation": {
                                                                             "type": "string",
                                                                             "maxLength": 260
                                                                         },
@@ -2192,10 +2192,10 @@
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "moderationStatus",
-                                                                        "moderationAction",
-                                                                        "moderationReason",
-                                                                        "moderationExplanation",
+                                                                        "status",
+                                                                        "action",
+                                                                        "reason",
+                                                                        "explanation",
                                                                         "createdAt",
                                                                         "updatedAt"
                                                                     ],
@@ -2204,7 +2204,7 @@
                                                                 {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "moderationStatus": {
+                                                                        "status": {
                                                                             "type": "string",
                                                                             "enum": [
                                                                                 "unmoderated"
@@ -2212,7 +2212,7 @@
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "moderationStatus"
+                                                                        "status"
                                                                     ],
                                                                     "additionalProperties": false
                                                                 }

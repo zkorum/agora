@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-if="moderationProperty.moderationStatus == 'moderated'"
+      v-if="moderationProperty.status == 'moderated'"
       class="container moderationFont"
     >
       <div class="coreMessage">
@@ -16,8 +16,8 @@
         </div>
 
         <div>
-          <span v-if="moderationProperty.moderationExplanation.length > 0">
-            "{{ moderationProperty.moderationExplanation }}"
+          <span v-if="moderationProperty.explanation.length > 0">
+            "{{ moderationProperty.explanation }}"
           </span>
         </div>
       </div>
@@ -71,9 +71,8 @@ watch(
 function loadModerationreason() {
   for (let i = 0; i < moderationReasonMapping.length; i++) {
     if (
-      props.moderationProperty.moderationStatus == "moderated" &&
-      moderationReasonMapping[i].value ==
-        props.moderationProperty.moderationReason
+      props.moderationProperty.status == "moderated" &&
+      moderationReasonMapping[i].value == props.moderationProperty.reason
     ) {
       moderationReasonName.value = moderationReasonMapping[i].label;
       break;

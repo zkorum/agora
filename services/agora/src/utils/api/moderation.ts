@@ -122,13 +122,13 @@ export function useBackendModerateApi() {
       });
 
       const moderationStatus = response.data
-        .moderationStatus as moderationStatusOptionsType;
+        .status as moderationStatusOptionsType;
 
       return {
-        moderationStatus: moderationStatus,
-        moderationAction: response.data.moderationAction,
-        moderationExplanation: response.data.moderationExplanation,
-        moderationReason: response.data.moderationReason,
+        status: moderationStatus,
+        action: response.data.action,
+        explanation: response.data.explanation,
+        reason: response.data.reason,
         createdAt: new Date(response.data.createdAt),
         updatedAt: new Date(response.data.updatedAt),
       };
@@ -136,7 +136,7 @@ export function useBackendModerateApi() {
       console.error(e);
       showNotifyMessage("Failed to fetch post moderation details");
       return {
-        moderationStatus: "unmoderated",
+        status: "unmoderated",
       };
     }
   }
@@ -165,13 +165,13 @@ export function useBackendModerateApi() {
       });
 
       const moderationStatus = response.data
-        .moderationStatus as moderationStatusOptionsType;
+        .status as moderationStatusOptionsType;
 
       return {
-        moderationStatus: moderationStatus,
-        moderationAction: response.data.moderationAction,
-        moderationExplanation: response.data.moderationExplanation,
-        moderationReason: response.data.moderationReason,
+        status: moderationStatus,
+        action: response.data.action,
+        explanation: response.data.explanation,
+        reason: response.data.reason,
         createdAt: new Date(response.data.createdAt),
         updatedAt: new Date(response.data.updatedAt),
       };
@@ -179,7 +179,7 @@ export function useBackendModerateApi() {
       console.error(e);
       showNotifyMessage("Failed to fetch comment moderation details");
       return {
-        moderationStatus: "unmoderated",
+        status: "unmoderated",
       };
     }
   }

@@ -123,47 +123,41 @@ export const zodUsername = z
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
-export const zodModerationPropertiesPosts = z.discriminatedUnion(
-    "moderationStatus",
-    [
-        z
-            .object({
-                moderationStatus: z.literal("moderated"),
-                moderationAction: zodModerationActionPosts,
-                moderationReason: zodModerationReason,
-                moderationExplanation: zodModerationExplanation,
-                createdAt: z.date(),
-                updatedAt: z.date(),
-            })
-            .strict(),
-        z
-            .object({
-                moderationStatus: z.literal("unmoderated"),
-            })
-            .strict(),
-    ],
-);
+export const zodModerationPropertiesPosts = z.discriminatedUnion("status", [
+    z
+        .object({
+            status: z.literal("moderated"),
+            action: zodModerationActionPosts,
+            reason: zodModerationReason,
+            explanation: zodModerationExplanation,
+            createdAt: z.date(),
+            updatedAt: z.date(),
+        })
+        .strict(),
+    z
+        .object({
+            status: z.literal("unmoderated"),
+        })
+        .strict(),
+]);
 
-export const zodModerationPropertiesComments = z.discriminatedUnion(
-    "moderationStatus",
-    [
-        z
-            .object({
-                moderationStatus: z.literal("moderated"),
-                moderationAction: zodModerationActionComments,
-                moderationReason: zodModerationReason,
-                moderationExplanation: zodModerationExplanation,
-                createdAt: z.date(),
-                updatedAt: z.date(),
-            })
-            .strict(),
-        z
-            .object({
-                moderationStatus: z.literal("unmoderated"),
-            })
-            .strict(),
-    ],
-);
+export const zodModerationPropertiesComments = z.discriminatedUnion("status", [
+    z
+        .object({
+            status: z.literal("moderated"),
+            action: zodModerationActionComments,
+            reason: zodModerationReason,
+            explanation: zodModerationExplanation,
+            createdAt: z.date(),
+            updatedAt: z.date(),
+        })
+        .strict(),
+    z
+        .object({
+            status: z.literal("unmoderated"),
+        })
+        .strict(),
+]);
 
 export const zodPostMetadata = z
     .object({

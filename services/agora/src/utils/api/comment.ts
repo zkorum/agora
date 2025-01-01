@@ -29,7 +29,7 @@ export function useBackendCommentApi() {
 
     webCommentItemList.forEach((item) => {
       const moderationStatus = item.moderation
-        .moderationStatus as moderationStatusOptionsType;
+        .status as moderationStatusOptionsType;
 
       parsedCommentItemList.push({
         comment: item.comment,
@@ -40,10 +40,10 @@ export function useBackendCommentApi() {
         updatedAt: new Date(item.updatedAt),
         username: String(item.username),
         moderation: {
-          moderationStatus: moderationStatus,
-          moderationAction: item.moderation.moderationAction,
-          moderationExplanation: item.moderation.moderationExplanation,
-          moderationReason: item.moderation.moderationReason,
+          status: moderationStatus,
+          action: item.moderation.action,
+          explanation: item.moderation.explanation,
+          reason: item.moderation.reason,
           createdAt: new Date(item.moderation.createdAt),
           updatedAt: new Date(item.moderation.updatedAt),
         },
@@ -78,7 +78,7 @@ export function useBackendCommentApi() {
       const postList: CommentItem[] = [];
       response.data.forEach((item) => {
         const moderationStatus = item.moderation
-          .moderationStatus as moderationStatusOptionsType;
+          .status as moderationStatusOptionsType;
 
         postList.push({
           comment: item.comment,
@@ -89,10 +89,10 @@ export function useBackendCommentApi() {
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
           moderation: {
-            moderationStatus: moderationStatus,
-            moderationAction: item.moderation.moderationAction,
-            moderationExplanation: item.moderation.moderationExplanation,
-            moderationReason: item.moderation.moderationReason,
+            status: moderationStatus,
+            action: item.moderation.action,
+            explanation: item.moderation.explanation,
+            reason: item.moderation.reason,
             createdAt: new Date(item.moderation.createdAt),
             updatedAt: new Date(item.moderation.updatedAt),
           },

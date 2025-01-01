@@ -660,25 +660,25 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
      */
-    'moderationStatus': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationStatusEnum;
+    'status': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
      */
-    'moderationAction': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum;
+    'action': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
      */
-    'moderationReason': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum;
+    'reason': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
      */
-    'moderationExplanation': string;
+    'explanation': string;
     /**
      * 
      * @type {string}
@@ -693,17 +693,17 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
     'updatedAt': string;
 }
 
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationStatusEnum = {
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum = {
     Unmoderated: 'unmoderated'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationStatusEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = {
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum];
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum = {
     Lock: 'lock'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationActionEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = {
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum];
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -712,7 +712,7 @@ export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerat
     Spam: 'spam'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationModerationReasonEnum];
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum];
 
 /**
  * 
@@ -725,25 +725,25 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
      */
-    'moderationStatus': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationStatusEnum;
+    'status': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
      */
-    'moderationAction': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum;
+    'action': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
      */
-    'moderationReason': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum;
+    'reason': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
      */
-    'moderationExplanation': string;
+    'explanation': string;
     /**
      * 
      * @type {string}
@@ -758,17 +758,17 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
     'updatedAt': string;
 }
 
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationStatusEnum = {
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum = {
     Moderated: 'moderated'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationStatusEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum = {
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum];
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum = {
     Lock: 'lock'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationActionEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum = {
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum];
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -777,7 +777,7 @@ export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerat
     Spam: 'spam'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfModerationReasonEnum];
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum];
 
 /**
  * 
@@ -790,14 +790,14 @@ export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataMod
      * @type {string}
      * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1
      */
-    'moderationStatus': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1ModerationStatusEnum;
+    'status': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum;
 }
 
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1ModerationStatusEnum = {
+export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum = {
     Unmoderated: 'unmoderated'
 } as const;
 
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1ModerationStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1ModerationStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1ModerationStatusEnum];
+export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum];
 
 /**
  * 
@@ -928,25 +928,25 @@ export interface ApiV1ModerationCommentFetchReportPost200Response {
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200Response
      */
-    'moderationStatus': ApiV1ModerationCommentFetchReportPost200ResponseModerationStatusEnum;
+    'status': ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200Response
      */
-    'moderationAction': ApiV1ModerationCommentFetchReportPost200ResponseModerationActionEnum;
+    'action': ApiV1ModerationCommentFetchReportPost200ResponseActionEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200Response
      */
-    'moderationReason': ApiV1ModerationCommentFetchReportPost200ResponseModerationReasonEnum;
+    'reason': ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200Response
      */
-    'moderationExplanation': string;
+    'explanation': string;
     /**
      * 
      * @type {string}
@@ -961,18 +961,18 @@ export interface ApiV1ModerationCommentFetchReportPost200Response {
     'updatedAt': string;
 }
 
-export const ApiV1ModerationCommentFetchReportPost200ResponseModerationStatusEnum = {
+export const ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum = {
     Unmoderated: 'unmoderated'
 } as const;
 
-export type ApiV1ModerationCommentFetchReportPost200ResponseModerationStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseModerationStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseModerationStatusEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseModerationActionEnum = {
+export type ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum];
+export const ApiV1ModerationCommentFetchReportPost200ResponseActionEnum = {
     Lock: 'lock',
     Hide: 'hide'
 } as const;
 
-export type ApiV1ModerationCommentFetchReportPost200ResponseModerationActionEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseModerationActionEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseModerationActionEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseModerationReasonEnum = {
+export type ApiV1ModerationCommentFetchReportPost200ResponseActionEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseActionEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseActionEnum];
+export const ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -981,7 +981,7 @@ export const ApiV1ModerationCommentFetchReportPost200ResponseModerationReasonEnu
     Spam: 'spam'
 } as const;
 
-export type ApiV1ModerationCommentFetchReportPost200ResponseModerationReasonEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseModerationReasonEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseModerationReasonEnum];
+export type ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum];
 
 /**
  * 
@@ -994,25 +994,25 @@ export interface ApiV1ModerationCommentFetchReportPost200ResponseAnyOf {
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
      */
-    'moderationStatus': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationStatusEnum;
+    'status': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
      */
-    'moderationAction': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationActionEnum;
+    'action': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
      */
-    'moderationReason': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationReasonEnum;
+    'reason': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
      */
-    'moderationExplanation': string;
+    'explanation': string;
     /**
      * 
      * @type {string}
@@ -1027,18 +1027,18 @@ export interface ApiV1ModerationCommentFetchReportPost200ResponseAnyOf {
     'updatedAt': string;
 }
 
-export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationStatusEnum = {
+export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum = {
     Moderated: 'moderated'
 } as const;
 
-export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationStatusEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationActionEnum = {
+export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum];
+export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum = {
     Lock: 'lock',
     Hide: 'hide'
 } as const;
 
-export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationActionEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationActionEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationActionEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationReasonEnum = {
+export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum];
+export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -1047,7 +1047,7 @@ export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationReas
     Spam: 'spam'
 } as const;
 
-export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationReasonEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationReasonEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfModerationReasonEnum];
+export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum];
 
 /**
  * 

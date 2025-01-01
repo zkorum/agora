@@ -107,7 +107,7 @@ export function useBackendUserApi() {
       response.data.forEach((responseItem) => {
         // Patch OpenAPI bug on discriminatedUnion
         const moderationStatus = responseItem.commentItem.moderation
-          .moderationStatus as moderationStatusOptionsType;
+          .status as moderationStatusOptionsType;
 
         const extendedComment: ExtendedComment = {
           postData: createInternalPostData(responseItem.postData),
@@ -120,13 +120,10 @@ export function useBackendUserApi() {
             updatedAt: new Date(responseItem.commentItem.updatedAt),
             username: String(responseItem.commentItem.username),
             moderation: {
-              moderationStatus: moderationStatus,
-              moderationAction:
-                responseItem.commentItem.moderation.moderationAction,
-              moderationExplanation:
-                responseItem.commentItem.moderation.moderationExplanation,
-              moderationReason:
-                responseItem.commentItem.moderation.moderationReason,
+              status: moderationStatus,
+              action: responseItem.commentItem.moderation.action,
+              explanation: responseItem.commentItem.moderation.explanation,
+              reason: responseItem.commentItem.moderation.reason,
               createdAt: new Date(
                 responseItem.commentItem.moderation.createdAt
               ),

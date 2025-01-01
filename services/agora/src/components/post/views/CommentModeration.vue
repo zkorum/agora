@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-if="commentItem.moderation?.moderationStatus == 'moderated'"
+      v-if="commentItem.moderation?.status == 'moderated'"
       class="moderatedBox"
     >
       <ZKCard padding="1rem">
@@ -9,14 +9,14 @@
           <div class="moderatedMessage">
             <div class="moderatedFont moderatedItalic">
               Moderator flagged this response as "{{
-                commentItem.moderation.moderationReason
+                commentItem.moderation.reason
               }}".
             </div>
             <div
-              v-if="commentItem.moderation.moderationExplanation.length > 0"
+              v-if="commentItem.moderation.explanation.length > 0"
               class="moderatedFont"
             >
-              "{{ commentItem.moderation.moderationExplanation }}"
+              "{{ commentItem.moderation.explanation }}"
             </div>
           </div>
 
