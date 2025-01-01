@@ -163,7 +163,7 @@ export async function fetchPostBySlugId({
             enableCompactBody: false,
             fetchPollResponse: fetchPollResponse,
             userId: userId,
-            removeLocked: false,
+            excludeLockedPosts: false,
         });
 
         if (postData.length == 1) {

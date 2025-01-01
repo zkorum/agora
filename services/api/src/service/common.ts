@@ -63,7 +63,7 @@ export function useCommonPost() {
         enableCompactBody: boolean;
         fetchPollResponse: boolean;
         userId?: string;
-        removeLocked: boolean;
+        excludeLockedPosts: boolean;
     }
 
     async function fetchPostItems({
@@ -73,7 +73,7 @@ export function useCommonPost() {
         enableCompactBody,
         fetchPollResponse,
         userId,
-        removeLocked,
+        excludeLockedPosts,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
         const postItems = await db
             .select({
@@ -220,7 +220,7 @@ export function useCommonPost() {
                 };
             }
 
-            if (removeLocked && postItem.moderationAction == "lock") {
+            if (excludeLockedPosts && postItem.moderationAction == "lock") {
                 // Skip
             } else {
                 posts.push({
