@@ -759,6 +759,9 @@ server.after(() => {
         url: `/api/${apiVersion}/voting/cast-vote`,
         schema: {
             body: Dto.castVoteForCommentRequest,
+            response: {
+                200: Dto.castVoteForCommentResponse,
+            },
         },
         handler: async (request) => {
             const didWrite = await verifyUCAN(db, request, {
@@ -771,7 +774,7 @@ server.after(() => {
             } else {
                 const authHeader = getAuthHeader(request);
 
-                await castVoteForCommentSlugId({
+                return await castVoteForCommentSlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                     userId: status.userId,

@@ -2955,7 +2955,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<boolean>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VotingCastVotePost']?.[localVarOperationServerIndex]?.url;
@@ -3243,7 +3243,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: any): AxiosPromise<void> {
+        apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: any): AxiosPromise<boolean> {
             return localVarFp.apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest, options).then((request) => request(axios, basePath));
         },
         /**

@@ -67,7 +67,7 @@ export async function castVoteForCommentSlugId({
     didWrite,
     authHeader,
     votingAction,
-}: CastVoteForCommentSlugIdProps) {
+}: CastVoteForCommentSlugIdProps): Promise<boolean> {
     {
         const postSlugId =
             await useCommonComment().getPostSlugIdFromCommentSlugId({
@@ -75,10 +75,14 @@ export async function castVoteForCommentSlugId({
                 db: db,
             });
 
-        await useCommonPost().isPostSlugIdLocked({
+        const isLocked = await useCommonPost().isPostSlugIdLocked({
             db: db,
             postSlugId: postSlugId,
         });
+
+        if (isLocked) {
+            return false;
+        }
     }
 
     const commentData = await getCommentIdAndContentIdFromCommentSlugId({
@@ -240,6 +244,8 @@ export async function castVoteForCommentSlugId({
             "Database error while casting new vote",
         );
     }
+
+    return true;
 }
 
 interface GetUserVotesForPostSlugIdsProps {

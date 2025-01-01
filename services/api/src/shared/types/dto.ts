@@ -194,6 +194,7 @@ export class Dto {
             chosenOption: zodVotingAction,
         })
         .strict();
+    static castVoteForCommentResponse = z.boolean();
     static fetchUserProfileResponse = z
         .object({
             activePostCount: z.number().gte(0),

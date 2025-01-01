@@ -28,7 +28,7 @@ export function useBackendVoteApi() {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1VotingCastVotePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(
+      const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
@@ -38,7 +38,7 @@ export function useBackendVoteApi() {
         },
       });
 
-      return true;
+      return response;
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to cast vote for the comment.");
