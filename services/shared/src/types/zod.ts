@@ -9,14 +9,13 @@ import {
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
-export const zodReportReason = z.union([
-    z.literal("off-topic"),
-    z.literal("spam"),
-    z.literal("misleading"),
-    z.literal("privacy"),
-    z.literal("sexual"),
-    z.literal("toxic"),
-    z.literal("illegal"),
+export const zodReportReason = z.enum([
+    "misleading",
+    "antisocial",
+    "illegal",
+    "doxing",
+    "sexual",
+    "spam",
 ]);
 export const zodModerationReason = z.enum([
     "misleading",
