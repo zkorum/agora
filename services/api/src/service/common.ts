@@ -22,15 +22,15 @@ import { getUserPollResponse } from "./poll.js";
 import { createPostModerationPropertyObject } from "./moderation.js";
 
 export function useCommonPost() {
-    interface IsPostLockedProps {
+    interface IsPostSlugIdLockedProps {
         db: PostgresJsDatabase;
         postSlugId: string;
     }
 
-    async function throwIfPostSlugIdIsLocked({
+    async function isPostSlugIdLocked({
         db,
         postSlugId,
-    }: IsPostLockedProps) {
+    }: IsPostSlugIdLockedProps) {
         const { getPostAndContentIdFromSlugId } = useCommonPost();
         const postDetails = await getPostAndContentIdFromSlugId({
             db: db,
@@ -50,9 +50,9 @@ export function useCommonPost() {
             );
 
         if (moderationPostsTableResponse.length == 1) {
-            throw httpErrors.internalServerError(
-                "Post slug ID is locked: " + postSlugId,
-            );
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -307,7 +307,7 @@ export function useCommonPost() {
     return {
         fetchPostItems,
         getPostAndContentIdFromSlugId,
-        throwIfPostSlugIdIsLocked,
+        isPostSlugIdLocked,
     };
 }
 

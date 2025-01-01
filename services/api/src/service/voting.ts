@@ -75,7 +75,7 @@ export async function castVoteForCommentSlugId({
                 db: db,
             });
 
-        await useCommonPost().throwIfPostSlugIdIsLocked({
+        await useCommonPost().isPostSlugIdLocked({
             db: db,
             postSlugId: postSlugId,
         });

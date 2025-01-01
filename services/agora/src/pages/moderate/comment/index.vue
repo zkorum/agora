@@ -87,22 +87,30 @@ onMounted(async () => {
 });
 
 async function initializeData() {
-  const response = await fetchCommentModeration(commentSlugId);
-  hasExistingReport.value = response.moderationStatus == "moderated";
-  if (response.moderationStatus == "moderated") {
-    moderationAction.value = response.moderationAction;
-    moderationExplanation.value = response.moderationExplanation;
-    moderationReason.value = response.moderationReason;
+  if (commentSlugId != null) {
+    const response = await fetchCommentModeration(commentSlugId);
+    hasExistingReport.value = response.moderationStatus == "moderated";
+    if (response.moderationStatus == "moderated") {
+      moderationAction.value = response.moderationAction;
+      moderationExplanation.value = response.moderationExplanation;
+      moderationReason.value = response.moderationReason;
+    } else {
+      moderationAction.value = DEFAULT_MODERATION_ACTION;
+      moderationExplanation.value = "";
+      moderationReason.value = DEFAULT_MODERATION_REASON;
+    }
   } else {
-    moderationAction.value = DEFAULT_MODERATION_ACTION;
-    moderationExplanation.value = "";
-    moderationReason.value = DEFAULT_MODERATION_REASON;
+    console.log("Missing comment slug ID");
   }
 }
 
 async function clickedCancel() {
-  await cancelModerationCommentReport(commentSlugId);
-  initializeData();
+  if (commentSlugId) {
+    await cancelModerationCommentReport(commentSlugId);
+    initializeData();
+  } else {
+    console.log("Missing comment slug ID");
+  }
 }
 
 async function clickedSubmit() {

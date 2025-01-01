@@ -170,10 +170,17 @@ export async function postNewComment({
     authHeader,
     httpErrors,
 }: PostNewCommentProps): Promise<CreateCommentResponse> {
-    await useCommonPost().throwIfPostSlugIdIsLocked({
+    const isLocked = await useCommonPost().isPostSlugIdLocked({
         postSlugId: postSlugId,
         db: db,
     });
+
+    if (isLocked) {
+        return {
+            success: false,
+            reason: "post_locked",
+        };
+    }
 
     try {
         commentBody = sanitizeHtmlBody(commentBody, MAX_LENGTH_COMMENT);
@@ -260,6 +267,7 @@ export async function postNewComment({
     });
 
     return {
+        success: true,
         commentSlugId: commentSlugId,
     };
 }

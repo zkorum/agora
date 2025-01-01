@@ -53,9 +53,7 @@ export function useBackendCommentApi() {
     return parsedCommentItemList;
   }
 
-  async function fetchHiddenCommentsForPost(
-    postSlugId: string
-  ): Promise<CommentItem[]> {
+  async function fetchHiddenCommentsForPost(postSlugId: string) {
     try {
       const params: ApiV1CommentFetchHiddenCommentsPostRequest = {
         postSlugId: postSlugId,
@@ -112,7 +110,7 @@ export function useBackendCommentApi() {
   async function fetchCommentsForPost(
     postSlugId: string,
     filter: CommentFeedFilter
-  ): Promise<CommentItem[]> {
+  ) {
     try {
       const params: ApiV1CommentFetchCommentsByPostSlugIdPostRequest = {
         postSlugId: postSlugId,

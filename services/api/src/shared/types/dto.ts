@@ -153,9 +153,20 @@ export class Dto {
             commentBody: z.string(),
         })
         .strict();
-    static createCommentResponse = z
-        .object({ commentSlugId: z.string() })
-        .strict();
+    static createCommentResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                commentSlugId: z.string(),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum(["post_locked"]),
+            })
+            .strict(),
+    ]);
     static submitPollResponseRequest = z
         .object({
             voteOptionChoice: z.number(),

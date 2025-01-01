@@ -46,7 +46,7 @@ export function useBackendUserApi() {
 
   async function fetchUserPosts(
     lastPostSlugId: string | undefined
-  ): Promise<ExtendedPost[]> {
+  ): Promise<ExtendedPost[] | null> {
     try {
       const params: ApiV1UserFetchUserPostsPostRequest = {
         lastPostSlugId: lastPostSlugId,
@@ -76,13 +76,13 @@ export function useBackendUserApi() {
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user's personal posts.");
-      return undefined;
+      return null;
     }
   }
 
   async function fetchUserComments(
     lastCommentSlugId: string | undefined
-  ): Promise<ExtendedComment[]> {
+  ): Promise<ExtendedComment[] | null> {
     try {
       const params: ApiV1UserFetchUserCommentsPostRequest = {
         lastCommentSlugId: lastCommentSlugId,
@@ -143,7 +143,7 @@ export function useBackendUserApi() {
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user's personal comments.");
-      return undefined;
+      return null;
     }
   }
 

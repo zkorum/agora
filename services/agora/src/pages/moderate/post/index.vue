@@ -83,24 +83,32 @@ onMounted(async () => {
 });
 
 async function initializeData() {
-  const response = await fetchPostModeration(postSlugId);
-  hasExistingReport.value = response.moderationStatus == "moderated";
-  if (response.moderationStatus == "moderated") {
-    moderationAction.value = response.moderationAction;
-    moderationExplanation.value = response.moderationExplanation;
-    moderationReason.value = response.moderationReason;
+  if (postSlugId != null) {
+    const response = await fetchPostModeration(postSlugId);
+    hasExistingReport.value = response.moderationStatus == "moderated";
+    if (response.moderationStatus == "moderated") {
+      moderationAction.value = response.moderationAction;
+      moderationExplanation.value = response.moderationExplanation;
+      moderationReason.value = response.moderationReason;
+    } else {
+      moderationAction.value = DEFAULT_MODERATION_ACTION;
+      moderationExplanation.value = "";
+      moderationReason.value = DEFAULT_MODERATION_REASON;
+    }
   } else {
-    moderationAction.value = DEFAULT_MODERATION_ACTION;
-    moderationExplanation.value = "";
-    moderationReason.value = DEFAULT_MODERATION_REASON;
+    console.log("Missing post slug ID");
   }
 }
 
 async function clickedCancel() {
-  const isSuccessful = await cancelModerationPostReport(postSlugId);
-  if (isSuccessful) {
-    initializeData();
-    loadPostData(false);
+  if (postSlugId) {
+    const isSuccessful = await cancelModerationPostReport(postSlugId);
+    if (isSuccessful) {
+      initializeData();
+      loadPostData(false);
+    }
+  } else {
+    console.log("Missing comment slug ID");
   }
 }
 

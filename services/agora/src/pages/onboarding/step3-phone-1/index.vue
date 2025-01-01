@@ -202,11 +202,17 @@ function checkDevAuthorizedNumbers() {
     const phoneList = process.env.VITE_DEV_AUTHORIZED_PHONES.split(",");
     phoneList.forEach((number) => {
       const parsedNumber = parsePhoneNumberFromString(number);
-      console.log(parsedNumber.number);
-      devAuthorizedNumbers.push({
-        fullNumber: parsedNumber.number,
-        countryCallingCode: parsedNumber.countryCallingCode,
-      });
+      if (parsedNumber) {
+        console.log(parsedNumber.number);
+        devAuthorizedNumbers.push({
+          fullNumber: parsedNumber.number,
+          countryCallingCode: parsedNumber.countryCallingCode,
+        });
+      } else {
+        console.log(
+          "Failed to parse development number from string: " + number
+        );
+      }
     });
   }
 }
@@ -216,7 +222,7 @@ function validateNumber() {
     const phoneNumber = parsePhoneNumberFromString(inputNumber.value, {
       defaultCallingCode: selectedCountryCode.value.code,
     });
-    if (phoneNumber.isValid()) {
+    if (phoneNumber && phoneNumber.isValid()) {
       verificationPhoneNumber.value = {
         defaultCallingCode: phoneNumber.countryCallingCode,
         phoneNumber: phoneNumber.number,

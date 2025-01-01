@@ -397,11 +397,75 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarim
 export interface ApiV1CommentCreatePost200Response {
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1CommentCreatePost200Response
+     */
+    'success': boolean;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1CommentCreatePost200Response
      */
     'commentSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1CommentCreatePost200Response
+     */
+    'reason': ApiV1CommentCreatePost200ResponseReasonEnum;
 }
+
+export const ApiV1CommentCreatePost200ResponseReasonEnum = {
+    PostLocked: 'post_locked'
+} as const;
+
+export type ApiV1CommentCreatePost200ResponseReasonEnum = typeof ApiV1CommentCreatePost200ResponseReasonEnum[keyof typeof ApiV1CommentCreatePost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1CommentCreatePost200ResponseAnyOf
+ */
+export interface ApiV1CommentCreatePost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1CommentCreatePost200ResponseAnyOf
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1CommentCreatePost200ResponseAnyOf
+     */
+    'commentSlugId': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1CommentCreatePost200ResponseAnyOf1
+ */
+export interface ApiV1CommentCreatePost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1CommentCreatePost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1CommentCreatePost200ResponseAnyOf1
+     */
+    'reason': ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum;
+}
+
+export const ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum = {
+    PostLocked: 'post_locked'
+} as const;
+
+export type ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum = typeof ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum];
+
 /**
  * 
  * @export
