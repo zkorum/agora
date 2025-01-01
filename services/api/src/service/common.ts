@@ -329,7 +329,7 @@ export function useCommonComment() {
             .where(eq(commentTable.slugId, commentSlugId));
 
         if (commentTableResponse.length != 1) {
-            throw httpErrors.internalServerError(
+            throw httpErrors.notFound(
                 "Failed to locate comment ID from comment slug ID: " +
                     commentSlugId,
             );
