@@ -1232,31 +1232,31 @@ export interface ApiV1PostFetchPostBySlugIdPostRequest {
     'isAuthenticatedRequest': boolean;
 }
 /**
- *
+ * 
  * @export
  * @interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
  */
 export interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner {
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
      */
     'username': string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
      */
     'reason': ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
      */
     'explanation'?: string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
      */
@@ -1275,25 +1275,25 @@ export const ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum =
 export type ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum = typeof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum[keyof typeof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum];
 
 /**
- *
+ * 
  * @export
  * @interface ApiV1ReportSubmitReportByCommentSlugIdPostRequest
  */
 export interface ApiV1ReportSubmitReportByCommentSlugIdPostRequest {
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
      */
     'commentSlugId': string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
      */
     'reportReason': ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
      */
@@ -1312,25 +1312,25 @@ export const ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum =
 export type ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum = typeof ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum[keyof typeof ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum];
 
 /**
- *
+ * 
  * @export
  * @interface ApiV1ReportSubmitReportByPostSlugIdPostRequest
  */
 export interface ApiV1ReportSubmitReportByPostSlugIdPostRequest {
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
      */
     'postSlugId': string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
      */
     'reportReason': ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
      */
@@ -2531,8 +2531,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest
+         * 
+         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2556,7 +2556,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2570,8 +2570,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest
+         * 
+         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2595,7 +2595,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2609,8 +2609,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
-         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest
+         * 
+         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2634,7 +2634,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2648,8 +2648,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
-         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest
+         * 
+         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2673,7 +2673,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -3188,8 +3188,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest
+         * 
+         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3200,8 +3200,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest
+         * 
+         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3212,8 +3212,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
-         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest
+         * 
+         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3224,8 +3224,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
-         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest
+         * 
+         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3533,8 +3533,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         *
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest
+         * 
+         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3542,8 +3542,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         *
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest
+         * 
+         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3551,8 +3551,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         *
-         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest
+         * 
+         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3560,8 +3560,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         *
-         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest
+         * 
+         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3903,8 +3903,8 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
-     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest
+     * 
+     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -3914,8 +3914,8 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
-     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest
+     * 
+     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -3925,8 +3925,8 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
-     * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest
+     * 
+     * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -3936,8 +3936,8 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
-     * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest
+     * 
+     * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
