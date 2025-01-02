@@ -73,6 +73,10 @@ We generate an `openapi-zkorum.json` file from the backend, and then use [openap
 
 Some typescript source files are shared directly without using npm packages - by copy-pasting using rsync.
 
+## Security disclosures
+
+If you discover any security issues, please send an email to security@zkorum.com. The email is automatically CCed to the entire team, and we'll respond promptly. See [SECURITY](./SECURITY.md) for more info.
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)
