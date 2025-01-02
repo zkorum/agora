@@ -55,14 +55,20 @@ import {
 } from "./service/account.js";
 import { isModeratorAccount } from "@/service/authUtil.js";
 import {
-    fetchCommentModeration,
-    fetchPostModeration,
+    fetchModerationReportByCommentSlugId,
+    fetchModerationReportByPostSlugId,
     moderateByCommentSlugId,
     moderateByPostSlugId,
     withdrawModerationReportByCommentSlugId,
     withdrawModerationReportByPostSlugId,
 } from "./service/moderation.js";
 import { nowZeroMs } from "./shared/common/util.js";
+import {
+    createUserReportByCommentSlugId,
+    createUserReportByPostSlugId,
+    fetchUserReportsByCommentSlugId,
+    fetchUserReportsByPostSlugId,
+} from "./service/report.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -608,7 +614,7 @@ server.after(() => {
                     );
                 }
 
-                return await fetchPostModeration({
+                return await fetchModerationReportByPostSlugId({
                     db: db,
                     postSlugId: request.body.postSlugId,
                 });
@@ -644,7 +650,7 @@ server.after(() => {
                     );
                 }
 
-                return await fetchCommentModeration({
+                return await fetchModerationReportByCommentSlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                 });
@@ -1179,6 +1185,132 @@ server.after(() => {
             return await generateUnusedRandomUsername({
                 db: db,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/report/submit-report-by-post-slug-id`,
+        schema: {
+            body: Dto.submitUserReportByPostSlugIdRequest,
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                await createUserReportByPostSlugId({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                    userReportReason: request.body.reportReason,
+                    userReportExplanation: request.body.reportExplanation,
+                    userId: status.userId,
+                });
+                return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/report/submit-report-by-comment-slug-id`,
+        schema: {
+            body: Dto.submitUserReportByCommentSlugIdRequest,
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                await createUserReportByCommentSlugId({
+                    db: db,
+                    commentSlugId: request.body.commentSlugId,
+                    userReportReason: request.body.reportReason,
+                    userReportExplanation: request.body.reportExplanation,
+                    userId: status.userId,
+                });
+                return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/report/fetch-reports-by-post-slug-id`,
+        schema: {
+            body: Dto.fetchUserReportsByPostSlugIdRequest,
+            response: {
+                200: Dto.fetchUserReportsByPostSlugIdResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await fetchUserReportsByPostSlugId({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                });
+                return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/report/fetch-reports-by-comment-slug-id`,
+        schema: {
+            body: Dto.fetchUserReportsByCommentSlugIdRequest,
+            response: {
+                200: Dto.fetchUserReportsByCommentSlugIdResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await fetchUserReportsByCommentSlugId({
+                    db: db,
+                    commentSlugId: request.body.commentSlugId,
+                });
+                return;
+            }
         },
     });
 });

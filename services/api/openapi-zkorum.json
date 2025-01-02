@@ -2526,6 +2526,236 @@
                     }
                 }
             }
+        },
+        "/api/v1/report/submit-report-by-post-slug-id": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "reportReason": {
+                                        "type": "string",
+                                        "enum": [
+                                            "misleading",
+                                            "antisocial",
+                                            "illegal",
+                                            "doxing",
+                                            "sexual",
+                                            "spam"
+                                        ]
+                                    },
+                                    "reportExplanation": {
+                                        "type": "string",
+                                        "maxLength": 260
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId",
+                                    "reportReason"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/report/submit-report-by-comment-slug-id": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "reportReason": {
+                                        "type": "string",
+                                        "enum": [
+                                            "misleading",
+                                            "antisocial",
+                                            "illegal",
+                                            "doxing",
+                                            "sexual",
+                                            "spam"
+                                        ]
+                                    },
+                                    "reportExplanation": {
+                                        "type": "string",
+                                        "maxLength": 260
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId",
+                                    "reportReason"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/report/fetch-reports-by-post-slug-id": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "username": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "reason": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "misleading",
+                                                    "antisocial",
+                                                    "illegal",
+                                                    "doxing",
+                                                    "sexual",
+                                                    "spam"
+                                                ]
+                                            },
+                                            "explanation": {
+                                                "type": "string",
+                                                "maxLength": 260
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        },
+                                        "required": [
+                                            "username",
+                                            "reason",
+                                            "createdAt"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/report/fetch-reports-by-comment-slug-id": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "username": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "reason": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "misleading",
+                                                    "antisocial",
+                                                    "illegal",
+                                                    "doxing",
+                                                    "sexual",
+                                                    "spam"
+                                                ]
+                                            },
+                                            "explanation": {
+                                                "type": "string",
+                                                "maxLength": 260
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        },
+                                        "required": [
+                                            "username",
+                                            "reason",
+                                            "createdAt"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "servers": [],

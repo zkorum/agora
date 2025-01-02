@@ -5,7 +5,7 @@ CREATE TYPE "public"."moderation_action_posts" AS ENUM('lock');--> statement-bre
 CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');--> statement-breakpoint
 CREATE TYPE "public"."phone_country_code" AS ENUM('AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW');--> statement-breakpoint
 CREATE TYPE "public"."proof_type" AS ENUM('creation', 'edit', 'deletion');--> statement-breakpoint
-CREATE TYPE "public"."report_reason_enum" AS ENUM('off-topic', 'spam', 'misleading', 'privacy', 'sexual', 'toxic', 'illegal');--> statement-breakpoint
+CREATE TYPE "public"."report_reason_enum" AS ENUM('illegal', 'doxing', 'sexual', 'spam', 'misleading', 'antisocial');--> statement-breakpoint
 CREATE TYPE "public"."sex" AS ENUM('F', 'M', 'X');--> statement-breakpoint
 CREATE TYPE "public"."vote_enum" AS ENUM('like', 'dislike');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "auth_attempt_phone" (
@@ -237,8 +237,7 @@ CREATE TABLE IF NOT EXISTS "report_comments_table" (
 	"reporter_id" uuid NOT NULL,
 	"reporter_reason" "report_reason_enum" NOT NULL,
 	"report_explanation" varchar(260),
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "report_posts_table" (
@@ -247,8 +246,7 @@ CREATE TABLE IF NOT EXISTS "report_posts_table" (
 	"reporter_id" uuid NOT NULL,
 	"reporter_reason" "report_reason_enum" NOT NULL,
 	"report_explanation" varchar(260),
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_language_preference" (
@@ -672,5 +670,7 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "commentId_idx" ON "report_comments_table" USING btree ("comment_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "postId_idx" ON "report_posts_table" USING btree ("post_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_post_topic_preference" USING btree ("user_id");

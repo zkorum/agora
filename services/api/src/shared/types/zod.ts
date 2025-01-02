@@ -7,10 +7,11 @@ import {
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
+    MAX_LENGTH_USER_REPORT_EXPLANATION,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
-export const zodReportReason = z.enum([
+export const zodUserReportReason = z.enum([
     "misleading",
     "antisocial",
     "illegal",
@@ -122,6 +123,18 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
+
+export const zodUserReportExplanation = z
+    .string()
+    .max(MAX_LENGTH_USER_REPORT_EXPLANATION)
+    .optional();
+export const zodUserReportItem = z.object({
+    username: zodUsername,
+    reason: zodUserReportReason,
+    explanation: zodUserReportExplanation.optional(),
+    createdAt: z.date(),
+});
+
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
 export const zodModerationPropertiesPosts = z.discriminatedUnion("status", [
     z
@@ -490,6 +503,9 @@ export type PollList = z.infer<typeof zodPollList>;
 export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
 export type ModerationReason = z.infer<typeof zodModerationReason>;
+export type UserReportReason = z.infer<typeof zodUserReportReason>;
+export type UserReportExplanation = z.infer<typeof zodUserReportExplanation>;
+export type UserReportItem = z.infer<typeof zodUserReportItem>;
 export type ModerationActionPosts = z.infer<typeof zodModerationActionPosts>;
 export type ModerationActionComments = z.infer<
     typeof zodModerationActionComments
