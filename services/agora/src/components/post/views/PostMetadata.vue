@@ -56,6 +56,10 @@
       </div>
     </div>
   </div>
+
+  <q-dialog v-model="showReportDialog">
+    <ReportPostDialog :post-slug-id="props.postSlugId" />
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -66,6 +70,8 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import Tag from "primevue/tag";
 import { formatTimeAgo } from "@vueuse/core";
 import { getDateString } from "src/utils/common";
+import { ref } from "vue";
+import ReportPostDialog from "src/components/report/ReportPostDialog.vue";
 
 const props = defineProps<{
   posterUserName: string;
@@ -78,8 +84,18 @@ const props = defineProps<{
 
 const { showPostOptionSelector } = useBottomSheet();
 
+const showReportDialog = ref(false);
+
+function selectedReportOption() {
+  showReportDialog.value = true;
+}
+
 function clickedMoreIcon() {
-  showPostOptionSelector(props.postSlugId, props.posterUserName);
+  showPostOptionSelector(
+    props.postSlugId,
+    props.posterUserName,
+    selectedReportOption
+  );
 }
 </script>
 

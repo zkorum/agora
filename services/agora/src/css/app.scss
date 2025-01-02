@@ -11,3 +11,7 @@ a {
   color: rgb(24, 28, 31);
   text-decoration: none;
 }
+
+html {
+  overscroll-behavior: none;
+}
