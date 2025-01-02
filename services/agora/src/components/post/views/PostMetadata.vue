@@ -58,7 +58,10 @@
   </div>
 
   <q-dialog v-model="showReportDialog">
-    <ReportPostDialog :post-slug-id="props.postSlugId" />
+    <ReportPostDialog
+      :post-slug-id="props.postSlugId"
+      @close="showReportDialog = false"
+    />
   </q-dialog>
 </template>
 

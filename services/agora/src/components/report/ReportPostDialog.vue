@@ -61,18 +61,24 @@ const props = defineProps<{
   postSlugId: string;
 }>();
 
+const emit = defineEmits(["close"]);
+
 const explanation = ref("");
 const selectedReason = ref<UserReportReason>();
 
 const { createUserReportByPostSlugId } = useBackendReportApi();
 
-function clickedSubmitButton() {
+async function clickedSubmitButton() {
   if (selectedReason.value) {
-    createUserReportByPostSlugId(
+    const isSuccessful = await createUserReportByPostSlugId(
       props.postSlugId,
       selectedReason.value,
       explanation.value
     );
+
+    if (isSuccessful) {
+      emit("close");
+    }
   }
 }
 </script>
