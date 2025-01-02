@@ -131,7 +131,10 @@ export function useBackendCommentApi() {
     }
   }
 
-  async function createNewComment(commentBody: string, postSlugId: string) {
+  async function createNewComment(
+    commentBody: string,
+    postSlugId: string
+  ): Promise<boolean> {
     try {
       const params: ApiV1CommentCreatePostRequest = {
         commentBody: commentBody,
@@ -151,11 +154,19 @@ export function useBackendCommentApi() {
         },
       });
 
-      return response.data;
+      if (response.data.success) {
+        return true;
+      } else {
+        if (response.data.reason == "post_locked") {
+          showNotifyMessage("Cannot create comment because post is locked");
+        }
+
+        return false;
+      }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to add comment to post.");
-      return null;
+      showNotifyMessage("Failed to add opinion to post.");
+      return false;
     }
   }
 

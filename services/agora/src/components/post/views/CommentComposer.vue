@@ -34,7 +34,7 @@
           <ZKButton
             label="Post"
             color="primary"
-            :disable="characterProgress > 100"
+            :disable="characterProgress > 100 || characterProgress == 0"
             @click="postClicked()"
           />
         </div>
@@ -105,7 +105,7 @@ function cancelClicked() {
 
 async function postClicked() {
   const response = await createNewComment(commentText.value, props.postSlugId);
-  if (response != null) {
+  if (response) {
     emit("submittedComment", {});
     innerFocus.value = false;
     resetKey.value = resetKey.value + 1;
