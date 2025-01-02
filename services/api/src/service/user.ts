@@ -2,6 +2,7 @@ import { log } from "@/app.js";
 import {
     commentContentTable,
     commentTable,
+    moderationCommentsTable,
     postTable,
     userTable,
 } from "@/schema.js";
@@ -18,6 +19,7 @@ import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCreatedAt } from "./feed.js";
 import { getCommentSlugIdLastCreatedAt } from "./comment.js";
 import { fetchPostBySlugId } from "./post.js";
+import { createCommentModerationPropertyObject } from "./moderation.js";
 
 interface GetUserCommentsProps {
     db: PostgresJsDatabase;
@@ -47,6 +49,12 @@ export async function getUserComments({
                 numDislikes: commentTable.numDislikes,
                 username: userTable.username,
                 postSlugId: postTable.slugId,
+                moderationAction: moderationCommentsTable.moderationAction,
+                moderationExplanation:
+                    moderationCommentsTable.moderationExplanation,
+                moderationReason: moderationCommentsTable.moderationReason,
+                moderationCreatedAt: moderationCommentsTable.createdAt,
+                moderationUpdatedAt: moderationCommentsTable.updatedAt,
             })
             .from(commentTable)
             .innerJoin(
@@ -55,6 +63,10 @@ export async function getUserComments({
             )
             .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
             .innerJoin(postTable, eq(postTable.id, commentTable.postId))
+            .leftJoin(
+                moderationCommentsTable,
+                eq(moderationCommentsTable.commentId, commentTable.id),
+            )
             .where(
                 and(
                     eq(commentTable.authorId, userId),
@@ -67,6 +79,14 @@ export async function getUserComments({
         const extendedCommentList: ExtendedComment[] = [];
 
         for (const commentResponse of commentResponseList) {
+            const moderationProperties = createCommentModerationPropertyObject(
+                commentResponse.moderationAction,
+                commentResponse.moderationExplanation,
+                commentResponse.moderationReason,
+                commentResponse.moderationCreatedAt,
+                commentResponse.moderationUpdatedAt,
+            );
+
             const commentItem: CommentItem = {
                 comment: commentResponse.comment,
                 commentSlugId: commentResponse.commentSlugId,
@@ -75,6 +95,7 @@ export async function getUserComments({
                 numLikes: commentResponse.numLikes,
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
+                moderation: moderationProperties,
             };
 
             const postItem = await fetchPostBySlugId({
@@ -132,6 +153,7 @@ export async function getUserPosts({
             enableCompactBody: true,
             fetchPollResponse: true,
             userId: userId,
+            excludeLockedPosts: false,
         });
 
         return posts;

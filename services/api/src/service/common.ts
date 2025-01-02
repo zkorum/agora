@@ -4,6 +4,8 @@ import {
     postTable,
     organisationTable,
     userTable,
+    commentTable,
+    moderationPostsTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -13,12 +15,47 @@ import type {
     ExtendedPost,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL } from "drizzle-orm";
+import { eq, desc, SQL, and } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
+import { createPostModerationPropertyObject } from "./moderation.js";
 
 export function useCommonPost() {
+    interface IsPostSlugIdLockedProps {
+        db: PostgresJsDatabase;
+        postSlugId: string;
+    }
+
+    async function isPostSlugIdLocked({
+        db,
+        postSlugId,
+    }: IsPostSlugIdLockedProps) {
+        const { getPostAndContentIdFromSlugId } = useCommonPost();
+        const postDetails = await getPostAndContentIdFromSlugId({
+            db: db,
+            postSlugId: postSlugId,
+        });
+
+        const moderationPostsTableResponse = await db
+            .select({
+                moderationAction: moderationPostsTable.moderationAction,
+            })
+            .from(moderationPostsTable)
+            .where(
+                and(
+                    eq(moderationPostsTable.postId, postDetails.id),
+                    eq(moderationPostsTable.moderationAction, "lock"),
+                ),
+            );
+
+        if (moderationPostsTableResponse.length == 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     interface FetchPostItemsProps {
         db: PostgresJsDatabase;
         limit: number;
@@ -26,6 +63,7 @@ export function useCommonPost() {
         enableCompactBody: boolean;
         fetchPollResponse: boolean;
         userId?: string;
+        excludeLockedPosts: boolean;
     }
 
     async function fetchPostItems({
@@ -35,6 +73,7 @@ export function useCommonPost() {
         enableCompactBody,
         fetchPollResponse,
         userId,
+        excludeLockedPosts,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
         const postItems = await db
             .select({
@@ -54,13 +93,18 @@ export function useCommonPost() {
                 option6Response: pollTable.option6Response,
                 // metadata
                 slugId: postTable.slugId,
-                isHidden: postTable.isHidden,
                 createdAt: postTable.createdAt,
                 updatedAt: postTable.updatedAt,
                 lastReactedAt: postTable.lastReactedAt,
                 commentCount: postTable.commentCount,
                 authorName: userTable.username,
-                authorImagePath: organisationTable.imageUrl,
+                // moderation
+                moderationAction: moderationPostsTable.moderationAction,
+                moderationExplanation:
+                    moderationPostsTable.moderationExplanation,
+                moderationReason: moderationPostsTable.moderationReason,
+                moderationCreatedAt: moderationPostsTable.createdAt,
+                moderationUpdatedAt: moderationPostsTable.updatedAt,
             })
             .from(postTable)
             .innerJoin(
@@ -68,6 +112,10 @@ export function useCommonPost() {
                 eq(postContentTable.id, postTable.currentContentId),
             )
             .innerJoin(userTable, eq(userTable.id, postTable.authorId))
+            .leftJoin(
+                moderationPostsTable,
+                eq(moderationPostsTable.postId, postTable.id),
+            )
             .leftJoin(
                 organisationTable,
                 eq(organisationTable.id, userTable.organisationId),
@@ -94,15 +142,22 @@ export function useCommonPost() {
                 });
             }
 
+            const moderationProperties = createPostModerationPropertyObject(
+                postItem.moderationAction,
+                postItem.moderationExplanation,
+                postItem.moderationReason,
+                postItem.moderationCreatedAt,
+                postItem.moderationUpdatedAt,
+            );
+
             const metadata: PostMetadata = {
                 postSlugId: postItem.slugId,
-                isHidden: postItem.isHidden,
+                moderation: moderationProperties,
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.updatedAt,
                 lastReactedAt: postItem.lastReactedAt,
                 commentCount: postItem.commentCount,
                 authorUsername: postItem.authorName,
-                authorImagePath: toUnionUndefined(postItem.authorImagePath),
             };
 
             let payload: ExtendedPostPayload;
@@ -164,14 +219,19 @@ export function useCommonPost() {
                     body: toUnionUndefined(postItem.body),
                 };
             }
-            posts.push({
-                metadata: metadata,
-                payload: payload,
-                interaction: {
-                    hasVoted: false,
-                    votedIndex: 0,
-                },
-            });
+
+            if (excludeLockedPosts && postItem.moderationAction == "lock") {
+                // Skip
+            } else {
+                posts.push({
+                    metadata: metadata,
+                    payload: payload,
+                    interaction: {
+                        hasVoted: false,
+                        votedIndex: 0,
+                    },
+                });
+            }
         });
 
         if (fetchPollResponse) {
@@ -244,5 +304,66 @@ export function useCommonPost() {
         }
     }
 
-    return { fetchPostItems, getPostAndContentIdFromSlugId };
+    return {
+        fetchPostItems,
+        getPostAndContentIdFromSlugId,
+        isPostSlugIdLocked,
+    };
+}
+
+export function useCommonComment() {
+    interface GetCommentIdFromCommentSlugIdProps {
+        db: PostgresJsDatabase;
+        commentSlugId: string;
+    }
+
+    async function getCommentIdFromCommentSlugId({
+        db,
+        commentSlugId,
+    }: GetCommentIdFromCommentSlugIdProps) {
+        const commentTableResponse = await db
+            .select({
+                commentId: commentTable.id,
+            })
+            .from(commentTable)
+            .where(eq(commentTable.slugId, commentSlugId));
+
+        if (commentTableResponse.length != 1) {
+            throw httpErrors.notFound(
+                "Failed to locate comment ID from comment slug ID: " +
+                    commentSlugId,
+            );
+        }
+
+        return commentTableResponse[0].commentId;
+    }
+
+    interface GetPostIdFromCommentSlugIdProps {
+        db: PostgresJsDatabase;
+        commentSlugId: string;
+    }
+
+    async function getPostSlugIdFromCommentSlugId({
+        db,
+        commentSlugId,
+    }: GetPostIdFromCommentSlugIdProps) {
+        const commentTableResponse = await db
+            .select({
+                postSlugId: postTable.slugId,
+            })
+            .from(commentTable)
+            .innerJoin(postTable, eq(postTable.id, commentTable.postId))
+            .where(eq(commentTable.slugId, commentSlugId));
+
+        if (commentTableResponse.length != 1) {
+            throw httpErrors.internalServerError(
+                "Failed to locate post slug ID from comment slug ID: " +
+                    commentSlugId,
+            );
+        }
+
+        return commentTableResponse[0].postSlugId;
+    }
+
+    return { getPostSlugIdFromCommentSlugId, getCommentIdFromCommentSlugId };
 }

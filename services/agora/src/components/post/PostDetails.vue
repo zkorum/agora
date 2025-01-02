@@ -44,6 +44,16 @@
                 v-html="extendedPostData.payload.body"
               ></span>
             </div>
+
+            <ZKCard
+              v-if="extendedPostData.metadata.moderation.status == 'moderated'"
+              padding="1rem"
+            >
+              <PostLockedMessage
+                :moderation-property="extendedPostData.metadata.moderation"
+                :post-slug-id="extendedPostData.metadata.postSlugId"
+              />
+            </ZKCard>
           </div>
 
           <div v-if="extendedPostData.payload.poll" class="pollContainer">
@@ -58,6 +68,9 @@
             <div class="leftButtonCluster">
               <div v-if="!skeletonMode">
                 <ZKButton
+                  :disable="
+                    extendedPostData.metadata.moderation.status == 'moderated'
+                  "
                   text-color="color-text-weak"
                   size="0.8rem"
                   :label="
@@ -103,14 +116,20 @@
           <CommentSection
             :key="commentCountOffset"
             :post-slug-id="extendedPostData.metadata.postSlugId"
-            :initial-comment-slug-id="commentSlugId"
+            :initial-comment-slug-id="commentSlugIdQuery"
+            :is-post-locked="
+              extendedPostData.metadata.moderation.status == 'moderated'
+            "
+            :comment-filter="parsedCommentFilter"
             @deleted="decrementCommentCount()"
           />
         </div>
       </div>
     </ZKHoverEffect>
 
-    <FloatingBottomContainer v-if="!compactMode && isAuthenticated">
+    <FloatingBottomContainer
+      v-if="!compactMode && isAuthenticated && !isLocked"
+    >
       <CommentComposer
         :show-controls="focusCommentElement"
         :post-slug-id="extendedPostData.metadata.postSlugId"
@@ -130,7 +149,7 @@ import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
 import { usePostStore } from "src/stores/post";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRoute, useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
@@ -138,6 +157,8 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
 import type { ExtendedPost } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import ZKCard from "../ui-library/ZKCard.vue";
+import PostLockedMessage from "./views/PostLockedMessage.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedPost;
@@ -149,7 +170,24 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuthenticationStore();
 
-const commentSlugId = useRouteQuery("commentSlugId", "", { transform: String });
+const commentSlugIdQuery = useRouteQuery("commentSlugId", "", {
+  transform: String,
+});
+const commentFilterQuery = useRouteQuery("commentFilterQuery", "", {
+  transform: String,
+});
+
+const parsedCommentFilter = computed<"new" | "moderated" | "hidden">(() => {
+  if (
+    commentFilterQuery.value == "new" ||
+    commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "hidden"
+  ) {
+    return commentFilterQuery.value;
+  } else {
+    return "new";
+  }
+});
 
 const commentCountOffset = ref(0);
 
@@ -174,6 +212,15 @@ onMounted(() => {
       scrollToCommentSection();
     }, 100);
   }
+});
+
+const isLocked = computed(() => {
+  if (props.extendedPostData.metadata.moderation.status == "moderated") {
+    if (props.extendedPostData.metadata.moderation.action == "lock") {
+      return true;
+    }
+  }
+  return false;
 });
 
 function decrementCommentCount() {
@@ -212,8 +259,11 @@ function clickedCommentButton() {
 }
 
 function shareClicked() {
+  console.log(process.env.VITE_PUBLIC_DIR);
+
   const sharePostUrl =
     window.location.origin +
+    process.env.VITE_PUBLIC_DIR +
     "/post/" +
     props.extendedPostData.metadata.postSlugId;
   webShare.share(

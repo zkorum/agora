@@ -956,7 +956,6 @@ export const postTable = pgTable("post", {
     currentContentId: integer("current_content_id")
         .references((): AnyPgColumn => postContentTable.id)
         .unique(), // null if post was deleted
-    isHidden: boolean("is_hidden").notNull().default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1092,7 +1091,6 @@ export const commentTable = pgTable("comment", {
     ), // null if comment was deleted
     numLikes: integer("num_likes").notNull().default(0),
     numDislikes: integer("num_dislikes").notNull().default(0),
-    isHidden: boolean("is_hidden").notNull().default(false),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1221,34 +1219,36 @@ export const reportReasons = pgEnum("report_reason_enum", [
     "illegal",
 ]);
 export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
-    "off-topic",
-    "spam",
     "misleading",
-    "privacy",
-    "sexual",
-    "toxic",
+    "antisocial",
     "illegal",
-    "nothing",
+    "doxing",
+    "sexual",
+    "spam",
 ]);
 
 // todo: add suspend and ban
-export const moderationAction = pgEnum("moderation_action", [
-    "hide",
-    "nothing",
+export const moderationActionPostsEnum = pgEnum("moderation_action_posts", [
+    "lock",
 ]);
 
-export const reportTable = pgTable("report_table", {
+export const moderationActionCommentsEnum = pgEnum(
+    "moderation_action_comments",
+    ["lock", "hide"],
+);
+
+export const reportPostsTable = pgTable("report_posts_table", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    postId: integer("post_id") //
-        .references(() => postTable.id), // at least one or the other should be not null - add a check
-    commentId: integer("comment_id") //
-        .references(() => postTable.id), // at least one or the other should be not null - add a check
-    reporterId: uuid("reporter_id").references(() => userTable.id), // null if reported by AI
-    reportReason: reportReasons("reporter_reason"),
+    postId: integer("post_id")
+        .references(() => postTable.id)
+        .notNull(),
+    reporterId: uuid("reporter_id")
+        .references(() => userTable.id)
+        .notNull(),
+    reportReason: reportReasons("reporter_reason").notNull(),
     reportExplanation: varchar("report_explanation", {
         length: MAX_LENGTH_BODY,
     }),
-    moderationId: integer("moderation_id").references(() => moderationTable.id),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1263,13 +1263,71 @@ export const reportTable = pgTable("report_table", {
         .notNull(),
 });
 
-export const moderationTable = pgTable("moderation_table", {
+export const reportCommentsTable = pgTable("report_comments_table", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    reportId: integer("report_id")
-        .references((): AnyPgColumn => reportTable.id)
-        .notNull(), // if moderation is not in reaction to a report, then create the report with the moderator userId before inserting data in this table
-    moderatorId: uuid("moderator_id").references(() => userTable.id),
-    moderationAction: moderationAction("moderation_action").notNull(), // add check
+    commentId: integer("comment_id")
+        .references(() => commentTable.id)
+        .notNull(),
+    reporterId: uuid("reporter_id")
+        .references(() => userTable.id)
+        .notNull(),
+    reportReason: reportReasons("reporter_reason").notNull(),
+    reportExplanation: varchar("report_explanation", {
+        length: MAX_LENGTH_BODY,
+    }),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const moderationPostsTable = pgTable("moderation_posts_table", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    postId: integer("post_id") // one moderation action per post
+        .references(() => postTable.id)
+        .unique()
+        .notNull(),
+    moderatorId: uuid("moderator_id")
+        .references(() => userTable.id)
+        .notNull(),
+    moderationAction: moderationActionPostsEnum("moderation_action").notNull(), // add check
+    moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
+    moderationExplanation: varchar("moderation_explanation", {
+        length: MAX_LENGTH_BODY,
+    }),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const moderationCommentsTable = pgTable("moderation_comments_table", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    commentId: integer("comment_id") // one moderation action per comment
+        .references(() => commentTable.id)
+        .unique()
+        .notNull(),
+    moderatorId: uuid("moderator_id")
+        .references(() => userTable.id)
+        .notNull(),
+    moderationAction:
+        moderationActionCommentsEnum("moderation_action").notNull(), // add check
     moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
     moderationExplanation: varchar("moderation_explanation", {
         length: MAX_LENGTH_BODY,

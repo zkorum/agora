@@ -14,6 +14,7 @@
         @click.stop.prevent="shareButtonClicked()"
       />
       <ZKButton
+        :disable="isPostLocked"
         flat
         :text-color="downvoteIcon.color"
         :icon="downvoteIcon.icon"
@@ -28,6 +29,7 @@
       </ZKButton>
 
       <ZKButton
+        :disable="isPostLocked"
         flat
         :text-color="upvoteIcon.color"
         :icon="upvoteIcon.icon"
@@ -61,6 +63,7 @@ const props = defineProps<{
   commentItem: CommentItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "like" | "dislike">;
+  isPostLocked: boolean;
 }>();
 
 const webShare = useWebShare();
@@ -120,12 +123,19 @@ const upvoteIcon = computed<IconObject>(() => {
 });
 
 function shareButtonClicked() {
+  let moderatedParameter = "";
+  if (props.commentItem.moderation.status == "moderated") {
+    moderatedParameter = "&filter=moderation-history";
+  }
+
   const sharePostUrl =
     window.location.origin +
+    process.env.VITE_PUBLIC_DIR +
     "/post/" +
     props.postSlugId +
     "?commentSlugId=" +
-    props.commentItem.commentSlugId;
+    props.commentItem.commentSlugId +
+    moderatedParameter;
   webShare.share("Agora Comment", sharePostUrl);
 }
 

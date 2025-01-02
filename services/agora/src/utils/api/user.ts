@@ -7,7 +7,11 @@ import {
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
-import type { ExtendedComment, ExtendedPost } from "src/shared/types/zod";
+import type {
+  ExtendedComment,
+  ExtendedPost,
+  moderationStatusOptionsType,
+} from "src/shared/types/zod";
 import { useBackendPostApi } from "./post";
 import { useNotify } from "../ui/notify";
 
@@ -42,7 +46,7 @@ export function useBackendUserApi() {
 
   async function fetchUserPosts(
     lastPostSlugId: string | undefined
-  ): Promise<ExtendedPost[]> {
+  ): Promise<ExtendedPost[] | null> {
     try {
       const params: ApiV1UserFetchUserPostsPostRequest = {
         lastPostSlugId: lastPostSlugId,
@@ -71,14 +75,14 @@ export function useBackendUserApi() {
       return internalPostList;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch user's personal votes.");
-      return undefined;
+      showNotifyMessage("Failed to fetch user's personal posts.");
+      return null;
     }
   }
 
   async function fetchUserComments(
     lastCommentSlugId: string | undefined
-  ): Promise<ExtendedComment[]> {
+  ): Promise<ExtendedComment[] | null> {
     try {
       const params: ApiV1UserFetchUserCommentsPostRequest = {
         lastCommentSlugId: lastCommentSlugId,
@@ -101,6 +105,10 @@ export function useBackendUserApi() {
 
       const extendedCommentList: ExtendedComment[] = [];
       response.data.forEach((responseItem) => {
+        // Patch OpenAPI bug on discriminatedUnion
+        const moderationStatus = responseItem.commentItem.moderation
+          .status as moderationStatusOptionsType;
+
         const extendedComment: ExtendedComment = {
           postData: createInternalPostData(responseItem.postData),
           commentItem: {
@@ -111,6 +119,18 @@ export function useBackendUserApi() {
             numLikes: responseItem.commentItem.numLikes,
             updatedAt: new Date(responseItem.commentItem.updatedAt),
             username: String(responseItem.commentItem.username),
+            moderation: {
+              status: moderationStatus,
+              action: responseItem.commentItem.moderation.action,
+              explanation: responseItem.commentItem.moderation.explanation,
+              reason: responseItem.commentItem.moderation.reason,
+              createdAt: new Date(
+                responseItem.commentItem.moderation.createdAt
+              ),
+              updatedAt: new Date(
+                responseItem.commentItem.moderation.updatedAt
+              ),
+            },
           },
         };
         extendedCommentList.push(extendedComment);
@@ -120,7 +140,7 @@ export function useBackendUserApi() {
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user's personal comments.");
-      return undefined;
+      return null;
     }
   }
 

@@ -1,5 +1,5 @@
 {
-  "id": "0cf3a251-45be-41b2-93b6-beff34548d74",
+  "id": "e8cb498a-daa6-4e28-9c13-ad7333d63dce",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -400,13 +400,6 @@
           "notNull": true,
           "default": 0
         },
-        "is_hidden": {
-          "name": "is_hidden",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -704,8 +697,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.moderation_table": {
-      "name": "moderation_table",
+    "public.moderation_comments_table": {
+      "name": "moderation_comments_table",
       "schema": "",
       "columns": {
         "id": {
@@ -715,7 +708,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "moderation_table_id_seq",
+            "name": "moderation_comments_table_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -725,8 +718,8 @@
             "cycle": false
           }
         },
-        "report_id": {
-          "name": "report_id",
+        "comment_id": {
+          "name": "comment_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -735,11 +728,11 @@
           "name": "moderator_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "moderation_action": {
           "name": "moderation_action",
-          "type": "moderation_action",
+          "type": "moderation_action_comments",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -774,12 +767,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "moderation_table_report_id_report_table_id_fk": {
-          "name": "moderation_table_report_id_report_table_id_fk",
-          "tableFrom": "moderation_table",
-          "tableTo": "report_table",
+        "moderation_comments_table_comment_id_comment_id_fk": {
+          "name": "moderation_comments_table_comment_id_comment_id_fk",
+          "tableFrom": "moderation_comments_table",
+          "tableTo": "comment",
           "columnsFrom": [
-            "report_id"
+            "comment_id"
           ],
           "columnsTo": [
             "id"
@@ -787,9 +780,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "moderation_table_moderator_id_user_id_fk": {
-          "name": "moderation_table_moderator_id_user_id_fk",
-          "tableFrom": "moderation_table",
+        "moderation_comments_table_moderator_id_user_id_fk": {
+          "name": "moderation_comments_table_moderator_id_user_id_fk",
+          "tableFrom": "moderation_comments_table",
           "tableTo": "user",
           "columnsFrom": [
             "moderator_id"
@@ -802,7 +795,124 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "moderation_comments_table_comment_id_unique": {
+          "name": "moderation_comments_table_comment_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "comment_id"
+          ]
+        }
+      },
+      "checkConstraints": {}
+    },
+    "public.moderation_posts_table": {
+      "name": "moderation_posts_table",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "moderation_posts_table_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderator_id": {
+          "name": "moderator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderation_action": {
+          "name": "moderation_action",
+          "type": "moderation_action_posts",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderation_reason": {
+          "name": "moderation_reason",
+          "type": "moderation_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderation_explanation": {
+          "name": "moderation_explanation",
+          "type": "varchar(260)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "moderation_posts_table_post_id_post_id_fk": {
+          "name": "moderation_posts_table_post_id_post_id_fk",
+          "tableFrom": "moderation_posts_table",
+          "tableTo": "post",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "moderation_posts_table_moderator_id_user_id_fk": {
+          "name": "moderation_posts_table_moderator_id_user_id_fk",
+          "tableFrom": "moderation_posts_table",
+          "tableTo": "user",
+          "columnsFrom": [
+            "moderator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "moderation_posts_table_post_id_unique": {
+          "name": "moderation_posts_table_post_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "post_id"
+          ]
+        }
+      },
       "checkConstraints": {}
     },
     "public.organisation": {
@@ -1746,13 +1856,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "is_hidden": {
-          "name": "is_hidden",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -1877,8 +1980,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.report_table": {
-      "name": "report_table",
+    "public.report_comments_table": {
+      "name": "report_comments_table",
       "schema": "",
       "columns": {
         "id": {
@@ -1888,7 +1991,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "report_table_id_seq",
+            "name": "report_comments_table_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -1898,40 +2001,28 @@
             "cycle": false
           }
         },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "comment_id": {
           "name": "comment_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "reporter_id": {
           "name": "reporter_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "reporter_reason": {
           "name": "reporter_reason",
           "type": "report_reason_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "report_explanation": {
           "name": "report_explanation",
           "type": "varchar(260)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "moderation_id": {
-          "name": "moderation_id",
-          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -1952,9 +2043,103 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "report_table_post_id_post_id_fk": {
-          "name": "report_table_post_id_post_id_fk",
-          "tableFrom": "report_table",
+        "report_comments_table_comment_id_comment_id_fk": {
+          "name": "report_comments_table_comment_id_comment_id_fk",
+          "tableFrom": "report_comments_table",
+          "tableTo": "comment",
+          "columnsFrom": [
+            "comment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "report_comments_table_reporter_id_user_id_fk": {
+          "name": "report_comments_table_reporter_id_user_id_fk",
+          "tableFrom": "report_comments_table",
+          "tableTo": "user",
+          "columnsFrom": [
+            "reporter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.report_posts_table": {
+      "name": "report_posts_table",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "report_posts_table_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reporter_id": {
+          "name": "reporter_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reporter_reason": {
+          "name": "reporter_reason",
+          "type": "report_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "report_explanation": {
+          "name": "report_explanation",
+          "type": "varchar(260)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "report_posts_table_post_id_post_id_fk": {
+          "name": "report_posts_table_post_id_post_id_fk",
+          "tableFrom": "report_posts_table",
           "tableTo": "post",
           "columnsFrom": [
             "post_id"
@@ -1965,38 +2150,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "report_table_comment_id_post_id_fk": {
-          "name": "report_table_comment_id_post_id_fk",
-          "tableFrom": "report_table",
-          "tableTo": "post",
-          "columnsFrom": [
-            "comment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "report_table_reporter_id_user_id_fk": {
-          "name": "report_table_reporter_id_user_id_fk",
-          "tableFrom": "report_table",
+        "report_posts_table_reporter_id_user_id_fk": {
+          "name": "report_posts_table_reporter_id_user_id_fk",
+          "tableFrom": "report_posts_table",
           "tableTo": "user",
           "columnsFrom": [
             "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "report_table_moderation_id_moderation_table_id_fk": {
-          "name": "report_table_moderation_id_moderation_table_id_fk",
-          "tableFrom": "report_table",
-          "tableTo": "moderation_table",
-          "columnsFrom": [
-            "moderation_id"
           ],
           "columnsTo": [
             "id"
@@ -2779,26 +2938,31 @@
         "other"
       ]
     },
-    "public.moderation_action": {
-      "name": "moderation_action",
+    "public.moderation_action_comments": {
+      "name": "moderation_action_comments",
       "schema": "public",
       "values": [
-        "hide",
-        "nothing"
+        "lock",
+        "hide"
+      ]
+    },
+    "public.moderation_action_posts": {
+      "name": "moderation_action_posts",
+      "schema": "public",
+      "values": [
+        "lock"
       ]
     },
     "public.moderation_reason_enum": {
       "name": "moderation_reason_enum",
       "schema": "public",
       "values": [
-        "off-topic",
-        "spam",
         "misleading",
-        "privacy",
-        "sexual",
-        "toxic",
+        "antisocial",
         "illegal",
-        "nothing"
+        "doxing",
+        "sexual",
+        "spam"
       ]
     },
     "public.phone_country_code": {

@@ -11,6 +11,7 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
+import { useCommonComment, useCommonPost } from "./common.js";
 
 interface GetCommentIdAndContentIdFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -66,7 +67,24 @@ export async function castVoteForCommentSlugId({
     didWrite,
     authHeader,
     votingAction,
-}: CastVoteForCommentSlugIdProps) {
+}: CastVoteForCommentSlugIdProps): Promise<boolean> {
+    {
+        const postSlugId =
+            await useCommonComment().getPostSlugIdFromCommentSlugId({
+                commentSlugId: commentSlugId,
+                db: db,
+            });
+
+        const isLocked = await useCommonPost().isPostSlugIdLocked({
+            db: db,
+            postSlugId: postSlugId,
+        });
+
+        if (isLocked) {
+            return false;
+        }
+    }
+
     const commentData = await getCommentIdAndContentIdFromCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,
@@ -226,6 +244,8 @@ export async function castVoteForCommentSlugId({
             "Database error while casting new vote",
         );
     }
+
+    return true;
 }
 
 interface GetUserVotesForPostSlugIdsProps {

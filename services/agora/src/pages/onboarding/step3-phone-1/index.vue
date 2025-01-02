@@ -41,11 +41,7 @@
                 >
                   <img
                     :alt="slotProps.value.label"
-                    :src="
-                      '/feed/images/communities/flags/' +
-                      slotProps.value.country +
-                      '.svg'
-                    "
+                    :src="getFlagLink(slotProps.value.country)"
                     class="flagImg"
                   />
                   <div>+ {{ slotProps.value.code }}</div>
@@ -57,11 +53,7 @@
               <template #option="slotProps">
                 <div class="innerOption">
                   <img
-                    :src="
-                      '/feed/images/communities/flags/' +
-                      slotProps.option.country +
-                      '.svg'
-                    "
+                    :src="getFlagLink(slotProps.option.country)"
                     class="flagImg"
                     loading="lazy"
                   />
@@ -191,6 +183,15 @@ interface PhoneNumber {
 const devAuthorizedNumbers: PhoneNumber[] = [];
 checkDevAuthorizedNumbers();
 
+function getFlagLink(country: string) {
+  return (
+    process.env.VITE_PUBLIC_DIR +
+    "/images/communities/flags/" +
+    country +
+    ".svg"
+  );
+}
+
 function injectDevelopmentNumber(phoneItem: PhoneNumber) {
   inputNumber.value = phoneItem.fullNumber;
   validateNumber();
@@ -201,11 +202,17 @@ function checkDevAuthorizedNumbers() {
     const phoneList = process.env.VITE_DEV_AUTHORIZED_PHONES.split(",");
     phoneList.forEach((number) => {
       const parsedNumber = parsePhoneNumberFromString(number);
-      console.log(parsedNumber.number);
-      devAuthorizedNumbers.push({
-        fullNumber: parsedNumber.number,
-        countryCallingCode: parsedNumber.countryCallingCode,
-      });
+      if (parsedNumber) {
+        console.log(parsedNumber.number);
+        devAuthorizedNumbers.push({
+          fullNumber: parsedNumber.number,
+          countryCallingCode: parsedNumber.countryCallingCode,
+        });
+      } else {
+        console.log(
+          "Failed to parse development number from string: " + number
+        );
+      }
     });
   }
 }
@@ -215,7 +222,7 @@ function validateNumber() {
     const phoneNumber = parsePhoneNumberFromString(inputNumber.value, {
       defaultCallingCode: selectedCountryCode.value.code,
     });
-    if (phoneNumber.isValid()) {
+    if (phoneNumber && phoneNumber.isValid()) {
       verificationPhoneNumber.value = {
         defaultCallingCode: phoneNumber.countryCallingCode,
         phoneNumber: phoneNumber.number,

@@ -1,87 +1,119 @@
 <template>
   <div>
     <div class="container">
-      <CommentSortSelector
-        @changed-algorithm="(value) => (commentSortPreference = value)"
+      <div class="filterButtonCluster">
+        <ZKButton
+          v-for="option in filterOptions"
+          :key="option.value"
+          :label="option.name"
+          :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
+          :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
+          @click="sortAlgorithm = option.value"
+        />
+      </div>
+
+      <CommentGroup
+        v-if="sortAlgorithm == 'new'"
+        :comment-item-list="commentItemsNew"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="initialCommentSlugId"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
       />
 
-      <div
-        v-if="commentItems.length == 0 && commentSortPreference != 'clusters'"
-        class="noCommentMessage"
-      >
-        There are no opinions in this conservation.
-      </div>
+      <CommentGroup
+        v-if="sortAlgorithm == 'moderated'"
+        :comment-item-list="commentItemsModerated"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="initialCommentSlugId"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+      />
 
-      <div v-if="commentItems.length > 0" class="commentListFlex">
-        <div
-          v-for="commentItem in commentItems"
-          :id="commentItem.commentSlugId"
-          :key="commentItem.commentSlugId"
-        >
-          <CommentSingle
-            :comment-item="commentItem"
-            :post-slug-id="postSlugId"
-            :highlight="initialCommentSlugId == commentItem.commentSlugId"
-            :comment-slug-id-liked-map="commentSlugIdLikedMap"
-            @deleted="deletedComment()"
-          />
-
-          <Divider :style="{ width: '100%' }" />
-        </div>
-      </div>
-
-      <div
-        v-if="commentSortPreference == 'clusters'"
-        :style="{ paddingTop: '1rem' }"
-      >
-        <ZKCard padding="2rem">
-          <div class="specialMessage">
-            <img src="/development/polis/example.png" class="polisExampleImg" />
-            <div class="specialText">
-              This visualization is currently a work-in-progress!
-            </div>
-          </div>
-        </ZKCard>
-      </div>
+      <CommentGroup
+        v-if="sortAlgorithm == 'hidden'"
+        :comment-item-list="commentItemsHidden"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="initialCommentSlugId"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import CommentSingle from "./CommentSingle.vue";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
-import { onMounted, ref } from "vue";
-import Divider from "primevue/divider";
-import CommentSortSelector from "./CommentSortSelector.vue";
+import { onMounted, ref, watch } from "vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { type CommentItem } from "src/shared/types/zod";
+import { type CommentFeedFilter, type CommentItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
+import CommentGroup from "./CommentGroup.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useUserStore } from "src/stores/user";
+
+type CommentFilterOptions = "new" | "moderated" | "hidden";
 
 const emit = defineEmits(["deleted"]);
 
 const props = defineProps<{
   postSlugId: string;
   initialCommentSlugId: string;
+  isPostLocked: boolean;
+  commentFilter: CommentFilterOptions;
 }>();
 
-const commentSortPreference = ref("");
+const sortAlgorithm = ref<CommentFilterOptions>("new");
+sortAlgorithm.value = props.commentFilter;
 
-const { fetchCommentsForPost } = useBackendCommentApi();
+const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
+  useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const commentItems = ref<CommentItem[]>([]);
+const { profileData } = storeToRefs(useUserStore());
+
+let commentItemsNew = ref<CommentItem[]>([]);
+let commentItemsModerated = ref<CommentItem[]>([]);
+let commentItemsHidden = ref<CommentItem[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "like" | "dislike">>(new Map());
 
-fetchCommentList();
+const baseFilters: { name: string; value: CommentFilterOptions }[] = [
+  { name: "New", value: "new" },
+  { name: "Moderation History", value: "moderated" },
+];
+const filterOptions = ref(baseFilters);
+
+fetchCommentList("new");
+fetchCommentList("moderated");
+initializeModeratorMenu();
 
 onMounted(() => {
   fetchPersonalLikes();
 });
+
+watch(profileData, () => {
+  initializeModeratorMenu();
+});
+
+function initializeModeratorMenu() {
+  if (profileData.value.isModerator) {
+    filterOptions.value = baseFilters.concat([
+      {
+        name: "Hidden",
+        value: "hidden",
+      },
+    ]);
+
+    fetchHiddenComments();
+  }
+}
 
 function deletedComment() {
   emit("deleted");
@@ -102,12 +134,27 @@ async function fetchPersonalLikes() {
   }
 }
 
-async function fetchCommentList() {
+async function fetchHiddenComments() {
   if (props.postSlugId.length > 0) {
-    const response = await fetchCommentsForPost(props.postSlugId);
+    const response = await fetchHiddenCommentsForPost(props.postSlugId);
 
     if (response != null) {
-      commentItems.value = response;
+      commentItemsHidden.value = response;
+    }
+  }
+}
+
+async function fetchCommentList(filter: CommentFeedFilter) {
+  if (props.postSlugId.length > 0) {
+    const response = await fetchCommentsForPost(props.postSlugId, filter);
+
+    if (response != null) {
+      if (filter == "moderated") {
+        commentItemsModerated.value = response;
+      } else {
+        commentItemsNew.value = response;
+      }
+
       setTimeout(function () {
         scrollToComment();
       }, 1000);
@@ -140,32 +187,9 @@ function scrollToComment() {
   gap: 1rem;
 }
 
-.noCommentMessage {
+.filterButtonCluster {
   display: flex;
-  justify-content: center;
-  padding-top: 4rem;
-}
-
-.specialMessage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-}
-
-.commentListFlex {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.polisExampleImg {
-  width: 100%;
-  border-radius: 15px;
-}
-
-.specialText {
-  text-align: center;
-  width: min(15rem, 100%);
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 </style>

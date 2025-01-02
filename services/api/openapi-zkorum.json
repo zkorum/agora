@@ -223,9 +223,6 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "showHidden": {
-                                        "type": "boolean"
-                                    },
                                     "lastSlugId": {
                                         "type": "string"
                                     },
@@ -234,7 +231,6 @@
                                     }
                                 },
                                 "required": [
-                                    "showHidden",
                                     "isAuthenticatedRequest"
                                 ],
                                 "additionalProperties": false
@@ -263,9 +259,6 @@
                                                                 "type": "string",
                                                                 "maxLength": 10
                                                             },
-                                                            "isHidden": {
-                                                                "type": "boolean"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -286,19 +279,83 @@
                                                                 "type": "string",
                                                                 "pattern": "^[a-z0-9_]*$"
                                                             },
-                                                            "authorImagePath": {
-                                                                "type": "string",
-                                                                "format": "uri"
+                                                            "moderation": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "moderated"
+                                                                                ]
+                                                                            },
+                                                                            "action": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "lock"
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "misleading",
+                                                                                    "antisocial",
+                                                                                    "illegal",
+                                                                                    "doxing",
+                                                                                    "sexual",
+                                                                                    "spam"
+                                                                                ]
+                                                                            },
+                                                                            "explanation": {
+                                                                                "type": "string",
+                                                                                "maxLength": 260
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status",
+                                                                            "action",
+                                                                            "reason",
+                                                                            "explanation",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "unmoderated"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
                                                             "postSlugId",
-                                                            "isHidden",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
                                                             "commentCount",
-                                                            "authorUsername"
+                                                            "authorUsername",
+                                                            "moderation"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -389,7 +446,7 @@
                 }
             }
         },
-        "/api/v1/moderate/report-post": {
+        "/api/v1/moderation/post/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -402,71 +459,20 @@
                                         "maxLength": 10
                                     },
                                     "moderationReason": {
-                                        "anyOf": [
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "off-topic"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "spam"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "misleading"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "privacy"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "sexual"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "toxic"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "illegal"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "nothing"
-                                                ]
-                                            }
+                                        "type": "string",
+                                        "enum": [
+                                            "misleading",
+                                            "antisocial",
+                                            "illegal",
+                                            "doxing",
+                                            "sexual",
+                                            "spam"
                                         ]
                                     },
                                     "moderationAction": {
-                                        "anyOf": [
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "hide"
-                                                ]
-                                            },
-                                            {
-                                                "type": "string",
-                                                "enum": [
-                                                    "nothing"
-                                                ]
-                                            }
+                                        "type": "string",
+                                        "enum": [
+                                            "lock"
                                         ]
                                     },
                                     "moderationExplanation": {
@@ -489,6 +495,321 @@
                 "responses": {
                     "200": {
                         "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderation/comment/create": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "moderationReason": {
+                                        "type": "string",
+                                        "enum": [
+                                            "misleading",
+                                            "antisocial",
+                                            "illegal",
+                                            "doxing",
+                                            "sexual",
+                                            "spam"
+                                        ]
+                                    },
+                                    "moderationAction": {
+                                        "type": "string",
+                                        "enum": [
+                                            "lock",
+                                            "hide"
+                                        ]
+                                    },
+                                    "moderationExplanation": {
+                                        "type": "string",
+                                        "maxLength": 260
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId",
+                                    "moderationReason",
+                                    "moderationAction",
+                                    "moderationExplanation"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderation/post/withdraw": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderation/comment/withdraw": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/moderation/post/fetch-report": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "moderated"
+                                                    ]
+                                                },
+                                                "action": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "lock"
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "misleading",
+                                                        "antisocial",
+                                                        "illegal",
+                                                        "doxing",
+                                                        "sexual",
+                                                        "spam"
+                                                    ]
+                                                },
+                                                "explanation": {
+                                                    "type": "string",
+                                                    "maxLength": 260
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "action",
+                                                "reason",
+                                                "explanation",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "unmoderated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/moderation/comment/fetch-report": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "commentSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "commentSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "moderated"
+                                                    ]
+                                                },
+                                                "action": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "lock",
+                                                        "hide"
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "misleading",
+                                                        "antisocial",
+                                                        "illegal",
+                                                        "doxing",
+                                                        "sexual",
+                                                        "spam"
+                                                    ]
+                                                },
+                                                "explanation": {
+                                                    "type": "string",
+                                                    "maxLength": 260
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "action",
+                                                "reason",
+                                                "explanation",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "unmoderated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -568,9 +889,6 @@
                                                         "type": "string",
                                                         "maxLength": 10
                                                     },
-                                                    "isHidden": {
-                                                        "type": "boolean"
-                                                    },
                                                     "createdAt": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -591,19 +909,83 @@
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
                                                     },
-                                                    "authorImagePath": {
-                                                        "type": "string",
-                                                        "format": "uri"
+                                                    "moderation": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "moderated"
+                                                                        ]
+                                                                    },
+                                                                    "action": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lock"
+                                                                        ]
+                                                                    },
+                                                                    "reason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "misleading",
+                                                                            "antisocial",
+                                                                            "illegal",
+                                                                            "doxing",
+                                                                            "sexual",
+                                                                            "spam"
+                                                                        ]
+                                                                    },
+                                                                    "explanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 260
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "status",
+                                                                    "action",
+                                                                    "reason",
+                                                                    "explanation",
+                                                                    "createdAt",
+                                                                    "updatedAt"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "unmoderated"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "status"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
                                                     "postSlugId",
-                                                    "isHidden",
                                                     "createdAt",
                                                     "updatedAt",
                                                     "lastReactedAt",
                                                     "commentCount",
-                                                    "authorUsername"
+                                                    "authorUsername",
+                                                    "moderation"
                                                 ],
                                                 "additionalProperties": false
                                             },
@@ -722,9 +1104,6 @@
                                                                 "type": "string",
                                                                 "maxLength": 10
                                                             },
-                                                            "isHidden": {
-                                                                "type": "boolean"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -745,19 +1124,83 @@
                                                                 "type": "string",
                                                                 "pattern": "^[a-z0-9_]*$"
                                                             },
-                                                            "authorImagePath": {
-                                                                "type": "string",
-                                                                "format": "uri"
+                                                            "moderation": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "moderated"
+                                                                                ]
+                                                                            },
+                                                                            "action": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "lock"
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "misleading",
+                                                                                    "antisocial",
+                                                                                    "illegal",
+                                                                                    "doxing",
+                                                                                    "sexual",
+                                                                                    "spam"
+                                                                                ]
+                                                                            },
+                                                                            "explanation": {
+                                                                                "type": "string",
+                                                                                "maxLength": 260
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "format": "date-time"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status",
+                                                                            "action",
+                                                                            "reason",
+                                                                            "explanation",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "status": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "unmoderated"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "status"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
                                                             "postSlugId",
-                                                            "isHidden",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
                                                             "commentCount",
-                                                            "authorUsername"
+                                                            "authorUsername",
+                                                            "moderation"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -861,6 +1304,75 @@
                                                     "username": {
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "moderation": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "moderated"
+                                                                        ]
+                                                                    },
+                                                                    "action": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lock",
+                                                                            "hide"
+                                                                        ]
+                                                                    },
+                                                                    "reason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "misleading",
+                                                                            "antisocial",
+                                                                            "illegal",
+                                                                            "doxing",
+                                                                            "sexual",
+                                                                            "spam"
+                                                                        ]
+                                                                    },
+                                                                    "explanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 260
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "status",
+                                                                    "action",
+                                                                    "reason",
+                                                                    "explanation",
+                                                                    "createdAt",
+                                                                    "updatedAt"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "unmoderated"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "status"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
@@ -870,7 +1382,8 @@
                                                     "comment",
                                                     "numLikes",
                                                     "numDislikes",
-                                                    "username"
+                                                    "username",
+                                                    "moderation"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -978,7 +1491,14 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Default Response"
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1116,16 +1636,49 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "commentSlugId": {
-                                            "type": "string"
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "commentSlugId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "commentSlugId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "post_locked"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "commentSlugId"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -1134,6 +1687,167 @@
             }
         },
         "/api/v1/comment/fetch-comments-by-post-slugId": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "postSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "filter": {
+                                        "type": "string",
+                                        "enum": [
+                                            "moderated",
+                                            "new"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "postSlugId",
+                                    "filter"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "commentSlugId": {
+                                                "type": "string",
+                                                "maxLength": 10
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updatedAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "comment": {
+                                                "type": "string",
+                                                "minLength": 1
+                                            },
+                                            "numLikes": {
+                                                "type": "integer",
+                                                "minimum": 0
+                                            },
+                                            "numDislikes": {
+                                                "type": "integer",
+                                                "minimum": 0
+                                            },
+                                            "username": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "moderation": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "moderated"
+                                                                ]
+                                                            },
+                                                            "action": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lock",
+                                                                    "hide"
+                                                                ]
+                                                            },
+                                                            "reason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "misleading",
+                                                                    "antisocial",
+                                                                    "illegal",
+                                                                    "doxing",
+                                                                    "sexual",
+                                                                    "spam"
+                                                                ]
+                                                            },
+                                                            "explanation": {
+                                                                "type": "string",
+                                                                "maxLength": 260
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updatedAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "status",
+                                                            "action",
+                                                            "reason",
+                                                            "explanation",
+                                                            "createdAt",
+                                                            "updatedAt"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "unmoderated"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "status"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "commentSlugId",
+                                            "createdAt",
+                                            "updatedAt",
+                                            "comment",
+                                            "numLikes",
+                                            "numDislikes",
+                                            "username",
+                                            "moderation"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/comment/fetch-hidden-comments": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1196,6 +1910,75 @@
                                             "username": {
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "moderation": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "moderated"
+                                                                ]
+                                                            },
+                                                            "action": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "lock",
+                                                                    "hide"
+                                                                ]
+                                                            },
+                                                            "reason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "misleading",
+                                                                    "antisocial",
+                                                                    "illegal",
+                                                                    "doxing",
+                                                                    "sexual",
+                                                                    "spam"
+                                                                ]
+                                                            },
+                                                            "explanation": {
+                                                                "type": "string",
+                                                                "maxLength": 260
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updatedAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "status",
+                                                            "action",
+                                                            "reason",
+                                                            "explanation",
+                                                            "createdAt",
+                                                            "updatedAt"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "unmoderated"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "status"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                ]
                                             }
                                         },
                                         "required": [
@@ -1205,7 +1988,8 @@
                                             "comment",
                                             "numLikes",
                                             "numDislikes",
-                                            "username"
+                                            "username",
+                                            "moderation"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -1346,9 +2130,6 @@
                                                             "type": "string",
                                                             "maxLength": 10
                                                         },
-                                                        "isHidden": {
-                                                            "type": "boolean"
-                                                        },
                                                         "createdAt": {
                                                             "type": "string",
                                                             "format": "date-time"
@@ -1369,19 +2150,83 @@
                                                             "type": "string",
                                                             "pattern": "^[a-z0-9_]*$"
                                                         },
-                                                        "authorImagePath": {
-                                                            "type": "string",
-                                                            "format": "uri"
+                                                        "moderation": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "moderated"
+                                                                            ]
+                                                                        },
+                                                                        "action": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "lock"
+                                                                            ]
+                                                                        },
+                                                                        "reason": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "misleading",
+                                                                                "antisocial",
+                                                                                "illegal",
+                                                                                "doxing",
+                                                                                "sexual",
+                                                                                "spam"
+                                                                            ]
+                                                                        },
+                                                                        "explanation": {
+                                                                            "type": "string",
+                                                                            "maxLength": 260
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "format": "date-time"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "format": "date-time"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "status",
+                                                                        "action",
+                                                                        "reason",
+                                                                        "explanation",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "unmoderated"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "status"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
                                                         "postSlugId",
-                                                        "isHidden",
                                                         "createdAt",
                                                         "updatedAt",
                                                         "lastReactedAt",
                                                         "commentCount",
-                                                        "authorUsername"
+                                                        "authorUsername",
+                                                        "moderation"
                                                     ],
                                                     "additionalProperties": false
                                                 },

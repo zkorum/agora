@@ -25,6 +25,7 @@
         <ZKButton
           label="Login with my phone number"
           color="secondary"
+          text-color="primary"
           @click="goToPhoneLogin()"
         />
       </template>

@@ -5,7 +5,7 @@
         <ZKEditor
           :key="resetKey"
           v-model="commentText"
-          placeholder="Add a comment"
+          placeholder="Add your own opinion"
           :min-height="innerFocus ? '6rem' : '2rem'"
           :focus-editor="showControls"
           :show-toolbar="innerFocus || showControls"
@@ -25,11 +25,16 @@
 
           <q-separator vertical inset />
 
-          <ZKButton label="Cancel" color="secondary" @click="cancelClicked()" />
+          <ZKButton
+            label="Cancel"
+            color="white"
+            text-color="primary"
+            @click="cancelClicked()"
+          />
           <ZKButton
             label="Post"
             color="primary"
-            :disable="characterProgress > 100"
+            :disable="characterProgress > 100 || characterProgress == 0"
             @click="postClicked()"
           />
         </div>
@@ -100,7 +105,7 @@ function cancelClicked() {
 
 async function postClicked() {
   const response = await createNewComment(commentText.value, props.postSlugId);
-  if (response != null) {
+  if (response) {
     emit("submittedComment", {});
     innerFocus.value = false;
     resetKey.value = resetKey.value + 1;

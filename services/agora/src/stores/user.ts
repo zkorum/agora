@@ -53,27 +53,43 @@ export const useUserStore = defineStore("user", () => {
   async function loadMoreUserPosts() {
     let lastPostSlugId: undefined | string = undefined;
     if (profileData.value.userPostList.length > 0) {
-      lastPostSlugId =
-        profileData.value.userPostList.at(-1).metadata.postSlugId;
+      const lastPostItem = profileData.value.userPostList.at(-1);
+      if (lastPostItem) {
+        lastPostSlugId = lastPostItem.metadata.postSlugId;
+      } else {
+        console.log(
+          "Error failed to fetch the last post item from the existing list"
+        );
+      }
     }
 
     const userPosts = await fetchUserPosts(lastPostSlugId);
-    profileData.value.userPostList.push(...userPosts);
-
-    return { reachedEndOfFeed: userPosts.length == 0 };
+    if (userPosts) {
+      profileData.value.userPostList.push(...userPosts);
+      return { reachedEndOfFeed: userPosts.length == 0 };
+    } else {
+      return { reachedEndOfFeed: true };
+    }
   }
 
   async function loadMoreUserComments() {
     let lastCommentSlugId: undefined | string = undefined;
     if (profileData.value.userCommentList.length > 0) {
-      lastCommentSlugId =
-        profileData.value.userCommentList.at(-1).commentItem.commentSlugId;
+      const lastCommentItem = profileData.value.userCommentList.at(-1);
+      if (lastCommentItem) {
+        lastCommentSlugId = lastCommentItem.commentItem.commentSlugId;
+      } else {
+        console.log("Failed to fetch the last comment item from the list");
+      }
     }
 
     const userComments = await fetchUserComments(lastCommentSlugId);
-    profileData.value.userCommentList.push(...userComments);
-
-    return { reachedEndOfFeed: userComments.length == 0 };
+    if (userComments) {
+      profileData.value.userCommentList.push(...userComments);
+      return { reachedEndOfFeed: userComments.length == 0 };
+    } else {
+      return { reachedEndOfFeed: true };
+    }
   }
 
   return {

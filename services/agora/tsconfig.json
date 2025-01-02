@@ -1,3 +1,9 @@
 {
-  "extends": "./.quasar/tsconfig.json"
+  "extends": "./.quasar/tsconfig.json",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true
+  }
 }

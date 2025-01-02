@@ -5,9 +5,28 @@ import {
     MAX_LENGTH_OPTION,
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
+    MAX_LENGTH_BODY,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
+export const zodReportReason = z.enum([
+    "misleading",
+    "antisocial",
+    "illegal",
+    "doxing",
+    "sexual",
+    "spam",
+]);
+export const zodModerationReason = z.enum([
+    "misleading",
+    "antisocial",
+    "illegal",
+    "doxing",
+    "sexual",
+    "spam",
+]);
+export const zodModerationActionPosts = z.enum(["lock"]);
+export const zodModerationActionComments = z.enum(["lock", "hide"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -43,6 +62,7 @@ export const zodDidWeb = z
             message: "Please use a valid DID formatted `did:web:...`",
         },
     );
+export const zodModerationExplanation = z.string().max(MAX_LENGTH_BODY);
 export const zodCode = z.coerce.number().min(0).max(999999);
 export const zodDigit = z.coerce.number().int().nonnegative().lte(9);
 export const zodUserId = z.string().uuid().min(1);
@@ -79,6 +99,7 @@ export const zodPollResponse = z
     .strict();
 export const zodSlugId = z.string().max(10);
 export const zodCommentCount = z.number().int().nonnegative();
+export const zodCommentFeedFilter = z.enum(["moderated", "new"]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
@@ -100,16 +121,52 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
+export type moderationStatusOptionsType = "moderated" | "unmoderated";
+export const zodModerationPropertiesPosts = z.discriminatedUnion("status", [
+    z
+        .object({
+            status: z.literal("moderated"),
+            action: zodModerationActionPosts,
+            reason: zodModerationReason,
+            explanation: zodModerationExplanation,
+            createdAt: z.date(),
+            updatedAt: z.date(),
+        })
+        .strict(),
+    z
+        .object({
+            status: z.literal("unmoderated"),
+        })
+        .strict(),
+]);
+
+export const zodModerationPropertiesComments = z.discriminatedUnion("status", [
+    z
+        .object({
+            status: z.literal("moderated"),
+            action: zodModerationActionComments,
+            reason: zodModerationReason,
+            explanation: zodModerationExplanation,
+            createdAt: z.date(),
+            updatedAt: z.date(),
+        })
+        .strict(),
+    z
+        .object({
+            status: z.literal("unmoderated"),
+        })
+        .strict(),
+]);
+
 export const zodPostMetadata = z
     .object({
         postSlugId: zodSlugId,
-        isHidden: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         lastReactedAt: z.date(),
         commentCount: zodCommentCount,
         authorUsername: zodUsername,
-        authorImagePath: z.string().url({ message: "Invalid url" }).optional(), // TODO: check if it accepts path segments for local dev
+        moderation: zodModerationPropertiesPosts,
     })
     .strict();
 export const zodCommentContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
@@ -122,6 +179,7 @@ export const zodCommentItem = z
         numLikes: z.number().int().nonnegative(),
         numDislikes: z.number().int().nonnegative(),
         username: zodUsername,
+        moderation: zodModerationPropertiesComments,
     })
     .strict();
 export const zodUserInteraction = z
@@ -143,29 +201,6 @@ export const zodExtendedCommentData = z
         commentItem: zodCommentItem,
     })
     .strict();
-export const zodReportReason = z.union([
-    z.literal("off-topic"),
-    z.literal("spam"),
-    z.literal("misleading"),
-    z.literal("privacy"),
-    z.literal("sexual"),
-    z.literal("toxic"),
-    z.literal("illegal"),
-]);
-export const zodModerationReason = z.union([
-    z.literal("off-topic"),
-    z.literal("spam"),
-    z.literal("misleading"),
-    z.literal("privacy"),
-    z.literal("sexual"),
-    z.literal("toxic"),
-    z.literal("illegal"),
-    z.literal("nothing"),
-]);
-export const zodModerationAction = z.union([
-    z.literal("hide"),
-    z.literal("nothing"),
-]);
 export const zodVotingOption = z.enum(["like", "dislike"]);
 export const zodVotingAction = z.enum(["like", "dislike", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
@@ -454,4 +489,14 @@ export type PollList = z.infer<typeof zodPollList>;
 export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
 export type ModerationReason = z.infer<typeof zodModerationReason>;
-export type ModerationAction = z.infer<typeof zodModerationAction>;
+export type ModerationActionPosts = z.infer<typeof zodModerationActionPosts>;
+export type ModerationActionComments = z.infer<
+    typeof zodModerationActionComments
+>;
+export type ModerationPropertiesPosts = z.infer<
+    typeof zodModerationPropertiesPosts
+>;
+export type ModerationPropertiesComments = z.infer<
+    typeof zodModerationPropertiesComments
+>;
+export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;

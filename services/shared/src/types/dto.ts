@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-extraneous-class */
 import { z } from "zod";
 import {
     zodExtendedPostData,
@@ -14,13 +15,16 @@ import {
     zodPollResponse,
     zodPhoneNumber,
     zodExtendedCommentData,
-    zodModerationAction,
     zodModerationReason,
+    zodModerationExplanation,
+    zodModerationActionPosts,
+    zodModerationActionComments,
+    zodModerationPropertiesPosts,
+    zodModerationPropertiesComments,
+    zodCommentFeedFilter,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
-import { MAX_LENGTH_BODY } from "../shared.js";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static authenticateCheckLoginStatus = z.object({}).strict();
     static authenticateRequestBody = z
@@ -87,7 +91,6 @@ export class Dto {
         .optional();
     static fetchFeedRequest = z
         .object({
-            showHidden: z.boolean(),
             lastSlugId: z.string().optional(),
             isAuthenticatedRequest: z.boolean(),
         })
@@ -111,9 +114,17 @@ export class Dto {
         .object({
             postSlugId: zodSlugId, // z.object() does not exist :(
             createdAt: z.string().datetime().optional(),
+            filter: zodCommentFeedFilter,
         })
         .strict();
     static fetchCommentFeedResponse = z.array(zodCommentItem);
+    static fetchHiddenCommentRequest = z
+        .object({
+            postSlugId: zodSlugId, // z.object() does not exist :(
+            createdAt: z.string().datetime().optional(),
+        })
+        .strict();
+    static fetchHiddenCommentResponse = z.array(zodCommentItem);
     static createNewPostRequest = z
         .object({
             postTitle: zodPostTitle,
@@ -141,9 +152,20 @@ export class Dto {
             commentBody: z.string(),
         })
         .strict();
-    static createCommentResponse = z
-        .object({ commentSlugId: z.string() })
-        .strict();
+    static createCommentResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                commentSlugId: z.string(),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum(["post_locked"]),
+            })
+            .strict(),
+    ]);
     static submitPollResponseRequest = z
         .object({
             voteOptionChoice: z.number(),
@@ -171,6 +193,7 @@ export class Dto {
             chosenOption: zodVotingAction,
         })
         .strict();
+    static castVoteForCommentResponse = z.boolean();
     static fetchUserProfileResponse = z
         .object({
             activePostCount: z.number().gte(0),
@@ -225,10 +248,36 @@ export class Dto {
         .object({
             postSlugId: zodSlugId,
             moderationReason: zodModerationReason,
-            moderationAction: zodModerationAction,
-            moderationExplanation: z.string().max(MAX_LENGTH_BODY),
+            moderationAction: zodModerationActionPosts,
+            moderationExplanation: zodModerationExplanation,
         })
         .strict();
+    static moderateReportCommentRequest = z
+        .object({
+            commentSlugId: zodSlugId,
+            moderationReason: zodModerationReason,
+            moderationAction: zodModerationActionComments,
+            moderationExplanation: zodModerationExplanation,
+        })
+        .strict();
+    static moderateCancelPostReportRequest = z
+        .object({
+            postSlugId: zodSlugId,
+        })
+        .strict();
+    static moderateCancelCommentReportRequest = z
+        .object({
+            commentSlugId: zodSlugId,
+        })
+        .strict();
+    static fetchPostModerationRequest = z.object({
+        postSlugId: zodSlugId,
+    });
+    static fetchPostModerationResponse = zodModerationPropertiesPosts;
+    static fetchCommentModerationRequest = z.object({
+        commentSlugId: zodSlugId,
+    });
+    static fetchCommentModerationResponse = zodModerationPropertiesComments;
     static checkUsernameInUseRequest = z
         .object({
             username: zodUsername,

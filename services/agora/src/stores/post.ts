@@ -82,14 +82,15 @@ export const usePostStore = defineStore("post", () => {
 
   const emptyPost: DummyPostDataFormat = {
     metadata: {
-      isHidden: false,
       createdAt: new Date(),
       commentCount: 0,
       authorUsername: "",
       lastReactedAt: new Date(),
       postSlugId: "",
       updatedAt: new Date(),
-      authorImagePath: "",
+      moderation: {
+        status: "unmoderated",
+      },
     },
     payload: {
       title: "",

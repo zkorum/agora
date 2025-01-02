@@ -62,7 +62,6 @@ export async function createNewPost({
                     slugId: postSlugId,
                     commentCount: 0,
                     currentContentId: null,
-                    isHidden: false,
                     lastReactedAt: new Date(),
                 })
                 .returning({ postId: postTable.id });
@@ -164,6 +163,7 @@ export async function fetchPostBySlugId({
             enableCompactBody: false,
             fetchPollResponse: fetchPollResponse,
             userId: userId,
+            excludeLockedPosts: false,
         });
 
         if (postData.length == 1) {

@@ -1,10 +1,12 @@
 <template>
   <div class="container">
     <div v-if="hasExistingReport" class="title">
-      Modify the existing post report
+      Modify the existing comment report
     </div>
 
-    <div v-if="!hasExistingReport" class="title">Submit a new post report</div>
+    <div v-if="!hasExistingReport" class="title">
+      Submit a new comment report
+    </div>
 
     <q-select
       v-model="moderationAction"
@@ -44,26 +46,28 @@ import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
-  ModerationActionPosts,
+  ModerationActionComments,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
-  moderationActionPostsMapping,
+  moderationActionCommentsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderation";
-import { usePostStore } from "src/stores/post";
 
-const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
-  useBackendModerateApi();
+const {
+  moderateComment,
+  fetchCommentModeration,
+  cancelModerationCommentReport,
+} = useBackendModerateApi();
 
 const route = useRoute();
 
-const { loadPostData } = usePostStore();
-
 const DEFAULT_MODERATION_ACTION = "lock";
-const moderationAction = ref<ModerationActionPosts>(DEFAULT_MODERATION_ACTION);
-const actionMapping = ref(moderationActionPostsMapping);
+const moderationAction = ref<ModerationActionComments>(
+  DEFAULT_MODERATION_ACTION
+);
+const actionMapping = ref(moderationActionCommentsMapping);
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
@@ -73,9 +77,9 @@ const moderationExplanation = ref("");
 
 const hasExistingReport = ref(false);
 
-let postSlugId: string | null = null;
-if (typeof route.params.postSlugId == "string") {
-  postSlugId = route.params.postSlugId;
+let commentSlugId: string | null = null;
+if (typeof route.params.commentSlugId == "string") {
+  commentSlugId = route.params.commentSlugId;
 }
 
 onMounted(async () => {
@@ -83,8 +87,8 @@ onMounted(async () => {
 });
 
 async function initializeData() {
-  if (postSlugId != null) {
-    const response = await fetchPostModeration(postSlugId);
+  if (commentSlugId != null) {
+    const response = await fetchCommentModeration(commentSlugId);
     hasExistingReport.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;
@@ -96,34 +100,27 @@ async function initializeData() {
       moderationReason.value = DEFAULT_MODERATION_REASON;
     }
   } else {
-    console.log("Missing post slug ID");
+    console.log("Missing comment slug ID");
   }
 }
 
 async function clickedCancel() {
-  if (postSlugId) {
-    const isSuccessful = await cancelModerationPostReport(postSlugId);
-    if (isSuccessful) {
-      initializeData();
-      loadPostData(false);
-    }
+  if (commentSlugId) {
+    await cancelModerationCommentReport(commentSlugId);
+    initializeData();
   } else {
     console.log("Missing comment slug ID");
   }
 }
 
 async function clickedSubmit() {
-  if (postSlugId) {
-    const isSuccessful = await moderatePost(
-      postSlugId,
+  if (commentSlugId) {
+    await moderateComment(
+      commentSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
-
-    if (isSuccessful) {
-      loadPostData(false);
-    }
   }
 }
 </script>

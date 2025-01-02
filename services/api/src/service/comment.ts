@@ -5,16 +5,18 @@ import {
     commentProofTable,
     postTable,
     userTable,
+    moderationCommentsTable,
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and } from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type { CommentItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
 import { MAX_LENGTH_COMMENT } from "@/shared/shared.js";
 import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
+import { createCommentModerationPropertyObject } from "./moderation.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -42,11 +44,37 @@ export async function getCommentSlugIdLastCreatedAt({
     return lastCreatedAt;
 }
 
-export async function fetchCommentsByPostSlugId(
-    db: PostgresJsDatabase,
-    postSlugId: SlugId,
-): Promise<CommentItem[]> {
+interface FetchCommentsByPostSlugIdProps {
+    db: PostgresJsDatabase;
+    postSlugId: SlugId;
+    fetchTarget: "moderated" | "new" | "hidden";
+}
+
+export async function fetchCommentsByPostSlugId({
+    db,
+    postSlugId,
+    fetchTarget,
+}: FetchCommentsByPostSlugIdProps): Promise<CommentItem[]> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
+
+    let whereClause: SQL | undefined = eq(commentTable.postId, postId);
+
+    if (fetchTarget == "moderated") {
+        whereClause = and(
+            whereClause,
+            ne(moderationCommentsTable.moderationAction, "hide"),
+            isNotNull(moderationCommentsTable.id),
+        );
+    } else if (fetchTarget == "new") {
+        whereClause = and(whereClause, isNull(moderationCommentsTable.id));
+    } else {
+        whereClause = and(
+            whereClause,
+            eq(moderationCommentsTable.moderationAction, "hide"),
+            isNotNull(moderationCommentsTable.id),
+        );
+    }
+
     const results = await db
         .select({
             // comment payload
@@ -57,6 +85,12 @@ export async function fetchCommentsByPostSlugId(
             numLikes: commentTable.numLikes,
             numDislikes: commentTable.numDislikes,
             username: userTable.username,
+            moderationAction: moderationCommentsTable.moderationAction,
+            moderationExplanation:
+                moderationCommentsTable.moderationExplanation,
+            moderationReason: moderationCommentsTable.moderationReason,
+            moderationCreatedAt: moderationCommentsTable.createdAt,
+            moderationUpdatedAt: moderationCommentsTable.updatedAt,
         })
         .from(commentTable)
         .innerJoin(postTable, eq(postTable.id, postId))
@@ -64,12 +98,24 @@ export async function fetchCommentsByPostSlugId(
             commentContentTable,
             eq(commentContentTable.id, commentTable.currentContentId),
         )
+        .leftJoin(
+            moderationCommentsTable,
+            eq(moderationCommentsTable.commentId, commentTable.id),
+        )
         .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
         .orderBy(desc(commentTable.createdAt))
-        .where(eq(commentTable.postId, postId));
+        .where(whereClause);
 
     const commentItemList: CommentItem[] = [];
     results.map((commentResponse) => {
+        const moderationProperties = createCommentModerationPropertyObject(
+            commentResponse.moderationAction,
+            commentResponse.moderationExplanation,
+            commentResponse.moderationReason,
+            commentResponse.moderationCreatedAt,
+            commentResponse.moderationUpdatedAt,
+        );
+
         const item: CommentItem = {
             comment: commentResponse.comment,
             commentSlugId: commentResponse.commentSlugId,
@@ -78,98 +124,11 @@ export async function fetchCommentsByPostSlugId(
             numLikes: commentResponse.numLikes,
             updatedAt: commentResponse.updatedAt,
             username: commentResponse.username,
+            moderation: moderationProperties,
         };
         commentItemList.push(item);
     });
     return commentItemList;
-
-    /*
-    const actualLimit = limit ?? 30;
-    const whereCreatedAt =
-        createdAt === undefined
-            ? eq(postTable.slugId, postSlugId)
-            : order === "more"
-                ? and(
-                    eq(postTable.slugId, postSlugId),
-                    gt(commentTable.createdAt, createdAt)
-                )
-                : and(
-                    eq(postTable.slugId, postSlugId),
-                    lt(commentTable.createdAt, createdAt)
-                );
-    if (userId === undefined) {
-        const results = await db
-            .selectDistinctOn([commentTable.createdAt, commentTable.id], {
-                // comment payload
-                commentSlugId: commentTable.slugId,
-                isHidden: commentTable.isHidden,
-                createdAt: commentTable.createdAt,
-                updatedAt: commentTable.updatedAt,
-                comment: commentContentTable.content,
-                numLikes: commentTable.numLikes,
-                numDislikes: commentTable.numDislikes,
-            })
-            .from(commentTable)
-            .innerJoin(
-                postTable,
-                eq(postTable.id, commentTable.postId)
-            )
-            .innerJoin(
-                commentContentTable,
-                eq(commentContentTable.id, commentTable.currentContentId)
-            )
-            .orderBy(asc(commentTable.createdAt), desc(commentTable.id))
-            .limit(actualLimit)
-            .where(
-                showHidden === true
-                    ? whereCreatedAt
-                    : and(whereCreatedAt, eq(commentTable.isHidden, false))
-            );
-        return results;
-    } else {
-        const results = await db
-            .selectDistinctOn([commentTable.createdAt, commentTable.id], {
-                commentSlugId: commentTable.slugId,
-                isHidden: commentTable.isHidden,
-                createdAt: commentTable.createdAt,
-                updatedAt: commentTable.updatedAt,
-                comment: commentContentTable.content,
-                numLikes: commentTable.numLikes,
-                numDislikes: commentTable.numDislikes,
-                optionChosen: voteContentTable.optionChosen,
-            })
-            .from(commentTable)
-            .innerJoin(
-                postTable,
-                eq(postTable.id, commentTable.postId)
-            )
-            .innerJoin(
-                commentContentTable,
-                eq(commentContentTable.id, commentTable.currentContentId)
-            )
-            .leftJoin(voteTable, and(eq(voteTable.authorId, userId), eq(voteTable.commentId, commentTable.id)))
-            .leftJoin(voteContentTable, eq(voteContentTable.id, voteTable.currentContentId))
-            .orderBy(asc(commentTable.createdAt), desc(commentTable.id))
-            .limit(actualLimit)
-            .where(
-                showHidden === true
-                    ? whereCreatedAt
-                    : and(whereCreatedAt, eq(commentTable.isHidden, false))
-            );
-        return results.map((result) => {
-            return {
-                commentSlugId: result.commentSlugId,
-                isHidden: result.isHidden,
-                createdAt: result.createdAt,
-                updatedAt: result.updatedAt,
-                comment: result.comment,
-                numLikes: result.numLikes,
-                numDislikes: result.numDislikes,
-                optionChosen: toUnionUndefined(result.optionChosen),
-            };
-        });
-    }
-    */
 }
 
 async function getPostIdFromPostSlugId(
@@ -211,6 +170,18 @@ export async function postNewComment({
     authHeader,
     httpErrors,
 }: PostNewCommentProps): Promise<CreateCommentResponse> {
+    const isLocked = await useCommonPost().isPostSlugIdLocked({
+        postSlugId: postSlugId,
+        db: db,
+    });
+
+    if (isLocked) {
+        return {
+            success: false,
+            reason: "post_locked",
+        };
+    }
+
     try {
         commentBody = sanitizeHtmlBody(commentBody, MAX_LENGTH_COMMENT);
     } catch (error) {
@@ -238,7 +209,6 @@ export async function postNewComment({
                 slugId: commentSlugId,
                 authorId: userId,
                 currentContentId: null,
-                isHidden: false,
                 postId: postId,
             })
             .returning({ commentId: commentTable.id });
@@ -297,6 +267,7 @@ export async function postNewComment({
     });
 
     return {
+        success: true,
         commentSlugId: commentSlugId,
     };
 }

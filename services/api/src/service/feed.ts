@@ -1,6 +1,6 @@
 import { postTable } from "@/schema.js";
 import type { ExtendedPost } from "@/shared/types/zod.js";
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, lt, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import type { FetchFeedResponse } from "@/shared/types/dto.js";
@@ -35,7 +35,6 @@ interface FetchFeedProps {
     db: PostgresDatabase;
     lastSlugId: string | undefined;
     limit?: number;
-    showHidden?: boolean;
     fetchPollResponse: boolean;
     userId?: string;
 }
@@ -44,7 +43,6 @@ export async function fetchFeed({
     db,
     lastSlugId,
     limit,
-    showHidden,
     fetchPollResponse,
     userId,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
@@ -56,7 +54,7 @@ export async function fetchFeed({
         db: db,
     });
 
-    let whereClause = showHidden ? undefined : eq(postTable.isHidden, false);
+    let whereClause: SQL | undefined = undefined;
     if (lastSlugId) {
         whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
     }
@@ -70,6 +68,7 @@ export async function fetchFeed({
         enableCompactBody: true,
         fetchPollResponse: fetchPollResponse,
         userId: userId,
+        excludeLockedPosts: true,
     });
 
     let reachedEndOfFeed = true;
