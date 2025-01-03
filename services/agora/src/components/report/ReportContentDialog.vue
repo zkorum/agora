@@ -43,7 +43,7 @@
             :maxlength="MAX_LENGTH_USER_REPORT_EXPLANATION"
             outlined
             autogrow
-            label="Enter reason"
+            label="Add explanation"
           />
         </div>
 
