@@ -28,7 +28,7 @@
           <div>
             {{ option }}
             <span v-if="votedByUser">
-              <q-icon name="mdi-check-circle" color="secondary" size="1rem" />
+              <q-icon name="mdi-check-circle" color="black" size="1rem" />
             </span>
           </div>
           <div>{{ optionPercentage }}%</div>
