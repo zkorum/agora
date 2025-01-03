@@ -58,8 +58,8 @@
   </div>
 
   <q-dialog v-model="showReportDialog">
-    <ReportPostDialog
-      :post-slug-id="props.postSlugId"
+    <ReportContentDialog
+      :slug-id="props.postSlugId"
       report-type="conversation"
       @close="showReportDialog = false"
     />
@@ -75,7 +75,7 @@ import Tag from "primevue/tag";
 import { formatTimeAgo } from "@vueuse/core";
 import { getDateString } from "src/utils/common";
 import { ref } from "vue";
-import ReportPostDialog from "src/components/report/ReportPostDialog.vue";
+import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 
 const props = defineProps<{
   posterUserName: string;

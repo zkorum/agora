@@ -37,7 +37,8 @@ export const useBottomSheet = () => {
   function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
-    deleteCommentCallback: (deleted: boolean) => void
+    deleteCommentCallback: (deleted: boolean) => void,
+    reportCommentHandler: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -72,7 +73,7 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
-          // FIX LATER
+          reportCommentHandler();
         } else if (action.id == "delete") {
           const response = await deleteCommentBySlugId(commentSlugId);
           if (response) {

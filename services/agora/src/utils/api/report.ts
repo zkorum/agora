@@ -35,7 +35,10 @@ export function useBackendReportApi() {
       const params: ApiV1ReportSubmitReportByPostSlugIdPostRequest = {
         postSlugId: postSlugId,
         reportReason: userReportReason,
-        reportExplanation: userReportExplanation,
+        reportExplanation:
+          userReportExplanation?.length == 0
+            ? undefined
+            : userReportExplanation,
       };
 
       const { url, options } =
@@ -63,14 +66,17 @@ export function useBackendReportApi() {
 
   async function createUserReportByCommentSlugId(
     commentSlugId: string,
-    reportReason: UserReportReason,
-    reportExplanation: UserReportExplanation
+    userReportReason: UserReportReason,
+    userReportExplanation: UserReportExplanation
   ) {
     try {
       const params: ApiV1ReportSubmitReportByCommentSlugIdPostRequest = {
         commentSlugId: commentSlugId,
-        reportReason: reportReason,
-        reportExplanation: reportExplanation,
+        reportReason: userReportReason,
+        reportExplanation:
+          userReportExplanation?.length == 0
+            ? undefined
+            : userReportExplanation,
       };
 
       const { url, options } =

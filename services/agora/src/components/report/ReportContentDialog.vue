@@ -34,7 +34,7 @@
         <div class="title">Thanks for your feedback!</div>
 
         <div>
-          Why are you flagging this conversation as {{ selectedReason }}?
+          Why are you flagging this {{ reportType }} as {{ selectedReason }}?
         </div>
 
         <div>
@@ -83,7 +83,7 @@ import { useBackendReportApi } from "src/utils/api/report";
 
 const props = defineProps<{
   reportType: "conversation" | "opinion";
-  postSlugId: string;
+  slugId: string;
 }>();
 
 const emit = defineEmits(["close"]);
@@ -93,7 +93,8 @@ const selectedReason = ref<UserReportReason>();
 
 const enabledSkip = ref(false);
 
-const { createUserReportByPostSlugId } = useBackendReportApi();
+const { createUserReportByPostSlugId, createUserReportByCommentSlugId } =
+  useBackendReportApi();
 
 function clickedSkipExplanationButton() {
   explanation.value = "";
@@ -102,14 +103,26 @@ function clickedSkipExplanationButton() {
 
 async function clickedSubmitButton() {
   if (selectedReason.value) {
-    const isSuccessful = await createUserReportByPostSlugId(
-      props.postSlugId,
-      selectedReason.value,
-      explanation.value
-    );
+    if (props.reportType == "conversation") {
+      const isSuccessful = await createUserReportByPostSlugId(
+        props.slugId,
+        selectedReason.value,
+        explanation.value
+      );
 
-    if (isSuccessful) {
-      emit("close");
+      if (isSuccessful) {
+        emit("close");
+      }
+    } else {
+      const isSuccessful = await createUserReportByCommentSlugId(
+        props.slugId,
+        selectedReason.value,
+        explanation.value
+      );
+
+      if (isSuccessful) {
+        emit("close");
+      }
     }
   }
 }
