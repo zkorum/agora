@@ -60,6 +60,7 @@
   <q-dialog v-model="showReportDialog">
     <ReportPostDialog
       :post-slug-id="props.postSlugId"
+      report-type="conversation"
       @close="showReportDialog = false"
     />
   </q-dialog>

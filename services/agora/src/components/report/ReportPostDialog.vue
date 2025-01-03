@@ -1,7 +1,12 @@
 <template>
   <div class="card">
     <div v-if="!selectedReason" class="container">
-      <div class="title">Please select a report reason:</div>
+      <div class="title">Submit a report</div>
+
+      <div>
+        Thank you for helping us improve the community. What is the problem with
+        this {{ reportType }}?
+      </div>
 
       <div class="reportReasonsFlex">
         <div
@@ -9,13 +14,17 @@
           :key="reason.value"
           @click="selectedReason = reason.value"
         >
-          <ZKButton
-            :label="reason.label"
-            :color="selectedReason == reason.value ? 'primary' : 'secondary'"
-            :text-color="
-              selectedReason == reason.value ? 'secondary' : 'primary'
-            "
-          />
+          <ZKButton color="button-background-color" text-color="black">
+            <div class="iconLayout">
+              <div>
+                <q-icon :name="reason.icon" />
+              </div>
+
+              <div>
+                {{ reason.label }}
+              </div>
+            </div>
+          </ZKButton>
         </div>
       </div>
     </div>
@@ -73,6 +82,7 @@ import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
 import { useBackendReportApi } from "src/utils/api/report";
 
 const props = defineProps<{
+  reportType: "conversation" | "opinion";
   postSlugId: string;
 }>();
 
@@ -110,7 +120,7 @@ async function clickedSubmitButton() {
   width: calc(min(30rem, 100vw) - 5rem);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
   padding: 2rem;
 }
 
@@ -122,8 +132,8 @@ async function clickedSubmitButton() {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: start;
-  gap: 1rem;
+  justify-content: center;
+  gap: 1.5rem;
 }
 
 .submitButtons {
@@ -145,5 +155,15 @@ async function clickedSubmitButton() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.iconLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  min-width: 5rem;
 }
 </style>
