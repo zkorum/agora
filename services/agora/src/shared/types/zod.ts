@@ -133,6 +133,7 @@ export const zodUserReportItem = z.object({
     reason: zodUserReportReason,
     explanation: zodUserReportExplanation.optional(),
     createdAt: z.date(),
+    id: z.number(),
 });
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";

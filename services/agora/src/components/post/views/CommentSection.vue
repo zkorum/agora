@@ -106,7 +106,7 @@ function initializeModeratorMenu() {
   if (profileData.value.isModerator) {
     filterOptions.value = baseFilters.concat([
       {
-        name: "Hidden",
+        name: "⚔️ Hidden",
         value: "hidden",
       },
     ]);

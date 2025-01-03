@@ -22,6 +22,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import type { CommentItem } from "src/shared/types/zod";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const emit = defineEmits(["deleted"]);
 
@@ -33,8 +34,17 @@ const { showCommentOptionSelector } = useBottomSheet();
 
 const showReportDialog = ref(false);
 
+const router = useRouter();
+
 function reportContentCallback() {
   showReportDialog.value = true;
+}
+
+function openUserReportsCallback() {
+  router.push({
+    name: "user-report-viewer",
+    params: { reportType: "comment", slugId: props.commentItem.commentSlugId },
+  });
 }
 
 function optionButtonClicked() {
@@ -48,7 +58,8 @@ function optionButtonClicked() {
     props.commentItem.commentSlugId,
     props.commentItem.username,
     deleteCommentCallback,
-    reportContentCallback
+    reportContentCallback,
+    openUserReportsCallback
   );
 }
 </script>

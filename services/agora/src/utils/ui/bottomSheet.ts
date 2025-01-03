@@ -38,7 +38,8 @@ export const useBottomSheet = () => {
     commentSlugId: string,
     posterUserName: string,
     deleteCommentCallback: (deleted: boolean) => void,
-    reportCommentHandler: () => void
+    reportCommentCallback: () => void,
+    openUserReportsCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -62,6 +63,12 @@ export const useBottomSheet = () => {
         icon: "mdi-sword",
         id: "moderate",
       });
+
+      actionList.push({
+        label: "User Reports",
+        icon: "mdi-sword",
+        id: "userReports",
+      });
     }
 
     quasar
@@ -73,7 +80,7 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
-          reportCommentHandler();
+          reportCommentCallback();
         } else if (action.id == "delete") {
           const response = await deleteCommentBySlugId(commentSlugId);
           if (response) {
@@ -87,6 +94,8 @@ export const useBottomSheet = () => {
             name: "moderate-comment-page",
             params: { commentSlugId: commentSlugId },
           });
+        } else if (action.id == "userReports") {
+          openUserReportsCallback();
         }
       })
       .onCancel(() => {
@@ -100,7 +109,8 @@ export const useBottomSheet = () => {
   function showPostOptionSelector(
     postSlugId: string,
     posterUserName: string,
-    reportPostHandler: () => void
+    reportPostCallback: () => void,
+    openUserReportsCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -124,6 +134,12 @@ export const useBottomSheet = () => {
         icon: "mdi-sword",
         id: "moderate",
       });
+
+      actionList.push({
+        label: "User Reports",
+        icon: "mdi-sword",
+        id: "userReports",
+      });
     }
 
     quasar
@@ -135,7 +151,7 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         if (action.id == "report") {
           if (isAuthenticated.value) {
-            reportPostHandler();
+            reportPostCallback();
           } else {
             showLoginConfirmationDialog();
           }
@@ -154,6 +170,8 @@ export const useBottomSheet = () => {
             name: "moderate-post-page",
             params: { postSlugId: postSlugId },
           });
+        } else if (action.id == "userReports") {
+          openUserReportsCallback();
         }
       })
       .onCancel(() => {

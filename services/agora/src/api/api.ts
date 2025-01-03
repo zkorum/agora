@@ -1261,6 +1261,12 @@ export interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner {
      * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
      */
     'createdAt': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     */
+    'id': number;
 }
 
 export const ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum = {

@@ -1268,7 +1268,7 @@ server.after(() => {
                     );
                 }
 
-                await fetchUserReportsByPostSlugId({
+                return await fetchUserReportsByPostSlugId({
                     db: db,
                     postSlugId: request.body.postSlugId,
                 });
@@ -1305,7 +1305,7 @@ server.after(() => {
                     );
                 }
 
-                await fetchUserReportsByCommentSlugId({
+                return await fetchUserReportsByCommentSlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                 });

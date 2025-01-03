@@ -13,7 +13,7 @@ import {
     reportPostsTable,
     userTable,
 } from "@/schema.js";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { FetchUserReportsByPostSlugIdResponse } from "@/shared/types/dto.js";
 
 interface CreateUserReportByPostSlugIdProps {
@@ -89,11 +89,13 @@ export async function fetchUserReportsByPostSlugId({
             reportReason: reportPostsTable.reportReason,
             reportExplanation: reportPostsTable.reportExplanation,
             createdAt: reportPostsTable.createdAt,
+            id: reportPostsTable.id,
         })
         .from(reportPostsTable)
         .innerJoin(postTable, eq(postTable.id, reportPostsTable.postId))
         .innerJoin(userTable, eq(userTable.id, reportPostsTable.reporterId))
-        .where(eq(postTable.slugId, postSlugId));
+        .where(eq(postTable.slugId, postSlugId))
+        .orderBy(desc(reportPostsTable.createdAt));
 
     const userReportItemList: UserReportItem[] = [];
     reportPostsTableResponse.forEach((tableItem) => {
@@ -102,6 +104,7 @@ export async function fetchUserReportsByPostSlugId({
             reason: tableItem.reportReason,
             explanation: tableItem.reportExplanation ?? undefined,
             createdAt: tableItem.createdAt,
+            id: tableItem.id,
         };
         userReportItemList.push(userReportItem);
     });
@@ -124,6 +127,7 @@ export async function fetchUserReportsByCommentSlugId({
             reportReason: reportCommentsTable.reportReason,
             reportExplanation: reportCommentsTable.reportExplanation,
             createdAt: reportCommentsTable.createdAt,
+            id: reportCommentsTable.id,
         })
         .from(reportCommentsTable)
         .innerJoin(
@@ -131,7 +135,8 @@ export async function fetchUserReportsByCommentSlugId({
             eq(commentTable.id, reportCommentsTable.commentId),
         )
         .innerJoin(userTable, eq(userTable.id, reportCommentsTable.reporterId))
-        .where(eq(commentTable.slugId, commentSlugId));
+        .where(eq(commentTable.slugId, commentSlugId))
+        .orderBy(desc(reportCommentsTable.createdAt));
 
     const userReportItemList: UserReportItem[] = [];
     reportCommentsTableResponse.forEach((tableItem) => {
@@ -140,6 +145,7 @@ export async function fetchUserReportsByCommentSlugId({
             reason: tableItem.reportReason,
             explanation: tableItem.reportExplanation ?? undefined,
             createdAt: tableItem.createdAt,
+            id: tableItem.id,
         };
         userReportItemList.push(userReportItem);
     });

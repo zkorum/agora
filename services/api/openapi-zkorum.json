@@ -2671,12 +2671,16 @@
                                             "createdAt": {
                                                 "type": "string",
                                                 "format": "date-time"
+                                            },
+                                            "id": {
+                                                "type": "number"
                                             }
                                         },
                                         "required": [
                                             "username",
                                             "reason",
-                                            "createdAt"
+                                            "createdAt",
+                                            "id"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -2741,12 +2745,16 @@
                                             "createdAt": {
                                                 "type": "string",
                                                 "format": "date-time"
+                                            },
+                                            "id": {
+                                                "type": "number"
                                             }
                                         },
                                         "required": [
                                             "username",
                                             "reason",
-                                            "createdAt"
+                                            "createdAt",
+                                            "id"
                                         ],
                                         "additionalProperties": false
                                     }

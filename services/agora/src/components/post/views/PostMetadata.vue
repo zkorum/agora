@@ -76,6 +76,7 @@ import { formatTimeAgo } from "@vueuse/core";
 import { getDateString } from "src/utils/common";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   posterUserName: string;
@@ -86,6 +87,8 @@ const props = defineProps<{
   postSlugId: string;
 }>();
 
+const router = useRouter();
+
 const { showPostOptionSelector } = useBottomSheet();
 
 const showReportDialog = ref(false);
@@ -94,11 +97,19 @@ function reportContentCallback() {
   showReportDialog.value = true;
 }
 
+function openUserReportsCallback() {
+  router.push({
+    name: "user-report-viewer",
+    params: { reportType: "post", slugId: props.postSlugId },
+  });
+}
+
 function clickedMoreIcon() {
   showPostOptionSelector(
     props.postSlugId,
     props.posterUserName,
-    reportContentCallback
+    reportContentCallback,
+    openUserReportsCallback
   );
 }
 </script>

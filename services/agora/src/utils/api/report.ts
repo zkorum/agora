@@ -104,7 +104,7 @@ export function useBackendReportApi() {
 
   function createInternalUserReportObjectList(
     unparsedUserReportList: ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner[]
-  ): FetchUserReportsByPostSlugIdResponse {
+  ): UserReportItem[] {
     const reportList: UserReportItem[] = [];
     unparsedUserReportList.forEach((report) => {
       const parsedReport: UserReportItem = {
@@ -112,6 +112,7 @@ export function useBackendReportApi() {
         reason: report.reason,
         explanation: report.explanation,
         createdAt: new Date(report.createdAt),
+        id: report.id,
       };
       reportList.push(parsedReport);
     });
