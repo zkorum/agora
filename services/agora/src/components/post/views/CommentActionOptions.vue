@@ -33,7 +33,7 @@ const { showCommentOptionSelector } = useBottomSheet();
 
 const showReportDialog = ref(false);
 
-function selectedReportOption() {
+function reportContentCallback() {
   showReportDialog.value = true;
 }
 
@@ -48,7 +48,7 @@ function optionButtonClicked() {
     props.commentItem.commentSlugId,
     props.commentItem.username,
     deleteCommentCallback,
-    selectedReportOption
+    reportContentCallback
   );
 }
 </script>

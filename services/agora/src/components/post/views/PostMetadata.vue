@@ -90,7 +90,7 @@ const { showPostOptionSelector } = useBottomSheet();
 
 const showReportDialog = ref(false);
 
-function selectedReportOption() {
+function reportContentCallback() {
   showReportDialog.value = true;
 }
 
@@ -98,7 +98,7 @@ function clickedMoreIcon() {
   showPostOptionSelector(
     props.postSlugId,
     props.posterUserName,
-    selectedReportOption
+    reportContentCallback
   );
 }
 </script>
