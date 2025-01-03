@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <div class="container">
+    <div v-if="!selectedReason" class="container">
       <div class="title">Please select a report reason:</div>
 
       <div class="reportReasonsFlex">
@@ -18,9 +18,13 @@
           />
         </div>
       </div>
+    </div>
 
+    <div v-if="selectedReason" class="container">
       <div v-if="selectedReason" class="flaggingExplanation">
-        <div class="title">
+        <div class="title">Thanks for your feedback!</div>
+
+        <div>
           Why are you flagging this conversation as {{ selectedReason }}?
         </div>
 
@@ -30,14 +34,25 @@
             :maxlength="MAX_LENGTH_USER_REPORT_EXPLANATION"
             outlined
             autogrow
+            label="Enter reason"
           />
         </div>
 
         <div class="submitButtons">
+          <div v-if="enabledSkip == false">
+            <ZKButton
+              label="Skip"
+              color="secondary"
+              text-color="primary"
+              flat
+              @click="clickedSkipExplanationButton()"
+            />
+          </div>
+
           <div>
             <ZKButton
               label="Submit"
-              :disable="!selectedReason"
+              :disable="explanation.length == 0 && !enabledSkip"
               color="secondary"
               text-color="primary"
               @click="clickedSubmitButton()"
@@ -66,7 +81,14 @@ const emit = defineEmits(["close"]);
 const explanation = ref("");
 const selectedReason = ref<UserReportReason>();
 
+const enabledSkip = ref(false);
+
 const { createUserReportByPostSlugId } = useBackendReportApi();
+
+function clickedSkipExplanationButton() {
+  explanation.value = "";
+  clickedSubmitButton();
+}
 
 async function clickedSubmitButton() {
   if (selectedReason.value) {
@@ -100,7 +122,7 @@ async function clickedSubmitButton() {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   gap: 1rem;
 }
 
@@ -115,7 +137,8 @@ async function clickedSubmitButton() {
 }
 
 .title {
-  font-size: 1rem;
+  font-size: 1.2rem;
+  font-weight: 500;
 }
 
 .flaggingExplanation {
