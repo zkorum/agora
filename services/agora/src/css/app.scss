@@ -1,6 +1,11 @@
 // app global css in SCSS form
+@font-face {
+    font-family: AlbertSans;
+    src: url("./fonts/Albert_Sans/AlbertSans-VariableFont_wght.ttf");
+}
+
 body {
-  font-family: "Albert Sans", serif;
+  font-family: AlbertSans, serif;
   font-optical-sizing: auto;
   font-size: 0.9rem;
   background-color: white;
@@ -10,4 +15,8 @@ body {
 a {
   color: rgb(24, 28, 31);
   text-decoration: none;
+}
+
+html {
+  overscroll-behavior: none;
 }

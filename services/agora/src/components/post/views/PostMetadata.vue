@@ -56,6 +56,14 @@
       </div>
     </div>
   </div>
+
+  <q-dialog v-model="showReportDialog">
+    <ReportContentDialog
+      :slug-id="props.postSlugId"
+      report-type="conversation"
+      @close="showReportDialog = false"
+    />
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -66,6 +74,9 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import Tag from "primevue/tag";
 import { formatTimeAgo } from "@vueuse/core";
 import { getDateString } from "src/utils/common";
+import { ref } from "vue";
+import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   posterUserName: string;
@@ -76,10 +87,30 @@ const props = defineProps<{
   postSlugId: string;
 }>();
 
+const router = useRouter();
+
 const { showPostOptionSelector } = useBottomSheet();
 
+const showReportDialog = ref(false);
+
+function reportContentCallback() {
+  showReportDialog.value = true;
+}
+
+function openUserReportsCallback() {
+  router.push({
+    name: "user-report-viewer",
+    params: { reportType: "post", slugId: props.postSlugId },
+  });
+}
+
 function clickedMoreIcon() {
-  showPostOptionSelector(props.postSlugId, props.posterUserName);
+  showPostOptionSelector(
+    props.postSlugId,
+    props.posterUserName,
+    reportContentCallback,
+    openUserReportsCallback
+  );
 }
 </script>
 

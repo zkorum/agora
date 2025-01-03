@@ -51,7 +51,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
   moderationActionPostsMapping,
   moderationReasonMapping,
-} from "src/utils/component/moderation";
+} from "src/utils/component/moderations";
 import { usePostStore } from "src/stores/post";
 
 const { moderatePost, fetchPostModeration, cancelModerationPostReport } =

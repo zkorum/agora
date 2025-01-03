@@ -62,6 +62,22 @@ const routes: RouteRecordRaw[] = [
           },
         ],
       },
+      {
+        path: "/user-reports/:reportType/:slugId",
+        components: {
+          default: () => import("pages/user-reports/index.vue"),
+          topmenubar: DefaultMenuBar,
+        },
+        props: {
+          topmenubar: {
+            hasBackButton: false,
+            hasSettingsButton: true,
+            hasCloseButton: false,
+            hasLoginButton: true,
+          } as DefaultMenuBarProps,
+        },
+        name: "user-report-viewer",
+      },
     ],
   },
   {

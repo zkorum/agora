@@ -53,7 +53,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
   moderationActionCommentsMapping,
   moderationReasonMapping,
-} from "src/utils/component/moderation";
+} from "src/utils/component/moderations";
 
 const {
   moderateComment,

@@ -22,6 +22,9 @@ import {
     zodModerationPropertiesPosts,
     zodModerationPropertiesComments,
     zodCommentFeedFilter,
+    zodUserReportReason,
+    zodUserReportExplanation,
+    zodUserReportItem,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -278,6 +281,24 @@ export class Dto {
         commentSlugId: zodSlugId,
     });
     static fetchCommentModerationResponse = zodModerationPropertiesComments;
+    static submitUserReportByPostSlugIdRequest = z.object({
+        postSlugId: zodSlugId,
+        reportReason: zodUserReportReason,
+        reportExplanation: zodUserReportExplanation,
+    });
+    static submitUserReportByCommentSlugIdRequest = z.object({
+        commentSlugId: zodSlugId,
+        reportReason: zodUserReportReason,
+        reportExplanation: zodUserReportExplanation,
+    });
+    static fetchUserReportsByPostSlugIdRequest = z.object({
+        postSlugId: zodSlugId,
+    });
+    static fetchUserReportsByPostSlugIdResponse = z.array(zodUserReportItem);
+    static fetchUserReportsByCommentSlugIdRequest = z.object({
+        commentSlugId: zodSlugId,
+    });
+    static fetchUserReportsByCommentSlugIdResponse = z.array(zodUserReportItem);
     static checkUsernameInUseRequest = z
         .object({
             username: zodUsername,
@@ -358,4 +379,10 @@ export type GenerateVerificationLink200 = z.infer<
 >;
 export type VerifyUserStatusAndAuthenticate200 = z.infer<
     typeof Dto.verifyUserStatusAndAuthenticate200
+>;
+export type FetchUserReportsByPostSlugIdResponse = z.infer<
+    typeof Dto.fetchUserReportsByPostSlugIdResponse
+>;
+export type FetchUserReportsByCommentSlugIdResponse = z.infer<
+    typeof Dto.fetchUserReportsByCommentSlugIdResponse
 >;

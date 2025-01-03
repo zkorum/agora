@@ -40,7 +40,7 @@ export async function moderateByPostSlugId({
         postSlugId: postSlugId,
     });
 
-    const moderationStatus = await fetchPostModeration({
+    const moderationStatus = await fetchModerationReportByPostSlugId({
         db: db,
         postSlugId: postSlugId,
     });
@@ -90,7 +90,7 @@ export async function moderateByCommentSlugId({
         commentSlugId: commentSlugId,
     });
 
-    const moderationStatus = await fetchCommentModeration({
+    const moderationStatus = await fetchModerationReportByCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,
     });
@@ -119,15 +119,15 @@ export async function moderateByCommentSlugId({
     });
 }
 
-interface FetchPostModerationProps {
+interface FetchModerationReportByPostSlugIdProps {
     postSlugId: string;
     db: PostgresJsDatabase;
 }
 
-export async function fetchPostModeration({
+export async function fetchModerationReportByPostSlugId({
     db,
     postSlugId,
-}: FetchPostModerationProps): Promise<ModerationPropertiesPosts> {
+}: FetchModerationReportByPostSlugIdProps): Promise<ModerationPropertiesPosts> {
     const moderationPostsTableResponse = await db
         .select({
             moderationAction: moderationPostsTable.moderationAction,
@@ -157,15 +157,15 @@ export async function fetchPostModeration({
     }
 }
 
-interface FetchCommentModerationProps {
+interface FetchModerationReportByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
 }
 
-export async function fetchCommentModeration({
+export async function fetchModerationReportByCommentSlugId({
     db,
     commentSlugId,
-}: FetchCommentModerationProps): Promise<ModerationPropertiesComments> {
+}: FetchModerationReportByCommentSlugIdProps): Promise<ModerationPropertiesComments> {
     const moderationTableResponse = await db
         .select({
             moderationAction: moderationCommentsTable.moderationAction,
