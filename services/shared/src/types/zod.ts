@@ -98,7 +98,6 @@ export const zodPollResponse = z
         optionChosen: z.number().gte(0),
     })
     .strict();
-export const zodUserMuteAction = z.enum(["mute", "unmute"]);
 export const zodSlugId = z.string().max(10);
 export const zodCommentCount = z.number().int().nonnegative();
 export const zodCommentFeedFilter = z.enum(["moderated", "new"]);
@@ -123,6 +122,14 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     });
+
+export const zodUserMuteAction = z.enum(["mute", "unmute"]);
+export const zodUserMuteItem = z
+    .object({
+        createdAt: z.date(),
+        username: zodUsername,
+    })
+    .strict();
 
 export const zodUserReportExplanation = z
     .string()
@@ -519,4 +526,5 @@ export type ModerationPropertiesComments = z.infer<
 >;
 export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;
 export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
+export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;
