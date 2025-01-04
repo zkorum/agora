@@ -27,6 +27,7 @@ import {
     zodUserReportExplanation,
     zodUserReportItem,
     zodUserMuteAction,
+    zodUserMuteItem,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -256,7 +257,7 @@ export class Dto {
             action: zodUserMuteAction,
         })
         .strict();
-    static fetchUserMutePreferencesResponse = z.array(zodUsername);
+    static fetchUserMutePreferencesResponse = z.array(zodUserMuteItem);
 
     static moderateReportPostRequest = z
         .object({

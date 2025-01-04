@@ -17,7 +17,10 @@ export async function getUserMutePreferences({
     userId,
 }: GetUserMutePreferencesProps): Promise<FetchUserMutePreferencesResponse> {
     const userMutePreferenceTableResponse = await db
-        .select({ username: userTable.username })
+        .select({
+            username: userTable.username,
+            createdAt: userTable.createdAt,
+        })
         .from(userMutePreferenceTable)
         .innerJoin(
             userTable,
@@ -25,12 +28,15 @@ export async function getUserMutePreferences({
         )
         .where(eq(userMutePreferenceTable.sourceUserId, userId));
 
-    const userNameList: string[] = [];
+    const userMuteItemList: FetchUserMutePreferencesResponse = [];
     userMutePreferenceTableResponse.forEach((userMuteItem) => {
-        userNameList.push(userMuteItem.username);
+        userMuteItemList.push({
+            username: userMuteItem.username,
+            createdAt: userMuteItem.createdAt,
+        });
     });
 
-    return userNameList;
+    return userMuteItemList;
 }
 
 interface MuteUserProps {

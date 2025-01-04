@@ -3,7 +3,7 @@
     <div class="container">
       <ZKCard padding="0rem">
         <div class="flexStyle">
-          <div v-for="(item, index) in settingsItemList" :key="item.icon">
+          <div v-for="(item, index) in settingsItemList" :key="item.label">
             <ZKHoverEffect :enable-hover="true">
               <div
                 class="menuItem"

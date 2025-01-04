@@ -8,6 +8,7 @@ import {
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import type { UserMuteAction } from "src/shared/types/zod";
+import type { FetchUserMutePreferencesResponse } from "src/shared/types/dto";
 
 export function useBackendUserMuteApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -54,10 +55,7 @@ export function useBackendUserMuteApi() {
     }
   }
 
-  async function fetchMutePreferences(
-    targetUsername: string,
-    userMuteAction: UserMuteAction
-  ) {
+  async function fetchMutePreferences() {
     try {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1UserMuteFetchPreferencesPost();
@@ -72,14 +70,18 @@ export function useBackendUserMuteApi() {
         },
       });
 
-      return response.data;
+      const muteUserItemList: FetchUserMutePreferencesResponse = [];
+      response.data.forEach((muteUserItemRaw) => {
+        muteUserItemList.push({
+          username: muteUserItemRaw.username,
+          createdAt: new Date(muteUserItemRaw.username),
+        });
+      });
+
+      return muteUserItemList;
     } catch (e) {
       console.error(e);
-      if (userMuteAction == "mute") {
-        showNotifyMessage("Failed to mute user");
-      } else {
-        showNotifyMessage("Failed to unmute user");
-      }
+      showNotifyMessage("Failed to fetch muted user list");
       return [];
     }
   }

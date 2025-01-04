@@ -76,10 +76,16 @@ async function logoutRequested() {
 
 const accountSettings: SettingsInterface[] = [
   {
-    icon: "mdi-account",
     label: "Profile",
     action: () => {
       router.push({ name: "settings-account-profile" });
+    },
+    style: "none",
+  },
+  {
+    label: "Muted Users",
+    action: () => {
+      router.push({ name: "settings-account-muted-users" });
     },
     style: "none",
   },
@@ -87,7 +93,6 @@ const accountSettings: SettingsInterface[] = [
 
 const aboutSettings: SettingsInterface[] = [
   {
-    icon: "mdi-key",
     label: "Privacy Policy",
     action: () => {
       router.push({ name: "privacy" });
@@ -95,7 +100,6 @@ const aboutSettings: SettingsInterface[] = [
     style: "none",
   },
   {
-    icon: "mdi-file-document",
     label: "Terms of Service",
     action: () => {
       router.push({ name: "terms" });
@@ -106,7 +110,6 @@ const aboutSettings: SettingsInterface[] = [
 
 const logoutSettings: SettingsInterface[] = [
   {
-    icon: "mdi-logout",
     label: "Log Out",
     action: logoutRequested,
     style: "warning",
@@ -115,7 +118,6 @@ const logoutSettings: SettingsInterface[] = [
 
 const deleteAccountSettings: SettingsInterface[] = [
   {
-    icon: "mdi-delete",
     label: "Delete Account",
     action: processDeleteAccount,
     style: "negative",

@@ -1488,6 +1488,25 @@ export interface ApiV1UserFetchUserProfilePost200Response {
 /**
  * 
  * @export
+ * @interface ApiV1UserMuteFetchPreferencesPost200ResponseInner
+ */
+export interface ApiV1UserMuteFetchPreferencesPost200ResponseInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserMuteFetchPreferencesPost200ResponseInner
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserMuteFetchPreferencesPost200ResponseInner
+     */
+    'username': string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1UserMuteMuteUserPostRequest
  */
 export interface ApiV1UserMuteMuteUserPostRequest {
@@ -3380,7 +3399,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserMuteFetchPreferencesPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<string>>> {
+        async apiV1UserMuteFetchPreferencesPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserMuteFetchPreferencesPost200ResponseInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserMuteFetchPreferencesPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserMuteFetchPreferencesPost']?.[localVarOperationServerIndex]?.url;
@@ -3727,7 +3746,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserMuteFetchPreferencesPost(options?: any): AxiosPromise<Array<string>> {
+        apiV1UserMuteFetchPreferencesPost(options?: any): AxiosPromise<Array<ApiV1UserMuteFetchPreferencesPost200ResponseInner>> {
             return localVarFp.apiV1UserMuteFetchPreferencesPost(options).then((request) => request(axios, basePath));
         },
         /**

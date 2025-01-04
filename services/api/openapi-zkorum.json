@@ -2775,8 +2775,22 @@
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
+                                        "type": "object",
+                                        "properties": {
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "username": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
+                                            }
+                                        },
+                                        "required": [
+                                            "createdAt",
+                                            "username"
+                                        ],
+                                        "additionalProperties": false
                                     }
                                 }
                             }
