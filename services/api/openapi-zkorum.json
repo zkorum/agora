@@ -2764,6 +2764,63 @@
                     }
                 }
             }
+        },
+        "/api/v1/user-mute/fetch-preferences": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user-mute/mute-user": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "targetUsername": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    },
+                                    "action": {
+                                        "type": "string",
+                                        "enum": [
+                                            "mute",
+                                            "unmute"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "targetUsername",
+                                    "action"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
         }
     },
     "servers": [],

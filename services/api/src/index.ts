@@ -69,6 +69,10 @@ import {
     fetchUserReportsByCommentSlugId,
     fetchUserReportsByPostSlugId,
 } from "./service/report.js";
+import {
+    getUserMutePreferences,
+    muteUserByUsername,
+} from "./service/muteUser.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -1310,6 +1314,54 @@ server.after(() => {
                     commentSlugId: request.body.commentSlugId,
                 });
                 return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/user-mute/fetch-preferences`,
+        schema: {
+            response: {
+                200: Dto.fetchUserMutePreferencesResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                return await getUserMutePreferences({
+                    db: db,
+                    userId: status.userId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/user-mute/mute-user`,
+        schema: {
+            body: Dto.muteUserByUsernameRequest,
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                await muteUserByUsername({
+                    db: db,
+                    muteAction: request.body.action,
+                    sourceUserId: status.userId,
+                    targetUsername: request.body.targetUsername,
+                });
             }
         },
     });
