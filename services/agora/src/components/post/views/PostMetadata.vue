@@ -77,6 +77,7 @@ import { getDateString } from "src/utils/common";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRouter } from "vue-router";
+import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 
 const props = defineProps<{
   posterUserName: string;
@@ -91,6 +92,8 @@ const router = useRouter();
 
 const { showPostOptionSelector } = useBottomSheet();
 
+const { muteUser } = useBackendUserMuteApi();
+
 const showReportDialog = ref(false);
 
 function reportContentCallback() {
@@ -104,12 +107,17 @@ function openUserReportsCallback() {
   });
 }
 
+function muteUserCallback() {
+  muteUser(props.posterUserName, "mute");
+}
+
 function clickedMoreIcon() {
   showPostOptionSelector(
     props.postSlugId,
     props.posterUserName,
     reportContentCallback,
-    openUserReportsCallback
+    openUserReportsCallback,
+    muteUserCallback
   );
 }
 </script>

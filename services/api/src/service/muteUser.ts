@@ -24,7 +24,7 @@ export async function getUserMutePreferences({
         .from(userMutePreferenceTable)
         .innerJoin(
             userTable,
-            eq(userTable.id, userMutePreferenceTable.sourceUserId),
+            eq(userTable.id, userMutePreferenceTable.targetUserId),
         )
         .where(eq(userMutePreferenceTable.sourceUserId, userId));
 
@@ -58,7 +58,13 @@ export async function muteUserByUsername({
         username: targetUsername,
     });
 
-    const initialCheckResponse = await db
+    if (targetUserId == sourceUserId) {
+        throw httpErrors.badRequest(
+            "User is not allowed to mute/unmute themself",
+        );
+    }
+
+    const existanceCheckResponse = await db
         .select({})
         .from(userMutePreferenceTable)
         .where(
@@ -67,10 +73,12 @@ export async function muteUserByUsername({
                 eq(userMutePreferenceTable.targetUserId, targetUserId),
             ),
         );
+    const isUserAlreadyMuted =
+        existanceCheckResponse.length == 1 ? true : false;
 
     try {
         if (muteAction == "mute") {
-            if (initialCheckResponse.length == 1) {
+            if (isUserAlreadyMuted) {
                 // entry already exists
             } else {
                 await db.insert(userMutePreferenceTable).values({
@@ -79,7 +87,7 @@ export async function muteUserByUsername({
                 });
             }
         } else {
-            if (initialCheckResponse.length == 1) {
+            if (isUserAlreadyMuted) {
                 await db
                     .delete(userMutePreferenceTable)
                     .where(
