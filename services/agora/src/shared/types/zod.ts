@@ -99,6 +99,7 @@ export const zodPollResponse = z
         optionChosen: z.number().gte(0),
     })
     .strict();
+export const zodUserMuteAction = z.enum(["mute", "unmute"]);
 export const zodSlugId = z.string().max(10);
 export const zodCommentCount = z.number().int().nonnegative();
 export const zodCommentFeedFilter = z.enum(["moderated", "new"]);
@@ -518,3 +519,5 @@ export type ModerationPropertiesComments = z.infer<
     typeof zodModerationPropertiesComments
 >;
 export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;
+export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
+export type Username = z.infer<typeof zodUsername>;

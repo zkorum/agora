@@ -264,6 +264,14 @@ CREATE TABLE IF NOT EXISTS "user_language" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "user_mute_preference" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_mute_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"source_user_id" uuid NOT NULL,
+	"target_user_id" uuid NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "user_unique_mute" UNIQUE("source_user_id","target_user_id")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_post_topic_preference" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_post_topic_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_id" uuid NOT NULL,
@@ -599,6 +607,18 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "user_mute_preference" ADD CONSTRAINT "user_mute_preference_source_user_id_user_id_fk" FOREIGN KEY ("source_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "user_mute_preference" ADD CONSTRAINT "user_mute_preference_target_user_id_user_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "user_post_topic_preference" ADD CONSTRAINT "user_post_topic_preference_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -673,4 +693,5 @@ END $$;
 CREATE INDEX IF NOT EXISTS "commentId_idx" ON "report_comments_table" USING btree ("comment_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "postId_idx" ON "report_posts_table" USING btree ("post_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_post_topic_preference" USING btree ("user_id");

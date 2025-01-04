@@ -21,6 +21,33 @@ import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
 import { createPostModerationPropertyObject } from "./moderation.js";
 
+export function useCommonUser() {
+    interface GetUserIdFromUsernameProps {
+        db: PostgresJsDatabase;
+        username: string;
+    }
+
+    async function getUserIdFromUsername({
+        db,
+        username,
+    }: GetUserIdFromUsernameProps) {
+        const userTableResponse = await db
+            .select({ userId: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.username, username));
+
+        if (userTableResponse.length == 1) {
+            return userTableResponse[0].userId;
+        } else {
+            throw httpErrors.notFound(
+                "Failed to locate user by username: " + username,
+            );
+        }
+    }
+
+    return { getUserIdFromUsername };
+}
+
 export function useCommonPost() {
     interface IsPostSlugIdLockedProps {
         db: PostgresJsDatabase;

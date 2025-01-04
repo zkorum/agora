@@ -26,6 +26,7 @@ import {
     zodUserReportReason,
     zodUserReportExplanation,
     zodUserReportItem,
+    zodUserMuteAction,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -248,6 +249,15 @@ export class Dto {
             username: zodUsername,
         })
         .strict();
+
+    static muteUserByUsernameRequest = z
+        .object({
+            targetUsername: zodUsername,
+            action: zodUserMuteAction,
+        })
+        .strict();
+    static fetchUserMutePreferencesResponse = z.array(zodUsername);
+
     static moderateReportPostRequest = z
         .object({
             postSlugId: zodSlugId,
@@ -386,4 +396,10 @@ export type FetchUserReportsByPostSlugIdResponse = z.infer<
 >;
 export type FetchUserReportsByCommentSlugIdResponse = z.infer<
     typeof Dto.fetchUserReportsByCommentSlugIdResponse
+>;
+export type MuteUserRequest = z.infer<
+    typeof Dto.fetchUserMutePreferencesResponse
+>;
+export type FetchUserMutePreferencesResponse = z.infer<
+    typeof Dto.fetchUserMutePreferencesResponse
 >;
