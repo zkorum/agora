@@ -2,44 +2,67 @@
   <div class="container">
     <div class="titleStyle">Muted Users</div>
 
-    <div v-if="userMuteItemList.length == 0">You have no muted users.</div>
+    <div v-if="userMuteItemList.length == 0 && dataLoaded">
+      You have no muted users.
+    </div>
+    <q-list v-if="userMuteItemList.length > 0 && dataLoaded" bordered padding>
+      <div
+        v-for="(muteItem, index) in userMuteItemList"
+        :key="muteItem.username"
+      >
+        <q-item>
+          <q-item-section top avatar>
+            <UserAvatar :user-name="muteItem.username" :size="40" />
+          </q-item-section>
 
-    <q-list v-if="userMuteItemList.length > 0" bordered padding>
-      <q-item v-for="muteItem in userMuteItemList" :key="muteItem.username">
-        <q-item-section top avatar>
-          <UserAvatar :user-name="muteItem.username" :size="40" />
-        </q-item-section>
+          <q-item-section>
+            <q-item-label caption>
+              {{ useTimeAgo(muteItem.createdAt) }}</q-item-label
+            >
+            <q-item-label>{{ muteItem.username }}</q-item-label>
+          </q-item-section>
 
-        <q-item-section>
-          <q-item-label>Single line item</q-item-label>
-        </q-item-section>
+          <q-item-section side top>
+            <q-btn
+              flat
+              round
+              icon="mdi-delete"
+              @click="removeMutedUser(muteItem.username)"
+            />
+          </q-item-section>
+        </q-item>
 
-        <q-item-section side top>
-          <q-item-label caption>5 min ago</q-item-label>
-          <q-icon name="star" color="yellow" />
-        </q-item-section>
-      </q-item>
-
-      <!--
-      <q-separator spaced inset="item" />
-      -->
+        <q-separator v-if="index != userMuteItemList.length - 1" spaced />
+      </div>
     </q-list>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { UserMuteItem } from "src/shared/types/zod";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { onMounted, ref } from "vue";
 
-const { fetchMutePreferences } = useBackendUserMuteApi();
+const { fetchMutePreferences, muteUser } = useBackendUserMuteApi();
 
 const userMuteItemList = ref<UserMuteItem[]>([]);
+const dataLoaded = ref(false);
 
 onMounted(async () => {
-  userMuteItemList.value = await fetchMutePreferences();
+  await loadData();
+  dataLoaded.value = true;
 });
+
+async function loadData() {
+  userMuteItemList.value = await fetchMutePreferences();
+}
+
+async function removeMutedUser(targetUsername: string) {
+  await muteUser(targetUsername, "unmute");
+  await loadData();
+}
 </script>
 
 <style scoped lang="scss">

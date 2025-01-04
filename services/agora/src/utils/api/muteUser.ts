@@ -74,7 +74,7 @@ export function useBackendUserMuteApi() {
       response.data.forEach((muteUserItemRaw) => {
         muteUserItemList.push({
           username: muteUserItemRaw.username,
-          createdAt: new Date(muteUserItemRaw.username),
+          createdAt: new Date(muteUserItemRaw.createdAt),
         });
       });
 

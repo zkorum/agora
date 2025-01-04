@@ -39,7 +39,8 @@ export const useBottomSheet = () => {
     posterUserName: string,
     deleteCommentCallback: (deleted: boolean) => void,
     reportCommentCallback: () => void,
-    openUserReportsCallback: () => void
+    openUserReportsCallback: () => void,
+    muteUserCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -48,6 +49,14 @@ export const useBottomSheet = () => {
       icon: "mdi-flag",
       id: "report",
     });
+
+    if (profileData.value.userName != posterUserName) {
+      actionList.push({
+        label: "Mute User",
+        icon: "mdi-account-off",
+        id: "mute-user",
+      });
+    }
 
     if (profileData.value.userName == posterUserName) {
       actionList.push({
@@ -96,6 +105,8 @@ export const useBottomSheet = () => {
           });
         } else if (action.id == "userReports") {
           openUserReportsCallback();
+        } else if (action.id == "mute-user") {
+          muteUserCallback();
         }
       })
       .onCancel(() => {
@@ -110,7 +121,8 @@ export const useBottomSheet = () => {
     postSlugId: string,
     posterUserName: string,
     reportPostCallback: () => void,
-    openUserReportsCallback: () => void
+    openUserReportsCallback: () => void,
+    muteUserCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -119,6 +131,14 @@ export const useBottomSheet = () => {
       icon: "mdi-flag",
       id: "report",
     });
+
+    if (profileData.value.userName != posterUserName) {
+      actionList.push({
+        label: "Mute User",
+        icon: "mdi-account-off",
+        id: "mute-user",
+      });
+    }
 
     if (profileData.value.userName == posterUserName) {
       actionList.push({
@@ -172,6 +192,8 @@ export const useBottomSheet = () => {
           });
         } else if (action.id == "userReports") {
           openUserReportsCallback();
+        } else if (action.id == "mute-user") {
+          muteUserCallback();
         }
       })
       .onCancel(() => {

@@ -20,6 +20,7 @@
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import type { CommentItem } from "src/shared/types/zod";
+import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -36,6 +37,8 @@ const showReportDialog = ref(false);
 
 const router = useRouter();
 
+const { muteUser } = useBackendUserMuteApi();
+
 function reportContentCallback() {
   showReportDialog.value = true;
 }
@@ -45,6 +48,10 @@ function openUserReportsCallback() {
     name: "user-report-viewer",
     params: { reportType: "comment", slugId: props.commentItem.commentSlugId },
   });
+}
+
+function muteUserCallback() {
+  muteUser(props.commentItem.username, "mute");
 }
 
 function optionButtonClicked() {
@@ -59,7 +66,8 @@ function optionButtonClicked() {
     props.commentItem.username,
     deleteCommentCallback,
     reportContentCallback,
-    openUserReportsCallback
+    openUserReportsCallback,
+    muteUserCallback
   );
 }
 </script>
