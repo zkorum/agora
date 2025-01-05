@@ -17,6 +17,7 @@ import { MAX_LENGTH_COMMENT } from "@/shared/shared.js";
 import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
+import { getUserMutePreferences } from "./muteUser.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -48,12 +49,14 @@ interface FetchCommentsByPostSlugIdProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
     fetchTarget: "moderated" | "new" | "hidden";
+    personalizationUserId?: string;
 }
 
 export async function fetchCommentsByPostSlugId({
     db,
     postSlugId,
     fetchTarget,
+    personalizationUserId,
 }: FetchCommentsByPostSlugIdProps): Promise<CommentItem[]> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
 
@@ -106,7 +109,7 @@ export async function fetchCommentsByPostSlugId({
         .orderBy(desc(commentTable.createdAt))
         .where(whereClause);
 
-    const commentItemList: CommentItem[] = [];
+    let commentItemList: CommentItem[] = [];
     results.map((commentResponse) => {
         const moderationProperties = createCommentModerationPropertyObject(
             commentResponse.moderationAction,
@@ -128,6 +131,23 @@ export async function fetchCommentsByPostSlugId({
         };
         commentItemList.push(item);
     });
+
+    if (personalizationUserId) {
+        const mutedUserItems = await getUserMutePreferences({
+            db: db,
+            userId: personalizationUserId,
+        });
+
+        commentItemList = commentItemList.filter((commentItem) => {
+            for (const muteItem of mutedUserItems) {
+                if (muteItem.username == commentItem.username) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
     return commentItemList;
 }
 

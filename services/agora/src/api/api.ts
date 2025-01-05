@@ -502,13 +502,13 @@ export interface ApiV1CommentFetchCommentsByPostSlugIdPostRequest {
      * @type {string}
      * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
      */
-    'createdAt'?: string;
+    'filter': ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum;
     /**
      * 
-     * @type {string}
+     * @type {boolean}
      * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
      */
-    'filter': ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum;
+    'isAuthenticatedRequest': boolean;
 }
 
 export const ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum = {

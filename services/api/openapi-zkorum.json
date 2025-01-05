@@ -1698,21 +1698,21 @@
                                         "type": "string",
                                         "maxLength": 10
                                     },
-                                    "createdAt": {
-                                        "type": "string",
-                                        "format": "date-time"
-                                    },
                                     "filter": {
                                         "type": "string",
                                         "enum": [
                                             "moderated",
                                             "new"
                                         ]
+                                    },
+                                    "isAuthenticatedRequest": {
+                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
                                     "postSlugId",
-                                    "filter"
+                                    "filter",
+                                    "isAuthenticatedRequest"
                                 ],
                                 "additionalProperties": false
                             }

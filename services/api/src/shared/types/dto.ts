@@ -119,8 +119,8 @@ export class Dto {
     static fetchCommentFeedRequest = z
         .object({
             postSlugId: zodSlugId, // z.object() does not exist :(
-            createdAt: z.string().datetime().optional(),
             filter: zodCommentFeedFilter,
+            isAuthenticatedRequest: z.boolean(),
         })
         .strict();
     static fetchCommentFeedResponse = z.array(zodCommentItem);
