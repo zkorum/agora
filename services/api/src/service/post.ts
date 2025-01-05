@@ -144,15 +144,13 @@ export async function createNewPost({
 interface FetchPostBySlugIdProps {
     db: PostgresDatabase;
     postSlugId: string;
-    fetchPollResponse: boolean;
-    userId?: string;
+    personalizationUserId?: string;
 }
 
 export async function fetchPostBySlugId({
     db,
     postSlugId,
-    fetchPollResponse,
-    userId,
+    personalizationUserId,
 }: FetchPostBySlugIdProps): Promise<ExtendedPost> {
     try {
         const { fetchPostItems } = useCommonPost();
@@ -161,8 +159,7 @@ export async function fetchPostBySlugId({
             limit: 1,
             where: eq(postTable.slugId, postSlugId),
             enableCompactBody: false,
-            fetchPersonalizedFeed: fetchPollResponse,
-            userId: userId,
+            personalizationUserId: personalizationUserId,
             excludeLockedPosts: false,
         });
 

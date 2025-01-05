@@ -35,16 +35,14 @@ interface FetchFeedProps {
     db: PostgresDatabase;
     lastSlugId: string | undefined;
     limit?: number;
-    fetchPollResponse: boolean;
-    userId?: string;
+    personalizationUserId?: string;
 }
 
 export async function fetchFeed({
     db,
     lastSlugId,
     limit,
-    fetchPollResponse,
-    userId,
+    personalizationUserId,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const defaultLimit = 10;
     const targetLimit = limit ?? defaultLimit;
@@ -66,8 +64,7 @@ export async function fetchFeed({
         limit: targetLimit + 1,
         where: whereClause,
         enableCompactBody: true,
-        fetchPersonalizedFeed: fetchPollResponse,
-        userId: userId,
+        personalizationUserId: personalizationUserId,
         excludeLockedPosts: true,
     });
 

@@ -89,8 +89,7 @@ export function useCommonPost() {
         limit: number;
         where: SQL | undefined;
         enableCompactBody: boolean;
-        fetchPersonalizedFeed: boolean;
-        userId?: string;
+        personalizationUserId?: string;
         excludeLockedPosts: boolean;
     }
 
@@ -99,8 +98,7 @@ export function useCommonPost() {
         limit,
         where,
         enableCompactBody,
-        fetchPersonalizedFeed,
-        userId,
+        personalizationUserId,
         excludeLockedPosts,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
         const postItems = await db
@@ -262,64 +260,58 @@ export function useCommonPost() {
             }
         });
 
-        if (fetchPersonalizedFeed) {
-            if (!userId) {
-                throw httpErrors.internalServerError(
-                    "Missing author ID for personalized feed",
-                );
-            } else {
-                // Annotate return list with poll response
-                {
-                    const pollResponseMap = new Map<string, number>();
+        if (personalizationUserId) {
+            // Annotate return list with poll response
+            {
+                const pollResponseMap = new Map<string, number>();
 
-                    const postSlugIdList: string[] = [];
-                    extendedPostList.forEach((post) => {
-                        postSlugIdList.push(post.metadata.postSlugId);
-                    });
+                const postSlugIdList: string[] = [];
+                extendedPostList.forEach((post) => {
+                    postSlugIdList.push(post.metadata.postSlugId);
+                });
 
-                    const pollResponses = await getUserPollResponse({
-                        db: db,
-                        authorId: userId,
-                        httpErrors: httpErrors,
-                        postSlugIdList: postSlugIdList,
-                    });
+                const pollResponses = await getUserPollResponse({
+                    db: db,
+                    authorId: personalizationUserId,
+                    httpErrors: httpErrors,
+                    postSlugIdList: postSlugIdList,
+                });
 
-                    pollResponses.forEach((response) => {
-                        pollResponseMap.set(
-                            response.postSlugId,
-                            response.optionChosen,
-                        );
-                    });
+                pollResponses.forEach((response) => {
+                    pollResponseMap.set(
+                        response.postSlugId,
+                        response.optionChosen,
+                    );
+                });
 
-                    extendedPostList.forEach((post) => {
-                        const voteIndex = pollResponseMap.get(
-                            post.metadata.postSlugId,
-                        );
-                        post.interaction = {
-                            hasVoted: voteIndex != undefined,
-                            votedIndex: voteIndex ?? 0,
-                        };
-                    });
-                }
+                extendedPostList.forEach((post) => {
+                    const voteIndex = pollResponseMap.get(
+                        post.metadata.postSlugId,
+                    );
+                    post.interaction = {
+                        hasVoted: voteIndex != undefined,
+                        votedIndex: voteIndex ?? 0,
+                    };
+                });
+            }
 
-                // Remove muted users from the list
-                {
-                    const mutedUserItems = await getUserMutePreferences({
-                        db: db,
-                        userId: userId,
-                    });
-                    extendedPostList = extendedPostList.filter((postItem) => {
-                        for (const muteItem of mutedUserItems) {
-                            if (
-                                muteItem.username ==
-                                postItem.metadata.authorUsername
-                            ) {
-                                return false;
-                            }
+            // Remove muted users from the list
+            {
+                const mutedUserItems = await getUserMutePreferences({
+                    db: db,
+                    userId: personalizationUserId,
+                });
+                extendedPostList = extendedPostList.filter((postItem) => {
+                    for (const muteItem of mutedUserItems) {
+                        if (
+                            muteItem.username ==
+                            postItem.metadata.authorUsername
+                        ) {
+                            return false;
                         }
-                        return true;
-                    });
-                }
+                    }
+                    return true;
+                });
             }
         }
 

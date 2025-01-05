@@ -436,15 +436,13 @@ server.after(() => {
                     return await feedService.fetchFeed({
                         db: db,
                         lastSlugId: request.body.lastSlugId,
-                        fetchPollResponse: true,
-                        userId: status.userId,
+                        personalizationUserId: status.userId,
                     });
                 }
             } else {
                 return await feedService.fetchFeed({
                     db: db,
                     lastSlugId: request.body.lastSlugId,
-                    fetchPollResponse: false,
                 });
             }
         },
@@ -1045,8 +1043,7 @@ server.after(() => {
                     const postItem = await postService.fetchPostBySlugId({
                         db: db,
                         postSlugId: request.body.postSlugId,
-                        fetchPollResponse: true,
-                        userId: status.userId,
+                        personalizationUserId: status.userId,
                     });
 
                     const response: FetchPostBySlugIdResponse = {
@@ -1058,7 +1055,6 @@ server.after(() => {
                 const postItem = await postService.fetchPostBySlugId({
                     db: db,
                     postSlugId: request.body.postSlugId,
-                    fetchPollResponse: false,
                 });
 
                 const response: FetchPostBySlugIdResponse = {
