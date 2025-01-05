@@ -20,6 +20,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
 import { createPostModerationPropertyObject } from "./moderation.js";
+import { getUserMutePreferences } from "./muteUser.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -88,7 +89,7 @@ export function useCommonPost() {
         limit: number;
         where: SQL | undefined;
         enableCompactBody: boolean;
-        fetchPollResponse: boolean;
+        fetchPersonalizedFeed: boolean;
         userId?: string;
         excludeLockedPosts: boolean;
     }
@@ -98,7 +99,7 @@ export function useCommonPost() {
         limit,
         where,
         enableCompactBody,
-        fetchPollResponse,
+        fetchPersonalizedFeed,
         userId,
         excludeLockedPosts,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
@@ -156,7 +157,7 @@ export function useCommonPost() {
             .orderBy(desc(postTable.createdAt))
             .limit(limit);
 
-        const posts: ExtendedPost[] = [];
+        let extendedPostList: ExtendedPost[] = [];
         postItems.forEach((postItem) => {
             if (enableCompactBody && postItem.body != null) {
                 postItem.body = sanitizeHtml(postItem.body, {
@@ -250,7 +251,7 @@ export function useCommonPost() {
             if (excludeLockedPosts && postItem.moderationAction == "lock") {
                 // Skip
             } else {
-                posts.push({
+                extendedPostList.push({
                     metadata: metadata,
                     payload: payload,
                     interaction: {
@@ -261,40 +262,68 @@ export function useCommonPost() {
             }
         });
 
-        if (fetchPollResponse) {
+        if (fetchPersonalizedFeed) {
             if (!userId) {
                 throw httpErrors.internalServerError(
-                    "Missing author ID for fetching poll response",
+                    "Missing author ID for personalized feed",
                 );
             } else {
-                const postSlugIdList: string[] = [];
-                posts.forEach((post) => {
-                    postSlugIdList.push(post.metadata.postSlugId);
-                });
+                // Annotate return list with poll response
+                {
+                    const pollResponseMap = new Map<string, number>();
 
-                const pollResponses = await getUserPollResponse({
-                    db: db,
-                    authorId: userId,
-                    httpErrors: httpErrors,
-                    postSlugIdList: postSlugIdList,
-                });
+                    const postSlugIdList: string[] = [];
+                    extendedPostList.forEach((post) => {
+                        postSlugIdList.push(post.metadata.postSlugId);
+                    });
 
-                const responseMap = new Map<string, number>();
-                pollResponses.forEach((response) => {
-                    responseMap.set(response.postSlugId, response.optionChosen);
-                });
+                    const pollResponses = await getUserPollResponse({
+                        db: db,
+                        authorId: userId,
+                        httpErrors: httpErrors,
+                        postSlugIdList: postSlugIdList,
+                    });
 
-                posts.forEach((post) => {
-                    const voteIndex = responseMap.get(post.metadata.postSlugId);
-                    post.interaction = {
-                        hasVoted: voteIndex != undefined,
-                        votedIndex: voteIndex ?? 0,
-                    };
-                });
+                    pollResponses.forEach((response) => {
+                        pollResponseMap.set(
+                            response.postSlugId,
+                            response.optionChosen,
+                        );
+                    });
+
+                    extendedPostList.forEach((post) => {
+                        const voteIndex = pollResponseMap.get(
+                            post.metadata.postSlugId,
+                        );
+                        post.interaction = {
+                            hasVoted: voteIndex != undefined,
+                            votedIndex: voteIndex ?? 0,
+                        };
+                    });
+                }
+
+                // Remove muted users from the list
+                {
+                    const mutedUserItems = await getUserMutePreferences({
+                        db: db,
+                        userId: userId,
+                    });
+                    extendedPostList = extendedPostList.filter((postItem) => {
+                        for (const muteItem of mutedUserItems) {
+                            if (
+                                muteItem.username ==
+                                postItem.metadata.authorUsername
+                            ) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                }
             }
         }
 
-        return posts;
+        return extendedPostList;
     }
 
     interface IdAndContentId {
