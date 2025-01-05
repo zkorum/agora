@@ -918,11 +918,31 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            return await fetchCommentsByPostSlugId({
-                db: db,
-                postSlugId: request.body.postSlugId,
-                fetchTarget: request.body.filter,
-            });
+            if (request.body.isAuthenticatedRequest) {
+                const didWrite = await verifyUCAN(db, request, {
+                    expectedDeviceStatus: undefined,
+                });
+
+                const status = await authUtilService.isLoggedIn(db, didWrite);
+                if (!status.isLoggedIn) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not logged in",
+                    );
+                } else {
+                    return await fetchCommentsByPostSlugId({
+                        db: db,
+                        postSlugId: request.body.postSlugId,
+                        fetchTarget: request.body.filter,
+                        personalizationUserId: status.userId,
+                    });
+                }
+            } else {
+                return await fetchCommentsByPostSlugId({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                    fetchTarget: request.body.filter,
+                });
+            }
         },
     });
 
