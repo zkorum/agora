@@ -25,7 +25,7 @@ import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
-const emit = defineEmits(["deleted"]);
+const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
   commentItem: CommentItem;
@@ -52,6 +52,7 @@ function openUserReportsCallback() {
 
 function muteUserCallback() {
   muteUser(props.commentItem.username, "mute");
+  emit("mutedComment");
 }
 
 function optionButtonClicked() {

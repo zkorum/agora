@@ -20,6 +20,7 @@
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
       />
 
       <CommentGroup
@@ -30,6 +31,7 @@
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
       />
 
       <CommentGroup
@@ -40,6 +42,7 @@
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
       />
     </div>
   </div>
@@ -90,17 +93,20 @@ const baseFilters: { name: string; value: CommentFilterOptions }[] = [
 ];
 const filterOptions = ref(baseFilters);
 
-fetchCommentList("new");
-fetchCommentList("moderated");
-initializeModeratorMenu();
-
 onMounted(() => {
+  initializeData();
   fetchPersonalLikes();
 });
 
 watch(profileData, () => {
   initializeModeratorMenu();
 });
+
+function initializeData() {
+  fetchCommentList("new");
+  fetchCommentList("moderated");
+  initializeModeratorMenu();
+}
 
 function initializeModeratorMenu() {
   if (profileData.value.isModerator) {
@@ -113,6 +119,10 @@ function initializeModeratorMenu() {
 
     fetchHiddenComments();
   }
+}
+
+function mutedComment() {
+  initializeData();
 }
 
 function deletedComment() {

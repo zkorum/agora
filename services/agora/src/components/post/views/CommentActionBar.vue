@@ -4,6 +4,7 @@
       <CommentActionOptions
         :comment-item="props.commentItem"
         @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
       />
 
       <ZKButton
@@ -57,7 +58,7 @@ import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
 import CommentActionOptions from "./CommentActionOptions.vue";
 
-const emit = defineEmits(["deleted"]);
+const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
   commentItem: CommentItem;
@@ -121,6 +122,10 @@ const upvoteIcon = computed<IconObject>(() => {
     };
   }
 });
+
+function mutedComment() {
+  emit("mutedComment");
+}
 
 function shareButtonClicked() {
   let moderatedParameter = "";

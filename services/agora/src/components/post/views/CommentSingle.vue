@@ -30,6 +30,7 @@
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
             :is-post-locked="isPostLocked"
             @deleted="deletedComment()"
+            @muted-comment="mutedComment()"
           />
         </div>
       </div>
@@ -44,7 +45,7 @@ import type { CommentItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
 
-const emit = defineEmits(["deleted"]);
+const emit = defineEmits(["deleted", "mutedComment"]);
 
 defineProps<{
   commentItem: CommentItem;
@@ -59,6 +60,10 @@ const deleted = ref(false);
 function deletedComment() {
   deleted.value = true;
   emit("deleted");
+}
+
+function mutedComment() {
+  emit("mutedComment");
 }
 </script>
 
