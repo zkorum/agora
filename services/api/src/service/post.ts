@@ -161,6 +161,7 @@ export async function fetchPostBySlugId({
             enableCompactBody: false,
             personalizationUserId: personalizationUserId,
             excludeLockedPosts: false,
+            removeMutedAuthors: false,
         });
 
         if (postData.length == 1) {
