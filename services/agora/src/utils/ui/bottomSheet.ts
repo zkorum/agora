@@ -50,7 +50,7 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.value.userName != posterUserName) {
+    if (profileData.value.userName != posterUserName && isAuthenticated.value) {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
@@ -132,7 +132,7 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.value.userName != posterUserName) {
+    if (profileData.value.userName != posterUserName && isAuthenticated.value) {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
