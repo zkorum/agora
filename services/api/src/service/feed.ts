@@ -66,6 +66,7 @@ export async function fetchFeed({
         enableCompactBody: true,
         personalizationUserId: personalizationUserId,
         excludeLockedPosts: true,
+        removeMutedAuthors: true,
     });
 
     let reachedEndOfFeed = true;

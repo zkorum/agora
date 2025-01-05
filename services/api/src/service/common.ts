@@ -91,6 +91,7 @@ export function useCommonPost() {
         enableCompactBody: boolean;
         personalizationUserId?: string;
         excludeLockedPosts: boolean;
+        removeMutedAuthors: boolean;
     }
 
     async function fetchPostItems({
@@ -100,6 +101,7 @@ export function useCommonPost() {
         enableCompactBody,
         personalizationUserId,
         excludeLockedPosts,
+        removeMutedAuthors,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
         const postItems = await db
             .select({
@@ -296,7 +298,7 @@ export function useCommonPost() {
             }
 
             // Remove muted users from the list
-            {
+            if (removeMutedAuthors) {
                 const mutedUserItems = await getUserMutePreferences({
                     db: db,
                     userId: personalizationUserId,

@@ -152,6 +152,7 @@ export async function getUserPosts({
             enableCompactBody: true,
             personalizationUserId: userId,
             excludeLockedPosts: false,
+            removeMutedAuthors: false,
         });
 
         return posts;

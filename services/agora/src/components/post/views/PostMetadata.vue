@@ -78,6 +78,7 @@ import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import { usePostStore } from "src/stores/post";
 
 const props = defineProps<{
   posterUserName: string;
@@ -93,6 +94,7 @@ const router = useRouter();
 const { showPostOptionSelector } = useBottomSheet();
 
 const { muteUser } = useBackendUserMuteApi();
+const { loadPostData } = usePostStore();
 
 const showReportDialog = ref(false);
 
@@ -107,8 +109,11 @@ function openUserReportsCallback() {
   });
 }
 
-function muteUserCallback() {
-  muteUser(props.posterUserName, "mute");
+async function muteUserCallback() {
+  const isSuccessful = await muteUser(props.posterUserName, "mute");
+  if (isSuccessful) {
+    loadPostData(false);
+  }
 }
 
 function clickedMoreIcon() {
