@@ -151,7 +151,7 @@ export async function getUserPosts({
             limit: 10,
             where: whereClause,
             enableCompactBody: true,
-            fetchPollResponse: true,
+            fetchPersonalizedFeed: true,
             userId: userId,
             excludeLockedPosts: false,
         });

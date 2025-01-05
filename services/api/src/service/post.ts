@@ -161,7 +161,7 @@ export async function fetchPostBySlugId({
             limit: 1,
             where: eq(postTable.slugId, postSlugId),
             enableCompactBody: false,
-            fetchPollResponse: fetchPollResponse,
+            fetchPersonalizedFeed: fetchPollResponse,
             userId: userId,
             excludeLockedPosts: false,
         });

@@ -66,7 +66,7 @@ export async function fetchFeed({
         limit: targetLimit + 1,
         where: whereClause,
         enableCompactBody: true,
-        fetchPollResponse: fetchPollResponse,
+        fetchPersonalizedFeed: fetchPollResponse,
         userId: userId,
         excludeLockedPosts: true,
     });
