@@ -89,7 +89,11 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
-          reportCommentCallback();
+          if (isAuthenticated.value) {
+            reportCommentCallback();
+          } else {
+            showLoginConfirmationDialog();
+          }
         } else if (action.id == "delete") {
           const response = await deleteCommentBySlugId(commentSlugId);
           if (response) {
