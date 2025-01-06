@@ -42,26 +42,29 @@
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { UserMuteItem } from "src/shared/types/zod";
+import { usePostStore } from "src/stores/post";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { onMounted, ref } from "vue";
 
 const { fetchMutePreferences, muteUser } = useBackendUserMuteApi();
+const { loadPostData } = usePostStore();
 
 const userMuteItemList = ref<UserMuteItem[]>([]);
 const dataLoaded = ref(false);
 
 onMounted(async () => {
-  await loadData();
+  await loadMuteData();
   dataLoaded.value = true;
 });
 
-async function loadData() {
+async function loadMuteData() {
   userMuteItemList.value = await fetchMutePreferences();
 }
 
 async function removeMutedUser(targetUsername: string) {
   await muteUser(targetUsername, "unmute");
-  await loadData();
+  await loadMuteData();
+  await loadPostData(false);
 }
 </script>
 
