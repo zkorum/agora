@@ -196,7 +196,9 @@ async function generateVerificationLink(keyAction?: KeyAction) {
     });
     if (response.data.success) {
       verificationLink.value = response.data.verificationLink;
-      isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
+      if (isDeviceLoggedInIntervalId === undefined) {
+        isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
+      }
     } else {
       switch (response.data.reason) {
         case "already_logged_in":
@@ -204,6 +206,7 @@ async function generateVerificationLink(keyAction?: KeyAction) {
           await completeVerification();
           break;
         case "associated_with_another_user":
+          // TODO: make sure we don't get in an infinite loop...! (should not happen)
           await generateVerificationLink("overwrite");
           break;
       }
@@ -272,6 +275,7 @@ async function isDeviceLoggedIn() {
           // This did:key belongs to another phone number / nullifier.
           // Something wrong probably happened during keystore eviction on log out.
           // Retry, and this time overwrite the existing key with a new one.
+          window.clearInterval(isDeviceLoggedInIntervalId);
           await generateVerificationLink("overwrite");
           showNotifyMessage(
             "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!"
@@ -291,6 +295,7 @@ async function clickedVerifyButton() {
 }
 
 async function completeVerification() {
+  window.clearInterval(isDeviceLoggedInIntervalId);
   showNotifyMessage("Verification successful 🎉");
   await userLogin();
 

@@ -75,7 +75,7 @@ export const useBottomSheet = () => {
 
       actionList.push({
         label: "User Reports",
-        icon: "mdi-sword",
+        icon: "mdi-account-alert",
         id: "userReports",
       });
     }
@@ -161,7 +161,7 @@ export const useBottomSheet = () => {
 
       actionList.push({
         label: "User Reports",
-        icon: "mdi-sword",
+        icon: "mdi-account-alert",
         id: "userReports",
       });
     }

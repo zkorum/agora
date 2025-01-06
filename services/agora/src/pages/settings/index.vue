@@ -20,12 +20,12 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { axios } from "src/boot/axios";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { type SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
+import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
@@ -34,22 +34,17 @@ const { showDeleteAccountDialog } = useDialog();
 
 const { logoutFromServer, logoutCleanup } = useBackendAuthApi();
 const router = useRouter();
+const { showNotifyMessage } = useNotify();
 
 async function logoutRequested() {
   try {
     await logoutFromServer();
-  } catch (e) {
-    if (axios.isAxiosError(e)) {
-      if (e.response?.status !== 401 && e.response?.status !== 403) {
-        console.error("Unexpected status when logging out", e);
-      }
-    } else {
-      if (e.response?.status !== 401 && e.response?.status !== 403) {
-        console.error("Unexpected error when logging out", e);
-      }
-    }
-  } finally {
     await logoutCleanup();
+    showNotifyMessage("Logged out");
+    router.push({ name: "welcome" });
+  } catch (e) {
+    console.error("Unexpected error when logging out", e);
+    showNotifyMessage("Oops! Logout failed. Please try again");
   }
 }
 

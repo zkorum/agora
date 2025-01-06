@@ -15,8 +15,6 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { getPlatform } from "../common";
-import { useRouter } from "vue-router";
-import { useNotify } from "../ui/notify";
 
 export interface AuthenticateReturn {
   isSuccessful: boolean;
@@ -40,9 +38,6 @@ export function useBackendAuthApi() {
   const { isAuthenticated } = storeToRefs(useAuthenticationStore());
   const { loadPostData } = usePostStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
-
-  const router = useRouter();
-  const { showNotifyMessage } = useNotify();
 
   const $q = useQuasar();
 
@@ -149,7 +144,6 @@ export function useBackendAuthApi() {
           e
         );
       }
-      isAuthenticated.value = false;
       logoutCleanup();
     } finally {
       loadPostData(false);
@@ -165,10 +159,6 @@ export function useBackendAuthApi() {
 
     await loadPostData(false);
     clearProfileData();
-
-    showNotifyMessage("Logged out");
-
-    router.push({ name: "welcome" });
   }
 
   return {
