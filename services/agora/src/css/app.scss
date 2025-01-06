@@ -1,11 +1,23 @@
 // app global css in SCSS form
 @font-face {
     font-family: AlbertSans;
+    font-style: normal;
     src: url("./fonts/Albert_Sans/AlbertSans-VariableFont_wght.ttf");
+}
+@font-face {
+    font-family: AlbertSans;
+    font-style: italic;
+    src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf");
+}
+@font-face {
+    font-family: AlbertSans;
+    font-style: oblique;
+    src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf");
 }
 
 body {
-  font-family: AlbertSans, serif;
+  /* inspiration from existing apps for the fallback list */
+  font-family: AlbertSans, InterSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
   font-optical-sizing: auto;
   font-size: 0.9rem;
   background-color: white;
