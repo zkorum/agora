@@ -19,7 +19,7 @@ export async function getUserMutePreferences({
     const userMutePreferenceTableResponse = await db
         .select({
             username: userTable.username,
-            createdAt: userTable.createdAt,
+            createdAt: userMutePreferenceTable.createdAt,
         })
         .from(userMutePreferenceTable)
         .innerJoin(
