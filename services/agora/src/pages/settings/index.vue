@@ -20,46 +20,24 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useQuasar } from "quasar";
 import { axios } from "src/boot/axios";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { usePostStore } from "src/stores/post";
-import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { getPlatform } from "src/utils/common";
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import { deleteDid } from "src/utils/crypto/ucan/operation";
 import { useDialog } from "src/utils/ui/dialog";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-const { clearProfileData } = useUserStore();
 
 const { showDeleteAccountDialog } = useDialog();
-const { loadPostData } = usePostStore();
 
-const backendAuth = useBackendAuthApi();
+const { logoutFromServer, logoutCleanup } = useBackendAuthApi();
 const router = useRouter();
-
-const $q = useQuasar();
-const platform: "mobile" | "web" = getPlatform($q.platform);
-
-async function logoutCleanup() {
-  await deleteDid(platform);
-
-  isAuthenticated.value = false;
-
-  await loadPostData(false);
-  clearProfileData();
-
-  router.push({ name: "default-home-feed" });
-}
 
 async function logoutRequested() {
   try {
-    await backendAuth.logout();
-    logoutCleanup();
+    await logoutFromServer();
   } catch (e) {
     if (axios.isAxiosError(e)) {
       if (e.response?.status !== 401 && e.response?.status !== 403) {
@@ -70,8 +48,9 @@ async function logoutRequested() {
         console.error("Unexpected error when logging out", e);
       }
     }
+  } finally {
+    await logoutCleanup();
   }
-  // logoutCleanup();
 }
 
 const accountSettings: SettingsInterface[] = [

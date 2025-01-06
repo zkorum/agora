@@ -7,12 +7,16 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import { axios, api } from "boot/axios";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
 import { useCommonApi, type KeyAction } from "./common";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { usePostStore } from "src/stores/post";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
+import { getPlatform } from "../common";
+import { useRouter } from "vue-router";
+import { useNotify } from "../ui/notify";
 
 export interface AuthenticateReturn {
   isSuccessful: boolean;
@@ -35,7 +39,12 @@ export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
   const { isAuthenticated } = storeToRefs(useAuthenticationStore());
   const { loadPostData } = usePostStore();
-  const { loadUserProfile } = useUserStore();
+  const { loadUserProfile, clearProfileData } = useUserStore();
+
+  const router = useRouter();
+  const { showNotifyMessage } = useNotify();
+
+  const $q = useQuasar();
 
   async function sendSmsCode({
     phoneNumber,
@@ -99,7 +108,7 @@ export function useBackendAuthApi() {
     });
   }
 
-  async function logout() {
+  async function logoutFromServer() {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1AuthLogoutPost();
     const encodedUcan = await buildEncodedUcan(url, options);
@@ -128,33 +137,46 @@ export function useBackendAuthApi() {
       if (axios.isAxiosError(e)) {
         if (e.response?.status === 401 || e.response?.status === 403) {
           // unauthorized or forbidden
-          isAuthenticated.value = false;
         } else {
           console.error(
             "Unexpected status when checking if device is logged-in",
             e
           );
-          // properly present error and recover
-          isAuthenticated.value = false;
         }
       } else {
         console.error(
           "Unexpected error when checking if device is logged-in",
           e
         );
-        // properly present error and recover
-        isAuthenticated.value = false;
       }
+      isAuthenticated.value = false;
+      logoutCleanup();
     } finally {
       loadPostData(false);
     }
   }
 
+  async function logoutCleanup() {
+    const platform: "mobile" | "web" = getPlatform($q.platform);
+
+    await deleteDid(platform);
+
+    isAuthenticated.value = false;
+
+    await loadPostData(false);
+    clearProfileData();
+
+    showNotifyMessage("Logged out");
+
+    router.push({ name: "welcome" });
+  }
+
   return {
     sendSmsCode,
     verifyPhoneOtp,
-    logout,
+    logoutFromServer,
     deviceIsLoggedIn,
     initializeAuthState,
+    logoutCleanup,
   };
 }
