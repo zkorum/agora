@@ -1234,6 +1234,129 @@ export interface ApiV1PostFetchPostBySlugIdPostRequest {
 /**
  * 
  * @export
+ * @interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+ */
+export interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     */
+    'username': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     */
+    'reason': ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     */
+    'explanation'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     */
+    'id': number;
+}
+
+export const ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum = typeof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum[keyof typeof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+ */
+export interface ApiV1ReportSubmitReportByCommentSlugIdPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+     */
+    'commentSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+     */
+    'reportReason': ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+     */
+    'reportExplanation'?: string;
+}
+
+export const ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum = typeof ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum[keyof typeof ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ReportSubmitReportByPostSlugIdPostRequest
+ */
+export interface ApiV1ReportSubmitReportByPostSlugIdPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
+     */
+    'postSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
+     */
+    'reportReason': ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
+     */
+    'reportExplanation'?: string;
+}
+
+export const ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum = typeof ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum[keyof typeof ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1UserFetchUserCommentsPost200ResponseInner
  */
 export interface ApiV1UserFetchUserCommentsPost200ResponseInner {
@@ -2415,6 +2538,162 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportFetchReportsByCommentSlugIdPost: async (apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationCommentWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ReportFetchReportsByCommentSlugIdPost', 'apiV1ModerationCommentWithdrawPostRequest', apiV1ModerationCommentWithdrawPostRequest)
+            const localVarPath = `/api/v1/report/fetch-reports-by-comment-slug-id`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationCommentWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportFetchReportsByPostSlugIdPost: async (apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationPostWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ReportFetchReportsByPostSlugIdPost', 'apiV1ModerationPostWithdrawPostRequest', apiV1ModerationPostWithdrawPostRequest)
+            const localVarPath = `/api/v1/report/fetch-reports-by-post-slug-id`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationPostWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportSubmitReportByCommentSlugIdPost: async (apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ReportSubmitReportByCommentSlugIdPostRequest' is not null or undefined
+            assertParamExists('apiV1ReportSubmitReportByCommentSlugIdPost', 'apiV1ReportSubmitReportByCommentSlugIdPostRequest', apiV1ReportSubmitReportByCommentSlugIdPostRequest)
+            const localVarPath = `/api/v1/report/submit-report-by-comment-slug-id`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ReportSubmitReportByCommentSlugIdPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportSubmitReportByPostSlugIdPost: async (apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ReportSubmitReportByPostSlugIdPostRequest' is not null or undefined
+            assertParamExists('apiV1ReportSubmitReportByPostSlugIdPost', 'apiV1ReportSubmitReportByPostSlugIdPostRequest', apiV1ReportSubmitReportByPostSlugIdPostRequest)
+            const localVarPath = `/api/v1/report/submit-report-by-post-slug-id`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ReportSubmitReportByPostSlugIdPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2916,6 +3195,54 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportFetchReportsByCommentSlugIdPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportFetchReportsByPostSlugIdPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportSubmitReportByCommentSlugIdPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportSubmitReportByPostSlugIdPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3210,6 +3537,42 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: any): AxiosPromise<ApiV1PostFetchPostBySlugIdPost200Response> {
             return localVarFp.apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: any): AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>> {
+            return localVarFp.apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: any): AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>> {
+            return localVarFp.apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3543,6 +3906,50 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

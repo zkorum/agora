@@ -1,5 +1,5 @@
 {
-  "id": "e8cb498a-daa6-4e28-9c13-ad7333d63dce",
+  "id": "a56edb05-2bb6-4f2c-8b8e-60b982cbfb90",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2032,16 +2032,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "commentId_idx": {
+          "name": "commentId_idx",
+          "columns": [
+            {
+              "expression": "comment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "report_comments_table_comment_id_comment_id_fk": {
           "name": "report_comments_table_comment_id_comment_id_fk",
@@ -2126,16 +2135,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "postId_idx": {
+          "name": "postId_idx",
+          "columns": [
+            {
+              "expression": "post_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "report_posts_table_post_id_post_id_fk": {
           "name": "report_posts_table_post_id_post_id_fk",
@@ -3229,13 +3247,12 @@
       "name": "report_reason_enum",
       "schema": "public",
       "values": [
-        "off-topic",
+        "illegal",
+        "doxing",
+        "sexual",
         "spam",
         "misleading",
-        "privacy",
-        "sexual",
-        "toxic",
-        "illegal"
+        "antisocial"
       ]
     },
     "public.sex": {

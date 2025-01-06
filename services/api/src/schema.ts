@@ -20,6 +20,7 @@ const MAX_LENGTH_BODY = 260;
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 40;
+const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
 
 export const bytea = customType<{
     data: string;
@@ -1210,13 +1211,12 @@ export const voteContentTable = pgTable("vote_content", {
 
 // illegal = glaring violation of law (scam, terrorism, threat, etc)
 export const reportReasons = pgEnum("report_reason_enum", [
-    "off-topic",
+    "illegal",
+    "doxing",
+    "sexual",
     "spam",
     "misleading",
-    "privacy",
-    "sexual",
-    "toxic",
-    "illegal",
+    "antisocial",
 ]);
 export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
     "misleading",
@@ -1237,57 +1237,61 @@ export const moderationActionCommentsEnum = pgEnum(
     ["lock", "hide"],
 );
 
-export const reportPostsTable = pgTable("report_posts_table", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    postId: integer("post_id")
-        .references(() => postTable.id)
-        .notNull(),
-    reporterId: uuid("reporter_id")
-        .references(() => userTable.id)
-        .notNull(),
-    reportReason: reportReasons("reporter_reason").notNull(),
-    reportExplanation: varchar("report_explanation", {
-        length: MAX_LENGTH_BODY,
-    }),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const reportPostsTable = pgTable(
+    "report_posts_table",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        postId: integer("post_id")
+            .references(() => postTable.id)
+            .notNull(),
+        reporterId: uuid("reporter_id")
+            .references(() => userTable.id)
+            .notNull(),
+        reportReason: reportReasons("reporter_reason").notNull(),
+        reportExplanation: varchar("report_explanation", {
+            length: MAX_LENGTH_USER_REPORT_EXPLANATION,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => {
+        return {
+            postIdInx: index("postId_idx").on(table.postId),
+        };
+    },
+);
 
-export const reportCommentsTable = pgTable("report_comments_table", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    commentId: integer("comment_id")
-        .references(() => commentTable.id)
-        .notNull(),
-    reporterId: uuid("reporter_id")
-        .references(() => userTable.id)
-        .notNull(),
-    reportReason: reportReasons("reporter_reason").notNull(),
-    reportExplanation: varchar("report_explanation", {
-        length: MAX_LENGTH_BODY,
-    }),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const reportCommentsTable = pgTable(
+    "report_comments_table",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        commentId: integer("comment_id")
+            .references(() => commentTable.id)
+            .notNull(),
+        reporterId: uuid("reporter_id")
+            .references(() => userTable.id)
+            .notNull(),
+        reportReason: reportReasons("reporter_reason").notNull(),
+        reportExplanation: varchar("report_explanation", {
+            length: MAX_LENGTH_USER_REPORT_EXPLANATION,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => {
+        return {
+            commentIdInx: index("commentId_idx").on(table.commentId),
+        };
+    },
+);
 
 export const moderationPostsTable = pgTable("moderation_posts_table", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),

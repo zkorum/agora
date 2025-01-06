@@ -1,6 +1,5 @@
 import { useQuasar } from "quasar";
 import { type Ref } from "vue";
-import { useDialog } from "./dialog";
 import { useBackendPostApi } from "../api/post";
 import { useUserStore } from "src/stores/user";
 import { usePostStore } from "src/stores/post";
@@ -8,11 +7,14 @@ import { useNotify } from "./notify";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendCommentApi } from "../api/comment";
 import { storeToRefs } from "pinia";
+import { useDialog } from "./dialog";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 export const useBottomSheet = () => {
   const quasar = useQuasar();
 
-  const dialog = useDialog();
+  const { showLoginConfirmationDialog } = useDialog();
+
   const { showNotifyMessage } = useNotify();
 
   const router = useRouter();
@@ -24,6 +26,7 @@ export const useBottomSheet = () => {
   const { profileData } = storeToRefs(useUserStore());
   const { loadUserProfile } = useUserStore();
   const { loadPostData } = usePostStore();
+  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
   interface QuasarAction {
     label: string;
@@ -34,7 +37,9 @@ export const useBottomSheet = () => {
   function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
-    deleteCommentCallback: (deleted: boolean) => void
+    deleteCommentCallback: (deleted: boolean) => void,
+    reportCommentCallback: () => void,
+    openUserReportsCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -58,6 +63,12 @@ export const useBottomSheet = () => {
         icon: "mdi-sword",
         id: "moderate",
       });
+
+      actionList.push({
+        label: "User Reports",
+        icon: "mdi-sword",
+        id: "userReports",
+      });
     }
 
     quasar
@@ -69,7 +80,7 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
-          showStandardReportSelector("comment");
+          reportCommentCallback();
         } else if (action.id == "delete") {
           const response = await deleteCommentBySlugId(commentSlugId);
           if (response) {
@@ -83,6 +94,8 @@ export const useBottomSheet = () => {
             name: "moderate-comment-page",
             params: { commentSlugId: commentSlugId },
           });
+        } else if (action.id == "userReports") {
+          openUserReportsCallback();
         }
       })
       .onCancel(() => {
@@ -93,7 +106,12 @@ export const useBottomSheet = () => {
       });
   }
 
-  function showPostOptionSelector(postSlugId: string, posterUserName: string) {
+  function showPostOptionSelector(
+    postSlugId: string,
+    posterUserName: string,
+    reportPostCallback: () => void,
+    openUserReportsCallback: () => void
+  ) {
     const actionList: QuasarAction[] = [];
 
     actionList.push({
@@ -116,6 +134,12 @@ export const useBottomSheet = () => {
         icon: "mdi-sword",
         id: "moderate",
       });
+
+      actionList.push({
+        label: "User Reports",
+        icon: "mdi-sword",
+        id: "userReports",
+      });
     }
 
     quasar
@@ -126,7 +150,11 @@ export const useBottomSheet = () => {
       })
       .onOk(async (action: QuasarAction) => {
         if (action.id == "report") {
-          showStandardReportSelector("post");
+          if (isAuthenticated.value) {
+            reportPostCallback();
+          } else {
+            showLoginConfirmationDialog();
+          }
         } else if (action.id == "delete") {
           const response = await deletePostBySlugId(postSlugId);
           if (response) {
@@ -142,68 +170,9 @@ export const useBottomSheet = () => {
             name: "moderate-post-page",
             params: { postSlugId: postSlugId },
           });
+        } else if (action.id == "userReports") {
+          openUserReportsCallback();
         }
-      })
-      .onCancel(() => {
-        console.log("Dismissed");
-      })
-      .onDismiss(() => {
-        // console.log('I am triggered on both OK and Cancel')
-      });
-  }
-
-  function showStandardReportSelector(itemName: "post" | "comment") {
-    const actionList: QuasarAction[] = [];
-
-    const icon = "mdi-circle-small";
-
-    actionList.push(
-      {
-        label: "Spam",
-        icon: icon,
-        id: "spam",
-      },
-      {
-        label: "Irrelevant",
-        icon: icon,
-        id: "irrelevant",
-      },
-      {
-        label: "Harassment",
-        icon: icon,
-        id: "harassment",
-      },
-      {
-        label: "Hate",
-        icon: icon,
-        id: "hate",
-      },
-      {
-        label: "Sharing personal information",
-        icon: icon,
-        id: "personal-information",
-      },
-      {
-        label: "Threatening violence",
-        icon: icon,
-        id: "violence",
-      },
-      {
-        label: "Sexualization",
-        icon: icon,
-        id: "sexualization",
-      }
-    );
-
-    quasar
-      .bottomSheet({
-        message: `Why do you think this ${itemName} is not appropriate?`,
-        grid: false,
-        actions: actionList,
-      })
-      .onOk((action: QuasarAction) => {
-        console.log("Selected action: " + action.id);
-        dialog.showReportDialog(itemName);
       })
       .onCancel(() => {
         console.log("Dismissed");
