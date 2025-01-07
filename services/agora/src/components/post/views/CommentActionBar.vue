@@ -128,19 +128,13 @@ function mutedComment() {
 }
 
 function shareButtonClicked() {
-  let moderatedParameter = "";
-  if (props.commentItem.moderation.status == "moderated") {
-    moderatedParameter = "&filter=moderation-history";
-  }
-
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
     "/post/" +
     props.postSlugId +
     "?commentSlugId=" +
-    props.commentItem.commentSlugId +
-    moderatedParameter;
+    props.commentItem.commentSlugId;
   webShare.share("Agora Comment", sharePostUrl);
 }
 
