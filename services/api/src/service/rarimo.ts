@@ -16,7 +16,6 @@ import {
     loginNewDeviceWithZKP,
     registerWithZKP,
 } from "@/service/auth.js";
-import type { HttpErrors } from "@fastify/sensible";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;

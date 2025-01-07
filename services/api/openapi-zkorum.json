@@ -525,7 +525,7 @@
                                     "moderationAction": {
                                         "type": "string",
                                         "enum": [
-                                            "lock",
+                                            "move",
                                             "hide"
                                         ]
                                     },
@@ -753,7 +753,7 @@
                                                 "action": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "lock",
+                                                        "move",
                                                         "hide"
                                                     ]
                                                 },
@@ -1319,7 +1319,7 @@
                                                                     "action": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "lock",
+                                                                            "move",
                                                                             "hide"
                                                                         ]
                                                                     },
@@ -1772,7 +1772,7 @@
                                                             "action": {
                                                                 "type": "string",
                                                                 "enum": [
-                                                                    "lock",
+                                                                    "move",
                                                                     "hide"
                                                                 ]
                                                             },
@@ -1925,7 +1925,7 @@
                                                             "action": {
                                                                 "type": "string",
                                                                 "enum": [
-                                                                    "lock",
+                                                                    "move",
                                                                     "hide"
                                                                 ]
                                                             },

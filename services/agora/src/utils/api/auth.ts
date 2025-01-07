@@ -15,6 +15,8 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { getPlatform } from "../common";
+import { useNotify } from "../ui/notify";
+import { useRoute, useRouter } from "vue-router";
 
 export interface AuthenticateReturn {
   isSuccessful: boolean;
@@ -40,6 +42,10 @@ export function useBackendAuthApi() {
   const { loadUserProfile, clearProfileData } = useUserStore();
 
   const $q = useQuasar();
+
+  const { showNotifyMessage } = useNotify();
+  const router = useRouter();
+  const route = useRoute();
 
   async function sendSmsCode({
     phoneNumber,
@@ -88,19 +94,40 @@ export function useBackendAuthApi() {
     return response.data;
   }
 
-  async function deviceIsLoggedIn() {
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
-    const encodedUcan = await buildEncodedUcan(url, options);
-    await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1AuthCheckLoginStatusPost({
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
+  async function deviceIsLoggedIn(): Promise<boolean> {
+    try {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
+      const encodedUcan = await buildEncodedUcan(url, options);
+      await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AuthCheckLoginStatusPost({
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      return true;
+    } catch (e) {
+      if (axios.isAxiosError(e)) {
+        if (e.response?.status === 401 || e.response?.status === 403) {
+          // unauthorized or forbidden
+        } else {
+          console.error(
+            "Unexpected status when checking if device is logged-in",
+            e
+          );
+        }
+      } else {
+        console.error(
+          "Unexpected error when checking if device is logged-in",
+          e
+        );
+      }
+      console.error(e);
+      return false;
+    }
   }
 
   async function logoutFromServer() {
@@ -121,36 +148,46 @@ export function useBackendAuthApi() {
 
   function loadAuthenticatedModules() {
     loadUserProfile();
+    loadPostData(false);
   }
 
   async function initializeAuthState() {
-    try {
-      await deviceIsLoggedIn();
+    const isLoggedIn = await deviceIsLoggedIn();
+    if (isLoggedIn) {
       isAuthenticated.value = true;
       loadAuthenticatedModules();
-    } catch (e) {
-      if (axios.isAxiosError(e)) {
-        if (e.response?.status === 401 || e.response?.status === 403) {
-          // unauthorized or forbidden
-        } else {
-          console.error(
-            "Unexpected status when checking if device is logged-in",
-            e
-          );
-        }
-      } else {
-        console.error(
-          "Unexpected error when checking if device is logged-in",
-          e
-        );
+    } else {
+      logoutDataCleanup();
+
+      const needRedirect = needRedirectUnauthenticatedUser();
+      if (needRedirect) {
+        showNotifyMessage("Logged out");
+        router.push({ name: "welcome" });
       }
-      logoutCleanup();
-    } finally {
-      loadPostData(false);
     }
   }
 
-  async function logoutCleanup() {
+  function needRedirectUnauthenticatedUser(): boolean {
+    const openRouteNames = [
+      "single-post",
+      "default-home-feed",
+      "privacy",
+      "terms",
+    ];
+    const currentRouteName = route.name;
+    if (currentRouteName) {
+      if (openRouteNames.includes(currentRouteName.toString())) {
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      console.log("Failed to detect current route name");
+      return true;
+    }
+  }
+
+  async function logoutDataCleanup() {
     const platform: "mobile" | "web" = getPlatform($q.platform);
 
     await deleteDid(platform);
@@ -167,6 +204,6 @@ export function useBackendAuthApi() {
     logoutFromServer,
     deviceIsLoggedIn,
     initializeAuthState,
-    logoutCleanup,
+    logoutDataCleanup,
   };
 }

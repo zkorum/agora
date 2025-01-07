@@ -32,14 +32,14 @@ const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { showDeleteAccountDialog } = useDialog();
 
-const { logoutFromServer, logoutCleanup } = useBackendAuthApi();
+const { logoutFromServer, logoutDataCleanup } = useBackendAuthApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
 async function logoutRequested() {
   try {
     await logoutFromServer();
-    await logoutCleanup();
+    await logoutDataCleanup();
     showNotifyMessage("Logged out");
     router.push({ name: "welcome" });
   } catch (e) {
@@ -99,7 +99,7 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(logoutCleanup);
+  showDeleteAccountDialog(logoutDataCleanup);
 }
 </script>
 

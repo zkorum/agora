@@ -911,7 +911,7 @@ export const ApiV1ModerationCommentCreatePostRequestModerationReasonEnum = {
 
 export type ApiV1ModerationCommentCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationCommentCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationCommentCreatePostRequestModerationReasonEnum];
 export const ApiV1ModerationCommentCreatePostRequestModerationActionEnum = {
-    Lock: 'lock',
+    Move: 'move',
     Hide: 'hide'
 } as const;
 
@@ -967,7 +967,7 @@ export const ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum = {
 
 export type ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum];
 export const ApiV1ModerationCommentFetchReportPost200ResponseActionEnum = {
-    Lock: 'lock',
+    Move: 'move',
     Hide: 'hide'
 } as const;
 
@@ -1033,7 +1033,7 @@ export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum = {
 
 export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum];
 export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum = {
-    Lock: 'lock',
+    Move: 'move',
     Hide: 'hide'
 } as const;
 

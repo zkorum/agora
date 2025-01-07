@@ -65,7 +65,7 @@ const {
 
 const route = useRoute();
 
-const DEFAULT_MODERATION_ACTION = "lock";
+const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<ModerationActionComments>(
   DEFAULT_MODERATION_ACTION
 );

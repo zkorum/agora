@@ -1262,7 +1262,7 @@ export const moderationActionPostsEnum = pgEnum("moderation_action_posts", [
 
 export const moderationActionCommentsEnum = pgEnum(
     "moderation_action_comments",
-    ["lock", "hide"],
+    ["move", "hide"],
 );
 
 export const reportPostsTable = pgTable(

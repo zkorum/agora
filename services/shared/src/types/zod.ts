@@ -27,7 +27,7 @@ export const zodModerationReason = z.enum([
     "spam",
 ]);
 export const zodModerationActionPosts = z.enum(["lock"]);
-export const zodModerationActionComments = z.enum(["lock", "hide"]);
+export const zodModerationActionComments = z.enum(["move", "hide"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
