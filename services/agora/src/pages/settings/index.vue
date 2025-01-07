@@ -32,7 +32,8 @@ const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { showDeleteAccountDialog } = useDialog();
 
-const { logoutFromServer, logoutDataCleanup } = useBackendAuthApi();
+const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
+  useBackendAuthApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
@@ -40,8 +41,7 @@ async function logoutRequested() {
   try {
     await logoutFromServer();
     await logoutDataCleanup();
-    showNotifyMessage("Logged out");
-    router.push({ name: "welcome" });
+    showLogoutMessageAndRedirect();
   } catch (e) {
     console.error("Unexpected error when logging out", e);
     showNotifyMessage("Oops! Logout failed. Please try again");

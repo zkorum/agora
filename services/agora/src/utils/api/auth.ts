@@ -161,10 +161,14 @@ export function useBackendAuthApi() {
 
       const needRedirect = needRedirectUnauthenticatedUser();
       if (needRedirect) {
-        showNotifyMessage("Logged out");
-        router.push({ name: "welcome" });
+        showLogoutMessageAndRedirect();
       }
     }
+  }
+
+  function showLogoutMessageAndRedirect() {
+    showNotifyMessage("Logged out");
+    router.push({ name: "welcome" });
   }
 
   function needRedirectUnauthenticatedUser(): boolean {
@@ -205,5 +209,6 @@ export function useBackendAuthApi() {
     deviceIsLoggedIn,
     initializeAuthState,
     logoutDataCleanup,
+    showLogoutMessageAndRedirect,
   };
 }
