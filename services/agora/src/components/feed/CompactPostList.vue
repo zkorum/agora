@@ -13,7 +13,7 @@
           <div :style="{ fontSize: '1.3rem' }">It is too quiet here...</div>
 
           <div>
-            Create a new conservation using the
+            Create a new conversation using the
             <q-icon name="mdi-plus-circle" /> button.
           </div>
         </div>
@@ -66,7 +66,7 @@
 
         <div :style="{ fontSize: '1.3rem' }">You're all caught up</div>
 
-        <div>You have seen all the new conservations.</div>
+        <div>You have seen all the new conversations.</div>
       </div>
     </div>
   </div>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="commentItemList.length == 0" class="noCommentMessage">
-      There are no opinions in this conservation.
+      There are no opinions in this conversation filter.
     </div>
 
     <div v-if="commentItemList.length > 0" class="commentListFlex">

@@ -188,7 +188,7 @@ export const useBottomSheet = () => {
         } else if (action.id == "delete") {
           const response = await deletePostBySlugId(postSlugId);
           if (response) {
-            showNotifyMessage("Conservation deleted");
+            showNotifyMessage("Conversation deleted");
             await loadPostData(false);
             await loadUserProfile();
             if (route.name == "single-post") {

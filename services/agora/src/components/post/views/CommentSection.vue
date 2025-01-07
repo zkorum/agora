@@ -58,6 +58,7 @@ import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
+import { useNotify } from "src/utils/ui/notify";
 
 type CommentFilterOptions = "new" | "moderated" | "hidden";
 
@@ -69,6 +70,8 @@ const props = defineProps<{
   isPostLocked: boolean;
   commentFilter: CommentFilterOptions;
 }>();
+
+const { showNotifyMessage } = useNotify();
 
 const sortAlgorithm = ref<CommentFilterOptions>("new");
 sortAlgorithm.value = props.commentFilter;
@@ -102,10 +105,11 @@ watch(profileData, () => {
   initializeModeratorMenu();
 });
 
-function initializeData() {
-  fetchCommentList("new");
-  fetchCommentList("moderated");
+async function initializeData() {
   initializeModeratorMenu();
+  await Promise.all([fetchCommentList("new"), fetchCommentList("moderated")]);
+
+  scrollToComment();
 }
 
 function initializeModeratorMenu() {
@@ -164,28 +168,49 @@ async function fetchCommentList(filter: CommentFeedFilter) {
       } else {
         commentItemsNew.value = response;
       }
-
-      setTimeout(function () {
-        scrollToComment();
-      }, 1000);
     }
   }
 }
 
-function scrollToComment() {
-  if (props.initialCommentSlugId != "") {
-    const targetElement = document.getElementById(props.initialCommentSlugId);
-
-    if (targetElement != null) {
-      targetElement.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    } else {
-      console.log(
-        "Failed to locate comment slug ID: " + props.initialCommentSlugId
-      );
+function getCommentStatus(commentSlugId: string): CommentFilterOptions {
+  for (const commentItem of commentItemsNew.value) {
+    if (commentItem.commentSlugId == commentSlugId) {
+      return "new";
     }
+  }
+
+  for (const commentItem of commentItemsModerated.value) {
+    if (commentItem.commentSlugId == commentSlugId) {
+      return "moderated";
+    }
+  }
+
+  if (!isAuthenticated.value) {
+    showNotifyMessage("This comment had been removed by the moderator");
+    return "new";
+  } else {
+    return "hidden";
+  }
+}
+
+async function scrollToComment() {
+  if (props.initialCommentSlugId != "") {
+    sortAlgorithm.value = getCommentStatus(props.initialCommentSlugId);
+
+    setTimeout(function () {
+      const targetElement = document.getElementById(props.initialCommentSlugId);
+
+      if (targetElement != null) {
+        targetElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      } else {
+        console.log(
+          "Failed to locate comment slug ID: " + props.initialCommentSlugId
+        );
+      }
+    }, 1000);
   }
 }
 </script>
