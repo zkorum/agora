@@ -172,7 +172,7 @@ const { isAuthenticated } = useAuthenticationStore();
 const commentSlugIdQuery = useRouteQuery("commentSlugId", "", {
   transform: String,
 });
-const commentFilterQuery = useRouteQuery("commentFilterQuery", "", {
+const commentFilterQuery = useRouteQuery("filter", "", {
   transform: String,
 });
 

@@ -54,7 +54,7 @@ export const useBottomSheet = () => {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
-        id: "mute-user",
+        id: "muteUser",
       });
     }
 
@@ -109,7 +109,7 @@ export const useBottomSheet = () => {
           });
         } else if (action.id == "userReports") {
           openUserReportsCallback();
-        } else if (action.id == "mute-user") {
+        } else if (action.id == "muteUser") {
           muteUserCallback();
         }
       })
@@ -140,7 +140,7 @@ export const useBottomSheet = () => {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
-        id: "mute-user",
+        id: "muteUser",
       });
     }
 
@@ -163,6 +163,12 @@ export const useBottomSheet = () => {
         label: "User Reports",
         icon: "mdi-account-alert",
         id: "userReports",
+      });
+
+      actionList.push({
+        label: "Moderation History",
+        icon: "mdi-book-open",
+        id: "moderationHistory",
       });
     }
 
@@ -196,8 +202,14 @@ export const useBottomSheet = () => {
           });
         } else if (action.id == "userReports") {
           openUserReportsCallback();
-        } else if (action.id == "mute-user") {
+        } else if (action.id == "muteUser") {
           muteUserCallback();
+        } else if (action.id == "moderationHistory") {
+          await router.push({
+            name: "single-post",
+            params: { postSlugId: postSlugId },
+            query: { filter: "moderated" },
+          });
         }
       })
       .onCancel(() => {
