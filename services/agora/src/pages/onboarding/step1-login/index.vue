@@ -44,11 +44,11 @@ const description = "Please select a log in method.";
 const router = useRouter();
 
 function goToPassportLogin() {
-  router.push({ name: "onboarding-step3-passport" });
+  router.push({ name: "/onboarding/step3-passport/" });
 }
 
 function goToPhoneLogin() {
-  router.push({ name: "onboarding-step3-phone-1" });
+  router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

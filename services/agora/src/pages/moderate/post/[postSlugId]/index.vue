@@ -1,6 +1,8 @@
 <template>
   <div class="container">
-    <div class="title">Moderate the opinion "{add opinion title excerpt}"</div>
+    <div class="title">
+      Moderate the conversation "{add conversation title excerpt}"
+    </div>
 
     <q-select
       v-model="moderationAction"
@@ -45,31 +47,30 @@
 
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
-  ModerationActionComments,
+  ModerationActionPosts,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
-  moderationActionCommentsMapping,
+  moderationActionPostsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
+import { usePostStore } from "src/stores/post";
 
-const {
-  moderateComment,
-  fetchCommentModeration,
-  cancelModerationCommentReport,
-} = useBackendModerateApi();
+const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
+  useBackendModerateApi();
 
 const route = useRoute();
+const router = useRouter();
 
-const DEFAULT_MODERATION_ACTION = "move";
-const moderationAction = ref<ModerationActionComments>(
-  DEFAULT_MODERATION_ACTION
-);
-const actionMapping = ref(moderationActionCommentsMapping);
+const { loadPostData } = usePostStore();
+
+const DEFAULT_MODERATION_ACTION = "lock";
+const moderationAction = ref<ModerationActionPosts>(DEFAULT_MODERATION_ACTION);
+const actionMapping = ref(moderationActionPostsMapping);
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
@@ -79,9 +80,12 @@ const moderationExplanation = ref("");
 
 const hasExistingDecision = ref(false);
 
-let commentSlugId: string | null = null;
-if (typeof route.params.commentSlugId == "string") {
-  commentSlugId = route.params.commentSlugId;
+let postSlugId: string | null = null;
+if (
+  route.name == "/moderate/post/[postSlugId]/" &&
+  typeof route.params.postSlugId == "string"
+) {
+  postSlugId = route.params.postSlugId;
 }
 
 onMounted(async () => {
@@ -89,8 +93,8 @@ onMounted(async () => {
 });
 
 async function initializeData() {
-  if (commentSlugId != null) {
-    const response = await fetchCommentModeration(commentSlugId);
+  if (postSlugId != null) {
+    const response = await fetchPostModeration(postSlugId);
     hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;
@@ -102,38 +106,41 @@ async function initializeData() {
       moderationReason.value = DEFAULT_MODERATION_REASON;
     }
   } else {
-    console.log("Missing comment slug ID");
+    console.log("Missing post slug ID");
   }
 }
 
 async function clickedWithdraw() {
-  if (commentSlugId) {
-    await cancelModerationCommentReport(commentSlugId);
-    initializeData();
-    // TODO: redirect to comment
-    // await router.push({
-    //   name: "single-post",
-    //   params: { postSlugId: postSlugId },
-    // });
+  if (postSlugId) {
+    const isSuccessful = await cancelModerationPostReport(postSlugId);
+    if (isSuccessful) {
+      initializeData();
+      loadPostData(false);
+      await router.push({
+        name: "/post/[postSlugId]",
+        params: { postSlugId: postSlugId },
+      });
+    }
   } else {
     console.log("Missing comment slug ID");
   }
 }
 
 async function clickedSubmit() {
-  if (commentSlugId) {
-    const isSuccessful = await moderateComment(
-      commentSlugId,
+  if (postSlugId) {
+    const isSuccessful = await moderatePost(
+      postSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
+
     if (isSuccessful) {
-      // TODO: redirect to comment
-      // await router.push({
-      //   name: "single-post",
-      //   params: { postSlugId: postSlugId },
-      // });
+      loadPostData(false);
+      await router.push({
+        name: "/post/[postSlugId]",
+        params: { postSlugId: postSlugId },
+      });
     }
   }
 }

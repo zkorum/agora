@@ -53,17 +53,14 @@
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
-import { useRouter } from "vue-router";
 import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 
-const router = useRouter();
-
 const description = ref("");
 
 function goToNextRoute() {
-  router.push({ name: "onboarding-step6-preferences" });
+  // router.push({ name: "onboarding-step6-preferences" });
 }
 
 function selectedOption(option: "safe-space" | "brave-space") {

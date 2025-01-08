@@ -224,7 +224,7 @@ let savedToRoute: RouteLocationNormalized = {
   fullPath: "",
   query: {},
   hash: "",
-  name: "",
+  name: "/",
   path: "",
   meta: {},
   params: {},
@@ -298,7 +298,7 @@ async function onSubmit() {
     loadPostData(false);
 
     router.push({
-      name: "single-post",
+      name: "/post/[postSlugId]",
       params: { postSlugId: response.postSlugId },
     });
   } else {

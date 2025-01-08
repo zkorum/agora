@@ -152,7 +152,10 @@ async function newPostCheck() {
 
 function openPost(postSlugId: string) {
   if (dataReady.value) {
-    router.push({ name: "single-post", params: { postSlugId: postSlugId } });
+    router.push({
+      name: "/post/[postSlugId]",
+      params: { postSlugId: postSlugId },
+    });
   }
 }
 

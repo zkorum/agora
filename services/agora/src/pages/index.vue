@@ -23,7 +23,7 @@ const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 function createNewPost() {
   if (isAuthenticated.value) {
-    router.push({ name: "create-post" });
+    router.push({ name: "/post/create/" });
   } else {
     dialog.showLoginConfirmationDialog();
   }

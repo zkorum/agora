@@ -194,7 +194,7 @@ function validateNumber() {
         defaultCallingCode: phoneNumber.countryCallingCode,
         phoneNumber: phoneNumber.number,
       };
-      router.push({ name: "onboarding-step3-phone-2" });
+      router.push({ name: "/onboarding/step3-phone-2/" });
     } else {
       // TODO: make sure this never happen one the first place
       showNotifyMessage("Invalid phone number");

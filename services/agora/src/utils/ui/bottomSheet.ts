@@ -104,7 +104,7 @@ export const useBottomSheet = () => {
           }
         } else if (action.id == "moderate") {
           router.push({
-            name: "moderate-comment-page",
+            name: "/moderate/comment/[commentSlugId]/",
             params: { commentSlugId: commentSlugId },
           });
         } else if (action.id == "userReports") {
@@ -191,13 +191,13 @@ export const useBottomSheet = () => {
             showNotifyMessage("Conversation deleted");
             await loadPostData(false);
             await loadUserProfile();
-            if (route.name == "single-post") {
-              await router.push({ name: "default-home-feed" });
+            if (route.name == "/post/[postSlugId]") {
+              await router.push({ name: "/" });
             }
           }
         } else if (action.id == "moderate") {
           await router.push({
-            name: "moderate-post-page",
+            name: "/moderate/post/[postSlugId]/",
             params: { postSlugId: postSlugId },
           });
         } else if (action.id == "userReports") {
@@ -206,7 +206,7 @@ export const useBottomSheet = () => {
           muteUserCallback();
         } else if (action.id == "moderationHistory") {
           await router.push({
-            name: "single-post",
+            name: "/post/[postSlugId]",
             params: { postSlugId: postSlugId },
             query: { filter: "moderated" },
           });

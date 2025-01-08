@@ -26,9 +26,6 @@ import { useTimeAgo } from "@vueuse/core";
 
 const route = useRoute();
 
-console.log(route.params.reportType);
-console.log(route.params.slugId);
-
 const { showNotifyMessage } = useNotify();
 
 const { fetchUserReportsByPostSlugId, fetchUserReportsByCommentSlugId } =
@@ -41,7 +38,10 @@ onMounted(() => {
 });
 
 async function loadReports() {
-  if (typeof route.params.slugId === "string") {
+  if (
+    route.name === "/user-reports/[reportType]/[slugId]/" &&
+    typeof route.params.slugId === "string"
+  ) {
     if (route.params.reportType == "post") {
       reportItemList.value = await fetchUserReportsByPostSlugId(
         route.params.slugId

@@ -110,6 +110,13 @@ export default defineConfig((ctx) => {
         ],
         // TODO: add env variable to add TLS/SSL
         // basicSsl(),
+        [
+          "unplugin-vue-router/vite",
+          {
+            // routesFolder: 'src/pages',
+            dts: "./typed-router.d.ts",
+          },
+        ],
       ],
     },
 

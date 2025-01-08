@@ -82,7 +82,7 @@ function loadModerationreason() {
 
 function openModerationPage() {
   router.push({
-    name: "moderate-post-page",
+    name: "/moderate/post/[postSlugId]/",
     params: { postSlugId: props.postSlugId },
   });
 }

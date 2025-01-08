@@ -29,7 +29,7 @@ const description =
 const router = useRouter();
 
 function goToNextRoute() {
-  router.push({ name: "onboarding-step2-signup" });
+  router.push({ name: "/onboarding/step2-signup/" });
 }
 </script>
 

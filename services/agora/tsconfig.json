@@ -4,6 +4,7 @@
     "strictNullChecks": true,
     "alwaysStrict": true,
     "noImplicitThis": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "types": ["unplugin-vue-router/client"]
   }
 }

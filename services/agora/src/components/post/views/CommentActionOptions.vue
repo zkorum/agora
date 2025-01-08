@@ -45,7 +45,7 @@ function reportContentCallback() {
 
 function openUserReportsCallback() {
   router.push({
-    name: "user-report-viewer",
+    name: "/user-reports/[reportType]/[slugId]/",
     params: { reportType: "comment", slugId: props.commentItem.commentSlugId },
   });
 }

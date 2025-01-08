@@ -52,14 +52,14 @@ const accountSettings: SettingsInterface[] = [
   {
     label: "Profile",
     action: () => {
-      router.push({ name: "settings-account-profile" });
+      router.push({ name: "/settings/account/profile/" });
     },
     style: "none",
   },
   {
     label: "Muted Users",
     action: () => {
-      router.push({ name: "settings-account-muted-users" });
+      router.push({ name: "/settings/account/muted-users/" });
     },
     style: "none",
   },
@@ -69,14 +69,14 @@ const aboutSettings: SettingsInterface[] = [
   {
     label: "Privacy Policy",
     action: () => {
-      router.push({ name: "privacy" });
+      router.push({ name: "/legal/privacy/" });
     },
     style: "none",
   },
   {
     label: "Terms of Service",
     action: () => {
-      router.push({ name: "terms" });
+      router.push({ name: "/legal/terms/" });
     },
     style: "none",
   },

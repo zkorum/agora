@@ -79,7 +79,7 @@ const languageList = ["English", "Spanish", "French", "Chinese"];
 const topicList = ["Technology", "Environment", "Politics"];
 
 function goToHome() {
-  router.push({ name: "default-home-feed" });
+  router.push({ name: "/" });
 }
 </script>
 

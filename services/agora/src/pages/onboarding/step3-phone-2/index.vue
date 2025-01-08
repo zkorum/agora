@@ -129,9 +129,9 @@ async function nextButtonClicked() {
       showNotifyMessage("Verification successful 🎉");
       await userLogin();
       if (onboardingMode == "LOGIN") {
-        await router.push({ name: "default-home-feed" });
+        await router.push({ name: "/" });
       } else {
-        await router.push({ name: "onboarding-step4-username" });
+        await router.push({ name: "/onboarding/step4-username/" });
       }
     } else {
       switch (response.reason) {
@@ -150,9 +150,9 @@ async function nextButtonClicked() {
           showNotifyMessage("Verification successful 🎉");
           await userLogin();
           if (onboardingMode == "LOGIN") {
-            await router.push({ name: "default-home-feed" });
+            await router.push({ name: "/" });
           } else {
-            await router.push({ name: "onboarding-step4-username" });
+            await router.push({ name: "/onboarding/step4-username/" });
           }
           break;
         case "associated_with_another_user": {
@@ -187,9 +187,9 @@ async function requestCodeClicked(
           showNotifyMessage("Verification successful 🎉");
           await userLogin();
           if (onboardingMode == "LOGIN") {
-            await router.push({ name: "default-home-feed" });
+            await router.push({ name: "/" });
           } else {
-            await router.push({ name: "onboarding-step4-username" });
+            await router.push({ name: "/onboarding/step4-username/" });
           }
           break;
         case "associated_with_another_user":

@@ -1,22 +1,16 @@
 <template>
   <div class="flexIcons">
-    <RouterLink :to="{ name: 'default-home-feed' }">
+    <RouterLink to="/">
       <div class="iconStyle">
         <q-icon
           name="mdi-home"
           size="1.6rem"
-          :color="
-            route.name === 'default-home-feed'
-              ? 'color-highlight'
-              : 'color-text-weak'
-          "
+          :color="route.name === '/' ? 'color-highlight' : 'color-text-weak'"
         />
         <div
           :class="
             'text-' +
-            (route.name === 'default-home-feed'
-              ? 'color-highlight'
-              : 'color-text-weak')
+            (route.name === '/' ? 'color-highlight' : 'color-text-weak')
           "
         >
           Home
@@ -29,8 +23,7 @@
         name="mdi-account-circle"
         size="1.6rem"
         :color="
-          route.name === 'user-profile-posts' ||
-          route.name === 'user-profile-comments'
+          route.name === '/' || route.name === '/user-profile/comments/'
             ? 'color-highlight'
             : 'color-text-weak'
         "
@@ -38,8 +31,8 @@
       <div
         :class="
           'text-' +
-          (route.name === 'user-profile-posts' ||
-          route.name === 'user-profile-comments'
+          (route.name === '/user-profile/posts/' ||
+          route.name === '/user-profile/comments/'
             ? 'color-highlight'
             : 'color-text-weak')
         "
@@ -67,7 +60,7 @@ function accessProfile() {
   if (!isAuthenticated.value) {
     dialog.showLoginConfirmationDialog();
   } else {
-    router.push({ name: "user-profile-posts" });
+    router.push({ name: "/user-profile/posts/" });
   }
 }
 </script>

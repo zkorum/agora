@@ -104,7 +104,7 @@ function reportContentCallback() {
 
 function openUserReportsCallback() {
   router.push({
-    name: "user-report-viewer",
+    name: "/user-reports/[reportType]/[slugId]/",
     params: { reportType: "post", slugId: props.postSlugId },
   });
 }

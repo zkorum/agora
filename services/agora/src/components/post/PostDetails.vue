@@ -246,9 +246,9 @@ function cancelledCommentComposor() {
 }
 
 function clickedCommentButton() {
-  if (route.name != "single-post") {
+  if (route.name != "/post/[postSlugId]") {
     router.push({
-      name: "single-post",
+      name: "/post/[postSlugId]",
       params: { postSlugId: props.extendedPostData.metadata.postSlugId },
       query: { action: "comment" },
     });

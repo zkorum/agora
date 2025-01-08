@@ -5,10 +5,9 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from "vue-router";
-
-import routes from "./routes";
 import { useLastNavigatedRouteName } from "src/utils/nav/lastNavigatedRouteName";
 import { useStorage } from "@vueuse/core";
+import { routes, handleHotUpdate } from "vue-router/auto-routes";
 
 /*
  * If not building with SSR mode, you can
@@ -68,6 +67,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     }
   });
 
+  /*
   // @see https://stackoverflow.com/questions/69300341/typeerror-failed-to-fetch-dynamically-imported-module-on-vue-vite-vanilla-set
   // @see https://github.com/vitejs/vite/issues/11804#issuecomment-1406182566
   Router.onError((error, to) => {
@@ -75,18 +75,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       window.location.href = to.fullPath;
     }
   });
-
-  /*
-  if (!process.env.DEV) {
-    const STARTING_PAGE = "welcome";
-
-    Router.beforeEach(async (to) => {
-      if (!useAuthenticationStore().isAuthenticated && to.name !== STARTING_PAGE) {
-        return { name: STARTING_PAGE }
-      }
-    })
-  }
   */
+
+  // This will update routes at runtime without reloading the page
+  if (import.meta.hot) {
+    handleHotUpdate(Router);
+  }
 
   return Router;
 });

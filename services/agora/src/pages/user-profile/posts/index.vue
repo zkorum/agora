@@ -67,7 +67,10 @@ watch(targetIsVisible, async () => {
 });
 
 function openPost(postSlugId: string) {
-  router.push({ name: "single-post", params: { postSlugId: postSlugId } });
+  router.push({
+    name: "/post/[postSlugId]",
+    params: { postSlugId: postSlugId },
+  });
 }
 </script>
 

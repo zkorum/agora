@@ -9,13 +9,13 @@
     <div class="menuButtons">
       <RouterLink
         v-if="hasLoginButton && !isAuthenticated && showAuthButton"
-        :to="{ name: 'welcome' }"
+        :to="{ name: '/welcome/' }"
       >
         <ZKButton label="Log in" text-color="white" color="warning" />
       </RouterLink>
 
       <HelpButton />
-      <RouterLink :to="{ name: 'settings-page' }">
+      <RouterLink :to="{ name: '/settings/' }">
         <ZKButton
           v-if="hasSettingsButton"
           icon="mdi-cog"

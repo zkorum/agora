@@ -168,7 +168,7 @@ export function useBackendAuthApi() {
 
   function showLogoutMessageAndRedirect() {
     showNotifyMessage("Logged out");
-    router.push({ name: "welcome" });
+    router.push({ name: "/welcome/" });
   }
 
   function needRedirectUnauthenticatedUser(): boolean {

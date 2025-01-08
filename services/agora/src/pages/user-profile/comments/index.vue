@@ -53,12 +53,12 @@
 <script setup lang="ts">
 import { useElementVisibility, useTimeAgo } from "@vueuse/core";
 import { useUserStore } from "src/stores/user";
-import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import CommentActionOptions from "../post/views/CommentActionOptions.vue";
-import CommentModeration from "../post/views/CommentModeration.vue";
+import CommentActionOptions from "src/components/post/views/CommentActionOptions.vue";
+import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
+import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
@@ -96,7 +96,7 @@ watch(targetIsVisible, async () => {
 
 function openComment(postSlugId: string, commentSlugId: string) {
   router.push({
-    name: "single-post",
+    name: "/post/[postSlugId]",
     params: { postSlugId: postSlugId },
     query: {
       commentSlugId: commentSlugId,

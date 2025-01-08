@@ -300,14 +300,14 @@ async function completeVerification() {
   await userLogin();
 
   if (onboardingMode == "LOGIN") {
-    router.push({ name: "default-home-feed" });
+    router.push({ name: "/" });
   } else {
-    router.push({ name: "onboarding-step4-username" });
+    router.push({ name: "/onboarding/step4-username/" });
   }
 }
 
 function goToPhoneVerification() {
-  router.push({ name: "onboarding-step3-phone-1" });
+  router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 
