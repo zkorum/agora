@@ -14,7 +14,7 @@
         <ZKButton label="Log in" text-color="white" color="warning" />
       </RouterLink>
 
-      <HelpButton />
+      <HelpButton v-if="isAuthenticated" />
       <RouterLink :to="{ name: '/settings/' }">
         <ZKButton
           v-if="hasSettingsButton"

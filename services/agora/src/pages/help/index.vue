@@ -8,9 +8,9 @@
     }"
     :menu-bar-props="{
       hasBackButton: false,
-      hasSettingsButton: false,
+      hasSettingsButton: true,
       hasCloseButton: true,
-      hasLoginButton: true,
+      hasLoginButton: false,
     }"
   >
     <form @submit.prevent="submitForm()">

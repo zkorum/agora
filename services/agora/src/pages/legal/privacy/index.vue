@@ -10,7 +10,7 @@
       hasBackButton: false,
       hasSettingsButton: false,
       hasCloseButton: true,
-      hasLoginButton: true,
+      hasLoginButton: false,
     }"
   >
     <ZKTitleBodyWrapper title="Privacy Policy">
