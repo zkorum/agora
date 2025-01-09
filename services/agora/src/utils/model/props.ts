@@ -1,4 +1,9 @@
 export interface MainLayoutProps {
+  generalProps: GeneralProps;
+  menuBarProps: DefaultMenuBarProps;
+}
+
+export interface GeneralProps {
   addBottomPadding: boolean;
   enableHeader: boolean;
   enableFooter: boolean;

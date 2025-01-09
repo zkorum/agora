@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: true,
+      enableFooter: true,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasCloseButton: false,
+      hasLoginButton: true,
+      hasSettingsButton: true,
+    }"
+  >
     <div>
       <q-form @submit="onSubmit()">
         <TopMenuWrapper :reveal="false">
@@ -171,7 +184,7 @@
         </ZKCard>
       </q-dialog>
     </div>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -197,6 +210,7 @@ import {
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);

@@ -1,46 +1,63 @@
 <template>
-  <div class="container">
-    <div class="title">Moderate the opinion "{add opinion title excerpt}"</div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasSettingsButton: false,
+      hasCloseButton: true,
+      hasLoginButton: true,
+    }"
+  >
+    <div class="container">
+      <div class="title">
+        Moderate the opinion "{add opinion title excerpt}"
+      </div>
 
-    <q-select
-      v-model="moderationAction"
-      :options="actionMapping"
-      label="Action"
-      emit-value
-      map-options
-    />
+      <q-select
+        v-model="moderationAction"
+        :options="actionMapping"
+        label="Action"
+        emit-value
+        map-options
+      />
 
-    <q-select
-      v-model="moderationReason"
-      :options="reasonMapping"
-      label="Reason"
-      emit-value
-      map-options
-    />
+      <q-select
+        v-model="moderationReason"
+        :options="reasonMapping"
+        label="Reason"
+        emit-value
+        map-options
+      />
 
-    <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
-    <ZKButton
-      v-if="!hasExistingDecision"
-      label="Modify"
-      color="primary"
-      @click="clickedSubmit()"
-    />
-    <ZKButton
-      v-if="hasExistingDecision"
-      label="Moderate"
-      color="primary"
-      @click="clickedSubmit()"
-    />
+      <ZKButton
+        v-if="!hasExistingDecision"
+        label="Modify"
+        color="primary"
+        @click="clickedSubmit()"
+      />
+      <ZKButton
+        v-if="hasExistingDecision"
+        label="Moderate"
+        color="primary"
+        @click="clickedSubmit()"
+      />
 
-    <ZKButton
-      v-if="hasExistingDecision"
-      label="Withdraw"
-      color="secondary"
-      text-color="primary"
-      @click="clickedWithdraw()"
-    />
-  </div>
+      <ZKButton
+        v-if="hasExistingDecision"
+        label="Withdraw"
+        color="secondary"
+        text-color="primary"
+        @click="clickedWithdraw()"
+      />
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -56,6 +73,7 @@ import {
   moderationActionCommentsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const {
   moderateComment,

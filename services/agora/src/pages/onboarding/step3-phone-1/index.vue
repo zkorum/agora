@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <form @submit.prevent="">
       <StepperLayout
         :submit-call-back="validateNumber"
@@ -89,7 +102,7 @@
         </template>
       </StepperLayout>
     </form>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -108,6 +121,7 @@ import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useNotify } from "src/utils/ui/notify";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const inputNumber = ref("");
 

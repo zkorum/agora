@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <StepperLayout
       :submit-call-back="() => {}"
       :current-step="2"
@@ -30,7 +43,7 @@
         />
       </template>
     </StepperLayout>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -38,6 +51,7 @@ import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const router = useRouter();
 

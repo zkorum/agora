@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: true,
+      enableFooter: true,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasCloseButton: false,
+      hasLoginButton: true,
+      hasSettingsButton: true,
+    }"
+  >
     <div class="container">
       <div v-if="isAuthenticated">
         <SettingsSection :settings-item-list="accountSettings" />
@@ -15,12 +28,13 @@
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
     </div>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
+import MainLayout from "src/layouts/MainLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { type SettingsInterface } from "src/utils/component/settings/settings";

@@ -159,10 +159,12 @@ export function useBackendAuthApi() {
     } else {
       logoutDataCleanup();
 
-      const needRedirect = needRedirectUnauthenticatedUser();
-      if (needRedirect) {
-        showLogoutMessageAndRedirect();
-      }
+      setTimeout(function () {
+        const needRedirect = needRedirectUnauthenticatedUser();
+        if (needRedirect) {
+          showLogoutMessageAndRedirect();
+        }
+      }, 500);
     }
   }
 
@@ -172,21 +174,20 @@ export function useBackendAuthApi() {
   }
 
   function needRedirectUnauthenticatedUser(): boolean {
-    const openRouteNames = [
-      "single-post",
-      "default-home-feed",
-      "privacy",
-      "terms",
-    ];
     const currentRouteName = route.name;
     if (currentRouteName) {
-      if (openRouteNames.includes(currentRouteName.toString())) {
+      if (
+        currentRouteName == "/" ||
+        currentRouteName == "/post/[postSlugId]" ||
+        currentRouteName == "/legal/privacy/" ||
+        currentRouteName == "/legal/terms/"
+      ) {
         return false;
       } else {
         return true;
       }
     } else {
-      console.log("Failed to detect current route name");
+      console.log("Failed to detect current route name: " + currentRouteName);
       return true;
     }
   }

@@ -23,7 +23,8 @@
         name="mdi-account-circle"
         size="1.6rem"
         :color="
-          route.name === '/' || route.name === '/user-profile/comments/'
+          route.name === '/user-profile/posts/' ||
+          route.name === '/user-profile/comments/'
             ? 'color-highlight'
             : 'color-text-weak'
         "

@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <form class="formStyle" @submit.prevent="">
       <StepperLayout
         :submit-call-back="nextButtonClicked"
@@ -66,7 +79,7 @@
         </template>
       </StepperLayout>
     </form>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -87,6 +100,7 @@ import { useNotify } from "src/utils/ui/notify";
 import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const $q = useQuasar();
 let platform: "mobile" | "web" = "web";

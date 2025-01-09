@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: true,
+      enableFooter: true,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasSettingsButton: true,
+      hasCloseButton: false,
+      hasLoginButton: true,
+    }"
+  >
     <div class="topBar">
       <UserAvatar :user-name="profileData.userName" :size="60" />
 
@@ -27,7 +40,7 @@
       </TabList>
       <router-view />
     </Tabs>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +53,7 @@ import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const { profileData } = storeToRefs(useUserStore());
 
