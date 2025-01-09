@@ -820,7 +820,7 @@ server.after(() => {
                 200: Dto.castVoteForCommentResponse,
             },
         },
-        handler: async (request) => {
+        handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
@@ -829,7 +829,7 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                return await castVoteForCommentSlugId({
+                const castVoteResponse = await castVoteForCommentSlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                     userId: status.userId,
@@ -837,6 +837,24 @@ server.after(() => {
                     proof: encodedUcan,
                     votingAction: request.body.chosenOption,
                 });
+                reply.send(castVoteResponse);
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
             }
         },
     });
@@ -846,9 +864,8 @@ server.after(() => {
         url: `/api/${apiVersion}/poll/submitResponse`,
         schema: {
             body: Dto.submitPollResponseRequest,
-            response: {},
         },
-        handler: async (request) => {
+        handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
@@ -866,6 +883,24 @@ server.after(() => {
                     postSlugId: request.body.postSlugId,
                     voteOptionChoice: request.body.voteOptionChoice,
                 });
+                reply.send();
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
             }
         },
     });
@@ -902,7 +937,7 @@ server.after(() => {
         schema: {
             body: Dto.deleteCommentBySlugIdRequest,
         },
-        handler: async (request) => {
+        handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(
                 db,
                 request,
@@ -920,6 +955,24 @@ server.after(() => {
                     proof: encodedUcan,
                     didWrite: didWrite,
                 });
+                reply.send();
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
             }
         },
     });
@@ -933,7 +986,7 @@ server.after(() => {
                 200: Dto.createCommentResponse,
             },
         },
-        handler: async (request) => {
+        handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
@@ -942,7 +995,7 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                return await postNewComment({
+                const newCommentResponse = await postNewComment({
                     db: db,
                     commentBody: request.body.commentBody,
                     postSlugId: request.body.postSlugId,
@@ -951,6 +1004,24 @@ server.after(() => {
                     proof: encodedUcan,
                     httpErrors: server.httpErrors,
                 });
+                reply.send(newCommentResponse);
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
             }
         },
     });
@@ -1036,7 +1107,7 @@ server.after(() => {
         schema: {
             body: Dto.deletePostBySlugIdRequest,
         },
-        handler: async (request) => {
+        handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
@@ -1052,6 +1123,24 @@ server.after(() => {
                     proof: encodedUcan,
                     didWrite: didWrite,
                 });
+                reply.send();
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
             }
         },
     });
@@ -1200,7 +1289,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/account/delete-user`,
         schema: {},
-        handler: async (request) => {
+        handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
@@ -1215,6 +1304,24 @@ server.after(() => {
                     didWrite: didWrite,
                     userId: status.userId,
                 });
+                reply.send();
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
             }
         },
     });
