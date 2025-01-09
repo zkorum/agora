@@ -9,7 +9,7 @@
 
       <div class="profileMetadataBar">
         <div>
-          {{ profileData.activePostCount }} conservations
+          {{ profileData.activePostCount }} conversations
           <span class="dotPadding">•</span>
         </div>
         <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
@@ -19,7 +19,7 @@
     <Tabs :value="currentTab">
       <TabList>
         <RouterLink :to="{ name: 'user-profile-posts' }">
-          <Tab :value="0">Conservations</Tab>
+          <Tab :value="0">Conversations</Tab>
         </RouterLink>
         <RouterLink :to="{ name: 'user-profile-comments' }">
           <Tab :value="1">Opinions</Tab>

@@ -1,15 +1,13 @@
 <template>
   <div class="container">
-    <div v-if="hasExistingReport" class="title">
-      Modify the existing post report
+    <div class="title">
+      Moderate the conversation "{add conversation title excerpt}"
     </div>
-
-    <div v-if="!hasExistingReport" class="title">Submit a new post report</div>
 
     <q-select
       v-model="moderationAction"
       :options="actionMapping"
-      label="Moderation Action"
+      label="Action"
       emit-value
       map-options
     />
@@ -17,31 +15,39 @@
     <q-select
       v-model="moderationReason"
       :options="reasonMapping"
-      label="Moderation Reason"
+      label="Reason"
       emit-value
       map-options
     />
 
-    <q-input
-      v-model="moderationExplanation"
-      label="Moderation Explanation (optional)"
-    />
-
-    <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
+    <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
     <ZKButton
-      v-if="hasExistingReport"
-      label="Withdraw Report"
+      v-if="!hasExistingDecision"
+      label="Modify"
+      color="primary"
+      @click="clickedSubmit()"
+    />
+    <ZKButton
+      v-if="hasExistingDecision"
+      label="Moderate"
+      color="primary"
+      @click="clickedSubmit()"
+    />
+
+    <ZKButton
+      v-if="hasExistingDecision"
+      label="Withdraw"
       color="secondary"
       text-color="primary"
-      @click="clickedCancel()"
+      @click="clickedWithdraw()"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
   ModerationActionPosts,
@@ -58,6 +64,7 @@ const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
   useBackendModerateApi();
 
 const route = useRoute();
+const router = useRouter();
 
 const { loadPostData } = usePostStore();
 
@@ -71,7 +78,7 @@ const reasonMapping = ref(moderationReasonMapping);
 
 const moderationExplanation = ref("");
 
-const hasExistingReport = ref(false);
+const hasExistingDecision = ref(false);
 
 let postSlugId: string | null = null;
 if (typeof route.params.postSlugId == "string") {
@@ -85,7 +92,7 @@ onMounted(async () => {
 async function initializeData() {
   if (postSlugId != null) {
     const response = await fetchPostModeration(postSlugId);
-    hasExistingReport.value = response.status == "moderated";
+    hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;
       moderationExplanation.value = response.explanation;
@@ -100,12 +107,16 @@ async function initializeData() {
   }
 }
 
-async function clickedCancel() {
+async function clickedWithdraw() {
   if (postSlugId) {
     const isSuccessful = await cancelModerationPostReport(postSlugId);
     if (isSuccessful) {
       initializeData();
       loadPostData(false);
+      await router.push({
+        name: "single-post",
+        params: { postSlugId: postSlugId },
+      });
     }
   } else {
     console.log("Missing comment slug ID");
@@ -123,6 +134,10 @@ async function clickedSubmit() {
 
     if (isSuccessful) {
       loadPostData(false);
+      await router.push({
+        name: "single-post",
+        params: { postSlugId: postSlugId },
+      });
     }
   }
 }
@@ -133,7 +148,7 @@ async function clickedSubmit() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1rem;
+  padding: 1rem;
 }
 
 .title {

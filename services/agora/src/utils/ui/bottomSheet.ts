@@ -39,7 +39,8 @@ export const useBottomSheet = () => {
     posterUserName: string,
     deleteCommentCallback: (deleted: boolean) => void,
     reportCommentCallback: () => void,
-    openUserReportsCallback: () => void
+    openUserReportsCallback: () => void,
+    muteUserCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -48,6 +49,14 @@ export const useBottomSheet = () => {
       icon: "mdi-flag",
       id: "report",
     });
+
+    if (profileData.value.userName != posterUserName && isAuthenticated.value) {
+      actionList.push({
+        label: "Mute User",
+        icon: "mdi-account-off",
+        id: "muteUser",
+      });
+    }
 
     if (profileData.value.userName == posterUserName) {
       actionList.push({
@@ -66,7 +75,7 @@ export const useBottomSheet = () => {
 
       actionList.push({
         label: "User Reports",
-        icon: "mdi-sword",
+        icon: "mdi-account-alert",
         id: "userReports",
       });
     }
@@ -80,7 +89,11 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
-          reportCommentCallback();
+          if (isAuthenticated.value) {
+            reportCommentCallback();
+          } else {
+            showLoginConfirmationDialog();
+          }
         } else if (action.id == "delete") {
           const response = await deleteCommentBySlugId(commentSlugId);
           if (response) {
@@ -96,6 +109,8 @@ export const useBottomSheet = () => {
           });
         } else if (action.id == "userReports") {
           openUserReportsCallback();
+        } else if (action.id == "muteUser") {
+          muteUserCallback();
         }
       })
       .onCancel(() => {
@@ -110,7 +125,8 @@ export const useBottomSheet = () => {
     postSlugId: string,
     posterUserName: string,
     reportPostCallback: () => void,
-    openUserReportsCallback: () => void
+    openUserReportsCallback: () => void,
+    muteUserCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -119,6 +135,14 @@ export const useBottomSheet = () => {
       icon: "mdi-flag",
       id: "report",
     });
+
+    if (profileData.value.userName != posterUserName && isAuthenticated.value) {
+      actionList.push({
+        label: "Mute User",
+        icon: "mdi-account-off",
+        id: "muteUser",
+      });
+    }
 
     if (profileData.value.userName == posterUserName) {
       actionList.push({
@@ -137,8 +161,14 @@ export const useBottomSheet = () => {
 
       actionList.push({
         label: "User Reports",
-        icon: "mdi-sword",
+        icon: "mdi-account-alert",
         id: "userReports",
+      });
+
+      actionList.push({
+        label: "Moderation History",
+        icon: "mdi-book-open",
+        id: "moderationHistory",
       });
     }
 
@@ -158,7 +188,7 @@ export const useBottomSheet = () => {
         } else if (action.id == "delete") {
           const response = await deletePostBySlugId(postSlugId);
           if (response) {
-            showNotifyMessage("Conservation deleted");
+            showNotifyMessage("Conversation deleted");
             await loadPostData(false);
             await loadUserProfile();
             if (route.name == "single-post") {
@@ -172,6 +202,14 @@ export const useBottomSheet = () => {
           });
         } else if (action.id == "userReports") {
           openUserReportsCallback();
+        } else if (action.id == "muteUser") {
+          muteUserCallback();
+        } else if (action.id == "moderationHistory") {
+          await router.push({
+            name: "single-post",
+            params: { postSlugId: postSlugId },
+            query: { filter: "moderated" },
+          });
         }
       })
       .onCancel(() => {

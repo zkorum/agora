@@ -101,8 +101,7 @@ export async function getUserComments({
             const postItem = await fetchPostBySlugId({
                 db: db,
                 postSlugId: commentResponse.postSlugId,
-                fetchPollResponse: false,
-                userId: undefined,
+                personalizationUserId: undefined,
             });
 
             const extendedCommentItem: ExtendedComment = {
@@ -151,9 +150,9 @@ export async function getUserPosts({
             limit: 10,
             where: whereClause,
             enableCompactBody: true,
-            fetchPollResponse: true,
-            userId: userId,
+            personalizationUserId: userId,
             excludeLockedPosts: false,
+            removeMutedAuthors: false,
         });
 
         return posts;

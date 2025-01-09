@@ -1,5 +1,5 @@
 {
-  "id": "a56edb05-2bb6-4f2c-8b8e-60b982cbfb90",
+  "id": "a9239353-5014-4c84-8538-2e1b34b6abc9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2332,6 +2332,105 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "public.user_mute_preference": {
+      "name": "user_mute_preference",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "user_mute_preference_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "source_user_id": {
+          "name": "source_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_user_id": {
+          "name": "target_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_idx_mute": {
+          "name": "user_idx_mute",
+          "columns": [
+            {
+              "expression": "source_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_mute_preference_source_user_id_user_id_fk": {
+          "name": "user_mute_preference_source_user_id_user_id_fk",
+          "tableFrom": "user_mute_preference",
+          "tableTo": "user",
+          "columnsFrom": [
+            "source_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_mute_preference_target_user_id_user_id_fk": {
+          "name": "user_mute_preference_target_user_id_user_id_fk",
+          "tableFrom": "user_mute_preference",
+          "tableTo": "user",
+          "columnsFrom": [
+            "target_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_unique_mute": {
+          "name": "user_unique_mute",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_user_id",
+            "target_user_id"
+          ]
+        }
+      },
+      "checkConstraints": {}
+    },
     "public.user_post_topic_preference": {
       "name": "user_post_topic_preference",
       "schema": "",
@@ -2960,7 +3059,7 @@
       "name": "moderation_action_comments",
       "schema": "public",
       "values": [
-        "lock",
+        "move",
         "hide"
       ]
     },

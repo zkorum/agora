@@ -211,6 +211,22 @@ const routes: RouteRecordRaw[] = [
         name: "settings-account-profile",
       },
       {
+        path: "/settings/account/muted-users",
+        components: {
+          default: () => import("pages/settings/account/muted-users/index.vue"),
+          topmenubar: DefaultMenuBar,
+        },
+        props: {
+          topmenubar: {
+            hasBackButton: false,
+            hasSettingsButton: true,
+            hasCloseButton: true,
+            hasLoginButton: true,
+          } as DefaultMenuBarProps,
+        },
+        name: "settings-account-muted-users",
+      },
+      {
         path: "/legal/privacy",
         components: {
           default: () => import("pages/legal/privacy/index.vue"),

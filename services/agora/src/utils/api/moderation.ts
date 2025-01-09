@@ -52,11 +52,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Submitted report");
+      showNotifyMessage("Moderation decision completed");
       return true;
     } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to submit moderation report for post");
+      console.error(
+        "Error while submitting moderation decision on conversation",
+        e
+      );
+      showNotifyMessage("Failed to submit moderation decision");
       return false;
     }
   }
@@ -89,11 +92,11 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Submitted report");
+      showNotifyMessage("Moderation decision completed");
       return true;
     } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to submit moderation report for comment");
+      console.error("Error while submitting moderation decision on opinion", e);
+      showNotifyMessage("Failed to submit moderation decision");
       return false;
     }
   }
@@ -206,10 +209,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
+      showNotifyMessage("Moderation decision withdrawn");
       return true;
     } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to fetch comment moderation details");
+      console.error(
+        "Error while withdrawing moderation decision on conversation",
+        e
+      );
+      showNotifyMessage("Failed to withdraw moderation decision");
       return false;
     }
   }
@@ -236,10 +243,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
+      showNotifyMessage("Moderation decision withdrawn");
       return true;
     } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to fetch comment moderation details");
+      console.error(
+        "Error while withdrawing moderation decision on opinion",
+        e
+      );
+      showNotifyMessage("Failed to withdraw moderation decision");
       return false;
     }
   }

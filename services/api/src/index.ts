@@ -69,6 +69,10 @@ import {
     fetchUserReportsByCommentSlugId,
     fetchUserReportsByPostSlugId,
 } from "./service/report.js";
+import {
+    getUserMutePreferences,
+    muteUserByUsername,
+} from "./service/muteUser.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -432,15 +436,13 @@ server.after(() => {
                     return await feedService.fetchFeed({
                         db: db,
                         lastSlugId: request.body.lastSlugId,
-                        fetchPollResponse: true,
-                        userId: status.userId,
+                        personalizationUserId: status.userId,
                     });
                 }
             } else {
                 return await feedService.fetchFeed({
                     db: db,
                     lastSlugId: request.body.lastSlugId,
-                    fetchPollResponse: false,
                 });
             }
         },
@@ -916,11 +918,31 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            return await fetchCommentsByPostSlugId({
-                db: db,
-                postSlugId: request.body.postSlugId,
-                fetchTarget: request.body.filter,
-            });
+            if (request.body.isAuthenticatedRequest) {
+                const didWrite = await verifyUCAN(db, request, {
+                    expectedDeviceStatus: undefined,
+                });
+
+                const status = await authUtilService.isLoggedIn(db, didWrite);
+                if (!status.isLoggedIn) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not logged in",
+                    );
+                } else {
+                    return await fetchCommentsByPostSlugId({
+                        db: db,
+                        postSlugId: request.body.postSlugId,
+                        fetchTarget: request.body.filter,
+                        personalizationUserId: status.userId,
+                    });
+                }
+            } else {
+                return await fetchCommentsByPostSlugId({
+                    db: db,
+                    postSlugId: request.body.postSlugId,
+                    fetchTarget: request.body.filter,
+                });
+            }
         },
     });
 
@@ -1041,8 +1063,7 @@ server.after(() => {
                     const postItem = await postService.fetchPostBySlugId({
                         db: db,
                         postSlugId: request.body.postSlugId,
-                        fetchPollResponse: true,
-                        userId: status.userId,
+                        personalizationUserId: status.userId,
                     });
 
                     const response: FetchPostBySlugIdResponse = {
@@ -1054,7 +1075,6 @@ server.after(() => {
                 const postItem = await postService.fetchPostBySlugId({
                     db: db,
                     postSlugId: request.body.postSlugId,
-                    fetchPollResponse: false,
                 });
 
                 const response: FetchPostBySlugIdResponse = {
@@ -1310,6 +1330,54 @@ server.after(() => {
                     commentSlugId: request.body.commentSlugId,
                 });
                 return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/user-mute/fetch-preferences`,
+        schema: {
+            response: {
+                200: Dto.fetchUserMutePreferencesResponse,
+            },
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                return await getUserMutePreferences({
+                    db: db,
+                    userId: status.userId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/user-mute/mute-user`,
+        schema: {
+            body: Dto.muteUserByUsernameRequest,
+        },
+        handler: async (request) => {
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                await muteUserByUsername({
+                    db: db,
+                    muteAction: request.body.action,
+                    sourceUserId: status.userId,
+                    targetUsername: request.body.targetUsername,
+                });
             }
         },
     });

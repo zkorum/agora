@@ -25,6 +25,8 @@ import {
     zodUserReportReason,
     zodUserReportExplanation,
     zodUserReportItem,
+    zodUserMuteAction,
+    zodUserMuteItem,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -116,8 +118,8 @@ export class Dto {
     static fetchCommentFeedRequest = z
         .object({
             postSlugId: zodSlugId, // z.object() does not exist :(
-            createdAt: z.string().datetime().optional(),
             filter: zodCommentFeedFilter,
+            isAuthenticatedRequest: z.boolean(),
         })
         .strict();
     static fetchCommentFeedResponse = z.array(zodCommentItem);
@@ -247,6 +249,15 @@ export class Dto {
             username: zodUsername,
         })
         .strict();
+
+    static muteUserByUsernameRequest = z
+        .object({
+            targetUsername: zodUsername,
+            action: zodUserMuteAction,
+        })
+        .strict();
+    static fetchUserMutePreferencesResponse = z.array(zodUserMuteItem);
+
     static moderateReportPostRequest = z
         .object({
             postSlugId: zodSlugId,
@@ -385,4 +396,10 @@ export type FetchUserReportsByPostSlugIdResponse = z.infer<
 >;
 export type FetchUserReportsByCommentSlugIdResponse = z.infer<
     typeof Dto.fetchUserReportsByCommentSlugIdResponse
+>;
+export type MuteUserRequest = z.infer<
+    typeof Dto.fetchUserMutePreferencesResponse
+>;
+export type FetchUserMutePreferencesResponse = z.infer<
+    typeof Dto.fetchUserMutePreferencesResponse
 >;

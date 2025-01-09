@@ -1,17 +1,11 @@
 <template>
   <div class="container">
-    <div v-if="hasExistingReport" class="title">
-      Modify the existing comment report
-    </div>
-
-    <div v-if="!hasExistingReport" class="title">
-      Submit a new comment report
-    </div>
+    <div class="title">Moderate the opinion "{add opinion title excerpt}"</div>
 
     <q-select
       v-model="moderationAction"
       :options="actionMapping"
-      label="Moderation Action"
+      label="Action"
       emit-value
       map-options
     />
@@ -19,24 +13,32 @@
     <q-select
       v-model="moderationReason"
       :options="reasonMapping"
-      label="Moderation Reason"
+      label="Reason"
       emit-value
       map-options
     />
 
-    <q-input
-      v-model="moderationExplanation"
-      label="Moderation Explanation (optional)"
-    />
-
-    <ZKButton label="Submit" color="primary" @click="clickedSubmit()" />
+    <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
     <ZKButton
-      v-if="hasExistingReport"
-      label="Withdraw Report"
+      v-if="!hasExistingDecision"
+      label="Modify"
+      color="primary"
+      @click="clickedSubmit()"
+    />
+    <ZKButton
+      v-if="hasExistingDecision"
+      label="Moderate"
+      color="primary"
+      @click="clickedSubmit()"
+    />
+
+    <ZKButton
+      v-if="hasExistingDecision"
+      label="Withdraw"
       color="secondary"
       text-color="primary"
-      @click="clickedCancel()"
+      @click="clickedWithdraw()"
     />
   </div>
 </template>
@@ -63,7 +65,7 @@ const {
 
 const route = useRoute();
 
-const DEFAULT_MODERATION_ACTION = "lock";
+const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<ModerationActionComments>(
   DEFAULT_MODERATION_ACTION
 );
@@ -75,7 +77,7 @@ const reasonMapping = ref(moderationReasonMapping);
 
 const moderationExplanation = ref("");
 
-const hasExistingReport = ref(false);
+const hasExistingDecision = ref(false);
 
 let commentSlugId: string | null = null;
 if (typeof route.params.commentSlugId == "string") {
@@ -89,7 +91,7 @@ onMounted(async () => {
 async function initializeData() {
   if (commentSlugId != null) {
     const response = await fetchCommentModeration(commentSlugId);
-    hasExistingReport.value = response.status == "moderated";
+    hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;
       moderationExplanation.value = response.explanation;
@@ -104,10 +106,15 @@ async function initializeData() {
   }
 }
 
-async function clickedCancel() {
+async function clickedWithdraw() {
   if (commentSlugId) {
     await cancelModerationCommentReport(commentSlugId);
     initializeData();
+    // TODO: redirect to comment
+    // await router.push({
+    //   name: "single-post",
+    //   params: { postSlugId: postSlugId },
+    // });
   } else {
     console.log("Missing comment slug ID");
   }
@@ -115,12 +122,19 @@ async function clickedCancel() {
 
 async function clickedSubmit() {
   if (commentSlugId) {
-    await moderateComment(
+    const isSuccessful = await moderateComment(
       commentSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
+    if (isSuccessful) {
+      // TODO: redirect to comment
+      // await router.push({
+      //   name: "single-post",
+      //   params: { postSlugId: postSlugId },
+      // });
+    }
   }
 }
 </script>
@@ -130,7 +144,7 @@ async function clickedSubmit() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1rem;
+  padding: 1rem;
 }
 
 .title {

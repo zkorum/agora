@@ -11,8 +11,7 @@
           @click="
             openComment(
               commentItem.postData.metadata.postSlugId,
-              commentItem.commentItem.commentSlugId,
-              commentItem.commentItem.moderation.status == 'moderated'
+              commentItem.commentItem.commentSlugId
             )
           "
         >
@@ -95,17 +94,12 @@ watch(targetIsVisible, async () => {
   }
 });
 
-function openComment(
-  postSlugId: string,
-  commentSlugId: string,
-  isModerated: boolean
-) {
+function openComment(postSlugId: string, commentSlugId: string) {
   router.push({
     name: "single-post",
     params: { postSlugId: postSlugId },
     query: {
       commentSlugId: commentSlugId,
-      filter: isModerated ? "moderation-history" : "",
     },
   });
 }

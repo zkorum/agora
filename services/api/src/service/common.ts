@@ -20,6 +20,34 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
 import { createPostModerationPropertyObject } from "./moderation.js";
+import { getUserMutePreferences } from "./muteUser.js";
+
+export function useCommonUser() {
+    interface GetUserIdFromUsernameProps {
+        db: PostgresJsDatabase;
+        username: string;
+    }
+
+    async function getUserIdFromUsername({
+        db,
+        username,
+    }: GetUserIdFromUsernameProps) {
+        const userTableResponse = await db
+            .select({ userId: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.username, username));
+
+        if (userTableResponse.length == 1) {
+            return userTableResponse[0].userId;
+        } else {
+            throw httpErrors.notFound(
+                "Failed to locate user by username: " + username,
+            );
+        }
+    }
+
+    return { getUserIdFromUsername };
+}
 
 export function useCommonPost() {
     interface IsPostSlugIdLockedProps {
@@ -61,9 +89,9 @@ export function useCommonPost() {
         limit: number;
         where: SQL | undefined;
         enableCompactBody: boolean;
-        fetchPollResponse: boolean;
-        userId?: string;
+        personalizationUserId?: string;
         excludeLockedPosts: boolean;
+        removeMutedAuthors: boolean;
     }
 
     async function fetchPostItems({
@@ -71,9 +99,9 @@ export function useCommonPost() {
         limit,
         where,
         enableCompactBody,
-        fetchPollResponse,
-        userId,
+        personalizationUserId,
         excludeLockedPosts,
+        removeMutedAuthors,
     }: FetchPostItemsProps): Promise<ExtendedPost[]> {
         const postItems = await db
             .select({
@@ -129,7 +157,7 @@ export function useCommonPost() {
             .orderBy(desc(postTable.createdAt))
             .limit(limit);
 
-        const posts: ExtendedPost[] = [];
+        let extendedPostList: ExtendedPost[] = [];
         postItems.forEach((postItem) => {
             if (enableCompactBody && postItem.body != null) {
                 postItem.body = sanitizeHtml(postItem.body, {
@@ -223,7 +251,7 @@ export function useCommonPost() {
             if (excludeLockedPosts && postItem.moderationAction == "lock") {
                 // Skip
             } else {
-                posts.push({
+                extendedPostList.push({
                     metadata: metadata,
                     payload: payload,
                     interaction: {
@@ -234,40 +262,62 @@ export function useCommonPost() {
             }
         });
 
-        if (fetchPollResponse) {
-            if (!userId) {
-                throw httpErrors.internalServerError(
-                    "Missing author ID for fetching poll response",
-                );
-            } else {
+        if (personalizationUserId) {
+            // Annotate return list with poll response
+            {
+                const pollResponseMap = new Map<string, number>();
+
                 const postSlugIdList: string[] = [];
-                posts.forEach((post) => {
+                extendedPostList.forEach((post) => {
                     postSlugIdList.push(post.metadata.postSlugId);
                 });
 
                 const pollResponses = await getUserPollResponse({
                     db: db,
-                    authorId: userId,
+                    authorId: personalizationUserId,
                     httpErrors: httpErrors,
                     postSlugIdList: postSlugIdList,
                 });
 
-                const responseMap = new Map<string, number>();
                 pollResponses.forEach((response) => {
-                    responseMap.set(response.postSlugId, response.optionChosen);
+                    pollResponseMap.set(
+                        response.postSlugId,
+                        response.optionChosen,
+                    );
                 });
 
-                posts.forEach((post) => {
-                    const voteIndex = responseMap.get(post.metadata.postSlugId);
+                extendedPostList.forEach((post) => {
+                    const voteIndex = pollResponseMap.get(
+                        post.metadata.postSlugId,
+                    );
                     post.interaction = {
                         hasVoted: voteIndex != undefined,
                         votedIndex: voteIndex ?? 0,
                     };
                 });
             }
+
+            // Remove muted users from the list
+            if (removeMutedAuthors) {
+                const mutedUserItems = await getUserMutePreferences({
+                    db: db,
+                    userId: personalizationUserId,
+                });
+                extendedPostList = extendedPostList.filter((postItem) => {
+                    for (const muteItem of mutedUserItems) {
+                        if (
+                            muteItem.username ==
+                            postItem.metadata.authorUsername
+                        ) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
         }
 
-        return posts;
+        return extendedPostList;
     }
 
     interface IdAndContentId {

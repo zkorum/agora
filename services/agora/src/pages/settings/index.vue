@@ -20,66 +20,46 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useQuasar } from "quasar";
-import { axios } from "src/boot/axios";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { usePostStore } from "src/stores/post";
-import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { getPlatform } from "src/utils/common";
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import { deleteDid } from "src/utils/crypto/ucan/operation";
 import { useDialog } from "src/utils/ui/dialog";
+import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-const { clearProfileData } = useUserStore();
 
 const { showDeleteAccountDialog } = useDialog();
-const { loadPostData } = usePostStore();
 
-const backendAuth = useBackendAuthApi();
+const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
+  useBackendAuthApi();
 const router = useRouter();
-
-const $q = useQuasar();
-const platform: "mobile" | "web" = getPlatform($q.platform);
-
-async function logoutCleanup() {
-  await deleteDid(platform);
-
-  isAuthenticated.value = false;
-
-  await loadPostData(false);
-  clearProfileData();
-
-  router.push({ name: "default-home-feed" });
-}
+const { showNotifyMessage } = useNotify();
 
 async function logoutRequested() {
   try {
-    await backendAuth.logout();
-    logoutCleanup();
+    await logoutFromServer();
+    await logoutDataCleanup();
+    showLogoutMessageAndRedirect();
   } catch (e) {
-    if (axios.isAxiosError(e)) {
-      if (e.response?.status !== 401 && e.response?.status !== 403) {
-        console.error("Unexpected status when logging out", e);
-      }
-    } else {
-      if (e.response?.status !== 401 && e.response?.status !== 403) {
-        console.error("Unexpected error when logging out", e);
-      }
-    }
+    console.error("Unexpected error when logging out", e);
+    showNotifyMessage("Oops! Logout failed. Please try again");
   }
-  // logoutCleanup();
 }
 
 const accountSettings: SettingsInterface[] = [
   {
-    icon: "mdi-account",
     label: "Profile",
     action: () => {
       router.push({ name: "settings-account-profile" });
+    },
+    style: "none",
+  },
+  {
+    label: "Muted Users",
+    action: () => {
+      router.push({ name: "settings-account-muted-users" });
     },
     style: "none",
   },
@@ -87,7 +67,6 @@ const accountSettings: SettingsInterface[] = [
 
 const aboutSettings: SettingsInterface[] = [
   {
-    icon: "mdi-key",
     label: "Privacy Policy",
     action: () => {
       router.push({ name: "privacy" });
@@ -95,7 +74,6 @@ const aboutSettings: SettingsInterface[] = [
     style: "none",
   },
   {
-    icon: "mdi-file-document",
     label: "Terms of Service",
     action: () => {
       router.push({ name: "terms" });
@@ -106,7 +84,6 @@ const aboutSettings: SettingsInterface[] = [
 
 const logoutSettings: SettingsInterface[] = [
   {
-    icon: "mdi-logout",
     label: "Log Out",
     action: logoutRequested,
     style: "warning",
@@ -115,7 +92,6 @@ const logoutSettings: SettingsInterface[] = [
 
 const deleteAccountSettings: SettingsInterface[] = [
   {
-    icon: "mdi-delete",
     label: "Delete Account",
     action: processDeleteAccount,
     style: "negative",
@@ -123,7 +99,7 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(logoutCleanup);
+  showDeleteAccountDialog(logoutDataCleanup);
 }
 </script>
 

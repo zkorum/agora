@@ -16,9 +16,12 @@ import {
   type moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import { useNotify } from "../ui/notify";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan } = useCommonApi();
+  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
   const { showNotifyMessage } = useNotify();
 
@@ -115,15 +118,33 @@ export function useBackendCommentApi() {
       const params: ApiV1CommentFetchCommentsByPostSlugIdPostRequest = {
         postSlugId: postSlugId,
         filter: filter,
+        isAuthenticatedRequest: isAuthenticated.value,
       };
 
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1CommentFetchCommentsByPostSlugIdPost(params, {});
-
-      return createLocalCommentObject(response.data);
+      if (isAuthenticated.value) {
+        const { url, options } =
+          await DefaultApiAxiosParamCreator().apiV1CommentFetchCommentsByPostSlugIdPost(
+            params
+          );
+        const encodedUcan = await buildEncodedUcan(url, options);
+        const response = await DefaultApiFactory(
+          undefined,
+          undefined,
+          api
+        ).apiV1CommentFetchCommentsByPostSlugIdPost(params, {
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        });
+        return createLocalCommentObject(response.data);
+      } else {
+        const response = await DefaultApiFactory(
+          undefined,
+          undefined,
+          api
+        ).apiV1CommentFetchCommentsByPostSlugIdPost(params, {});
+        return createLocalCommentObject(response.data);
+      }
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch comments for post: " + postSlugId);

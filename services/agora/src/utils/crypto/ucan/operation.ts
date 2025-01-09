@@ -72,12 +72,16 @@ export async function getDid(
 
   switch (platform) {
     case "mobile":
+      // TODO: FIX SecureSigning
+      /*
       const { publicKey } = await SecureSigning.getKeyPair({
         prefixedKey: prefixedKey,
       });
       const decodedPublicKey = base64Decode(publicKey);
       const didMobile = publicKeyToDid(decodedPublicKey);
       return { did: didMobile, prefixedKey };
+      */
+      return { did: "", prefixedKey };
     case "web":
       const cryptoStore = await getWebCryptoStore();
       await cryptoStore.keystore.publicWriteKey(prefixedKey);
@@ -88,14 +92,17 @@ export async function getDid(
 
 //TODO: move the web target's code to the Capacitor plugin
 export async function deleteDid(platform: SupportedPlatform): Promise<void> {
-  const prefixedKey = PREFIXED_KEY;
+  // const prefixedKey = PREFIXED_KEY;
 
   switch (platform) {
     case "mobile":
       // TODO: test if this actually works:
+      // TODO: FIX SecureSigning
+      /*
       await SecureSigning.deleteKeyPair({
         prefixedKey: prefixedKey,
       });
+      */
       break;
     case "web":
       const cryptoStore = await getWebCryptoStore();

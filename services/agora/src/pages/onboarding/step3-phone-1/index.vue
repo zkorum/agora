@@ -96,7 +96,7 @@
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import InputText from "primevue/inputtext";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import {
   parsePhoneNumberFromString,
   getCountries,
@@ -107,11 +107,7 @@ import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { useAuthSetup } from "src/utils/auth/setup";
 import { useNotify } from "src/utils/ui/notify";
-import { useBackendAuthApi } from "src/utils/api/auth";
-import { axios } from "src/boot/axios";
 
 const inputNumber = ref("");
 
@@ -131,36 +127,7 @@ const countries = ref<SelectItem[]>([]);
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
-const { onboardingMode } = onboardingFlowStore();
 const { showNotifyMessage } = useNotify();
-const { userLogin } = useAuthSetup();
-
-const { deviceIsLoggedIn } = useBackendAuthApi();
-
-onMounted(async () => {
-  try {
-    await deviceIsLoggedIn();
-    showNotifyMessage("Verification successful 🎉");
-    await userLogin();
-    if (onboardingMode == "LOGIN") {
-      await router.push({ name: "default-home-feed" });
-    } else {
-      await router.push({ name: "onboarding-step4-username" });
-    }
-  } catch (e) {
-    if (axios.isAxiosError(e)) {
-      if (e.response?.status !== 401 && e.response?.status !== 403) {
-        console.error(
-          "Unexpected status when checking if device is logged-in",
-          e
-        );
-      }
-    } else {
-      console.error("Unexpected error when checking if device is logged-in", e);
-    }
-  }
-});
-onMounted(() => {});
 
 const countryList = getCountries();
 for (let i = 0; i < countryList.length; i++) {

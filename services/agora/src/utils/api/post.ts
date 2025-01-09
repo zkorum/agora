@@ -104,8 +104,6 @@ export function useBackendPostApi() {
         isAuthenticatedRequest: loadUserPollData,
       };
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1FeedFetchRecentPost(params);
       if (!loadUserPollData) {
         const response = await DefaultApiFactory(
           undefined,
@@ -118,6 +116,8 @@ export function useBackendPostApi() {
           reachedEndOfFeed: response.data.reachedEndOfFeed,
         };
       } else {
+        const { url, options } =
+          await DefaultApiAxiosParamCreator().apiV1FeedFetchRecentPost(params);
         const encodedUcan = await buildEncodedUcan(url, options);
         const response = await DefaultApiFactory(
           undefined,

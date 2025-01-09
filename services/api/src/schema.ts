@@ -588,6 +588,34 @@ export const userTable = pgTable("user", {
         .notNull(),
 });
 
+export const userMutePreferenceTable = pgTable(
+    "user_mute_preference",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        sourceUserId: uuid("source_user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        targetUserId: uuid("target_user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => {
+        return {
+            userIdx: index("user_idx_mute").on(t.sourceUserId),
+            unqPreference: unique("user_unique_mute").on(
+                t.sourceUserId,
+                t.targetUserId,
+            ),
+        };
+    },
+);
+
 export const userLanguagePreferenceTable = pgTable(
     "user_language_preference",
     {
@@ -1234,7 +1262,7 @@ export const moderationActionPostsEnum = pgEnum("moderation_action_posts", [
 
 export const moderationActionCommentsEnum = pgEnum(
     "moderation_action_comments",
-    ["lock", "hide"],
+    ["move", "hide"],
 );
 
 export const reportPostsTable = pgTable(

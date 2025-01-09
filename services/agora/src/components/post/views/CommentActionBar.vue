@@ -4,6 +4,7 @@
       <CommentActionOptions
         :comment-item="props.commentItem"
         @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
       />
 
       <ZKButton
@@ -57,7 +58,7 @@ import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
 import CommentActionOptions from "./CommentActionOptions.vue";
 
-const emit = defineEmits(["deleted"]);
+const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
   commentItem: CommentItem;
@@ -122,20 +123,18 @@ const upvoteIcon = computed<IconObject>(() => {
   }
 });
 
-function shareButtonClicked() {
-  let moderatedParameter = "";
-  if (props.commentItem.moderation.status == "moderated") {
-    moderatedParameter = "&filter=moderation-history";
-  }
+function mutedComment() {
+  emit("mutedComment");
+}
 
+function shareButtonClicked() {
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
     "/post/" +
     props.postSlugId +
     "?commentSlugId=" +
-    props.commentItem.commentSlugId +
-    moderatedParameter;
+    props.commentItem.commentSlugId;
   webShare.share("Agora Comment", sharePostUrl);
 }
 
