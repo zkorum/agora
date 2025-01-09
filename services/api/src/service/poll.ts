@@ -79,7 +79,7 @@ interface SubmitPollResponseProps {
     authorId: string;
     httpErrors: HttpErrors;
     didWrite: string;
-    authHeader: string;
+    proof: string;
 }
 
 export async function submitPollResponse({
@@ -89,7 +89,7 @@ export async function submitPollResponse({
     authorId,
     httpErrors,
     didWrite,
-    authHeader,
+    proof,
 }: SubmitPollResponseProps) {
     const { id: postId, contentId: postContentId } =
         await useCommonPost().getPostAndContentIdFromSlugId({
@@ -122,7 +122,7 @@ export async function submitPollResponse({
                     postId: postId,
                     parentId: null,
                     authorDid: didWrite,
-                    proof: authHeader,
+                    proof: proof,
                     proofVersion: 1,
                 })
                 .returning({ id: pollResponseTable.id });

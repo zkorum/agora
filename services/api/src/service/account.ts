@@ -605,7 +605,7 @@ export async function submitUsernameChange({
 
 interface DeleteAccountProps {
     db: PostgresJsDatabase;
-    authHeader: string;
+    proof: string;
     didWrite: string;
     userId: string;
 }
@@ -613,9 +613,15 @@ interface DeleteAccountProps {
 export async function deleteUserAccount({
     db,
     userId,
-    authHeader,
+    proof,
     didWrite,
 }: DeleteAccountProps) {
+    // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
+    // 2. proof should be recorded once only
+    // delay should be given for people to recover their account - so data should not be set to be deleted immediately even though it should immediately not show on the client anymore
+    // 3. old proofs should be set to be deleted as well, except the deletion proof and the proofs binding the devices together
+    // 4. conversation deletion should not necessarily delete other people's opinion
+    // 5. opinion deletion should not necessarily delete other people's replies
     try {
         await db.transaction(async (tx) => {
             const updatedUserTableResponse = await tx
@@ -643,7 +649,7 @@ export async function deleteUserAccount({
             });
             for (const comment of userComments) {
                 await deleteCommentBySlugId({
-                    authHeader: authHeader,
+                    proof: proof,
                     commentSlugId: comment.commentItem.commentSlugId,
                     db: tx,
                     didWrite: didWrite,
@@ -659,7 +665,7 @@ export async function deleteUserAccount({
             });
             for (const post of userPosts) {
                 await deletePostBySlugId({
-                    authHeader: authHeader,
+                    proof: proof,
                     db: tx,
                     didWrite: didWrite,
                     postSlugId: post.metadata.postSlugId,

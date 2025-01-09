@@ -366,6 +366,7 @@ export type VerifyOtpReqBody = z.infer<typeof Dto.verifyOtpReqBody>;
 export type IsLoggedInResponse = z.infer<typeof Dto.isLoggedInResponse>;
 export type GetDeviceStatusResp = z.infer<typeof Dto.getDeviceStatusResp>;
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
+export type CreateNewPostRequest = z.infer<typeof Dto.createNewPostRequest>;
 export type CreateNewPostResponse = z.infer<typeof Dto.createNewPostResponse>;
 export type FetchPostBySlugIdResponse = z.infer<
     typeof Dto.fetchPostBySlugIdResponse

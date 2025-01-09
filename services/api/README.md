@@ -1,4 +1,4 @@
-# Back API
+# Back API (@zkorum/agora-api)
 
 ## Installation
 

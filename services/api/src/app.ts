@@ -55,6 +55,8 @@ const configSchema = z.object({
         .pipe(z.string().min(16).array().nonempty()),
     VERIFICATOR_SVC_BASE_URL: z.string().url(),
     BASE_EVENT_ID: z.string().min(20).default("63957849393154643868"),
+    NOSTR_PROOF_CHANNEL_EVENT_ID: z.string().optional(), // will deactivate nostr broadcast if null
+    NOSTR_DEFAULT_RELAY_URL: z.string().url().default("wss://nos.lol"),
 });
 
 export const config = configSchema.parse(process.env);

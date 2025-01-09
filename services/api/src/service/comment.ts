@@ -177,7 +177,7 @@ interface PostNewCommentProps {
     postSlugId: string;
     userId: string;
     didWrite: string;
-    authHeader: string;
+    proof: string;
     httpErrors: HttpErrors;
 }
 
@@ -187,7 +187,7 @@ export async function postNewComment({
     postSlugId,
     userId,
     didWrite,
-    authHeader,
+    proof,
     httpErrors,
 }: PostNewCommentProps): Promise<CreateCommentResponse> {
     const isLocked = await useCommonPost().isPostSlugIdLocked({
@@ -241,7 +241,7 @@ export async function postNewComment({
                 type: "creation",
                 commentId: commentId,
                 authorDid: didWrite,
-                proof: authHeader,
+                proof: proof,
                 proofVersion: 1,
             })
             .returning({ proofId: commentProofTable.id });
@@ -296,7 +296,7 @@ interface DeleteCommentBySlugIdProps {
     db: PostgresJsDatabase;
     commentSlugId: string;
     userId: string;
-    authHeader: string;
+    proof: string;
     didWrite: string;
 }
 
@@ -304,7 +304,7 @@ export async function deleteCommentBySlugId({
     db,
     commentSlugId,
     userId,
-    authHeader,
+    proof,
     didWrite,
 }: DeleteCommentBySlugIdProps): Promise<void> {
     try {
@@ -339,7 +339,7 @@ export async function deleteCommentBySlugId({
                 type: "deletion",
                 commentId: commentId,
                 authorDid: didWrite,
-                proof: authHeader,
+                proof: proof,
                 proofVersion: 1,
             });
 

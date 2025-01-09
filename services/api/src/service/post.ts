@@ -25,7 +25,7 @@ interface CreateNewPostProps {
     pollingOptionList: string[] | null;
     authorId: string;
     didWrite: string;
-    authHeader: string;
+    proof: string;
 }
 
 export async function createNewPost({
@@ -34,7 +34,7 @@ export async function createNewPost({
     postBody,
     authorId,
     didWrite,
-    authHeader,
+    proof,
     pollingOptionList,
 }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
@@ -74,7 +74,7 @@ export async function createNewPost({
                     type: "creation",
                     postId: postId,
                     authorDid: didWrite,
-                    proof: authHeader,
+                    proof: proof,
                     proofVersion: 1,
                 })
                 .returning({ proofId: postProofTable.id });
@@ -183,7 +183,7 @@ interface DeletePostBySlugIdProps {
     db: PostgresDatabase;
     postSlugId: string;
     userId: string;
-    authHeader: string;
+    proof: string;
     didWrite: string;
 }
 
@@ -191,7 +191,7 @@ export async function deletePostBySlugId({
     db,
     postSlugId,
     userId,
-    authHeader,
+    proof,
     didWrite,
 }: DeletePostBySlugIdProps): Promise<void> {
     try {
@@ -231,7 +231,7 @@ export async function deletePostBySlugId({
                     type: "deletion",
                     postId: postId,
                     authorDid: didWrite,
-                    proof: authHeader,
+                    proof: proof,
                     proofVersion: 1,
                 })
                 .returning({ proofId: postProofTable.id });

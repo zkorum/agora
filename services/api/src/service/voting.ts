@@ -56,7 +56,7 @@ interface CastVoteForCommentSlugIdProps {
     commentSlugId: string;
     userId: string;
     didWrite: string;
-    authHeader: string;
+    proof: string;
     votingAction: VotingAction;
 }
 
@@ -65,7 +65,7 @@ export async function castVoteForCommentSlugId({
     userId,
     commentSlugId,
     didWrite,
-    authHeader,
+    proof,
     votingAction,
 }: CastVoteForCommentSlugIdProps): Promise<boolean> {
     {
@@ -198,7 +198,7 @@ export async function castVoteForCommentSlugId({
                     type: votingAction == "cancel" ? "deletion" : "creation",
                     voteId: voteTableId,
                     authorDid: didWrite,
-                    proof: authHeader,
+                    proof: proof,
                     proofVersion: 1,
                 })
                 .returning({ voteProofTableId: voteProofTable.id });

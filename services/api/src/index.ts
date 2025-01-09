@@ -17,12 +17,17 @@ import {
 } from "fastify-type-provider-zod";
 import fs from "fs";
 import postgres from "postgres";
-import { config, server } from "./app.js";
+import { config, log, server } from "./app.js";
 import { DrizzleFastifyLogger } from "./logger.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+// import * as p2pService from "@/service/p2p.js";
+import * as nostrService from "@/service/nostr.js";
+import WebSocket from "ws";
+import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
+import { Relay, useWebSocketImplementation } from "nostr-tools/relay";
 import {
     httpMethodToAbility,
     httpUrlToResourcePointer,
@@ -73,6 +78,8 @@ import {
     getUserMutePreferences,
     muteUserByUsername,
 } from "./service/muteUser.js";
+// import { Protocols, createLightNode } from "@waku/sdk";
+// import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -111,12 +118,36 @@ const speciallyAuthorizedPhones: string[] =
 const axiosVerificatorSvc: AxiosInstance = axios.create({
     baseURL: config.VERIFICATOR_SVC_BASE_URL,
 });
+
+// Websocket polyfill necessary on nodejs to avoid
+// .pnpm/nostr-tools@2.10.4_typescript@5.2.2/node_modules/nostr-tools/lib/esm/relay.js:260
+// this._WebSocket = opts.websocketImplementation || WebSocket;
+// ReferenceError: WebSocket is not defined             ^
+// See https://github.com/nbd-wtf/nostr-tools/issues/57#issuecomment-1363420743
+useWebSocketImplementation(WebSocket);
+// Agora backend's own private key
+let nostrSecretKey: Uint8Array;
+let nostrPublicKey: string;
+if (config.NODE_ENV === "development") {
+    nostrSecretKey = generateSecretKey(); // `sk` is a Uint8Array
+    nostrPublicKey = getPublicKey(nostrSecretKey);
+} else {
+    // TODO: use AWS KMS
+    nostrSecretKey = generateSecretKey(); // `sk` is a Uint8Array
+    nostrPublicKey = getPublicKey(nostrSecretKey);
+}
+let relay: Relay;
+if (config.NOSTR_PROOF_CHANNEL_EVENT_ID !== undefined) {
+    relay = await Relay.connect(config.NOSTR_DEFAULT_RELAY_URL);
+    log.info(`Connected to ${relay.url}`);
+}
+
 // axiosVerificatorSvc.interceptors.request.use((request) => {
-//     server.log.info("Starting Request", JSON.stringify(request));
+//     log.info("Starting Request", JSON.stringify(request));
 //     return request;
 // });
 // axiosVerificatorSvc.interceptors.response.use((response) => {
-//     server.log.info("Response:", JSON.stringify(response));
+//     log.info("Response:", JSON.stringify(response));
 //     return response;
 // });
 
@@ -174,10 +205,20 @@ server.setErrorHandler((error, _request, reply) => {
     }
 });
 
-// const client = postgres(config.CONNECTION_STRING);
+// // Create and start a Light Node
+// const node = await createLightNode({
+//     defaultBootstrap: true,
+//     networkConfig: {
+//         clusterId: 1,
+//         contentTopics: ["/agora/1/create-conversation/proto"],
+//     },
+// });
+// await node.start();
+// await node.waitForPeers([Protocols.LightPush]);
+
 const client = postgres(config.CONNECTION_STRING);
 const db = drizzle(client, {
-    logger: new DrizzleFastifyLogger(server.log),
+    logger: new DrizzleFastifyLogger(log),
 });
 
 interface ExpectedDeviceStatus {
@@ -213,6 +254,17 @@ function getAuthHeader(request: FastifyRequest) {
     }
 }
 
+function getEncodedUcan(request: FastifyRequest): string {
+    const authHeader = getAuthHeader(request);
+    const encodedUcan = authHeader.substring(7, authHeader.length);
+    return encodedUcan;
+}
+
+interface VerifyUCANReturn {
+    didWrite: string;
+    encodedUcan: string;
+}
+
 // auth for account profile interaction
 // TODO: store UCAN in ucan table at the end and check whether UCAN has already been seen in the ucan table on the first place - if yes, throw unauthorized error and log the potential replay attack attempt.
 // ! WARNING: will not work if there are queryParams. We only use POST requests and JSON body requests (JSON-RPC style).
@@ -225,13 +277,12 @@ async function verifyUCAN(
             isLoggedIn: true,
         },
     },
-): Promise<string> {
-    const authHeader = getAuthHeader(request);
+): Promise<VerifyUCANReturn> {
+    const encodedUcan = getEncodedUcan(request);
+    log.info(`Received UCAN: ${encodedUcan}`);
     const { scheme, hierPart } = httpUrlToResourcePointer(
         new URL(request.originalUrl, SERVER_URL),
     );
-    const encodedUcan = authHeader.substring(7, authHeader.length);
-    server.log.info(`Received UCAN: ${encodedUcan}`);
     const rootIssuerDid = ucans.parse(encodedUcan).payload.iss;
     const result = await ucans.verify(encodedUcan, {
         audience: SERVER_DID,
@@ -252,14 +303,12 @@ async function verifyUCAN(
     if (!result.ok) {
         for (const err of result.error) {
             if (err instanceof Error) {
-                server.log.error(
-                    `Error verifying UCAN - ${err.name}: ${err.message}`,
-                );
-                server.log.error(err.cause);
-                server.log.error(err.stack);
+                log.error(`Error verifying UCAN - ${err.name}: ${err.message}`);
+                log.error(err.cause);
+                log.error(err.stack);
             } else {
-                server.log.error(`Unknown Error verifying UCAN:`);
-                server.log.error(err);
+                log.error(`Unknown Error verifying UCAN:`);
+                log.error(err);
             }
         }
         throw server.httpErrors.createError(
@@ -303,7 +352,7 @@ async function verifyUCAN(
             }
         }
     }
-    return rootIssuerDid;
+    return { didWrite: rootIssuerDid, encodedUcan: encodedUcan };
 }
 
 const apiVersion = "v1";
@@ -344,7 +393,7 @@ server.after(() => {
         handler: async (request) => {
             // This endpoint is accessible without being logged in
             // this endpoint could be especially subject to attacks such as DDoS or man-in-the-middle (to associate their own DID instead of the legitimate user's ones for example)
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined, // TODO: return already_logged_in here instead of doing it inside the function below
             });
             const userAgent = request.headers["user-agent"] ?? "Unknown device";
@@ -385,7 +434,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             return await authService.verifyPhoneOtp({
@@ -402,7 +451,7 @@ server.after(() => {
         url: `/api/${apiVersion}/auth/logout`,
         handler: async (request) => {
             const now = nowZeroMs();
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: {
                     isLoggedIn: true,
                     now: now,
@@ -423,7 +472,7 @@ server.after(() => {
         },
         handler: async (request) => {
             if (request.body.isAuthenticatedRequest) {
-                const didWrite = await verifyUCAN(db, request, {
+                const { didWrite } = await verifyUCAN(db, request, {
                     expectedDeviceStatus: undefined,
                 });
 
@@ -455,7 +504,7 @@ server.after(() => {
             body: Dto.moderateReportPostRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -669,7 +718,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -694,7 +743,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -720,7 +769,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -746,7 +795,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -772,7 +821,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -780,14 +829,12 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
-
                 return await castVoteForCommentSlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                     userId: status.userId,
                     didWrite: didWrite,
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                     votingAction: request.body.chosenOption,
                 });
             }
@@ -802,7 +849,7 @@ server.after(() => {
             response: {},
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -810,11 +857,9 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
-
                 await submitPollResponse({
                     db: db,
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                     authorId: status.userId,
                     didWrite: didWrite,
                     httpErrors: server.httpErrors,
@@ -835,7 +880,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, undefined);
+            const { didWrite } = await verifyUCAN(db, request, undefined);
 
             const status = await authUtilService.isLoggedIn(db, didWrite);
             if (!status.isLoggedIn) {
@@ -858,18 +903,21 @@ server.after(() => {
             body: Dto.deleteCommentBySlugIdRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, undefined);
+            const { didWrite, encodedUcan } = await verifyUCAN(
+                db,
+                request,
+                undefined,
+            );
 
             const status = await authUtilService.isLoggedIn(db, didWrite);
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
                 await deleteCommentBySlugId({
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                     userId: status.userId,
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                     didWrite: didWrite,
                 });
             }
@@ -886,7 +934,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -894,14 +942,13 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
                 return await postNewComment({
                     db: db,
                     commentBody: request.body.commentBody,
                     postSlugId: request.body.postSlugId,
                     userId: status.userId,
                     didWrite: didWrite,
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                     httpErrors: server.httpErrors,
                 });
             }
@@ -990,7 +1037,7 @@ server.after(() => {
             body: Dto.deletePostBySlugIdRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -998,12 +1045,11 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
                 await postService.deletePostBySlugId({
                     db: db,
                     postSlugId: request.body.postSlugId,
                     userId: status.userId,
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                     didWrite: didWrite,
                 });
             }
@@ -1019,8 +1065,8 @@ server.after(() => {
                 200: Dto.createNewPostResponse,
             },
         },
-        handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+        handler: async (request, reply) => {
+            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -1028,16 +1074,38 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
-                return await postService.createNewPost({
+                const postResponse = await postService.createNewPost({
                     db: db,
                     postTitle: request.body.postTitle,
                     postBody: request.body.postBody ?? null,
                     pollingOptionList: request.body.pollingOptionList ?? null,
                     authorId: status.userId,
                     didWrite: didWrite,
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                 });
+                reply.send(postResponse);
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error("Error while trying to broadcast proof:");
+                        log.error(e);
+                    }
+                }
+                // await p2pService.broadcastProof({
+                //     proof: encodedUcan,
+                //     node: node,
+                //     topic: WAKU_TOPIC_CREATE_POST,
+                // });
             }
         },
     });
@@ -1052,7 +1120,7 @@ server.after(() => {
         },
         handler: async (request) => {
             if (request.body.isAuthenticatedRequest) {
-                const didWrite = await verifyUCAN(db, request, {
+                const { didWrite } = await verifyUCAN(db, request, {
                     expectedDeviceStatus: undefined,
                 });
 
@@ -1093,7 +1161,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             return await generateVerificationLink({
@@ -1113,7 +1181,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const userAgent = request.headers["user-agent"] ?? "Unknown device";
@@ -1133,7 +1201,7 @@ server.after(() => {
         url: `/api/${apiVersion}/account/delete-user`,
         schema: {},
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -1141,9 +1209,8 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const authHeader = getAuthHeader(request);
                 await deleteUserAccount({
-                    authHeader: authHeader,
+                    proof: encodedUcan,
                     db: db,
                     didWrite: didWrite,
                     userId: status.userId,
@@ -1159,7 +1226,7 @@ server.after(() => {
             body: Dto.submitUsernameChangeRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -1385,7 +1452,8 @@ server.after(() => {
 
 server.ready((e) => {
     if (e) {
-        server.log.error(e);
+        log.error(e);
+        // await node.stop();
         process.exit(1);
     }
     if (config.NODE_ENV === "development") {
@@ -1404,7 +1472,8 @@ const host =
 
 server.listen({ port: config.PORT, host: host }, (err) => {
     if (err) {
-        server.log.error(err);
+        log.error(err);
+        // await node.stop();
         process.exit(1);
     }
 });
