@@ -541,7 +541,7 @@ server.after(() => {
             body: Dto.moderateReportCommentRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -578,7 +578,7 @@ server.after(() => {
             body: Dto.moderateCancelPostReportRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -611,7 +611,7 @@ server.after(() => {
             body: Dto.moderateCancelCommentReportRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -647,7 +647,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -683,7 +683,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -966,7 +966,7 @@ server.after(() => {
         },
         handler: async (request) => {
             if (request.body.isAuthenticatedRequest) {
-                const didWrite = await verifyUCAN(db, request, {
+                const { didWrite } = await verifyUCAN(db, request, {
                     expectedDeviceStatus: undefined,
                 });
 
@@ -1003,7 +1003,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1282,7 +1282,7 @@ server.after(() => {
             body: Dto.submitUserReportByPostSlugIdRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1308,7 +1308,7 @@ server.after(() => {
             body: Dto.submitUserReportByCommentSlugIdRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1337,7 +1337,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1359,7 +1359,6 @@ server.after(() => {
                     db: db,
                     postSlugId: request.body.postSlugId,
                 });
-                return;
             }
         },
     });
@@ -1374,7 +1373,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1396,7 +1395,6 @@ server.after(() => {
                     db: db,
                     commentSlugId: request.body.commentSlugId,
                 });
-                return;
             }
         },
     });
@@ -1410,7 +1408,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
@@ -1432,7 +1430,7 @@ server.after(() => {
             body: Dto.muteUserByUsernameRequest,
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
             const status = await authUtilService.isLoggedIn(db, didWrite);
