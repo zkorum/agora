@@ -46,3 +46,5 @@ pepk.jar
 *.pem
 
 serve.json
+
+typed-router.d.ts
