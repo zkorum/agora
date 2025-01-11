@@ -7,7 +7,7 @@ import {
 } from "vue-router";
 import { useLastNavigatedRouteName } from "src/utils/nav/lastNavigatedRouteName";
 import { useStorage } from "@vueuse/core";
-import { routes, handleHotUpdate } from "vue-router/auto-routes";
+import { routes } from "vue-router/auto-routes";
 
 /*
  * If not building with SSR mode, you can
@@ -77,10 +77,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
   */
 
+  /*
   // This will update routes at runtime without reloading the page
   if (import.meta.hot) {
     handleHotUpdate(Router);
   }
+  */
 
   return Router;
 });
