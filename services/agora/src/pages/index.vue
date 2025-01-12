@@ -35,9 +35,9 @@ const dialog = useDialog();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-function createNewPost() {
+async function createNewPost() {
   if (isAuthenticated.value) {
-    router.push({ name: "/post/create/" });
+    await router.push({ name: "/post/create/" });
   } else {
     dialog.showLoginConfirmationDialog();
   }

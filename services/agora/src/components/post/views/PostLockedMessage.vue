@@ -80,8 +80,8 @@ function loadModerationreason() {
   }
 }
 
-function openModerationPage() {
-  router.push({
+async function openModerationPage() {
+  await router.push({
     name: "/moderate/post/[postSlugId]/",
     params: { postSlugId: props.postSlugId },
   });

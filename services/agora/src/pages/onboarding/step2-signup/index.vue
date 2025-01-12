@@ -58,12 +58,12 @@ const router = useRouter();
 const description =
   "We ask you to prove your humanity anonymously with RariMe, so Agora is authentically human, free from bots and their propaganda.";
 
-function goToNextRoute() {
-  router.push({ name: "/onboarding/step3-passport/" });
+async function goToNextRoute() {
+  await router.push({ name: "/onboarding/step3-passport/" });
 }
 
-function verifyPhone() {
-  router.push({ name: "/onboarding/step3-phone-1/" });
+async function verifyPhone() {
+  await router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

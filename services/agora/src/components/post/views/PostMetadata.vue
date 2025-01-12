@@ -102,8 +102,8 @@ function reportContentCallback() {
   showReportDialog.value = true;
 }
 
-function openUserReportsCallback() {
-  router.push({
+async function openUserReportsCallback() {
+  await router.push({
     name: "/user-reports/[reportType]/[slugId]/",
     params: { reportType: "post", slugId: props.postSlugId },
   });
@@ -112,7 +112,7 @@ function openUserReportsCallback() {
 async function muteUserCallback() {
   const isSuccessful = await muteUser(props.posterUserName, "mute");
   if (isSuccessful) {
-    loadPostData(false);
+    await loadPostData(false);
   }
 }
 

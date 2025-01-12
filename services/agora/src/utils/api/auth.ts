@@ -146,31 +146,30 @@ export function useBackendAuthApi() {
     return { data: otpDetails.data };
   }
 
-  function loadAuthenticatedModules() {
-    loadUserProfile();
-    loadPostData(false);
+  async function loadAuthenticatedModules() {
+    await Promise.all([loadUserProfile(), loadPostData(false)]);
   }
 
   async function initializeAuthState() {
     const isLoggedIn = await deviceIsLoggedIn();
     if (isLoggedIn) {
       isAuthenticated.value = true;
-      loadAuthenticatedModules();
+      await loadAuthenticatedModules();
     } else {
-      logoutDataCleanup();
+      await logoutDataCleanup();
 
-      setTimeout(function () {
+      setTimeout(async function () {
         const needRedirect = needRedirectUnauthenticatedUser();
         if (needRedirect) {
-          showLogoutMessageAndRedirect();
+          await showLogoutMessageAndRedirect();
         }
       }, 500);
     }
   }
 
-  function showLogoutMessageAndRedirect() {
+  async function showLogoutMessageAndRedirect() {
     showNotifyMessage("Logged out");
-    router.push({ name: "/welcome/" });
+    await router.push({ name: "/welcome/" });
   }
 
   function needRedirectUnauthenticatedUser(): boolean {

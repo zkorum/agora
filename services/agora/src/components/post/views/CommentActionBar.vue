@@ -127,7 +127,7 @@ function mutedComment() {
   emit("mutedComment");
 }
 
-function shareButtonClicked() {
+async function shareButtonClicked() {
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
@@ -135,7 +135,7 @@ function shareButtonClicked() {
     props.postSlugId +
     "?commentSlugId=" +
     props.commentItem.commentSlugId;
-  webShare.share("Agora Comment", sharePostUrl);
+  await webShare.share("Agora Comment", sharePostUrl);
 }
 
 function deletedComment() {

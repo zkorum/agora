@@ -57,11 +57,11 @@ const dialog = useDialog();
 const route = useRoute();
 const router = useRouter();
 
-function accessProfile() {
+async function accessProfile() {
   if (!isAuthenticated.value) {
     dialog.showLoginConfirmationDialog();
   } else {
-    router.push({ name: "/user-profile/posts/" });
+    await router.push({ name: "/user-profile/posts/" });
   }
 }
 </script>

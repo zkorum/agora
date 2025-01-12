@@ -92,8 +92,8 @@ const router = useRouter();
 const languageList = ["English", "Spanish", "French", "Chinese"];
 const topicList = ["Technology", "Environment", "Politics"];
 
-function goToHome() {
-  router.push({ name: "/" });
+async function goToHome() {
+  await router.push({ name: "/" });
 }
 </script>
 

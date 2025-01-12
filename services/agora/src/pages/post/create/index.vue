@@ -309,9 +309,9 @@ async function onSubmit() {
   if (response != null) {
     quasar.loading.hide();
 
-    loadPostData(false);
+    await loadPostData(false);
 
-    router.push({
+    await router.push({
       name: "/post/[postSlugId]",
       params: { postSlugId: response.postSlugId },
     });
@@ -320,9 +320,9 @@ async function onSubmit() {
   }
 }
 
-function leaveRoute() {
+async function leaveRoute() {
   grantedRouteLeave = true;
-  router.push(savedToRoute);
+  await router.push(savedToRoute);
 }
 
 onBeforeRouteLeave((to) => {

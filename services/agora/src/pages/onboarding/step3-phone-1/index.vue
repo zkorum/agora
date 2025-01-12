@@ -173,9 +173,9 @@ function getFlagLink(country: string) {
   );
 }
 
-function injectDevelopmentNumber(phoneItem: PhoneNumber) {
+async function injectDevelopmentNumber(phoneItem: PhoneNumber) {
   inputNumber.value = phoneItem.fullNumber;
-  validateNumber();
+  await validateNumber();
 }
 
 function checkDevAuthorizedNumbers() {
@@ -198,7 +198,7 @@ function checkDevAuthorizedNumbers() {
   }
 }
 
-function validateNumber() {
+async function validateNumber() {
   try {
     const phoneNumber = parsePhoneNumberFromString(inputNumber.value, {
       defaultCallingCode: selectedCountryCode.value.code,
@@ -208,7 +208,7 @@ function validateNumber() {
         defaultCallingCode: phoneNumber.countryCallingCode,
         phoneNumber: phoneNumber.number,
       };
-      router.push({ name: "/onboarding/step3-phone-2/" });
+      await router.push({ name: "/onboarding/step3-phone-2/" });
     } else {
       // TODO: make sure this never happen one the first place
       showNotifyMessage("Invalid phone number");

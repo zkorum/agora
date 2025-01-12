@@ -242,8 +242,8 @@ onUnmounted(() => {
   }
 });
 
-function copyVerificationLink() {
-  share("Verification Link", verificationLink.value);
+async function copyVerificationLink() {
+  await share("Verification Link", verificationLink.value);
 }
 
 async function isDeviceLoggedIn() {
@@ -314,14 +314,14 @@ async function completeVerification() {
   await userLogin();
 
   if (onboardingMode == "LOGIN") {
-    router.push({ name: "/" });
+    await router.push({ name: "/" });
   } else {
-    router.push({ name: "/onboarding/step4-username/" });
+    await router.push({ name: "/onboarding/step4-username/" });
   }
 }
 
-function goToPhoneVerification() {
-  router.push({ name: "/onboarding/step3-phone-1/" });
+async function goToPhoneVerification() {
+  await router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

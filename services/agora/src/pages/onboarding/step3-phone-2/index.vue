@@ -123,17 +123,17 @@ const { onboardingMode } = onboardingFlowStore();
 
 const { showNotifyMessage } = useNotify();
 
-onMounted(() => {
+onMounted(async () => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
     changePhoneNumber();
   } else {
-    requestCodeClicked(false);
+    await requestCodeClicked(false);
   }
 });
 
-function clickedResendButton() {
+async function clickedResendButton() {
   verificationCode.value = "";
-  requestCodeClicked(true);
+  await requestCodeClicked(true);
 }
 
 async function nextButtonClicked() {

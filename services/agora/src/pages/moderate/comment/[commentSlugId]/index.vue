@@ -130,7 +130,7 @@ async function initializeData() {
 async function clickedWithdraw() {
   if (commentSlugId) {
     await cancelModerationCommentReport(commentSlugId);
-    initializeData();
+    await initializeData();
     // TODO: redirect to comment
     // await router.push({
     //   name: "single-post",

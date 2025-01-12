@@ -106,7 +106,7 @@ const userVoteStatus = ref<UserInteraction>({
 const totalVoteCount = ref(0);
 initializeTotalVoteCount();
 
-fetchUserPollResponseData(false);
+await fetchUserPollResponseData(false);
 
 function initializeTotalVoteCount() {
   totalVoteCount.value = 0;
@@ -175,8 +175,7 @@ async function voteCasted(selectedIndex: number) {
     props.postSlugId
   );
   if (response == true) {
-    loadPostData(false);
-    fetchUserPollResponseData(true);
+    await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
     incrementLocalPollIndex(selectedIndex);
     totalVoteCount.value += 1;
   }

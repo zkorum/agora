@@ -69,7 +69,7 @@ async function goToNextRoute() {
     profileData.value.userName
   );
   if (isSuccessful) {
-    router.push({ name: "/onboarding/step5-preferences/" });
+    await router.push({ name: "/onboarding/step5-preferences/" });
   }
 }
 </script>

@@ -150,16 +150,16 @@ async function newPostCheck() {
   }
 }
 
-function openPost(postSlugId: string) {
+async function openPost(postSlugId: string) {
   if (dataReady.value) {
-    router.push({
+    await router.push({
       name: "/post/[postSlugId]",
       params: { postSlugId: postSlugId },
     });
   }
 }
 
-function refreshPage(done: () => void) {
+async function refreshPage(done: () => void) {
   hasPendingNewPosts.value = false;
 
   window.scrollTo({
@@ -167,7 +167,7 @@ function refreshPage(done: () => void) {
     behavior: "instant",
   });
 
-  loadPostData(false);
+  await loadPostData(false);
 
   setTimeout(() => {
     done();

@@ -245,9 +245,9 @@ function cancelledCommentComposor() {
   focusCommentElement.value = false;
 }
 
-function clickedCommentButton() {
+async function clickedCommentButton() {
   if (route.name != "/post/[postSlugId]") {
-    router.push({
+    await router.push({
       name: "/post/[postSlugId]",
       params: { postSlugId: props.extendedPostData.metadata.postSlugId },
       query: { action: "comment" },
@@ -257,7 +257,7 @@ function clickedCommentButton() {
   }
 }
 
-function shareClicked() {
+async function shareClicked() {
   console.log(process.env.VITE_PUBLIC_DIR);
 
   const sharePostUrl =
@@ -265,7 +265,7 @@ function shareClicked() {
     process.env.VITE_PUBLIC_DIR +
     "/post/" +
     props.extendedPostData.metadata.postSlugId;
-  webShare.share(
+  await webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
     sharePostUrl
   );

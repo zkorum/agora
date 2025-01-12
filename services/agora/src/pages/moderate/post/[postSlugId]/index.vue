@@ -130,8 +130,8 @@ async function clickedWithdraw() {
   if (postSlugId) {
     const isSuccessful = await cancelModerationPostReport(postSlugId);
     if (isSuccessful) {
-      initializeData();
-      loadPostData(false);
+      await initializeData();
+      await loadPostData(false);
       await router.push({
         name: "/post/[postSlugId]",
         params: { postSlugId: postSlugId },
@@ -152,7 +152,7 @@ async function clickedSubmit() {
     );
 
     if (isSuccessful) {
-      loadPostData(false);
+      await loadPostData(false);
       await router.push({
         name: "/post/[postSlugId]",
         params: { postSlugId: postSlugId },

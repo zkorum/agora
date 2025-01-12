@@ -42,8 +42,8 @@ const description =
 
 const router = useRouter();
 
-function goToNextRoute() {
-  router.push({ name: "/onboarding/step2-signup/" });
+async function goToNextRoute() {
+  await router.push({ name: "/onboarding/step2-signup/" });
 }
 </script>
 

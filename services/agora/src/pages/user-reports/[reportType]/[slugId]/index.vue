@@ -47,8 +47,8 @@ const { fetchUserReportsByPostSlugId, fetchUserReportsByCommentSlugId } =
 
 const reportItemList = ref<UserReportItem[]>([]);
 
-onMounted(() => {
-  loadReports();
+onMounted(async () => {
+  await loadReports();
 });
 
 async function loadReports() {

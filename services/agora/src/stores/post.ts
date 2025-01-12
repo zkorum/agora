@@ -197,10 +197,9 @@ export const usePostStore = defineStore("post", () => {
     return emptyPost;
   }
 
-  function resetPostData() {
+  async function resetPostData() {
     masterPostDataList.value = [];
-    loadPostData(false);
-    loadUserProfile();
+    await Promise.all([loadPostData(false), loadUserProfile()]);
   }
 
   return {

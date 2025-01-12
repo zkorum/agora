@@ -34,7 +34,7 @@ export const useBottomSheet = () => {
     id: string;
   }
 
-  function showCommentOptionSelector(
+  async function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
     deleteCommentCallback: (deleted: boolean) => void,
@@ -103,7 +103,7 @@ export const useBottomSheet = () => {
             deleteCommentCallback(false);
           }
         } else if (action.id == "moderate") {
-          router.push({
+          await router.push({
             name: "/moderate/comment/[commentSlugId]/",
             params: { commentSlugId: commentSlugId },
           });

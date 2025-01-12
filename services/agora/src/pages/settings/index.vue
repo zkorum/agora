@@ -55,7 +55,7 @@ async function logoutRequested() {
   try {
     await logoutFromServer();
     await logoutDataCleanup();
-    showLogoutMessageAndRedirect();
+    await showLogoutMessageAndRedirect();
   } catch (e) {
     console.error("Unexpected error when logging out", e);
     showNotifyMessage("Oops! Logout failed. Please try again");
@@ -65,15 +65,15 @@ async function logoutRequested() {
 const accountSettings: SettingsInterface[] = [
   {
     label: "Profile",
-    action: () => {
-      router.push({ name: "/settings/account/profile/" });
+    action: async () => {
+      await router.push({ name: "/settings/account/profile/" });
     },
     style: "none",
   },
   {
     label: "Muted Users",
-    action: () => {
-      router.push({ name: "/settings/account/muted-users/" });
+    action: async () => {
+      await router.push({ name: "/settings/account/muted-users/" });
     },
     style: "none",
   },
@@ -82,15 +82,15 @@ const accountSettings: SettingsInterface[] = [
 const aboutSettings: SettingsInterface[] = [
   {
     label: "Privacy Policy",
-    action: () => {
-      router.push({ name: "/legal/privacy/" });
+    action: async () => {
+      await router.push({ name: "/legal/privacy/" });
     },
     style: "none",
   },
   {
     label: "Terms of Service",
-    action: () => {
-      router.push({ name: "/legal/terms/" });
+    action: async () => {
+      await router.push({ name: "/legal/terms/" });
     },
     style: "none",
   },
