@@ -40,7 +40,8 @@ export const useBottomSheet = () => {
     deleteCommentCallback: (deleted: boolean) => void,
     reportCommentCallback: () => void,
     openUserReportsCallback: () => void,
-    muteUserCallback: () => void
+    muteUserCallback: () => void,
+    moderateCommentCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -103,10 +104,7 @@ export const useBottomSheet = () => {
             deleteCommentCallback(false);
           }
         } else if (action.id == "moderate") {
-          await router.push({
-            name: "/moderate/opinion/[commentSlugId]/",
-            params: { commentSlugId: commentSlugId },
-          });
+          moderateCommentCallback();
         } else if (action.id == "userReports") {
           openUserReportsCallback();
         } else if (action.id == "muteUser") {
@@ -126,7 +124,8 @@ export const useBottomSheet = () => {
     posterUserName: string,
     reportPostCallback: () => void,
     openUserReportsCallback: () => void,
-    muteUserCallback: () => void
+    muteUserCallback: () => void,
+    moderatePostCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -196,10 +195,7 @@ export const useBottomSheet = () => {
             }
           }
         } else if (action.id == "moderate") {
-          await router.push({
-            name: "/moderate/conversation/[postSlugId]/",
-            params: { postSlugId: postSlugId },
-          });
+          moderatePostCallback();
         } else if (action.id == "userReports") {
           openUserReportsCallback();
         } else if (action.id == "muteUser") {

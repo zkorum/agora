@@ -97,16 +97,17 @@ const moderationExplanation = ref("");
 const hasExistingDecision = ref(false);
 
 let postSlugId: string | null = null;
-if (
-  route.name == "/moderate/conversation/[postSlugId]/" &&
-  typeof route.params.postSlugId == "string"
-) {
-  postSlugId = route.params.postSlugId;
-}
+loadRouteParams();
 
 onMounted(async () => {
   await initializeData();
 });
+
+function loadRouteParams() {
+  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
+    postSlugId = route.params.postSlugId;
+  }
+}
 
 async function initializeData() {
   if (postSlugId != null) {

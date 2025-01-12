@@ -21,7 +21,10 @@
           <span v-html="commentItem.comment"></span>
         </div>
 
-        <CommentModeration :comment-item="commentItem" />
+        <CommentModeration
+          :comment-item="commentItem"
+          :post-slug-id="postSlugId"
+        />
 
         <div class="actionBarPaddings">
           <CommentActionBar

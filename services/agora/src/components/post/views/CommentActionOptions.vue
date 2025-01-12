@@ -28,6 +28,7 @@ import { useRouter } from "vue-router";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
+  postSlugId: string;
   commentItem: CommentItem;
 }>();
 
@@ -55,6 +56,16 @@ async function muteUserCallback() {
   emit("mutedComment");
 }
 
+async function moderateCommentCallback() {
+  await router.push({
+    name: "/moderate/opinion/[postSlugId]/[commentSlugId]/",
+    params: {
+      postSlugId: props.postSlugId,
+      commentSlugId: props.commentItem.commentSlugId,
+    },
+  });
+}
+
 async function optionButtonClicked() {
   const deleteCommentCallback = (deleted: boolean) => {
     if (deleted) {
@@ -68,7 +79,8 @@ async function optionButtonClicked() {
     deleteCommentCallback,
     reportContentCallback,
     openUserReportsCallback,
-    muteUserCallback
+    muteUserCallback,
+    moderateCommentCallback
   );
 }
 </script>

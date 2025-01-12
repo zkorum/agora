@@ -3,6 +3,7 @@
     <div class="actionButtonCluster">
       <CommentActionOptions
         :comment-item="props.commentItem"
+        :post-slug-id="props.postSlugId"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
       />

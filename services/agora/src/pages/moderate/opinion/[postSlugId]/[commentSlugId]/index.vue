@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
   ModerationActionComments,
@@ -82,6 +82,7 @@ const {
 } = useBackendModerateApi();
 
 const route = useRoute();
+const router = useRouter();
 
 const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<ModerationActionComments>(
@@ -97,17 +98,20 @@ const moderationExplanation = ref("");
 
 const hasExistingDecision = ref(false);
 
+let postSlugId: string | null = null;
 let commentSlugId: string | null = null;
-if (
-  route.name == "/moderate/opinion/[commentSlugId]/" &&
-  typeof route.params.commentSlugId == "string"
-) {
-  commentSlugId = route.params.commentSlugId;
-}
+loadRouteParams();
 
 onMounted(async () => {
   await initializeData();
 });
+
+function loadRouteParams() {
+  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
+    postSlugId = route.params.postSlugId;
+    commentSlugId = route.params.commentSlugId;
+  }
+}
 
 async function initializeData() {
   if (commentSlugId != null) {
@@ -142,7 +146,7 @@ async function clickedWithdraw() {
 }
 
 async function clickedSubmit() {
-  if (commentSlugId) {
+  if (postSlugId && commentSlugId) {
     const isSuccessful = await moderateComment(
       commentSlugId,
       moderationAction.value,
@@ -150,11 +154,11 @@ async function clickedSubmit() {
       moderationExplanation.value
     );
     if (isSuccessful) {
-      // TODO: redirect to comment
-      // await router.push({
-      //   name: "single-post",
-      //   params: { postSlugId: postSlugId },
-      // });
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: postSlugId },
+        query: { opinionSlugId: commentSlugId },
+      });
     }
   }
 }

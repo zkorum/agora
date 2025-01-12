@@ -22,6 +22,7 @@
             <div>
               <CommentActionOptions
                 :comment-item="commentItem.commentItem"
+                :post-slug-id="commentItem.postData.metadata.postSlugId"
                 @deleted="commentDeleted()"
               />
             </div>
@@ -39,7 +40,10 @@
             <span v-html="commentItem.commentItem.comment"></span>
           </div>
 
-          <CommentModeration :comment-item="commentItem.commentItem" />
+          <CommentModeration
+            :comment-item="commentItem.commentItem"
+            :post-slug-id="commentItem.postData.metadata.postSlugId"
+          />
         </div>
       </ZKHoverEffect>
 
