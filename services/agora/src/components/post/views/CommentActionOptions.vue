@@ -55,14 +55,14 @@ async function muteUserCallback() {
   emit("mutedComment");
 }
 
-function optionButtonClicked() {
+async function optionButtonClicked() {
   const deleteCommentCallback = (deleted: boolean) => {
     if (deleted) {
       emit("deleted");
     }
   };
 
-  showCommentOptionSelector(
+  await showCommentOptionSelector(
     props.commentItem.commentSlugId,
     props.commentItem.username,
     deleteCommentCallback,
