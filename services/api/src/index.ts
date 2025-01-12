@@ -367,19 +367,15 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/auth/check-login-status`,
         schema: {
-            response: {
-                200: Dto.authenticateCheckLoginStatus,
-            },
+            response: { 200: Dto.checkLoginStatusResponse },
         },
         handler: async (request) => {
-            const now = nowZeroMs();
-            await verifyUCAN(db, request, {
-                expectedDeviceStatus: {
-                    isLoggedIn: true,
-                    now: now,
-                },
+            const didWrite = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
             });
-            return;
+
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            return { isLoggedIn: status.isLoggedIn };
         },
     });
 

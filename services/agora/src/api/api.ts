@@ -157,6 +157,19 @@ export interface ApiV1AuthAuthenticatePostRequest {
 /**
  * 
  * @export
+ * @interface ApiV1AuthCheckLoginStatusPost200Response
+ */
+export interface ApiV1AuthCheckLoginStatusPost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200Response
+     */
+    'isLoggedIn': boolean;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1AuthVerifyPhoneOtpPost200Response
  */
 export interface ApiV1AuthVerifyPhoneOtpPost200Response {
@@ -3068,7 +3081,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthCheckLoginStatusPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+        async apiV1AuthCheckLoginStatusPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthCheckLoginStatusPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthCheckLoginStatusPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthCheckLoginStatusPost']?.[localVarOperationServerIndex]?.url;
@@ -3499,7 +3512,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthCheckLoginStatusPost(options?: any): AxiosPromise<object> {
+        apiV1AuthCheckLoginStatusPost(options?: any): AxiosPromise<ApiV1AuthCheckLoginStatusPost200Response> {
             return localVarFp.apiV1AuthCheckLoginStatusPost(options).then((request) => request(axios, basePath));
         },
         /**

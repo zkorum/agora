@@ -12,7 +12,12 @@ swiperElement.register();
 const authenticationStore = useBackendAuthApi();
 
 onMounted(async () => {
-  await authenticationStore.initializeAuthState();
+  try {
+    await authenticationStore.initializeAuthState();
+  } catch (e) {
+    console.error("Error while trying to get logged-in status", e);
+    // TODO: create a unified error handling to notify the user _once_ only if the backend is down?
+  }
 });
 </script>
 

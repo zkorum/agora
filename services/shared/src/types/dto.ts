@@ -31,7 +31,9 @@ import {
 import { zodRarimoStatusAttributes } from "./zod.js";
 
 export class Dto {
-    static authenticateCheckLoginStatus = z.object({}).strict();
+    static checkLoginStatusResponse = z
+        .object({ isLoggedIn: z.boolean() })
+        .strict();
     static authenticateRequestBody = z
         .object({
             phoneNumber: zodPhoneNumber,

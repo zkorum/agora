@@ -6,7 +6,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import { axios, api } from "boot/axios";
+import { api } from "boot/axios";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
 import { useCommonApi, type KeyAction } from "./common";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -95,39 +95,19 @@ export function useBackendAuthApi() {
   }
 
   async function deviceIsLoggedIn(): Promise<boolean> {
-    try {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
-      const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AuthCheckLoginStatusPost({
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
-      return true;
-    } catch (e) {
-      if (axios.isAxiosError(e)) {
-        if (e.response?.status === 401 || e.response?.status === 403) {
-          // unauthorized or forbidden
-        } else {
-          console.error(
-            "Unexpected status when checking if device is logged-in",
-            e
-          );
-        }
-      } else {
-        console.error(
-          "Unexpected error when checking if device is logged-in",
-          e
-        );
-      }
-      console.error(e);
-      return false;
-    }
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const resp = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1AuthCheckLoginStatusPost({
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
+    return resp.data.isLoggedIn;
   }
 
   async function logoutFromServer() {

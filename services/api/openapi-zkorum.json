@@ -24,7 +24,14 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "properties": {},
+                                    "properties": {
+                                        "isLoggedIn": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "isLoggedIn"
+                                    ],
                                     "additionalProperties": false
                                 }
                             }
