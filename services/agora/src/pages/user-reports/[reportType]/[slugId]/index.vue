@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: true,
+      enableFooter: true,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasCloseButton: false,
+      hasLoginButton: true,
+      hasSettingsButton: true,
+    }"
+  >
     <div class="container">
       <div class="title">User Reports Viewer</div>
 
@@ -13,7 +26,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -23,11 +36,9 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const route = useRoute();
-
-console.log(route.params.reportType);
-console.log(route.params.slugId);
 
 const { showNotifyMessage } = useNotify();
 
@@ -36,12 +47,12 @@ const { fetchUserReportsByPostSlugId, fetchUserReportsByCommentSlugId } =
 
 const reportItemList = ref<UserReportItem[]>([]);
 
-onMounted(() => {
-  loadReports();
+onMounted(async () => {
+  await loadReports();
 });
 
 async function loadReports() {
-  if (typeof route.params.slugId === "string") {
+  if (route.name === "/user-reports/[reportType]/[slugId]/") {
     if (route.params.reportType == "post") {
       reportItemList.value = await fetchUserReportsByPostSlugId(
         route.params.slugId

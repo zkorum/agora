@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <StepperLayout
       :submit-call-back="goToNextRoute"
       :current-step="4"
@@ -21,13 +34,13 @@
 
           <UsernameChange
             :show-submit-button="false"
-            @is-valid-username="(value) => (isValidUsername = value)"
-            @user-name="(value) => (userName = value)"
+            @is-valid-username="(value: boolean) => (isValidUsername = value)"
+            @user-name="(value: string) => (userName = value)"
           />
         </div>
       </template>
     </StepperLayout>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -39,6 +52,7 @@ import UsernameChange from "src/components/account/UsernameChange.vue";
 import { ref } from "vue";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const { submitUsernameChange } = useBackendAccountApi();
 
@@ -55,7 +69,7 @@ async function goToNextRoute() {
     profileData.value.userName
   );
   if (isSuccessful) {
-    router.push({ name: "onboarding-step5-preferences" });
+    await router.push({ name: "/onboarding/step5-preferences/" });
   }
 }
 </script>

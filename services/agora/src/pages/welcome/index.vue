@@ -40,17 +40,17 @@ const welcomeBackgroundImagePath =
 
 const { onboardingMode } = storeToRefs(onboardingFlowStore());
 
-function skipAuthentication() {
-  router.push({ name: "default-home-feed" });
+async function skipAuthentication() {
+  await router.push({ name: "/" });
 }
 
-function gotoNextRoute(isLogin: boolean) {
+async function gotoNextRoute(isLogin: boolean) {
   if (isLogin) {
     onboardingMode.value = "LOGIN";
-    router.push({ name: "onboarding-step1-login" });
+    await router.push({ name: "/onboarding/step1-login/" });
   } else {
     onboardingMode.value = "SIGNUP";
-    router.push({ name: "onboarding-step1-signup" });
+    await router.push({ name: "/onboarding/step1-signup/" });
   }
 }
 </script>

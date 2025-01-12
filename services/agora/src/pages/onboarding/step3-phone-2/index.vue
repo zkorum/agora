@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <form class="formStyle" @submit.prevent="">
       <StepperLayout
         :submit-call-back="nextButtonClicked"
@@ -66,7 +79,7 @@
         </template>
       </StepperLayout>
     </form>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -87,6 +100,7 @@ import { useNotify } from "src/utils/ui/notify";
 import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const $q = useQuasar();
 let platform: "mobile" | "web" = "web";
@@ -109,17 +123,17 @@ const { onboardingMode } = onboardingFlowStore();
 
 const { showNotifyMessage } = useNotify();
 
-onMounted(() => {
+onMounted(async () => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
     changePhoneNumber();
   } else {
-    requestCodeClicked(false);
+    await requestCodeClicked(false);
   }
 });
 
-function clickedResendButton() {
+async function clickedResendButton() {
   verificationCode.value = "";
-  requestCodeClicked(true);
+  await requestCodeClicked(true);
 }
 
 async function nextButtonClicked() {
@@ -129,9 +143,9 @@ async function nextButtonClicked() {
       showNotifyMessage("Verification successful 🎉");
       await userLogin();
       if (onboardingMode == "LOGIN") {
-        await router.push({ name: "default-home-feed" });
+        await router.push({ name: "/" });
       } else {
-        await router.push({ name: "onboarding-step4-username" });
+        await router.push({ name: "/onboarding/step4-username/" });
       }
     } else {
       switch (response.reason) {
@@ -150,9 +164,9 @@ async function nextButtonClicked() {
           showNotifyMessage("Verification successful 🎉");
           await userLogin();
           if (onboardingMode == "LOGIN") {
-            await router.push({ name: "default-home-feed" });
+            await router.push({ name: "/" });
           } else {
-            await router.push({ name: "onboarding-step4-username" });
+            await router.push({ name: "/onboarding/step4-username/" });
           }
           break;
         case "associated_with_another_user": {
@@ -187,9 +201,9 @@ async function requestCodeClicked(
           showNotifyMessage("Verification successful 🎉");
           await userLogin();
           if (onboardingMode == "LOGIN") {
-            await router.push({ name: "default-home-feed" });
+            await router.push({ name: "/" });
           } else {
-            await router.push({ name: "onboarding-step4-username" });
+            await router.push({ name: "/onboarding/step4-username/" });
           }
           break;
         case "associated_with_another_user":

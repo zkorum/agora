@@ -3,6 +3,7 @@
     <div class="actionButtonCluster">
       <CommentActionOptions
         :comment-item="props.commentItem"
+        :post-slug-id="props.postSlugId"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
       />
@@ -127,15 +128,15 @@ function mutedComment() {
   emit("mutedComment");
 }
 
-function shareButtonClicked() {
+async function shareButtonClicked() {
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
-    "/post/" +
+    "/conversation/" +
     props.postSlugId +
-    "?commentSlugId=" +
+    "?opinionSlugId=" +
     props.commentItem.commentSlugId;
-  webShare.share("Agora Comment", sharePostUrl);
+  await webShare.share("Agora Comment", sharePostUrl);
 }
 
 function deletedComment() {

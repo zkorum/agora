@@ -96,23 +96,25 @@ const baseFilters: { name: string; value: CommentFilterOptions }[] = [
 ];
 const filterOptions = ref(baseFilters);
 
-onMounted(() => {
-  initializeData();
-  fetchPersonalLikes();
+onMounted(async () => {
+  await Promise.all([initializeData(), fetchPersonalLikes()]);
 });
 
-watch(profileData, () => {
-  initializeModeratorMenu();
+watch(profileData, async () => {
+  await initializeModeratorMenu();
 });
 
 async function initializeData() {
-  initializeModeratorMenu();
-  await Promise.all([fetchCommentList("new"), fetchCommentList("moderated")]);
+  await Promise.all([
+    initializeModeratorMenu(),
+    fetchCommentList("new"),
+    fetchCommentList("moderated"),
+  ]);
 
-  scrollToComment();
+  await scrollToComment();
 }
 
-function initializeModeratorMenu() {
+async function initializeModeratorMenu() {
   if (profileData.value.isModerator) {
     filterOptions.value = baseFilters.concat([
       {
@@ -121,12 +123,12 @@ function initializeModeratorMenu() {
       },
     ]);
 
-    fetchHiddenComments();
+    await fetchHiddenComments();
   }
 }
 
-function mutedComment() {
-  initializeData();
+async function mutedComment() {
+  await initializeData();
 }
 
 function deletedComment() {

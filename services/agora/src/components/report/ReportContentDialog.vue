@@ -96,9 +96,9 @@ const enabledSkip = ref(false);
 const { createUserReportByPostSlugId, createUserReportByCommentSlugId } =
   useBackendReportApi();
 
-function clickedSkipExplanationButton() {
+async function clickedSkipExplanationButton() {
   explanation.value = "";
-  clickedSubmitButton();
+  await clickedSubmitButton();
 }
 
 async function clickedSubmitButton() {

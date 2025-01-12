@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <StepperLayout
       :submit-call-back="goToNextRoute"
       :current-step="5"
@@ -47,23 +60,21 @@
         </div>
       </template>
     </StepperLayout>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
-import { useRouter } from "vue-router";
 import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-
-const router = useRouter();
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const description = ref("");
 
 function goToNextRoute() {
-  router.push({ name: "onboarding-step6-preferences" });
+  // router.push({ name: "onboarding-step6-preferences" });
 }
 
 function selectedOption(option: "safe-space" | "brave-space") {

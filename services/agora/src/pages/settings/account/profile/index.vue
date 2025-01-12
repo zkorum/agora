@@ -1,15 +1,31 @@
 <template>
-  <div class="container">
-    <div class="titleStyle">Profile Settings</div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: true,
+      hasCloseButton: false,
+      hasLoginButton: true,
+    }"
+  >
+    <div class="container">
+      <div class="titleStyle">Profile Settings</div>
 
-    <div class="subtitleStyle">Change username</div>
+      <div class="subtitleStyle">Change username</div>
 
-    <UsernameChange :show-submit-button="true" />
-  </div>
+      <UsernameChange :show-submit-button="true" />
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import UsernameChange from "src/components/account/UsernameChange.vue";
+import MainLayout from "src/layouts/MainLayout.vue";
 </script>
 
 <style scoped lang="scss">

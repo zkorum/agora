@@ -1,5 +1,5 @@
 <template>
-  <RouterLink :to="{ name: 'help-page' }">
+  <RouterLink :to="{ name: '/help/' }">
     <ZKButton icon="mdi-help" text-color="color-text-strong" flat />
   </RouterLink>
 </template>

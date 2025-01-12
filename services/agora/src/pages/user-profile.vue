@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: true,
+      enableFooter: true,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasSettingsButton: true,
+      hasCloseButton: false,
+      hasLoginButton: true,
+    }"
+  >
     <div class="topBar">
       <UserAvatar :user-name="profileData.userName" :size="60" />
 
@@ -18,16 +31,16 @@
 
     <Tabs :value="currentTab">
       <TabList>
-        <RouterLink :to="{ name: 'user-profile-posts' }">
+        <RouterLink :to="{ name: '/user-profile/opinions/' }">
           <Tab :value="0">Conversations</Tab>
         </RouterLink>
-        <RouterLink :to="{ name: 'user-profile-comments' }">
+        <RouterLink :to="{ name: '/user-profile/conversations/' }">
           <Tab :value="1">Opinions</Tab>
         </RouterLink>
       </TabList>
       <router-view />
     </Tabs>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +53,7 @@ import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -54,7 +68,7 @@ watch(route, () => {
 });
 
 function applyCurrentTab() {
-  if (route.name == "user-profile-posts") {
+  if (route.name == "/user-profile/opinions/") {
     currentTab.value = 0;
   } else {
     currentTab.value = 1;

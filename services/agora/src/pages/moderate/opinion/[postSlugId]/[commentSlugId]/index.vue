@@ -1,51 +1,68 @@
 <template>
-  <div class="container">
-    <div class="title">Moderate the opinion "{add opinion title excerpt}"</div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasSettingsButton: false,
+      hasCloseButton: true,
+      hasLoginButton: true,
+    }"
+  >
+    <div class="container">
+      <div class="title">
+        Moderate the opinion "{add opinion title excerpt}"
+      </div>
 
-    <q-select
-      v-model="moderationAction"
-      :options="actionMapping"
-      label="Action"
-      emit-value
-      map-options
-    />
+      <q-select
+        v-model="moderationAction"
+        :options="actionMapping"
+        label="Action"
+        emit-value
+        map-options
+      />
 
-    <q-select
-      v-model="moderationReason"
-      :options="reasonMapping"
-      label="Reason"
-      emit-value
-      map-options
-    />
+      <q-select
+        v-model="moderationReason"
+        :options="reasonMapping"
+        label="Reason"
+        emit-value
+        map-options
+      />
 
-    <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
-    <ZKButton
-      v-if="!hasExistingDecision"
-      label="Modify"
-      color="primary"
-      @click="clickedSubmit()"
-    />
-    <ZKButton
-      v-if="hasExistingDecision"
-      label="Moderate"
-      color="primary"
-      @click="clickedSubmit()"
-    />
+      <ZKButton
+        v-if="!hasExistingDecision"
+        label="Modify"
+        color="primary"
+        @click="clickedSubmit()"
+      />
+      <ZKButton
+        v-if="hasExistingDecision"
+        label="Moderate"
+        color="primary"
+        @click="clickedSubmit()"
+      />
 
-    <ZKButton
-      v-if="hasExistingDecision"
-      label="Withdraw"
-      color="secondary"
-      text-color="primary"
-      @click="clickedWithdraw()"
-    />
-  </div>
+      <ZKButton
+        v-if="hasExistingDecision"
+        label="Withdraw"
+        color="secondary"
+        text-color="primary"
+        @click="clickedWithdraw()"
+      />
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
   ModerationActionComments,
@@ -56,6 +73,7 @@ import {
   moderationActionCommentsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const {
   moderateComment,
@@ -64,6 +82,7 @@ const {
 } = useBackendModerateApi();
 
 const route = useRoute();
+const router = useRouter();
 
 const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<ModerationActionComments>(
@@ -79,14 +98,20 @@ const moderationExplanation = ref("");
 
 const hasExistingDecision = ref(false);
 
+let postSlugId: string | null = null;
 let commentSlugId: string | null = null;
-if (typeof route.params.commentSlugId == "string") {
-  commentSlugId = route.params.commentSlugId;
-}
+loadRouteParams();
 
 onMounted(async () => {
   await initializeData();
 });
+
+function loadRouteParams() {
+  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
+    postSlugId = route.params.postSlugId;
+    commentSlugId = route.params.commentSlugId;
+  }
+}
 
 async function initializeData() {
   if (commentSlugId != null) {
@@ -109,7 +134,7 @@ async function initializeData() {
 async function clickedWithdraw() {
   if (commentSlugId) {
     await cancelModerationCommentReport(commentSlugId);
-    initializeData();
+    await initializeData();
     // TODO: redirect to comment
     // await router.push({
     //   name: "single-post",
@@ -121,7 +146,7 @@ async function clickedWithdraw() {
 }
 
 async function clickedSubmit() {
-  if (commentSlugId) {
+  if (postSlugId && commentSlugId) {
     const isSuccessful = await moderateComment(
       commentSlugId,
       moderationAction.value,
@@ -129,11 +154,11 @@ async function clickedSubmit() {
       moderationExplanation.value
     );
     if (isSuccessful) {
-      // TODO: redirect to comment
-      // await router.push({
-      //   name: "single-post",
-      //   params: { postSlugId: postSlugId },
-      // });
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: postSlugId },
+        query: { opinionSlugId: commentSlugId },
+      });
     }
   }
 }

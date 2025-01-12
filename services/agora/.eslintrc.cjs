@@ -1,3 +1,5 @@
+const { parse } = require("path");
+
 module.exports = {
   // https://eslint.org/docs/user-guide/configuring#configuration-cascading-and-hierarchy
   // This option interrupts the configuration hierarchy at this file
@@ -10,7 +12,7 @@ module.exports = {
   parserOptions: {
     parser: require.resolve("@typescript-eslint/parser"),
     extraFileExtensions: [".vue"],
-    // project: true,
+    project: ["tsconfig.json"],
   },
 
   env: {
@@ -104,19 +106,9 @@ module.exports = {
     ],
 
     "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-    //
-    // // useful to know, but too verbose https://stackoverflow.com/a/63488201/11046178
-    // "@typescript-eslint/no-floating-promises": [
-    //   "error",
-    //   {
-    //     ignoreVoid: true,
-    //   },
-    // ],
-    // "@typescript-eslint/no-misused-promises": [
-    //   "error",
-    //   {
-    //     checksVoidReturn: false,
-    //   },
-    // ],
+
+    // useful to know, but too verbose https://stackoverflow.com/a/63488201/11046178
+    "@typescript-eslint/no-floating-promises": ["error"],
+    // "@typescript-eslint/no-misused-promises": ["error"],
   },
 };

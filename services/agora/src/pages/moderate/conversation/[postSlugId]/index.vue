@@ -1,48 +1,63 @@
 <template>
-  <div class="container">
-    <div class="title">
-      Moderate the conversation "{add conversation title excerpt}"
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasSettingsButton: false,
+      hasCloseButton: true,
+      hasLoginButton: true,
+    }"
+  >
+    <div class="container">
+      <div class="title">
+        Moderate the conversation "{add conversation title excerpt}"
+      </div>
+
+      <q-select
+        v-model="moderationAction"
+        :options="actionMapping"
+        label="Action"
+        emit-value
+        map-options
+      />
+
+      <q-select
+        v-model="moderationReason"
+        :options="reasonMapping"
+        label="Reason"
+        emit-value
+        map-options
+      />
+
+      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+
+      <ZKButton
+        v-if="!hasExistingDecision"
+        label="Modify"
+        color="primary"
+        @click="clickedSubmit()"
+      />
+      <ZKButton
+        v-if="hasExistingDecision"
+        label="Moderate"
+        color="primary"
+        @click="clickedSubmit()"
+      />
+
+      <ZKButton
+        v-if="hasExistingDecision"
+        label="Withdraw"
+        color="secondary"
+        text-color="primary"
+        @click="clickedWithdraw()"
+      />
     </div>
-
-    <q-select
-      v-model="moderationAction"
-      :options="actionMapping"
-      label="Action"
-      emit-value
-      map-options
-    />
-
-    <q-select
-      v-model="moderationReason"
-      :options="reasonMapping"
-      label="Reason"
-      emit-value
-      map-options
-    />
-
-    <q-input v-model="moderationExplanation" label="Explanation (optional)" />
-
-    <ZKButton
-      v-if="!hasExistingDecision"
-      label="Modify"
-      color="primary"
-      @click="clickedSubmit()"
-    />
-    <ZKButton
-      v-if="hasExistingDecision"
-      label="Moderate"
-      color="primary"
-      @click="clickedSubmit()"
-    />
-
-    <ZKButton
-      v-if="hasExistingDecision"
-      label="Withdraw"
-      color="secondary"
-      text-color="primary"
-      @click="clickedWithdraw()"
-    />
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -59,6 +74,7 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderations";
 import { usePostStore } from "src/stores/post";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
   useBackendModerateApi();
@@ -81,13 +97,17 @@ const moderationExplanation = ref("");
 const hasExistingDecision = ref(false);
 
 let postSlugId: string | null = null;
-if (typeof route.params.postSlugId == "string") {
-  postSlugId = route.params.postSlugId;
-}
+loadRouteParams();
 
 onMounted(async () => {
   await initializeData();
 });
+
+function loadRouteParams() {
+  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
+    postSlugId = route.params.postSlugId;
+  }
+}
 
 async function initializeData() {
   if (postSlugId != null) {
@@ -111,10 +131,10 @@ async function clickedWithdraw() {
   if (postSlugId) {
     const isSuccessful = await cancelModerationPostReport(postSlugId);
     if (isSuccessful) {
-      initializeData();
-      loadPostData(false);
+      await initializeData();
+      await loadPostData(false);
       await router.push({
-        name: "single-post",
+        name: "/conversation/[postSlugId]",
         params: { postSlugId: postSlugId },
       });
     }
@@ -133,9 +153,9 @@ async function clickedSubmit() {
     );
 
     if (isSuccessful) {
-      loadPostData(false);
+      await loadPostData(false);
       await router.push({
-        name: "single-post",
+        name: "/conversation/[postSlugId]",
         params: { postSlugId: postSlugId },
       });
     }

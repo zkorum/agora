@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <StepperLayout
       :submit-call-back="() => {}"
       :current-step="3"
@@ -124,7 +137,7 @@
         />
       </template>
     </StepperLayout>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -145,6 +158,7 @@ import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const description =
   "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
@@ -228,8 +242,8 @@ onUnmounted(() => {
   }
 });
 
-function copyVerificationLink() {
-  share("Verification Link", verificationLink.value);
+async function copyVerificationLink() {
+  await share("Verification Link", verificationLink.value);
 }
 
 async function isDeviceLoggedIn() {
@@ -300,14 +314,14 @@ async function completeVerification() {
   await userLogin();
 
   if (onboardingMode == "LOGIN") {
-    router.push({ name: "default-home-feed" });
+    await router.push({ name: "/" });
   } else {
-    router.push({ name: "onboarding-step4-username" });
+    await router.push({ name: "/onboarding/step4-username/" });
   }
 }
 
-function goToPhoneVerification() {
-  router.push({ name: "onboarding-step3-phone-1" });
+async function goToPhoneVerification() {
+  await router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

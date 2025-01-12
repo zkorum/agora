@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: true,
+      enableFooter: true,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasCloseButton: true,
+      hasLoginButton: true,
+      hasSettingsButton: true,
+    }"
+  >
     <div class="container">
       <div v-if="isAuthenticated">
         <SettingsSection :settings-item-list="accountSettings" />
@@ -15,12 +28,13 @@
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
     </div>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
+import MainLayout from "src/layouts/MainLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { type SettingsInterface } from "src/utils/component/settings/settings";
@@ -41,7 +55,7 @@ async function logoutRequested() {
   try {
     await logoutFromServer();
     await logoutDataCleanup();
-    showLogoutMessageAndRedirect();
+    await showLogoutMessageAndRedirect();
   } catch (e) {
     console.error("Unexpected error when logging out", e);
     showNotifyMessage("Oops! Logout failed. Please try again");
@@ -51,15 +65,15 @@ async function logoutRequested() {
 const accountSettings: SettingsInterface[] = [
   {
     label: "Profile",
-    action: () => {
-      router.push({ name: "settings-account-profile" });
+    action: async () => {
+      await router.push({ name: "/settings/account/profile/" });
     },
     style: "none",
   },
   {
     label: "Muted Users",
-    action: () => {
-      router.push({ name: "settings-account-muted-users" });
+    action: async () => {
+      await router.push({ name: "/settings/account/muted-users/" });
     },
     style: "none",
   },
@@ -68,15 +82,15 @@ const accountSettings: SettingsInterface[] = [
 const aboutSettings: SettingsInterface[] = [
   {
     label: "Privacy Policy",
-    action: () => {
-      router.push({ name: "privacy" });
+    action: async () => {
+      await router.push({ name: "/legal/privacy/" });
     },
     style: "none",
   },
   {
     label: "Terms of Service",
-    action: () => {
-      router.push({ name: "terms" });
+    action: async () => {
+      await router.push({ name: "/legal/terms/" });
     },
     style: "none",
   },

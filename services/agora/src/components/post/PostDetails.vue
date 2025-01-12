@@ -169,7 +169,7 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuthenticationStore();
 
-const commentSlugIdQuery = useRouteQuery("commentSlugId", "", {
+const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
   transform: String,
 });
 const commentFilterQuery = useRouteQuery("filter", "", {
@@ -191,8 +191,6 @@ const parsedCommentFilter = computed<"new" | "moderated" | "hidden">(() => {
 const commentCountOffset = ref(0);
 
 const commentSectionRef = ref<HTMLElement | null>(null);
-
-// const { composeDummyCommentItem } = usePostStore();
 
 const router = useRouter();
 const route = useRoute();
@@ -245,10 +243,10 @@ function cancelledCommentComposor() {
   focusCommentElement.value = false;
 }
 
-function clickedCommentButton() {
-  if (route.name != "single-post") {
-    router.push({
-      name: "single-post",
+async function clickedCommentButton() {
+  if (route.name != "/conversation/[postSlugId]") {
+    await router.push({
+      name: "/conversation/[postSlugId]",
       params: { postSlugId: props.extendedPostData.metadata.postSlugId },
       query: { action: "comment" },
     });
@@ -257,15 +255,13 @@ function clickedCommentButton() {
   }
 }
 
-function shareClicked() {
-  console.log(process.env.VITE_PUBLIC_DIR);
-
+async function shareClicked() {
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
-    "/post/" +
+    "/conversation/" +
     props.extendedPostData.metadata.postSlugId;
-  webShare.share(
+  await webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
     sharePostUrl
   );

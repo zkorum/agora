@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasSettingsButton: true,
+      hasCloseButton: true,
+      hasLoginButton: false,
+    }"
+  >
     <form @submit.prevent="submitForm()">
       <div class="container">
         <div class="title">Report an issue</div>
@@ -30,7 +43,7 @@
         />
       </div>
     </form>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -39,6 +52,7 @@ import Select from "primevue/select";
 import Button from "primevue/button";
 import { ref } from "vue";
 import { useDialog } from "src/utils/ui/dialog";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const description = ref("");
 

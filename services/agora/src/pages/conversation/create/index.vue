@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableFooter: false,
+      enableHeader: true,
+      reducedWidth: false,
+    }"
+    :menu-bar-props="{
+      hasBackButton: false,
+      hasCloseButton: false,
+      hasLoginButton: true,
+      hasSettingsButton: true,
+    }"
+  >
     <div>
       <q-form @submit="onSubmit()">
         <TopMenuWrapper :reveal="false">
@@ -171,7 +184,7 @@
         </ZKCard>
       </q-dialog>
     </div>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -197,6 +210,7 @@ import {
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -224,7 +238,7 @@ let savedToRoute: RouteLocationNormalized = {
   fullPath: "",
   query: {},
   hash: "",
-  name: "",
+  name: "/",
   path: "",
   meta: {},
   params: {},
@@ -295,10 +309,10 @@ async function onSubmit() {
   if (response != null) {
     quasar.loading.hide();
 
-    loadPostData(false);
+    await loadPostData(false);
 
-    router.push({
-      name: "single-post",
+    await router.push({
+      name: "/conversation/[postSlugId]",
       params: { postSlugId: response.postSlugId },
     });
   } else {
@@ -306,9 +320,9 @@ async function onSubmit() {
   }
 }
 
-function leaveRoute() {
+async function leaveRoute() {
   grantedRouteLeave = true;
-  router.push(savedToRoute);
+  await router.push(savedToRoute);
 }
 
 onBeforeRouteLeave((to) => {

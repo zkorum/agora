@@ -16,7 +16,7 @@ import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { getPlatform } from "../common";
 import { useNotify } from "../ui/notify";
-import { useRoute, useRouter } from "vue-router";
+import { RouteMap, useRoute, useRouter } from "vue-router";
 
 export interface AuthenticateReturn {
   isSuccessful: boolean;
@@ -146,47 +146,57 @@ export function useBackendAuthApi() {
     return { data: otpDetails.data };
   }
 
-  function loadAuthenticatedModules() {
-    loadUserProfile();
-    loadPostData(false);
+  async function loadAuthenticatedModules() {
+    await Promise.all([loadUserProfile(), loadPostData(false)]);
   }
 
   async function initializeAuthState() {
     const isLoggedIn = await deviceIsLoggedIn();
     if (isLoggedIn) {
       isAuthenticated.value = true;
-      loadAuthenticatedModules();
+      await loadAuthenticatedModules();
     } else {
-      logoutDataCleanup();
+      await logoutDataCleanup();
 
-      const needRedirect = needRedirectUnauthenticatedUser();
-      if (needRedirect) {
-        showLogoutMessageAndRedirect();
-      }
+      setTimeout(async function () {
+        const needRedirect = needRedirectUnauthenticatedUser();
+        if (needRedirect) {
+          await showLogoutMessageAndRedirect();
+        }
+      }, 500);
     }
   }
 
-  function showLogoutMessageAndRedirect() {
+  async function showLogoutMessageAndRedirect() {
     showNotifyMessage("Logged out");
-    router.push({ name: "welcome" });
+    await router.push({ name: "/welcome/" });
   }
 
   function needRedirectUnauthenticatedUser(): boolean {
-    const openRouteNames = [
-      "single-post",
-      "default-home-feed",
-      "privacy",
-      "terms",
-    ];
     const currentRouteName = route.name;
     if (currentRouteName) {
-      if (openRouteNames.includes(currentRouteName.toString())) {
+      const whiteListedRoutes: (keyof RouteMap)[] = [
+        "/",
+        "/conversation/[postSlugId]",
+        "/legal/privacy/",
+        "/legal/terms/",
+        "/onboarding/step1-login/",
+        "/onboarding/step1-signup/",
+        "/onboarding/step2-signup/",
+        "/onboarding/step3-passport/",
+        "/onboarding/step3-phone-1/",
+        "/onboarding/step3-phone-2/",
+        "/onboarding/step4-username/",
+        "/onboarding/step5-experience-deprecated/",
+        "/onboarding/step5-preferences/",
+      ];
+      if (whiteListedRoutes.includes(currentRouteName)) {
         return false;
       } else {
         return true;
       }
     } else {
-      console.log("Failed to detect current route name");
+      console.log(`Failed to detect current route name: ${currentRouteName}`);
       return true;
     }
   }

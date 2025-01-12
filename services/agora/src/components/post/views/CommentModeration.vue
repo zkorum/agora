@@ -29,8 +29,11 @@
             <div v-if="profileData.isModerator" class="moderationEditButton">
               <RouterLink
                 :to="{
-                  name: 'moderate-comment-page',
-                  params: { commentSlugId: commentItem.commentSlugId },
+                  name: '/moderate/opinion/[postSlugId]/[commentSlugId]/',
+                  params: {
+                    postSlugId: postSlugId,
+                    commentSlugId: commentItem.commentSlugId,
+                  },
                 }"
               >
                 <ZKButton label="Edit" color="primary" />
@@ -53,6 +56,7 @@ import ModerationTime from "./moderation/ModerationTime.vue";
 
 defineProps<{
   commentItem: CommentItem;
+  postSlugId: string;
 }>();
 
 const { profileData } = storeToRefs(useUserStore());

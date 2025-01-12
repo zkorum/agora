@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <MainLayout
+    :general-props="{
+      addBottomPadding: false,
+      enableHeader: true,
+      enableFooter: false,
+      reducedWidth: true,
+    }"
+    :menu-bar-props="{
+      hasBackButton: true,
+      hasSettingsButton: false,
+      hasCloseButton: false,
+      hasLoginButton: false,
+    }"
+  >
     <form @submit.prevent="">
       <StepperLayout
         :submit-call-back="validateNumber"
@@ -89,7 +102,7 @@
         </template>
       </StepperLayout>
     </form>
-  </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -108,6 +121,7 @@ import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useNotify } from "src/utils/ui/notify";
+import MainLayout from "src/layouts/MainLayout.vue";
 
 const inputNumber = ref("");
 
@@ -159,9 +173,9 @@ function getFlagLink(country: string) {
   );
 }
 
-function injectDevelopmentNumber(phoneItem: PhoneNumber) {
+async function injectDevelopmentNumber(phoneItem: PhoneNumber) {
   inputNumber.value = phoneItem.fullNumber;
-  validateNumber();
+  await validateNumber();
 }
 
 function checkDevAuthorizedNumbers() {
@@ -184,7 +198,7 @@ function checkDevAuthorizedNumbers() {
   }
 }
 
-function validateNumber() {
+async function validateNumber() {
   try {
     const phoneNumber = parsePhoneNumberFromString(inputNumber.value, {
       defaultCallingCode: selectedCountryCode.value.code,
@@ -194,7 +208,7 @@ function validateNumber() {
         defaultCallingCode: phoneNumber.countryCallingCode,
         phoneNumber: phoneNumber.number,
       };
-      router.push({ name: "onboarding-step3-phone-2" });
+      await router.push({ name: "/onboarding/step3-phone-2/" });
     } else {
       // TODO: make sure this never happen one the first place
       showNotifyMessage("Invalid phone number");

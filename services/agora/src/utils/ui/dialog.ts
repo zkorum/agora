@@ -39,7 +39,7 @@ export const useDialog = () => {
         persistent: false,
       })
       .onOk(async () => {
-        await router.push({ name: "welcome" });
+        await router.push({ name: "/welcome/" });
       })
       .onCancel(() => {
         // console.log('>>>> Cancel')

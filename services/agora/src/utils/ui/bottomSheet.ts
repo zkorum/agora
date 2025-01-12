@@ -34,13 +34,14 @@ export const useBottomSheet = () => {
     id: string;
   }
 
-  function showCommentOptionSelector(
+  async function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
     deleteCommentCallback: (deleted: boolean) => void,
     reportCommentCallback: () => void,
     openUserReportsCallback: () => void,
-    muteUserCallback: () => void
+    muteUserCallback: () => void,
+    moderateCommentCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -103,10 +104,7 @@ export const useBottomSheet = () => {
             deleteCommentCallback(false);
           }
         } else if (action.id == "moderate") {
-          router.push({
-            name: "moderate-comment-page",
-            params: { commentSlugId: commentSlugId },
-          });
+          moderateCommentCallback();
         } else if (action.id == "userReports") {
           openUserReportsCallback();
         } else if (action.id == "muteUser") {
@@ -126,7 +124,8 @@ export const useBottomSheet = () => {
     posterUserName: string,
     reportPostCallback: () => void,
     openUserReportsCallback: () => void,
-    muteUserCallback: () => void
+    muteUserCallback: () => void,
+    moderatePostCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -191,22 +190,19 @@ export const useBottomSheet = () => {
             showNotifyMessage("Conversation deleted");
             await loadPostData(false);
             await loadUserProfile();
-            if (route.name == "single-post") {
-              await router.push({ name: "default-home-feed" });
+            if (route.name == "/conversation/[postSlugId]") {
+              await router.push({ name: "/" });
             }
           }
         } else if (action.id == "moderate") {
-          await router.push({
-            name: "moderate-post-page",
-            params: { postSlugId: postSlugId },
-          });
+          moderatePostCallback();
         } else if (action.id == "userReports") {
           openUserReportsCallback();
         } else if (action.id == "muteUser") {
           muteUserCallback();
         } else if (action.id == "moderationHistory") {
           await router.push({
-            name: "single-post",
+            name: "/conversation/[postSlugId]",
             params: { postSlugId: postSlugId },
             query: { filter: "moderated" },
           });

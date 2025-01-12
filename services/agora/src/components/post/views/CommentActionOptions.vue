@@ -28,6 +28,7 @@ import { useRouter } from "vue-router";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
+  postSlugId: string;
   commentItem: CommentItem;
 }>();
 
@@ -43,32 +44,43 @@ function reportContentCallback() {
   showReportDialog.value = true;
 }
 
-function openUserReportsCallback() {
-  router.push({
-    name: "user-report-viewer",
+async function openUserReportsCallback() {
+  await router.push({
+    name: "/user-reports/[reportType]/[slugId]/",
     params: { reportType: "comment", slugId: props.commentItem.commentSlugId },
   });
 }
 
-function muteUserCallback() {
-  muteUser(props.commentItem.username, "mute");
+async function muteUserCallback() {
+  await muteUser(props.commentItem.username, "mute");
   emit("mutedComment");
 }
 
-function optionButtonClicked() {
+async function moderateCommentCallback() {
+  await router.push({
+    name: "/moderate/opinion/[postSlugId]/[commentSlugId]/",
+    params: {
+      postSlugId: props.postSlugId,
+      commentSlugId: props.commentItem.commentSlugId,
+    },
+  });
+}
+
+async function optionButtonClicked() {
   const deleteCommentCallback = (deleted: boolean) => {
     if (deleted) {
       emit("deleted");
     }
   };
 
-  showCommentOptionSelector(
+  await showCommentOptionSelector(
     props.commentItem.commentSlugId,
     props.commentItem.username,
     deleteCommentCallback,
     reportContentCallback,
     openUserReportsCallback,
-    muteUserCallback
+    muteUserCallback,
+    moderateCommentCallback
   );
 }
 </script>
