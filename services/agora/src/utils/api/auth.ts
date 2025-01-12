@@ -16,7 +16,7 @@ import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { getPlatform } from "../common";
 import { useNotify } from "../ui/notify";
-import { useRoute, useRouter } from "vue-router";
+import { RouteMap, useRoute, useRouter } from "vue-router";
 
 export interface AuthenticateReturn {
   isSuccessful: boolean;
@@ -175,12 +175,22 @@ export function useBackendAuthApi() {
   function needRedirectUnauthenticatedUser(): boolean {
     const currentRouteName = route.name;
     if (currentRouteName) {
-      if (
-        currentRouteName == "/" ||
-        currentRouteName == "/post/[postSlugId]" ||
-        currentRouteName == "/legal/privacy/" ||
-        currentRouteName == "/legal/terms/"
-      ) {
+      const whiteListedRoutes: (keyof RouteMap)[] = [
+        "/",
+        "/conversation/[postSlugId]",
+        "/legal/privacy/",
+        "/legal/terms/",
+        "/onboarding/step1-login/",
+        "/onboarding/step1-signup/",
+        "/onboarding/step2-signup/",
+        "/onboarding/step3-passport/",
+        "/onboarding/step3-phone-1/",
+        "/onboarding/step3-phone-2/",
+        "/onboarding/step4-username/",
+        "/onboarding/step5-experience-deprecated/",
+        "/onboarding/step5-preferences/",
+      ];
+      if (whiteListedRoutes.includes(currentRouteName)) {
         return false;
       } else {
         return true;

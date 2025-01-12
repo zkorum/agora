@@ -96,7 +96,7 @@ watch(targetIsVisible, async () => {
 
 async function openComment(postSlugId: string, commentSlugId: string) {
   await router.push({
-    name: "/post/[postSlugId]",
+    name: "/conversation/[postSlugId]",
     params: { postSlugId: postSlugId },
     query: {
       commentSlugId: commentSlugId,

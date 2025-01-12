@@ -23,8 +23,8 @@
         name="mdi-account-circle"
         size="1.6rem"
         :color="
-          route.name === '/user-profile/posts/' ||
-          route.name === '/user-profile/comments/'
+          route.name === '/user-profile/opinions/' ||
+          route.name === '/user-profile/conversations/'
             ? 'color-highlight'
             : 'color-text-weak'
         "
@@ -32,8 +32,8 @@
       <div
         :class="
           'text-' +
-          (route.name === '/user-profile/posts/' ||
-          route.name === '/user-profile/comments/'
+          (route.name === '/user-profile/opinions/' ||
+          route.name === '/user-profile/conversations/'
             ? 'color-highlight'
             : 'color-text-weak')
         "
@@ -61,7 +61,7 @@ async function accessProfile() {
   if (!isAuthenticated.value) {
     dialog.showLoginConfirmationDialog();
   } else {
-    await router.push({ name: "/user-profile/posts/" });
+    await router.push({ name: "/user-profile/opinions/" });
   }
 }
 </script>

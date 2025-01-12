@@ -131,9 +131,9 @@ async function shareButtonClicked() {
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
-    "/post/" +
+    "/conversation/" +
     props.postSlugId +
-    "?commentSlugId=" +
+    "?opinionSlugId=" +
     props.commentItem.commentSlugId;
   await webShare.share("Agora Comment", sharePostUrl);
 }

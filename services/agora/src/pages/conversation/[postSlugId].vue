@@ -45,7 +45,7 @@ const dataLoaded = ref(false);
 const route = useRoute();
 
 onMounted(async () => {
-  if (route.name == "/post/[postSlugId]") {
+  if (route.name == "/conversation/[postSlugId]") {
     const response = await fetchPostBySlugId(
       route.params.postSlugId,
       isAuthenticated.value

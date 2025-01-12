@@ -68,7 +68,7 @@ watch(targetIsVisible, async () => {
 
 async function openPost(postSlugId: string) {
   await router.push({
-    name: "/post/[postSlugId]",
+    name: "/conversation/[postSlugId]",
     params: { postSlugId: postSlugId },
   });
 }

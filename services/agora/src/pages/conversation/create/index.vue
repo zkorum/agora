@@ -1,8 +1,8 @@
 <template>
   <MainLayout
     :general-props="{
-      addBottomPadding: true,
-      enableFooter: true,
+      addBottomPadding: false,
+      enableFooter: false,
       enableHeader: true,
       reducedWidth: false,
     }"
@@ -312,7 +312,7 @@ async function onSubmit() {
     await loadPostData(false);
 
     await router.push({
-      name: "/post/[postSlugId]",
+      name: "/conversation/[postSlugId]",
       params: { postSlugId: response.postSlugId },
     });
   } else {

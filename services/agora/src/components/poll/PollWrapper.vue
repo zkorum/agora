@@ -69,7 +69,7 @@
 import OptionView from "components/poll/OptionView.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { usePostStore, type DummyPollOptionFormat } from "src/stores/post";
-import { ref, watch } from "vue";
+import { onBeforeMount, ref, watch } from "vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
@@ -106,7 +106,9 @@ const userVoteStatus = ref<UserInteraction>({
 const totalVoteCount = ref(0);
 initializeTotalVoteCount();
 
-await fetchUserPollResponseData(false);
+onBeforeMount(async () => {
+  await fetchUserPollResponseData(false);
+});
 
 function initializeTotalVoteCount() {
   totalVoteCount.value = 0;

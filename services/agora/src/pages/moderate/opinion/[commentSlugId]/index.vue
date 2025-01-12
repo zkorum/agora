@@ -15,7 +15,7 @@
   >
     <div class="container">
       <div class="title">
-        Moderate the conversation "{add conversation title excerpt}"
+        Moderate the opinion "{add opinion title excerpt}"
       </div>
 
       <q-select
@@ -62,31 +62,32 @@
 
 <script setup lang="ts">
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
-  ModerationActionPosts,
+  ModerationActionComments,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
-  moderationActionPostsMapping,
+  moderationActionCommentsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
-import { usePostStore } from "src/stores/post";
 import MainLayout from "src/layouts/MainLayout.vue";
 
-const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
-  useBackendModerateApi();
+const {
+  moderateComment,
+  fetchCommentModeration,
+  cancelModerationCommentReport,
+} = useBackendModerateApi();
 
 const route = useRoute();
-const router = useRouter();
 
-const { loadPostData } = usePostStore();
-
-const DEFAULT_MODERATION_ACTION = "lock";
-const moderationAction = ref<ModerationActionPosts>(DEFAULT_MODERATION_ACTION);
-const actionMapping = ref(moderationActionPostsMapping);
+const DEFAULT_MODERATION_ACTION = "move";
+const moderationAction = ref<ModerationActionComments>(
+  DEFAULT_MODERATION_ACTION
+);
+const actionMapping = ref(moderationActionCommentsMapping);
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
@@ -96,12 +97,12 @@ const moderationExplanation = ref("");
 
 const hasExistingDecision = ref(false);
 
-let postSlugId: string | null = null;
+let commentSlugId: string | null = null;
 if (
-  route.name == "/moderate/post/[postSlugId]/" &&
-  typeof route.params.postSlugId == "string"
+  route.name == "/moderate/opinion/[commentSlugId]/" &&
+  typeof route.params.commentSlugId == "string"
 ) {
-  postSlugId = route.params.postSlugId;
+  commentSlugId = route.params.commentSlugId;
 }
 
 onMounted(async () => {
@@ -109,8 +110,8 @@ onMounted(async () => {
 });
 
 async function initializeData() {
-  if (postSlugId != null) {
-    const response = await fetchPostModeration(postSlugId);
+  if (commentSlugId != null) {
+    const response = await fetchCommentModeration(commentSlugId);
     hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;
@@ -122,41 +123,38 @@ async function initializeData() {
       moderationReason.value = DEFAULT_MODERATION_REASON;
     }
   } else {
-    console.log("Missing post slug ID");
+    console.log("Missing comment slug ID");
   }
 }
 
 async function clickedWithdraw() {
-  if (postSlugId) {
-    const isSuccessful = await cancelModerationPostReport(postSlugId);
-    if (isSuccessful) {
-      await initializeData();
-      await loadPostData(false);
-      await router.push({
-        name: "/post/[postSlugId]",
-        params: { postSlugId: postSlugId },
-      });
-    }
+  if (commentSlugId) {
+    await cancelModerationCommentReport(commentSlugId);
+    await initializeData();
+    // TODO: redirect to comment
+    // await router.push({
+    //   name: "single-post",
+    //   params: { postSlugId: postSlugId },
+    // });
   } else {
     console.log("Missing comment slug ID");
   }
 }
 
 async function clickedSubmit() {
-  if (postSlugId) {
-    const isSuccessful = await moderatePost(
-      postSlugId,
+  if (commentSlugId) {
+    const isSuccessful = await moderateComment(
+      commentSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
-
     if (isSuccessful) {
-      await loadPostData(false);
-      await router.push({
-        name: "/post/[postSlugId]",
-        params: { postSlugId: postSlugId },
-      });
+      // TODO: redirect to comment
+      // await router.push({
+      //   name: "single-post",
+      //   params: { postSlugId: postSlugId },
+      // });
     }
   }
 }

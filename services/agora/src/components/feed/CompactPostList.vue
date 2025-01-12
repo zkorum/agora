@@ -153,7 +153,7 @@ async function newPostCheck() {
 async function openPost(postSlugId: string) {
   if (dataReady.value) {
     await router.push({
-      name: "/post/[postSlugId]",
+      name: "/conversation/[postSlugId]",
       params: { postSlugId: postSlugId },
     });
   }
