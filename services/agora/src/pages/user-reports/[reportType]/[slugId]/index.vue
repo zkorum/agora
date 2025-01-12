@@ -52,10 +52,7 @@ onMounted(async () => {
 });
 
 async function loadReports() {
-  if (
-    route.name === "/user-reports/[reportType]/[slugId]/" &&
-    typeof route.params.slugId === "string"
-  ) {
+  if (route.name === "/user-reports/[reportType]/[slugId]/") {
     if (route.params.reportType == "post") {
       reportItemList.value = await fetchUserReportsByPostSlugId(
         route.params.slugId
