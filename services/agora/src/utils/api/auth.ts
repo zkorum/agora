@@ -196,7 +196,7 @@ export function useBackendAuthApi() {
         return true;
       }
     } else {
-      console.log("Failed to detect current route name: " + currentRouteName);
+      console.log(`Failed to detect current route name: ${currentRouteName}`);
       return true;
     }
   }
