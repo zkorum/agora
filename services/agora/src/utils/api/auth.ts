@@ -1,8 +1,8 @@
 import {
   type ApiV1AuthAuthenticatePost200Response,
   type ApiV1AuthAuthenticatePostRequest,
-  type ApiV1AuthVerifyPhoneOtpPost200Response,
-  type ApiV1AuthVerifyPhoneOtpPostRequest,
+  type ApiV1AuthPhoneVerifyOtpPost200Response,
+  type ApiV1AuthPhoneVerifyOtpPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -75,18 +75,18 @@ export function useBackendAuthApi() {
 
   async function verifyPhoneOtp(
     code: number
-  ): Promise<ApiV1AuthVerifyPhoneOtpPost200Response> {
-    const params: ApiV1AuthVerifyPhoneOtpPostRequest = {
+  ): Promise<ApiV1AuthPhoneVerifyOtpPost200Response> {
+    const params: ApiV1AuthPhoneVerifyOtpPostRequest = {
       code: code,
     };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthVerifyPhoneOtpPost(params);
+      await DefaultApiAxiosParamCreator().apiV1AuthPhoneVerifyOtpPost(params);
     const encodedUcan = await buildEncodedUcan(url, options);
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1AuthVerifyPhoneOtpPost(params, {
+    ).apiV1AuthPhoneVerifyOtpPost(params, {
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },

@@ -7,10 +7,10 @@ import type {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import {
-    commentTable,
-    postTable,
-    reportCommentsTable,
-    reportPostsTable,
+    opinionTable,
+    conversationTable,
+    opinionReportTable,
+    conversationReportTable,
     userTable,
 } from "@/schema.js";
 import { desc, eq } from "drizzle-orm";
@@ -37,9 +37,9 @@ export async function createUserReportByPostSlugId({
         postSlugId: postSlugId,
     });
 
-    await db.insert(reportPostsTable).values({
-        postId: postDetails.id,
-        reporterId: userId,
+    await db.insert(conversationReportTable).values({
+        conversationId: postDetails.id,
+        authorId: userId,
         reportReason: userReportReason,
         reportExplanation: userReportExplanation,
     });
@@ -66,9 +66,9 @@ export async function createUserReportByCommentSlugId({
         commentSlugId: commentSlugId,
     });
 
-    await db.insert(reportCommentsTable).values({
-        commentId: commentId,
-        reporterId: userId,
+    await db.insert(opinionReportTable).values({
+        opinionId: commentId,
+        authorId: userId,
         reportReason: userReportReason,
         reportExplanation: userReportExplanation,
     });
@@ -86,16 +86,22 @@ export async function fetchUserReportsByPostSlugId({
     const reportPostsTableResponse = await db
         .select({
             username: userTable.username,
-            reportReason: reportPostsTable.reportReason,
-            reportExplanation: reportPostsTable.reportExplanation,
-            createdAt: reportPostsTable.createdAt,
-            id: reportPostsTable.id,
+            reportReason: conversationReportTable.reportReason,
+            reportExplanation: conversationReportTable.reportExplanation,
+            createdAt: conversationReportTable.createdAt,
+            id: conversationReportTable.id,
         })
-        .from(reportPostsTable)
-        .innerJoin(postTable, eq(postTable.id, reportPostsTable.postId))
-        .innerJoin(userTable, eq(userTable.id, reportPostsTable.reporterId))
-        .where(eq(postTable.slugId, postSlugId))
-        .orderBy(desc(reportPostsTable.createdAt));
+        .from(conversationReportTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, conversationReportTable.conversationId),
+        )
+        .innerJoin(
+            userTable,
+            eq(userTable.id, conversationReportTable.authorId),
+        )
+        .where(eq(conversationTable.slugId, postSlugId))
+        .orderBy(desc(conversationReportTable.createdAt));
 
     const userReportItemList: UserReportItem[] = [];
     reportPostsTableResponse.forEach((tableItem) => {
@@ -124,19 +130,19 @@ export async function fetchUserReportsByCommentSlugId({
     const reportCommentsTableResponse = await db
         .select({
             username: userTable.username,
-            reportReason: reportCommentsTable.reportReason,
-            reportExplanation: reportCommentsTable.reportExplanation,
-            createdAt: reportCommentsTable.createdAt,
-            id: reportCommentsTable.id,
+            reportReason: opinionReportTable.reportReason,
+            reportExplanation: opinionReportTable.reportExplanation,
+            createdAt: opinionReportTable.createdAt,
+            id: opinionReportTable.id,
         })
-        .from(reportCommentsTable)
+        .from(opinionReportTable)
         .innerJoin(
-            commentTable,
-            eq(commentTable.id, reportCommentsTable.commentId),
+            opinionTable,
+            eq(opinionTable.id, opinionReportTable.opinionId),
         )
-        .innerJoin(userTable, eq(userTable.id, reportCommentsTable.reporterId))
-        .where(eq(commentTable.slugId, commentSlugId))
-        .orderBy(desc(reportCommentsTable.createdAt));
+        .innerJoin(userTable, eq(userTable.id, opinionReportTable.authorId))
+        .where(eq(opinionTable.slugId, commentSlugId))
+        .orderBy(desc(opinionReportTable.createdAt));
 
     const userReportItemList: UserReportItem[] = [];
     reportCommentsTableResponse.forEach((tableItem) => {

@@ -26,8 +26,8 @@ export const zodModerationReason = z.enum([
     "sexual",
     "spam",
 ]);
-export const zodModerationActionPosts = z.enum(["lock"]);
-export const zodModerationActionComments = z.enum(["move", "hide"]);
+export const zodConversationModerationAction = z.enum(["lock"]);
+export const zodOpinionModerationAction = z.enum(["move", "hide"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -74,8 +74,8 @@ export const zodDevice = z
     })
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
-export const zodPostTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
-export const zodPostBody = z.string().optional(); // Cannot specify length due to HTML tags
+export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
+export const zodConversationBody = z.string().optional(); // Cannot specify length due to HTML tags
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
 export const zodPollOptionWithResult = z
     .object({
@@ -84,22 +84,22 @@ export const zodPollOptionWithResult = z
         numResponses: z.number().int().nonnegative(),
     })
     .strict();
-export const zodPollList = z.array(zodPollOptionWithResult).optional();
-export const zodPostDataWithResult = z
+export const zodConversationList = z.array(zodPollOptionWithResult).optional();
+export const zodConversationDataWithResult = z
     .object({
-        title: zodPostTitle,
-        body: zodPostBody,
-        poll: zodPollList,
+        title: zodConversationTitle,
+        body: zodConversationBody,
+        poll: zodConversationList,
     })
     .strict();
 export const zodPollResponse = z
     .object({
-        postSlugId: z.string(),
+        conversationSlugId: z.string(),
         optionChosen: z.number().gte(0),
     })
     .strict();
 export const zodSlugId = z.string().max(10);
-export const zodCommentCount = z.number().int().nonnegative();
+export const zodOpinionCount = z.number().int().nonnegative();
 export const zodCommentFeedFilter = z.enum(["moderated", "new"]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
@@ -144,11 +144,32 @@ export const zodUserReportItem = z.object({
 });
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
-export const zodModerationPropertiesPosts = z.discriminatedUnion("status", [
+export const zodConversationModerationProperties = z.discriminatedUnion(
+    "status",
+    [
+        z
+            .object({
+                status: z.literal("moderated"),
+                action: zodConversationModerationAction,
+                reason: zodModerationReason,
+                explanation: zodModerationExplanation,
+                createdAt: z.date(),
+                updatedAt: z.date(),
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("unmoderated"),
+            })
+            .strict(),
+    ],
+);
+
+export const zodOpinionModerationProperties = z.discriminatedUnion("status", [
     z
         .object({
             status: z.literal("moderated"),
-            action: zodModerationActionPosts,
+            action: zodOpinionModerationAction,
             reason: zodModerationReason,
             explanation: zodModerationExplanation,
             createdAt: z.date(),
@@ -162,46 +183,28 @@ export const zodModerationPropertiesPosts = z.discriminatedUnion("status", [
         .strict(),
 ]);
 
-export const zodModerationPropertiesComments = z.discriminatedUnion("status", [
-    z
-        .object({
-            status: z.literal("moderated"),
-            action: zodModerationActionComments,
-            reason: zodModerationReason,
-            explanation: zodModerationExplanation,
-            createdAt: z.date(),
-            updatedAt: z.date(),
-        })
-        .strict(),
-    z
-        .object({
-            status: z.literal("unmoderated"),
-        })
-        .strict(),
-]);
-
-export const zodPostMetadata = z
+export const zodConversationMetadata = z
     .object({
-        postSlugId: zodSlugId,
+        conversationSlugId: zodSlugId,
         createdAt: z.date(),
         updatedAt: z.date(),
         lastReactedAt: z.date(),
-        commentCount: zodCommentCount,
+        opinionCount: zodOpinionCount,
         authorUsername: zodUsername,
-        moderation: zodModerationPropertiesPosts,
+        moderation: zodConversationModerationProperties,
     })
     .strict();
-export const zodCommentContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
-export const zodCommentItem = z
+export const zodOpinionContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
+export const zodOpinionItem = z
     .object({
-        commentSlugId: zodSlugId,
+        opinionSlugId: zodSlugId,
         createdAt: z.date(),
         updatedAt: z.date(),
-        comment: zodCommentContent,
-        numLikes: z.number().int().nonnegative(),
-        numDislikes: z.number().int().nonnegative(),
+        opinion: zodOpinionContent,
+        numAgrees: z.number().int().nonnegative(),
+        numDisagrees: z.number().int().nonnegative(),
         username: zodUsername,
-        moderation: zodModerationPropertiesComments,
+        moderation: zodOpinionModerationProperties,
     })
     .strict();
 export const zodUserInteraction = z
@@ -210,21 +213,21 @@ export const zodUserInteraction = z
         votedIndex: z.number().int().nonnegative(),
     })
     .strict();
-export const zodExtendedPostData = z
+export const zodExtendedConversationData = z
     .object({
-        metadata: zodPostMetadata,
-        payload: zodPostDataWithResult,
+        metadata: zodConversationMetadata,
+        payload: zodConversationDataWithResult,
         interaction: zodUserInteraction,
     })
     .strict();
-export const zodExtendedCommentData = z
+export const zodExtendedOpinionData = z
     .object({
-        postData: zodExtendedPostData,
-        commentItem: zodCommentItem,
+        conversationData: zodExtendedConversationData,
+        opinionItem: zodOpinionItem,
     })
     .strict();
-export const zodVotingOption = z.enum(["like", "dislike"]);
-export const zodVotingAction = z.enum(["like", "dislike", "cancel"]);
+export const zodVotingOption = z.enum(["agree", "disagree"]);
+export const zodVotingAction = z.enum(["agree", "disagree", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
 export interface LanguageObject {
     name: string;
@@ -496,33 +499,37 @@ export const zodCountryCodeEnum = z.enum([
 ]);
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
-export type ExtendedPost = z.infer<typeof zodExtendedPostData>;
+export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
 export type UserInteraction = z.infer<typeof zodUserInteraction>;
-export type PostMetadata = z.infer<typeof zodPostMetadata>;
-export type ExtendedPostPayload = z.infer<typeof zodPostDataWithResult>;
+export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
+export type ExtendedConversationPayload = z.infer<
+    typeof zodConversationDataWithResult
+>;
 export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
-export type CommentContent = z.infer<typeof zodCommentContent>;
-export type CommentItem = z.infer<typeof zodCommentItem>;
-export type ExtendedComment = z.infer<typeof zodExtendedCommentData>;
+export type CommentContent = z.infer<typeof zodOpinionContent>;
+export type OpinionItem = z.infer<typeof zodOpinionItem>;
+export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;
 export type SlugId = z.infer<typeof zodSlugId>;
 export type VotingOption = z.infer<typeof zodVotingOption>;
 export type VotingAction = z.infer<typeof zodVotingAction>;
-export type PollList = z.infer<typeof zodPollList>;
+export type PollList = z.infer<typeof zodConversationList>;
 export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
 export type ModerationReason = z.infer<typeof zodModerationReason>;
 export type UserReportReason = z.infer<typeof zodUserReportReason>;
 export type UserReportExplanation = z.infer<typeof zodUserReportExplanation>;
 export type UserReportItem = z.infer<typeof zodUserReportItem>;
-export type ModerationActionPosts = z.infer<typeof zodModerationActionPosts>;
-export type ModerationActionComments = z.infer<
-    typeof zodModerationActionComments
+export type ConversationModerationAction = z.infer<
+    typeof zodConversationModerationAction
 >;
-export type ModerationPropertiesPosts = z.infer<
-    typeof zodModerationPropertiesPosts
+export type OpinionModerationAction = z.infer<
+    typeof zodOpinionModerationAction
 >;
-export type ModerationPropertiesComments = z.infer<
-    typeof zodModerationPropertiesComments
+export type ConversationModerationProperties = z.infer<
+    typeof zodConversationModerationProperties
+>;
+export type OpinionModerationProperties = z.infer<
+    typeof zodOpinionModerationProperties
 >;
 export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;
 export type UserMuteAction = z.infer<typeof zodUserMuteAction>;

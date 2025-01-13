@@ -12,7 +12,7 @@ import {
     unique,
     index,
 } from "drizzle-orm/pg-core";
-// import { MAX_LENGTH_OPTION, MAX_LENGTH_TITLE, MAX_LENGTH_COMMENT, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
+// import { MAX_LENGTH_OPTION, MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING - change this in shared.ts as well
 const MAX_LENGTH_OPTION = 30;
 const MAX_LENGTH_TITLE = 130;
@@ -571,9 +571,13 @@ export const userTable = pgTable("user", {
         .notNull()
         .default(false),
     isDeleted: boolean("is_deleted").notNull().default(false),
-    activePostCount: integer("active_post_count").notNull().default(0), // total posts (without deleted posts)
-    totalPostCount: integer("total_post_count").notNull().default(0), // total posts created
-    totalCommentCount: integer("total_comment_count").notNull().default(0), // total comments created
+    activeConversationCount: integer("active_conversation_count")
+        .notNull()
+        .default(0), // total conversations (without deleted conversations)
+    totalConversationCount: integer("total_conversation_count")
+        .notNull()
+        .default(0), // total conversations created
+    totalOpinionCount: integer("total_opinion_count").notNull().default(0), // total opinions created
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -656,7 +660,7 @@ export const userLanguageTable = pgTable("user_language", {
         .notNull(),
 });
 
-export const postTopicTable = pgTable("post_topic", {
+export const conversationTopicTable = pgTable("conversation_topic", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name"),
     code: text("code"),
@@ -668,15 +672,15 @@ export const postTopicTable = pgTable("post_topic", {
         .notNull(),
 });
 
-export const userPostTopicPreferenceTable = pgTable(
-    "user_post_topic_preference",
+export const userConversationTopicPreferenceTable = pgTable(
+    "user_conversation_topic_preference",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         userId: uuid("user_id")
             .references(() => userTable.id)
             .notNull(),
-        postTagId: integer("post_tag_id")
-            .references(() => postTopicTable.id)
+        conversationTagId: integer("conversation_tag_id")
+            .references(() => conversationTopicTable.id)
             .notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -690,7 +694,7 @@ export const userPostTopicPreferenceTable = pgTable(
             userIdx: index("user_idx_topic").on(t.userId),
             unqPreference: unique("user_unique_topic").on(
                 t.userId,
-                t.postTagId,
+                t.conversationTagId,
             ),
         };
     },
@@ -894,10 +898,10 @@ export const authAttemptPhoneTable = pgTable("auth_attempt_phone", {
 // conceptually, it is a "pollContentTable"
 export const pollTable = pgTable("poll", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    postContentId: integer("post_content_id")
+    conversationContentId: integer("conversation_content_id")
         .notNull()
         .unique()
-        .references(() => postContentTable.id),
+        .references(() => conversationContentTable.id),
     option1: varchar("option1", { length: MAX_LENGTH_OPTION }).notNull(),
     option2: varchar("option2", { length: MAX_LENGTH_OPTION }).notNull(),
     option3: varchar("option3", { length: MAX_LENGTH_OPTION }),
@@ -931,14 +935,14 @@ export const proofTypeEnum = pgEnum("proof_type", [
     "deletion",
 ]);
 
-export const postProofTable = pgTable("post_proof", {
+export const conversationProofTable = pgTable("conversation_proof", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: proofTypeEnum("proof_type").notNull(),
-    postId: integer("post_id")
+    conversationId: integer("conversation_id")
         .notNull()
-        .references(() => postTable.id), // the postTable never gets deleted
+        .references(() => conversationTable.id), // the conversationTable never gets deleted
     parentId: integer("parent_id").references(
-        (): AnyPgColumn => postProofTable.id,
+        (): AnyPgColumn => conversationProofTable.id,
     ), // not null if edit or delete, else null
     authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
         .notNull()
@@ -953,21 +957,21 @@ export const postProofTable = pgTable("post_proof", {
         .notNull(),
 });
 
-export const postContentTable = pgTable("post_content", {
+export const conversationContentTable = pgTable("conversation_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    postId: integer("post_id")
-        .references(() => postTable.id)
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
         .notNull(),
-    postProofId: integer("post_proof_id")
+    conversationProofId: integer("conversation_proof_id")
         .notNull()
         .unique()
-        .references(() => postProofTable.id), // cannot point to deletion proof
+        .references(() => conversationProofTable.id), // cannot point to deletion proof
     parentId: integer("parent_id").references(
-        (): AnyPgColumn => postContentTable.id,
+        (): AnyPgColumn => conversationContentTable.id,
     ), // not null if edit
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
     body: varchar("body"),
-    pollId: integer("poll_id").references((): AnyPgColumn => pollTable.id), // for now there is only one poll per post at most
+    pollId: integer("poll_id").references((): AnyPgColumn => pollTable.id), // for now there is only one poll per conversation at most
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -976,15 +980,15 @@ export const postContentTable = pgTable("post_content", {
         .notNull(),
 });
 
-export const postTable = pgTable("post", {
+export const conversationTable = pgTable("conversation", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
     authorId: uuid("author_id") // "postAs"
         .notNull()
         .references(() => userTable.id), // the author of the poll
     currentContentId: integer("current_content_id")
-        .references((): AnyPgColumn => postContentTable.id)
-        .unique(), // null if post was deleted
+        .references((): AnyPgColumn => conversationContentTable.id)
+        .unique(), // null if conversation was deleted
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -998,13 +1002,13 @@ export const postTable = pgTable("post", {
         .defaultNow()
         .notNull(),
     lastReactedAt: timestamp("last_reacted_at", {
-        // latest response to poll or comment
+        // latest response to poll or opinion
         mode: "date",
         precision: 0,
     })
         .defaultNow()
         .notNull(),
-    commentCount: integer("comment_count").notNull().default(0),
+    opinionCount: integer("opinion_count").notNull().default(0),
 });
 
 export const pollResponseTable = pgTable(
@@ -1014,9 +1018,9 @@ export const pollResponseTable = pgTable(
         authorId: uuid("author_id")
             .notNull()
             .references(() => userTable.id),
-        postId: integer("post_id") // poll is bound to the post
+        conversationId: integer("conversation_id") // poll is bound to the conversation
             .notNull()
-            .references(() => postTable.id),
+            .references(() => conversationTable.id),
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => pollResponseContentTable.id)
             .unique(),
@@ -1034,16 +1038,16 @@ export const pollResponseTable = pgTable(
             .notNull(),
     },
     (t) => ({
-        onePollResponsePerAuthor: unique().on(t.authorId, t.postId),
+        onePollResponsePerAuthor: unique().on(t.authorId, t.conversationId),
     }),
 );
 
 export const pollResponseProofTable = pgTable("poll_response_proof", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: proofTypeEnum("proof_type").notNull(),
-    postId: integer("post_id")
+    conversationId: integer("conversation_id")
         .notNull()
-        .references(() => postTable.id), // the postTable never gets deleted
+        .references(() => conversationTable.id), // the conversationTable never gets deleted
     parentId: integer("parent_id").references(
         (): AnyPgColumn => pollResponseProofTable.id,
     ), // not null if edit or delete, else null
@@ -1069,9 +1073,9 @@ export const pollResponseContentTable = pgTable("poll_response_content", {
         .notNull()
         .unique()
         .references((): AnyPgColumn => pollResponseProofTable.id),
-    postContentId: integer("post_content_id")
-        .references(() => postContentTable.id)
-        .notNull(), // exact post content and associated poll that existed when this poll was responded.
+    conversationContentId: integer("conversation_content_id")
+        .references(() => conversationContentTable.id)
+        .notNull(), // exact conversation content and associated poll that existed when this poll was responded.
     parentId: integer("parent_id").references(
         (): AnyPgColumn => pollResponseContentTable.id,
     ), // not null if edit
@@ -1084,14 +1088,14 @@ export const pollResponseContentTable = pgTable("poll_response_content", {
         .notNull(),
 });
 
-export const commentProofTable = pgTable("comment_proof", {
+export const opinionProofTable = pgTable("opinion_proof", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: proofTypeEnum("proof_type").notNull(),
-    commentId: integer("comment_id")
+    opinionId: integer("opinion_id")
         .notNull()
-        .references(() => commentTable.id), // the commentTable never gets deleted
+        .references(() => opinionTable.id), // the opinionTable never gets deleted
     parentId: integer("parent_id").references(
-        (): AnyPgColumn => commentProofTable.id,
+        (): AnyPgColumn => opinionProofTable.id,
     ), // not null if edit or delete, else null
     authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
         .notNull()
@@ -1106,20 +1110,20 @@ export const commentProofTable = pgTable("comment_proof", {
         .notNull(),
 });
 
-export const commentTable = pgTable("comment", {
+export const opinionTable = pgTable("opinion", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
     authorId: uuid("author_id")
         .notNull()
         .references(() => userTable.id),
-    postId: integer("post_id")
-        .references(() => postTable.id)
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
         .notNull(),
     currentContentId: integer("current_content_id").references(
-        (): AnyPgColumn => commentContentTable.id,
-    ), // null if comment was deleted
-    numLikes: integer("num_likes").notNull().default(0),
-    numDislikes: integer("num_dislikes").notNull().default(0),
+        (): AnyPgColumn => opinionContentTable.id,
+    ), // null if opinion was deleted
+    numAgrees: integer("num_agrees").notNull().default(0),
+    numDisagrees: integer("num_disagrees").notNull().default(0),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1141,19 +1145,19 @@ export const commentTable = pgTable("comment", {
         .notNull(),
 });
 
-export const commentContentTable = pgTable("comment_content", {
+export const opinionContentTable = pgTable("opinion_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    commentId: integer("comment_id")
-        .references(() => commentTable.id)
-        .notNull(), // used to delete all commentContent when deleting a comment
-    postContentId: integer("post_content_id")
-        .references(() => postContentTable.id)
-        .notNull(), // used to cascade delete all commentContent when deleting a post(content)
-    commentProofId: integer("comment_proof_id")
+    opinionId: integer("opinion_id")
+        .references(() => opinionTable.id)
+        .notNull(), // used to delete all opinionContent when deleting an opinion
+    conversationContentId: integer("conversation_content_id")
+        .references(() => conversationContentTable.id)
+        .notNull(), // used to cascade delete all opinionContent when deleting a conversation(content)
+    opinionProofId: integer("opinion_proof_id")
         .notNull()
-        .references(() => commentProofTable.id), // cannot point to deletion proof
+        .references(() => opinionProofTable.id), // cannot point to deletion proof
     parentId: integer("parent_id").references(
-        (): AnyPgColumn => commentContentTable.id,
+        (): AnyPgColumn => opinionContentTable.id,
     ), // not null if edit
     content: varchar("content").notNull(),
     createdAt: timestamp("created_at", {
@@ -1164,7 +1168,7 @@ export const commentContentTable = pgTable("comment_content", {
         .notNull(),
 });
 
-// like or dislike on comments for each user
+// like or dislike on opinions for each user
 export const voteTable = pgTable(
     "vote",
     {
@@ -1172,9 +1176,9 @@ export const voteTable = pgTable(
         authorId: uuid("author_id")
             .notNull()
             .references(() => userTable.id),
-        commentId: integer("comment_id")
+        opinionId: integer("opinion_id")
             .notNull()
-            .references(() => commentTable.id),
+            .references(() => opinionTable.id),
         currentContentId: integer("current_content_id").references(
             (): AnyPgColumn => voteContentTable.id,
         ), // not null if not deleted, else null
@@ -1192,7 +1196,7 @@ export const voteTable = pgTable(
             .notNull(),
     },
     (t) => ({
-        oneCommentVotePerUser: unique().on(t.authorId, t.commentId),
+        oneOpinionVotePerUser: unique().on(t.authorId, t.opinionId),
     }),
 );
 
@@ -1201,7 +1205,7 @@ export const voteProofTable = pgTable("vote_proof", {
     type: proofTypeEnum("proof_type").notNull(),
     voteId: integer("vote_id")
         .notNull()
-        .references(() => voteTable.id), // the postTable never gets deleted
+        .references(() => voteTable.id), // the conversationTable never gets deleted
     authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
         .notNull()
         .references(() => deviceTable.didWrite),
@@ -1215,7 +1219,7 @@ export const voteProofTable = pgTable("vote_proof", {
         .notNull(),
 });
 
-export const voteEnum = pgEnum("vote_enum", ["like", "dislike"]);
+export const voteEnum = pgEnum("vote_enum", ["agree", "disagree"]);
 
 export const voteContentTable = pgTable("vote_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1225,9 +1229,9 @@ export const voteContentTable = pgTable("vote_content", {
     voteProofId: integer("vote_proof_id")
         .notNull()
         .references((): AnyPgColumn => voteProofTable.id),
-    commentContentId: integer("comment_content_id")
-        .references(() => commentContentTable.id)
-        .notNull(), // exact comment content that existed when this vote was cast. Cascade delete from commentContent if commentContent was deleted.
+    opinionContentId: integer("opinion_content_id")
+        .references(() => opinionContentTable.id)
+        .notNull(), // exact opinion content that existed when this vote was cast. Cascade delete from opinionContent if opinionContent was deleted.
     optionChosen: voteEnum("option_chosen").notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -1256,26 +1260,27 @@ export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
 ]);
 
 // todo: add suspend and ban
-export const moderationActionPostsEnum = pgEnum("moderation_action_posts", [
-    "lock",
+export const conversationModerationActionEnum = pgEnum(
+    "conversation_moderation_action",
+    ["lock"],
+);
+
+export const opinionModerationActionEnum = pgEnum("opinion_moderation_action", [
+    "move",
+    "hide",
 ]);
 
-export const moderationActionCommentsEnum = pgEnum(
-    "moderation_action_comments",
-    ["move", "hide"],
-);
-
-export const reportPostsTable = pgTable(
-    "report_posts_table",
+export const conversationReportTable = pgTable(
+    "conversation_report",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        postId: integer("post_id")
-            .references(() => postTable.id)
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
             .notNull(),
-        reporterId: uuid("reporter_id")
+        authorId: uuid("author_id")
             .references(() => userTable.id)
             .notNull(),
-        reportReason: reportReasons("reporter_reason").notNull(),
+        reportReason: reportReasons("report_reason").notNull(),
         reportExplanation: varchar("report_explanation", {
             length: MAX_LENGTH_USER_REPORT_EXPLANATION,
         }),
@@ -1288,22 +1293,24 @@ export const reportPostsTable = pgTable(
     },
     (table) => {
         return {
-            postIdInx: index("postId_idx").on(table.postId),
+            conversationIdInx: index("conversation_id_idx").on(
+                table.conversationId,
+            ),
         };
     },
 );
 
-export const reportCommentsTable = pgTable(
-    "report_comments_table",
+export const opinionReportTable = pgTable(
+    "opinion_report",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        commentId: integer("comment_id")
-            .references(() => commentTable.id)
+        opinionId: integer("opinion_id")
+            .references(() => opinionTable.id)
             .notNull(),
-        reporterId: uuid("reporter_id")
+        authorId: uuid("author_id")
             .references(() => userTable.id)
             .notNull(),
-        reportReason: reportReasons("reporter_reason").notNull(),
+        reportReason: reportReasons("report_reason").notNull(),
         reportExplanation: varchar("report_explanation", {
             length: MAX_LENGTH_USER_REPORT_EXPLANATION,
         }),
@@ -1316,21 +1323,22 @@ export const reportCommentsTable = pgTable(
     },
     (table) => {
         return {
-            commentIdInx: index("commentId_idx").on(table.commentId),
+            opinionIdInx: index("opinion_id_idx").on(table.opinionId),
         };
     },
 );
 
-export const moderationPostsTable = pgTable("moderation_posts_table", {
+export const conversationModerationTable = pgTable("conversation_moderation", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    postId: integer("post_id") // one moderation action per post
-        .references(() => postTable.id)
+    conversationId: integer("conversation_id") // one moderation action per conversation
+        .references(() => conversationTable.id)
         .unique()
         .notNull(),
-    moderatorId: uuid("moderator_id")
+    authorId: uuid("author_id")
         .references(() => userTable.id)
         .notNull(),
-    moderationAction: moderationActionPostsEnum("moderation_action").notNull(), // add check
+    moderationAction:
+        conversationModerationActionEnum("moderation_action").notNull(), // add check
     moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
     moderationExplanation: varchar("moderation_explanation", {
         length: MAX_LENGTH_BODY,
@@ -1349,17 +1357,17 @@ export const moderationPostsTable = pgTable("moderation_posts_table", {
         .notNull(),
 });
 
-export const moderationCommentsTable = pgTable("moderation_comments_table", {
+export const opinionModerationTable = pgTable("opinion_moderation", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    commentId: integer("comment_id") // one moderation action per comment
-        .references(() => commentTable.id)
+    opinionId: integer("opinion_id") // one moderation action per opinion
+        .references(() => opinionTable.id)
         .unique()
         .notNull(),
-    moderatorId: uuid("moderator_id")
+    authorId: uuid("author_id")
         .references(() => userTable.id)
         .notNull(),
     moderationAction:
-        moderationActionCommentsEnum("moderation_action").notNull(), // add check
+        opinionModerationActionEnum("moderation_action").notNull(), // add check
     moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
     moderationExplanation: varchar("moderation_explanation", {
         length: MAX_LENGTH_BODY,

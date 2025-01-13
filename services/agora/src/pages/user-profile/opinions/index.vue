@@ -2,7 +2,7 @@
   <div>
     <div
       v-for="postData in profileData.userPostList"
-      :key="postData.metadata.postSlugId"
+      :key="postData.metadata.conversationSlugId"
     >
       <PostDetails
         :extended-post-data="postData"
@@ -12,7 +12,7 @@
         class="showCursor"
         :show-author="false"
         :display-absolute-time="true"
-        @click="openPost(postData.metadata.postSlugId)"
+        @click="openPost(postData.metadata.conversationSlugId)"
       />
 
       <div>

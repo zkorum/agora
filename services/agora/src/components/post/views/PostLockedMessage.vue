@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ModerationPropertiesPosts } from "src/shared/types/zod";
+import type { ConversationModerationProperties } from "src/shared/types/zod";
 import { moderationReasonMapping } from "src/utils/component/moderations";
 import { ref, watch } from "vue";
 import ModerationTime from "./moderation/ModerationTime.vue";
@@ -49,7 +49,7 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "src/stores/user";
 
 const props = defineProps<{
-  moderationProperty: ModerationPropertiesPosts;
+  moderationProperty: ConversationModerationProperties;
   postSlugId: string;
 }>();
 

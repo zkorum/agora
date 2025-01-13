@@ -65,19 +65,19 @@ import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
-  ModerationActionComments,
+  OpinionModerationAction,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
-  moderationActionCommentsMapping,
+  opinionModerationActionMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
 import MainLayout from "src/layouts/MainLayout.vue";
 
 const {
   moderateComment,
-  fetchCommentModeration,
+  getOpinionModerationStatus: fetchCommentModeration,
   cancelModerationCommentReport,
 } = useBackendModerateApi();
 
@@ -85,10 +85,10 @@ const route = useRoute();
 const router = useRouter();
 
 const DEFAULT_MODERATION_ACTION = "move";
-const moderationAction = ref<ModerationActionComments>(
+const moderationAction = ref<OpinionModerationAction>(
   DEFAULT_MODERATION_ACTION
 );
-const actionMapping = ref(moderationActionCommentsMapping);
+const actionMapping = ref(opinionModerationActionMapping);
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);

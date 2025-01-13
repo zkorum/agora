@@ -1,11 +1,11 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
-  type ApiV1ModerationCommentWithdrawPostRequest,
-  type ApiV1ModerationPostWithdrawPostRequest,
-  type ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner,
-  type ApiV1ReportSubmitReportByCommentSlugIdPostRequest,
-  type ApiV1ReportSubmitReportByPostSlugIdPostRequest,
+  type ApiV1ModerationOpinionWithdrawPostRequest,
+  type ApiV1ModerationConversationWithdrawPostRequest,
+  type ApiV1ReportConversationFetchPost200ResponseInner,
+  type ApiV1ReportOpinionCreatePostRequest,
+  type ApiV1ReportConversationCreatePostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -32,8 +32,8 @@ export function useBackendReportApi() {
     userReportExplanation: UserReportExplanation
   ) {
     try {
-      const params: ApiV1ReportSubmitReportByPostSlugIdPostRequest = {
-        postSlugId: postSlugId,
+      const params: ApiV1ReportConversationCreatePostRequest = {
+        conversationSlugId: postSlugId,
         reportReason: userReportReason,
         reportExplanation:
           userReportExplanation?.length == 0
@@ -42,7 +42,7 @@ export function useBackendReportApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ReportSubmitReportByPostSlugIdPost(
+        await DefaultApiAxiosParamCreator().apiV1ReportConversationCreatePost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -50,7 +50,7 @@ export function useBackendReportApi() {
         undefined,
         undefined,
         api
-      ).apiV1ReportSubmitReportByPostSlugIdPost(params, {
+      ).apiV1ReportConversationCreatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -70,8 +70,8 @@ export function useBackendReportApi() {
     userReportExplanation: UserReportExplanation
   ) {
     try {
-      const params: ApiV1ReportSubmitReportByCommentSlugIdPostRequest = {
-        commentSlugId: commentSlugId,
+      const params: ApiV1ReportOpinionCreatePostRequest = {
+        opinionSlugId: commentSlugId,
         reportReason: userReportReason,
         reportExplanation:
           userReportExplanation?.length == 0
@@ -80,7 +80,7 @@ export function useBackendReportApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ReportSubmitReportByCommentSlugIdPost(
+        await DefaultApiAxiosParamCreator().apiV1ReportOpinionCreatePost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -88,7 +88,7 @@ export function useBackendReportApi() {
         undefined,
         undefined,
         api
-      ).apiV1ReportSubmitReportByCommentSlugIdPost(params, {
+      ).apiV1ReportOpinionCreatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -103,7 +103,7 @@ export function useBackendReportApi() {
   }
 
   function createInternalUserReportObjectList(
-    unparsedUserReportList: ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner[]
+    unparsedUserReportList: ApiV1ReportConversationFetchPost200ResponseInner[]
   ): UserReportItem[] {
     const reportList: UserReportItem[] = [];
     unparsedUserReportList.forEach((report) => {
@@ -123,12 +123,12 @@ export function useBackendReportApi() {
     postSlugId: string
   ): Promise<FetchUserReportsByPostSlugIdResponse> {
     try {
-      const params: ApiV1ModerationPostWithdrawPostRequest = {
-        postSlugId: postSlugId,
+      const params: ApiV1ModerationConversationWithdrawPostRequest = {
+        conversationSlugId: postSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ReportFetchReportsByPostSlugIdPost(
+        await DefaultApiAxiosParamCreator().apiV1ReportConversationFetchPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -136,7 +136,7 @@ export function useBackendReportApi() {
         undefined,
         undefined,
         api
-      ).apiV1ReportFetchReportsByPostSlugIdPost(params, {
+      ).apiV1ReportConversationFetchPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -154,20 +154,18 @@ export function useBackendReportApi() {
     commentSlugId: string
   ): Promise<FetchUserReportsByCommentSlugIdResponse> {
     try {
-      const params: ApiV1ModerationCommentWithdrawPostRequest = {
-        commentSlugId: commentSlugId,
+      const params: ApiV1ModerationOpinionWithdrawPostRequest = {
+        opinionSlugId: commentSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ReportFetchReportsByCommentSlugIdPost(
-          params
-        );
+        await DefaultApiAxiosParamCreator().apiV1ReportOpinionFetchPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1ReportFetchReportsByCommentSlugIdPost(params, {
+      ).apiV1ReportOpinionFetchPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },

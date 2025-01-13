@@ -1,14 +1,14 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
-  type ApiV1UserMuteMuteUserPostRequest,
+  type ApiV1MuteUserCreatePostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import type { UserMuteAction } from "src/shared/types/zod";
-import type { FetchUserMutePreferencesResponse } from "src/shared/types/dto";
+import type { GetMutedUsersResponse } from "src/shared/types/dto";
 
 export function useBackendUserMuteApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -20,19 +20,19 @@ export function useBackendUserMuteApi() {
     userMuteAction: UserMuteAction
   ) {
     try {
-      const params: ApiV1UserMuteMuteUserPostRequest = {
+      const params: ApiV1MuteUserCreatePostRequest = {
         targetUsername: targetUsername,
         action: userMuteAction,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserMuteMuteUserPost(params);
+        await DefaultApiAxiosParamCreator().apiV1MuteUserCreatePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1UserMuteMuteUserPost(params, {
+      ).apiV1MuteUserCreatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -55,22 +55,22 @@ export function useBackendUserMuteApi() {
     }
   }
 
-  async function fetchMutePreferences() {
+  async function getMutedUsers() {
     try {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserMuteFetchPreferencesPost();
+        await DefaultApiAxiosParamCreator().apiV1MuteUserGetPost();
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1UserMuteFetchPreferencesPost({
+      ).apiV1MuteUserGetPost({
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
 
-      const muteUserItemList: FetchUserMutePreferencesResponse = [];
+      const muteUserItemList: GetMutedUsersResponse = [];
       response.data.forEach((muteUserItemRaw) => {
         muteUserItemList.push({
           username: muteUserItemRaw.username,
@@ -86,5 +86,5 @@ export function useBackendUserMuteApi() {
     }
   }
 
-  return { muteUser, fetchMutePreferences };
+  return { muteUser, getMutedUsers };
 }

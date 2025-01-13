@@ -7,13 +7,13 @@
     <div v-if="commentItemList.length > 0" class="commentListFlex">
       <div
         v-for="commentItem in commentItemList"
-        :id="commentItem.commentSlugId"
-        :key="commentItem.commentSlugId"
+        :id="commentItem.opinionSlugId"
+        :key="commentItem.opinionSlugId"
       >
         <CommentSingle
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
-          :highlight="initialCommentSlugId == commentItem.commentSlugId"
+          :highlight="initialCommentSlugId == commentItem.opinionSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
           @deleted="deletedComment()"
@@ -27,16 +27,16 @@
 </template>
 
 <script setup lang="ts">
-import type { CommentItem } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 defineProps<{
-  commentItemList: CommentItem[];
+  commentItemList: OpinionItem[];
   postSlugId: string;
   initialCommentSlugId: string;
-  commentSlugIdLikedMap: Map<string, "like" | "dislike">;
+  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
 

@@ -1,6 +1,6 @@
 import {
-    commentTable,
-    postTable,
+    opinionTable,
+    conversationTable,
     voteContentTable,
     voteProofTable,
     voteTable,
@@ -29,24 +29,24 @@ async function getCommentIdAndContentIdFromCommentSlugId({
 }: GetCommentIdAndContentIdFromCommentSlugIdProps): Promise<GetCommentIdAndContentIdFromCommentSlugIdReturn> {
     const response = await db
         .select({
-            commentId: commentTable.id,
-            contentId: commentTable.currentContentId,
+            opinionId: opinionTable.id,
+            contentId: opinionTable.currentContentId,
         })
-        .from(commentTable)
-        .where(eq(commentTable.slugId, commentSlugId));
+        .from(opinionTable)
+        .where(eq(opinionTable.slugId, commentSlugId));
     if (response.length == 1) {
         const commentData = response[0];
         if (commentData.contentId == null) {
             throw httpErrors.notFound("Failed to locate comment content ID");
         } else {
             return {
-                commentId: commentData.commentId,
+                commentId: commentData.opinionId,
                 contentId: commentData.contentId,
             };
         }
     } else {
         throw httpErrors.internalServerError(
-            "Database error while fetching comment ID from comment slug ID",
+            "Database error while fetching opinion ID from opinion slug ID",
         );
     }
 }
@@ -103,12 +103,12 @@ export async function castVoteForCommentSlugId({
         .where(
             and(
                 eq(voteTable.authorId, userId),
-                eq(voteTable.commentId, commentData.commentId),
+                eq(voteTable.opinionId, commentData.commentId),
             ),
         );
 
-    let numLikesDiff = 0;
-    let numDislikesDiff = 0;
+    let numAgreesDiff = 0;
+    let numDisagreesDiff = 0;
 
     if (existingVoteTableResponse.length == 0) {
         // No existing vote
@@ -117,42 +117,42 @@ export async function castVoteForCommentSlugId({
                 "Cannot cancel a vote that does not exist",
             );
         } else {
-            if (votingAction == "like") {
-                numLikesDiff = 1;
+            if (votingAction == "agree") {
+                numAgreesDiff = 1;
             } else {
-                numDislikesDiff = 1;
+                numDisagreesDiff = 1;
             }
         }
     } else if (existingVoteTableResponse.length == 1) {
         const existingResponse = existingVoteTableResponse[0].optionChosen;
-        if (existingResponse == "like") {
-            if (votingAction == "like") {
+        if (existingResponse == "agree") {
+            if (votingAction == "agree") {
                 throw httpErrors.badRequest(
-                    "User already liked the target comment",
+                    "User already agreed the target opinion",
                 );
             } else if (votingAction == "cancel") {
-                numLikesDiff = -1;
+                numAgreesDiff = -1;
             } else {
-                numDislikesDiff = 1;
-                numLikesDiff = -1;
+                numDisagreesDiff = 1;
+                numAgreesDiff = -1;
             }
-        } else if (existingResponse == "dislike") {
-            if (votingAction == "dislike") {
+        } else if (existingResponse == "disagree") {
+            if (votingAction == "disagree") {
                 throw httpErrors.badRequest(
-                    "User already disliked the target comment",
+                    "User already disagreed the target opinion",
                 );
             } else if (votingAction == "cancel") {
-                numDislikesDiff = -1;
+                numDisagreesDiff = -1;
             } else {
-                numDislikesDiff = -1;
-                numLikesDiff = 1;
+                numDisagreesDiff = -1;
+                numAgreesDiff = 1;
             }
         } else {
             // null case meaning user cancelled
-            if (votingAction == "like") {
-                numLikesDiff = 1;
+            if (votingAction == "agree") {
+                numAgreesDiff = 1;
             } else {
-                numDislikesDiff = 1;
+                numDisagreesDiff = 1;
             }
         }
     } else {
@@ -169,7 +169,7 @@ export async function castVoteForCommentSlugId({
                     .insert(voteTable)
                     .values({
                         authorId: userId,
-                        commentId: commentData.commentId,
+                        opinionId: commentData.commentId,
                         currentContentId: null,
                     })
                     .returning({ voteTableId: voteTable.id });
@@ -211,9 +211,9 @@ export async function castVoteForCommentSlugId({
                     .values({
                         voteId: voteTableId,
                         voteProofId: voteProofTableId,
-                        commentContentId: commentData.contentId,
+                        opinionContentId: commentData.contentId,
                         optionChosen:
-                            votingAction == "like" ? "like" : "dislike",
+                            votingAction == "agree" ? "agree" : "disagree",
                     })
                     .returning({ voteContentTableId: voteContentTable.id });
 
@@ -229,13 +229,13 @@ export async function castVoteForCommentSlugId({
             }
 
             await tx
-                .update(commentTable)
+                .update(opinionTable)
                 .set({
-                    numLikes: sql`${commentTable.numLikes} + ${numLikesDiff}`,
-                    numDislikes: sql`${commentTable.numDislikes} + ${numDislikesDiff}`,
+                    numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
+                    numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
                 })
                 .where(
-                    eq(commentTable.currentContentId, commentData.contentId),
+                    eq(opinionTable.currentContentId, commentData.contentId),
                 );
         });
     } catch (err: unknown) {
@@ -265,25 +265,28 @@ export async function getUserVotesForPostSlugIds({
         const userResponses = await db
             .select({
                 optionChosen: voteContentTable.optionChosen,
-                commentSlugId: commentTable.slugId,
+                opinionSlugId: opinionTable.slugId,
             })
             .from(voteTable)
             .innerJoin(
                 voteContentTable,
                 eq(voteContentTable.id, voteTable.currentContentId),
             )
-            .innerJoin(commentTable, eq(commentTable.id, voteTable.commentId))
-            .innerJoin(postTable, eq(commentTable.postId, postTable.id))
+            .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
+            .innerJoin(
+                conversationTable,
+                eq(opinionTable.conversationId, conversationTable.id),
+            )
             .where(
                 and(
-                    eq(postTable.slugId, postSlugId),
+                    eq(conversationTable.slugId, postSlugId),
                     eq(voteTable.authorId, userId),
                 ),
             );
 
         userResponses.forEach((response) => {
             userVoteList.push({
-                commentSlugId: response.commentSlugId,
+                opinionSlugId: response.opinionSlugId,
                 votingAction: response.optionChosen,
             });
         });

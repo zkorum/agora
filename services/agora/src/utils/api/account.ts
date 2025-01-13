@@ -2,7 +2,7 @@ import { api } from "boot/axios";
 import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1AccountSubmitUsernameChangePostRequest,
+  type ApiV1UserUsernameUpdatePostRequest,
 } from "src/api";
 import { useNotify } from "../ui/notify";
 import { useCommonApi } from "./common";
@@ -29,20 +29,18 @@ export function useBackendAccountApi() {
     }
 
     try {
-      const params: ApiV1AccountSubmitUsernameChangePostRequest = {
+      const params: ApiV1UserUsernameUpdatePostRequest = {
         username: username,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AccountSubmitUsernameChangePost(
-          params
-        );
+        await DefaultApiAxiosParamCreator().apiV1UserUsernameUpdatePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1AccountSubmitUsernameChangePost(params, {
+      ).apiV1UserUsernameUpdatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -61,13 +59,9 @@ export function useBackendAccountApi() {
   async function deleteUserAccount(): Promise<boolean> {
     try {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AccountDeleteUserPost();
+        await DefaultApiAxiosParamCreator().apiV1UserDeletePost();
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AccountDeleteUserPost({
+      await DefaultApiFactory(undefined, undefined, api).apiV1UserDeletePost({
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -85,7 +79,7 @@ export function useBackendAccountApi() {
 
   async function isUsernameInUse(username: string): Promise<boolean | null> {
     try {
-      const params: ApiV1AccountSubmitUsernameChangePostRequest = {
+      const params: ApiV1UserUsernameUpdatePostRequest = {
         username: username,
       };
 

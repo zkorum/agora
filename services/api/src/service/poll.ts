@@ -9,7 +9,7 @@ import { useCommonPost } from "./common.js";
 import type { HttpErrors } from "@fastify/sensible";
 import { eq, sql, and } from "drizzle-orm";
 import { log } from "@/app.js";
-import type { FetchUserPollResponseResponse } from "@/shared/types/dto.js";
+import type { GetUserPollResponseByConversations200 } from "@/shared/types/dto.js";
 
 interface GetUserPollResponseProps {
     db: PostgresDatabase;
@@ -23,8 +23,8 @@ export async function getUserPollResponse({
     postSlugIdList,
     authorId,
     httpErrors,
-}: GetUserPollResponseProps): Promise<FetchUserPollResponseResponse> {
-    const resultList: FetchUserPollResponseResponse = [];
+}: GetUserPollResponseProps): Promise<GetUserPollResponseByConversations200> {
+    const resultList: GetUserPollResponseByConversations200 = [];
 
     for (const postSlugId of postSlugIdList) {
         const postDetails = await useCommonPost().getPostAndContentIdFromSlugId(
@@ -42,7 +42,7 @@ export async function getUserPollResponse({
 
         const selectStatementResponse = await db
             .select({
-                postId: pollResponseTable.postId,
+                postId: pollResponseTable.conversationId,
                 authorId: pollResponseTable.authorId,
                 optionChosen: pollResponseContentTable.optionChosen,
             })
@@ -57,13 +57,13 @@ export async function getUserPollResponse({
             .where(
                 and(
                     eq(pollResponseTable.authorId, authorId),
-                    eq(pollResponseTable.postId, postDetails.id),
+                    eq(pollResponseTable.conversationId, postDetails.id),
                 ),
             );
 
         if (selectStatementResponse.length == 1) {
             resultList.push({
-                postSlugId: postSlugId,
+                conversationSlugId: postSlugId,
                 optionChosen: selectStatementResponse[0].optionChosen,
             });
         }
@@ -109,7 +109,7 @@ export async function submitPollResponse({
                 .insert(pollResponseTable)
                 .values({
                     authorId: authorId,
-                    postId: postId,
+                    conversationId: postId,
                 })
                 .returning({ id: pollResponseTable.id });
 
@@ -119,7 +119,7 @@ export async function submitPollResponse({
                 .insert(pollResponseProofTable)
                 .values({
                     type: "creation",
-                    postId: postId,
+                    conversationId: postId,
                     parentId: null,
                     authorDid: didWrite,
                     proof: proof,
@@ -135,7 +135,7 @@ export async function submitPollResponse({
                 .values({
                     pollResponseId: pollResponseTableId,
                     pollResponseProofId: pollResponseProofTableId,
-                    postContentId: postContentId,
+                    conversationContentId: postContentId,
                     parentId: null,
                     optionChosen: voteOptionChoice,
                 })
@@ -174,7 +174,7 @@ export async function submitPollResponse({
                         option6Response: sql`${pollTable.option6Response} + ${option6CountDiff}`,
                     }),
                 })
-                .where(eq(pollTable.postContentId, postContentId));
+                .where(eq(pollTable.conversationContentId, postContentId));
 
             await tx
                 .update(pollResponseTable)

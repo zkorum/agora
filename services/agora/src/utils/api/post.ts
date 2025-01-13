@@ -1,19 +1,19 @@
 import { axios, api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
+  type ApiV1ConversationCreatePostRequest,
+  type ApiV1ConversationFetchRecentPostRequest,
+  ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1FeedFetchRecentPost200ResponsePostDataListInner,
-  type ApiV1FeedFetchRecentPostRequest,
-  type ApiV1ModerationPostWithdrawPostRequest,
-  type ApiV1PostCreatePostRequest,
-  type ApiV1PostFetchPostBySlugIdPostRequest,
+  type ApiV1ConversationGetPostRequest,
+  ApiV1ModerationConversationWithdrawPostRequest,
 } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 import type {
-  ExtendedPost,
+  ExtendedConversation,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import type { DummyPollOptionFormat } from "src/stores/post";
@@ -26,8 +26,8 @@ export function useBackendPostApi() {
   const router = useRouter();
 
   function createInternalPostData(
-    postElement: ApiV1FeedFetchRecentPost200ResponsePostDataListInner
-  ): ExtendedPost {
+    postElement: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
+  ): ExtendedConversation {
     // Create the polling object
     const pollOptionList: DummyPollOptionFormat[] = [];
     postElement.payload.poll?.forEach((pollOption) => {
@@ -46,38 +46,36 @@ export function useBackendPostApi() {
   async function fetchPostBySlugId(
     postSlugId: string,
     loadUserPollResponse: boolean
-  ): Promise<ExtendedPost | null> {
+  ): Promise<ExtendedConversation | null> {
     try {
-      const params: ApiV1PostFetchPostBySlugIdPostRequest = {
-        postSlugId: postSlugId,
+      const params: ApiV1ConversationGetPostRequest = {
+        conversationSlugId: postSlugId,
         isAuthenticatedRequest: loadUserPollResponse,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1PostFetchPostBySlugIdPost(
-          params
-        );
+        await DefaultApiAxiosParamCreator().apiV1ConversationGetPost(params);
       if (!loadUserPollResponse) {
         const response = await DefaultApiFactory(
           undefined,
           undefined,
           api
-        ).apiV1PostFetchPostBySlugIdPost(params, {});
+        ).apiV1ConversationGetPost(params, {});
 
-        return createInternalPostData(response.data.postData);
+        return createInternalPostData(response.data.conversationData);
       } else {
         const encodedUcan = await buildEncodedUcan(url, options);
         const response = await DefaultApiFactory(
           undefined,
           undefined,
           api
-        ).apiV1PostFetchPostBySlugIdPost(params, {
+        ).apiV1ConversationGetPost(params, {
           headers: {
             ...buildAuthorizationHeader(encodedUcan),
           },
         });
 
-        return createInternalPostData(response.data.postData);
+        return createInternalPostData(response.data.conversationData);
       }
     } catch (error) {
       console.error(error);
@@ -99,7 +97,7 @@ export function useBackendPostApi() {
     loadUserPollData: boolean
   ) {
     try {
-      const params: ApiV1FeedFetchRecentPostRequest = {
+      const params: ApiV1ConversationFetchRecentPostRequest = {
         lastSlugId: lastSlugId,
         isAuthenticatedRequest: loadUserPollData,
       };
@@ -109,28 +107,30 @@ export function useBackendPostApi() {
           undefined,
           undefined,
           api
-        ).apiV1FeedFetchRecentPost(params, {});
+        ).apiV1ConversationFetchRecentPost(params, {});
 
         return {
-          postDataList: response.data.postDataList,
+          postDataList: response.data.conversationDataList,
           reachedEndOfFeed: response.data.reachedEndOfFeed,
         };
       } else {
         const { url, options } =
-          await DefaultApiAxiosParamCreator().apiV1FeedFetchRecentPost(params);
+          await DefaultApiAxiosParamCreator().apiV1ConversationFetchRecentPost(
+            params
+          );
         const encodedUcan = await buildEncodedUcan(url, options);
         const response = await DefaultApiFactory(
           undefined,
           undefined,
           api
-        ).apiV1FeedFetchRecentPost(params, {
+        ).apiV1ConversationFetchRecentPost(params, {
           headers: {
             ...buildAuthorizationHeader(encodedUcan),
           },
         });
 
         return {
-          postDataList: response.data.postDataList,
+          postDataList: response.data.conversationDataList,
           reachedEndOfFeed: response.data.reachedEndOfFeed,
         };
       }
@@ -147,20 +147,20 @@ export function useBackendPostApi() {
     pollingOptionList: string[] | undefined
   ) {
     try {
-      const params: ApiV1PostCreatePostRequest = {
-        postTitle: postTitle,
-        postBody: postBody,
+      const params: ApiV1ConversationCreatePostRequest = {
+        conversationTitle: postTitle,
+        conversationBody: postBody,
         pollingOptionList: pollingOptionList,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1PostCreatePost(params);
+        await DefaultApiAxiosParamCreator().apiV1ConversationCreatePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1PostCreatePost(params, {
+      ).apiV1ConversationCreatePost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -174,20 +174,20 @@ export function useBackendPostApi() {
   }
 
   function composeInternalPostList(
-    incomingPostList: ApiV1FeedFetchRecentPost200ResponsePostDataListInner[]
-  ): ExtendedPost[] {
-    const parsedList: ExtendedPost[] = [];
+    incomingPostList: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner[]
+  ): ExtendedConversation[] {
+    const parsedList: ExtendedConversation[] = [];
     incomingPostList.forEach((item) => {
       const moderationStatus = item.metadata.moderation
         .status as moderationStatusOptionsType;
 
-      const newPost: ExtendedPost = {
+      const newPost: ExtendedConversation = {
         metadata: {
           authorUsername: String(item.metadata.authorUsername),
-          commentCount: item.metadata.commentCount,
+          opinionCount: item.metadata.opinionCount,
           createdAt: new Date(item.metadata.createdAt),
           lastReactedAt: new Date(item.metadata.lastReactedAt),
-          postSlugId: item.metadata.postSlugId,
+          conversationSlugId: item.metadata.conversationSlugId,
           updatedAt: new Date(item.metadata.updatedAt),
           moderation: {
             status: moderationStatus,
@@ -217,21 +217,22 @@ export function useBackendPostApi() {
 
   async function deletePostBySlugId(postSlugId: string) {
     try {
-      const params: ApiV1ModerationPostWithdrawPostRequest = {
-        postSlugId: postSlugId,
+      const params: ApiV1ModerationConversationWithdrawPostRequest = {
+        conversationSlugId: postSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1PostDeletePost(params);
+        await DefaultApiAxiosParamCreator().apiV1ConversationDeletePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(undefined, undefined, api).apiV1PostDeletePost(
-        params,
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
-      );
+      await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1ConversationDeletePost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
       return true;
     } catch (e) {
       console.error(e);

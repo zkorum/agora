@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { useStorage } from "@vueuse/core";
 import { useBackendPostApi } from "src/utils/api/post";
 import { useAuthenticationStore } from "./authentication";
-import type { ExtendedPost } from "src/shared/types/zod";
+import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "./user";
 
 export interface DummyPollOptionFormat {
@@ -63,7 +63,7 @@ export interface DummyUserPostDataFormat {
   comment: { ratedIndexList: number[] };
 }
 
-export interface DummyPostDataFormat extends ExtendedPost {
+export interface DummyPostDataFormat extends ExtendedConversation {
   userInteraction: {
     pollResponse: DummyUserPollResponse;
     commentRanking: DummyCommentRankingFormat;
@@ -83,10 +83,10 @@ export const usePostStore = defineStore("post", () => {
   const emptyPost: DummyPostDataFormat = {
     metadata: {
       createdAt: new Date(),
-      commentCount: 0,
+      opinionCount: 0,
       authorUsername: "",
       lastReactedAt: new Date(),
-      postSlugId: "",
+      conversationSlugId: "",
       updatedAt: new Date(),
       moderation: {
         status: "unmoderated",
@@ -113,7 +113,7 @@ export const usePostStore = defineStore("post", () => {
     },
   };
 
-  const masterPostDataList = ref<ExtendedPost[]>([
+  const masterPostDataList = ref<ExtendedConversation[]>([
     emptyPost,
     emptyPost,
     emptyPost,
@@ -131,7 +131,7 @@ export const usePostStore = defineStore("post", () => {
     if (loadMoreData) {
       const lastPostItem = masterPostDataList.value.at(-1);
       if (lastPostItem) {
-        lastSlugId = lastPostItem.metadata.postSlugId;
+        lastSlugId = lastPostItem.metadata.conversationSlugId;
       }
     }
 
@@ -189,7 +189,7 @@ export const usePostStore = defineStore("post", () => {
   function getPostBySlugId(slugId: string) {
     for (let i = 0; i < masterPostDataList.value.length; i++) {
       const postItem = masterPostDataList.value[i];
-      if (slugId == postItem.metadata.postSlugId) {
+      if (slugId == postItem.metadata.conversationSlugId) {
         return postItem;
       }
     }

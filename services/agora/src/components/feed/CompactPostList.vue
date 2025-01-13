@@ -33,7 +33,7 @@
           <div v-if="masterPostDataList.length > 0" class="postListFlex">
             <div
               v-for="postData in masterPostDataList"
-              :key="postData.metadata.postSlugId"
+              :key="postData.metadata.conversationSlugId"
             >
               <PostDetails
                 :extended-post-data="postData"
@@ -43,7 +43,7 @@
                 class="showCursor"
                 :show-author="true"
                 :display-absolute-time="false"
-                @click="openPost(postData.metadata.postSlugId)"
+                @click="openPost(postData.metadata.conversationSlugId)"
               />
 
               <div class="seperator">

@@ -1,26 +1,26 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
 import { z } from "zod";
 import {
-    zodExtendedPostData,
+    zodExtendedConversationData,
     zodCode,
     zodUserId,
     zodSlugId,
-    zodCommentItem,
+    zodOpinionItem,
     zodPollOptionTitle,
-    zodPostTitle,
-    zodPostBody,
+    zodConversationTitle,
+    zodConversationBody,
     zodVotingOption,
     zodVotingAction,
     zodUsername,
     zodPollResponse,
     zodPhoneNumber,
-    zodExtendedCommentData,
+    zodExtendedOpinionData,
     zodModerationReason,
     zodModerationExplanation,
-    zodModerationActionPosts,
-    zodModerationActionComments,
-    zodModerationPropertiesPosts,
-    zodModerationPropertiesComments,
+    zodConversationModerationAction,
+    zodOpinionModerationAction,
+    zodConversationModerationProperties as zodConversationModerationProperties,
+    zodOpinionModerationProperties,
     zodCommentFeedFilter,
     zodUserReportReason,
     zodUserReportExplanation,
@@ -103,7 +103,7 @@ export class Dto {
         })
         .strict();
     static fetchFeedResponse = z.object({
-        postDataList: z.array(zodExtendedPostData),
+        conversationDataList: z.array(zodExtendedConversationData),
         reachedEndOfFeed: z.boolean(),
     });
     static postFetchRequest = z
@@ -113,95 +113,96 @@ export class Dto {
         .strict();
     static postFetch200 = z
         .object({
-            post: zodExtendedPostData, // z.object() does not exist :(
-            comments: z.array(zodCommentItem),
+            post: zodExtendedConversationData, // z.object() does not exist :(
+            comments: z.array(zodOpinionItem),
         })
         .strict();
-    static fetchCommentFeedRequest = z
+    static fetchOpinionsRequest = z
         .object({
-            postSlugId: zodSlugId, // z.object() does not exist :(
+            conversationSlugId: zodSlugId, // z.object() does not exist :(
             filter: zodCommentFeedFilter,
             isAuthenticatedRequest: z.boolean(),
         })
         .strict();
-    static fetchCommentFeedResponse = z.array(zodCommentItem);
-    static fetchHiddenCommentRequest = z
+    static fetchOpinionsResponse = z.array(zodOpinionItem);
+    static fetchHiddenOpinionsRequest = z
         .object({
-            postSlugId: zodSlugId, // z.object() does not exist :(
+            conversationSlugId: zodSlugId, // z.object() does not exist :(
             createdAt: z.string().datetime().optional(),
         })
         .strict();
-    static fetchHiddenCommentResponse = z.array(zodCommentItem);
-    static createNewPostRequest = z
+    static fetchHiddenOpinionsResponse = z.array(zodOpinionItem);
+    static createNewConversationRequest = z
         .object({
-            postTitle: zodPostTitle,
-            postBody: zodPostBody,
+            conversationTitle: zodConversationTitle,
+            conversationBody: zodConversationBody,
             pollingOptionList: zodPollOptionTitle.array().optional(),
         })
         .strict();
-    static createNewPostResponse = z
-        .object({ postSlugId: z.string() })
+    static createNewConversationResponse = z
+        .object({ conversationSlugId: z.string() })
         .strict();
-    static fetchPostBySlugIdRequest = z
+    static getConversationRequest = z
         .object({
-            postSlugId: zodSlugId,
+            conversationSlugId: zodSlugId,
             isAuthenticatedRequest: z.boolean(),
         })
         .strict();
-    static fetchPostBySlugIdResponse = z
+    static getConversationResponse = z
         .object({
-            postData: zodExtendedPostData,
+            conversationData: zodExtendedConversationData,
         })
         .strict();
-    static createCommentRequest = z
+    static createOpinionRequest = z
         .object({
-            postSlugId: z.string(),
-            commentBody: z.string(),
+            conversationSlugId: z.string(),
+            opinionBody: z.string(),
         })
         .strict();
-    static createCommentResponse = z.discriminatedUnion("success", [
+    static createOpinionResponse = z.discriminatedUnion("success", [
         z
             .object({
                 success: z.literal(true),
-                commentSlugId: z.string(),
+                opinionSlugId: z.string(),
             })
             .strict(),
         z
             .object({
                 success: z.literal(false),
-                reason: z.enum(["post_locked"]),
+                reason: z.enum(["conversation_locked"]),
             })
             .strict(),
     ]);
-    static submitPollResponseRequest = z
+    static pollRespondRequest = z
         .object({
             voteOptionChoice: z.number(),
-            postSlugId: z.string(),
+            conversationSlugId: z.string(),
         })
         .strict();
-    static fetchUserPollResponseRequest = z.array(z.string());
-    static fetchUserPollResponseResponse = z.array(zodPollResponse);
-    static fetchUserVotesForPostSlugIdRequest = z
+    static getUserPollResponseByConversationsRequest = z.array(z.string());
+    static getUserPollResponseByConversationsResponse =
+        z.array(zodPollResponse);
+    static getUserVotesByConversationsRequest = z
         .object({
-            postSlugIdList: z.array(z.string()),
+            conversationSlugIdList: z.array(z.string()),
         })
         .strict();
-    static fetchUserVotesForPostSlugIdsResponse = z.array(
+    static getUserVotesByConversationsResponse = z.array(
         z
             .object({
-                commentSlugId: z.string(),
+                opinionSlugId: z.string(),
                 votingAction: zodVotingOption,
             })
             .strict(),
     );
-    static castVoteForCommentRequest = z
+    static castVoteRequest = z
         .object({
-            commentSlugId: z.string(),
+            opinionSlugId: z.string(),
             chosenOption: zodVotingAction,
         })
         .strict();
-    static castVoteForCommentResponse = z.boolean();
-    static fetchUserProfileResponse = z
+    static castVoteResponse = z.boolean();
+    static getUserProfileResponse = z
         .object({
             activePostCount: z.number().gte(0),
             createdAt: z.date(),
@@ -209,26 +210,28 @@ export class Dto {
             isModerator: z.boolean(),
         })
         .strict();
-    static fetchUserPostsRequest = z
+    static fetchUserConversationsRequest = z
         .object({
-            lastPostSlugId: zodSlugId.optional(),
+            lastConversationSlugId: zodSlugId.optional(),
         })
         .strict();
-    static fetchUserPostsResponse = z.array(zodExtendedPostData);
-    static fetchUserCommentsRequest = z
+    static fetchUserConversationsResponse = z.array(
+        zodExtendedConversationData,
+    );
+    static fetchUserOpinionsRequest = z
         .object({
-            lastCommentSlugId: zodSlugId.optional(),
+            lastOpinionSlugId: zodSlugId.optional(),
         })
         .strict();
-    static fetchUserCommentsResponse = z.array(zodExtendedCommentData);
-    static deletePostBySlugIdRequest = z
+    static fetchUserOpinionsResponse = z.array(zodExtendedOpinionData);
+    static deleteConversationRequest = z
         .object({
-            postSlugId: zodSlugId,
+            conversationSlugId: zodSlugId,
         })
         .strict();
-    static deleteCommentBySlugIdRequest = z
+    static deleteOpinionRequest = z
         .object({
-            commentSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
         })
         .strict();
     static generateVerificationLink200 = z.discriminatedUnion("success", [
@@ -246,7 +249,7 @@ export class Dto {
             ]),
         }),
     ]);
-    static submitUsernameChangeRequest = z
+    static updateUsernameRequest = z
         .object({
             username: zodUsername,
         })
@@ -258,60 +261,61 @@ export class Dto {
             action: zodUserMuteAction,
         })
         .strict();
-    static fetchUserMutePreferencesResponse = z.array(zodUserMuteItem);
+    static getMutedUsersResponse = z.array(zodUserMuteItem);
 
     static moderateReportPostRequest = z
         .object({
-            postSlugId: zodSlugId,
+            conversationSlugId: zodSlugId,
             moderationReason: zodModerationReason,
-            moderationAction: zodModerationActionPosts,
+            moderationAction: zodConversationModerationAction,
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
     static moderateReportCommentRequest = z
         .object({
-            commentSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
             moderationReason: zodModerationReason,
-            moderationAction: zodModerationActionComments,
+            moderationAction: zodOpinionModerationAction,
             moderationExplanation: zodModerationExplanation,
         })
         .strict();
-    static moderateCancelPostReportRequest = z
+    static moderateCancelConversationReportRequest = z
         .object({
-            postSlugId: zodSlugId,
+            conversationSlugId: zodSlugId,
         })
         .strict();
-    static moderateCancelCommentReportRequest = z
+    static moderateCancelOpinionReportRequest = z
         .object({
-            commentSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
         })
         .strict();
-    static fetchPostModerationRequest = z.object({
-        postSlugId: zodSlugId,
+    static getConversationModerationStatusRequest = z.object({
+        conversationSlugId: zodSlugId,
     });
-    static fetchPostModerationResponse = zodModerationPropertiesPosts;
-    static fetchCommentModerationRequest = z.object({
-        commentSlugId: zodSlugId,
+    static getConversationModerationStatusResponse =
+        zodConversationModerationProperties;
+    static getOpinionModerationStatusRequest = z.object({
+        opinionSlugId: zodSlugId,
     });
-    static fetchCommentModerationResponse = zodModerationPropertiesComments;
-    static submitUserReportByPostSlugIdRequest = z.object({
-        postSlugId: zodSlugId,
+    static getOpinionModerationStatusResponse = zodOpinionModerationProperties;
+    static createConversationReportRequest = z.object({
+        conversationSlugId: zodSlugId,
         reportReason: zodUserReportReason,
         reportExplanation: zodUserReportExplanation,
     });
-    static submitUserReportByCommentSlugIdRequest = z.object({
-        commentSlugId: zodSlugId,
+    static createOpinionReportRequest = z.object({
+        opinionSlugId: zodSlugId,
         reportReason: zodUserReportReason,
         reportExplanation: zodUserReportExplanation,
     });
-    static fetchUserReportsByPostSlugIdRequest = z.object({
-        postSlugId: zodSlugId,
+    static fetchConversationReportsRequest = z.object({
+        conversationSlugId: zodSlugId,
     });
-    static fetchUserReportsByPostSlugIdResponse = z.array(zodUserReportItem);
-    static fetchUserReportsByCommentSlugIdRequest = z.object({
-        commentSlugId: zodSlugId,
+    static fetchConversationReportsResponse = z.array(zodUserReportItem);
+    static fetchOpinionReportsRequest = z.object({
+        opinionSlugId: zodSlugId,
     });
-    static fetchUserReportsByCommentSlugIdResponse = z.array(zodUserReportItem);
+    static fetchOpinionReportsResponse = z.array(zodUserReportItem);
     static checkUsernameInUseRequest = z
         .object({
             username: zodUsername,
@@ -368,26 +372,30 @@ export type VerifyOtpReqBody = z.infer<typeof Dto.verifyOtpReqBody>;
 export type IsLoggedInResponse = z.infer<typeof Dto.isLoggedInResponse>;
 export type GetDeviceStatusResp = z.infer<typeof Dto.getDeviceStatusResp>;
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
-export type CreateNewPostRequest = z.infer<typeof Dto.createNewPostRequest>;
-export type CreateNewPostResponse = z.infer<typeof Dto.createNewPostResponse>;
-export type FetchPostBySlugIdResponse = z.infer<
-    typeof Dto.fetchPostBySlugIdResponse
+export type CreateNewConversationRequest = z.infer<
+    typeof Dto.createNewConversationRequest
 >;
-export type CreateCommentResponse = z.infer<typeof Dto.createCommentResponse>;
-export type FetchUserPollResponseResponse = z.infer<
-    typeof Dto.fetchUserPollResponseResponse
+export type CreateNewConversationResponse = z.infer<
+    typeof Dto.createNewConversationResponse
+>;
+export type GetConversationResponse = z.infer<
+    typeof Dto.getConversationResponse
+>;
+export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
+export type GetUserPollResponseByConversations200 = z.infer<
+    typeof Dto.getUserPollResponseByConversationsResponse
 >;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
-    typeof Dto.fetchUserVotesForPostSlugIdsResponse
+    typeof Dto.getUserVotesByConversationsResponse
 >;
 export type FetchCommentFeedResponse = z.infer<
-    typeof Dto.fetchCommentFeedResponse
+    typeof Dto.fetchOpinionsResponse
 >;
 export type FetchFeedResponse = z.infer<typeof Dto.fetchFeedResponse>;
-export type FetchUserProfileResponse = z.infer<
-    typeof Dto.fetchUserProfileResponse
+export type GetUserProfileResponse = z.infer<typeof Dto.getUserProfileResponse>;
+export type getUserConversationsResponse = z.infer<
+    typeof Dto.fetchUserConversationsResponse
 >;
-export type FetchUserPostsResponse = z.infer<typeof Dto.fetchUserPostsResponse>;
 export type GenerateVerificationLink200 = z.infer<
     typeof Dto.generateVerificationLink200
 >;
@@ -395,14 +403,9 @@ export type VerifyUserStatusAndAuthenticate200 = z.infer<
     typeof Dto.verifyUserStatusAndAuthenticate200
 >;
 export type FetchUserReportsByPostSlugIdResponse = z.infer<
-    typeof Dto.fetchUserReportsByPostSlugIdResponse
+    typeof Dto.fetchConversationReportsResponse
 >;
 export type FetchUserReportsByCommentSlugIdResponse = z.infer<
-    typeof Dto.fetchUserReportsByCommentSlugIdResponse
+    typeof Dto.fetchOpinionReportsResponse
 >;
-export type MuteUserRequest = z.infer<
-    typeof Dto.fetchUserMutePreferencesResponse
->;
-export type FetchUserMutePreferencesResponse = z.infer<
-    typeof Dto.fetchUserMutePreferencesResponse
->;
+export type GetMutedUsersResponse = z.infer<typeof Dto.getMutedUsersResponse>;

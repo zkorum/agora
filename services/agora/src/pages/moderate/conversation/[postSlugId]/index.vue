@@ -65,7 +65,7 @@ import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
-  ModerationActionPosts,
+  ConversationModerationAction,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -76,8 +76,11 @@ import {
 import { usePostStore } from "src/stores/post";
 import MainLayout from "src/layouts/MainLayout.vue";
 
-const { moderatePost, fetchPostModeration, cancelModerationPostReport } =
-  useBackendModerateApi();
+const {
+  moderatePost,
+  getConversationModerationStatus,
+  cancelModerationPostReport,
+} = useBackendModerateApi();
 
 const route = useRoute();
 const router = useRouter();
@@ -85,7 +88,9 @@ const router = useRouter();
 const { loadPostData } = usePostStore();
 
 const DEFAULT_MODERATION_ACTION = "lock";
-const moderationAction = ref<ModerationActionPosts>(DEFAULT_MODERATION_ACTION);
+const moderationAction = ref<ConversationModerationAction>(
+  DEFAULT_MODERATION_ACTION
+);
 const actionMapping = ref(moderationActionPostsMapping);
 
 const DEFAULT_MODERATION_REASON = "misleading";
@@ -111,7 +116,7 @@ function loadRouteParams() {
 
 async function initializeData() {
   if (postSlugId != null) {
-    const response = await fetchPostModeration(postSlugId);
+    const response = await getConversationModerationStatus(postSlugId);
     hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;

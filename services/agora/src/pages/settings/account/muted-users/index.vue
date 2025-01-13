@@ -62,7 +62,7 @@ import { usePostStore } from "src/stores/post";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { onMounted, ref } from "vue";
 
-const { fetchMutePreferences, muteUser } = useBackendUserMuteApi();
+const { getMutedUsers, muteUser } = useBackendUserMuteApi();
 const { loadPostData } = usePostStore();
 
 const userMuteItemList = ref<UserMuteItem[]>([]);
@@ -74,7 +74,7 @@ onMounted(async () => {
 });
 
 async function loadMuteData() {
-  userMuteItemList.value = await fetchMutePreferences();
+  userMuteItemList.value = await getMutedUsers();
 }
 
 async function removeMutedUser(targetUsername: string) {

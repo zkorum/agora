@@ -1,16 +1,16 @@
 import { generateRandomSlugId } from "@/crypto.js";
 import {
-    commentContentTable,
-    commentTable,
-    commentProofTable,
-    postTable,
+    opinionContentTable,
+    opinionTable,
+    opinionProofTable,
+    conversationTable,
     userTable,
-    moderationCommentsTable,
+    opinionModerationTable,
 } from "@/schema.js";
 import type { CreateCommentResponse } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
-import type { CommentItem, SlugId } from "@/shared/types/zod.js";
+import type { OpinionItem, SlugId } from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
 import { MAX_LENGTH_COMMENT } from "@/shared/shared.js";
@@ -32,9 +32,9 @@ export async function getCommentSlugIdLastCreatedAt({
 
     if (lastSlugId) {
         const selectResponse = await db
-            .select({ createdAt: commentTable.createdAt })
-            .from(commentTable)
-            .where(eq(commentTable.slugId, lastSlugId));
+            .select({ createdAt: opinionTable.createdAt })
+            .from(opinionTable)
+            .where(eq(opinionTable.slugId, lastSlugId));
         if (selectResponse.length == 1) {
             lastCreatedAt = selectResponse[0].createdAt;
         } else {
@@ -57,59 +57,58 @@ export async function fetchCommentsByPostSlugId({
     postSlugId,
     fetchTarget,
     personalizationUserId,
-}: FetchCommentsByPostSlugIdProps): Promise<CommentItem[]> {
+}: FetchCommentsByPostSlugIdProps): Promise<OpinionItem[]> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
 
-    let whereClause: SQL | undefined = eq(commentTable.postId, postId);
+    let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
 
     if (fetchTarget == "moderated") {
         whereClause = and(
             whereClause,
-            ne(moderationCommentsTable.moderationAction, "hide"),
-            isNotNull(moderationCommentsTable.id),
+            ne(opinionModerationTable.moderationAction, "hide"),
+            isNotNull(opinionModerationTable.id),
         );
     } else if (fetchTarget == "new") {
-        whereClause = and(whereClause, isNull(moderationCommentsTable.id));
+        whereClause = and(whereClause, isNull(opinionModerationTable.id));
     } else {
         whereClause = and(
             whereClause,
-            eq(moderationCommentsTable.moderationAction, "hide"),
-            isNotNull(moderationCommentsTable.id),
+            eq(opinionModerationTable.moderationAction, "hide"),
+            isNotNull(opinionModerationTable.id),
         );
     }
 
     const results = await db
         .select({
             // comment payload
-            commentSlugId: commentTable.slugId,
-            createdAt: commentTable.createdAt,
-            updatedAt: commentTable.updatedAt,
-            comment: commentContentTable.content,
-            numLikes: commentTable.numLikes,
-            numDislikes: commentTable.numDislikes,
+            commentSlugId: opinionTable.slugId,
+            createdAt: opinionTable.createdAt,
+            updatedAt: opinionTable.updatedAt,
+            comment: opinionContentTable.content,
+            numLikes: opinionTable.numAgrees,
+            numDislikes: opinionTable.numDisagrees,
             username: userTable.username,
-            moderationAction: moderationCommentsTable.moderationAction,
-            moderationExplanation:
-                moderationCommentsTable.moderationExplanation,
-            moderationReason: moderationCommentsTable.moderationReason,
-            moderationCreatedAt: moderationCommentsTable.createdAt,
-            moderationUpdatedAt: moderationCommentsTable.updatedAt,
+            moderationAction: opinionModerationTable.moderationAction,
+            moderationExplanation: opinionModerationTable.moderationExplanation,
+            moderationReason: opinionModerationTable.moderationReason,
+            moderationCreatedAt: opinionModerationTable.createdAt,
+            moderationUpdatedAt: opinionModerationTable.updatedAt,
         })
-        .from(commentTable)
-        .innerJoin(postTable, eq(postTable.id, postId))
+        .from(opinionTable)
+        .innerJoin(conversationTable, eq(conversationTable.id, postId))
         .innerJoin(
-            commentContentTable,
-            eq(commentContentTable.id, commentTable.currentContentId),
+            opinionContentTable,
+            eq(opinionContentTable.id, opinionTable.currentContentId),
         )
         .leftJoin(
-            moderationCommentsTable,
-            eq(moderationCommentsTable.commentId, commentTable.id),
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
         )
-        .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
-        .orderBy(desc(commentTable.createdAt))
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .orderBy(desc(opinionTable.createdAt))
         .where(whereClause);
 
-    let commentItemList: CommentItem[] = [];
+    let commentItemList: OpinionItem[] = [];
     results.map((commentResponse) => {
         const moderationProperties = createCommentModerationPropertyObject(
             commentResponse.moderationAction,
@@ -119,12 +118,12 @@ export async function fetchCommentsByPostSlugId({
             commentResponse.moderationUpdatedAt,
         );
 
-        const item: CommentItem = {
-            comment: commentResponse.comment,
-            commentSlugId: commentResponse.commentSlugId,
+        const item: OpinionItem = {
+            opinion: commentResponse.comment,
+            opinionSlugId: commentResponse.commentSlugId,
             createdAt: commentResponse.createdAt,
-            numDislikes: commentResponse.numDislikes,
-            numLikes: commentResponse.numLikes,
+            numDisagrees: commentResponse.numDislikes,
+            numAgrees: commentResponse.numLikes,
             updatedAt: commentResponse.updatedAt,
             username: commentResponse.username,
             moderation: moderationProperties,
@@ -157,10 +156,10 @@ async function getPostIdFromPostSlugId(
 ): Promise<number> {
     const postTableResponse = await db
         .select({
-            id: postTable.id,
+            id: conversationTable.id,
         })
-        .from(postTable)
-        .where(eq(postTable.slugId, postSlugId));
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, postSlugId));
     if (postTableResponse.length != 1) {
         throw httpErrors.notFound(
             "Failed to locate post slug ID: " + postSlugId,
@@ -181,7 +180,7 @@ interface PostNewCommentProps {
     httpErrors: HttpErrors;
 }
 
-export async function postNewComment({
+export async function postNewOpinion({
     db,
     commentBody,
     postSlugId,
@@ -198,7 +197,7 @@ export async function postNewComment({
     if (isLocked) {
         return {
             success: false,
-            reason: "post_locked",
+            reason: "conversation_locked",
         };
     }
 
@@ -224,85 +223,85 @@ export async function postNewComment({
 
     await db.transaction(async (tx) => {
         const insertCommentResponse = await tx
-            .insert(commentTable)
+            .insert(opinionTable)
             .values({
                 slugId: commentSlugId,
                 authorId: userId,
                 currentContentId: null,
-                postId: postId,
+                conversationId: postId,
             })
-            .returning({ commentId: commentTable.id });
+            .returning({ commentId: opinionTable.id });
 
         const commentId = insertCommentResponse[0].commentId;
 
         const insertProofResponse = await tx
-            .insert(commentProofTable)
+            .insert(opinionProofTable)
             .values({
                 type: "creation",
-                commentId: commentId,
+                opinionId: commentId,
                 authorDid: didWrite,
                 proof: proof,
                 proofVersion: 1,
             })
-            .returning({ proofId: commentProofTable.id });
+            .returning({ proofId: opinionProofTable.id });
 
         const proofId = insertProofResponse[0].proofId;
 
         const commentContentTableResponse = await tx
-            .insert(commentContentTable)
+            .insert(opinionContentTable)
             .values({
-                commentProofId: proofId,
-                commentId: commentId,
-                postContentId: postContentId,
+                opinionProofId: proofId,
+                opinionId: commentId,
+                conversationContentId: postContentId,
                 parentId: null,
                 content: commentBody,
             })
-            .returning({ commentContentTableId: commentContentTable.id });
+            .returning({ commentContentTableId: opinionContentTable.id });
 
         const commentContentTableId =
             commentContentTableResponse[0].commentContentTableId;
 
         await tx
-            .update(commentTable)
+            .update(opinionTable)
             .set({
                 currentContentId: commentContentTableId,
             })
-            .where(eq(commentTable.id, commentId));
+            .where(eq(opinionTable.id, commentId));
 
         // Update the post's comment count
         await tx
-            .update(postTable)
+            .update(conversationTable)
             .set({
-                commentCount: sql`${postTable.commentCount} + 1`,
+                opinionCount: sql`${conversationTable.opinionCount} + 1`,
             })
-            .where(eq(postTable.slugId, postSlugId));
+            .where(eq(conversationTable.slugId, postSlugId));
 
         // Update the user profile's comment count
         await tx
             .update(userTable)
             .set({
-                totalCommentCount: sql`${userTable.totalCommentCount} + 1`,
+                totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
             })
             .where(eq(userTable.id, userId));
     });
 
     return {
         success: true,
-        commentSlugId: commentSlugId,
+        opinionSlugId: commentSlugId,
     };
 }
 
 interface DeleteCommentBySlugIdProps {
     db: PostgresJsDatabase;
-    commentSlugId: string;
+    opinionSlugId: string;
     userId: string;
     proof: string;
     didWrite: string;
 }
 
-export async function deleteCommentBySlugId({
+export async function deleteOpinionBySlugId({
     db,
-    commentSlugId,
+    opinionSlugId,
     userId,
     proof,
     didWrite,
@@ -310,19 +309,19 @@ export async function deleteCommentBySlugId({
     try {
         await db.transaction(async (tx) => {
             const updatedCommentIdResponse = await tx
-                .update(commentTable)
+                .update(opinionTable)
                 .set({
                     currentContentId: null,
                 })
                 .where(
                     and(
-                        eq(commentTable.authorId, userId),
-                        eq(commentTable.slugId, commentSlugId),
+                        eq(opinionTable.authorId, userId),
+                        eq(opinionTable.slugId, opinionSlugId),
                     ),
                 )
                 .returning({
-                    updateCommentId: commentTable.id,
-                    postId: commentTable.postId,
+                    updateCommentId: opinionTable.id,
+                    postId: opinionTable.conversationId,
                 });
 
             if (updatedCommentIdResponse.length != 1) {
@@ -335,9 +334,9 @@ export async function deleteCommentBySlugId({
 
             const commentId = updatedCommentIdResponse[0].updateCommentId;
 
-            await tx.insert(commentProofTable).values({
+            await tx.insert(opinionProofTable).values({
                 type: "deletion",
-                commentId: commentId,
+                opinionId: commentId,
                 authorDid: didWrite,
                 proof: proof,
                 proofVersion: 1,
@@ -346,16 +345,16 @@ export async function deleteCommentBySlugId({
             const postId = updatedCommentIdResponse[0].postId;
 
             await tx
-                .update(postTable)
+                .update(conversationTable)
                 .set({
-                    commentCount: sql`${postTable.commentCount} - 1`,
+                    opinionCount: sql`${conversationTable.opinionCount} - 1`,
                 })
-                .where(eq(postTable.id, postId));
+                .where(eq(conversationTable.id, postId));
         });
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
-            "Failed to delete comment by comment ID: " + commentSlugId,
+            "Failed to delete comment by comment ID: " + opinionSlugId,
         );
     }
 }

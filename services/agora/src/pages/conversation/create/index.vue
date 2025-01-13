@@ -313,7 +313,7 @@ async function onSubmit() {
 
     await router.push({
       name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.postSlugId },
+      params: { postSlugId: response.conversationSlugId },
     });
   } else {
     quasar.loading.hide();

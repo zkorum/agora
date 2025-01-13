@@ -1,5 +1,5 @@
-import { postTable } from "@/schema.js";
-import type { ExtendedPost } from "@/shared/types/zod.js";
+import { conversationTable } from "@/schema.js";
+import type { ExtendedConversation } from "@/shared/types/zod.js";
 import { and, eq, lt, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -18,9 +18,9 @@ export async function getPostSlugIdLastCreatedAt({
 
     if (lastSlugId) {
         const selectResponse = await db
-            .select({ createdAt: postTable.createdAt })
-            .from(postTable)
-            .where(eq(postTable.slugId, lastSlugId));
+            .select({ createdAt: conversationTable.createdAt })
+            .from(conversationTable)
+            .where(eq(conversationTable.slugId, lastSlugId));
         if (selectResponse.length == 1) {
             lastCreatedAt = selectResponse[0].createdAt;
         } else {
@@ -54,12 +54,15 @@ export async function fetchFeed({
 
     let whereClause: SQL | undefined = undefined;
     if (lastSlugId) {
-        whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
+        whereClause = and(
+            whereClause,
+            lt(conversationTable.createdAt, lastCreatedAt),
+        );
     }
 
     const { fetchPostItems } = useCommonPost();
 
-    const posts: ExtendedPost[] = await fetchPostItems({
+    const posts: ExtendedConversation[] = await fetchPostItems({
         db: db,
         limit: targetLimit + 1,
         where: whereClause,
@@ -76,7 +79,7 @@ export async function fetchFeed({
     }
 
     return {
-        postDataList: posts,
+        conversationDataList: posts,
         reachedEndOfFeed: reachedEndOfFeed,
     };
 }

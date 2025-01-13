@@ -4,7 +4,7 @@ import { useCommonUser } from "./common.js";
 import { and, eq } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
-import type { FetchUserMutePreferencesResponse } from "@/shared/types/dto.js";
+import type { GetMutedUsersResponse } from "@/shared/types/dto.js";
 import type { UserMuteAction } from "@/shared/types/zod.js";
 
 interface GetUserMutePreferencesProps {
@@ -15,7 +15,7 @@ interface GetUserMutePreferencesProps {
 export async function getUserMutePreferences({
     db,
     userId,
-}: GetUserMutePreferencesProps): Promise<FetchUserMutePreferencesResponse> {
+}: GetUserMutePreferencesProps): Promise<GetMutedUsersResponse> {
     const userMutePreferenceTableResponse = await db
         .select({
             username: userTable.username,
@@ -28,7 +28,7 @@ export async function getUserMutePreferences({
         )
         .where(eq(userMutePreferenceTable.sourceUserId, userId));
 
-    const userMuteItemList: FetchUserMutePreferencesResponse = [];
+    const userMuteItemList: GetMutedUsersResponse = [];
     userMutePreferenceTableResponse.forEach((userMuteItem) => {
         userMuteItemList.push({
             username: userMuteItem.username,

@@ -1,5 +1,8 @@
 import { useBackendUserApi } from "src/utils/api/user";
-import type { ExtendedComment, ExtendedPost } from "src/shared/types/zod";
+import type {
+  ExtendedOpinion,
+  ExtendedConversation,
+} from "src/shared/types/zod";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
@@ -11,8 +14,8 @@ export const useUserStore = defineStore("user", () => {
     activePostCount: number;
     createdAt: Date;
     userName: string;
-    userPostList: ExtendedPost[];
-    userCommentList: ExtendedComment[];
+    userPostList: ExtendedConversation[];
+    userCommentList: ExtendedOpinion[];
     isModerator: boolean;
   }
 
@@ -55,7 +58,7 @@ export const useUserStore = defineStore("user", () => {
     if (profileData.value.userPostList.length > 0) {
       const lastPostItem = profileData.value.userPostList.at(-1);
       if (lastPostItem) {
-        lastPostSlugId = lastPostItem.metadata.postSlugId;
+        lastPostSlugId = lastPostItem.metadata.conversationSlugId;
       } else {
         console.log(
           "Error failed to fetch the last post item from the existing list"
@@ -77,7 +80,7 @@ export const useUserStore = defineStore("user", () => {
     if (profileData.value.userCommentList.length > 0) {
       const lastCommentItem = profileData.value.userCommentList.at(-1);
       if (lastCommentItem) {
-        lastCommentSlugId = lastCommentItem.commentItem.commentSlugId;
+        lastCommentSlugId = lastCommentItem.opinionItem.opinionSlugId;
       } else {
         console.log("Failed to fetch the last comment item from the list");
       }

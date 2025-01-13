@@ -3,26 +3,28 @@
   <div>
     <div
       v-for="commentItem in profileData.userCommentList"
-      :key="commentItem.commentItem.commentSlugId"
+      :key="commentItem.opinionItem.opinionSlugId"
     >
       <ZKHoverEffect :enable-hover="true">
         <div
           class="container"
           @click="
             openComment(
-              commentItem.postData.metadata.postSlugId,
-              commentItem.commentItem.commentSlugId
+              commentItem.conversationData.metadata.conversationSlugId,
+              commentItem.opinionItem.opinionSlugId
             )
           "
         >
           <div class="topRowFlex">
             <div class="postTitle">
-              {{ commentItem.postData.payload.title }}
+              {{ commentItem.conversationData.payload.title }}
             </div>
             <div>
               <CommentActionOptions
-                :comment-item="commentItem.commentItem"
-                :post-slug-id="commentItem.postData.metadata.postSlugId"
+                :comment-item="commentItem.opinionItem"
+                :post-slug-id="
+                  commentItem.conversationData.metadata.conversationSlugId
+                "
                 @deleted="commentDeleted()"
               />
             </div>
@@ -30,19 +32,21 @@
 
           <div class="commentMetadata">
             <span :style="{ fontWeight: 'bold' }">{{
-              commentItem.commentItem.username
+              commentItem.opinionItem.username
             }}</span>
             commented
-            {{ useTimeAgo(commentItem.commentItem.createdAt) }}
+            {{ useTimeAgo(commentItem.opinionItem.createdAt) }}
           </div>
 
           <div class="commentBody">
-            <span v-html="commentItem.commentItem.comment"></span>
+            <span v-html="commentItem.opinionItem.opinion"></span>
           </div>
 
           <CommentModeration
-            :comment-item="commentItem.commentItem"
-            :post-slug-id="commentItem.postData.metadata.postSlugId"
+            :comment-item="commentItem.opinionItem"
+            :post-slug-id="
+              commentItem.conversationData.metadata.conversationSlugId
+            "
           />
         </div>
       </ZKHoverEffect>

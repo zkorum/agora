@@ -26,19 +26,6 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
- * @interface ApiV1AccountSubmitUsernameChangePostRequest
- */
-export interface ApiV1AccountSubmitUsernameChangePostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AccountSubmitUsernameChangePostRequest
-     */
-    'username': string;
-}
-/**
- * 
- * @export
  * @interface ApiV1AuthAuthenticatePost200Response
  */
 export interface ApiV1AuthAuthenticatePost200Response {
@@ -170,24 +157,24 @@ export interface ApiV1AuthCheckLoginStatusPost200Response {
 /**
  * 
  * @export
- * @interface ApiV1AuthVerifyPhoneOtpPost200Response
+ * @interface ApiV1AuthPhoneVerifyOtpPost200Response
  */
-export interface ApiV1AuthVerifyPhoneOtpPost200Response {
+export interface ApiV1AuthPhoneVerifyOtpPost200Response {
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1AuthVerifyPhoneOtpPost200Response
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200Response
      */
     'success': boolean;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AuthVerifyPhoneOtpPost200Response
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200Response
      */
-    'reason': ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum;
+    'reason': ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum;
 }
 
-export const ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum = {
+export const ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
     TooManyWrongGuess: 'too_many_wrong_guess',
@@ -195,42 +182,42 @@ export const ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum = {
     AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
-export type ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum = typeof ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum[keyof typeof ApiV1AuthVerifyPhoneOtpPost200ResponseReasonEnum];
+export type ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf
+ * @interface ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf
  */
-export interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf {
+export interface ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf {
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf
      */
     'success': boolean;
 }
 /**
  * 
  * @export
- * @interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1
+ * @interface ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1
  */
-export interface ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1 {
+export interface ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1 {
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1
      */
     'success': boolean;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1
      */
-    'reason': ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum;
+    'reason': ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum;
 }
 
-export const ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum = {
+export const ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
     TooManyWrongGuess: 'too_many_wrong_guess',
@@ -238,18 +225,18 @@ export const ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum = {
     AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
-export type ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthVerifyPhoneOtpPost200ResponseAnyOf1ReasonEnum];
+export type ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1AuthVerifyPhoneOtpPostRequest
+ * @interface ApiV1AuthPhoneVerifyOtpPostRequest
  */
-export interface ApiV1AuthVerifyPhoneOtpPostRequest {
+export interface ApiV1AuthPhoneVerifyOtpPostRequest {
     /**
      * 
      * @type {number}
-     * @memberof ApiV1AuthVerifyPhoneOtpPostRequest
+     * @memberof ApiV1AuthPhoneVerifyOtpPostRequest
      */
     'code': number;
 }
@@ -405,884 +392,948 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarim
 /**
  * 
  * @export
- * @interface ApiV1CommentCreatePost200Response
+ * @interface ApiV1ConversationCreatePost200Response
  */
-export interface ApiV1CommentCreatePost200Response {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1CommentCreatePost200Response
-     */
-    'success': boolean;
+export interface ApiV1ConversationCreatePost200Response {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1CommentCreatePost200Response
+     * @memberof ApiV1ConversationCreatePost200Response
      */
-    'commentSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentCreatePost200Response
-     */
-    'reason': ApiV1CommentCreatePost200ResponseReasonEnum;
-}
-
-export const ApiV1CommentCreatePost200ResponseReasonEnum = {
-    PostLocked: 'post_locked'
-} as const;
-
-export type ApiV1CommentCreatePost200ResponseReasonEnum = typeof ApiV1CommentCreatePost200ResponseReasonEnum[keyof typeof ApiV1CommentCreatePost200ResponseReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1CommentCreatePost200ResponseAnyOf
- */
-export interface ApiV1CommentCreatePost200ResponseAnyOf {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1CommentCreatePost200ResponseAnyOf
-     */
-    'success': boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentCreatePost200ResponseAnyOf
-     */
-    'commentSlugId': string;
+    'conversationSlugId': string;
 }
 /**
  * 
  * @export
- * @interface ApiV1CommentCreatePost200ResponseAnyOf1
+ * @interface ApiV1ConversationCreatePostRequest
  */
-export interface ApiV1CommentCreatePost200ResponseAnyOf1 {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1CommentCreatePost200ResponseAnyOf1
-     */
-    'success': boolean;
+export interface ApiV1ConversationCreatePostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1CommentCreatePost200ResponseAnyOf1
+     * @memberof ApiV1ConversationCreatePostRequest
      */
-    'reason': ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum;
-}
-
-export const ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum = {
-    PostLocked: 'post_locked'
-} as const;
-
-export type ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum = typeof ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1CommentCreatePost200ResponseAnyOf1ReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1CommentCreatePostRequest
- */
-export interface ApiV1CommentCreatePostRequest {
+    'conversationTitle': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1CommentCreatePostRequest
+     * @memberof ApiV1ConversationCreatePostRequest
      */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentCreatePostRequest
-     */
-    'commentBody': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1CommentFetchCommentsByPostSlugIdPostRequest
- */
-export interface ApiV1CommentFetchCommentsByPostSlugIdPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
-     */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
-     */
-    'filter': ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1CommentFetchCommentsByPostSlugIdPostRequest
-     */
-    'isAuthenticatedRequest': boolean;
-}
-
-export const ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum = {
-    Moderated: 'moderated',
-    New: 'new'
-} as const;
-
-export type ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum = typeof ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum[keyof typeof ApiV1CommentFetchCommentsByPostSlugIdPostRequestFilterEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1CommentFetchHiddenCommentsPostRequest
- */
-export interface ApiV1CommentFetchHiddenCommentsPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentFetchHiddenCommentsPostRequest
-     */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1CommentFetchHiddenCommentsPostRequest
-     */
-    'createdAt'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200Response
- */
-export interface ApiV1FeedFetchRecentPost200Response {
-    /**
-     * 
-     * @type {Array<ApiV1FeedFetchRecentPost200ResponsePostDataListInner>}
-     * @memberof ApiV1FeedFetchRecentPost200Response
-     */
-    'postDataList': Array<ApiV1FeedFetchRecentPost200ResponsePostDataListInner>;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1FeedFetchRecentPost200Response
-     */
-    'reachedEndOfFeed': boolean;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInner
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInner {
-    /**
-     * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInner
-     */
-    'metadata': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata;
-    /**
-     * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInner
-     */
-    'payload': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload;
-    /**
-     * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerInteraction}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInner
-     */
-    'interaction': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerInteraction;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerInteraction
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerInteraction {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerInteraction
-     */
-    'hasVoted': boolean;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerInteraction
-     */
-    'votedIndex': number;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'updatedAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'lastReactedAt': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'commentCount': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'authorUsername': string;
-    /**
-     * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadata
-     */
-    'moderation': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
-     */
-    'status': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
-     */
-    'action': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
-     */
-    'reason': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
-     */
-    'explanation': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration
-     */
-    'updatedAt': string;
-}
-
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum = {
-    Unmoderated: 'unmoderated'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationStatusEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum = {
-    Lock: 'lock'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationActionEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
-     */
-    'status': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
-     */
-    'action': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
-     */
-    'reason': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
-     */
-    'explanation': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf
-     */
-    'updatedAt': string;
-}
-
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum = {
-    Moderated: 'moderated'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfStatusEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum = {
-    Lock: 'lock'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfActionEnum];
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOfReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1 {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1
-     */
-    'status': ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum;
-}
-
-export const ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum = {
-    Unmoderated: 'unmoderated'
-} as const;
-
-export type ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum = typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum[keyof typeof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModerationAnyOf1StatusEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload
-     */
-    'title': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload
-     */
-    'body'?: string;
-    /**
-     * 
-     * @type {Array<ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner>}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayload
-     */
-    'poll'?: Array<ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner>;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner
- */
-export interface ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner {
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner
-     */
-    'optionNumber': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner
-     */
-    'optionTitle': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1FeedFetchRecentPost200ResponsePostDataListInnerPayloadPollInner
-     */
-    'numResponses': number;
-}
-/**
- * 
- * @export
- * @interface ApiV1FeedFetchRecentPostRequest
- */
-export interface ApiV1FeedFetchRecentPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1FeedFetchRecentPostRequest
-     */
-    'lastSlugId'?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1FeedFetchRecentPostRequest
-     */
-    'isAuthenticatedRequest': boolean;
-}
-/**
- * 
- * @export
- * @interface ApiV1ModerationCommentCreatePostRequest
- */
-export interface ApiV1ModerationCommentCreatePostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentCreatePostRequest
-     */
-    'commentSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentCreatePostRequest
-     */
-    'moderationReason': ApiV1ModerationCommentCreatePostRequestModerationReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentCreatePostRequest
-     */
-    'moderationAction': ApiV1ModerationCommentCreatePostRequestModerationActionEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentCreatePostRequest
-     */
-    'moderationExplanation': string;
-}
-
-export const ApiV1ModerationCommentCreatePostRequestModerationReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1ModerationCommentCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationCommentCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationCommentCreatePostRequestModerationReasonEnum];
-export const ApiV1ModerationCommentCreatePostRequestModerationActionEnum = {
-    Move: 'move',
-    Hide: 'hide'
-} as const;
-
-export type ApiV1ModerationCommentCreatePostRequestModerationActionEnum = typeof ApiV1ModerationCommentCreatePostRequestModerationActionEnum[keyof typeof ApiV1ModerationCommentCreatePostRequestModerationActionEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1ModerationCommentFetchReportPost200Response
- */
-export interface ApiV1ModerationCommentFetchReportPost200Response {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200Response
-     */
-    'status': ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200Response
-     */
-    'action': ApiV1ModerationCommentFetchReportPost200ResponseActionEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200Response
-     */
-    'reason': ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200Response
-     */
-    'explanation': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200Response
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200Response
-     */
-    'updatedAt': string;
-}
-
-export const ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum = {
-    Unmoderated: 'unmoderated'
-} as const;
-
-export type ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseStatusEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseActionEnum = {
-    Move: 'move',
-    Hide: 'hide'
-} as const;
-
-export type ApiV1ModerationCommentFetchReportPost200ResponseActionEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseActionEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseActionEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
- */
-export interface ApiV1ModerationCommentFetchReportPost200ResponseAnyOf {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
-     */
-    'status': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
-     */
-    'action': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
-     */
-    'reason': ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
-     */
-    'explanation': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentFetchReportPost200ResponseAnyOf
-     */
-    'updatedAt': string;
-}
-
-export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum = {
-    Moderated: 'moderated'
-} as const;
-
-export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfStatusEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum = {
-    Move: 'move',
-    Hide: 'hide'
-} as const;
-
-export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfActionEnum];
-export const ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum = typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum[keyof typeof ApiV1ModerationCommentFetchReportPost200ResponseAnyOfReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1ModerationCommentWithdrawPostRequest
- */
-export interface ApiV1ModerationCommentWithdrawPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationCommentWithdrawPostRequest
-     */
-    'commentSlugId': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1ModerationPostCreatePostRequest
- */
-export interface ApiV1ModerationPostCreatePostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationPostCreatePostRequest
-     */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationPostCreatePostRequest
-     */
-    'moderationReason': ApiV1ModerationPostCreatePostRequestModerationReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationPostCreatePostRequest
-     */
-    'moderationAction': ApiV1ModerationPostCreatePostRequestModerationActionEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationPostCreatePostRequest
-     */
-    'moderationExplanation': string;
-}
-
-export const ApiV1ModerationPostCreatePostRequestModerationReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1ModerationPostCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationPostCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationPostCreatePostRequestModerationReasonEnum];
-export const ApiV1ModerationPostCreatePostRequestModerationActionEnum = {
-    Lock: 'lock'
-} as const;
-
-export type ApiV1ModerationPostCreatePostRequestModerationActionEnum = typeof ApiV1ModerationPostCreatePostRequestModerationActionEnum[keyof typeof ApiV1ModerationPostCreatePostRequestModerationActionEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1ModerationPostWithdrawPostRequest
- */
-export interface ApiV1ModerationPostWithdrawPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ModerationPostWithdrawPostRequest
-     */
-    'postSlugId': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1PollGetUserPollResponsePost200ResponseInner
- */
-export interface ApiV1PollGetUserPollResponsePost200ResponseInner {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1PollGetUserPollResponsePost200ResponseInner
-     */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1PollGetUserPollResponsePost200ResponseInner
-     */
-    'optionChosen': number;
-}
-/**
- * 
- * @export
- * @interface ApiV1PollSubmitResponsePostRequest
- */
-export interface ApiV1PollSubmitResponsePostRequest {
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1PollSubmitResponsePostRequest
-     */
-    'voteOptionChoice': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1PollSubmitResponsePostRequest
-     */
-    'postSlugId': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1PostCreatePost200Response
- */
-export interface ApiV1PostCreatePost200Response {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1PostCreatePost200Response
-     */
-    'postSlugId': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1PostCreatePostRequest
- */
-export interface ApiV1PostCreatePostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1PostCreatePostRequest
-     */
-    'postTitle': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1PostCreatePostRequest
-     */
-    'postBody'?: string;
+    'conversationBody'?: string;
     /**
      * 
      * @type {Array<string>}
-     * @memberof ApiV1PostCreatePostRequest
+     * @memberof ApiV1ConversationCreatePostRequest
      */
     'pollingOptionList'?: Array<string>;
 }
 /**
  * 
  * @export
- * @interface ApiV1PostFetchPostBySlugIdPost200Response
+ * @interface ApiV1ConversationFetchRecentPost200Response
  */
-export interface ApiV1PostFetchPostBySlugIdPost200Response {
+export interface ApiV1ConversationFetchRecentPost200Response {
     /**
      * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInner}
-     * @memberof ApiV1PostFetchPostBySlugIdPost200Response
+     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>}
+     * @memberof ApiV1ConversationFetchRecentPost200Response
      */
-    'postData': ApiV1FeedFetchRecentPost200ResponsePostDataListInner;
+    'conversationDataList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationFetchRecentPost200Response
+     */
+    'reachedEndOfFeed': boolean;
 }
 /**
  * 
  * @export
- * @interface ApiV1PostFetchPostBySlugIdPostRequest
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
  */
-export interface ApiV1PostFetchPostBySlugIdPostRequest {
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner {
     /**
      * 
-     * @type {string}
-     * @memberof ApiV1PostFetchPostBySlugIdPostRequest
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
      */
-    'postSlugId': string;
+    'metadata': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata;
+    /**
+     * 
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
+     */
+    'payload': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload;
+    /**
+     * 
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
+     */
+    'interaction': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction {
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1PostFetchPostBySlugIdPostRequest
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction
+     */
+    'hasVoted': boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction
+     */
+    'votedIndex': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'lastReactedAt': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'opinionCount': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'authorUsername': string;
+    /**
+     * 
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+     */
+    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+     */
+    'action': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+     */
+    'reason': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+     */
+    'explanation': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationStatusEnum = {
+    Unmoderated: 'unmoderated'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationStatusEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationActionEnum = {
+    Lock: 'lock'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationActionEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationActionEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationActionEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationReasonEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationReasonEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+     */
+    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+     */
+    'action': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+     */
+    'reason': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+     */
+    'explanation': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfStatusEnum = {
+    Moderated: 'moderated'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfStatusEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfActionEnum = {
+    Lock: 'lock'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfActionEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfActionEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfActionEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfReasonEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfReasonEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOfReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1
+     */
+    'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1StatusEnum;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1StatusEnum = {
+    Unmoderated: 'unmoderated'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1StatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1StatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload
+     */
+    'body'?: string;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner>}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload
+     */
+    'poll'?: Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner>;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner
+     */
+    'optionNumber': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner
+     */
+    'optionTitle': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner
+     */
+    'numResponses': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPostRequest
+ */
+export interface ApiV1ConversationFetchRecentPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPostRequest
+     */
+    'lastSlugId'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationFetchRecentPostRequest
      */
     'isAuthenticatedRequest': boolean;
 }
 /**
  * 
  * @export
- * @interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+ * @interface ApiV1ConversationGetPost200Response
  */
-export interface ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner {
+export interface ApiV1ConversationGetPost200Response {
+    /**
+     * 
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner}
+     * @memberof ApiV1ConversationGetPost200Response
+     */
+    'conversationData': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationGetPostRequest
+ */
+export interface ApiV1ConversationGetPostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     * @memberof ApiV1ConversationGetPostRequest
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationGetPostRequest
+     */
+    'isAuthenticatedRequest': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ModerationConversationCreatePostRequest
+ */
+export interface ApiV1ModerationConversationCreatePostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationConversationCreatePostRequest
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationConversationCreatePostRequest
+     */
+    'moderationReason': ApiV1ModerationConversationCreatePostRequestModerationReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationConversationCreatePostRequest
+     */
+    'moderationAction': ApiV1ModerationConversationCreatePostRequestModerationActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationConversationCreatePostRequest
+     */
+    'moderationExplanation': string;
+}
+
+export const ApiV1ModerationConversationCreatePostRequestModerationReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ModerationConversationCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationConversationCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationConversationCreatePostRequestModerationReasonEnum];
+export const ApiV1ModerationConversationCreatePostRequestModerationActionEnum = {
+    Lock: 'lock'
+} as const;
+
+export type ApiV1ModerationConversationCreatePostRequestModerationActionEnum = typeof ApiV1ModerationConversationCreatePostRequestModerationActionEnum[keyof typeof ApiV1ModerationConversationCreatePostRequestModerationActionEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ModerationConversationWithdrawPostRequest
+ */
+export interface ApiV1ModerationConversationWithdrawPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationConversationWithdrawPostRequest
+     */
+    'conversationSlugId': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ModerationOpinionCreatePostRequest
+ */
+export interface ApiV1ModerationOpinionCreatePostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionCreatePostRequest
+     */
+    'opinionSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionCreatePostRequest
+     */
+    'moderationReason': ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionCreatePostRequest
+     */
+    'moderationAction': ApiV1ModerationOpinionCreatePostRequestModerationActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionCreatePostRequest
+     */
+    'moderationExplanation': string;
+}
+
+export const ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum];
+export const ApiV1ModerationOpinionCreatePostRequestModerationActionEnum = {
+    Move: 'move',
+    Hide: 'hide'
+} as const;
+
+export type ApiV1ModerationOpinionCreatePostRequestModerationActionEnum = typeof ApiV1ModerationOpinionCreatePostRequestModerationActionEnum[keyof typeof ApiV1ModerationOpinionCreatePostRequestModerationActionEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ModerationOpinionGetPost200Response
+ */
+export interface ApiV1ModerationOpinionGetPost200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200Response
+     */
+    'status': ApiV1ModerationOpinionGetPost200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200Response
+     */
+    'action': ApiV1ModerationOpinionGetPost200ResponseActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200Response
+     */
+    'reason': ApiV1ModerationOpinionGetPost200ResponseReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200Response
+     */
+    'explanation': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200Response
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200Response
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ModerationOpinionGetPost200ResponseStatusEnum = {
+    Unmoderated: 'unmoderated'
+} as const;
+
+export type ApiV1ModerationOpinionGetPost200ResponseStatusEnum = typeof ApiV1ModerationOpinionGetPost200ResponseStatusEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseStatusEnum];
+export const ApiV1ModerationOpinionGetPost200ResponseActionEnum = {
+    Move: 'move',
+    Hide: 'hide'
+} as const;
+
+export type ApiV1ModerationOpinionGetPost200ResponseActionEnum = typeof ApiV1ModerationOpinionGetPost200ResponseActionEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseActionEnum];
+export const ApiV1ModerationOpinionGetPost200ResponseReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ModerationOpinionGetPost200ResponseReasonEnum = typeof ApiV1ModerationOpinionGetPost200ResponseReasonEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ModerationOpinionGetPost200ResponseAnyOf
+ */
+export interface ApiV1ModerationOpinionGetPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200ResponseAnyOf
+     */
+    'status': ApiV1ModerationOpinionGetPost200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200ResponseAnyOf
+     */
+    'action': ApiV1ModerationOpinionGetPost200ResponseAnyOfActionEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200ResponseAnyOf
+     */
+    'reason': ApiV1ModerationOpinionGetPost200ResponseAnyOfReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200ResponseAnyOf
+     */
+    'explanation': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200ResponseAnyOf
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionGetPost200ResponseAnyOf
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ModerationOpinionGetPost200ResponseAnyOfStatusEnum = {
+    Moderated: 'moderated'
+} as const;
+
+export type ApiV1ModerationOpinionGetPost200ResponseAnyOfStatusEnum = typeof ApiV1ModerationOpinionGetPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseAnyOfStatusEnum];
+export const ApiV1ModerationOpinionGetPost200ResponseAnyOfActionEnum = {
+    Move: 'move',
+    Hide: 'hide'
+} as const;
+
+export type ApiV1ModerationOpinionGetPost200ResponseAnyOfActionEnum = typeof ApiV1ModerationOpinionGetPost200ResponseAnyOfActionEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseAnyOfActionEnum];
+export const ApiV1ModerationOpinionGetPost200ResponseAnyOfReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ModerationOpinionGetPost200ResponseAnyOfReasonEnum = typeof ApiV1ModerationOpinionGetPost200ResponseAnyOfReasonEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseAnyOfReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ModerationOpinionWithdrawPostRequest
+ */
+export interface ApiV1ModerationOpinionWithdrawPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ModerationOpinionWithdrawPostRequest
+     */
+    'opinionSlugId': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1MuteUserCreatePostRequest
+ */
+export interface ApiV1MuteUserCreatePostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1MuteUserCreatePostRequest
+     */
+    'targetUsername': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1MuteUserCreatePostRequest
+     */
+    'action': ApiV1MuteUserCreatePostRequestActionEnum;
+}
+
+export const ApiV1MuteUserCreatePostRequestActionEnum = {
+    Mute: 'mute',
+    Unmute: 'unmute'
+} as const;
+
+export type ApiV1MuteUserCreatePostRequestActionEnum = typeof ApiV1MuteUserCreatePostRequestActionEnum[keyof typeof ApiV1MuteUserCreatePostRequestActionEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1MuteUserGetPost200ResponseInner
+ */
+export interface ApiV1MuteUserGetPost200ResponseInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1MuteUserGetPost200ResponseInner
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1MuteUserGetPost200ResponseInner
+     */
+    'username': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1OpinionCreatePost200Response
+ */
+export interface ApiV1OpinionCreatePost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1OpinionCreatePost200Response
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionCreatePost200Response
+     */
+    'opinionSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionCreatePost200Response
+     */
+    'reason': ApiV1OpinionCreatePost200ResponseReasonEnum;
+}
+
+export const ApiV1OpinionCreatePost200ResponseReasonEnum = {
+    ConversationLocked: 'conversation_locked'
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseReasonEnum = typeof ApiV1OpinionCreatePost200ResponseReasonEnum[keyof typeof ApiV1OpinionCreatePost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1OpinionCreatePost200ResponseAnyOf
+ */
+export interface ApiV1OpinionCreatePost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1OpinionCreatePost200ResponseAnyOf
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionCreatePost200ResponseAnyOf
+     */
+    'opinionSlugId': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1OpinionCreatePost200ResponseAnyOf1
+ */
+export interface ApiV1OpinionCreatePost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1OpinionCreatePost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionCreatePost200ResponseAnyOf1
+     */
+    'reason': ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum;
+}
+
+export const ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum = {
+    ConversationLocked: 'conversation_locked'
+} as const;
+
+export type ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum = typeof ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1OpinionCreatePostRequest
+ */
+export interface ApiV1OpinionCreatePostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionCreatePostRequest
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionCreatePostRequest
+     */
+    'opinionBody': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1OpinionFetchByConversationPostRequest
+ */
+export interface ApiV1OpinionFetchByConversationPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionFetchByConversationPostRequest
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionFetchByConversationPostRequest
+     */
+    'filter': ApiV1OpinionFetchByConversationPostRequestFilterEnum;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1OpinionFetchByConversationPostRequest
+     */
+    'isAuthenticatedRequest': boolean;
+}
+
+export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
+    Moderated: 'moderated',
+    New: 'new'
+} as const;
+
+export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1OpinionFetchHiddenByConversationPostRequest
+ */
+export interface ApiV1OpinionFetchHiddenByConversationPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionFetchHiddenByConversationPostRequest
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1OpinionFetchHiddenByConversationPostRequest
+     */
+    'createdAt'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1PollRespondPostRequest
+ */
+export interface ApiV1PollRespondPostRequest {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1PollRespondPostRequest
+     */
+    'voteOptionChoice': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1PollRespondPostRequest
+     */
+    'conversationSlugId': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ReportConversationCreatePostRequest
+ */
+export interface ApiV1ReportConversationCreatePostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportConversationCreatePostRequest
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportConversationCreatePostRequest
+     */
+    'reportReason': ApiV1ReportConversationCreatePostRequestReportReasonEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportConversationCreatePostRequest
+     */
+    'reportExplanation'?: string;
+}
+
+export const ApiV1ReportConversationCreatePostRequestReportReasonEnum = {
+    Misleading: 'misleading',
+    Antisocial: 'antisocial',
+    Illegal: 'illegal',
+    Doxing: 'doxing',
+    Sexual: 'sexual',
+    Spam: 'spam'
+} as const;
+
+export type ApiV1ReportConversationCreatePostRequestReportReasonEnum = typeof ApiV1ReportConversationCreatePostRequestReportReasonEnum[keyof typeof ApiV1ReportConversationCreatePostRequestReportReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ReportConversationFetchPost200ResponseInner
+ */
+export interface ApiV1ReportConversationFetchPost200ResponseInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ReportConversationFetchPost200ResponseInner
      */
     'username': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     * @memberof ApiV1ReportConversationFetchPost200ResponseInner
      */
-    'reason': ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum;
+    'reason': ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     * @memberof ApiV1ReportConversationFetchPost200ResponseInner
      */
     'explanation'?: string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     * @memberof ApiV1ReportConversationFetchPost200ResponseInner
      */
     'createdAt': string;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner
+     * @memberof ApiV1ReportConversationFetchPost200ResponseInner
      */
     'id': number;
 }
 
-export const ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum = {
+export const ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -1291,35 +1342,35 @@ export const ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum =
     Spam: 'spam'
 } as const;
 
-export type ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum = typeof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum[keyof typeof ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInnerReasonEnum];
+export type ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum = typeof ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum[keyof typeof ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+ * @interface ApiV1ReportOpinionCreatePostRequest
  */
-export interface ApiV1ReportSubmitReportByCommentSlugIdPostRequest {
+export interface ApiV1ReportOpinionCreatePostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+     * @memberof ApiV1ReportOpinionCreatePostRequest
      */
-    'commentSlugId': string;
+    'opinionSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+     * @memberof ApiV1ReportOpinionCreatePostRequest
      */
-    'reportReason': ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum;
+    'reportReason': ApiV1ReportOpinionCreatePostRequestReportReasonEnum;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportSubmitReportByCommentSlugIdPostRequest
+     * @memberof ApiV1ReportOpinionCreatePostRequest
      */
     'reportExplanation'?: string;
 }
 
-export const ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum = {
+export const ApiV1ReportOpinionCreatePostRequestReportReasonEnum = {
     Misleading: 'misleading',
     Antisocial: 'antisocial',
     Illegal: 'illegal',
@@ -1328,290 +1379,239 @@ export const ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum =
     Spam: 'spam'
 } as const;
 
-export type ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum = typeof ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum[keyof typeof ApiV1ReportSubmitReportByCommentSlugIdPostRequestReportReasonEnum];
+export type ApiV1ReportOpinionCreatePostRequestReportReasonEnum = typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum[keyof typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1ReportSubmitReportByPostSlugIdPostRequest
+ * @interface ApiV1UserConversationFetchPostRequest
  */
-export interface ApiV1ReportSubmitReportByPostSlugIdPostRequest {
+export interface ApiV1UserConversationFetchPostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
+     * @memberof ApiV1UserConversationFetchPostRequest
      */
-    'postSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
-     */
-    'reportReason': ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ReportSubmitReportByPostSlugIdPostRequest
-     */
-    'reportExplanation'?: string;
-}
-
-export const ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum = {
-    Misleading: 'misleading',
-    Antisocial: 'antisocial',
-    Illegal: 'illegal',
-    Doxing: 'doxing',
-    Sexual: 'sexual',
-    Spam: 'spam'
-} as const;
-
-export type ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum = typeof ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum[keyof typeof ApiV1ReportSubmitReportByPostSlugIdPostRequestReportReasonEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1UserFetchUserCommentsPost200ResponseInner
- */
-export interface ApiV1UserFetchUserCommentsPost200ResponseInner {
-    /**
-     * 
-     * @type {ApiV1FeedFetchRecentPost200ResponsePostDataListInner}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInner
-     */
-    'postData': ApiV1FeedFetchRecentPost200ResponsePostDataListInner;
-    /**
-     * 
-     * @type {ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInner
-     */
-    'commentItem': ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem;
+    'lastConversationSlugId'?: string;
 }
 /**
  * 
  * @export
- * @interface ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+ * @interface ApiV1UserOpinionFetchPost200ResponseInner
  */
-export interface ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem {
+export interface ApiV1UserOpinionFetchPost200ResponseInner {
     /**
      * 
-     * @type {string}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInner
      */
-    'commentSlugId': string;
+    'conversationData': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner;
+    /**
+     * 
+     * @type {ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInner
+     */
+    'opinionItem': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+ */
+export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+     */
+    'opinionSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
     'createdAt': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
     'updatedAt': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
-    'comment': string;
+    'opinion': string;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
-    'numLikes': number;
+    'numAgrees': number;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
-    'numDislikes': number;
+    'numDisagrees': number;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
     'username': string;
     /**
      * 
-     * @type {ApiV1ModerationCommentFetchReportPost200Response}
-     * @memberof ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem
+     * @type {ApiV1ModerationOpinionGetPost200Response}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
-    'moderation': ApiV1ModerationCommentFetchReportPost200Response;
+    'moderation': ApiV1ModerationOpinionGetPost200Response;
 }
 /**
  * 
  * @export
- * @interface ApiV1UserFetchUserCommentsPostRequest
+ * @interface ApiV1UserOpinionFetchPostRequest
  */
-export interface ApiV1UserFetchUserCommentsPostRequest {
+export interface ApiV1UserOpinionFetchPostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserCommentsPostRequest
+     * @memberof ApiV1UserOpinionFetchPostRequest
      */
-    'lastCommentSlugId'?: string;
+    'lastOpinionSlugId'?: string;
 }
 /**
  * 
  * @export
- * @interface ApiV1UserFetchUserPostsPostRequest
+ * @interface ApiV1UserPollGetResponseByConversationsPost200ResponseInner
  */
-export interface ApiV1UserFetchUserPostsPostRequest {
+export interface ApiV1UserPollGetResponseByConversationsPost200ResponseInner {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserPostsPostRequest
+     * @memberof ApiV1UserPollGetResponseByConversationsPost200ResponseInner
      */
-    'lastPostSlugId'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiV1UserFetchUserProfilePost200Response
- */
-export interface ApiV1UserFetchUserProfilePost200Response {
+    'conversationSlugId': string;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1UserFetchUserProfilePost200Response
+     * @memberof ApiV1UserPollGetResponseByConversationsPost200ResponseInner
+     */
+    'optionChosen': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1UserProfileGetPost200Response
+ */
+export interface ApiV1UserProfileGetPost200Response {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserProfileGetPost200Response
      */
     'activePostCount': number;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserProfilePost200Response
+     * @memberof ApiV1UserProfileGetPost200Response
      */
     'createdAt': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserFetchUserProfilePost200Response
+     * @memberof ApiV1UserProfileGetPost200Response
      */
     'username': string;
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1UserFetchUserProfilePost200Response
+     * @memberof ApiV1UserProfileGetPost200Response
      */
     'isModerator': boolean;
 }
 /**
  * 
  * @export
- * @interface ApiV1UserMuteFetchPreferencesPost200ResponseInner
+ * @interface ApiV1UserUsernameUpdatePostRequest
  */
-export interface ApiV1UserMuteFetchPreferencesPost200ResponseInner {
+export interface ApiV1UserUsernameUpdatePostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserMuteFetchPreferencesPost200ResponseInner
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserMuteFetchPreferencesPost200ResponseInner
+     * @memberof ApiV1UserUsernameUpdatePostRequest
      */
     'username': string;
 }
 /**
  * 
  * @export
- * @interface ApiV1UserMuteMuteUserPostRequest
+ * @interface ApiV1UserVoteGetByConversationsPost200ResponseInner
  */
-export interface ApiV1UserMuteMuteUserPostRequest {
+export interface ApiV1UserVoteGetByConversationsPost200ResponseInner {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserMuteMuteUserPostRequest
+     * @memberof ApiV1UserVoteGetByConversationsPost200ResponseInner
      */
-    'targetUsername': string;
+    'opinionSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserMuteMuteUserPostRequest
+     * @memberof ApiV1UserVoteGetByConversationsPost200ResponseInner
      */
-    'action': ApiV1UserMuteMuteUserPostRequestActionEnum;
+    'votingAction': ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum;
 }
 
-export const ApiV1UserMuteMuteUserPostRequestActionEnum = {
-    Mute: 'mute',
-    Unmute: 'unmute'
+export const ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum = {
+    Agree: 'agree',
+    Disagree: 'disagree'
 } as const;
 
-export type ApiV1UserMuteMuteUserPostRequestActionEnum = typeof ApiV1UserMuteMuteUserPostRequestActionEnum[keyof typeof ApiV1UserMuteMuteUserPostRequestActionEnum];
+export type ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum = typeof ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum[keyof typeof ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum];
 
 /**
  * 
  * @export
- * @interface ApiV1VotingCastVotePostRequest
+ * @interface ApiV1UserVoteGetByConversationsPostRequest
  */
-export interface ApiV1VotingCastVotePostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1VotingCastVotePostRequest
-     */
-    'commentSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1VotingCastVotePostRequest
-     */
-    'chosenOption': ApiV1VotingCastVotePostRequestChosenOptionEnum;
-}
-
-export const ApiV1VotingCastVotePostRequestChosenOptionEnum = {
-    Like: 'like',
-    Dislike: 'dislike',
-    Cancel: 'cancel'
-} as const;
-
-export type ApiV1VotingCastVotePostRequestChosenOptionEnum = typeof ApiV1VotingCastVotePostRequestChosenOptionEnum[keyof typeof ApiV1VotingCastVotePostRequestChosenOptionEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInner
- */
-export interface ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInner {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInner
-     */
-    'commentSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInner
-     */
-    'votingAction': ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInnerVotingActionEnum;
-}
-
-export const ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInnerVotingActionEnum = {
-    Like: 'like',
-    Dislike: 'dislike'
-} as const;
-
-export type ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInnerVotingActionEnum = typeof ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInnerVotingActionEnum[keyof typeof ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInnerVotingActionEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest
- */
-export interface ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest {
+export interface ApiV1UserVoteGetByConversationsPostRequest {
     /**
      * 
      * @type {Array<string>}
-     * @memberof ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest
+     * @memberof ApiV1UserVoteGetByConversationsPostRequest
      */
-    'postSlugIdList': Array<string>;
+    'conversationSlugIdList': Array<string>;
 }
+/**
+ * 
+ * @export
+ * @interface ApiV1VoteCastPostRequest
+ */
+export interface ApiV1VoteCastPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1VoteCastPostRequest
+     */
+    'opinionSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1VoteCastPostRequest
+     */
+    'chosenOption': ApiV1VoteCastPostRequestChosenOptionEnum;
+}
+
+export const ApiV1VoteCastPostRequestChosenOptionEnum = {
+    Agree: 'agree',
+    Disagree: 'disagree',
+    Cancel: 'cancel'
+} as const;
+
+export type ApiV1VoteCastPostRequestChosenOptionEnum = typeof ApiV1VoteCastPostRequestChosenOptionEnum[keyof typeof ApiV1VoteCastPostRequestChosenOptionEnum];
+
 
 /**
  * DefaultApi - axios parameter creator
@@ -1619,39 +1619,6 @@ export interface ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest {
  */
 export const DefaultApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1AccountDeleteUserPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/account/delete-user`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
         /**
          * 
          * @param {*} [options] Override http request option.
@@ -1687,13 +1654,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AccountIsUsernameInUsePost: async (apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AccountSubmitUsernameChangePostRequest' is not null or undefined
-            assertParamExists('apiV1AccountIsUsernameInUsePost', 'apiV1AccountSubmitUsernameChangePostRequest', apiV1AccountSubmitUsernameChangePostRequest)
+        apiV1AccountIsUsernameInUsePost: async (apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserUsernameUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AccountIsUsernameInUsePost', 'apiV1UserUsernameUpdatePostRequest', apiV1UserUsernameUpdatePostRequest)
             const localVarPath = `/api/v1/account/is-username-in-use`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1717,46 +1684,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AccountSubmitUsernameChangePostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1AccountSubmitUsernameChangePost: async (apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AccountSubmitUsernameChangePostRequest' is not null or undefined
-            assertParamExists('apiV1AccountSubmitUsernameChangePost', 'apiV1AccountSubmitUsernameChangePostRequest', apiV1AccountSubmitUsernameChangePostRequest)
-            const localVarPath = `/api/v1/account/submit-username-change`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AccountSubmitUsernameChangePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserUsernameUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1870,14 +1798,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
+         * @param {ApiV1AuthPhoneVerifyOtpPostRequest} apiV1AuthPhoneVerifyOtpPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthVerifyPhoneOtpPost: async (apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AuthVerifyPhoneOtpPostRequest' is not null or undefined
-            assertParamExists('apiV1AuthVerifyPhoneOtpPost', 'apiV1AuthVerifyPhoneOtpPostRequest', apiV1AuthVerifyPhoneOtpPostRequest)
-            const localVarPath = `/api/v1/auth/verify-phone-otp`;
+        apiV1AuthPhoneVerifyOtpPost: async (apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthPhoneVerifyOtpPostRequest' is not null or undefined
+            assertParamExists('apiV1AuthPhoneVerifyOtpPost', 'apiV1AuthPhoneVerifyOtpPostRequest', apiV1AuthPhoneVerifyOtpPostRequest)
+            const localVarPath = `/api/v1/auth/phone/verify-otp`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1900,7 +1828,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthVerifyPhoneOtpPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthPhoneVerifyOtpPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1975,14 +1903,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1CommentCreatePostRequest} apiV1CommentCreatePostRequest 
+         * @param {ApiV1ConversationCreatePostRequest} apiV1ConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentCreatePost: async (apiV1CommentCreatePostRequest: ApiV1CommentCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1CommentCreatePostRequest' is not null or undefined
-            assertParamExists('apiV1CommentCreatePost', 'apiV1CommentCreatePostRequest', apiV1CommentCreatePostRequest)
-            const localVarPath = `/api/v1/comment/create`;
+        apiV1ConversationCreatePost: async (apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationCreatePost', 'apiV1ConversationCreatePostRequest', apiV1ConversationCreatePostRequest)
+            const localVarPath = `/api/v1/conversation/create`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2005,7 +1933,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1CommentCreatePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationCreatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2014,14 +1942,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentDeletePost: async (apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationCommentWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1CommentDeletePost', 'apiV1ModerationCommentWithdrawPostRequest', apiV1ModerationCommentWithdrawPostRequest)
-            const localVarPath = `/api/v1/comment/delete`;
+        apiV1ConversationDeletePost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDeletePost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/conversation/delete`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2044,7 +1972,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationCommentWithdrawPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2053,14 +1981,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1CommentFetchCommentsByPostSlugIdPostRequest} apiV1CommentFetchCommentsByPostSlugIdPostRequest 
+         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentFetchCommentsByPostSlugIdPost: async (apiV1CommentFetchCommentsByPostSlugIdPostRequest: ApiV1CommentFetchCommentsByPostSlugIdPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1CommentFetchCommentsByPostSlugIdPostRequest' is not null or undefined
-            assertParamExists('apiV1CommentFetchCommentsByPostSlugIdPost', 'apiV1CommentFetchCommentsByPostSlugIdPostRequest', apiV1CommentFetchCommentsByPostSlugIdPostRequest)
-            const localVarPath = `/api/v1/comment/fetch-comments-by-post-slugId`;
+        apiV1ConversationFetchRecentPost: async (apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationFetchRecentPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationFetchRecentPost', 'apiV1ConversationFetchRecentPostRequest', apiV1ConversationFetchRecentPostRequest)
+            const localVarPath = `/api/v1/conversation/fetch-recent`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2083,7 +2011,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1CommentFetchCommentsByPostSlugIdPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationFetchRecentPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2092,14 +2020,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+         * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentFetchHiddenCommentsPost: async (apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1CommentFetchHiddenCommentsPostRequest' is not null or undefined
-            assertParamExists('apiV1CommentFetchHiddenCommentsPost', 'apiV1CommentFetchHiddenCommentsPostRequest', apiV1CommentFetchHiddenCommentsPostRequest)
-            const localVarPath = `/api/v1/comment/fetch-hidden-comments`;
+        apiV1ConversationGetPost: async (apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationGetPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationGetPost', 'apiV1ConversationGetPostRequest', apiV1ConversationGetPostRequest)
+            const localVarPath = `/api/v1/conversation/get`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2122,7 +2050,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1CommentFetchHiddenCommentsPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationGetPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2131,14 +2059,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
+         * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1FeedFetchRecentPost: async (apiV1FeedFetchRecentPostRequest: ApiV1FeedFetchRecentPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1FeedFetchRecentPostRequest' is not null or undefined
-            assertParamExists('apiV1FeedFetchRecentPost', 'apiV1FeedFetchRecentPostRequest', apiV1FeedFetchRecentPostRequest)
-            const localVarPath = `/api/v1/feed/fetch-recent`;
+        apiV1ModerationConversationCreatePost: async (apiV1ModerationConversationCreatePostRequest: ApiV1ModerationConversationCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1ModerationConversationCreatePost', 'apiV1ModerationConversationCreatePostRequest', apiV1ModerationConversationCreatePostRequest)
+            const localVarPath = `/api/v1/moderation/conversation/create`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2161,7 +2089,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1FeedFetchRecentPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationCreatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2170,14 +2098,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentCreatePostRequest} apiV1ModerationCommentCreatePostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationCommentCreatePost: async (apiV1ModerationCommentCreatePostRequest: ApiV1ModerationCommentCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationCommentCreatePostRequest' is not null or undefined
-            assertParamExists('apiV1ModerationCommentCreatePost', 'apiV1ModerationCommentCreatePostRequest', apiV1ModerationCommentCreatePostRequest)
-            const localVarPath = `/api/v1/moderation/comment/create`;
+        apiV1ModerationConversationGetPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ModerationConversationGetPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/moderation/conversation/get`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2200,7 +2128,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationCommentCreatePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2209,14 +2137,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationCommentFetchReportPost: async (apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationCommentWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ModerationCommentFetchReportPost', 'apiV1ModerationCommentWithdrawPostRequest', apiV1ModerationCommentWithdrawPostRequest)
-            const localVarPath = `/api/v1/moderation/comment/fetch-report`;
+        apiV1ModerationConversationWithdrawPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ModerationConversationWithdrawPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/moderation/conversation/withdraw`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2239,7 +2167,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationCommentWithdrawPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2248,14 +2176,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationOpinionCreatePostRequest} apiV1ModerationOpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationCommentWithdrawPost: async (apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationCommentWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ModerationCommentWithdrawPost', 'apiV1ModerationCommentWithdrawPostRequest', apiV1ModerationCommentWithdrawPostRequest)
-            const localVarPath = `/api/v1/moderation/comment/withdraw`;
+        apiV1ModerationOpinionCreatePost: async (apiV1ModerationOpinionCreatePostRequest: ApiV1ModerationOpinionCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationOpinionCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1ModerationOpinionCreatePost', 'apiV1ModerationOpinionCreatePostRequest', apiV1ModerationOpinionCreatePostRequest)
+            const localVarPath = `/api/v1/moderation/opinion/create`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2278,7 +2206,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationCommentWithdrawPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationOpinionCreatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2287,14 +2215,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationPostCreatePostRequest} apiV1ModerationPostCreatePostRequest 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationPostCreatePost: async (apiV1ModerationPostCreatePostRequest: ApiV1ModerationPostCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationPostCreatePostRequest' is not null or undefined
-            assertParamExists('apiV1ModerationPostCreatePost', 'apiV1ModerationPostCreatePostRequest', apiV1ModerationPostCreatePostRequest)
-            const localVarPath = `/api/v1/moderation/post/create`;
+        apiV1ModerationOpinionGetPost: async (apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationOpinionWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ModerationOpinionGetPost', 'apiV1ModerationOpinionWithdrawPostRequest', apiV1ModerationOpinionWithdrawPostRequest)
+            const localVarPath = `/api/v1/moderation/opinion/get`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2317,7 +2245,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationPostCreatePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationOpinionWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2326,14 +2254,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationPostFetchReportPost: async (apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationPostWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ModerationPostFetchReportPost', 'apiV1ModerationPostWithdrawPostRequest', apiV1ModerationPostWithdrawPostRequest)
-            const localVarPath = `/api/v1/moderation/post/fetch-report`;
+        apiV1ModerationOpinionWithdrawPost: async (apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationOpinionWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ModerationOpinionWithdrawPost', 'apiV1ModerationOpinionWithdrawPostRequest', apiV1ModerationOpinionWithdrawPostRequest)
+            const localVarPath = `/api/v1/moderation/opinion/withdraw`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2356,7 +2284,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationPostWithdrawPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationOpinionWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2365,14 +2293,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1MuteUserCreatePostRequest} apiV1MuteUserCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationPostWithdrawPost: async (apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationPostWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ModerationPostWithdrawPost', 'apiV1ModerationPostWithdrawPostRequest', apiV1ModerationPostWithdrawPostRequest)
-            const localVarPath = `/api/v1/moderation/post/withdraw`;
+        apiV1MuteUserCreatePost: async (apiV1MuteUserCreatePostRequest: ApiV1MuteUserCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MuteUserCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1MuteUserCreatePost', 'apiV1MuteUserCreatePostRequest', apiV1MuteUserCreatePostRequest)
+            const localVarPath = `/api/v1/mute/user/create`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2395,7 +2323,498 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationPostWithdrawPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MuteUserCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MuteUserGetPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/mute/user/get`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionCreatePost: async (apiV1OpinionCreatePostRequest: ApiV1OpinionCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionCreatePost', 'apiV1OpinionCreatePostRequest', apiV1OpinionCreatePostRequest)
+            const localVarPath = `/api/v1/opinion/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionDeletePost: async (apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationOpinionWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionDeletePost', 'apiV1ModerationOpinionWithdrawPostRequest', apiV1ModerationOpinionWithdrawPostRequest)
+            const localVarPath = `/api/v1/opinion/delete`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationOpinionWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchByConversationPost: async (apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchByConversationPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchByConversationPost', 'apiV1OpinionFetchByConversationPostRequest', apiV1OpinionFetchByConversationPostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-by-conversation`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchByConversationPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchHiddenByConversationPost: async (apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchHiddenByConversationPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchHiddenByConversationPost', 'apiV1OpinionFetchHiddenByConversationPostRequest', apiV1OpinionFetchHiddenByConversationPostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-hidden-by-conversation`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchHiddenByConversationPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1PollRespondPost: async (apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1PollRespondPostRequest' is not null or undefined
+            assertParamExists('apiV1PollRespondPost', 'apiV1PollRespondPostRequest', apiV1PollRespondPostRequest)
+            const localVarPath = `/api/v1/poll/respond`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PollRespondPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ReportConversationCreatePostRequest} apiV1ReportConversationCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportConversationCreatePost: async (apiV1ReportConversationCreatePostRequest: ApiV1ReportConversationCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ReportConversationCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1ReportConversationCreatePost', 'apiV1ReportConversationCreatePostRequest', apiV1ReportConversationCreatePostRequest)
+            const localVarPath = `/api/v1/report/conversation/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ReportConversationCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportConversationFetchPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ReportConversationFetchPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/report/conversation/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ReportOpinionCreatePostRequest} apiV1ReportOpinionCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportOpinionCreatePost: async (apiV1ReportOpinionCreatePostRequest: ApiV1ReportOpinionCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ReportOpinionCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1ReportOpinionCreatePost', 'apiV1ReportOpinionCreatePostRequest', apiV1ReportOpinionCreatePostRequest)
+            const localVarPath = `/api/v1/report/opinion/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ReportOpinionCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportOpinionFetchPost: async (apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationOpinionWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ReportOpinionFetchPost', 'apiV1ModerationOpinionWithdrawPostRequest', apiV1ModerationOpinionWithdrawPostRequest)
+            const localVarPath = `/api/v1/report/opinion/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationOpinionWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserConversationFetchPost: async (apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/user/conversation/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserConversationFetchPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserDeletePost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/user/delete`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserOpinionFetchPost: async (apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/user/opinion/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserOpinionFetchPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2408,8 +2827,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PollGetUserPollResponsePost: async (requestBody?: Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/poll/get-user-poll-response`;
+        apiV1UserPollGetResponseByConversationsPost: async (requestBody?: Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/user/poll/get-response-by-conversations`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2441,14 +2860,47 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1PollSubmitResponsePostRequest} apiV1PollSubmitResponsePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PollSubmitResponsePost: async (apiV1PollSubmitResponsePostRequest: ApiV1PollSubmitResponsePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1PollSubmitResponsePostRequest' is not null or undefined
-            assertParamExists('apiV1PollSubmitResponsePost', 'apiV1PollSubmitResponsePostRequest', apiV1PollSubmitResponsePostRequest)
-            const localVarPath = `/api/v1/poll/submitResponse`;
+        apiV1UserProfileGetPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/user/profile/get`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserUsernameUpdatePost: async (apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserUsernameUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1UserUsernameUpdatePost', 'apiV1UserUsernameUpdatePostRequest', apiV1UserUsernameUpdatePostRequest)
+            const localVarPath = `/api/v1/user/username/update`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2471,7 +2923,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PollSubmitResponsePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserUsernameUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2480,14 +2932,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1PostCreatePostRequest} apiV1PostCreatePostRequest 
+         * @param {ApiV1UserVoteGetByConversationsPostRequest} apiV1UserVoteGetByConversationsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PostCreatePost: async (apiV1PostCreatePostRequest: ApiV1PostCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1PostCreatePostRequest' is not null or undefined
-            assertParamExists('apiV1PostCreatePost', 'apiV1PostCreatePostRequest', apiV1PostCreatePostRequest)
-            const localVarPath = `/api/v1/post/create`;
+        apiV1UserVoteGetByConversationsPost: async (apiV1UserVoteGetByConversationsPostRequest: ApiV1UserVoteGetByConversationsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserVoteGetByConversationsPostRequest' is not null or undefined
+            assertParamExists('apiV1UserVoteGetByConversationsPost', 'apiV1UserVoteGetByConversationsPostRequest', apiV1UserVoteGetByConversationsPostRequest)
+            const localVarPath = `/api/v1/user/vote/get-by-conversations`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2510,7 +2962,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PostCreatePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserVoteGetByConversationsPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2519,14 +2971,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1VoteCastPostRequest} apiV1VoteCastPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PostDeletePost: async (apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationPostWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1PostDeletePost', 'apiV1ModerationPostWithdrawPostRequest', apiV1ModerationPostWithdrawPostRequest)
-            const localVarPath = `/api/v1/post/delete`;
+        apiV1VoteCastPost: async (apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1VoteCastPostRequest' is not null or undefined
+            assertParamExists('apiV1VoteCastPost', 'apiV1VoteCastPostRequest', apiV1VoteCastPostRequest)
+            const localVarPath = `/api/v1/vote/cast`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2549,459 +3001,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationPostWithdrawPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1PostFetchPostBySlugIdPostRequest} apiV1PostFetchPostBySlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PostFetchPostBySlugIdPost: async (apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1PostFetchPostBySlugIdPostRequest' is not null or undefined
-            assertParamExists('apiV1PostFetchPostBySlugIdPost', 'apiV1PostFetchPostBySlugIdPostRequest', apiV1PostFetchPostBySlugIdPostRequest)
-            const localVarPath = `/api/v1/post/fetch-post-by-slug-id`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PostFetchPostBySlugIdPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportFetchReportsByCommentSlugIdPost: async (apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationCommentWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ReportFetchReportsByCommentSlugIdPost', 'apiV1ModerationCommentWithdrawPostRequest', apiV1ModerationCommentWithdrawPostRequest)
-            const localVarPath = `/api/v1/report/fetch-reports-by-comment-slug-id`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationCommentWithdrawPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportFetchReportsByPostSlugIdPost: async (apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationPostWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ReportFetchReportsByPostSlugIdPost', 'apiV1ModerationPostWithdrawPostRequest', apiV1ModerationPostWithdrawPostRequest)
-            const localVarPath = `/api/v1/report/fetch-reports-by-post-slug-id`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationPostWithdrawPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportSubmitReportByCommentSlugIdPost: async (apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ReportSubmitReportByCommentSlugIdPostRequest' is not null or undefined
-            assertParamExists('apiV1ReportSubmitReportByCommentSlugIdPost', 'apiV1ReportSubmitReportByCommentSlugIdPostRequest', apiV1ReportSubmitReportByCommentSlugIdPostRequest)
-            const localVarPath = `/api/v1/report/submit-report-by-comment-slug-id`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ReportSubmitReportByCommentSlugIdPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportSubmitReportByPostSlugIdPost: async (apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ReportSubmitReportByPostSlugIdPostRequest' is not null or undefined
-            assertParamExists('apiV1ReportSubmitReportByPostSlugIdPost', 'apiV1ReportSubmitReportByPostSlugIdPostRequest', apiV1ReportSubmitReportByPostSlugIdPostRequest)
-            const localVarPath = `/api/v1/report/submit-report-by-post-slug-id`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ReportSubmitReportByPostSlugIdPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserFetchUserCommentsPost: async (apiV1UserFetchUserCommentsPostRequest?: ApiV1UserFetchUserCommentsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/user/fetch-user-comments`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserFetchUserCommentsPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1UserFetchUserPostsPostRequest} [apiV1UserFetchUserPostsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserFetchUserPostsPost: async (apiV1UserFetchUserPostsPostRequest?: ApiV1UserFetchUserPostsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/user/fetch-user-posts`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserFetchUserPostsPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserFetchUserProfilePost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/user/fetch-user-profile`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserMuteFetchPreferencesPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/v1/user-mute/fetch-preferences`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1UserMuteMuteUserPostRequest} apiV1UserMuteMuteUserPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserMuteMuteUserPost: async (apiV1UserMuteMuteUserPostRequest: ApiV1UserMuteMuteUserPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1UserMuteMuteUserPostRequest' is not null or undefined
-            assertParamExists('apiV1UserMuteMuteUserPost', 'apiV1UserMuteMuteUserPostRequest', apiV1UserMuteMuteUserPostRequest)
-            const localVarPath = `/api/v1/user-mute/mute-user`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserMuteMuteUserPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1VotingCastVotePostRequest} apiV1VotingCastVotePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1VotingCastVotePost: async (apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1VotingCastVotePostRequest' is not null or undefined
-            assertParamExists('apiV1VotingCastVotePost', 'apiV1VotingCastVotePostRequest', apiV1VotingCastVotePostRequest)
-            const localVarPath = `/api/v1/voting/cast-vote`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1VotingCastVotePostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest} apiV1VotingFetchUserVotesForPostSlugIdsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1VotingFetchUserVotesForPostSlugIdsPost: async (apiV1VotingFetchUserVotesForPostSlugIdsPostRequest: ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1VotingFetchUserVotesForPostSlugIdsPostRequest' is not null or undefined
-            assertParamExists('apiV1VotingFetchUserVotesForPostSlugIdsPost', 'apiV1VotingFetchUserVotesForPostSlugIdsPostRequest', apiV1VotingFetchUserVotesForPostSlugIdsPostRequest)
-            const localVarPath = `/api/v1/voting/fetch-user-votes-for-post-slug-ids`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1VoteCastPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3023,17 +3023,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AccountDeleteUserPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AccountDeleteUserPost(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AccountDeleteUserPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
         async apiV1AccountGenerateUnusedRandomUsernamePost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AccountGenerateUnusedRandomUsernamePost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
@@ -3042,26 +3031,14 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AccountIsUsernameInUsePost(apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<boolean>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AccountIsUsernameInUsePost(apiV1AccountSubmitUsernameChangePostRequest, options);
+        async apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<boolean>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AccountIsUsernameInUsePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1AccountSubmitUsernameChangePost(apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AccountSubmitUsernameChangePost(apiV1AccountSubmitUsernameChangePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AccountSubmitUsernameChangePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3100,14 +3077,14 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
+         * @param {ApiV1AuthPhoneVerifyOtpPostRequest} apiV1AuthPhoneVerifyOtpPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthVerifyPhoneOtpPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest, options);
+        async apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthVerifyPhoneOtpPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthPhoneVerifyOtpPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3134,134 +3111,288 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1CommentCreatePostRequest} apiV1CommentCreatePostRequest 
+         * @param {ApiV1ConversationCreatePostRequest} apiV1ConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1CommentCreatePost(apiV1CommentCreatePostRequest: ApiV1CommentCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1CommentCreatePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1CommentCreatePost(apiV1CommentCreatePostRequest, options);
+        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationCreatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1CommentCreatePost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationCreatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1CommentDeletePost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1CommentDeletePost(apiV1ModerationCommentWithdrawPostRequest, options);
+        async apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1CommentDeletePost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDeletePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1CommentFetchCommentsByPostSlugIdPostRequest} apiV1CommentFetchCommentsByPostSlugIdPostRequest 
+         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest: ApiV1CommentFetchCommentsByPostSlugIdPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest, options);
+        async apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1CommentFetchCommentsByPostSlugIdPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationFetchRecentPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+         * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest, options);
+        async apiV1ConversationGetPost(apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetPost(apiV1ConversationGetPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1CommentFetchHiddenCommentsPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationGetPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
+         * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1FeedFetchRecentPost(apiV1FeedFetchRecentPostRequest: ApiV1FeedFetchRecentPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1FeedFetchRecentPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1FeedFetchRecentPost(apiV1FeedFetchRecentPostRequest, options);
+        async apiV1ModerationConversationCreatePost(apiV1ModerationConversationCreatePostRequest: ApiV1ModerationConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationConversationCreatePost(apiV1ModerationConversationCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1FeedFetchRecentPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationConversationCreatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentCreatePostRequest} apiV1ModerationCommentCreatePostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationCommentCreatePost(apiV1ModerationCommentCreatePostRequest: ApiV1ModerationCommentCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationCommentCreatePost(apiV1ModerationCommentCreatePostRequest, options);
+        async apiV1ModerationConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationCommentCreatePost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationConversationGetPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationCommentFetchReportPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ModerationCommentFetchReportPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationCommentFetchReportPost(apiV1ModerationCommentWithdrawPostRequest, options);
+        async apiV1ModerationConversationWithdrawPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationConversationWithdrawPost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationCommentFetchReportPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationConversationWithdrawPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationOpinionCreatePostRequest} apiV1ModerationOpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationCommentWithdrawPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationCommentWithdrawPost(apiV1ModerationCommentWithdrawPostRequest, options);
+        async apiV1ModerationOpinionCreatePost(apiV1ModerationOpinionCreatePostRequest: ApiV1ModerationOpinionCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationOpinionCreatePost(apiV1ModerationOpinionCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationCommentWithdrawPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationOpinionCreatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationPostCreatePostRequest} apiV1ModerationPostCreatePostRequest 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationPostCreatePost(apiV1ModerationPostCreatePostRequest: ApiV1ModerationPostCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationPostCreatePost(apiV1ModerationPostCreatePostRequest, options);
+        async apiV1ModerationOpinionGetPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ModerationOpinionGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationOpinionGetPost(apiV1ModerationOpinionWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationPostCreatePost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationOpinionGetPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationPostFetchReportPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationPostFetchReportPost(apiV1ModerationPostWithdrawPostRequest, options);
+        async apiV1ModerationOpinionWithdrawPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationOpinionWithdrawPost(apiV1ModerationOpinionWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationPostFetchReportPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationOpinionWithdrawPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1MuteUserCreatePostRequest} apiV1MuteUserCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ModerationPostWithdrawPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ModerationPostWithdrawPost(apiV1ModerationPostWithdrawPostRequest, options);
+        async apiV1MuteUserCreatePost(apiV1MuteUserCreatePostRequest: ApiV1MuteUserCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MuteUserCreatePost(apiV1MuteUserCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ModerationPostWithdrawPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MuteUserCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MuteUserGetPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1MuteUserGetPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MuteUserGetPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MuteUserGetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest: ApiV1OpinionCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionCreatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionDeletePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchByConversationPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchHiddenByConversationPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PollRespondPost(apiV1PollRespondPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PollRespondPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ReportConversationCreatePostRequest} apiV1ReportConversationCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportConversationCreatePost(apiV1ReportConversationCreatePostRequest: ApiV1ReportConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportConversationCreatePost(apiV1ReportConversationCreatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportConversationCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportConversationFetchPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ReportConversationFetchPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportConversationFetchPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportConversationFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ReportOpinionCreatePostRequest} apiV1ReportOpinionCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportOpinionCreatePost(apiV1ReportOpinionCreatePostRequest: ApiV1ReportOpinionCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportOpinionCreatePost(apiV1ReportOpinionCreatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportOpinionCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ReportConversationFetchPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportOpinionFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserConversationFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1UserDeletePost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserDeletePost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserDeletePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserOpinionFetchPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3270,130 +3401,10 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1PollGetUserPollResponsePost(requestBody?: Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1PollGetUserPollResponsePost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PollGetUserPollResponsePost(requestBody, options);
+        async apiV1UserPollGetResponseByConversationsPost(requestBody?: Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserPollGetResponseByConversationsPost(requestBody, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PollGetUserPollResponsePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1PollSubmitResponsePostRequest} apiV1PollSubmitResponsePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1PollSubmitResponsePost(apiV1PollSubmitResponsePostRequest: ApiV1PollSubmitResponsePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PollSubmitResponsePost(apiV1PollSubmitResponsePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PollSubmitResponsePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1PostCreatePostRequest} apiV1PostCreatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1PostCreatePost(apiV1PostCreatePostRequest: ApiV1PostCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PostCreatePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PostCreatePost(apiV1PostCreatePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PostCreatePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1PostDeletePost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PostDeletePost(apiV1ModerationPostWithdrawPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PostDeletePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1PostFetchPostBySlugIdPostRequest} apiV1PostFetchPostBySlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PostFetchPostBySlugIdPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PostFetchPostBySlugIdPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportFetchReportsByCommentSlugIdPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportFetchReportsByPostSlugIdPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportSubmitReportByCommentSlugIdPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ReportSubmitReportByPostSlugIdPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1UserFetchUserCommentsPost(apiV1UserFetchUserCommentsPostRequest?: ApiV1UserFetchUserCommentsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserFetchUserCommentsPost(apiV1UserFetchUserCommentsPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserFetchUserCommentsPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1UserFetchUserPostsPostRequest} [apiV1UserFetchUserPostsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1UserFetchUserPostsPost(apiV1UserFetchUserPostsPostRequest?: ApiV1UserFetchUserPostsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1FeedFetchRecentPost200ResponsePostDataListInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserFetchUserPostsPost(apiV1UserFetchUserPostsPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserFetchUserPostsPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserPollGetResponseByConversationsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3401,57 +3412,46 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserFetchUserProfilePost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1UserFetchUserProfilePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserFetchUserProfilePost(options);
+        async apiV1UserProfileGetPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1UserProfileGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserProfileGetPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserFetchUserProfilePost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserProfileGetPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserMuteFetchPreferencesPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserMuteFetchPreferencesPost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserMuteFetchPreferencesPost(options);
+        async apiV1UserUsernameUpdatePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserUsernameUpdatePost(apiV1UserUsernameUpdatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserMuteFetchPreferencesPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserUsernameUpdatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1UserMuteMuteUserPostRequest} apiV1UserMuteMuteUserPostRequest 
+         * @param {ApiV1UserVoteGetByConversationsPostRequest} apiV1UserVoteGetByConversationsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserMuteMuteUserPost(apiV1UserMuteMuteUserPostRequest: ApiV1UserMuteMuteUserPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserMuteMuteUserPost(apiV1UserMuteMuteUserPostRequest, options);
+        async apiV1UserVoteGetByConversationsPost(apiV1UserVoteGetByConversationsPostRequest: ApiV1UserVoteGetByConversationsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserVoteGetByConversationsPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserVoteGetByConversationsPost(apiV1UserVoteGetByConversationsPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserMuteMuteUserPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserVoteGetByConversationsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1VotingCastVotePostRequest} apiV1VotingCastVotePostRequest 
+         * @param {ApiV1VoteCastPostRequest} apiV1VoteCastPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<boolean>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest, options);
+        async apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<boolean>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VoteCastPost(apiV1VoteCastPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VotingCastVotePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest} apiV1VotingFetchUserVotesForPostSlugIdsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1VotingFetchUserVotesForPostSlugIdsPost(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest: ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VotingFetchUserVotesForPostSlugIdsPost(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VotingFetchUserVotesForPostSlugIdsPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VoteCastPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -3469,34 +3469,17 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AccountDeleteUserPost(options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1AccountDeleteUserPost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
         apiV1AccountGenerateUnusedRandomUsernamePost(options?: any): AxiosPromise<string> {
             return localVarFp.apiV1AccountGenerateUnusedRandomUsernamePost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AccountIsUsernameInUsePost(apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options?: any): AxiosPromise<boolean> {
-            return localVarFp.apiV1AccountIsUsernameInUsePost(apiV1AccountSubmitUsernameChangePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1AccountSubmitUsernameChangePost(apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1AccountSubmitUsernameChangePost(apiV1AccountSubmitUsernameChangePostRequest, options).then((request) => request(axios, basePath));
+        apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: any): AxiosPromise<boolean> {
+            return localVarFp.apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3525,12 +3508,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
+         * @param {ApiV1AuthPhoneVerifyOtpPostRequest} apiV1AuthPhoneVerifyOtpPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options?: any): AxiosPromise<ApiV1AuthVerifyPhoneOtpPost200Response> {
-            return localVarFp.apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest, options).then((request) => request(axios, basePath));
+        apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options?: any): AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response> {
+            return localVarFp.apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3550,102 +3533,217 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1CommentCreatePostRequest} apiV1CommentCreatePostRequest 
+         * @param {ApiV1ConversationCreatePostRequest} apiV1ConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentCreatePost(apiV1CommentCreatePostRequest: ApiV1CommentCreatePostRequest, options?: any): AxiosPromise<ApiV1CommentCreatePost200Response> {
-            return localVarFp.apiV1CommentCreatePost(apiV1CommentCreatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: any): AxiosPromise<ApiV1ConversationCreatePost200Response> {
+            return localVarFp.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentDeletePost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1CommentDeletePost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1CommentFetchCommentsByPostSlugIdPostRequest} apiV1CommentFetchCommentsByPostSlugIdPostRequest 
+         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest: ApiV1CommentFetchCommentsByPostSlugIdPostRequest, options?: any): AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem>> {
-            return localVarFp.apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: any): AxiosPromise<ApiV1ConversationFetchRecentPost200Response> {
+            return localVarFp.apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+         * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options?: any): AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInnerCommentItem>> {
-            return localVarFp.apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ConversationGetPost(apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options?: any): AxiosPromise<ApiV1ConversationGetPost200Response> {
+            return localVarFp.apiV1ConversationGetPost(apiV1ConversationGetPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
+         * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1FeedFetchRecentPost(apiV1FeedFetchRecentPostRequest: ApiV1FeedFetchRecentPostRequest, options?: any): AxiosPromise<ApiV1FeedFetchRecentPost200Response> {
-            return localVarFp.apiV1FeedFetchRecentPost(apiV1FeedFetchRecentPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ModerationConversationCreatePost(apiV1ModerationConversationCreatePostRequest: ApiV1ModerationConversationCreatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ModerationConversationCreatePost(apiV1ModerationConversationCreatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentCreatePostRequest} apiV1ModerationCommentCreatePostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationCommentCreatePost(apiV1ModerationCommentCreatePostRequest: ApiV1ModerationCommentCreatePostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1ModerationCommentCreatePost(apiV1ModerationCommentCreatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1ModerationConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration> {
+            return localVarFp.apiV1ModerationConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationCommentFetchReportPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: any): AxiosPromise<ApiV1ModerationCommentFetchReportPost200Response> {
-            return localVarFp.apiV1ModerationCommentFetchReportPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ModerationConversationWithdrawPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ModerationConversationWithdrawPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+         * @param {ApiV1ModerationOpinionCreatePostRequest} apiV1ModerationOpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationCommentWithdrawPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1ModerationCommentWithdrawPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ModerationOpinionCreatePost(apiV1ModerationOpinionCreatePostRequest: ApiV1ModerationOpinionCreatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ModerationOpinionCreatePost(apiV1ModerationOpinionCreatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationPostCreatePostRequest} apiV1ModerationPostCreatePostRequest 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationPostCreatePost(apiV1ModerationPostCreatePostRequest: ApiV1ModerationPostCreatePostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1ModerationPostCreatePost(apiV1ModerationPostCreatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1ModerationOpinionGetPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: any): AxiosPromise<ApiV1ModerationOpinionGetPost200Response> {
+            return localVarFp.apiV1ModerationOpinionGetPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationPostFetchReportPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: any): AxiosPromise<ApiV1FeedFetchRecentPost200ResponsePostDataListInnerMetadataModeration> {
-            return localVarFp.apiV1ModerationPostFetchReportPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ModerationOpinionWithdrawPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ModerationOpinionWithdrawPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+         * @param {ApiV1MuteUserCreatePostRequest} apiV1MuteUserCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ModerationPostWithdrawPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1ModerationPostWithdrawPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        apiV1MuteUserCreatePost(apiV1MuteUserCreatePostRequest: ApiV1MuteUserCreatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1MuteUserCreatePost(apiV1MuteUserCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MuteUserGetPost(options?: any): AxiosPromise<Array<ApiV1MuteUserGetPost200ResponseInner>> {
+            return localVarFp.apiV1MuteUserGetPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest: ApiV1OpinionCreatePostRequest, options?: any): AxiosPromise<ApiV1OpinionCreatePost200Response> {
+            return localVarFp.apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: any): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>> {
+            return localVarFp.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: any): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>> {
+            return localVarFp.apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1PollRespondPost(apiV1PollRespondPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ReportConversationCreatePostRequest} apiV1ReportConversationCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportConversationCreatePost(apiV1ReportConversationCreatePostRequest: ApiV1ReportConversationCreatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ReportConversationCreatePost(apiV1ReportConversationCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportConversationFetchPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<Array<ApiV1ReportConversationFetchPost200ResponseInner>> {
+            return localVarFp.apiV1ReportConversationFetchPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ReportOpinionCreatePostRequest} apiV1ReportOpinionCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportOpinionCreatePost(apiV1ReportOpinionCreatePostRequest: ApiV1ReportOpinionCreatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1ReportOpinionCreatePost(apiV1ReportOpinionCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: any): AxiosPromise<Array<ApiV1ReportConversationFetchPost200ResponseInner>> {
+            return localVarFp.apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options?: any): AxiosPromise<Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>> {
+            return localVarFp.apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserDeletePost(options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1UserDeletePost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options?: any): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>> {
+            return localVarFp.apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3653,141 +3751,43 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PollGetUserPollResponsePost(requestBody?: Array<string>, options?: any): AxiosPromise<Array<ApiV1PollGetUserPollResponsePost200ResponseInner>> {
-            return localVarFp.apiV1PollGetUserPollResponsePost(requestBody, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1PollSubmitResponsePostRequest} apiV1PollSubmitResponsePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PollSubmitResponsePost(apiV1PollSubmitResponsePostRequest: ApiV1PollSubmitResponsePostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1PollSubmitResponsePost(apiV1PollSubmitResponsePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1PostCreatePostRequest} apiV1PostCreatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PostCreatePost(apiV1PostCreatePostRequest: ApiV1PostCreatePostRequest, options?: any): AxiosPromise<ApiV1PostCreatePost200Response> {
-            return localVarFp.apiV1PostCreatePost(apiV1PostCreatePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PostDeletePost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1PostDeletePost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1PostFetchPostBySlugIdPostRequest} apiV1PostFetchPostBySlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: any): AxiosPromise<ApiV1PostFetchPostBySlugIdPost200Response> {
-            return localVarFp.apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: any): AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>> {
-            return localVarFp.apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: any): AxiosPromise<Array<ApiV1ReportFetchReportsByPostSlugIdPost200ResponseInner>> {
-            return localVarFp.apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserFetchUserCommentsPost(apiV1UserFetchUserCommentsPostRequest?: ApiV1UserFetchUserCommentsPostRequest, options?: any): AxiosPromise<Array<ApiV1UserFetchUserCommentsPost200ResponseInner>> {
-            return localVarFp.apiV1UserFetchUserCommentsPost(apiV1UserFetchUserCommentsPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1UserFetchUserPostsPostRequest} [apiV1UserFetchUserPostsPostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserFetchUserPostsPost(apiV1UserFetchUserPostsPostRequest?: ApiV1UserFetchUserPostsPostRequest, options?: any): AxiosPromise<Array<ApiV1FeedFetchRecentPost200ResponsePostDataListInner>> {
-            return localVarFp.apiV1UserFetchUserPostsPost(apiV1UserFetchUserPostsPostRequest, options).then((request) => request(axios, basePath));
+        apiV1UserPollGetResponseByConversationsPost(requestBody?: Array<string>, options?: any): AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>> {
+            return localVarFp.apiV1UserPollGetResponseByConversationsPost(requestBody, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserFetchUserProfilePost(options?: any): AxiosPromise<ApiV1UserFetchUserProfilePost200Response> {
-            return localVarFp.apiV1UserFetchUserProfilePost(options).then((request) => request(axios, basePath));
+        apiV1UserProfileGetPost(options?: any): AxiosPromise<ApiV1UserProfileGetPost200Response> {
+            return localVarFp.apiV1UserProfileGetPost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserMuteFetchPreferencesPost(options?: any): AxiosPromise<Array<ApiV1UserMuteFetchPreferencesPost200ResponseInner>> {
-            return localVarFp.apiV1UserMuteFetchPreferencesPost(options).then((request) => request(axios, basePath));
+        apiV1UserUsernameUpdatePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1UserUsernameUpdatePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1UserMuteMuteUserPostRequest} apiV1UserMuteMuteUserPostRequest 
+         * @param {ApiV1UserVoteGetByConversationsPostRequest} apiV1UserVoteGetByConversationsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserMuteMuteUserPost(apiV1UserMuteMuteUserPostRequest: ApiV1UserMuteMuteUserPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1UserMuteMuteUserPost(apiV1UserMuteMuteUserPostRequest, options).then((request) => request(axios, basePath));
+        apiV1UserVoteGetByConversationsPost(apiV1UserVoteGetByConversationsPostRequest: ApiV1UserVoteGetByConversationsPostRequest, options?: any): AxiosPromise<Array<ApiV1UserVoteGetByConversationsPost200ResponseInner>> {
+            return localVarFp.apiV1UserVoteGetByConversationsPost(apiV1UserVoteGetByConversationsPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1VotingCastVotePostRequest} apiV1VotingCastVotePostRequest 
+         * @param {ApiV1VoteCastPostRequest} apiV1VoteCastPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: any): AxiosPromise<boolean> {
-            return localVarFp.apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest} apiV1VotingFetchUserVotesForPostSlugIdsPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1VotingFetchUserVotesForPostSlugIdsPost(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest: ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options?: any): AxiosPromise<Array<ApiV1VotingFetchUserVotesForPostSlugIdsPost200ResponseInner>> {
-            return localVarFp.apiV1VotingFetchUserVotesForPostSlugIdsPost(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options).then((request) => request(axios, basePath));
+        apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: any): AxiosPromise<boolean> {
+            return localVarFp.apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3805,40 +3805,19 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AccountDeleteUserPost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AccountDeleteUserPost(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
     public apiV1AccountGenerateUnusedRandomUsernamePost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AccountGenerateUnusedRandomUsernamePost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
+     * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AccountIsUsernameInUsePost(apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AccountIsUsernameInUsePost(apiV1AccountSubmitUsernameChangePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1AccountSubmitUsernameChangePostRequest} apiV1AccountSubmitUsernameChangePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1AccountSubmitUsernameChangePost(apiV1AccountSubmitUsernameChangePostRequest: ApiV1AccountSubmitUsernameChangePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AccountSubmitUsernameChangePost(apiV1AccountSubmitUsernameChangePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3874,13 +3853,13 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1AuthVerifyPhoneOtpPostRequest} apiV1AuthVerifyPhoneOtpPostRequest 
+     * @param {ApiV1AuthPhoneVerifyOtpPostRequest} apiV1AuthPhoneVerifyOtpPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest: ApiV1AuthVerifyPhoneOtpPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AuthVerifyPhoneOtpPost(apiV1AuthVerifyPhoneOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3905,123 +3884,264 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1CommentCreatePostRequest} apiV1CommentCreatePostRequest 
+     * @param {ApiV1ConversationCreatePostRequest} apiV1ConversationCreatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1CommentCreatePost(apiV1CommentCreatePostRequest: ApiV1CommentCreatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1CommentCreatePost(apiV1CommentCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1CommentDeletePost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1CommentDeletePost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1CommentFetchCommentsByPostSlugIdPostRequest} apiV1CommentFetchCommentsByPostSlugIdPostRequest 
+     * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest: ApiV1CommentFetchCommentsByPostSlugIdPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1CommentFetchCommentsByPostSlugIdPost(apiV1CommentFetchCommentsByPostSlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1CommentFetchHiddenCommentsPostRequest} apiV1CommentFetchHiddenCommentsPostRequest 
+     * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest: ApiV1CommentFetchHiddenCommentsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1CommentFetchHiddenCommentsPost(apiV1CommentFetchHiddenCommentsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ConversationGetPost(apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationGetPost(apiV1ConversationGetPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1FeedFetchRecentPostRequest} apiV1FeedFetchRecentPostRequest 
+     * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1FeedFetchRecentPost(apiV1FeedFetchRecentPostRequest: ApiV1FeedFetchRecentPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1FeedFetchRecentPost(apiV1FeedFetchRecentPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ModerationConversationCreatePost(apiV1ModerationConversationCreatePostRequest: ApiV1ModerationConversationCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ModerationConversationCreatePost(apiV1ModerationConversationCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationCommentCreatePostRequest} apiV1ModerationCommentCreatePostRequest 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ModerationCommentCreatePost(apiV1ModerationCommentCreatePostRequest: ApiV1ModerationCommentCreatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ModerationCommentCreatePost(apiV1ModerationCommentCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ModerationConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ModerationConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ModerationCommentFetchReportPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ModerationCommentFetchReportPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ModerationConversationWithdrawPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ModerationConversationWithdrawPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
+     * @param {ApiV1ModerationOpinionCreatePostRequest} apiV1ModerationOpinionCreatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ModerationCommentWithdrawPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ModerationCommentWithdrawPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ModerationOpinionCreatePost(apiV1ModerationOpinionCreatePostRequest: ApiV1ModerationOpinionCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ModerationOpinionCreatePost(apiV1ModerationOpinionCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationPostCreatePostRequest} apiV1ModerationPostCreatePostRequest 
+     * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ModerationPostCreatePost(apiV1ModerationPostCreatePostRequest: ApiV1ModerationPostCreatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ModerationPostCreatePost(apiV1ModerationPostCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ModerationOpinionGetPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ModerationOpinionGetPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+     * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ModerationPostFetchReportPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ModerationPostFetchReportPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ModerationOpinionWithdrawPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ModerationOpinionWithdrawPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
+     * @param {ApiV1MuteUserCreatePostRequest} apiV1MuteUserCreatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ModerationPostWithdrawPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ModerationPostWithdrawPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1MuteUserCreatePost(apiV1MuteUserCreatePostRequest: ApiV1MuteUserCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MuteUserCreatePost(apiV1MuteUserCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1MuteUserGetPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MuteUserGetPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest: ApiV1OpinionCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1PollRespondPost(apiV1PollRespondPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ReportConversationCreatePostRequest} apiV1ReportConversationCreatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportConversationCreatePost(apiV1ReportConversationCreatePostRequest: ApiV1ReportConversationCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportConversationCreatePost(apiV1ReportConversationCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportConversationFetchPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportConversationFetchPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ReportOpinionCreatePostRequest} apiV1ReportOpinionCreatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportOpinionCreatePost(apiV1ReportOpinionCreatePostRequest: ApiV1ReportOpinionCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportOpinionCreatePost(apiV1ReportOpinionCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationOpinionWithdrawPostRequest} apiV1ModerationOpinionWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest: ApiV1ModerationOpinionWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1UserDeletePost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserDeletePost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4031,118 +4151,8 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1PollGetUserPollResponsePost(requestBody?: Array<string>, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1PollGetUserPollResponsePost(requestBody, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1PollSubmitResponsePostRequest} apiV1PollSubmitResponsePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1PollSubmitResponsePost(apiV1PollSubmitResponsePostRequest: ApiV1PollSubmitResponsePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1PollSubmitResponsePost(apiV1PollSubmitResponsePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1PostCreatePostRequest} apiV1PostCreatePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1PostCreatePost(apiV1PostCreatePostRequest: ApiV1PostCreatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1PostCreatePost(apiV1PostCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1PostDeletePost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1PostDeletePost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1PostFetchPostBySlugIdPostRequest} apiV1PostFetchPostBySlugIdPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest: ApiV1PostFetchPostBySlugIdPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1PostFetchPostBySlugIdPost(apiV1PostFetchPostBySlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1ModerationCommentWithdrawPostRequest} apiV1ModerationCommentWithdrawPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest: ApiV1ModerationCommentWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ReportFetchReportsByCommentSlugIdPost(apiV1ModerationCommentWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1ModerationPostWithdrawPostRequest} apiV1ModerationPostWithdrawPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest: ApiV1ModerationPostWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ReportFetchReportsByPostSlugIdPost(apiV1ModerationPostWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1ReportSubmitReportByCommentSlugIdPostRequest} apiV1ReportSubmitReportByCommentSlugIdPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest: ApiV1ReportSubmitReportByCommentSlugIdPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ReportSubmitReportByCommentSlugIdPost(apiV1ReportSubmitReportByCommentSlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1ReportSubmitReportByPostSlugIdPostRequest} apiV1ReportSubmitReportByPostSlugIdPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest: ApiV1ReportSubmitReportByPostSlugIdPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ReportSubmitReportByPostSlugIdPost(apiV1ReportSubmitReportByPostSlugIdPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1UserFetchUserCommentsPostRequest} [apiV1UserFetchUserCommentsPostRequest] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1UserFetchUserCommentsPost(apiV1UserFetchUserCommentsPostRequest?: ApiV1UserFetchUserCommentsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1UserFetchUserCommentsPost(apiV1UserFetchUserCommentsPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1UserFetchUserPostsPostRequest} [apiV1UserFetchUserPostsPostRequest] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1UserFetchUserPostsPost(apiV1UserFetchUserPostsPostRequest?: ApiV1UserFetchUserPostsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1UserFetchUserPostsPost(apiV1UserFetchUserPostsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1UserPollGetResponseByConversationsPost(requestBody?: Array<string>, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserPollGetResponseByConversationsPost(requestBody, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4151,51 +4161,41 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1UserFetchUserProfilePost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1UserFetchUserProfilePost(options).then((request) => request(this.axios, this.basePath));
+    public apiV1UserProfileGetPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserProfileGetPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
+     * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1UserMuteFetchPreferencesPost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1UserMuteFetchPreferencesPost(options).then((request) => request(this.axios, this.basePath));
+    public apiV1UserUsernameUpdatePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserUsernameUpdatePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1UserMuteMuteUserPostRequest} apiV1UserMuteMuteUserPostRequest 
+     * @param {ApiV1UserVoteGetByConversationsPostRequest} apiV1UserVoteGetByConversationsPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1UserMuteMuteUserPost(apiV1UserMuteMuteUserPostRequest: ApiV1UserMuteMuteUserPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1UserMuteMuteUserPost(apiV1UserMuteMuteUserPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1UserVoteGetByConversationsPost(apiV1UserVoteGetByConversationsPostRequest: ApiV1UserVoteGetByConversationsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserVoteGetByConversationsPost(apiV1UserVoteGetByConversationsPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1VotingCastVotePostRequest} apiV1VotingCastVotePostRequest 
+     * @param {ApiV1VoteCastPostRequest} apiV1VoteCastPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest: ApiV1VotingCastVotePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1VotingCastVotePost(apiV1VotingCastVotePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest} apiV1VotingFetchUserVotesForPostSlugIdsPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1VotingFetchUserVotesForPostSlugIdsPost(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest: ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1VotingFetchUserVotesForPostSlugIdsPost(apiV1VotingFetchUserVotesForPostSlugIdsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

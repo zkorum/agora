@@ -1,6 +1,6 @@
 import {
-  type ApiV1VotingCastVotePostRequest,
-  type ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest,
+  type ApiV1VoteCastPostRequest,
+  type ApiV1UserVoteGetByConversationsPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -20,19 +20,19 @@ export function useBackendVoteApi() {
     votingAction: VotingAction
   ) {
     try {
-      const params: ApiV1VotingCastVotePostRequest = {
-        commentSlugId: commentSlugId,
+      const params: ApiV1VoteCastPostRequest = {
+        opinionSlugId: commentSlugId,
         chosenOption: votingAction,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1VotingCastVotePost(params);
+        await DefaultApiAxiosParamCreator().apiV1VoteCastPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1VotingCastVotePost(params, {
+      ).apiV1VoteCastPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -48,12 +48,12 @@ export function useBackendVoteApi() {
 
   async function fetchUserVotesForPostSlugIds(postSlugIdList: string[]) {
     try {
-      const params: ApiV1VotingFetchUserVotesForPostSlugIdsPostRequest = {
-        postSlugIdList: postSlugIdList,
+      const params: ApiV1UserVoteGetByConversationsPostRequest = {
+        conversationSlugIdList: postSlugIdList,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1VotingFetchUserVotesForPostSlugIdsPost(
+        await DefaultApiAxiosParamCreator().apiV1UserVoteGetByConversationsPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -61,7 +61,7 @@ export function useBackendVoteApi() {
         undefined,
         undefined,
         api
-      ).apiV1VotingFetchUserVotesForPostSlugIdsPost(params, {
+      ).apiV1UserVoteGetByConversationsPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },

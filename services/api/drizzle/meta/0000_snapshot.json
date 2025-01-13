@@ -1,5 +1,5 @@
 {
-  "id": "a9239353-5014-4c84-8538-2e1b34b6abc9",
+  "id": "efb17285-7ee9-428d-b282-b030a2b0f88a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -111,8 +111,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.comment_content": {
-      "name": "comment_content",
+    "public.conversation_content": {
+      "name": "conversation_content",
       "schema": "",
       "columns": {
         "id": {
@@ -122,7 +122,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "comment_content_id_seq",
+            "name": "conversation_content_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -132,20 +132,14 @@
             "cycle": false
           }
         },
-        "comment_id": {
-          "name": "comment_id",
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "post_content_id": {
-          "name": "post_content_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "comment_proof_id": {
-          "name": "comment_proof_id",
+        "conversation_proof_id": {
+          "name": "conversation_proof_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -156,11 +150,23 @@
           "primaryKey": false,
           "notNull": false
         },
-        "content": {
-          "name": "content",
-          "type": "varchar",
+        "title": {
+          "name": "title",
+          "type": "varchar(130)",
           "primaryKey": false,
           "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poll_id": {
+          "name": "poll_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -172,12 +178,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "comment_content_comment_id_comment_id_fk": {
-          "name": "comment_content_comment_id_comment_id_fk",
-          "tableFrom": "comment_content",
-          "tableTo": "comment",
+        "conversation_content_conversation_id_conversation_id_fk": {
+          "name": "conversation_content_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_content",
+          "tableTo": "conversation",
           "columnsFrom": [
-            "comment_id"
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -185,12 +191,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comment_content_post_content_id_post_content_id_fk": {
-          "name": "comment_content_post_content_id_post_content_id_fk",
-          "tableFrom": "comment_content",
-          "tableTo": "post_content",
+        "conversation_content_conversation_proof_id_conversation_proof_id_fk": {
+          "name": "conversation_content_conversation_proof_id_conversation_proof_id_fk",
+          "tableFrom": "conversation_content",
+          "tableTo": "conversation_proof",
           "columnsFrom": [
-            "post_content_id"
+            "conversation_proof_id"
           ],
           "columnsTo": [
             "id"
@@ -198,25 +204,25 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comment_content_comment_proof_id_comment_proof_id_fk": {
-          "name": "comment_content_comment_proof_id_comment_proof_id_fk",
-          "tableFrom": "comment_content",
-          "tableTo": "comment_proof",
-          "columnsFrom": [
-            "comment_proof_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "comment_content_parent_id_comment_content_id_fk": {
-          "name": "comment_content_parent_id_comment_content_id_fk",
-          "tableFrom": "comment_content",
-          "tableTo": "comment_content",
+        "conversation_content_parent_id_conversation_content_id_fk": {
+          "name": "conversation_content_parent_id_conversation_content_id_fk",
+          "tableFrom": "conversation_content",
+          "tableTo": "conversation_content",
           "columnsFrom": [
             "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_content_poll_id_poll_id_fk": {
+          "name": "conversation_content_poll_id_poll_id_fk",
+          "tableFrom": "conversation_content",
+          "tableTo": "poll",
+          "columnsFrom": [
+            "poll_id"
           ],
           "columnsTo": [
             "id"
@@ -226,11 +232,19 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "conversation_content_conversation_proof_id_unique": {
+          "name": "conversation_content_conversation_proof_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_proof_id"
+          ]
+        }
+      },
       "checkConstraints": {}
     },
-    "public.comment_proof": {
-      "name": "comment_proof",
+    "public.conversation_moderation": {
+      "name": "conversation_moderation",
       "schema": "",
       "columns": {
         "id": {
@@ -240,7 +254,116 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "comment_proof_id_seq",
+            "name": "conversation_moderation_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderation_action": {
+          "name": "moderation_action",
+          "type": "conversation_moderation_action",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderation_reason": {
+          "name": "moderation_reason",
+          "type": "moderation_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moderation_explanation": {
+          "name": "moderation_explanation",
+          "type": "varchar(260)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conversation_moderation_conversation_id_conversation_id_fk": {
+          "name": "conversation_moderation_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_moderation",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_moderation_author_id_user_id_fk": {
+          "name": "conversation_moderation_author_id_user_id_fk",
+          "tableFrom": "conversation_moderation",
+          "tableTo": "user",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "conversation_moderation_conversation_id_unique": {
+          "name": "conversation_moderation_conversation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id"
+          ]
+        }
+      },
+      "checkConstraints": {}
+    },
+    "public.conversation_proof": {
+      "name": "conversation_proof",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_proof_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -257,8 +380,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "comment_id": {
-          "name": "comment_id",
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -297,12 +420,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "comment_proof_comment_id_comment_id_fk": {
-          "name": "comment_proof_comment_id_comment_id_fk",
-          "tableFrom": "comment_proof",
-          "tableTo": "comment",
+        "conversation_proof_conversation_id_conversation_id_fk": {
+          "name": "conversation_proof_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_proof",
+          "tableTo": "conversation",
           "columnsFrom": [
-            "comment_id"
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -310,10 +433,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comment_proof_parent_id_comment_proof_id_fk": {
-          "name": "comment_proof_parent_id_comment_proof_id_fk",
-          "tableFrom": "comment_proof",
-          "tableTo": "comment_proof",
+        "conversation_proof_parent_id_conversation_proof_id_fk": {
+          "name": "conversation_proof_parent_id_conversation_proof_id_fk",
+          "tableFrom": "conversation_proof",
+          "tableTo": "conversation_proof",
           "columnsFrom": [
             "parent_id"
           ],
@@ -323,9 +446,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comment_proof_author_did_device_did_write_fk": {
-          "name": "comment_proof_author_did_device_did_write_fk",
-          "tableFrom": "comment_proof",
+        "conversation_proof_author_did_device_did_write_fk": {
+          "name": "conversation_proof_author_did_device_did_write_fk",
+          "tableFrom": "conversation_proof",
           "tableTo": "device",
           "columnsFrom": [
             "author_did"
@@ -341,8 +464,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.comment": {
-      "name": "comment",
+    "public.conversation_report": {
+      "name": "conversation_report",
       "schema": "",
       "columns": {
         "id": {
@@ -352,7 +475,110 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "comment_id_seq",
+            "name": "conversation_report_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "report_reason": {
+          "name": "report_reason",
+          "type": "report_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "report_explanation": {
+          "name": "report_explanation",
+          "type": "varchar(260)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_id_idx": {
+          "name": "conversation_id_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_report_conversation_id_conversation_id_fk": {
+          "name": "conversation_report_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_report",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_report_author_id_user_id_fk": {
+          "name": "conversation_report_author_id_user_id_fk",
+          "tableFrom": "conversation_report",
+          "tableTo": "user",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.conversation": {
+      "name": "conversation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -374,31 +600,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
         "current_content_id": {
           "name": "current_content_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
-        },
-        "num_likes": {
-          "name": "num_likes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "num_dislikes": {
-          "name": "num_dislikes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -420,13 +626,20 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "opinion_count": {
+          "name": "opinion_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "comment_author_id_user_id_fk": {
-          "name": "comment_author_id_user_id_fk",
-          "tableFrom": "comment",
+        "conversation_author_id_user_id_fk": {
+          "name": "conversation_author_id_user_id_fk",
+          "tableFrom": "conversation",
           "tableTo": "user",
           "columnsFrom": [
             "author_id"
@@ -437,23 +650,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comment_post_id_post_id_fk": {
-          "name": "comment_post_id_post_id_fk",
-          "tableFrom": "comment",
-          "tableTo": "post",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "comment_current_content_id_comment_content_id_fk": {
-          "name": "comment_current_content_id_comment_content_id_fk",
-          "tableFrom": "comment",
-          "tableTo": "comment_content",
+        "conversation_current_content_id_conversation_content_id_fk": {
+          "name": "conversation_current_content_id_conversation_content_id_fk",
+          "tableFrom": "conversation",
+          "tableTo": "conversation_content",
           "columnsFrom": [
             "current_content_id"
           ],
@@ -466,14 +666,68 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "comment_slug_id_unique": {
-          "name": "comment_slug_id_unique",
+        "conversation_slug_id_unique": {
+          "name": "conversation_slug_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "slug_id"
           ]
+        },
+        "conversation_current_content_id_unique": {
+          "name": "conversation_current_content_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "current_content_id"
+          ]
         }
       },
+      "checkConstraints": {}
+    },
+    "public.conversation_topic": {
+      "name": "conversation_topic",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_topic_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "checkConstraints": {}
     },
     "public.device": {
@@ -697,8 +951,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.moderation_comments_table": {
-      "name": "moderation_comments_table",
+    "public.opinion_content": {
+      "name": "opinion_content",
       "schema": "",
       "columns": {
         "id": {
@@ -708,7 +962,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "moderation_comments_table_id_seq",
+            "name": "opinion_content_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -718,21 +972,139 @@
             "cycle": false
           }
         },
-        "comment_id": {
-          "name": "comment_id",
+        "opinion_id": {
+          "name": "opinion_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "moderator_id": {
-          "name": "moderator_id",
+        "conversation_content_id": {
+          "name": "conversation_content_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opinion_proof_id": {
+          "name": "opinion_proof_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "opinion_content_opinion_id_opinion_id_fk": {
+          "name": "opinion_content_opinion_id_opinion_id_fk",
+          "tableFrom": "opinion_content",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "opinion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_content_conversation_content_id_conversation_content_id_fk": {
+          "name": "opinion_content_conversation_content_id_conversation_content_id_fk",
+          "tableFrom": "opinion_content",
+          "tableTo": "conversation_content",
+          "columnsFrom": [
+            "conversation_content_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_content_opinion_proof_id_opinion_proof_id_fk": {
+          "name": "opinion_content_opinion_proof_id_opinion_proof_id_fk",
+          "tableFrom": "opinion_content",
+          "tableTo": "opinion_proof",
+          "columnsFrom": [
+            "opinion_proof_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_content_parent_id_opinion_content_id_fk": {
+          "name": "opinion_content_parent_id_opinion_content_id_fk",
+          "tableFrom": "opinion_content",
+          "tableTo": "opinion_content",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.opinion_moderation": {
+      "name": "opinion_moderation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "opinion_moderation_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "opinion_id": {
+          "name": "opinion_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "moderation_action": {
           "name": "moderation_action",
-          "type": "moderation_action_comments",
+          "type": "opinion_moderation_action",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -767,12 +1139,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "moderation_comments_table_comment_id_comment_id_fk": {
-          "name": "moderation_comments_table_comment_id_comment_id_fk",
-          "tableFrom": "moderation_comments_table",
-          "tableTo": "comment",
+        "opinion_moderation_opinion_id_opinion_id_fk": {
+          "name": "opinion_moderation_opinion_id_opinion_id_fk",
+          "tableFrom": "opinion_moderation",
+          "tableTo": "opinion",
           "columnsFrom": [
-            "comment_id"
+            "opinion_id"
           ],
           "columnsTo": [
             "id"
@@ -780,12 +1152,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "moderation_comments_table_moderator_id_user_id_fk": {
-          "name": "moderation_comments_table_moderator_id_user_id_fk",
-          "tableFrom": "moderation_comments_table",
+        "opinion_moderation_author_id_user_id_fk": {
+          "name": "opinion_moderation_author_id_user_id_fk",
+          "tableFrom": "opinion_moderation",
           "tableTo": "user",
           "columnsFrom": [
-            "moderator_id"
+            "author_id"
           ],
           "columnsTo": [
             "id"
@@ -796,18 +1168,18 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "moderation_comments_table_comment_id_unique": {
-          "name": "moderation_comments_table_comment_id_unique",
+        "opinion_moderation_opinion_id_unique": {
+          "name": "opinion_moderation_opinion_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "comment_id"
+            "opinion_id"
           ]
         }
       },
       "checkConstraints": {}
     },
-    "public.moderation_posts_table": {
-      "name": "moderation_posts_table",
+    "public.opinion_proof": {
+      "name": "opinion_proof",
       "schema": "",
       "columns": {
         "id": {
@@ -817,7 +1189,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "moderation_posts_table_id_seq",
+            "name": "opinion_proof_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -827,37 +1199,258 @@
             "cycle": false
           }
         },
-        "post_id": {
-          "name": "post_id",
+        "proof_type": {
+          "name": "proof_type",
+          "type": "proof_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opinion_id": {
+          "name": "opinion_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "moderator_id": {
-          "name": "moderator_id",
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_did": {
+          "name": "author_did",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proof": {
+          "name": "proof",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proof_version": {
+          "name": "proof_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "opinion_proof_opinion_id_opinion_id_fk": {
+          "name": "opinion_proof_opinion_id_opinion_id_fk",
+          "tableFrom": "opinion_proof",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "opinion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_proof_parent_id_opinion_proof_id_fk": {
+          "name": "opinion_proof_parent_id_opinion_proof_id_fk",
+          "tableFrom": "opinion_proof",
+          "tableTo": "opinion_proof",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_proof_author_did_device_did_write_fk": {
+          "name": "opinion_proof_author_did_device_did_write_fk",
+          "tableFrom": "opinion_proof",
+          "tableTo": "device",
+          "columnsFrom": [
+            "author_did"
+          ],
+          "columnsTo": [
+            "did_write"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.opinion_report": {
+      "name": "opinion_report",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "opinion_report_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "opinion_id": {
+          "name": "opinion_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "moderation_action": {
-          "name": "moderation_action",
-          "type": "moderation_action_posts",
+        "report_reason": {
+          "name": "report_reason",
+          "type": "report_reason_enum",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
-        "moderation_reason": {
-          "name": "moderation_reason",
-          "type": "moderation_reason_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "moderation_explanation": {
-          "name": "moderation_explanation",
+        "report_explanation": {
+          "name": "report_explanation",
           "type": "varchar(260)",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "opinion_id_idx": {
+          "name": "opinion_id_idx",
+          "columns": [
+            {
+              "expression": "opinion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "opinion_report_opinion_id_opinion_id_fk": {
+          "name": "opinion_report_opinion_id_opinion_id_fk",
+          "tableFrom": "opinion_report",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "opinion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_report_author_id_user_id_fk": {
+          "name": "opinion_report_author_id_user_id_fk",
+          "tableFrom": "opinion_report",
+          "tableTo": "user",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.opinion": {
+      "name": "opinion",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "opinion_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_content_id": {
+          "name": "current_content_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "num_agrees": {
+          "name": "num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "num_disagrees": {
+          "name": "num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -872,16 +1465,23 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "last_reacted_at": {
+          "name": "last_reacted_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "moderation_posts_table_post_id_post_id_fk": {
-          "name": "moderation_posts_table_post_id_post_id_fk",
-          "tableFrom": "moderation_posts_table",
-          "tableTo": "post",
+        "opinion_author_id_user_id_fk": {
+          "name": "opinion_author_id_user_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "user",
           "columnsFrom": [
-            "post_id"
+            "author_id"
           ],
           "columnsTo": [
             "id"
@@ -889,12 +1489,25 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "moderation_posts_table_moderator_id_user_id_fk": {
-          "name": "moderation_posts_table_moderator_id_user_id_fk",
-          "tableFrom": "moderation_posts_table",
-          "tableTo": "user",
+        "opinion_conversation_id_conversation_id_fk": {
+          "name": "opinion_conversation_id_conversation_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "conversation",
           "columnsFrom": [
-            "moderator_id"
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_current_content_id_opinion_content_id_fk": {
+          "name": "opinion_current_content_id_opinion_content_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "opinion_content",
+          "columnsFrom": [
+            "current_content_id"
           ],
           "columnsTo": [
             "id"
@@ -905,11 +1518,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "moderation_posts_table_post_id_unique": {
-          "name": "moderation_posts_table_post_id_unique",
+        "opinion_slug_id_unique": {
+          "name": "opinion_slug_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "post_id"
+            "slug_id"
           ]
         }
       },
@@ -1108,8 +1721,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "post_content_id": {
-          "name": "post_content_id",
+        "conversation_content_id": {
+          "name": "conversation_content_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1162,12 +1775,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "poll_response_content_post_content_id_post_content_id_fk": {
-          "name": "poll_response_content_post_content_id_post_content_id_fk",
+        "poll_response_content_conversation_content_id_conversation_content_id_fk": {
+          "name": "poll_response_content_conversation_content_id_conversation_content_id_fk",
           "tableFrom": "poll_response_content",
-          "tableTo": "post_content",
+          "tableTo": "conversation_content",
           "columnsFrom": [
-            "post_content_id"
+            "conversation_content_id"
           ],
           "columnsTo": [
             "id"
@@ -1229,8 +1842,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "post_id": {
-          "name": "post_id",
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1269,12 +1882,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "poll_response_proof_post_id_post_id_fk": {
-          "name": "poll_response_proof_post_id_post_id_fk",
+        "poll_response_proof_conversation_id_conversation_id_fk": {
+          "name": "poll_response_proof_conversation_id_conversation_id_fk",
           "tableFrom": "poll_response_proof",
-          "tableTo": "post",
+          "tableTo": "conversation",
           "columnsFrom": [
-            "post_id"
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -1340,8 +1953,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "post_id": {
-          "name": "post_id",
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1382,12 +1995,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "poll_response_post_id_post_id_fk": {
-          "name": "poll_response_post_id_post_id_fk",
+        "poll_response_conversation_id_conversation_id_fk": {
+          "name": "poll_response_conversation_id_conversation_id_fk",
           "tableFrom": "poll_response",
-          "tableTo": "post",
+          "tableTo": "conversation",
           "columnsFrom": [
-            "post_id"
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -1418,12 +2031,12 @@
             "current_content_id"
           ]
         },
-        "poll_response_author_id_post_id_unique": {
-          "name": "poll_response_author_id_post_id_unique",
+        "poll_response_author_id_conversation_id_unique": {
+          "name": "poll_response_author_id_conversation_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "author_id",
-            "post_id"
+            "conversation_id"
           ]
         }
       },
@@ -1450,8 +2063,8 @@
             "cycle": false
           }
         },
-        "post_content_id": {
-          "name": "post_content_id",
+        "conversation_content_id": {
+          "name": "conversation_content_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1547,12 +2160,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "poll_post_content_id_post_content_id_fk": {
-          "name": "poll_post_content_id_post_content_id_fk",
+        "poll_conversation_content_id_conversation_content_id_fk": {
+          "name": "poll_conversation_content_id_conversation_content_id_fk",
           "tableFrom": "poll",
-          "tableTo": "post_content",
+          "tableTo": "conversation_content",
           "columnsFrom": [
-            "post_content_id"
+            "conversation_content_id"
           ],
           "columnsTo": [
             "id"
@@ -1563,18 +2176,18 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "poll_post_content_id_unique": {
-          "name": "poll_post_content_id_unique",
+        "poll_conversation_content_id_unique": {
+          "name": "poll_conversation_content_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "post_content_id"
+            "conversation_content_id"
           ]
         }
       },
       "checkConstraints": {}
     },
-    "public.post_content": {
-      "name": "post_content",
+    "public.user_conversation_topic_preference": {
+      "name": "user_conversation_topic_preference",
       "schema": "",
       "columns": {
         "id": {
@@ -1584,7 +2197,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "post_content_id_seq",
+            "name": "user_conversation_topic_preference_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -1594,437 +2207,17 @@
             "cycle": false
           }
         },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "post_proof_id": {
-          "name": "post_proof_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "title": {
-          "name": "title",
-          "type": "varchar(130)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "body": {
-          "name": "body",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "poll_id": {
-          "name": "poll_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "post_content_post_id_post_id_fk": {
-          "name": "post_content_post_id_post_id_fk",
-          "tableFrom": "post_content",
-          "tableTo": "post",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "post_content_post_proof_id_post_proof_id_fk": {
-          "name": "post_content_post_proof_id_post_proof_id_fk",
-          "tableFrom": "post_content",
-          "tableTo": "post_proof",
-          "columnsFrom": [
-            "post_proof_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "post_content_parent_id_post_content_id_fk": {
-          "name": "post_content_parent_id_post_content_id_fk",
-          "tableFrom": "post_content",
-          "tableTo": "post_content",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "post_content_poll_id_poll_id_fk": {
-          "name": "post_content_poll_id_poll_id_fk",
-          "tableFrom": "post_content",
-          "tableTo": "poll",
-          "columnsFrom": [
-            "poll_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "post_content_post_proof_id_unique": {
-          "name": "post_content_post_proof_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "post_proof_id"
-          ]
-        }
-      },
-      "checkConstraints": {}
-    },
-    "public.post_proof": {
-      "name": "post_proof",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "post_proof_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "proof_type": {
-          "name": "proof_type",
-          "type": "proof_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "author_did": {
-          "name": "author_did",
-          "type": "varchar(1000)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "proof": {
-          "name": "proof",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "proof_version": {
-          "name": "proof_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "post_proof_post_id_post_id_fk": {
-          "name": "post_proof_post_id_post_id_fk",
-          "tableFrom": "post_proof",
-          "tableTo": "post",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "post_proof_parent_id_post_proof_id_fk": {
-          "name": "post_proof_parent_id_post_proof_id_fk",
-          "tableFrom": "post_proof",
-          "tableTo": "post_proof",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "post_proof_author_did_device_did_write_fk": {
-          "name": "post_proof_author_did_device_did_write_fk",
-          "tableFrom": "post_proof",
-          "tableTo": "device",
-          "columnsFrom": [
-            "author_did"
-          ],
-          "columnsTo": [
-            "did_write"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "public.post": {
-      "name": "post",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "post_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "slug_id": {
-          "name": "slug_id",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "author_id": {
-          "name": "author_id",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "current_content_id": {
-          "name": "current_content_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "last_reacted_at": {
-          "name": "last_reacted_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "comment_count": {
-          "name": "comment_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "post_author_id_user_id_fk": {
-          "name": "post_author_id_user_id_fk",
-          "tableFrom": "post",
-          "tableTo": "user",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "post_current_content_id_post_content_id_fk": {
-          "name": "post_current_content_id_post_content_id_fk",
-          "tableFrom": "post",
-          "tableTo": "post_content",
-          "columnsFrom": [
-            "current_content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "post_slug_id_unique": {
-          "name": "post_slug_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug_id"
-          ]
-        },
-        "post_current_content_id_unique": {
-          "name": "post_current_content_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "current_content_id"
-          ]
-        }
-      },
-      "checkConstraints": {}
-    },
-    "public.post_topic": {
-      "name": "post_topic",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "post_topic_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "public.report_comments_table": {
-      "name": "report_comments_table",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "report_comments_table_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "comment_id": {
-          "name": "comment_id",
+        "conversation_tag_id": {
+          "name": "conversation_tag_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
-        },
-        "reporter_id": {
-          "name": "reporter_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reporter_reason": {
-          "name": "reporter_reason",
-          "type": "report_reason_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "report_explanation": {
-          "name": "report_explanation",
-          "type": "varchar(260)",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -2035,11 +2228,11 @@
         }
       },
       "indexes": {
-        "commentId_idx": {
-          "name": "commentId_idx",
+        "user_idx_topic": {
+          "name": "user_idx_topic",
           "columns": [
             {
-              "expression": "comment_id",
+              "expression": "user_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2052,12 +2245,12 @@
         }
       },
       "foreignKeys": {
-        "report_comments_table_comment_id_comment_id_fk": {
-          "name": "report_comments_table_comment_id_comment_id_fk",
-          "tableFrom": "report_comments_table",
-          "tableTo": "comment",
+        "user_conversation_topic_preference_user_id_user_id_fk": {
+          "name": "user_conversation_topic_preference_user_id_user_id_fk",
+          "tableFrom": "user_conversation_topic_preference",
+          "tableTo": "user",
           "columnsFrom": [
-            "comment_id"
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -2065,12 +2258,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "report_comments_table_reporter_id_user_id_fk": {
-          "name": "report_comments_table_reporter_id_user_id_fk",
-          "tableFrom": "report_comments_table",
-          "tableTo": "user",
+        "user_conversation_topic_preference_conversation_tag_id_conversation_topic_id_fk": {
+          "name": "user_conversation_topic_preference_conversation_tag_id_conversation_topic_id_fk",
+          "tableFrom": "user_conversation_topic_preference",
+          "tableTo": "conversation_topic",
           "columnsFrom": [
-            "reporter_id"
+            "conversation_tag_id"
           ],
           "columnsTo": [
             "id"
@@ -2080,110 +2273,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "public.report_posts_table": {
-      "name": "report_posts_table",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "report_posts_table_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reporter_id": {
-          "name": "reporter_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reporter_reason": {
-          "name": "reporter_reason",
-          "type": "report_reason_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "report_explanation": {
-          "name": "report_explanation",
-          "type": "varchar(260)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "postId_idx": {
-          "name": "postId_idx",
+      "uniqueConstraints": {
+        "user_unique_topic": {
+          "name": "user_unique_topic",
+          "nullsNotDistinct": false,
           "columns": [
-            {
-              "expression": "post_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+            "user_id",
+            "conversation_tag_id"
+          ]
         }
       },
-      "foreignKeys": {
-        "report_posts_table_post_id_post_id_fk": {
-          "name": "report_posts_table_post_id_post_id_fk",
-          "tableFrom": "report_posts_table",
-          "tableTo": "post",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "report_posts_table_reporter_id_user_id_fk": {
-          "name": "report_posts_table_reporter_id_user_id_fk",
-          "tableFrom": "report_posts_table",
-          "tableTo": "user",
-          "columnsFrom": [
-            "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "checkConstraints": {}
     },
     "public.user_language_preference": {
@@ -2431,105 +2530,6 @@
       },
       "checkConstraints": {}
     },
-    "public.user_post_topic_preference": {
-      "name": "user_post_topic_preference",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "user_post_topic_preference_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "post_tag_id": {
-          "name": "post_tag_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "user_idx_topic": {
-          "name": "user_idx_topic",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "user_post_topic_preference_user_id_user_id_fk": {
-          "name": "user_post_topic_preference_user_id_user_id_fk",
-          "tableFrom": "user_post_topic_preference",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "user_post_topic_preference_post_tag_id_post_topic_id_fk": {
-          "name": "user_post_topic_preference_post_tag_id_post_topic_id_fk",
-          "tableFrom": "user_post_topic_preference",
-          "tableTo": "post_topic",
-          "columnsFrom": [
-            "post_tag_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "user_unique_topic": {
-          "name": "user_unique_topic",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "post_tag_id"
-          ]
-        }
-      },
-      "checkConstraints": {}
-    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -2580,22 +2580,22 @@
           "notNull": true,
           "default": false
         },
-        "active_post_count": {
-          "name": "active_post_count",
+        "active_conversation_count": {
+          "name": "active_conversation_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "total_post_count": {
-          "name": "total_post_count",
+        "total_conversation_count": {
+          "name": "total_conversation_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
-        "total_comment_count": {
-          "name": "total_comment_count",
+        "total_opinion_count": {
+          "name": "total_opinion_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -2677,8 +2677,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "comment_content_id": {
-          "name": "comment_content_id",
+        "opinion_content_id": {
+          "name": "opinion_content_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -2726,12 +2726,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "vote_content_comment_content_id_comment_content_id_fk": {
-          "name": "vote_content_comment_content_id_comment_content_id_fk",
+        "vote_content_opinion_content_id_opinion_content_id_fk": {
+          "name": "vote_content_opinion_content_id_opinion_content_id_fk",
           "tableFrom": "vote_content",
-          "tableTo": "comment_content",
+          "tableTo": "opinion_content",
           "columnsFrom": [
-            "comment_content_id"
+            "opinion_content_id"
           ],
           "columnsTo": [
             "id"
@@ -2864,8 +2864,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "comment_id": {
-          "name": "comment_id",
+        "opinion_id": {
+          "name": "opinion_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -2906,12 +2906,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "vote_comment_id_comment_id_fk": {
-          "name": "vote_comment_id_comment_id_fk",
+        "vote_opinion_id_opinion_id_fk": {
+          "name": "vote_opinion_id_opinion_id_fk",
           "tableFrom": "vote",
-          "tableTo": "comment",
+          "tableTo": "opinion",
           "columnsFrom": [
-            "comment_id"
+            "opinion_id"
           ],
           "columnsTo": [
             "id"
@@ -2935,12 +2935,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "vote_author_id_comment_id_unique": {
-          "name": "vote_author_id_comment_id_unique",
+        "vote_author_id_opinion_id_unique": {
+          "name": "vote_author_id_opinion_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "author_id",
-            "comment_id"
+            "opinion_id"
           ]
         }
       },
@@ -3045,6 +3045,13 @@
         "login_new_device"
       ]
     },
+    "public.conversation_moderation_action": {
+      "name": "conversation_moderation_action",
+      "schema": "public",
+      "values": [
+        "lock"
+      ]
+    },
     "public.email_type": {
       "name": "email_type",
       "schema": "public",
@@ -3053,21 +3060,6 @@
         "backup",
         "secondary",
         "other"
-      ]
-    },
-    "public.moderation_action_comments": {
-      "name": "moderation_action_comments",
-      "schema": "public",
-      "values": [
-        "move",
-        "hide"
-      ]
-    },
-    "public.moderation_action_posts": {
-      "name": "moderation_action_posts",
-      "schema": "public",
-      "values": [
-        "lock"
       ]
     },
     "public.moderation_reason_enum": {
@@ -3080,6 +3072,14 @@
         "doxing",
         "sexual",
         "spam"
+      ]
+    },
+    "public.opinion_moderation_action": {
+      "name": "opinion_moderation_action",
+      "schema": "public",
+      "values": [
+        "move",
+        "hide"
       ]
     },
     "public.phone_country_code": {
@@ -3367,8 +3367,8 @@
       "name": "vote_enum",
       "schema": "public",
       "values": [
-        "like",
-        "dislike"
+        "agree",
+        "disagree"
       ]
     }
   },

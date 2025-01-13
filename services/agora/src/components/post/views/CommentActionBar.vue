@@ -22,7 +22,7 @@
         :icon="downvoteIcon.icon"
         size="0.8rem"
         @click.stop.prevent="
-          castPersonalVote(props.commentItem.commentSlugId, false)
+          castPersonalVote(props.commentItem.opinionSlugId, false)
         "
       >
         <div v-if="userCastedVote" class="voteCountLabel">
@@ -37,7 +37,7 @@
         :icon="upvoteIcon.icon"
         size="0.8rem"
         @click.stop.prevent="
-          castPersonalVote(props.commentItem.commentSlugId, true)
+          castPersonalVote(props.commentItem.opinionSlugId, true)
         "
       >
         <div v-if="userCastedVote" class="voteCountLabel">
@@ -53,7 +53,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { computed, ref } from "vue";
-import { type CommentItem, type VotingAction } from "src/shared/types/zod";
+import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
@@ -62,9 +62,9 @@ import CommentActionOptions from "./CommentActionOptions.vue";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
-  commentItem: CommentItem;
+  commentItem: OpinionItem;
   postSlugId: string;
-  commentSlugIdLikedMap: Map<string, "like" | "dislike">;
+  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
 
@@ -75,12 +75,12 @@ const { showLoginConfirmationDialog } = useDialog();
 const { castVoteForComment } = useBackendVoteApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const numLikesLocal = ref(props.commentItem.numLikes);
-const numDislikesLocal = ref(props.commentItem.numDislikes);
+const numLikesLocal = ref(props.commentItem.numAgrees);
+const numDislikesLocal = ref(props.commentItem.numDisagrees);
 
 const userCastedVote = computed(() => {
   const hasEntry = props.commentSlugIdLikedMap.has(
-    props.commentItem.commentSlugId
+    props.commentItem.opinionSlugId
   );
   return hasEntry ? true : false;
 });
@@ -92,9 +92,9 @@ interface IconObject {
 
 const downvoteIcon = computed<IconObject>(() => {
   const userAction = props.commentSlugIdLikedMap.get(
-    props.commentItem.commentSlugId
+    props.commentItem.opinionSlugId
   );
-  if (userAction == "dislike") {
+  if (userAction == "disagree") {
     return {
       icon: "mdi-thumb-down",
       color: "primary",
@@ -109,9 +109,9 @@ const downvoteIcon = computed<IconObject>(() => {
 
 const upvoteIcon = computed<IconObject>(() => {
   const userAction = props.commentSlugIdLikedMap.get(
-    props.commentItem.commentSlugId
+    props.commentItem.opinionSlugId
   );
-  if (userAction == "like") {
+  if (userAction == "agree") {
     return {
       icon: "mdi-thumb-up",
       color: "primary",
@@ -135,8 +135,8 @@ async function shareButtonClicked() {
     "/conversation/" +
     props.postSlugId +
     "?opinionSlugId=" +
-    props.commentItem.commentSlugId;
-  await webShare.share("Agora Comment", sharePostUrl);
+    props.commentItem.opinionSlugId;
+  await webShare.share("Agora Opinion", sharePostUrl);
 }
 
 function deletedComment() {
@@ -156,17 +156,17 @@ async function castPersonalVote(
     let targetState: VotingAction = "cancel";
     const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
     if (originalSelection == undefined) {
-      targetState = isUpvoteButton ? "like" : "dislike";
+      targetState = isUpvoteButton ? "agree" : "disagree";
     } else {
-      if (originalSelection == "like") {
+      if (originalSelection == "agree") {
         if (isUpvoteButton) {
           targetState = "cancel";
         } else {
-          targetState = "dislike";
+          targetState = "disagree";
         }
       } else {
         if (isUpvoteButton) {
-          targetState = "like";
+          targetState = "agree";
         } else {
           targetState = "cancel";
         }
@@ -175,22 +175,22 @@ async function castPersonalVote(
 
     if (targetState == "cancel") {
       props.commentSlugIdLikedMap.delete(commentSlugId);
-      if (originalSelection == "like") {
+      if (originalSelection == "agree") {
         numLikesLocal.value = numLikesLocal.value - 1;
       } else {
         numDislikesLocal.value = numDislikesLocal.value - 1;
       }
     } else {
-      if (targetState == "like") {
-        props.commentSlugIdLikedMap.set(commentSlugId, "like");
+      if (targetState == "agree") {
+        props.commentSlugIdLikedMap.set(commentSlugId, "agree");
         numLikesLocal.value = numLikesLocal.value + 1;
-        if (originalSelection == "dislike") {
+        if (originalSelection == "disagree") {
           numDislikesLocal.value = numDislikesLocal.value - 1;
         }
       } else {
-        props.commentSlugIdLikedMap.set(commentSlugId, "dislike");
+        props.commentSlugIdLikedMap.set(commentSlugId, "disagree");
         numDislikesLocal.value = numDislikesLocal.value + 1;
-        if (originalSelection == "like") {
+        if (originalSelection == "agree") {
           numLikesLocal.value = numLikesLocal.value - 1;
         }
       }

@@ -18,7 +18,7 @@
 
       <div>
         <div :class="{ highlightComment: highlight }">
-          <span v-html="commentItem.comment"></span>
+          <span v-html="commentItem.opinion"></span>
         </div>
 
         <CommentModeration
@@ -44,17 +44,17 @@
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import type { CommentItem } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 defineProps<{
-  commentItem: CommentItem;
+  commentItem: OpinionItem;
   postSlugId: string;
   highlight: boolean;
-  commentSlugIdLikedMap: Map<string, "like" | "dislike">;
+  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
 

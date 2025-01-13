@@ -10,7 +10,7 @@
             :skeleton-mode="skeletonMode"
             :show-author="showAuthor"
             :display-absolute-time="displayAbsoluteTime"
-            :post-slug-id="extendedPostData.metadata.postSlugId"
+            :post-slug-id="extendedPostData.metadata.conversationSlugId"
           />
 
           <div class="postDiv">
@@ -50,7 +50,7 @@
             >
               <PostLockedMessage
                 :moderation-property="extendedPostData.metadata.moderation"
-                :post-slug-id="extendedPostData.metadata.postSlugId"
+                :post-slug-id="extendedPostData.metadata.conversationSlugId"
               />
             </ZKCard>
           </div>
@@ -58,7 +58,7 @@
           <div v-if="extendedPostData.payload.poll" class="pollContainer">
             <PollWrapper
               :poll-options="extendedPostData.payload.poll"
-              :post-slug-id="extendedPostData.metadata.postSlugId"
+              :post-slug-id="extendedPostData.metadata.conversationSlugId"
               :user-response="extendedPostData.interaction"
             />
           </div>
@@ -74,7 +74,7 @@
                   size="0.8rem"
                   :label="
                     (
-                      extendedPostData.metadata.commentCount +
+                      extendedPostData.metadata.opinionCount +
                       commentCountOffset
                     ).toString()
                   "
@@ -114,7 +114,7 @@
         <div v-if="!compactMode" ref="commentSectionRef">
           <CommentSection
             :key="commentCountOffset"
-            :post-slug-id="extendedPostData.metadata.postSlugId"
+            :post-slug-id="extendedPostData.metadata.conversationSlugId"
             :initial-comment-slug-id="commentSlugIdQuery"
             :is-post-locked="
               extendedPostData.metadata.moderation.status == 'moderated'
@@ -131,7 +131,7 @@
     >
       <CommentComposer
         :show-controls="focusCommentElement"
-        :post-slug-id="extendedPostData.metadata.postSlugId"
+        :post-slug-id="extendedPostData.metadata.conversationSlugId"
         @cancel-clicked="cancelledCommentComposor()"
         @submitted-comment="submittedComment()"
         @editor-focused="focusCommentElement = true"
@@ -154,13 +154,13 @@ import { useRoute, useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
-import type { ExtendedPost } from "src/shared/types/zod";
+import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKCard from "../ui-library/ZKCard.vue";
 import PostLockedMessage from "./views/PostLockedMessage.vue";
 
 const props = defineProps<{
-  extendedPostData: ExtendedPost;
+  extendedPostData: ExtendedConversation;
   compactMode: boolean;
   skeletonMode: boolean;
   showAuthor: boolean;
@@ -247,7 +247,9 @@ async function clickedCommentButton() {
   if (route.name != "/conversation/[postSlugId]") {
     await router.push({
       name: "/conversation/[postSlugId]",
-      params: { postSlugId: props.extendedPostData.metadata.postSlugId },
+      params: {
+        postSlugId: props.extendedPostData.metadata.conversationSlugId,
+      },
       query: { action: "comment" },
     });
   } else {
@@ -260,7 +262,7 @@ async function shareClicked() {
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
     "/conversation/" +
-    props.extendedPostData.metadata.postSlugId;
+    props.extendedPostData.metadata.conversationSlugId;
   await webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
     sharePostUrl

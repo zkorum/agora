@@ -1,4 +1,4 @@
-import { Dto, type FetchPostBySlugIdResponse } from "@/shared/types/dto.js";
+import { Dto, type GetConversationResponse } from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
 import fastifySensible, { httpErrors } from "@fastify/sensible";
@@ -33,14 +33,14 @@ import {
     httpUrlToResourcePointer,
 } from "./shared/ucan/ucan.js";
 import {
-    deleteCommentBySlugId,
+    deleteOpinionBySlugId,
     fetchCommentsByPostSlugId,
-    postNewComment,
+    postNewOpinion,
 } from "./service/comment.js";
 import { getUserPollResponse, submitPollResponse } from "./service/poll.js";
 import {
     castVoteForCommentSlugId,
-    getUserVotesForPostSlugIds,
+    getUserVotesForPostSlugIds as getUserVotesByConversations,
 } from "./service/voting.js";
 import {
     getUserComments,
@@ -60,8 +60,8 @@ import {
 } from "./service/account.js";
 import { isModeratorAccount } from "@/service/authUtil.js";
 import {
-    fetchModerationReportByCommentSlugId,
-    fetchModerationReportByPostSlugId,
+    fetchModerationReportByCommentSlugId as getOpinionModerationStatus,
+    fetchModerationReportByPostSlugId as getConversationModerationStatus,
     moderateByCommentSlugId,
     moderateByPostSlugId,
     withdrawModerationReportByCommentSlugId,
@@ -279,7 +279,6 @@ async function verifyUCAN(
     },
 ): Promise<VerifyUCANReturn> {
     const encodedUcan = getEncodedUcan(request);
-    log.info(`Received UCAN: ${encodedUcan}`);
     const { scheme, hierPart } = httpUrlToResourcePointer(
         new URL(request.originalUrl, SERVER_URL),
     );
@@ -370,7 +369,7 @@ server.after(() => {
             response: { 200: Dto.checkLoginStatusResponse },
         },
         handler: async (request) => {
-            const didWrite = await verifyUCAN(db, request, {
+            const { didWrite } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
 
@@ -422,7 +421,7 @@ server.after(() => {
     // TODO: for now there is no way to communicate "isTrusted", it's set to true automatically - but it will change
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/auth/verify-phone-otp`,
+        url: `/api/${apiVersion}/auth/phone/verify-otp`,
         schema: {
             body: Dto.verifyOtpReqBody,
             response: {
@@ -459,7 +458,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/feed/fetch-recent`,
+        url: `/api/${apiVersion}/conversation/fetch-recent`,
         schema: {
             body: Dto.fetchFeedRequest,
             response: {
@@ -495,7 +494,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/post/create`,
+        url: `/api/${apiVersion}/moderation/conversation/create`,
         schema: {
             body: Dto.moderateReportPostRequest,
         },
@@ -520,7 +519,7 @@ server.after(() => {
 
                 await moderateByPostSlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                     moderationReason: request.body.moderationReason,
                     moderationAction: request.body.moderationAction,
                     moderationExplanation: request.body.moderationExplanation,
@@ -532,7 +531,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/comment/create`,
+        url: `/api/${apiVersion}/moderation/opinion/create`,
         schema: {
             body: Dto.moderateReportCommentRequest,
         },
@@ -557,7 +556,7 @@ server.after(() => {
 
                 await moderateByCommentSlugId({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    commentSlugId: request.body.opinionSlugId,
                     moderationReason: request.body.moderationReason,
                     moderationAction: request.body.moderationAction,
                     moderationExplanation: request.body.moderationExplanation,
@@ -569,9 +568,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/post/withdraw`,
+        url: `/api/${apiVersion}/moderation/conversation/withdraw`,
         schema: {
-            body: Dto.moderateCancelPostReportRequest,
+            body: Dto.moderateCancelConversationReportRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -594,7 +593,7 @@ server.after(() => {
 
                 await withdrawModerationReportByPostSlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                 });
             }
         },
@@ -602,9 +601,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/comment/withdraw`,
+        url: `/api/${apiVersion}/moderation/opinion/withdraw`,
         schema: {
-            body: Dto.moderateCancelCommentReportRequest,
+            body: Dto.moderateCancelOpinionReportRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -627,7 +626,7 @@ server.after(() => {
 
                 await withdrawModerationReportByCommentSlugId({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    commentSlugId: request.body.opinionSlugId,
                 });
             }
         },
@@ -635,11 +634,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/post/fetch-report`,
+        url: `/api/${apiVersion}/moderation/conversation/get`,
         schema: {
-            body: Dto.fetchPostModerationRequest,
+            body: Dto.getConversationModerationStatusRequest,
             response: {
-                200: Dto.fetchPostModerationResponse,
+                200: Dto.getConversationModerationStatusResponse,
             },
         },
         handler: async (request) => {
@@ -661,9 +660,9 @@ server.after(() => {
                     );
                 }
 
-                return await fetchModerationReportByPostSlugId({
+                return await getConversationModerationStatus({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                 });
             }
         },
@@ -671,11 +670,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/moderation/comment/fetch-report`,
+        url: `/api/${apiVersion}/moderation/opinion/get`,
         schema: {
-            body: Dto.fetchCommentModerationRequest,
+            body: Dto.getOpinionModerationStatusRequest,
             response: {
-                200: Dto.fetchCommentModerationResponse,
+                200: Dto.getOpinionModerationStatusResponse,
             },
         },
         handler: async (request) => {
@@ -697,9 +696,9 @@ server.after(() => {
                     );
                 }
 
-                return await fetchModerationReportByCommentSlugId({
+                return await getOpinionModerationStatus({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    commentSlugId: request.body.opinionSlugId,
                 });
             }
         },
@@ -707,10 +706,10 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/user/fetch-user-profile`,
+        url: `/api/${apiVersion}/user/profile/get`,
         schema: {
             response: {
-                200: Dto.fetchUserProfileResponse,
+                200: Dto.getUserProfileResponse,
             },
         },
         handler: async (request) => {
@@ -731,11 +730,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/user/fetch-user-posts`,
+        url: `/api/${apiVersion}/user/conversation/fetch`,
         schema: {
-            body: Dto.fetchUserPostsRequest,
+            body: Dto.fetchUserConversationsRequest,
             response: {
-                200: Dto.fetchUserPostsResponse,
+                200: Dto.fetchUserConversationsResponse,
             },
         },
         handler: async (request) => {
@@ -749,7 +748,7 @@ server.after(() => {
                 return await getUserPosts({
                     db: db,
                     userId: status.userId,
-                    lastPostSlugId: request.body.lastPostSlugId,
+                    lastPostSlugId: request.body.lastConversationSlugId,
                 });
             }
         },
@@ -757,11 +756,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/user/fetch-user-comments`,
+        url: `/api/${apiVersion}/user/opinion/fetch`,
         schema: {
-            body: Dto.fetchUserCommentsRequest,
+            body: Dto.fetchUserOpinionsRequest,
             response: {
-                200: Dto.fetchUserCommentsResponse,
+                200: Dto.fetchUserOpinionsResponse,
             },
         },
         handler: async (request) => {
@@ -775,7 +774,7 @@ server.after(() => {
                 return await getUserComments({
                     db: db,
                     userId: status.userId,
-                    lastCommentSlugId: request.body.lastCommentSlugId,
+                    lastCommentSlugId: request.body.lastOpinionSlugId,
                 });
             }
         },
@@ -783,11 +782,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/voting/fetch-user-votes-for-post-slug-ids`,
+        url: `/api/${apiVersion}/user/vote/get-by-conversations`,
         schema: {
-            body: Dto.fetchUserVotesForPostSlugIdRequest,
+            body: Dto.getUserVotesByConversationsRequest,
             response: {
-                200: Dto.fetchUserVotesForPostSlugIdsResponse,
+                200: Dto.getUserVotesByConversationsResponse,
             },
         },
         handler: async (request) => {
@@ -798,9 +797,9 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                return await getUserVotesForPostSlugIds({
+                return await getUserVotesByConversations({
                     db: db,
-                    postSlugIdList: request.body.postSlugIdList,
+                    postSlugIdList: request.body.conversationSlugIdList,
                     userId: status.userId,
                 });
             }
@@ -809,11 +808,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/voting/cast-vote`,
+        url: `/api/${apiVersion}/vote/cast`,
         schema: {
-            body: Dto.castVoteForCommentRequest,
+            body: Dto.castVoteRequest,
             response: {
-                200: Dto.castVoteForCommentResponse,
+                200: Dto.castVoteResponse,
             },
         },
         handler: async (request, reply) => {
@@ -827,7 +826,7 @@ server.after(() => {
             } else {
                 const castVoteResponse = await castVoteForCommentSlugId({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    commentSlugId: request.body.opinionSlugId,
                     userId: status.userId,
                     didWrite: didWrite,
                     proof: encodedUcan,
@@ -847,7 +846,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -857,9 +858,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/poll/submitResponse`,
+        url: `/api/${apiVersion}/poll/respond`,
         schema: {
-            body: Dto.submitPollResponseRequest,
+            body: Dto.pollRespondRequest,
         },
         handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
@@ -876,7 +877,7 @@ server.after(() => {
                     authorId: status.userId,
                     didWrite: didWrite,
                     httpErrors: server.httpErrors,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                     voteOptionChoice: request.body.voteOptionChoice,
                 });
                 reply.send();
@@ -893,7 +894,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -903,11 +906,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/poll/get-user-poll-response`,
+        url: `/api/${apiVersion}/user/poll/get-response-by-conversations`,
         schema: {
-            body: Dto.fetchUserPollResponseRequest,
+            body: Dto.getUserPollResponseByConversationsRequest,
             response: {
-                200: Dto.fetchUserPollResponseResponse,
+                200: Dto.getUserPollResponseByConversationsResponse,
             },
         },
         handler: async (request) => {
@@ -929,9 +932,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/comment/delete`,
+        url: `/api/${apiVersion}/opinion/delete`,
         schema: {
-            body: Dto.deleteCommentBySlugIdRequest,
+            body: Dto.deleteOpinionRequest,
         },
         handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(
@@ -944,9 +947,9 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                await deleteCommentBySlugId({
+                await deleteOpinionBySlugId({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    opinionSlugId: request.body.opinionSlugId,
                     userId: status.userId,
                     proof: encodedUcan,
                     didWrite: didWrite,
@@ -965,7 +968,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -975,11 +980,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/comment/create`,
+        url: `/api/${apiVersion}/opinion/create`,
         schema: {
-            body: Dto.createCommentRequest,
+            body: Dto.createOpinionRequest,
             response: {
-                200: Dto.createCommentResponse,
+                200: Dto.createOpinionResponse,
             },
         },
         handler: async (request, reply) => {
@@ -991,10 +996,10 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const newCommentResponse = await postNewComment({
+                const newCommentResponse = await postNewOpinion({
                     db: db,
-                    commentBody: request.body.commentBody,
-                    postSlugId: request.body.postSlugId,
+                    commentBody: request.body.opinionBody,
+                    postSlugId: request.body.conversationSlugId,
                     userId: status.userId,
                     didWrite: didWrite,
                     proof: encodedUcan,
@@ -1014,7 +1019,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -1024,11 +1031,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/comment/fetch-comments-by-post-slugId`,
+        url: `/api/${apiVersion}/opinion/fetch-by-conversation`,
         schema: {
-            body: Dto.fetchCommentFeedRequest,
+            body: Dto.fetchOpinionsRequest,
             response: {
-                200: Dto.fetchCommentFeedResponse,
+                200: Dto.fetchOpinionsResponse,
             },
         },
         handler: async (request) => {
@@ -1045,7 +1052,7 @@ server.after(() => {
                 } else {
                     return await fetchCommentsByPostSlugId({
                         db: db,
-                        postSlugId: request.body.postSlugId,
+                        postSlugId: request.body.conversationSlugId,
                         fetchTarget: request.body.filter,
                         personalizationUserId: status.userId,
                     });
@@ -1053,7 +1060,7 @@ server.after(() => {
             } else {
                 return await fetchCommentsByPostSlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                     fetchTarget: request.body.filter,
                 });
             }
@@ -1062,11 +1069,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/comment/fetch-hidden-comments`,
+        url: `/api/${apiVersion}/opinion/fetch-hidden-by-conversation`,
         schema: {
-            body: Dto.fetchHiddenCommentRequest,
+            body: Dto.fetchHiddenOpinionsRequest,
             response: {
-                200: Dto.fetchHiddenCommentResponse,
+                200: Dto.fetchHiddenOpinionsResponse,
             },
         },
         handler: async (request) => {
@@ -1090,7 +1097,7 @@ server.after(() => {
 
                 return await fetchCommentsByPostSlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                     fetchTarget: "hidden",
                 });
             }
@@ -1099,9 +1106,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/post/delete`,
+        url: `/api/${apiVersion}/conversation/delete`,
         schema: {
-            body: Dto.deletePostBySlugIdRequest,
+            body: Dto.deleteConversationRequest,
         },
         handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
@@ -1114,7 +1121,7 @@ server.after(() => {
             } else {
                 await postService.deletePostBySlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                     userId: status.userId,
                     proof: encodedUcan,
                     didWrite: didWrite,
@@ -1133,7 +1140,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -1143,11 +1152,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/post/create`,
+        url: `/api/${apiVersion}/conversation/create`,
         schema: {
-            body: Dto.createNewPostRequest,
+            body: Dto.createNewConversationRequest,
             response: {
-                200: Dto.createNewPostResponse,
+                200: Dto.createNewConversationResponse,
             },
         },
         handler: async (request, reply) => {
@@ -1161,8 +1170,8 @@ server.after(() => {
             } else {
                 const postResponse = await postService.createNewPost({
                     db: db,
-                    postTitle: request.body.postTitle,
-                    postBody: request.body.postBody ?? null,
+                    conversationTitle: request.body.conversationTitle,
+                    conversationBody: request.body.conversationBody ?? null,
                     pollingOptionList: request.body.pollingOptionList ?? null,
                     authorId: status.userId,
                     didWrite: didWrite,
@@ -1182,7 +1191,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -1196,11 +1207,11 @@ server.after(() => {
     });
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/post/fetch-post-by-slug-id`,
+        url: `/api/${apiVersion}/conversation/get`,
         schema: {
-            body: Dto.fetchPostBySlugIdRequest,
+            body: Dto.getConversationRequest,
             response: {
-                200: Dto.fetchPostBySlugIdResponse,
+                200: Dto.getConversationResponse,
             },
         },
         handler: async (request) => {
@@ -1215,23 +1226,23 @@ server.after(() => {
                 } else {
                     const postItem = await postService.fetchPostBySlugId({
                         db: db,
-                        postSlugId: request.body.postSlugId,
+                        conversationSlugId: request.body.conversationSlugId,
                         personalizationUserId: status.userId,
                     });
 
-                    const response: FetchPostBySlugIdResponse = {
-                        postData: postItem,
+                    const response: GetConversationResponse = {
+                        conversationData: postItem,
                     };
                     return response;
                 }
             } else {
                 const postItem = await postService.fetchPostBySlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                 });
 
-                const response: FetchPostBySlugIdResponse = {
-                    postData: postItem,
+                const response: GetConversationResponse = {
+                    conversationData: postItem,
                 };
                 return response;
             }
@@ -1283,7 +1294,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/account/delete-user`,
+        url: `/api/${apiVersion}/user/delete`,
         schema: {},
         handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
@@ -1314,7 +1325,9 @@ server.after(() => {
                             defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
                         });
                     } catch (e) {
-                        log.error("Error while trying to broadcast proof:");
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
                         log.error(e);
                     }
                 }
@@ -1324,9 +1337,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/account/submit-username-change`,
+        url: `/api/${apiVersion}/user/username/update`,
         schema: {
-            body: Dto.submitUsernameChangeRequest,
+            body: Dto.updateUsernameRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1380,9 +1393,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/report/submit-report-by-post-slug-id`,
+        url: `/api/${apiVersion}/report/conversation/create`,
         schema: {
-            body: Dto.submitUserReportByPostSlugIdRequest,
+            body: Dto.createConversationReportRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1394,7 +1407,7 @@ server.after(() => {
             } else {
                 await createUserReportByPostSlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                     userReportReason: request.body.reportReason,
                     userReportExplanation: request.body.reportExplanation,
                     userId: status.userId,
@@ -1406,9 +1419,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/report/submit-report-by-comment-slug-id`,
+        url: `/api/${apiVersion}/report/opinion/create`,
         schema: {
-            body: Dto.submitUserReportByCommentSlugIdRequest,
+            body: Dto.createOpinionReportRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1420,7 +1433,7 @@ server.after(() => {
             } else {
                 await createUserReportByCommentSlugId({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    commentSlugId: request.body.opinionSlugId,
                     userReportReason: request.body.reportReason,
                     userReportExplanation: request.body.reportExplanation,
                     userId: status.userId,
@@ -1432,11 +1445,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/report/fetch-reports-by-post-slug-id`,
+        url: `/api/${apiVersion}/report/conversation/fetch`,
         schema: {
-            body: Dto.fetchUserReportsByPostSlugIdRequest,
+            body: Dto.fetchConversationReportsRequest,
             response: {
-                200: Dto.fetchUserReportsByPostSlugIdResponse,
+                200: Dto.fetchConversationReportsResponse,
             },
         },
         handler: async (request) => {
@@ -1460,7 +1473,7 @@ server.after(() => {
 
                 return await fetchUserReportsByPostSlugId({
                     db: db,
-                    postSlugId: request.body.postSlugId,
+                    postSlugId: request.body.conversationSlugId,
                 });
             }
         },
@@ -1468,11 +1481,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/report/fetch-reports-by-comment-slug-id`,
+        url: `/api/${apiVersion}/report/opinion/fetch`,
         schema: {
-            body: Dto.fetchUserReportsByCommentSlugIdRequest,
+            body: Dto.fetchOpinionReportsRequest,
             response: {
-                200: Dto.fetchUserReportsByCommentSlugIdResponse,
+                200: Dto.fetchOpinionReportsResponse,
             },
         },
         handler: async (request) => {
@@ -1496,7 +1509,7 @@ server.after(() => {
 
                 return await fetchUserReportsByCommentSlugId({
                     db: db,
-                    commentSlugId: request.body.commentSlugId,
+                    commentSlugId: request.body.opinionSlugId,
                 });
             }
         },
@@ -1504,10 +1517,10 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/user-mute/fetch-preferences`,
+        url: `/api/${apiVersion}/mute/user/get`,
         schema: {
             response: {
-                200: Dto.fetchUserMutePreferencesResponse,
+                200: Dto.getMutedUsersResponse,
             },
         },
         handler: async (request) => {
@@ -1528,7 +1541,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/user-mute/mute-user`,
+        url: `/api/${apiVersion}/mute/user/create`,
         schema: {
             body: Dto.muteUserByUsernameRequest,
         },

@@ -1,13 +1,13 @@
 CREATE TYPE "public"."auth_type" AS ENUM('register', 'login_known_device', 'login_new_device');--> statement-breakpoint
+CREATE TYPE "public"."conversation_moderation_action" AS ENUM('lock');--> statement-breakpoint
 CREATE TYPE "public"."email_type" AS ENUM('primary', 'backup', 'secondary', 'other');--> statement-breakpoint
-CREATE TYPE "public"."moderation_action_comments" AS ENUM('move', 'hide');--> statement-breakpoint
-CREATE TYPE "public"."moderation_action_posts" AS ENUM('lock');--> statement-breakpoint
 CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');--> statement-breakpoint
+CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');--> statement-breakpoint
 CREATE TYPE "public"."phone_country_code" AS ENUM('AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW');--> statement-breakpoint
 CREATE TYPE "public"."proof_type" AS ENUM('creation', 'edit', 'deletion');--> statement-breakpoint
 CREATE TYPE "public"."report_reason_enum" AS ENUM('illegal', 'doxing', 'sexual', 'spam', 'misleading', 'antisocial');--> statement-breakpoint
 CREATE TYPE "public"."sex" AS ENUM('F', 'M', 'X');--> statement-breakpoint
-CREATE TYPE "public"."vote_enum" AS ENUM('like', 'dislike');--> statement-breakpoint
+CREATE TYPE "public"."vote_enum" AS ENUM('agree', 'disagree');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "auth_attempt_phone" (
 	"did_write" varchar(1000) PRIMARY KEY NOT NULL,
 	"type" "auth_type" NOT NULL,
@@ -26,20 +26,34 @@ CREATE TABLE IF NOT EXISTS "auth_attempt_phone" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "comment_content" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "comment_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"comment_id" integer NOT NULL,
-	"post_content_id" integer NOT NULL,
-	"comment_proof_id" integer NOT NULL,
+CREATE TABLE IF NOT EXISTS "conversation_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"conversation_proof_id" integer NOT NULL,
 	"parent_id" integer,
-	"content" varchar NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"title" varchar(130) NOT NULL,
+	"body" varchar,
+	"poll_id" integer,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_content_conversation_proof_id_unique" UNIQUE("conversation_proof_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "comment_proof" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "comment_proof_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+CREATE TABLE IF NOT EXISTS "conversation_moderation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_moderation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"author_id" uuid NOT NULL,
+	"moderation_action" "conversation_moderation_action" NOT NULL,
+	"moderation_reason" "moderation_reason_enum" NOT NULL,
+	"moderation_explanation" varchar(260),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_moderation_conversation_id_unique" UNIQUE("conversation_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "conversation_proof" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_proof_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"proof_type" "proof_type" NOT NULL,
-	"comment_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
 	"parent_id" integer,
 	"author_did" varchar(1000) NOT NULL,
 	"proof" text NOT NULL,
@@ -47,18 +61,33 @@ CREATE TABLE IF NOT EXISTS "comment_proof" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "comment" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "comment_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+CREATE TABLE IF NOT EXISTS "conversation_report" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_report_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"author_id" uuid NOT NULL,
+	"report_reason" "report_reason_enum" NOT NULL,
+	"report_explanation" varchar(260),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "conversation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"slug_id" varchar(8) NOT NULL,
 	"author_id" uuid NOT NULL,
-	"post_id" integer NOT NULL,
 	"current_content_id" integer,
-	"num_likes" integer DEFAULT 0 NOT NULL,
-	"num_dislikes" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "comment_slug_id_unique" UNIQUE("slug_id")
+	"opinion_count" integer DEFAULT 0 NOT NULL,
+	CONSTRAINT "conversation_slug_id_unique" UNIQUE("slug_id"),
+	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "conversation_topic" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_topic_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"name" text,
+	"code" text,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "device" (
@@ -89,28 +118,60 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "moderation_comments_table" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_comments_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"comment_id" integer NOT NULL,
-	"moderator_id" uuid NOT NULL,
-	"moderation_action" "moderation_action_comments" NOT NULL,
-	"moderation_reason" "moderation_reason_enum" NOT NULL,
-	"moderation_explanation" varchar(260),
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "moderation_comments_table_comment_id_unique" UNIQUE("comment_id")
+CREATE TABLE IF NOT EXISTS "opinion_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"opinion_id" integer NOT NULL,
+	"conversation_content_id" integer NOT NULL,
+	"opinion_proof_id" integer NOT NULL,
+	"parent_id" integer,
+	"content" varchar NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "moderation_posts_table" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "moderation_posts_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"post_id" integer NOT NULL,
-	"moderator_id" uuid NOT NULL,
-	"moderation_action" "moderation_action_posts" NOT NULL,
+CREATE TABLE IF NOT EXISTS "opinion_moderation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_moderation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"opinion_id" integer NOT NULL,
+	"author_id" uuid NOT NULL,
+	"moderation_action" "opinion_moderation_action" NOT NULL,
 	"moderation_reason" "moderation_reason_enum" NOT NULL,
 	"moderation_explanation" varchar(260),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "moderation_posts_table_post_id_unique" UNIQUE("post_id")
+	CONSTRAINT "opinion_moderation_opinion_id_unique" UNIQUE("opinion_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "opinion_proof" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_proof_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"proof_type" "proof_type" NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"parent_id" integer,
+	"author_did" varchar(1000) NOT NULL,
+	"proof" text NOT NULL,
+	"proof_version" integer NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "opinion_report" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_report_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"opinion_id" integer NOT NULL,
+	"author_id" uuid NOT NULL,
+	"report_reason" "report_reason_enum" NOT NULL,
+	"report_explanation" varchar(260),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
+	"author_id" uuid NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"current_content_id" integer,
+	"num_agrees" integer DEFAULT 0 NOT NULL,
+	"num_disagrees" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "organisation" (
@@ -139,7 +200,7 @@ CREATE TABLE IF NOT EXISTS "poll_response_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "poll_response_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"poll_response_id" integer NOT NULL,
 	"poll_response_proof_id" integer NOT NULL,
-	"post_content_id" integer NOT NULL,
+	"conversation_content_id" integer NOT NULL,
 	"parent_id" integer,
 	"option_chosen" integer NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -149,7 +210,7 @@ CREATE TABLE IF NOT EXISTS "poll_response_content" (
 CREATE TABLE IF NOT EXISTS "poll_response_proof" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "poll_response_proof_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"proof_type" "proof_type" NOT NULL,
-	"post_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
 	"parent_id" integer,
 	"author_did" varchar(1000) NOT NULL,
 	"proof" text NOT NULL,
@@ -160,17 +221,17 @@ CREATE TABLE IF NOT EXISTS "poll_response_proof" (
 CREATE TABLE IF NOT EXISTS "poll_response" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "poll_response_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"author_id" uuid NOT NULL,
-	"post_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "poll_response_current_content_id_unique" UNIQUE("current_content_id"),
-	CONSTRAINT "poll_response_author_id_post_id_unique" UNIQUE("author_id","post_id")
+	CONSTRAINT "poll_response_author_id_conversation_id_unique" UNIQUE("author_id","conversation_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "poll" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "poll_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"post_content_id" integer NOT NULL,
+	"conversation_content_id" integer NOT NULL,
 	"option1" varchar(30) NOT NULL,
 	"option2" varchar(30) NOT NULL,
 	"option3" varchar(30),
@@ -185,68 +246,15 @@ CREATE TABLE IF NOT EXISTS "poll" (
 	"option6_response" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "poll_post_content_id_unique" UNIQUE("post_content_id")
+	CONSTRAINT "poll_conversation_content_id_unique" UNIQUE("conversation_content_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "post_content" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "post_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"post_id" integer NOT NULL,
-	"post_proof_id" integer NOT NULL,
-	"parent_id" integer,
-	"title" varchar(130) NOT NULL,
-	"body" varchar,
-	"poll_id" integer,
+CREATE TABLE IF NOT EXISTS "user_conversation_topic_preference" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_conversation_topic_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_id" uuid NOT NULL,
+	"conversation_tag_id" integer NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "post_content_post_proof_id_unique" UNIQUE("post_proof_id")
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "post_proof" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "post_proof_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"proof_type" "proof_type" NOT NULL,
-	"post_id" integer NOT NULL,
-	"parent_id" integer,
-	"author_did" varchar(1000) NOT NULL,
-	"proof" text NOT NULL,
-	"proof_version" integer NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "post" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "post_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"slug_id" varchar(8) NOT NULL,
-	"author_id" uuid NOT NULL,
-	"current_content_id" integer,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
-	"comment_count" integer DEFAULT 0 NOT NULL,
-	CONSTRAINT "post_slug_id_unique" UNIQUE("slug_id"),
-	CONSTRAINT "post_current_content_id_unique" UNIQUE("current_content_id")
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "post_topic" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "post_topic_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"name" text,
-	"code" text,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "report_comments_table" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "report_comments_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"comment_id" integer NOT NULL,
-	"reporter_id" uuid NOT NULL,
-	"reporter_reason" "report_reason_enum" NOT NULL,
-	"report_explanation" varchar(260),
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "report_posts_table" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "report_posts_table_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"post_id" integer NOT NULL,
-	"reporter_id" uuid NOT NULL,
-	"reporter_reason" "report_reason_enum" NOT NULL,
-	"report_explanation" varchar(260),
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	CONSTRAINT "user_unique_topic" UNIQUE("user_id","conversation_tag_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_language_preference" (
@@ -272,14 +280,6 @@ CREATE TABLE IF NOT EXISTS "user_mute_preference" (
 	CONSTRAINT "user_unique_mute" UNIQUE("source_user_id","target_user_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "user_post_topic_preference" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_post_topic_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"user_id" uuid NOT NULL,
-	"post_tag_id" integer NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "user_unique_topic" UNIQUE("user_id","post_tag_id")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organisation_id" integer,
@@ -288,9 +288,9 @@ CREATE TABLE IF NOT EXISTS "user" (
 	"is_anonymous" boolean DEFAULT true NOT NULL,
 	"show_flagged_content" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
-	"active_post_count" integer DEFAULT 0 NOT NULL,
-	"total_post_count" integer DEFAULT 0 NOT NULL,
-	"total_comment_count" integer DEFAULT 0 NOT NULL,
+	"active_conversation_count" integer DEFAULT 0 NOT NULL,
+	"total_conversation_count" integer DEFAULT 0 NOT NULL,
+	"total_opinion_count" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "user_username_unique" UNIQUE("username")
@@ -300,7 +300,7 @@ CREATE TABLE IF NOT EXISTS "vote_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"vote_id" integer NOT NULL,
 	"vote_proof_id" integer NOT NULL,
-	"comment_content_id" integer NOT NULL,
+	"opinion_content_id" integer NOT NULL,
 	"option_chosen" "vote_enum" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
@@ -318,11 +318,11 @@ CREATE TABLE IF NOT EXISTS "vote_proof" (
 CREATE TABLE IF NOT EXISTS "vote" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"author_id" uuid NOT NULL,
-	"comment_id" integer NOT NULL,
+	"opinion_id" integer NOT NULL,
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "vote_author_id_comment_id_unique" UNIQUE("author_id","comment_id")
+	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "zk_passport" (
@@ -337,61 +337,79 @@ CREATE TABLE IF NOT EXISTS "zk_passport" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_content" ADD CONSTRAINT "comment_content_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_content" ADD CONSTRAINT "conversation_content_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_content" ADD CONSTRAINT "comment_content_post_content_id_post_content_id_fk" FOREIGN KEY ("post_content_id") REFERENCES "public"."post_content"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_content" ADD CONSTRAINT "conversation_content_conversation_proof_id_conversation_proof_id_fk" FOREIGN KEY ("conversation_proof_id") REFERENCES "public"."conversation_proof"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_content" ADD CONSTRAINT "comment_content_comment_proof_id_comment_proof_id_fk" FOREIGN KEY ("comment_proof_id") REFERENCES "public"."comment_proof"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_content" ADD CONSTRAINT "conversation_content_parent_id_conversation_content_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."conversation_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_content" ADD CONSTRAINT "comment_content_parent_id_comment_content_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."comment_content"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_content" ADD CONSTRAINT "conversation_content_poll_id_poll_id_fk" FOREIGN KEY ("poll_id") REFERENCES "public"."poll"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_proof" ADD CONSTRAINT "comment_proof_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_moderation" ADD CONSTRAINT "conversation_moderation_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_proof" ADD CONSTRAINT "comment_proof_parent_id_comment_proof_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."comment_proof"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_moderation" ADD CONSTRAINT "conversation_moderation_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment_proof" ADD CONSTRAINT "comment_proof_author_did_device_did_write_fk" FOREIGN KEY ("author_did") REFERENCES "public"."device"("did_write") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_proof" ADD CONSTRAINT "conversation_proof_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment" ADD CONSTRAINT "comment_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_proof" ADD CONSTRAINT "conversation_proof_parent_id_conversation_proof_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."conversation_proof"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment" ADD CONSTRAINT "comment_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_proof" ADD CONSTRAINT "conversation_proof_author_did_device_did_write_fk" FOREIGN KEY ("author_did") REFERENCES "public"."device"("did_write") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comment" ADD CONSTRAINT "comment_current_content_id_comment_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."comment_content"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "conversation_report" ADD CONSTRAINT "conversation_report_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "conversation_report" ADD CONSTRAINT "conversation_report_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "conversation" ADD CONSTRAINT "conversation_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "conversation" ADD CONSTRAINT "conversation_current_content_id_conversation_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."conversation_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -421,25 +439,85 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_comments_table" ADD CONSTRAINT "moderation_comments_table_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "opinion_content" ADD CONSTRAINT "opinion_content_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_comments_table" ADD CONSTRAINT "moderation_comments_table_moderator_id_user_id_fk" FOREIGN KEY ("moderator_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "opinion_content" ADD CONSTRAINT "opinion_content_conversation_content_id_conversation_content_id_fk" FOREIGN KEY ("conversation_content_id") REFERENCES "public"."conversation_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_posts_table" ADD CONSTRAINT "moderation_posts_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "opinion_content" ADD CONSTRAINT "opinion_content_opinion_proof_id_opinion_proof_id_fk" FOREIGN KEY ("opinion_proof_id") REFERENCES "public"."opinion_proof"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "moderation_posts_table" ADD CONSTRAINT "moderation_posts_table_moderator_id_user_id_fk" FOREIGN KEY ("moderator_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "opinion_content" ADD CONSTRAINT "opinion_content_parent_id_opinion_content_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."opinion_content"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_moderation" ADD CONSTRAINT "opinion_moderation_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_moderation" ADD CONSTRAINT "opinion_moderation_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_proof" ADD CONSTRAINT "opinion_proof_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_proof" ADD CONSTRAINT "opinion_proof_parent_id_opinion_proof_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."opinion_proof"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_proof" ADD CONSTRAINT "opinion_proof_author_did_device_did_write_fk" FOREIGN KEY ("author_did") REFERENCES "public"."device"("did_write") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_report" ADD CONSTRAINT "opinion_report_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion_report" ADD CONSTRAINT "opinion_report_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion" ADD CONSTRAINT "opinion_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion" ADD CONSTRAINT "opinion_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "opinion" ADD CONSTRAINT "opinion_current_content_id_opinion_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."opinion_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -463,7 +541,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "poll_response_content" ADD CONSTRAINT "poll_response_content_post_content_id_post_content_id_fk" FOREIGN KEY ("post_content_id") REFERENCES "public"."post_content"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "poll_response_content" ADD CONSTRAINT "poll_response_content_conversation_content_id_conversation_content_id_fk" FOREIGN KEY ("conversation_content_id") REFERENCES "public"."conversation_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -475,7 +553,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "poll_response_proof" ADD CONSTRAINT "poll_response_proof_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "poll_response_proof" ADD CONSTRAINT "poll_response_proof_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -499,7 +577,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "poll_response" ADD CONSTRAINT "poll_response_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "poll_response" ADD CONSTRAINT "poll_response_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -511,85 +589,19 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "poll" ADD CONSTRAINT "poll_post_content_id_post_content_id_fk" FOREIGN KEY ("post_content_id") REFERENCES "public"."post_content"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "poll" ADD CONSTRAINT "poll_conversation_content_id_conversation_content_id_fk" FOREIGN KEY ("conversation_content_id") REFERENCES "public"."conversation_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "post_content" ADD CONSTRAINT "post_content_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "user_conversation_topic_preference" ADD CONSTRAINT "user_conversation_topic_preference_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "post_content" ADD CONSTRAINT "post_content_post_proof_id_post_proof_id_fk" FOREIGN KEY ("post_proof_id") REFERENCES "public"."post_proof"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post_content" ADD CONSTRAINT "post_content_parent_id_post_content_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."post_content"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post_content" ADD CONSTRAINT "post_content_poll_id_poll_id_fk" FOREIGN KEY ("poll_id") REFERENCES "public"."poll"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post_proof" ADD CONSTRAINT "post_proof_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post_proof" ADD CONSTRAINT "post_proof_parent_id_post_proof_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."post_proof"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post_proof" ADD CONSTRAINT "post_proof_author_did_device_did_write_fk" FOREIGN KEY ("author_did") REFERENCES "public"."device"("did_write") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post" ADD CONSTRAINT "post_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "post" ADD CONSTRAINT "post_current_content_id_post_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."post_content"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "report_comments_table" ADD CONSTRAINT "report_comments_table_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "report_comments_table" ADD CONSTRAINT "report_comments_table_reporter_id_user_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "report_posts_table" ADD CONSTRAINT "report_posts_table_post_id_post_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."post"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "report_posts_table" ADD CONSTRAINT "report_posts_table_reporter_id_user_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "user_conversation_topic_preference" ADD CONSTRAINT "user_conversation_topic_preference_conversation_tag_id_conversation_topic_id_fk" FOREIGN KEY ("conversation_tag_id") REFERENCES "public"."conversation_topic"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -619,18 +631,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "user_post_topic_preference" ADD CONSTRAINT "user_post_topic_preference_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "user_post_topic_preference" ADD CONSTRAINT "user_post_topic_preference_post_tag_id_post_topic_id_fk" FOREIGN KEY ("post_tag_id") REFERENCES "public"."post_topic"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "user" ADD CONSTRAINT "user_organisation_id_organisation_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -649,7 +649,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "vote_content" ADD CONSTRAINT "vote_content_comment_content_id_comment_content_id_fk" FOREIGN KEY ("comment_content_id") REFERENCES "public"."comment_content"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "vote_content" ADD CONSTRAINT "vote_content_opinion_content_id_opinion_content_id_fk" FOREIGN KEY ("opinion_content_id") REFERENCES "public"."opinion_content"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -673,7 +673,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "vote" ADD CONSTRAINT "vote_comment_id_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comment"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "vote" ADD CONSTRAINT "vote_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -690,8 +690,8 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "commentId_idx" ON "report_comments_table" USING btree ("comment_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "postId_idx" ON "report_posts_table" USING btree ("post_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversation_id_idx" ON "conversation_report" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "opinion_id_idx" ON "opinion_report" USING btree ("opinion_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_post_topic_preference" USING btree ("user_id");
+CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");

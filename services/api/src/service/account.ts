@@ -3,7 +3,7 @@ import { userTable } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { getUserComments, getUserPosts } from "./user.js";
-import { deleteCommentBySlugId } from "./comment.js";
+import { deleteOpinionBySlugId } from "./comment.js";
 import { deletePostBySlugId } from "./post.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 import { logout } from "./auth.js";
@@ -648,9 +648,9 @@ export async function deleteUserAccount({
                 lastCommentSlugId: undefined,
             });
             for (const comment of userComments) {
-                await deleteCommentBySlugId({
+                await deleteOpinionBySlugId({
                     proof: proof,
-                    commentSlugId: comment.commentItem.commentSlugId,
+                    opinionSlugId: comment.opinionItem.opinionSlugId,
                     db: tx,
                     didWrite: didWrite,
                     userId: userId,
@@ -668,7 +668,7 @@ export async function deleteUserAccount({
                     proof: proof,
                     db: tx,
                     didWrite: didWrite,
-                    postSlugId: post.metadata.postSlugId,
+                    conversationSlugId: post.metadata.conversationSlugId,
                     userId: userId,
                 });
             }

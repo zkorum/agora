@@ -9,7 +9,7 @@
 
   <q-dialog v-model="showReportDialog">
     <ReportContentDialog
-      :slug-id="props.commentItem.commentSlugId"
+      :slug-id="props.commentItem.opinionSlugId"
       report-type="opinion"
       @close="showReportDialog = false"
     />
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import type { CommentItem } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { ref } from "vue";
@@ -29,7 +29,7 @@ const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
   postSlugId: string;
-  commentItem: CommentItem;
+  commentItem: OpinionItem;
 }>();
 
 const { showCommentOptionSelector } = useBottomSheet();
@@ -47,7 +47,7 @@ function reportContentCallback() {
 async function openUserReportsCallback() {
   await router.push({
     name: "/user-reports/[reportType]/[slugId]/",
-    params: { reportType: "comment", slugId: props.commentItem.commentSlugId },
+    params: { reportType: "comment", slugId: props.commentItem.opinionSlugId },
   });
 }
 
@@ -61,7 +61,7 @@ async function moderateCommentCallback() {
     name: "/moderate/opinion/[postSlugId]/[commentSlugId]/",
     params: {
       postSlugId: props.postSlugId,
-      commentSlugId: props.commentItem.commentSlugId,
+      commentSlugId: props.commentItem.opinionSlugId,
     },
   });
 }
@@ -74,7 +74,7 @@ async function optionButtonClicked() {
   };
 
   await showCommentOptionSelector(
-    props.commentItem.commentSlugId,
+    props.commentItem.opinionSlugId,
     props.commentItem.username,
     deleteCommentCallback,
     reportContentCallback,

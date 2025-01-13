@@ -3,7 +3,7 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1PollSubmitResponsePostRequest,
+  type ApiV1PollRespondPostRequest,
 } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
@@ -18,7 +18,7 @@ export function useBackendPollApi() {
       const params = postSlugIdList;
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1PollGetUserPollResponsePost(
+        await DefaultApiAxiosParamCreator().apiV1UserPollGetResponseByConversationsPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -26,7 +26,7 @@ export function useBackendPollApi() {
         undefined,
         undefined,
         api
-      ).apiV1PollGetUserPollResponsePost(params, {
+      ).apiV1UserPollGetResponseByConversationsPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -35,7 +35,7 @@ export function useBackendPollApi() {
       const userResponseList = response.data;
       const responseMap = new Map<string, number>();
       userResponseList.forEach((response) => {
-        responseMap.set(response.postSlugId, response.optionChosen);
+        responseMap.set(response.conversationSlugId, response.optionChosen);
       });
 
       return responseMap;
@@ -48,23 +48,22 @@ export function useBackendPollApi() {
 
   async function submitPollResponse(voteIndex: number, postSlugId: string) {
     try {
-      const params: ApiV1PollSubmitResponsePostRequest = {
-        postSlugId: postSlugId,
+      const params: ApiV1PollRespondPostRequest = {
+        conversationSlugId: postSlugId,
         voteOptionChoice: voteIndex + 1,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1PollSubmitResponsePost(params);
+        await DefaultApiAxiosParamCreator().apiV1PollRespondPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1PollSubmitResponsePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      await DefaultApiFactory(undefined, undefined, api).apiV1PollRespondPost(
+        params,
+        {
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        }
+      );
 
       return true;
     } catch (e) {

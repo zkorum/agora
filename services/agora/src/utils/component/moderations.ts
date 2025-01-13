@@ -9,7 +9,7 @@ export const moderationReasonMapping = [
 
 export const moderationActionPostsMapping = [{ label: "Lock", value: "lock" }];
 
-export const moderationActionCommentsMapping = [
+export const opinionModerationActionMapping = [
   { label: "Move", value: "move" },
   { label: "Hide", value: "hide" },
 ];

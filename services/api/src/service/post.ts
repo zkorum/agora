@@ -1,27 +1,27 @@
-// Interact with a post
+// Interact with a conversation (= post)
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
-    commentTable,
+    opinionTable,
     pollTable,
-    postContentTable,
-    postProofTable,
-    postTable,
+    conversationContentTable,
+    conversationProofTable,
+    conversationTable,
     userTable,
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
-import type { CreateNewPostResponse } from "@/shared/types/dto.js";
+import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
 import { MAX_LENGTH_BODY } from "@/shared/shared.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
-import type { ExtendedPost } from "@/shared/types/zod.js";
+import type { ExtendedConversation } from "@/shared/types/zod.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
-    postTitle: string;
-    postBody: string | null;
+    conversationTitle: string;
+    conversationBody: string | null;
     pollingOptionList: string[] | null;
     authorId: string;
     didWrite: string;
@@ -30,19 +30,22 @@ interface CreateNewPostProps {
 
 export async function createNewPost({
     db,
-    postTitle,
-    postBody,
+    conversationTitle,
+    conversationBody,
     authorId,
     didWrite,
     proof,
     pollingOptionList,
-}: CreateNewPostProps): Promise<CreateNewPostResponse> {
+}: CreateNewPostProps): Promise<CreateNewConversationResponse> {
     try {
-        const postSlugId = generateRandomSlugId();
+        const conversationSlugId = generateRandomSlugId();
 
-        if (postBody != null) {
+        if (conversationBody != null) {
             try {
-                postBody = sanitizeHtmlBody(postBody, MAX_LENGTH_BODY);
+                conversationBody = sanitizeHtmlBody(
+                    conversationBody,
+                    MAX_LENGTH_BODY,
+                );
             } catch (error) {
                 if (error instanceof Error) {
                     throw httpErrors.badRequest(error.message);
@@ -56,55 +59,58 @@ export async function createNewPost({
 
         await db.transaction(async (tx) => {
             const insertPostResponse = await tx
-                .insert(postTable)
+                .insert(conversationTable)
                 .values({
                     authorId: authorId,
-                    slugId: postSlugId,
-                    commentCount: 0,
+                    slugId: conversationSlugId,
+                    opinionCount: 0,
                     currentContentId: null,
                     lastReactedAt: new Date(),
                 })
-                .returning({ postId: postTable.id });
+                .returning({ conversationId: conversationTable.id });
 
-            const postId = insertPostResponse[0].postId;
+            const conversationId = insertPostResponse[0].conversationId;
 
             const masterProofTableResponse = await tx
-                .insert(postProofTable)
+                .insert(conversationProofTable)
                 .values({
                     type: "creation",
-                    postId: postId,
+                    conversationId: conversationId,
                     authorDid: didWrite,
                     proof: proof,
                     proofVersion: 1,
                 })
-                .returning({ proofId: postProofTable.id });
+                .returning({ proofId: conversationProofTable.id });
 
             const proofId = masterProofTableResponse[0].proofId;
 
-            const postContentTableResponse = await tx
-                .insert(postContentTable)
+            const conversationContentTableResponse = await tx
+                .insert(conversationContentTable)
                 .values({
-                    postProofId: proofId,
-                    postId: postId,
+                    conversationProofId: proofId,
+                    conversationId: conversationId,
                     parentId: null,
-                    title: postTitle,
-                    body: postBody,
+                    title: conversationTitle,
+                    body: conversationBody,
                     pollId: null,
                 })
-                .returning({ postContentId: postContentTable.id });
+                .returning({
+                    conversationContentId: conversationContentTable.id,
+                });
 
-            const postContentId = postContentTableResponse[0].postContentId;
+            const conversationContentId =
+                conversationContentTableResponse[0].conversationContentId;
 
             await tx
-                .update(postTable)
+                .update(conversationTable)
                 .set({
-                    currentContentId: postContentId,
+                    currentContentId: conversationContentId,
                 })
-                .where(eq(postTable.id, postId));
+                .where(eq(conversationTable.id, conversationId));
 
             if (pollingOptionList != null) {
                 await tx.insert(pollTable).values({
-                    postContentId: postContentId,
+                    conversationContentId: conversationContentId,
                     option1: pollingOptionList[0],
                     option2: pollingOptionList[1],
                     option3: pollingOptionList[2] ?? null,
@@ -120,44 +126,44 @@ export async function createNewPost({
                 });
             }
 
-            // Update the user profile's post count
+            // Update the user profile's conversation count
             await tx
                 .update(userTable)
                 .set({
-                    activePostCount: sql`${userTable.activePostCount} + 1`,
-                    totalPostCount: sql`${userTable.totalPostCount} + 1`,
+                    activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
+                    totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
                 })
                 .where(eq(userTable.id, authorId));
         });
 
         return {
-            postSlugId: postSlugId,
+            conversationSlugId: conversationSlugId,
         };
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
-            "Database error while creating the new post",
+            "Database error while creating the new conversation",
         );
     }
 }
 
 interface FetchPostBySlugIdProps {
     db: PostgresDatabase;
-    postSlugId: string;
+    conversationSlugId: string;
     personalizationUserId?: string;
 }
 
 export async function fetchPostBySlugId({
     db,
-    postSlugId,
+    conversationSlugId,
     personalizationUserId,
-}: FetchPostBySlugIdProps): Promise<ExtendedPost> {
+}: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
     try {
         const { fetchPostItems } = useCommonPost();
         const postData = await fetchPostItems({
             db: db,
             limit: 1,
-            where: eq(postTable.slugId, postSlugId),
+            where: eq(conversationTable.slugId, conversationSlugId),
             enableCompactBody: false,
             personalizationUserId: personalizationUserId,
             excludeLockedPosts: false,
@@ -168,20 +174,21 @@ export async function fetchPostBySlugId({
             return postData[0];
         } else {
             throw httpErrors.notFound(
-                "Failed to locate post slug ID in the database: " + postSlugId,
+                "Failed to locate conversation slug ID in the database: " +
+                    conversationSlugId,
             );
         }
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
-            "Failed to fetch post by slug ID: " + postSlugId,
+            "Failed to fetch conversation by slug ID: " + conversationSlugId,
         );
     }
 }
 
 interface DeletePostBySlugIdProps {
     db: PostgresDatabase;
-    postSlugId: string;
+    conversationSlugId: string;
     userId: string;
     proof: string;
     didWrite: string;
@@ -189,65 +196,66 @@ interface DeletePostBySlugIdProps {
 
 export async function deletePostBySlugId({
     db,
-    postSlugId,
+    conversationSlugId,
     userId,
     proof,
     didWrite,
 }: DeletePostBySlugIdProps): Promise<void> {
     try {
         await db.transaction(async (tx) => {
-            // Delete the post
-            const updatedPostIdResponse = await tx
-                .update(postTable)
+            // Delete the conversation
+            const updatedConversationIdResponse = await tx
+                .update(conversationTable)
                 .set({
                     currentContentId: null,
                 })
                 .where(
                     and(
-                        eq(postTable.authorId, userId),
-                        eq(postTable.slugId, postSlugId),
+                        eq(conversationTable.authorId, userId),
+                        eq(conversationTable.slugId, conversationSlugId),
                     ),
                 )
-                .returning({ postId: postTable.id });
+                .returning({ conversationId: conversationTable.id });
 
-            if (updatedPostIdResponse.length != 1) {
+            if (updatedConversationIdResponse.length != 1) {
                 tx.rollback();
             }
 
-            const postId = updatedPostIdResponse[0].postId;
+            const conversationId =
+                updatedConversationIdResponse[0].conversationId;
 
-            // Update the user's active post count
+            // Update the user's active conversation count
             await tx
                 .update(userTable)
                 .set({
-                    activePostCount: sql`${userTable.activePostCount} - 1`,
+                    activeConversationCount: sql`${userTable.activeConversationCount} - 1`,
                 })
                 .where(eq(userTable.id, userId));
 
             // Create the delete proof
             await tx
-                .insert(postProofTable)
+                .insert(conversationProofTable)
                 .values({
                     type: "deletion",
-                    postId: postId,
+                    conversationId: conversationId,
                     authorDid: didWrite,
                     proof: proof,
                     proofVersion: 1,
                 })
-                .returning({ proofId: postProofTable.id });
+                .returning({ proofId: conversationProofTable.id });
 
-            // Mark all of the comments as deleted
+            // Mark all of the opinions as deleted
             await tx
-                .update(commentTable)
+                .update(opinionTable)
                 .set({
                     currentContentId: null,
                 })
-                .where(eq(commentTable.postId, postId));
+                .where(eq(opinionTable.conversationId, conversationId));
         });
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
-            "Failed to delete post by slug ID: " + postSlugId,
+            "Failed to delete conversation by slug ID: " + conversationSlugId,
         );
     }
 }

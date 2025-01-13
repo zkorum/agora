@@ -1,7 +1,7 @@
 import { useBackendAuthApi } from "src/utils/api/auth";
 import type {
   ApiV1AuthAuthenticatePost200Response,
-  ApiV1AuthVerifyPhoneOtpPost200Response,
+  ApiV1AuthPhoneVerifyOtpPost200Response,
 } from "src/api";
 import type { KeyAction } from "./common";
 
@@ -17,7 +17,7 @@ export function useBackendPhoneVerification() {
 
   async function submitCode(
     code: number
-  ): Promise<ApiV1AuthVerifyPhoneOtpPost200Response> {
+  ): Promise<ApiV1AuthPhoneVerifyOtpPost200Response> {
     if (process.env.VITE_DEV_AUTHORIZED_PHONES) {
       code = 0;
     }

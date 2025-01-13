@@ -1,18 +1,18 @@
 import {
-    postContentTable,
+    conversationContentTable,
     pollTable,
-    postTable,
+    conversationTable,
     organisationTable,
     userTable,
-    commentTable,
-    moderationPostsTable,
+    opinionTable,
+    conversationModerationTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
-    PostMetadata,
-    ExtendedPostPayload,
+    ConversationMetadata,
+    ExtendedConversationPayload,
     PollOptionWithResult,
-    ExtendedPost,
+    ExtendedConversation,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and } from "drizzle-orm";
@@ -67,13 +67,16 @@ export function useCommonPost() {
 
         const moderationPostsTableResponse = await db
             .select({
-                moderationAction: moderationPostsTable.moderationAction,
+                moderationAction: conversationModerationTable.moderationAction,
             })
-            .from(moderationPostsTable)
+            .from(conversationModerationTable)
             .where(
                 and(
-                    eq(moderationPostsTable.postId, postDetails.id),
-                    eq(moderationPostsTable.moderationAction, "lock"),
+                    eq(
+                        conversationModerationTable.conversationId,
+                        postDetails.id,
+                    ),
+                    eq(conversationModerationTable.moderationAction, "lock"),
                 ),
             );
 
@@ -102,11 +105,11 @@ export function useCommonPost() {
         personalizationUserId,
         excludeLockedPosts,
         removeMutedAuthors,
-    }: FetchPostItemsProps): Promise<ExtendedPost[]> {
+    }: FetchPostItemsProps): Promise<ExtendedConversation[]> {
         const postItems = await db
             .select({
-                title: postContentTable.title,
-                body: postContentTable.body,
+                title: conversationContentTable.title,
+                body: conversationContentTable.body,
                 option1: pollTable.option1,
                 option1Response: pollTable.option1Response,
                 option2: pollTable.option2,
@@ -120,29 +123,35 @@ export function useCommonPost() {
                 option6: pollTable.option6,
                 option6Response: pollTable.option6Response,
                 // metadata
-                slugId: postTable.slugId,
-                createdAt: postTable.createdAt,
-                updatedAt: postTable.updatedAt,
-                lastReactedAt: postTable.lastReactedAt,
-                commentCount: postTable.commentCount,
+                slugId: conversationTable.slugId,
+                createdAt: conversationTable.createdAt,
+                updatedAt: conversationTable.updatedAt,
+                lastReactedAt: conversationTable.lastReactedAt,
+                opinionCount: conversationTable.opinionCount,
                 authorName: userTable.username,
                 // moderation
-                moderationAction: moderationPostsTable.moderationAction,
+                moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
-                    moderationPostsTable.moderationExplanation,
-                moderationReason: moderationPostsTable.moderationReason,
-                moderationCreatedAt: moderationPostsTable.createdAt,
-                moderationUpdatedAt: moderationPostsTable.updatedAt,
+                    conversationModerationTable.moderationExplanation,
+                moderationReason: conversationModerationTable.moderationReason,
+                moderationCreatedAt: conversationModerationTable.createdAt,
+                moderationUpdatedAt: conversationModerationTable.updatedAt,
             })
-            .from(postTable)
+            .from(conversationTable)
             .innerJoin(
-                postContentTable,
-                eq(postContentTable.id, postTable.currentContentId),
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
             )
-            .innerJoin(userTable, eq(userTable.id, postTable.authorId))
+            .innerJoin(userTable, eq(userTable.id, conversationTable.authorId))
             .leftJoin(
-                moderationPostsTable,
-                eq(moderationPostsTable.postId, postTable.id),
+                conversationModerationTable,
+                eq(
+                    conversationModerationTable.conversationId,
+                    conversationTable.id,
+                ),
             )
             .leftJoin(
                 organisationTable,
@@ -150,14 +159,17 @@ export function useCommonPost() {
             )
             .leftJoin(
                 pollTable,
-                eq(postContentTable.id, pollTable.postContentId),
+                eq(
+                    conversationContentTable.id,
+                    pollTable.conversationContentId,
+                ),
             )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(where)
-            .orderBy(desc(postTable.createdAt))
+            .orderBy(desc(conversationTable.createdAt))
             .limit(limit);
 
-        let extendedPostList: ExtendedPost[] = [];
+        let extendedPostList: ExtendedConversation[] = [];
         postItems.forEach((postItem) => {
             if (enableCompactBody && postItem.body != null) {
                 postItem.body = sanitizeHtml(postItem.body, {
@@ -178,17 +190,17 @@ export function useCommonPost() {
                 postItem.moderationUpdatedAt,
             );
 
-            const metadata: PostMetadata = {
-                postSlugId: postItem.slugId,
+            const metadata: ConversationMetadata = {
+                conversationSlugId: postItem.slugId,
                 moderation: moderationProperties,
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.updatedAt,
                 lastReactedAt: postItem.lastReactedAt,
-                commentCount: postItem.commentCount,
+                opinionCount: postItem.opinionCount,
                 authorUsername: postItem.authorName,
             };
 
-            let payload: ExtendedPostPayload;
+            let payload: ExtendedConversationPayload;
             if (
                 postItem.option1 !== null &&
                 postItem.option2 !== null &&
@@ -269,7 +281,7 @@ export function useCommonPost() {
 
                 const postSlugIdList: string[] = [];
                 extendedPostList.forEach((post) => {
-                    postSlugIdList.push(post.metadata.postSlugId);
+                    postSlugIdList.push(post.metadata.conversationSlugId);
                 });
 
                 const pollResponses = await getUserPollResponse({
@@ -281,14 +293,14 @@ export function useCommonPost() {
 
                 pollResponses.forEach((response) => {
                     pollResponseMap.set(
-                        response.postSlugId,
+                        response.conversationSlugId,
                         response.optionChosen,
                     );
                 });
 
                 extendedPostList.forEach((post) => {
                     const voteIndex = pollResponseMap.get(
-                        post.metadata.postSlugId,
+                        post.metadata.conversationSlugId,
                     );
                     post.interaction = {
                         hasVoted: voteIndex != undefined,
@@ -336,11 +348,11 @@ export function useCommonPost() {
     }: GetPostAndContentIdFromSlugIdProps): Promise<IdAndContentId> {
         const postTableResponse = await db
             .select({
-                id: postTable.id,
-                currentContentId: postTable.currentContentId,
+                id: conversationTable.id,
+                currentContentId: conversationTable.currentContentId,
             })
-            .from(postTable)
-            .where(eq(postTable.slugId, postSlugId));
+            .from(conversationTable)
+            .where(eq(conversationTable.slugId, postSlugId));
 
         if (postTableResponse.length == 1) {
             return {
@@ -373,10 +385,10 @@ export function useCommonComment() {
     }: GetCommentIdFromCommentSlugIdProps) {
         const commentTableResponse = await db
             .select({
-                commentId: commentTable.id,
+                commentId: opinionTable.id,
             })
-            .from(commentTable)
-            .where(eq(commentTable.slugId, commentSlugId));
+            .from(opinionTable)
+            .where(eq(opinionTable.slugId, commentSlugId));
 
         if (commentTableResponse.length != 1) {
             throw httpErrors.notFound(
@@ -399,11 +411,14 @@ export function useCommonComment() {
     }: GetPostIdFromCommentSlugIdProps) {
         const commentTableResponse = await db
             .select({
-                postSlugId: postTable.slugId,
+                postSlugId: conversationTable.slugId,
             })
-            .from(commentTable)
-            .innerJoin(postTable, eq(postTable.id, commentTable.postId))
-            .where(eq(commentTable.slugId, commentSlugId));
+            .from(opinionTable)
+            .innerJoin(
+                conversationTable,
+                eq(conversationTable.id, opinionTable.conversationId),
+            )
+            .where(eq(opinionTable.slugId, commentSlugId));
 
         if (commentTableResponse.length != 1) {
             throw httpErrors.internalServerError(

@@ -53,7 +53,7 @@ import { onMounted, ref, watch } from "vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { type CommentFeedFilter, type CommentItem } from "src/shared/types/zod";
+import { type CommentFeedFilter, type OpinionItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -84,11 +84,11 @@ const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { profileData } = storeToRefs(useUserStore());
 
-let commentItemsNew = ref<CommentItem[]>([]);
-let commentItemsModerated = ref<CommentItem[]>([]);
-let commentItemsHidden = ref<CommentItem[]>([]);
+let commentItemsNew = ref<OpinionItem[]>([]);
+let commentItemsModerated = ref<OpinionItem[]>([]);
+let commentItemsHidden = ref<OpinionItem[]>([]);
 
-const commentSlugIdLikedMap = ref<Map<string, "like" | "dislike">>(new Map());
+const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
 const baseFilters: { name: string; value: CommentFilterOptions }[] = [
   { name: "New", value: "new" },
@@ -142,7 +142,7 @@ async function fetchPersonalLikes() {
     if (response) {
       response.forEach((userVote) => {
         commentSlugIdLikedMap.value.set(
-          userVote.commentSlugId,
+          userVote.opinionSlugId,
           userVote.votingAction
         );
       });
@@ -176,13 +176,13 @@ async function fetchCommentList(filter: CommentFeedFilter) {
 
 function getCommentStatus(commentSlugId: string): CommentFilterOptions {
   for (const commentItem of commentItemsNew.value) {
-    if (commentItem.commentSlugId == commentSlugId) {
+    if (commentItem.opinionSlugId == commentSlugId) {
       return "new";
     }
   }
 
   for (const commentItem of commentItemsModerated.value) {
-    if (commentItem.commentSlugId == commentSlugId) {
+    if (commentItem.opinionSlugId == commentSlugId) {
       return "moderated";
     }
   }

@@ -1,16 +1,16 @@
 import { log } from "@/app.js";
 import {
-    commentContentTable,
-    commentTable,
-    moderationCommentsTable,
-    postTable,
+    opinionContentTable,
+    opinionTable,
+    opinionModerationTable,
+    conversationTable,
     userTable,
 } from "@/schema.js";
-import type { FetchUserProfileResponse } from "@/shared/types/dto.js";
+import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type {
-    CommentItem,
-    ExtendedComment,
-    ExtendedPost,
+    OpinionItem,
+    ExtendedOpinion,
+    ExtendedConversation,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { and, eq, lt, desc } from "drizzle-orm";
@@ -31,7 +31,7 @@ export async function getUserComments({
     db,
     userId,
     lastCommentSlugId,
-}: GetUserCommentsProps): Promise<ExtendedComment[]> {
+}: GetUserCommentsProps): Promise<ExtendedOpinion[]> {
     try {
         const lastCreatedAt = await getCommentSlugIdLastCreatedAt({
             lastSlugId: lastCommentSlugId,
@@ -41,42 +41,45 @@ export async function getUserComments({
         // Fetch a list of comment IDs first
         const commentResponseList = await db
             .select({
-                commentSlugId: commentTable.slugId,
-                createdAt: commentTable.createdAt,
-                updatedAt: commentTable.updatedAt,
-                comment: commentContentTable.content,
-                numLikes: commentTable.numLikes,
-                numDislikes: commentTable.numDislikes,
+                commentSlugId: opinionTable.slugId,
+                createdAt: opinionTable.createdAt,
+                updatedAt: opinionTable.updatedAt,
+                comment: opinionContentTable.content,
+                numAgrees: opinionTable.numAgrees,
+                numDisagrees: opinionTable.numDisagrees,
                 username: userTable.username,
-                postSlugId: postTable.slugId,
-                moderationAction: moderationCommentsTable.moderationAction,
+                postSlugId: conversationTable.slugId,
+                moderationAction: opinionModerationTable.moderationAction,
                 moderationExplanation:
-                    moderationCommentsTable.moderationExplanation,
-                moderationReason: moderationCommentsTable.moderationReason,
-                moderationCreatedAt: moderationCommentsTable.createdAt,
-                moderationUpdatedAt: moderationCommentsTable.updatedAt,
+                    opinionModerationTable.moderationExplanation,
+                moderationReason: opinionModerationTable.moderationReason,
+                moderationCreatedAt: opinionModerationTable.createdAt,
+                moderationUpdatedAt: opinionModerationTable.updatedAt,
             })
-            .from(commentTable)
+            .from(opinionTable)
             .innerJoin(
-                commentContentTable,
-                eq(commentContentTable.id, commentTable.currentContentId),
+                opinionContentTable,
+                eq(opinionContentTable.id, opinionTable.currentContentId),
             )
-            .innerJoin(userTable, eq(userTable.id, commentTable.authorId))
-            .innerJoin(postTable, eq(postTable.id, commentTable.postId))
+            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .innerJoin(
+                conversationTable,
+                eq(conversationTable.id, opinionTable.conversationId),
+            )
             .leftJoin(
-                moderationCommentsTable,
-                eq(moderationCommentsTable.commentId, commentTable.id),
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
             )
             .where(
                 and(
-                    eq(commentTable.authorId, userId),
-                    lt(commentTable.createdAt, lastCreatedAt),
+                    eq(opinionTable.authorId, userId),
+                    lt(opinionTable.createdAt, lastCreatedAt),
                 ),
             )
-            .orderBy(desc(commentTable.createdAt))
+            .orderBy(desc(opinionTable.createdAt))
             .limit(10);
 
-        const extendedCommentList: ExtendedComment[] = [];
+        const extendedCommentList: ExtendedOpinion[] = [];
 
         for (const commentResponse of commentResponseList) {
             const moderationProperties = createCommentModerationPropertyObject(
@@ -87,12 +90,12 @@ export async function getUserComments({
                 commentResponse.moderationUpdatedAt,
             );
 
-            const commentItem: CommentItem = {
-                comment: commentResponse.comment,
-                commentSlugId: commentResponse.commentSlugId,
+            const commentItem: OpinionItem = {
+                opinion: commentResponse.comment,
+                opinionSlugId: commentResponse.commentSlugId,
                 createdAt: commentResponse.createdAt,
-                numDislikes: commentResponse.numDislikes,
-                numLikes: commentResponse.numLikes,
+                numDisagrees: commentResponse.numDisagrees,
+                numAgrees: commentResponse.numAgrees,
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
                 moderation: moderationProperties,
@@ -100,13 +103,13 @@ export async function getUserComments({
 
             const postItem = await fetchPostBySlugId({
                 db: db,
-                postSlugId: commentResponse.postSlugId,
+                conversationSlugId: commentResponse.postSlugId,
                 personalizationUserId: undefined,
             });
 
-            const extendedCommentItem: ExtendedComment = {
-                commentItem: commentItem,
-                postData: postItem,
+            const extendedCommentItem: ExtendedOpinion = {
+                opinionItem: commentItem,
+                conversationData: postItem,
             };
 
             extendedCommentList.push(extendedCommentItem);
@@ -131,7 +134,7 @@ export async function getUserPosts({
     db,
     userId,
     lastPostSlugId,
-}: GetUserPostProps): Promise<ExtendedPost[]> {
+}: GetUserPostProps): Promise<ExtendedConversation[]> {
     try {
         const { fetchPostItems } = useCommonPost();
 
@@ -141,11 +144,11 @@ export async function getUserPosts({
         });
 
         const whereClause = and(
-            eq(postTable.authorId, userId),
-            lt(postTable.createdAt, lastCreatedAt),
+            eq(conversationTable.authorId, userId),
+            lt(conversationTable.createdAt, lastCreatedAt),
         );
 
-        const posts: ExtendedPost[] = await fetchPostItems({
+        const posts: ExtendedConversation[] = await fetchPostItems({
             db: db,
             limit: 10,
             where: whereClause,
@@ -172,11 +175,11 @@ interface GetUserProfileProps {
 export async function getUserProfile({
     db,
     userId,
-}: GetUserProfileProps): Promise<FetchUserProfileResponse> {
+}: GetUserProfileProps): Promise<GetUserProfileResponse> {
     try {
         const userTableResponse = await db
             .select({
-                activePostCount: userTable.activePostCount,
+                activePostCount: userTable.activeConversationCount,
                 createdAt: userTable.createdAt,
                 username: userTable.username,
                 isModerator: userTable.isModerator,

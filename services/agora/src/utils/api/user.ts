@@ -1,15 +1,15 @@
 import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1UserFetchUserCommentsPostRequest,
-  type ApiV1UserFetchUserPostsPostRequest,
+  type ApiV1UserOpinionFetchPostRequest,
+  type ApiV1UserConversationFetchPostRequest,
 } from "src/api";
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import type {
-  ExtendedComment,
-  ExtendedPost,
+  ExtendedOpinion,
+  ExtendedConversation,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import { useBackendPostApi } from "./post";
@@ -24,13 +24,13 @@ export function useBackendUserApi() {
   async function fetchUserProfile() {
     try {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserFetchUserProfilePost();
+        await DefaultApiAxiosParamCreator().apiV1UserProfileGetPost();
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1UserFetchUserProfilePost({
+      ).apiV1UserProfileGetPost({
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -46,28 +46,31 @@ export function useBackendUserApi() {
 
   async function fetchUserPosts(
     lastPostSlugId: string | undefined
-  ): Promise<ExtendedPost[] | null> {
+  ): Promise<ExtendedConversation[] | null> {
     try {
-      const params: ApiV1UserFetchUserPostsPostRequest = {
-        lastPostSlugId: lastPostSlugId,
+      const params: ApiV1UserConversationFetchPostRequest = {
+        lastConversationSlugId: lastPostSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserFetchUserPostsPost(params);
+        await DefaultApiAxiosParamCreator().apiV1UserConversationFetchPost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1UserFetchUserPostsPost(params, {
+      ).apiV1UserConversationFetchPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
 
-      const internalPostList: ExtendedPost[] = response.data.map(
+      const internalPostList: ExtendedConversation[] = response.data.map(
         (postElement) => {
-          const dataItem: ExtendedPost = createInternalPostData(postElement);
+          const dataItem: ExtendedConversation =
+            createInternalPostData(postElement);
           return dataItem;
         }
       );
@@ -82,53 +85,53 @@ export function useBackendUserApi() {
 
   async function fetchUserComments(
     lastCommentSlugId: string | undefined
-  ): Promise<ExtendedComment[] | null> {
+  ): Promise<ExtendedOpinion[] | null> {
     try {
-      const params: ApiV1UserFetchUserCommentsPostRequest = {
-        lastCommentSlugId: lastCommentSlugId,
+      const params: ApiV1UserOpinionFetchPostRequest = {
+        lastOpinionSlugId: lastCommentSlugId,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserFetchUserCommentsPost(
-          params
-        );
+        await DefaultApiAxiosParamCreator().apiV1UserOpinionFetchPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1UserFetchUserCommentsPost(params, {
+      ).apiV1UserOpinionFetchPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
 
-      const extendedCommentList: ExtendedComment[] = [];
+      const extendedCommentList: ExtendedOpinion[] = [];
       response.data.forEach((responseItem) => {
         // Patch OpenAPI bug on discriminatedUnion
-        const moderationStatus = responseItem.commentItem.moderation
+        const moderationStatus = responseItem.opinionItem.moderation
           .status as moderationStatusOptionsType;
 
-        const extendedComment: ExtendedComment = {
-          postData: createInternalPostData(responseItem.postData),
-          commentItem: {
-            comment: responseItem.commentItem.comment,
-            commentSlugId: responseItem.commentItem.commentSlugId,
-            createdAt: new Date(responseItem.commentItem.createdAt),
-            numDislikes: responseItem.commentItem.numDislikes,
-            numLikes: responseItem.commentItem.numLikes,
-            updatedAt: new Date(responseItem.commentItem.updatedAt),
-            username: String(responseItem.commentItem.username),
+        const extendedComment: ExtendedOpinion = {
+          conversationData: createInternalPostData(
+            responseItem.conversationData
+          ),
+          opinionItem: {
+            opinion: responseItem.opinionItem.opinion,
+            opinionSlugId: responseItem.opinionItem.opinionSlugId,
+            createdAt: new Date(responseItem.opinionItem.createdAt),
+            numDisagrees: responseItem.opinionItem.numDisagrees,
+            numAgrees: responseItem.opinionItem.numAgrees,
+            updatedAt: new Date(responseItem.opinionItem.updatedAt),
+            username: String(responseItem.opinionItem.username),
             moderation: {
               status: moderationStatus,
-              action: responseItem.commentItem.moderation.action,
-              explanation: responseItem.commentItem.moderation.explanation,
-              reason: responseItem.commentItem.moderation.reason,
+              action: responseItem.opinionItem.moderation.action,
+              explanation: responseItem.opinionItem.moderation.explanation,
+              reason: responseItem.opinionItem.moderation.reason,
               createdAt: new Date(
-                responseItem.commentItem.moderation.createdAt
+                responseItem.opinionItem.moderation.createdAt
               ),
               updatedAt: new Date(
-                responseItem.commentItem.moderation.updatedAt
+                responseItem.opinionItem.moderation.updatedAt
               ),
             },
           },
