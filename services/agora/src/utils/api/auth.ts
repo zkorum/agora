@@ -95,19 +95,23 @@ export function useBackendAuthApi() {
   }
 
   async function deviceIsLoggedIn(): Promise<boolean> {
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
-    const encodedUcan = await buildEncodedUcan(url, options);
-    const resp = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1AuthCheckLoginStatusPost({
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
-    return resp.data.isLoggedIn;
+    try {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const resp = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AuthCheckLoginStatusPost({
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      return resp.data.isLoggedIn;
+    } catch (error) {
+      return false;
+    }
   }
 
   async function logoutFromServer() {
@@ -142,6 +146,8 @@ export function useBackendAuthApi() {
         const needRedirect = needRedirectUnauthenticatedUser();
         if (needRedirect) {
           await showLogoutMessageAndRedirect();
+        } else {
+          await loadPostData(false);
         }
       }, 500);
     }

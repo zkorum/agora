@@ -59,17 +59,17 @@
 </template>
 
 <script setup lang="ts">
-import { useElementVisibility } from "@vueuse/core";
-import { storeToRefs } from "pinia";
-import PostDetails from "src/components/post/PostDetails.vue";
+import { useElementVisibility, useTimeAgo } from "@vueuse/core";
 import { useUserStore } from "src/stores/user";
 import { onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import CommentActionOptions from "src/components/post/views/CommentActionOptions.vue";
+import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
+import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 
-const { loadUserProfile, loadMoreUserPosts } = useUserStore();
+const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
-
-const router = useRouter();
 
 const endOfFeed = ref(false);
 let isExpandingPosts = false;
@@ -78,6 +78,8 @@ const bottomOfPostDiv = ref(null);
 const targetIsVisible = useElementVisibility(bottomOfPostDiv);
 
 let isLoaded = false;
+
+const router = useRouter();
 
 onMounted(async () => {
   await loadUserProfile();
@@ -93,19 +95,60 @@ watch(targetIsVisible, async () => {
   ) {
     isExpandingPosts = true;
 
-    const response = await loadMoreUserPosts();
+    const response = await loadMoreUserComments();
     endOfFeed.value = response.reachedEndOfFeed;
 
     isExpandingPosts = false;
   }
 });
 
-async function openPost(postSlugId: string) {
+async function openComment(postSlugId: string, commentSlugId: string) {
   await router.push({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: postSlugId },
+    query: {
+      opinionSlugId: commentSlugId,
+    },
   });
+}
+
+async function commentDeleted() {
+  await loadUserProfile();
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.postTitle {
+  width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.commentMetadata {
+  color: $color-text-weak;
+  font-size: 0.9rem;
+}
+
+.commentBody {
+  padding-top: 0.5rem;
+}
+
+.topRowFlex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+</style>
