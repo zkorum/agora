@@ -17,6 +17,7 @@ import {
 import { useNotify } from "../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
+import { CreateCommentResponse } from "src/shared/types/dto";
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -156,7 +157,7 @@ export function useBackendCommentApi() {
   async function createNewComment(
     commentBody: string,
     postSlugId: string
-  ): Promise<boolean> {
+  ): Promise<CreateCommentResponse | undefined> {
     try {
       const params: ApiV1OpinionCreatePostRequest = {
         opinionBody: commentBody,
@@ -176,21 +177,18 @@ export function useBackendCommentApi() {
         },
       });
 
-      if (response.data.success) {
-        return true;
-      } else {
+      if (!response.data.success) {
         if (response.data.reason == "conversation_locked") {
           showNotifyMessage(
             "Cannot create opinion because the conversation is locked"
           );
         }
-
-        return false;
       }
+      return response.data;
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to add opinion to the conversation");
-      return false;
+      return undefined;
     }
   }
 

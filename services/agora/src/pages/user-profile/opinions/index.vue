@@ -1,23 +1,57 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
     <div
-      v-for="postData in profileData.userPostList"
-      :key="postData.metadata.conversationSlugId"
+      v-for="commentItem in profileData.userCommentList"
+      :key="commentItem.opinionItem.opinionSlugId"
     >
-      <PostDetails
-        :extended-post-data="postData"
-        :compact-mode="true"
-        :show-comment-section="false"
-        :skeleton-mode="false"
-        class="showCursor"
-        :show-author="false"
-        :display-absolute-time="true"
-        @click="openPost(postData.metadata.conversationSlugId)"
-      />
+      <ZKHoverEffect :enable-hover="true">
+        <div
+          class="container"
+          @click="
+            openComment(
+              commentItem.conversationData.metadata.conversationSlugId,
+              commentItem.opinionItem.opinionSlugId
+            )
+          "
+        >
+          <div class="topRowFlex">
+            <div class="postTitle">
+              {{ commentItem.conversationData.payload.title }}
+            </div>
+            <div>
+              <CommentActionOptions
+                :comment-item="commentItem.opinionItem"
+                :post-slug-id="
+                  commentItem.conversationData.metadata.conversationSlugId
+                "
+                @deleted="commentDeleted()"
+              />
+            </div>
+          </div>
 
-      <div>
-        <q-separator :inset="false" />
-      </div>
+          <div class="commentMetadata">
+            <span :style="{ fontWeight: 'bold' }">{{
+              commentItem.opinionItem.username
+            }}</span>
+            commented
+            {{ useTimeAgo(commentItem.opinionItem.createdAt) }}
+          </div>
+
+          <div class="commentBody">
+            <span v-html="commentItem.opinionItem.opinion"></span>
+          </div>
+
+          <CommentModeration
+            :comment-item="commentItem.opinionItem"
+            :post-slug-id="
+              commentItem.conversationData.metadata.conversationSlugId
+            "
+          />
+        </div>
+      </ZKHoverEffect>
+
+      <q-separator :inset="false" />
     </div>
 
     <div ref="bottomOfPostDiv"></div>

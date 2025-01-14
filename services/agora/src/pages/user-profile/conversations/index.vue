@@ -3,28 +3,26 @@
   <div>
     <div
       v-for="commentItem in profileData.userCommentList"
-      :key="commentItem.opinionItem.opinionSlugId"
+      :key="commentItem.commentItem.commentSlugId"
     >
       <ZKHoverEffect :enable-hover="true">
         <div
           class="container"
           @click="
             openComment(
-              commentItem.conversationData.metadata.conversationSlugId,
-              commentItem.opinionItem.opinionSlugId
+              commentItem.postData.metadata.postSlugId,
+              commentItem.commentItem.commentSlugId
             )
           "
         >
           <div class="topRowFlex">
             <div class="postTitle">
-              {{ commentItem.conversationData.payload.title }}
+              {{ commentItem.postData.payload.title }}
             </div>
             <div>
               <CommentActionOptions
-                :comment-item="commentItem.opinionItem"
-                :post-slug-id="
-                  commentItem.conversationData.metadata.conversationSlugId
-                "
+                :comment-item="commentItem.commentItem"
+                :post-slug-id="commentItem.postData.metadata.postSlugId"
                 @deleted="commentDeleted()"
               />
             </div>
@@ -32,21 +30,19 @@
 
           <div class="commentMetadata">
             <span :style="{ fontWeight: 'bold' }">{{
-              commentItem.opinionItem.username
+              commentItem.commentItem.username
             }}</span>
             commented
-            {{ useTimeAgo(commentItem.opinionItem.createdAt) }}
+            {{ useTimeAgo(commentItem.commentItem.createdAt) }}
           </div>
 
           <div class="commentBody">
-            <span v-html="commentItem.opinionItem.opinion"></span>
+            <span v-html="commentItem.commentItem.comment"></span>
           </div>
 
           <CommentModeration
-            :comment-item="commentItem.opinionItem"
-            :post-slug-id="
-              commentItem.conversationData.metadata.conversationSlugId
-            "
+            :comment-item="commentItem.commentItem"
+            :post-slug-id="commentItem.postData.metadata.postSlugId"
           />
         </div>
       </ZKHoverEffect>
@@ -107,7 +103,7 @@ async function openComment(postSlugId: string, commentSlugId: string) {
     name: "/conversation/[postSlugId]",
     params: { postSlugId: postSlugId },
     query: {
-      commentSlugId: commentSlugId,
+      opinionSlugId: commentSlugId,
     },
   });
 }

@@ -8,7 +8,7 @@
           :label="option.name"
           :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
           :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
-          @click="sortAlgorithm = option.value"
+          @click="selectedNewFilter(option.value)"
         />
       </div>
 
@@ -16,7 +16,7 @@
         v-if="sortAlgorithm == 'new'"
         :comment-item-list="commentItemsNew"
         :post-slug-id="postSlugId"
-        :initial-comment-slug-id="initialCommentSlugId"
+        :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         @deleted="deletedComment()"
@@ -27,7 +27,7 @@
         v-if="sortAlgorithm == 'moderated'"
         :comment-item-list="commentItemsModerated"
         :post-slug-id="postSlugId"
-        :initial-comment-slug-id="initialCommentSlugId"
+        :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         @deleted="deletedComment()"
@@ -38,7 +38,7 @@
         v-if="sortAlgorithm == 'hidden'"
         :comment-item-list="commentItemsHidden"
         :post-slug-id="postSlugId"
-        :initial-comment-slug-id="initialCommentSlugId"
+        :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         @deleted="deletedComment()"
@@ -59,6 +59,8 @@ import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
 import { useNotify } from "src/utils/ui/notify";
+import { useRouter } from "vue-router";
+import { useRouteQuery } from "@vueuse/router";
 
 type CommentFilterOptions = "new" | "moderated" | "hidden";
 
@@ -66,15 +68,21 @@ const emit = defineEmits(["deleted"]);
 
 const props = defineProps<{
   postSlugId: string;
-  initialCommentSlugId: string;
   isPostLocked: boolean;
-  commentFilter: CommentFilterOptions;
 }>();
 
+const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
+  transform: String,
+});
+const commentFilterQuery = useRouteQuery("filter", "", {
+  transform: String,
+});
+
 const { showNotifyMessage } = useNotify();
+const router = useRouter();
 
 const sortAlgorithm = ref<CommentFilterOptions>("new");
-sortAlgorithm.value = props.commentFilter;
+updateCommentFilter();
 
 const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
@@ -103,6 +111,24 @@ onMounted(async () => {
 watch(profileData, async () => {
   await initializeModeratorMenu();
 });
+
+async function selectedNewFilter(optionValue: CommentFilterOptions) {
+  await router.replace({ query: { filter: optionValue } });
+  sortAlgorithm.value = optionValue;
+}
+
+function updateCommentFilter() {
+  if (
+    commentFilterQuery.value == "new" ||
+    commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "hidden"
+  ) {
+    sortAlgorithm.value = commentFilterQuery.value;
+  } else {
+    console.log("Unknown comment filter detected: " + commentFilterQuery);
+    return "new";
+  }
+}
 
 async function initializeData() {
   await Promise.all([
@@ -174,7 +200,7 @@ async function fetchCommentList(filter: CommentFeedFilter) {
   }
 }
 
-function getCommentStatus(commentSlugId: string): CommentFilterOptions {
+function autoDetectCommentFilter(commentSlugId: string): CommentFilterOptions {
   for (const commentItem of commentItemsNew.value) {
     if (commentItem.opinionSlugId == commentSlugId) {
       return "new";
@@ -196,11 +222,17 @@ function getCommentStatus(commentSlugId: string): CommentFilterOptions {
 }
 
 async function scrollToComment() {
-  if (props.initialCommentSlugId != "") {
-    sortAlgorithm.value = getCommentStatus(props.initialCommentSlugId);
+  if (commentSlugIdQuery.value != "") {
+    sortAlgorithm.value = autoDetectCommentFilter(commentSlugIdQuery.value);
+    await router.replace({
+      query: {
+        opinionSlugId: commentSlugIdQuery.value,
+        filter: sortAlgorithm.value,
+      },
+    });
 
     setTimeout(function () {
-      const targetElement = document.getElementById(props.initialCommentSlugId);
+      const targetElement = document.getElementById(commentSlugIdQuery.value);
 
       if (targetElement != null) {
         targetElement.scrollIntoView({
@@ -209,7 +241,7 @@ async function scrollToComment() {
         });
       } else {
         console.log(
-          "Failed to locate comment slug ID: " + props.initialCommentSlugId
+          "Failed to locate comment slug ID: " + commentSlugIdQuery.value
         );
       }
     }, 1000);

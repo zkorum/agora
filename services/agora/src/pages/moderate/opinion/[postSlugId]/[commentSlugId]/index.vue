@@ -135,11 +135,7 @@ async function clickedWithdraw() {
   if (commentSlugId) {
     await cancelModerationCommentReport(commentSlugId);
     await initializeData();
-    // TODO: redirect to comment
-    // await router.push({
-    //   name: "single-post",
-    //   params: { postSlugId: postSlugId },
-    // });
+    await redirectToComment();
   } else {
     console.log("Missing comment slug ID");
   }
@@ -154,12 +150,18 @@ async function clickedSubmit() {
       moderationExplanation.value
     );
     if (isSuccessful) {
-      await router.push({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: postSlugId },
-        query: { opinionSlugId: commentSlugId },
-      });
+      await redirectToComment();
     }
+  }
+}
+
+async function redirectToComment() {
+  if (postSlugId && commentSlugId) {
+    await router.push({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: postSlugId },
+      query: { opinionSlugId: commentSlugId },
+    });
   }
 }
 </script>

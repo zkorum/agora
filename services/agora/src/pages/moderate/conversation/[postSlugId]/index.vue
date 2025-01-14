@@ -138,10 +138,7 @@ async function clickedWithdraw() {
     if (isSuccessful) {
       await initializeData();
       await loadPostData(false);
-      await router.push({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: postSlugId },
-      });
+      await redirectToPost();
     }
   } else {
     console.log("Missing comment slug ID");
@@ -159,11 +156,17 @@ async function clickedSubmit() {
 
     if (isSuccessful) {
       await loadPostData(false);
-      await router.push({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: postSlugId },
-      });
+      await redirectToPost();
     }
+  }
+}
+
+async function redirectToPost() {
+  if (postSlugId) {
+    await router.push({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: postSlugId },
+    });
   }
 }
 </script>
