@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <MainLayout
     :general-props="{
@@ -15,7 +16,18 @@
   >
     <div class="container">
       <div class="title">
-        Moderate the conversation "{add conversation title excerpt}"
+        <div>Moderate the conversation</div>
+      </div>
+
+      <div class="postPreview">
+        <b>
+          {{ conversationItem.payload.title }}
+        </b>
+
+        <div
+          v-if="conversationItem.payload.body"
+          v-html="conversationItem.payload.body"
+        ></div>
       </div>
 
       <q-select
@@ -66,6 +78,7 @@ import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
   ConversationModerationAction,
+  ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -75,6 +88,7 @@ import {
 } from "src/utils/component/moderations";
 import { usePostStore } from "src/stores/post";
 import MainLayout from "src/layouts/MainLayout.vue";
+import { useBackendPostApi } from "src/utils/api/post";
 
 const {
   moderatePost,
@@ -85,7 +99,8 @@ const {
 const route = useRoute();
 const router = useRouter();
 
-const { loadPostData } = usePostStore();
+const { loadPostData, emptyPost } = usePostStore();
+const { fetchPostBySlugId } = useBackendPostApi();
 
 const DEFAULT_MODERATION_ACTION = "lock";
 const moderationAction = ref<ConversationModerationAction>(
@@ -104,18 +119,20 @@ const hasExistingDecision = ref(false);
 let postSlugId: string | null = null;
 loadRouteParams();
 
+const conversationItem = ref<ExtendedConversation>(emptyPost);
+
 onMounted(async () => {
   await initializeData();
 });
 
 function loadRouteParams() {
-  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
+  if (route.name == "/moderate/conversation/[postSlugId]/") {
     postSlugId = route.params.postSlugId;
   }
 }
 
 async function initializeData() {
-  if (postSlugId != null) {
+  if (postSlugId) {
     const response = await getConversationModerationStatus(postSlugId);
     hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
@@ -129,6 +146,13 @@ async function initializeData() {
     }
   } else {
     console.log("Missing post slug ID");
+  }
+
+  if (postSlugId) {
+    const response = await fetchPostBySlugId(postSlugId, false);
+    if (response) {
+      conversationItem.value = response;
+    }
   }
 }
 
@@ -181,5 +205,14 @@ async function redirectToPost() {
 
 .title {
   font-size: 1.2rem;
+}
+
+.postPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: $button-background-color;
+  padding: 1rem;
+  border-radius: 15px;
 }
 </style>

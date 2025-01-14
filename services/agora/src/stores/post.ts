@@ -186,24 +186,12 @@ export const usePostStore = defineStore("post", () => {
     }
   }
 
-  function getPostBySlugId(slugId: string) {
-    for (let i = 0; i < masterPostDataList.value.length; i++) {
-      const postItem = masterPostDataList.value[i];
-      if (slugId == postItem.metadata.conversationSlugId) {
-        return postItem;
-      }
-    }
-
-    return emptyPost;
-  }
-
   async function resetPostData() {
     masterPostDataList.value = [];
     await Promise.all([loadPostData(false), loadUserProfile()]);
   }
 
   return {
-    getPostBySlugId,
     loadPostData,
     hasNewPosts,
     resetPostData,

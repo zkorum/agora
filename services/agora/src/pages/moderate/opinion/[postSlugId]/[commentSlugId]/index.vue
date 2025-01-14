@@ -132,7 +132,7 @@ function loadRouteParams() {
 }
 
 async function initializeData() {
-  if (commentSlugId != null) {
+  if (commentSlugId) {
     const response = await fetchCommentModeration(commentSlugId);
     hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
