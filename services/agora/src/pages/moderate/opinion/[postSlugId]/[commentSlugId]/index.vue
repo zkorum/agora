@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <MainLayout
     :general-props="{
@@ -14,9 +15,9 @@
     }"
   >
     <div class="container">
-      <div class="title">
-        Moderate the opinion "{add opinion title excerpt}"
-      </div>
+      <div class="title">Moderate the opinion</div>
+
+      <div class="userOpinion" v-html="opinionItem.opinion"></div>
 
       <q-select
         v-model="moderationAction"
@@ -67,6 +68,7 @@ import { onMounted, ref } from "vue";
 import type {
   OpinionModerationAction,
   ModerationReason,
+  OpinionItem,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
@@ -74,12 +76,15 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderations";
 import MainLayout from "src/layouts/MainLayout.vue";
+import { useBackendCommentApi } from "src/utils/api/comment";
 
 const {
   moderateComment,
   getOpinionModerationStatus: fetchCommentModeration,
   cancelModerationCommentReport,
 } = useBackendModerateApi();
+
+const { fetchOpinionsBySlugIdList } = useBackendCommentApi();
 
 const route = useRoute();
 const router = useRouter();
@@ -101,6 +106,19 @@ const hasExistingDecision = ref(false);
 let postSlugId: string | null = null;
 let commentSlugId: string | null = null;
 loadRouteParams();
+
+const opinionItem = ref<OpinionItem>({
+  opinion: "",
+  opinionSlugId: "",
+  createdAt: new Date(),
+  numDisagrees: 0,
+  numAgrees: 0,
+  updatedAt: new Date(),
+  username: "",
+  moderation: {
+    status: "unmoderated",
+  },
+});
 
 onMounted(async () => {
   await initializeData();
@@ -128,6 +146,11 @@ async function initializeData() {
     }
   } else {
     console.log("Missing comment slug ID");
+  }
+
+  if (commentSlugId) {
+    const response = await fetchOpinionsBySlugIdList([commentSlugId]);
+    opinionItem.value = response[0];
   }
 }
 
@@ -176,5 +199,11 @@ async function redirectToComment() {
 
 .title {
   font-size: 1.2rem;
+}
+
+.userOpinion {
+  background-color: $button-background-color;
+  padding: 1rem;
+  border-radius: 15px;
 }
 </style>

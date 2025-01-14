@@ -7,7 +7,10 @@ import {
     userTable,
     opinionModerationTable,
 } from "@/schema.js";
-import type { CreateCommentResponse } from "@/shared/types/dto.js";
+import type {
+    CreateCommentResponse,
+    GetOpinionBySlugIdListResponse,
+} from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type { OpinionItem, SlugId } from "@/shared/types/zod.js";
@@ -148,6 +151,78 @@ export async function fetchCommentsByPostSlugId({
     }
 
     return commentItemList;
+}
+
+interface FetchOpinionsByOpinionSlugIdListProps {
+    db: PostgresJsDatabase;
+    opinionSlugIdList: SlugId[];
+}
+
+export async function fetchOpinionsByOpinionSlugIdList({
+    db,
+    opinionSlugIdList,
+}: FetchOpinionsByOpinionSlugIdListProps): Promise<GetOpinionBySlugIdListResponse> {
+    const opinionItemList: OpinionItem[] = [];
+
+    for (const opinionSlugId of opinionSlugIdList) {
+        const results = await db
+            .select({
+                // comment payload
+                commentSlugId: opinionTable.slugId,
+                createdAt: opinionTable.createdAt,
+                updatedAt: opinionTable.updatedAt,
+                comment: opinionContentTable.content,
+                numLikes: opinionTable.numAgrees,
+                numDislikes: opinionTable.numDisagrees,
+                username: userTable.username,
+                moderationAction: opinionModerationTable.moderationAction,
+                moderationExplanation:
+                    opinionModerationTable.moderationExplanation,
+                moderationReason: opinionModerationTable.moderationReason,
+                moderationCreatedAt: opinionModerationTable.createdAt,
+                moderationUpdatedAt: opinionModerationTable.updatedAt,
+            })
+            .from(opinionTable)
+            .innerJoin(
+                conversationTable,
+                eq(conversationTable.id, opinionTable.conversationId),
+            )
+            .innerJoin(
+                opinionContentTable,
+                eq(opinionContentTable.id, opinionTable.currentContentId),
+            )
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
+            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .orderBy(desc(opinionTable.createdAt))
+            .where(eq(opinionTable.slugId, opinionSlugId));
+
+        results.map((commentResponse) => {
+            const moderationProperties = createCommentModerationPropertyObject(
+                commentResponse.moderationAction,
+                commentResponse.moderationExplanation,
+                commentResponse.moderationReason,
+                commentResponse.moderationCreatedAt,
+                commentResponse.moderationUpdatedAt,
+            );
+
+            const item: OpinionItem = {
+                opinion: commentResponse.comment,
+                opinionSlugId: commentResponse.commentSlugId,
+                createdAt: commentResponse.createdAt,
+                numDisagrees: commentResponse.numDislikes,
+                numAgrees: commentResponse.numLikes,
+                updatedAt: commentResponse.updatedAt,
+                username: commentResponse.username,
+                moderation: moderationProperties,
+            };
+            opinionItemList.push(item);
+        });
+    }
+
+    return opinionItemList;
 }
 
 async function getPostIdFromPostSlugId(

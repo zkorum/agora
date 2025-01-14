@@ -35,6 +35,7 @@ import {
 import {
     deleteOpinionBySlugId,
     fetchCommentsByPostSlugId,
+    fetchOpinionsByOpinionSlugIdList,
     postNewOpinion,
 } from "./service/comment.js";
 import { getUserPollResponse, submitPollResponse } from "./service/poll.js";
@@ -1064,6 +1065,23 @@ server.after(() => {
                     fetchTarget: request.body.filter,
                 });
             }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-by-slug-id-list`,
+        schema: {
+            body: Dto.getOpinionBySlugIdListRequest,
+            response: {
+                200: Dto.getOpinionBySlugIdListResponse,
+            },
+        },
+        handler: async (request) => {
+            return await fetchOpinionsByOpinionSlugIdList({
+                db: db,
+                opinionSlugIdList: request.body.opinionSlugIdList,
+            });
         },
     });
 

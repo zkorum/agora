@@ -3,6 +3,7 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchByConversationPostRequest,
+  ApiV1OpinionFetchBySlugIdListPostRequest,
   type ApiV1OpinionFetchHiddenByConversationPostRequest,
   type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
@@ -217,10 +218,32 @@ export function useBackendCommentApi() {
     }
   }
 
+  async function fetchOpinionsBySlugIdList(
+    opinionSlugIdList: string[]
+  ): Promise<OpinionItem[]> {
+    const params: ApiV1OpinionFetchBySlugIdListPostRequest = {
+      opinionSlugIdList: opinionSlugIdList,
+    };
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchBySlugIdListPost(params, {});
+
+    const opnionItemList: OpinionItem[] = [];
+    for (const item of response.data) {
+      opnionItemList.push(createLocalCommentObject([item])[0]);
+    }
+
+    return opnionItemList;
+  }
+
   return {
     createNewComment,
     fetchCommentsForPost,
     fetchHiddenCommentsForPost,
     deleteCommentBySlugId,
+    fetchOpinionsBySlugIdList,
   };
 }
