@@ -1,5 +1,9 @@
 import { api } from "boot/axios";
-import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import {
+  ApiV1UserUsernameUpdatePostRequest,
+  DefaultApiAxiosParamCreator,
+  DefaultApiFactory,
+} from "src/api";
 import { useNotify } from "../ui/notify";
 import { useCommonApi } from "./common";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";

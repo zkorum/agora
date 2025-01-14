@@ -24,7 +24,14 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "properties": {},
+                                    "properties": {
+                                        "isLoggedIn": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "isLoggedIn"
+                                    ],
                                     "additionalProperties": false
                                 }
                             }
@@ -127,7 +134,7 @@
                 }
             }
         },
-        "/api/v1/auth/verify-phone-otp": {
+        "/api/v1/auth/phone/verify-otp": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -215,7 +222,7 @@
                 }
             }
         },
-        "/api/v1/feed/fetch-recent": {
+        "/api/v1/conversation/fetch-recent": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -247,7 +254,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "postDataList": {
+                                        "conversationDataList": {
                                             "type": "array",
                                             "items": {
                                                 "type": "object",
@@ -255,7 +262,7 @@
                                                     "metadata": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "postSlugId": {
+                                                            "conversationSlugId": {
                                                                 "type": "string",
                                                                 "maxLength": 10
                                                             },
@@ -271,7 +278,7 @@
                                                                 "type": "string",
                                                                 "format": "date-time"
                                                             },
-                                                            "commentCount": {
+                                                            "opinionCount": {
                                                                 "type": "integer",
                                                                 "minimum": 0
                                                             },
@@ -349,11 +356,11 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "postSlugId",
+                                                            "conversationSlugId",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
-                                                            "commentCount",
+                                                            "opinionCount",
                                                             "authorUsername",
                                                             "moderation"
                                                         ],
@@ -435,7 +442,7 @@
                                         }
                                     },
                                     "required": [
-                                        "postDataList",
+                                        "conversationDataList",
                                         "reachedEndOfFeed"
                                     ],
                                     "additionalProperties": false
@@ -446,7 +453,7 @@
                 }
             }
         },
-        "/api/v1/moderation/post/create": {
+        "/api/v1/moderation/conversation/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -454,7 +461,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -481,7 +488,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postSlugId",
+                                    "conversationSlugId",
                                     "moderationReason",
                                     "moderationAction",
                                     "moderationExplanation"
@@ -499,7 +506,7 @@
                 }
             }
         },
-        "/api/v1/moderation/comment/create": {
+        "/api/v1/moderation/opinion/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -507,7 +514,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -535,7 +542,7 @@
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId",
+                                    "opinionSlugId",
                                     "moderationReason",
                                     "moderationAction",
                                     "moderationExplanation"
@@ -553,7 +560,7 @@
                 }
             }
         },
-        "/api/v1/moderation/post/withdraw": {
+        "/api/v1/moderation/conversation/withdraw": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -561,13 +568,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "postSlugId"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -582,7 +589,7 @@
                 }
             }
         },
-        "/api/v1/moderation/comment/withdraw": {
+        "/api/v1/moderation/opinion/withdraw": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -590,13 +597,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId"
+                                    "opinionSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -611,7 +618,7 @@
                 }
             }
         },
-        "/api/v1/moderation/post/fetch-report": {
+        "/api/v1/moderation/conversation/get": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -619,13 +626,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "postSlugId"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -712,7 +719,7 @@
                 }
             }
         },
-        "/api/v1/moderation/comment/fetch-report": {
+        "/api/v1/moderation/opinion/get": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -720,13 +727,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId"
+                                    "opinionSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -814,7 +821,7 @@
                 }
             }
         },
-        "/api/v1/user/fetch-user-profile": {
+        "/api/v1/user/profile/get": {
             "post": {
                 "responses": {
                     "200": {
@@ -854,7 +861,7 @@
                 }
             }
         },
-        "/api/v1/user/fetch-user-posts": {
+        "/api/v1/user/conversation/fetch": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -862,7 +869,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "lastPostSlugId": {
+                                    "lastConversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
@@ -885,7 +892,7 @@
                                             "metadata": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "postSlugId": {
+                                                    "conversationSlugId": {
                                                         "type": "string",
                                                         "maxLength": 10
                                                     },
@@ -901,7 +908,7 @@
                                                         "type": "string",
                                                         "format": "date-time"
                                                     },
-                                                    "commentCount": {
+                                                    "opinionCount": {
                                                         "type": "integer",
                                                         "minimum": 0
                                                     },
@@ -979,11 +986,11 @@
                                                     }
                                                 },
                                                 "required": [
-                                                    "postSlugId",
+                                                    "conversationSlugId",
                                                     "createdAt",
                                                     "updatedAt",
                                                     "lastReactedAt",
-                                                    "commentCount",
+                                                    "opinionCount",
                                                     "authorUsername",
                                                     "moderation"
                                                 ],
@@ -1066,7 +1073,7 @@
                 }
             }
         },
-        "/api/v1/user/fetch-user-comments": {
+        "/api/v1/user/opinion/fetch": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1074,7 +1081,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "lastCommentSlugId": {
+                                    "lastOpinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
@@ -1094,13 +1101,13 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "postData": {
+                                            "conversationData": {
                                                 "type": "object",
                                                 "properties": {
                                                     "metadata": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "postSlugId": {
+                                                            "conversationSlugId": {
                                                                 "type": "string",
                                                                 "maxLength": 10
                                                             },
@@ -1116,7 +1123,7 @@
                                                                 "type": "string",
                                                                 "format": "date-time"
                                                             },
-                                                            "commentCount": {
+                                                            "opinionCount": {
                                                                 "type": "integer",
                                                                 "minimum": 0
                                                             },
@@ -1194,11 +1201,11 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "postSlugId",
+                                                            "conversationSlugId",
                                                             "createdAt",
                                                             "updatedAt",
                                                             "lastReactedAt",
-                                                            "commentCount",
+                                                            "opinionCount",
                                                             "authorUsername",
                                                             "moderation"
                                                         ],
@@ -1274,10 +1281,10 @@
                                                 ],
                                                 "additionalProperties": false
                                             },
-                                            "commentItem": {
+                                            "opinionItem": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "commentSlugId": {
+                                                    "opinionSlugId": {
                                                         "type": "string",
                                                         "maxLength": 10
                                                     },
@@ -1289,15 +1296,15 @@
                                                         "type": "string",
                                                         "format": "date-time"
                                                     },
-                                                    "comment": {
+                                                    "opinion": {
                                                         "type": "string",
                                                         "minLength": 1
                                                     },
-                                                    "numLikes": {
+                                                    "numAgrees": {
                                                         "type": "integer",
                                                         "minimum": 0
                                                     },
-                                                    "numDislikes": {
+                                                    "numDisagrees": {
                                                         "type": "integer",
                                                         "minimum": 0
                                                     },
@@ -1376,12 +1383,12 @@
                                                     }
                                                 },
                                                 "required": [
-                                                    "commentSlugId",
+                                                    "opinionSlugId",
                                                     "createdAt",
                                                     "updatedAt",
-                                                    "comment",
-                                                    "numLikes",
-                                                    "numDislikes",
+                                                    "opinion",
+                                                    "numAgrees",
+                                                    "numDisagrees",
                                                     "username",
                                                     "moderation"
                                                 ],
@@ -1389,8 +1396,8 @@
                                             }
                                         },
                                         "required": [
-                                            "postData",
-                                            "commentItem"
+                                            "conversationData",
+                                            "opinionItem"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -1401,7 +1408,7 @@
                 }
             }
         },
-        "/api/v1/voting/fetch-user-votes-for-post-slug-ids": {
+        "/api/v1/user/vote/get-by-conversations": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1409,7 +1416,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugIdList": {
+                                    "conversationSlugIdList": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1417,7 +1424,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postSlugIdList"
+                                    "conversationSlugIdList"
                                 ],
                                 "additionalProperties": false
                             }
@@ -1435,19 +1442,19 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "commentSlugId": {
+                                            "opinionSlugId": {
                                                 "type": "string"
                                             },
                                             "votingAction": {
                                                 "type": "string",
                                                 "enum": [
-                                                    "like",
-                                                    "dislike"
+                                                    "agree",
+                                                    "disagree"
                                                 ]
                                             }
                                         },
                                         "required": [
-                                            "commentSlugId",
+                                            "opinionSlugId",
                                             "votingAction"
                                         ],
                                         "additionalProperties": false
@@ -1459,7 +1466,7 @@
                 }
             }
         },
-        "/api/v1/voting/cast-vote": {
+        "/api/v1/vote/cast": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1467,20 +1474,20 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string"
                                     },
                                     "chosenOption": {
                                         "type": "string",
                                         "enum": [
-                                            "like",
-                                            "dislike",
+                                            "agree",
+                                            "disagree",
                                             "cancel"
                                         ]
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId",
+                                    "opinionSlugId",
                                     "chosenOption"
                                 ],
                                 "additionalProperties": false
@@ -1503,7 +1510,7 @@
                 }
             }
         },
-        "/api/v1/poll/submitResponse": {
+        "/api/v1/poll/respond": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1514,13 +1521,13 @@
                                     "voteOptionChoice": {
                                         "type": "number"
                                     },
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string"
                                     }
                                 },
                                 "required": [
                                     "voteOptionChoice",
-                                    "postSlugId"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -1528,10 +1535,14 @@
                     },
                     "required": true
                 },
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
             }
         },
-        "/api/v1/poll/get-user-poll-response": {
+        "/api/v1/user/poll/get-response-by-conversations": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1555,7 +1566,7 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "postSlugId": {
+                                            "conversationSlugId": {
                                                 "type": "string"
                                             },
                                             "optionChosen": {
@@ -1564,7 +1575,7 @@
                                             }
                                         },
                                         "required": [
-                                            "postSlugId",
+                                            "conversationSlugId",
                                             "optionChosen"
                                         ],
                                         "additionalProperties": false
@@ -1576,7 +1587,7 @@
                 }
             }
         },
-        "/api/v1/comment/delete": {
+        "/api/v1/opinion/delete": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1584,13 +1595,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId"
+                                    "opinionSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -1605,7 +1616,7 @@
                 }
             }
         },
-        "/api/v1/comment/create": {
+        "/api/v1/opinion/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1613,16 +1624,16 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string"
                                     },
-                                    "commentBody": {
+                                    "opinionBody": {
                                         "type": "string"
                                     }
                                 },
                                 "required": [
-                                    "postSlugId",
-                                    "commentBody"
+                                    "conversationSlugId",
+                                    "opinionBody"
                                 ],
                                 "additionalProperties": false
                             }
@@ -1646,13 +1657,13 @@
                                                         true
                                                     ]
                                                 },
-                                                "commentSlugId": {
+                                                "opinionSlugId": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
                                                 "success",
-                                                "commentSlugId"
+                                                "opinionSlugId"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -1668,7 +1679,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "post_locked"
+                                                        "conversation_locked"
                                                     ]
                                                 }
                                             },
@@ -1686,7 +1697,7 @@
                 }
             }
         },
-        "/api/v1/comment/fetch-comments-by-post-slugId": {
+        "/api/v1/opinion/fetch-by-conversation": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1694,7 +1705,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -1710,7 +1721,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postSlugId",
+                                    "conversationSlugId",
                                     "filter",
                                     "isAuthenticatedRequest"
                                 ],
@@ -1730,7 +1741,7 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "commentSlugId": {
+                                            "opinionSlugId": {
                                                 "type": "string",
                                                 "maxLength": 10
                                             },
@@ -1742,15 +1753,15 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             },
-                                            "comment": {
+                                            "opinion": {
                                                 "type": "string",
                                                 "minLength": 1
                                             },
-                                            "numLikes": {
+                                            "numAgrees": {
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
-                                            "numDislikes": {
+                                            "numDisagrees": {
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
@@ -1829,12 +1840,12 @@
                                             }
                                         },
                                         "required": [
-                                            "commentSlugId",
+                                            "opinionSlugId",
                                             "createdAt",
                                             "updatedAt",
-                                            "comment",
-                                            "numLikes",
-                                            "numDislikes",
+                                            "opinion",
+                                            "numAgrees",
+                                            "numDisagrees",
                                             "username",
                                             "moderation"
                                         ],
@@ -1847,7 +1858,7 @@
                 }
             }
         },
-        "/api/v1/comment/fetch-hidden-comments": {
+        "/api/v1/opinion/fetch-hidden-by-conversation": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -1855,7 +1866,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -1865,7 +1876,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postSlugId"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -1883,7 +1894,7 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "commentSlugId": {
+                                            "opinionSlugId": {
                                                 "type": "string",
                                                 "maxLength": 10
                                             },
@@ -1895,15 +1906,15 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             },
-                                            "comment": {
+                                            "opinion": {
                                                 "type": "string",
                                                 "minLength": 1
                                             },
-                                            "numLikes": {
+                                            "numAgrees": {
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
-                                            "numDislikes": {
+                                            "numDisagrees": {
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
@@ -1982,12 +1993,12 @@
                                             }
                                         },
                                         "required": [
-                                            "commentSlugId",
+                                            "opinionSlugId",
                                             "createdAt",
                                             "updatedAt",
-                                            "comment",
-                                            "numLikes",
-                                            "numDislikes",
+                                            "opinion",
+                                            "numAgrees",
+                                            "numDisagrees",
                                             "username",
                                             "moderation"
                                         ],
@@ -2000,7 +2011,7 @@
                 }
             }
         },
-        "/api/v1/post/delete": {
+        "/api/v1/conversation/delete": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2008,13 +2019,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "postSlugId"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2029,7 +2040,7 @@
                 }
             }
         },
-        "/api/v1/post/create": {
+        "/api/v1/conversation/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2037,12 +2048,12 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postTitle": {
+                                    "conversationTitle": {
                                         "type": "string",
                                         "maxLength": 130,
                                         "minLength": 1
                                     },
-                                    "postBody": {
+                                    "conversationBody": {
                                         "type": "string"
                                     },
                                     "pollingOptionList": {
@@ -2055,7 +2066,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postTitle"
+                                    "conversationTitle"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2071,12 +2082,12 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "postSlugId": {
+                                        "conversationSlugId": {
                                             "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "postSlugId"
+                                        "conversationSlugId"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -2086,7 +2097,7 @@
                 }
             }
         },
-        "/api/v1/post/fetch-post-by-slug-id": {
+        "/api/v1/conversation/get": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2094,7 +2105,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -2103,7 +2114,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postSlugId",
+                                    "conversationSlugId",
                                     "isAuthenticatedRequest"
                                 ],
                                 "additionalProperties": false
@@ -2120,13 +2131,13 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "postData": {
+                                        "conversationData": {
                                             "type": "object",
                                             "properties": {
                                                 "metadata": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "postSlugId": {
+                                                        "conversationSlugId": {
                                                             "type": "string",
                                                             "maxLength": 10
                                                         },
@@ -2142,7 +2153,7 @@
                                                             "type": "string",
                                                             "format": "date-time"
                                                         },
-                                                        "commentCount": {
+                                                        "opinionCount": {
                                                             "type": "integer",
                                                             "minimum": 0
                                                         },
@@ -2220,11 +2231,11 @@
                                                         }
                                                     },
                                                     "required": [
-                                                        "postSlugId",
+                                                        "conversationSlugId",
                                                         "createdAt",
                                                         "updatedAt",
                                                         "lastReactedAt",
-                                                        "commentCount",
+                                                        "opinionCount",
                                                         "authorUsername",
                                                         "moderation"
                                                     ],
@@ -2302,7 +2313,7 @@
                                         }
                                     },
                                     "required": [
-                                        "postData"
+                                        "conversationData"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -2437,7 +2448,7 @@
                 }
             }
         },
-        "/api/v1/account/delete-user": {
+        "/api/v1/user/delete": {
             "post": {
                 "responses": {
                     "200": {
@@ -2446,7 +2457,7 @@
                 }
             }
         },
-        "/api/v1/account/submit-username-change": {
+        "/api/v1/user/username/update": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2527,7 +2538,7 @@
                 }
             }
         },
-        "/api/v1/report/submit-report-by-post-slug-id": {
+        "/api/v1/report/conversation/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2535,7 +2546,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -2556,7 +2567,7 @@
                                     }
                                 },
                                 "required": [
-                                    "postSlugId",
+                                    "conversationSlugId",
                                     "reportReason"
                                 ],
                                 "additionalProperties": false
@@ -2572,7 +2583,7 @@
                 }
             }
         },
-        "/api/v1/report/submit-report-by-comment-slug-id": {
+        "/api/v1/report/opinion/create": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2580,7 +2591,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     },
@@ -2601,7 +2612,7 @@
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId",
+                                    "opinionSlugId",
                                     "reportReason"
                                 ],
                                 "additionalProperties": false
@@ -2617,7 +2628,7 @@
                 }
             }
         },
-        "/api/v1/report/fetch-reports-by-post-slug-id": {
+        "/api/v1/report/conversation/fetch": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2625,13 +2636,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "postSlugId": {
+                                    "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "postSlugId"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2691,7 +2702,7 @@
                 }
             }
         },
-        "/api/v1/report/fetch-reports-by-comment-slug-id": {
+        "/api/v1/report/opinion/fetch": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -2699,13 +2710,13 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "commentSlugId": {
+                                    "opinionSlugId": {
                                         "type": "string",
                                         "maxLength": 10
                                     }
                                 },
                                 "required": [
-                                    "commentSlugId"
+                                    "opinionSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2765,7 +2776,7 @@
                 }
             }
         },
-        "/api/v1/user-mute/fetch-preferences": {
+        "/api/v1/mute/user/get": {
             "post": {
                 "responses": {
                     "200": {
@@ -2799,7 +2810,7 @@
                 }
             }
         },
-        "/api/v1/user-mute/mute-user": {
+        "/api/v1/mute/user/create": {
             "post": {
                 "requestBody": {
                     "content": {
