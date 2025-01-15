@@ -14,13 +14,23 @@
     }"
   >
     <div class="container">
-      <div class="title">
-        <div>User Reports Viewer</div>
-        <q-badge :label="reportType" />
-      </div>
+      <div class="titleBar">
+        <div class="title">
+          <div>User Reports Viewer</div>
+          <q-badge :label="reportType" />
+        </div>
 
-      <div>
-        <ZKButton label="Open" color="primary" @click="openPage()" />
+        <div>
+          <ZKButton
+            :label="
+              reportType == 'conversation'
+                ? 'Open ' + 'Conversation'
+                : 'Open ' + 'Opinion'
+            "
+            color="primary"
+            @click="openPage()"
+          />
+        </div>
       </div>
 
       <div v-if="reportItemList.length == 0">
@@ -133,5 +143,11 @@ async function loadReports() {
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 </style>
