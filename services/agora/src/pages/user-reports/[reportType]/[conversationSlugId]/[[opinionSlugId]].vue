@@ -7,16 +7,27 @@
       reducedWidth: false,
     }"
     :menu-bar-props="{
-      hasBackButton: false,
+      hasBackButton: true,
       hasCloseButton: false,
       hasLoginButton: true,
       hasSettingsButton: true,
     }"
   >
     <div class="container">
-      <div class="title">User Reports Viewer</div>
+      <div class="title">
+        <div>User Reports Viewer</div>
+        <q-badge :label="reportType" />
+      </div>
 
-      <div class="tableStyle">
+      <div>
+        <ZKButton label="Open" color="primary" @click="openPage()" />
+      </div>
+
+      <div v-if="reportItemList.length == 0">
+        No reports are available for this {{ reportType }}.
+      </div>
+
+      <div v-if="reportItemList.length > 0" class="tableStyle">
         <div v-for="report in reportItemList" :key="report.id">
           <div>ID: {{ report.id }}</div>
           <div>Username: {{ report.username }}</div>
@@ -33,12 +44,14 @@
 import { useBackendReportApi } from "src/utils/api/report";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
 import MainLayout from "src/layouts/MainLayout.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const route = useRoute();
+const router = useRouter();
 
 const { showNotifyMessage } = useNotify();
 
@@ -47,19 +60,51 @@ const { fetchUserReportsByPostSlugId, fetchUserReportsByCommentSlugId } =
 
 const reportItemList = ref<UserReportItem[]>([]);
 
+const reportType = ref<"conversation" | "opinion">("conversation");
+
 onMounted(async () => {
   await loadReports();
 });
 
-async function loadReports() {
-  if (route.name === "/user-reports/[reportType]/[slugId]/") {
+async function openPage() {
+  if (
+    route.name ===
+    "/user-reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
+  ) {
     if (route.params.reportType == "post") {
-      reportItemList.value = await fetchUserReportsByPostSlugId(
-        route.params.slugId
-      );
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: route.params.conversationSlugId },
+      });
     } else if (route.params.reportType == "comment") {
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: route.params.conversationSlugId },
+        query: { opinionSlugId: route.params.opinionSlugId },
+      });
+    } else {
+      console.log("Unknown report type");
+    }
+  }
+}
+
+async function loadReports() {
+  if (
+    route.name ===
+    "/user-reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
+  ) {
+    if (route.params.reportType == "post") {
+      reportType.value = "conversation";
+      reportItemList.value = await fetchUserReportsByPostSlugId(
+        route.params.conversationSlugId
+      );
+    } else if (
+      route.params.reportType == "comment" &&
+      route.params.opinionSlugId
+    ) {
+      reportType.value = "opinion";
       reportItemList.value = await fetchUserReportsByCommentSlugId(
-        route.params.slugId
+        route.params.opinionSlugId
       );
     } else {
       showNotifyMessage("Invlid report type");
@@ -84,6 +129,9 @@ async function loadReports() {
 }
 
 .container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 1rem;
 }
 </style>
