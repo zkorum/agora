@@ -1,85 +1,76 @@
 <template>
-  <MainLayout
-    :general-props="{
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
-  >
-    <form class="formStyle" @submit.prevent="">
-      <StepperLayout
-        :submit-call-back="nextButtonClicked"
-        :current-step="3.5"
-        :total-steps="5"
-        :enable-next-button="verificationCode.length == 6"
-        :show-next-button="true"
-      >
-        <template #header>
-          <InfoHeader
-            title="Enter the 6-digit code"
-            description=""
-            icon-name="mdi-phone"
-          />
-        </template>
+  <OnboardingLayout>
+    <template #body><DefaultImageExample /> </template>
 
-        <template #body>
-          <div class="instructions">
-            Please enter the 6-digit code that was sent to
-            <span class="phoneNumberStyle">{{
-              verificationPhoneNumber.phoneNumber
-            }}</span
-            >.
-          </div>
-
-          <div class="otpDiv">
-            <div class="codeInput">
-              <InputOtp v-model="verificationCode" :length="6" integer-only />
-            </div>
-
-            <div
-              v-if="verificationCodeExpirySeconds > 0"
-              class="weakColor codeExpiry"
-            >
-              Expires in {{ verificationCodeExpirySeconds }}s
-            </div>
-
-            <div
-              v-if="verificationCodeExpirySeconds <= 0"
-              class="weakColor codeExpiry"
-            >
-              Code expired
-            </div>
-          </div>
-
-          <div class="optionButtons">
-            <ZKButton
-              label="Change Number"
-              text-color="blue"
-              @click="changePhoneNumber()"
+    <template #footer>
+      <form class="formStyle" @submit.prevent="">
+        <StepperLayout
+          :submit-call-back="nextButtonClicked"
+          :current-step="3.5"
+          :total-steps="5"
+          :enable-next-button="verificationCode.length == 6"
+          :show-next-button="true"
+        >
+          <template #header>
+            <InfoHeader
+              title="Enter the 6-digit code"
+              description=""
+              icon-name="mdi-phone"
             />
+          </template>
 
-            <ZKButton
-              :label="
-                verificationNextCodeSeconds > 0
-                  ? 'Resend Code in ' + verificationNextCodeSeconds + 's'
-                  : 'Resend Code'
-              "
-              :disabled="verificationNextCodeSeconds > 0"
-              text-color="blue"
-              @click="clickedResendButton()"
-            />
-          </div>
-        </template>
-      </StepperLayout>
-    </form>
-  </MainLayout>
+          <template #body>
+            <div class="instructions">
+              Please enter the 6-digit code that was sent to
+              <span class="phoneNumberStyle">{{
+                verificationPhoneNumber.phoneNumber
+              }}</span
+              >.
+            </div>
+
+            <div class="otpDiv">
+              <div class="codeInput">
+                <InputOtp v-model="verificationCode" :length="6" integer-only />
+              </div>
+
+              <div
+                v-if="verificationCodeExpirySeconds > 0"
+                class="weakColor codeExpiry"
+              >
+                Expires in {{ verificationCodeExpirySeconds }}s
+              </div>
+
+              <div
+                v-if="verificationCodeExpirySeconds <= 0"
+                class="weakColor codeExpiry"
+              >
+                Code expired
+              </div>
+            </div>
+
+            <div class="optionButtons">
+              <ZKButton
+                label="Change Number"
+                text-color="blue"
+                @click="changePhoneNumber()"
+              />
+
+              <ZKButton
+                :label="
+                  verificationNextCodeSeconds > 0
+                    ? 'Resend Code in ' + verificationNextCodeSeconds + 's'
+                    : 'Resend Code'
+                "
+                :disabled="verificationNextCodeSeconds > 0"
+                text-color="blue"
+                @click="clickedResendButton()"
+              />
+            </div>
+          </template>
+        </StepperLayout>
+      </form>
+    </template>
+  </OnboardingLayout>
 </template>
 
 <script setup lang="ts">
@@ -100,7 +91,8 @@ import { useNotify } from "src/utils/ui/notify";
 import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 
 const $q = useQuasar();
 let platform: "mobile" | "web" = "web";

@@ -36,6 +36,8 @@ defineProps<{
 
 <style scoped lang="scss">
 .container {
+  background-color: white;
+  border-radius: 15px;
   display: flex;
   flex-direction: column;
   gap: 2rem;

@@ -171,7 +171,7 @@ export function useBackendAuthApi() {
         "/onboarding/step3-phone-2/",
         "/onboarding/step4-username/",
         "/onboarding/step5-experience-deprecated/",
-        "/onboarding/step5-preferences/",
+        "/onboarding/step5-preferences-deprecated/",
       ];
       if (whiteListedRoutes.includes(currentRouteName)) {
         return false;
