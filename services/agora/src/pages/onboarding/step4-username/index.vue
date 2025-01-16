@@ -1,46 +1,37 @@
 <template>
-  <MainLayout
-    :general-props="{
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
-  >
-    <StepperLayout
-      :submit-call-back="goToNextRoute"
-      :current-step="4"
-      :total-steps="5"
-      :enable-next-button="isValidUsername"
-      :show-next-button="true"
-    >
-      <template #header>
-        <InfoHeader
-          title="Choose your username"
-          description=""
-          icon-name="mdi-account-circle"
-        />
-      </template>
+  <OnboardingLayout>
+    <template #body><DefaultImageExample /> </template>
 
-      <template #body>
-        <div class="container">
-          <div>How do you want to appear in Agora?</div>
-
-          <UsernameChange
-            :show-submit-button="false"
-            @is-valid-username="(value: boolean) => (isValidUsername = value)"
-            @user-name="(value: string) => (userName = value)"
+    <template #footer>
+      <StepperLayout
+        :submit-call-back="goToNextRoute"
+        :current-step="4"
+        :total-steps="5"
+        :enable-next-button="isValidUsername"
+        :show-next-button="true"
+      >
+        <template #header>
+          <InfoHeader
+            title="Choose your username"
+            description=""
+            icon-name="mdi-account-circle"
           />
-        </div>
-      </template>
-    </StepperLayout>
-  </MainLayout>
+        </template>
+
+        <template #body>
+          <div class="container">
+            <div>How do you want to appear in Agora?</div>
+
+            <UsernameChange
+              :show-submit-button="false"
+              @is-valid-username="(value: boolean) => (isValidUsername = value)"
+              @user-name="(value: string) => (userName = value)"
+            />
+          </div>
+        </template>
+      </StepperLayout>
+    </template>
+  </OnboardingLayout>
 </template>
 
 <script setup lang="ts">
@@ -52,7 +43,8 @@ import UsernameChange from "src/components/account/UsernameChange.vue";
 import { ref } from "vue";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
-import MainLayout from "src/layouts/MainLayout.vue";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 
 const { submitUsernameChange } = useBackendAccountApi();
 
@@ -69,7 +61,7 @@ async function goToNextRoute() {
     profileData.value.userName
   );
   if (isSuccessful) {
-    await router.push({ name: "/onboarding/step5-preferences/" });
+    await router.push({ name: "/" });
   }
 }
 </script>
