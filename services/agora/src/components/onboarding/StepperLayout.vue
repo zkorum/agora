@@ -10,8 +10,8 @@
       <div v-if="showNextButton" class="nextButton">
         <ZKButton
           icon="mdi-arrow-right"
-          color="button-background-color"
-          text-color="color-text-strong"
+          :color="enableNextButton ? 'primary' : 'button-background-color'"
+          :text-color="enableNextButton ? 'white' : 'color-text-strong'"
           :disable="!enableNextButton"
           type="submit"
           @click="submitCallBack"
