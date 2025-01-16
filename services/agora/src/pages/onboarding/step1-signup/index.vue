@@ -1,41 +1,33 @@
 <template>
-  <MainLayout
-    :general-props="{
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
-  >
-    <StepperLayout
-      :submit-call-back="goToNextRoute"
-      :current-step="1"
-      :total-steps="5"
-      :enable-next-button="true"
-      :show-next-button="true"
-    >
-      <template #header>
-        <InfoHeader
-          title="Why does Agora exist?"
-          :description="description"
-          icon-name="mdi-robot"
-        />
-      </template>
-    </StepperLayout>
-  </MainLayout>
+  <OnboardingLayout>
+    <template #body><ClusterImageExample /> </template>
+
+    <template #footer>
+      <StepperLayout
+        :submit-call-back="goToNextRoute"
+        :current-step="1"
+        :total-steps="5"
+        :enable-next-button="true"
+        :show-next-button="true"
+      >
+        <template #header>
+          <InfoHeader
+            title="Why does Agora exist?"
+            :description="description"
+            icon-name="mdi-robot"
+          />
+        </template>
+      </StepperLayout>
+    </template>
+  </OnboardingLayout>
 </template>
 
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import { useRouter } from "vue-router";
-import MainLayout from "src/layouts/MainLayout.vue";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 
 const description =
   "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.";
