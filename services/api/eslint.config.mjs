@@ -29,7 +29,6 @@ export default tseslint.config(
             "**/dist/",
             "eslint.config.mjs",
             "jest.config.js",
-            "val.js",
             "tests/**/*",
             "drizzle.config.ts",
         ],
