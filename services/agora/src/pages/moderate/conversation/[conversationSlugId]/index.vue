@@ -124,7 +124,7 @@ function loadRouteParams() {
   }
 }
 
-async function initializeData() {
+async function loadRemoteModerationData() {
   if (postSlugId) {
     const response = await getConversationModerationStatus(postSlugId);
     hasExistingDecision.value = response.status == "moderated";
@@ -140,13 +140,20 @@ async function initializeData() {
   } else {
     console.log("Missing post slug ID");
   }
+}
 
+async function loadRemoteConversationData() {
   if (postSlugId) {
     const response = await fetchPostBySlugId(postSlugId, false);
     if (response) {
       conversationItem.value = response;
     }
   }
+}
+
+async function initializeData() {
+  await loadRemoteModerationData();
+  await loadRemoteConversationData();
 }
 
 async function clickedWithdraw() {
