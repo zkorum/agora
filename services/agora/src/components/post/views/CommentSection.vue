@@ -128,8 +128,10 @@ function updateCommentFilter() {
     commentFilterQuery.value == "hidden"
   ) {
     sortAlgorithm.value = commentFilterQuery.value;
+  } else if (commentFilterQuery.value == "") {
+    // do nothing keep the default value
   } else {
-    console.log("Unknown comment filter detected: " + commentFilterQuery);
+    console.log("Unknown comment filter detected: " + commentFilterQuery.value);
     return "new";
   }
 }
