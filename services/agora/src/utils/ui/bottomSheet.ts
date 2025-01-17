@@ -151,6 +151,12 @@ export const useBottomSheet = () => {
       });
     }
 
+    actionList.push({
+      label: "Moderation History",
+      icon: "mdi-book-open",
+      id: "moderationHistory",
+    });
+
     if (profileData.value.isModerator) {
       actionList.push({
         label: "Moderate",
@@ -162,12 +168,6 @@ export const useBottomSheet = () => {
         label: "User Reports",
         icon: "mdi-account-alert",
         id: "userReports",
-      });
-
-      actionList.push({
-        label: "Moderation History",
-        icon: "mdi-book-open",
-        id: "moderationHistory",
       });
     }
 
