@@ -108,6 +108,10 @@ onMounted(async () => {
   await Promise.all([initializeData(), fetchPersonalLikes()]);
 });
 
+watch(commentFilterQuery, () => {
+  updateCommentFilter();
+});
+
 watch(profileData, async () => {
   await initializeModeratorMenu();
 });
