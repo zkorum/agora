@@ -95,23 +95,20 @@ export function useBackendAuthApi() {
   }
 
   async function deviceIsLoggedIn(): Promise<boolean> {
-    try {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const resp = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AuthCheckLoginStatusPost({
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
-      return resp.data.isLoggedIn;
-    } catch (error) {
-      return false;
-    }
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const resp = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1AuthCheckLoginStatusPost({
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
+    return resp.data.isLoggedIn;
+    //NOTE: DO NOT return false on error! You would wipe out the user session at the first backend interruption.
   }
 
   async function logoutFromServer() {
