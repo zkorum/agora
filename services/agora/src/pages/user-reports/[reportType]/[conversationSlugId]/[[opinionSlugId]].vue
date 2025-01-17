@@ -103,13 +103,13 @@ async function loadReports() {
     route.name ===
     "/user-reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
-    if (route.params.reportType == "post") {
+    if (route.params.reportType == "conversation") {
       reportType.value = "conversation";
       reportItemList.value = await fetchUserReportsByPostSlugId(
         route.params.conversationSlugId
       );
     } else if (
-      route.params.reportType == "comment" &&
+      route.params.reportType == "opinion" &&
       route.params.opinionSlugId
     ) {
       reportType.value = "opinion";
