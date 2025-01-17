@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout>
+  <OnboardingLayout :limit-width="true">
     <template #body><ClusterImageExample /> </template>
 
     <template #footer>

@@ -3,21 +3,23 @@
     <q-layout view="hHh lpR fFf">
       <q-page-container>
         <div
-          class="backgroundStyle"
+          class="baseContainer"
           :style="{
             backgroundImage: 'url(' + welcomeBackgroundImagePath + ')',
           }"
         >
           <q-page>
-            <WidthWrapper :width="'25rem'">
+            <WidthWrapper width="25rem">
               <slot name="body" />
             </WidthWrapper>
           </q-page>
         </div>
       </q-page-container>
 
-      <q-footer bordered class="container">
-        <WidthWrapper :width="'25rem'"> <slot name="footer" /> </WidthWrapper>
+      <q-footer bordered class="footerContainer">
+        <WidthWrapper :width="limitWidth ? '25rem' : '100%'">
+          <slot name="footer" />
+        </WidthWrapper>
       </q-footer>
     </q-layout>
   </div>
@@ -30,17 +32,17 @@ const welcomeBackgroundImagePath =
   process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
 
 defineProps<{
-  //
+  limitWidth: boolean;
 }>();
 </script>
 
 <style scoped lang="scss">
-.container {
+.footerContainer {
   background-color: white;
   color: black;
 }
 
-.backgroundStyle {
+.baseContainer {
   background-size: cover;
   padding-right: 1rem;
   padding-left: 1rem;

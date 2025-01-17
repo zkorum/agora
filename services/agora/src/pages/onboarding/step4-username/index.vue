@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout>
+  <OnboardingLayout :limit-width="true">
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
