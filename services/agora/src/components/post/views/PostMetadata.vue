@@ -104,7 +104,7 @@ function reportContentCallback() {
 
 async function openUserReportsCallback() {
   await router.push({
-    name: "/user-reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]",
+    name: "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]",
     params: {
       reportType: "conversation",
       conversationSlugId: props.postSlugId,

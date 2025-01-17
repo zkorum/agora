@@ -207,7 +207,6 @@ function decrementCommentCount() {
 }
 
 function scrollToCommentSection() {
-  console.log(commentSectionRef.value);
   commentSectionRef.value?.scrollIntoView({
     behavior: "smooth",
     block: "center",

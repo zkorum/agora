@@ -79,7 +79,7 @@ onMounted(async () => {
 async function openPage() {
   if (
     route.name ===
-    "/user-reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
+    "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
     if (route.params.reportType == "post") {
       await router.push({
@@ -101,7 +101,7 @@ async function openPage() {
 async function loadReports() {
   if (
     route.name ===
-    "/user-reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
+    "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
     if (route.params.reportType == "conversation") {
       reportType.value = "conversation";
