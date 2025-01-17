@@ -62,10 +62,10 @@ async function muteUserCallback() {
 
 async function moderateCommentCallback() {
   await router.push({
-    name: "/moderate/opinion/[postSlugId]/[commentSlugId]/",
+    name: "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/",
     params: {
-      postSlugId: props.postSlugId,
-      commentSlugId: props.commentItem.opinionSlugId,
+      conversationSlugId: props.postSlugId,
+      opinionSlugId: props.commentItem.opinionSlugId,
     },
   });
 }

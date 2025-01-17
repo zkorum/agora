@@ -118,9 +118,12 @@ onMounted(async () => {
 });
 
 function loadRouteParams() {
-  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
-    postSlugId = route.params.postSlugId;
-    commentSlugId = route.params.commentSlugId;
+  if (
+    route.name ==
+    "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/"
+  ) {
+    postSlugId = route.params.conversationSlugId;
+    commentSlugId = route.params.opinionSlugId;
   }
 }
 

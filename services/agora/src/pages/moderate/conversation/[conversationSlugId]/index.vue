@@ -119,8 +119,8 @@ onMounted(async () => {
 });
 
 function loadRouteParams() {
-  if (route.name == "/moderate/conversation/[postSlugId]/") {
-    postSlugId = route.params.postSlugId;
+  if (route.name == "/moderate/conversation/[conversationSlugId]/") {
+    postSlugId = route.params.conversationSlugId;
   }
 }
 

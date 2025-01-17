@@ -121,8 +121,8 @@ async function muteUserCallback() {
 
 async function moderatePostCallback() {
   await router.push({
-    name: "/moderate/conversation/[postSlugId]/",
-    params: { postSlugId: props.postSlugId },
+    name: "/moderate/conversation/[conversationSlugId]/",
+    params: { conversationSlugId: props.postSlugId },
   });
 }
 
