@@ -38,14 +38,7 @@
       <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
       <ZKButton
-        v-if="!hasExistingDecision"
-        label="Modify"
-        color="primary"
-        @click="clickedSubmit()"
-      />
-      <ZKButton
-        v-if="hasExistingDecision"
-        label="Moderate"
+        :label="hasExistingDecision ? 'Modify' : 'Moderate'"
         color="primary"
         @click="clickedSubmit()"
       />
