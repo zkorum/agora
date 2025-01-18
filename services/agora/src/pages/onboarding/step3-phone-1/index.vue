@@ -23,7 +23,7 @@
 
           <template #body>
             <div class="container">
-              <div>You will receive a 6-digit one-time code by SMS.</div>
+              <div>You will receive a 6-digit one-time code by SMS</div>
 
               <Select
                 v-model="selectedCountryCode"
@@ -77,6 +77,12 @@
                 type="tel"
                 placeholder="Phone number"
                 required
+              />
+
+              <ZKButton
+                label="I'd prefer to login with complete privacy"
+                text-color="primary"
+                @click="goToPassportVerification()"
               />
 
               <div v-if="devAuthorizedNumbers.length > 0">
@@ -162,6 +168,10 @@ interface PhoneNumber {
 
 const devAuthorizedNumbers: PhoneNumber[] = [];
 checkDevAuthorizedNumbers();
+
+async function goToPassportVerification() {
+  await router.push({ name: "/onboarding/step3-passport/" });
+}
 
 function getFlagLink(country: string) {
   return (

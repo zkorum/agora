@@ -21,7 +21,7 @@
 
           <template #body>
             <div class="instructions">
-              Please enter the 6-digit code that was sent to
+              Enter the 6-digit that we have sent via the phone number
               <span class="phoneNumberStyle">{{
                 verificationPhoneNumber.phoneNumber
               }}</span
@@ -51,7 +51,7 @@
             <div class="optionButtons">
               <ZKButton
                 label="Change Number"
-                text-color="blue"
+                text-color="primary"
                 @click="changePhoneNumber()"
               />
 
@@ -62,7 +62,7 @@
                     : 'Resend Code'
                 "
                 :disabled="verificationNextCodeSeconds > 0"
-                text-color="blue"
+                text-color="primary"
                 @click="clickedResendButton()"
               />
             </div>
@@ -281,7 +281,7 @@ function changePhoneNumber() {
 }
 
 .phoneNumberStyle {
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .otpDiv {

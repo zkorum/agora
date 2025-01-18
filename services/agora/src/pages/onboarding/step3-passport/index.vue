@@ -43,12 +43,12 @@
                       </span>
                       <span v-if="!quasar.platform.is.mobile"
                         ><a
+                          class="hrefColor"
                           :href="rarimeStoreLink"
                           target="_blank"
                           rel="noopener noreferrer"
                           >RariMe</a
                         >
-                        on your phone
                       </span>
                     </div>
                   </div>
@@ -59,7 +59,7 @@
                       size="2rem"
                       class="numberCircle"
                     />
-                    Claim your anonymous ID on RariMe
+                    Claim your anonymous ID
                   </div>
                   <div class="stepFlex">
                     <q-icon
@@ -68,7 +68,7 @@
                       class="numberCircle"
                     />
                     <div v-if="quasar.platform.is.mobile">
-                      Come back here and click verify
+                      Come back here and click Verify
                     </div>
                     <div v-else>
                       Scan the QR code with RariMe to verify your identity
@@ -138,7 +138,7 @@
 
               <ZKButton
                 label="I'd rather verify with my phone number"
-                text-color="color-text-strong"
+                text-color="primary"
                 @click="goToPhoneVerification()"
               />
             </template>
@@ -396,6 +396,7 @@ async function goToPhoneVerification() {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  width: 100%;
 }
 
 .waitingVerificationText {
@@ -407,5 +408,11 @@ async function goToPhoneVerification() {
 
 .whiteBackground {
   background-color: white;
+}
+
+.hrefColor {
+  color: $primary;
+  font-weight: 500;
+  text-decoration: underline;
 }
 </style>
