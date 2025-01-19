@@ -163,8 +163,21 @@ async function mutedComment() {
   await initializeData();
 }
 
-function deletedComment() {
+async function deletedComment() {
   emit("deleted");
+
+  if (
+    commentFilterQuery.value == "new" ||
+    commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "hidden"
+  ) {
+    // clear the existing route params
+    await selectedNewFilter(commentFilterQuery.value);
+  } else {
+    // don't change the existing filter
+  }
+
+  await initializeData();
 }
 
 async function fetchPersonalLikes() {

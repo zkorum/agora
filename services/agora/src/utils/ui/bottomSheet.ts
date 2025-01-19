@@ -5,7 +5,6 @@ import { useUserStore } from "src/stores/user";
 import { usePostStore } from "src/stores/post";
 import { useNotify } from "./notify";
 import { useRoute, useRouter } from "vue-router";
-import { useBackendCommentApi } from "../api/comment";
 import { storeToRefs } from "pinia";
 import { useDialog } from "./dialog";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -21,7 +20,6 @@ export const useBottomSheet = () => {
   const route = useRoute();
 
   const { deletePostBySlugId } = useBackendPostApi();
-  const { deleteCommentBySlugId } = useBackendCommentApi();
 
   const { profileData } = storeToRefs(useUserStore());
   const { loadUserProfile } = useUserStore();
@@ -37,7 +35,7 @@ export const useBottomSheet = () => {
   async function showCommentOptionSelector(
     commentSlugId: string,
     posterUserName: string,
-    deleteCommentCallback: (deleted: boolean) => void,
+    deleteCommentCallback: () => void,
     reportCommentCallback: () => void,
     openUserReportsCallback: () => void,
     muteUserCallback: () => void,
@@ -96,13 +94,7 @@ export const useBottomSheet = () => {
             showLoginConfirmationDialog();
           }
         } else if (action.id == "delete") {
-          const response = await deleteCommentBySlugId(commentSlugId);
-          if (response) {
-            showNotifyMessage("Opinion deleted");
-            deleteCommentCallback(true);
-          } else {
-            deleteCommentCallback(false);
-          }
+          deleteCommentCallback();
         } else if (action.id == "moderate") {
           moderateCommentCallback();
         } else if (action.id == "userReports") {

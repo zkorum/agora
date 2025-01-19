@@ -20,8 +20,10 @@
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
+import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -32,6 +34,8 @@ const props = defineProps<{
   commentItem: OpinionItem;
 }>();
 
+const { showNotifyMessage } = useNotify();
+
 const { showCommentOptionSelector } = useBottomSheet();
 
 const showReportDialog = ref(false);
@@ -39,6 +43,7 @@ const showReportDialog = ref(false);
 const router = useRouter();
 
 const { muteUser } = useBackendUserMuteApi();
+const { deleteCommentBySlugId } = useBackendCommentApi();
 
 function reportContentCallback() {
   showReportDialog.value = true;
@@ -70,13 +75,17 @@ async function moderateCommentCallback() {
   });
 }
 
-async function optionButtonClicked() {
-  const deleteCommentCallback = (deleted: boolean) => {
-    if (deleted) {
-      emit("deleted");
-    }
-  };
+async function deleteCommentCallback() {
+  const response = await deleteCommentBySlugId(props.commentItem.opinionSlugId);
+  if (response) {
+    showNotifyMessage("Opinion deleted");
+    emit("deleted");
+  } else {
+    showNotifyMessage("Failed to delete opinion");
+  }
+}
 
+async function optionButtonClicked() {
   await showCommentOptionSelector(
     props.commentItem.opinionSlugId,
     props.commentItem.username,
