@@ -1,49 +1,40 @@
 <template>
-  <MainLayout
-    :general-props="{
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
-  >
-    <StepperLayout
-      :submit-call-back="() => {}"
-      :current-step="2"
-      :total-steps="5"
-      :enable-next-button="true"
-      :show-next-button="false"
-    >
-      <template #header>
-        <InfoHeader
-          title="Agora aims to be exclusively human"
-          :description="description"
-          icon-name="mdi-heart"
-        />
-      </template>
+  <OnboardingLayout :limit-width="true">
+    <template #body><ClusterImageExample /> </template>
 
-      <template #body>
-        <ZKButton
-          label="What is RariMe?"
-          color="primary"
-          @click="goToNextRoute()"
-        />
+    <template #footer>
+      <StepperLayout
+        :submit-call-back="() => {}"
+        :current-step="2"
+        :total-steps="5"
+        :enable-next-button="true"
+        :show-next-button="false"
+      >
+        <template #header>
+          <InfoHeader
+            title="Agora aims to be exclusively human"
+            :description="description"
+            icon-name="mdi-heart"
+          />
+        </template>
 
-        <ZKButton
-          label="Verify with my phone number"
-          color="button-background-color"
-          text-color="color-text-strong"
-          @click="verifyPhone()"
-        />
-      </template>
-    </StepperLayout>
-  </MainLayout>
+        <template #body>
+          <ZKButton
+            label="Verify anonymously"
+            color="primary"
+            @click="goToNextRoute()"
+          />
+
+          <ZKButton
+            label="Verify with my phone number"
+            color="button-background-color"
+            text-color="primary"
+            @click="verifyPhone()"
+          />
+        </template>
+      </StepperLayout>
+    </template>
+  </OnboardingLayout>
 </template>
 
 <script setup lang="ts">
@@ -51,12 +42,13 @@ import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
-import MainLayout from "src/layouts/MainLayout.vue";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 
 const router = useRouter();
 
 const description =
-  "We ask you to prove your humanity anonymously with RariMe, so Agora is authentically human, free from bots and their propaganda.";
+  "More than half of internet traffic comes from bots. That’s why we verify users, so you’re debating people, not robots plotting world domination!";
 
 async function goToNextRoute() {
   await router.push({ name: "/onboarding/step3-passport/" });

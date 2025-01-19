@@ -1,108 +1,112 @@
 <template>
-  <MainLayout
-    :general-props="{
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
-  >
-    <form @submit.prevent="">
-      <StepperLayout
-        :submit-call-back="validateNumber"
-        :current-step="3"
-        :total-steps="5"
-        :enable-next-button="
-          selectedCountryCode.code.length > 0 && inputNumber.length > 0
-        "
-        :show-next-button="true"
-      >
-        <template #header>
-          <InfoHeader
-            title="Verify with phone number"
-            :description="description"
-            icon-name="mdi-phone"
-          />
-        </template>
+  <OnboardingLayout :limit-width="true">
+    <template #body><DefaultImageExample /> </template>
 
-        <template #body>
-          <div class="container">
-            <div>You will receive a 6-digit one-time code by SMS.</div>
-
-            <Select
-              v-model="selectedCountryCode"
-              filter
-              :virtual-scroller-options="{
-                lazy: true,
-                itemSize: 40,
-                numToleratedItems: 10,
-              }"
-              :options="countries"
-              option-label="name"
-              placeholder="Country Code"
-            >
-              <template #value="slotProps">
-                <div
-                  v-if="slotProps.value.code != ''"
-                  class="flex items-center"
-                >
-                  <img
-                    :alt="slotProps.value.label"
-                    :src="getFlagLink(slotProps.value.country)"
-                    class="flagImg"
-                  />
-                  <div>+ {{ slotProps.value.code }}</div>
-                </div>
-                <span v-else>
-                  {{ slotProps.placeholder }}
-                </span>
-              </template>
-              <template #option="slotProps">
-                <div class="innerOption">
-                  <img
-                    :src="getFlagLink(slotProps.option.country)"
-                    class="flagImg"
-                    loading="lazy"
-                  />
-                  <div>{{ slotProps.option.name }}</div>
-                </div>
-              </template>
-            </Select>
-
-            <InputText
-              v-model="inputNumber"
-              type="tel"
-              placeholder="Phone number"
-              required
+    <template #footer>
+      <form @submit.prevent="">
+        <StepperLayout
+          :submit-call-back="validateNumber"
+          :current-step="3"
+          :total-steps="5"
+          :enable-next-button="
+            selectedCountryCode.code.length > 0 && inputNumber.length > 0
+          "
+          :show-next-button="true"
+        >
+          <template #header>
+            <InfoHeader
+              title="Verify with phone number"
+              :description="description"
+              icon-name="mdi-phone"
             />
+          </template>
 
-            <div v-if="devAuthorizedNumbers.length > 0">
-              <div class="developmentSection">
-                <div>Development Numbers:</div>
+          <template #body>
+            <div class="container">
+              <div>You will receive a 6-digit one-time code by SMS</div>
 
-                <div
-                  v-for="authorizedNumber in devAuthorizedNumbers"
-                  :key="authorizedNumber.fullNumber"
-                >
-                  <ZKButton
-                    color="blue"
-                    :label="authorizedNumber.fullNumber"
-                    @click="injectDevelopmentNumber(authorizedNumber)"
-                  />
+              <Select
+                v-model="selectedCountryCode"
+                filter
+                :virtual-scroller-options="{
+                  lazy: true,
+                  itemSize: 40,
+                  numToleratedItems: 10,
+                }"
+                :options="countries"
+                option-label="name"
+                placeholder="Country Code"
+                :pt="{
+                  overlay: {
+                    style: {
+                      'z-index': '2000',
+                    },
+                  },
+                }"
+              >
+                <template #value="slotProps">
+                  <div
+                    v-if="slotProps.value.code != ''"
+                    class="flex items-center"
+                  >
+                    <img
+                      :alt="slotProps.value.label"
+                      :src="getFlagLink(slotProps.value.country)"
+                      class="flagImg"
+                    />
+                    <div>+ {{ slotProps.value.code }}</div>
+                  </div>
+                  <span v-else>
+                    {{ slotProps.placeholder }}
+                  </span>
+                </template>
+                <template #option="slotProps">
+                  <div class="innerOption">
+                    <img
+                      :src="getFlagLink(slotProps.option.country)"
+                      class="flagImg"
+                      loading="lazy"
+                    />
+                    <div>{{ slotProps.option.name }}</div>
+                  </div>
+                </template>
+              </Select>
+
+              <InputText
+                v-model="inputNumber"
+                type="tel"
+                placeholder="Phone number"
+                required
+              />
+
+              <ZKButton
+                label="I'd prefer to login with complete privacy"
+                text-color="primary"
+                @click="goToPassportVerification()"
+              />
+
+              <div v-if="devAuthorizedNumbers.length > 0">
+                <div class="developmentSection">
+                  <div>Development Numbers:</div>
+
+                  <div
+                    v-for="authorizedNumber in devAuthorizedNumbers"
+                    :key="authorizedNumber.fullNumber"
+                  >
+                    <ZKButton
+                      color="blue"
+                      :label="authorizedNumber.fullNumber"
+                      @click="injectDevelopmentNumber(authorizedNumber)"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </template>
-      </StepperLayout>
-    </form>
-  </MainLayout>
+          </template>
+        </StepperLayout>
+      </form>
+    </template>
+  </OnboardingLayout>
 </template>
 
 <script setup lang="ts">
@@ -121,7 +125,8 @@ import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useNotify } from "src/utils/ui/notify";
-import MainLayout from "src/layouts/MainLayout.vue";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 
 const inputNumber = ref("");
 
@@ -163,6 +168,10 @@ interface PhoneNumber {
 
 const devAuthorizedNumbers: PhoneNumber[] = [];
 checkDevAuthorizedNumbers();
+
+async function goToPassportVerification() {
+  await router.push({ name: "/onboarding/step3-passport/" });
+}
 
 function getFlagLink(country: string) {
   return (

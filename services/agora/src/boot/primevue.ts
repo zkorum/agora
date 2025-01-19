@@ -12,5 +12,8 @@ export default defineBoot(({ app }) => {
         cssLayer: false,
       },
     },
+    zIndex: {
+      overlay: 2000,
+    },
   });
 });

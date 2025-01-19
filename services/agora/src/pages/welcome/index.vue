@@ -73,7 +73,7 @@ async function gotoNextRoute(isLogin: boolean) {
   align-items: center;
   justify-content: center;
   gap: 3rem;
-  height: 100vh;
+  height: 100dvh;
   background-size: cover;
 }
 </style>
