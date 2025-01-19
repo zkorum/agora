@@ -165,7 +165,11 @@ async function mutedComment() {
 
 async function deletedComment() {
   emit("deleted");
+  await resetRouteParams();
+  await initializeData();
+}
 
+async function resetRouteParams() {
   if (
     commentFilterQuery.value == "new" ||
     commentFilterQuery.value == "moderated" ||
@@ -173,11 +177,11 @@ async function deletedComment() {
   ) {
     // clear the existing route params
     await selectedNewFilter(commentFilterQuery.value);
+  } else if (commentFilterQuery.value == "") {
+    await selectedNewFilter("new");
   } else {
     // don't change the existing filter
   }
-
-  await initializeData();
 }
 
 async function fetchPersonalLikes() {
@@ -219,7 +223,9 @@ async function fetchCommentList(filter: CommentFeedFilter) {
   }
 }
 
-function autoDetectCommentFilter(commentSlugId: string): CommentFilterOptions {
+function autoDetectCommentFilter(
+  commentSlugId: string
+): CommentFilterOptions | "not_found" {
   for (const commentItem of commentItemsNew.value) {
     if (commentItem.opinionSlugId == commentSlugId) {
       return "new";
@@ -236,34 +242,46 @@ function autoDetectCommentFilter(commentSlugId: string): CommentFilterOptions {
     showNotifyMessage("This comment had been removed by the moderator");
     return "new";
   } else {
-    return "hidden";
+    for (const commentItem of commentItemsHidden.value) {
+      if (commentItem.opinionSlugId == commentSlugId) {
+        return "hidden";
+      }
+    }
   }
+
+  return "not_found";
 }
 
 async function scrollToComment() {
   if (commentSlugIdQuery.value != "") {
-    sortAlgorithm.value = autoDetectCommentFilter(commentSlugIdQuery.value);
-    await router.replace({
-      query: {
-        opinionSlugId: commentSlugIdQuery.value,
-        filter: sortAlgorithm.value,
-      },
-    });
+    const detectedFilter = autoDetectCommentFilter(commentSlugIdQuery.value);
+    if (detectedFilter == "not_found") {
+      showNotifyMessage("Opinion not found: " + commentSlugIdQuery.value);
+      await resetRouteParams();
+    } else {
+      sortAlgorithm.value = detectedFilter;
+      await router.replace({
+        query: {
+          opinionSlugId: commentSlugIdQuery.value,
+          filter: sortAlgorithm.value,
+        },
+      });
 
-    setTimeout(function () {
-      const targetElement = document.getElementById(commentSlugIdQuery.value);
+      setTimeout(function () {
+        const targetElement = document.getElementById(commentSlugIdQuery.value);
 
-      if (targetElement != null) {
-        targetElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      } else {
-        console.log(
-          "Failed to locate comment slug ID: " + commentSlugIdQuery.value
-        );
-      }
-    }, 1000);
+        if (targetElement != null) {
+          targetElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        } else {
+          console.log(
+            "Failed to locate comment slug ID: " + commentSlugIdQuery.value
+          );
+        }
+      }, 1000);
+    }
   }
 }
 </script>
