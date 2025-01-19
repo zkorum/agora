@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <MainLayout
     :general-props="{
@@ -15,7 +16,18 @@
   >
     <div class="container">
       <div class="title">
-        Moderate the opinion "{add opinion title excerpt}"
+        <div>Moderate the conversation</div>
+      </div>
+
+      <div class="postPreview">
+        <b>
+          {{ conversationItem.payload.title }}
+        </b>
+
+        <div
+          v-if="conversationItem.payload.body"
+          v-html="conversationItem.payload.body"
+        ></div>
       </div>
 
       <q-select
@@ -37,14 +49,7 @@
       <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
       <ZKButton
-        v-if="!hasExistingDecision"
-        label="Modify"
-        color="primary"
-        @click="clickedSubmit()"
-      />
-      <ZKButton
-        v-if="hasExistingDecision"
-        label="Moderate"
+        :label="hasExistingDecision ? 'Modify' : 'Moderate'"
         color="primary"
         @click="clickedSubmit()"
       />
@@ -65,30 +70,36 @@ import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import type {
-  OpinionModerationAction,
+  ConversationModerationAction,
+  ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import {
-  opinionModerationActionMapping,
+  moderationActionPostsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
+import { usePostStore } from "src/stores/post";
 import MainLayout from "src/layouts/MainLayout.vue";
+import { useBackendPostApi } from "src/utils/api/post";
 
 const {
-  moderateComment,
-  getOpinionModerationStatus: fetchCommentModeration,
-  cancelModerationCommentReport,
+  moderatePost,
+  getConversationModerationStatus,
+  cancelModerationPostReport,
 } = useBackendModerateApi();
 
 const route = useRoute();
 const router = useRouter();
 
-const DEFAULT_MODERATION_ACTION = "move";
-const moderationAction = ref<OpinionModerationAction>(
+const { loadPostData, emptyPost } = usePostStore();
+const { fetchPostBySlugId } = useBackendPostApi();
+
+const DEFAULT_MODERATION_ACTION = "lock";
+const moderationAction = ref<ConversationModerationAction>(
   DEFAULT_MODERATION_ACTION
 );
-const actionMapping = ref(opinionModerationActionMapping);
+const actionMapping = ref(moderationActionPostsMapping);
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
@@ -99,23 +110,23 @@ const moderationExplanation = ref("");
 const hasExistingDecision = ref(false);
 
 let postSlugId: string | null = null;
-let commentSlugId: string | null = null;
 loadRouteParams();
+
+const conversationItem = ref<ExtendedConversation>(emptyPost);
 
 onMounted(async () => {
   await initializeData();
 });
 
 function loadRouteParams() {
-  if (route.name == "/moderate/opinion/[postSlugId]/[commentSlugId]/") {
-    postSlugId = route.params.postSlugId;
-    commentSlugId = route.params.commentSlugId;
+  if (route.name == "/moderate/conversation/[conversationSlugId]/") {
+    postSlugId = route.params.conversationSlugId;
   }
 }
 
-async function initializeData() {
-  if (commentSlugId != null) {
-    const response = await fetchCommentModeration(commentSlugId);
+async function loadRemoteModerationData() {
+  if (postSlugId) {
+    const response = await getConversationModerationStatus(postSlugId);
     hasExistingDecision.value = response.status == "moderated";
     if (response.status == "moderated") {
       moderationAction.value = response.action;
@@ -127,39 +138,59 @@ async function initializeData() {
       moderationReason.value = DEFAULT_MODERATION_REASON;
     }
   } else {
-    console.log("Missing comment slug ID");
+    console.log("Missing post slug ID");
   }
 }
 
+async function loadRemoteConversationData() {
+  if (postSlugId) {
+    const response = await fetchPostBySlugId(postSlugId, false);
+    if (response) {
+      conversationItem.value = response;
+    }
+  }
+}
+
+async function initializeData() {
+  await loadRemoteModerationData();
+  await loadRemoteConversationData();
+}
+
 async function clickedWithdraw() {
-  if (commentSlugId) {
-    await cancelModerationCommentReport(commentSlugId);
-    await initializeData();
-    // TODO: redirect to comment
-    // await router.push({
-    //   name: "single-post",
-    //   params: { postSlugId: postSlugId },
-    // });
+  if (postSlugId) {
+    const isSuccessful = await cancelModerationPostReport(postSlugId);
+    if (isSuccessful) {
+      await initializeData();
+      await loadPostData(false);
+      await redirectToPost();
+    }
   } else {
     console.log("Missing comment slug ID");
   }
 }
 
 async function clickedSubmit() {
-  if (postSlugId && commentSlugId) {
-    const isSuccessful = await moderateComment(
-      commentSlugId,
+  if (postSlugId) {
+    const isSuccessful = await moderatePost(
+      postSlugId,
       moderationAction.value,
       moderationReason.value,
       moderationExplanation.value
     );
+
     if (isSuccessful) {
-      await router.push({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: postSlugId },
-        query: { opinionSlugId: commentSlugId },
-      });
+      await loadPostData(false);
+      await redirectToPost();
     }
+  }
+}
+
+async function redirectToPost() {
+  if (postSlugId) {
+    await router.push({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: postSlugId },
+    });
   }
 }
 </script>
@@ -174,5 +205,14 @@ async function clickedSubmit() {
 
 .title {
   font-size: 1.2rem;
+}
+
+.postPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: $button-background-color;
+  padding: 1rem;
+  border-radius: 15px;
 }
 </style>

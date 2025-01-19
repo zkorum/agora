@@ -113,13 +113,11 @@
 
         <div v-if="!compactMode" ref="commentSectionRef">
           <CommentSection
-            :key="commentCountOffset"
+            :key="commentSectionKey"
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
-            :initial-comment-slug-id="commentSlugIdQuery"
             :is-post-locked="
               extendedPostData.metadata.moderation.status == 'moderated'
             "
-            :comment-filter="parsedCommentFilter"
             @deleted="decrementCommentCount()"
           />
         </div>
@@ -133,7 +131,9 @@
         :show-controls="focusCommentElement"
         :post-slug-id="extendedPostData.metadata.conversationSlugId"
         @cancel-clicked="cancelledCommentComposor()"
-        @submitted-comment="submittedComment()"
+        @submitted-comment="
+          (opinionSlugId: string) => submittedComment(opinionSlugId)
+        "
         @editor-focused="focusCommentElement = true"
       />
     </FloatingBottomContainer>
@@ -169,26 +169,8 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuthenticationStore();
 
-const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
-  transform: String,
-});
-const commentFilterQuery = useRouteQuery("filter", "", {
-  transform: String,
-});
-
-const parsedCommentFilter = computed<"new" | "moderated" | "hidden">(() => {
-  if (
-    commentFilterQuery.value == "new" ||
-    commentFilterQuery.value == "moderated" ||
-    commentFilterQuery.value == "hidden"
-  ) {
-    return commentFilterQuery.value;
-  } else {
-    return "new";
-  }
-});
-
 const commentCountOffset = ref(0);
+const commentSectionKey = ref(Date.now());
 
 const commentSectionRef = ref<HTMLElement | null>(null);
 
@@ -225,16 +207,22 @@ function decrementCommentCount() {
 }
 
 function scrollToCommentSection() {
-  console.log(commentSectionRef.value);
   commentSectionRef.value?.scrollIntoView({
     behavior: "smooth",
     block: "center",
   });
 }
 
-async function submittedComment() {
+async function submittedComment(opinionSlugId: string) {
+  await router.replace({
+    query: { opinionSlugId: opinionSlugId, filter: "new" },
+  });
+
   commentCountOffset.value += 1;
   focusCommentElement.value = false;
+
+  commentSectionKey.value += Date.now();
+
   scrollToCommentSection();
   await loadPostData(false);
 }

@@ -31,10 +31,10 @@
 
     <Tabs :value="currentTab">
       <TabList>
-        <RouterLink :to="{ name: '/user-profile/opinions/' }">
+        <RouterLink :to="{ name: '/user-profile/conversations/' }">
           <Tab :value="0">Conversations</Tab>
         </RouterLink>
-        <RouterLink :to="{ name: '/user-profile/conversations/' }">
+        <RouterLink :to="{ name: '/user-profile/opinions/' }">
           <Tab :value="1">Opinions</Tab>
         </RouterLink>
       </TabList>
@@ -68,7 +68,7 @@ watch(route, () => {
 });
 
 function applyCurrentTab() {
-  if (route.name == "/user-profile/opinions/") {
+  if (route.name == "/user-profile/conversations/") {
     currentTab.value = 0;
   } else {
     currentTab.value = 1;

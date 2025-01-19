@@ -104,8 +104,11 @@ function reportContentCallback() {
 
 async function openUserReportsCallback() {
   await router.push({
-    name: "/user-reports/[reportType]/[slugId]/",
-    params: { reportType: "post", slugId: props.postSlugId },
+    name: "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]",
+    params: {
+      reportType: "conversation",
+      conversationSlugId: props.postSlugId,
+    },
   });
 }
 
@@ -118,8 +121,8 @@ async function muteUserCallback() {
 
 async function moderatePostCallback() {
   await router.push({
-    name: "/moderate/conversation/[postSlugId]/",
-    params: { postSlugId: props.postSlugId },
+    name: "/moderate/conversation/[conversationSlugId]/",
+    params: { conversationSlugId: props.postSlugId },
   });
 }
 

@@ -294,27 +294,43 @@ export class Dto {
     });
     static getConversationModerationStatusResponse =
         zodConversationModerationProperties;
-    static getOpinionModerationStatusRequest = z.object({
-        opinionSlugId: zodSlugId,
-    });
+    static getOpinionBySlugIdListRequest = z
+        .object({
+            opinionSlugIdList: z.array(zodSlugId),
+        })
+        .strict();
+    static getOpinionBySlugIdListResponse = z.array(zodOpinionItem);
+    static getOpinionModerationStatusRequest = z
+        .object({
+            opinionSlugId: zodSlugId,
+        })
+        .strict();
     static getOpinionModerationStatusResponse = zodOpinionModerationProperties;
-    static createConversationReportRequest = z.object({
-        conversationSlugId: zodSlugId,
-        reportReason: zodUserReportReason,
-        reportExplanation: zodUserReportExplanation,
-    });
-    static createOpinionReportRequest = z.object({
-        opinionSlugId: zodSlugId,
-        reportReason: zodUserReportReason,
-        reportExplanation: zodUserReportExplanation,
-    });
-    static fetchConversationReportsRequest = z.object({
-        conversationSlugId: zodSlugId,
-    });
+    static createConversationReportRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            reportReason: zodUserReportReason,
+            reportExplanation: zodUserReportExplanation,
+        })
+        .strict();
+    static createOpinionReportRequest = z
+        .object({
+            opinionSlugId: zodSlugId,
+            reportReason: zodUserReportReason,
+            reportExplanation: zodUserReportExplanation,
+        })
+        .strict();
+    static fetchConversationReportsRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
     static fetchConversationReportsResponse = z.array(zodUserReportItem);
-    static fetchOpinionReportsRequest = z.object({
-        opinionSlugId: zodSlugId,
-    });
+    static fetchOpinionReportsRequest = z
+        .object({
+            opinionSlugId: zodSlugId,
+        })
+        .strict();
     static fetchOpinionReportsResponse = z.array(zodUserReportItem);
     static checkUsernameInUseRequest = z
         .object({
@@ -409,3 +425,9 @@ export type FetchUserReportsByCommentSlugIdResponse = z.infer<
     typeof Dto.fetchOpinionReportsResponse
 >;
 export type GetMutedUsersResponse = z.infer<typeof Dto.getMutedUsersResponse>;
+export type GetOpinionBySlugIdListRequest = z.infer<
+    typeof Dto.getOpinionBySlugIdListRequest
+>;
+export type GetOpinionBySlugIdListResponse = z.infer<
+    typeof Dto.getOpinionBySlugIdListResponse
+>;

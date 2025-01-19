@@ -46,8 +46,12 @@ function reportContentCallback() {
 
 async function openUserReportsCallback() {
   await router.push({
-    name: "/user-reports/[reportType]/[slugId]/",
-    params: { reportType: "comment", slugId: props.commentItem.opinionSlugId },
+    name: "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]",
+    params: {
+      reportType: "opinion",
+      opinionSlugId: props.commentItem.opinionSlugId,
+      conversationSlugId: props.postSlugId,
+    },
   });
 }
 
@@ -58,10 +62,10 @@ async function muteUserCallback() {
 
 async function moderateCommentCallback() {
   await router.push({
-    name: "/moderate/opinion/[postSlugId]/[commentSlugId]/",
+    name: "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/",
     params: {
-      postSlugId: props.postSlugId,
-      commentSlugId: props.commentItem.opinionSlugId,
+      conversationSlugId: props.postSlugId,
+      opinionSlugId: props.commentItem.opinionSlugId,
     },
   });
 }

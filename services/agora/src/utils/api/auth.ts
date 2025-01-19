@@ -108,6 +108,7 @@ export function useBackendAuthApi() {
       },
     });
     return resp.data.isLoggedIn;
+    //NOTE: DO NOT return false on error! You would wipe out the user session at the first backend interruption.
   }
 
   async function logoutFromServer() {
@@ -142,6 +143,8 @@ export function useBackendAuthApi() {
         const needRedirect = needRedirectUnauthenticatedUser();
         if (needRedirect) {
           await showLogoutMessageAndRedirect();
+        } else {
+          await loadPostData(false);
         }
       }, 500);
     }

@@ -29,10 +29,10 @@
             <div v-if="profileData.isModerator" class="moderationEditButton">
               <RouterLink
                 :to="{
-                  name: '/moderate/opinion/[postSlugId]/[commentSlugId]/',
+                  name: '/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/',
                   params: {
-                    postSlugId: postSlugId,
-                    commentSlugId: commentItem.opinionSlugId,
+                    conversationSlugId: postSlugId,
+                    opinionSlugId: commentItem.opinionSlugId,
                   },
                 }"
               >

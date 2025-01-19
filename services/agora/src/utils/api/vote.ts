@@ -9,6 +9,7 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import { type VotingAction } from "src/shared/types/zod";
 import { useNotify } from "../ui/notify";
+import { FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
 
 export function useBackendVoteApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -46,7 +47,9 @@ export function useBackendVoteApi() {
     }
   }
 
-  async function fetchUserVotesForPostSlugIds(postSlugIdList: string[]) {
+  async function fetchUserVotesForPostSlugIds(
+    postSlugIdList: string[]
+  ): Promise<undefined | FetchUserVotesForPostSlugIdsResponse> {
     try {
       const params: ApiV1UserVoteGetByConversationsPostRequest = {
         conversationSlugIdList: postSlugIdList,

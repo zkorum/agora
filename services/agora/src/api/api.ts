@@ -1223,6 +1223,19 @@ export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1O
 /**
  * 
  * @export
+ * @interface ApiV1OpinionFetchBySlugIdListPostRequest
+ */
+export interface ApiV1OpinionFetchBySlugIdListPostRequest {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1OpinionFetchBySlugIdListPostRequest
+     */
+    'opinionSlugIdList': Array<string>;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1OpinionFetchHiddenByConversationPostRequest
  */
 export interface ApiV1OpinionFetchHiddenByConversationPostRequest {
@@ -2482,6 +2495,45 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchBySlugIdListPost: async (apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchBySlugIdListPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchBySlugIdListPost', 'apiV1OpinionFetchBySlugIdListPostRequest', apiV1OpinionFetchBySlugIdListPostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-by-slug-id-list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchBySlugIdListPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3290,6 +3342,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchBySlugIdListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3664,6 +3728,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: any): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>> {
             return localVarFp.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: any): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>> {
+            return localVarFp.apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -4044,6 +4117,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest: ApiV1OpinionFetchBySlugIdListPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchBySlugIdListPost(apiV1OpinionFetchBySlugIdListPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

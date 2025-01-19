@@ -2,7 +2,7 @@
   <div>
     <div class="container">
       <div>
-        {{ displayDateString("HH:mm A") }}
+        {{ displayDateString("h:mm A") }}
       </div>
       <div>
         {{ displayDateString("YYYY-MM-DD") }}

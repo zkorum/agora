@@ -35,7 +35,7 @@
             label="Post"
             color="primary"
             :disable="characterProgress > 100 || characterProgress == 0"
-            @click="postClicked()"
+            @click="submitPostClicked()"
           />
         </div>
       </div>
@@ -70,11 +70,19 @@ const commentText = ref("");
 const characterCount = ref(0);
 const resetKey = ref(0);
 
+/*
 const emit = defineEmits({
   cancelClicked: null,
   submittedComment: null,
   editorFocused: null,
 });
+*/
+
+const emit = defineEmits<{
+  (e: "cancelClicked"): void;
+  (e: "editorFocused"): void;
+  (e: "submittedComment", conversationSlugId: string): void;
+}>();
 
 watch(
   () => props.showControls,
@@ -103,10 +111,10 @@ function cancelClicked() {
   characterCount.value = 0;
 }
 
-async function postClicked() {
+async function submitPostClicked() {
   const response = await createNewComment(commentText.value, props.postSlugId);
-  if (response) {
-    emit("submittedComment", {});
+  if (response?.success) {
+    emit("submittedComment", response.opinionSlugId);
     innerFocus.value = false;
     resetKey.value = resetKey.value + 1;
     characterCount.value = 0;
