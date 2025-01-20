@@ -1,150 +1,148 @@
 <template>
-  <OnboardingLayout :limit-width="false">
+  <OnboardingLayout>
     <template #body>
       <RarimoImageExample />
     </template>
 
     <template #footer>
-      <q-scroll-area style="height: 70dvh" :visible="false">
-        <WidthWrapper width="25rem">
-          <StepperLayout
-            :submit-call-back="() => {}"
-            :current-step="3"
-            :total-steps="5"
-            :enable-next-button="true"
-            :show-next-button="false"
-          >
-            <template #header>
-              <InfoHeader
-                title="Own Your Privacy"
-                :description="description"
-                icon-name="mdi-wallet"
-              />
-            </template>
+      <WidthWrapper width="25rem">
+        <StepperLayout
+          :submit-call-back="() => {}"
+          :current-step="3"
+          :total-steps="5"
+          :enable-next-button="true"
+          :show-next-button="false"
+        >
+          <template #header>
+            <InfoHeader
+              title="Own Your Privacy"
+              :description="description"
+              icon-name="mdi-wallet"
+            />
+          </template>
 
-            <template #body>
-              <ZKCard padding="1rem">
-                <div class="stepContainer">
-                  <div class="stepFlex">
-                    <q-icon
-                      name="mdi-numeric-1"
-                      size="2rem"
-                      class="numberCircle"
-                    />
-                    <div>
-                      Download
-                      <span v-if="quasar.platform.is.mobile">
-                        <a
-                          :href="rarimeStoreLink"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          >RariMe</a
-                        >
-                      </span>
-                      <span v-if="!quasar.platform.is.mobile"
-                        ><a
-                          class="hrefColor"
-                          :href="rarimeStoreLink"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          >RariMe</a
-                        >
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="stepFlex">
-                    <q-icon
-                      name="mdi-numeric-2"
-                      size="2rem"
-                      class="numberCircle"
-                    />
-                    Claim your anonymous ID
-                  </div>
-                  <div class="stepFlex">
-                    <q-icon
-                      name="mdi-numeric-3"
-                      size="2rem"
-                      class="numberCircle"
-                    />
-                    <div v-if="quasar.platform.is.mobile">
-                      Come back here and click Verify
-                    </div>
-                    <div v-else>
-                      Scan the QR code with RariMe to verify your identity
-                    </div>
-                  </div>
-
-                  <div class="innerInstructions">
-                    <div v-if="!quasar.platform.is.mobile">
-                      <div v-if="verificationLink.length == 0">
-                        <div
-                          v-if="verificationLinkGenerationFailed"
-                          class="verificationFailure"
-                        >
-                          <q-icon name="mdi-alert-box" size="3rem" />
-                          Failed to generate verification link
-                        </div>
-                        <div
-                          v-if="!verificationLinkGenerationFailed"
-                          class="verificationLoadingSpinner"
-                        >
-                          <q-spinner color="primary" size="3em" />
-                          <div :style="{ fontSize: '0.8rem' }">
-                            Loading verification link
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        v-if="verificationLink.length != 0"
-                        class="verificationProcedureBlock"
+          <template #body>
+            <ZKCard padding="1rem">
+              <div class="stepContainer">
+                <div class="stepFlex">
+                  <q-icon
+                    name="mdi-numeric-1"
+                    size="2rem"
+                    class="numberCircle"
+                  />
+                  <div>
+                    Download
+                    <span v-if="quasar.platform.is.mobile">
+                      <a
+                        :href="rarimeStoreLink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >RariMe</a
                       >
-                        <img :src="qrcode" alt="QR Code" />
-                        <div>
-                          Or open the below link on your mobile browser (Safari
-                          or Firefox):
-                        </div>
-                        <!-- make this copyable -->
-                        <div class="longUrl">{{ verificationLink }}</div>
+                    </span>
+                    <span v-if="!quasar.platform.is.mobile"
+                      ><a
+                        class="hrefColor"
+                        :href="rarimeStoreLink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >RariMe</a
+                      >
+                    </span>
+                  </div>
+                </div>
 
-                        <ZKButton
-                          label="Copy"
-                          icon="mdi-content-copy"
-                          @click="copyVerificationLink()"
-                        />
-                        <div class="waitingVerificationText">
-                          Waiting for verification...
+                <div class="stepFlex">
+                  <q-icon
+                    name="mdi-numeric-2"
+                    size="2rem"
+                    class="numberCircle"
+                  />
+                  Claim your anonymous ID
+                </div>
+                <div class="stepFlex">
+                  <q-icon
+                    name="mdi-numeric-3"
+                    size="2rem"
+                    class="numberCircle"
+                  />
+                  <div v-if="quasar.platform.is.mobile">
+                    Come back here and click Verify
+                  </div>
+                  <div v-else>
+                    Scan the QR code with RariMe to verify your identity
+                  </div>
+                </div>
+
+                <div class="innerInstructions">
+                  <div v-if="!quasar.platform.is.mobile">
+                    <div v-if="verificationLink.length == 0">
+                      <div
+                        v-if="verificationLinkGenerationFailed"
+                        class="verificationFailure"
+                      >
+                        <q-icon name="mdi-alert-box" size="3rem" />
+                        Failed to generate verification link
+                      </div>
+                      <div
+                        v-if="!verificationLinkGenerationFailed"
+                        class="verificationLoadingSpinner"
+                      >
+                        <q-spinner color="primary" size="3em" />
+                        <div :style="{ fontSize: '0.8rem' }">
+                          Loading verification link
                         </div>
                       </div>
                     </div>
 
                     <div
-                      v-if="quasar.platform.is.mobile"
+                      v-if="verificationLink.length != 0"
                       class="verificationProcedureBlock"
                     >
+                      <img :src="qrcode" alt="QR Code" />
+                      <div>
+                        Or open the below link on your mobile browser (Safari or
+                        Firefox):
+                      </div>
+                      <!-- make this copyable -->
+                      <div class="longUrl">{{ verificationLink }}</div>
+
                       <ZKButton
-                        label="Verify"
-                        color="primary"
-                        @click="clickedVerifyButton()"
+                        label="Copy"
+                        icon="mdi-content-copy"
+                        @click="copyVerificationLink()"
                       />
                       <div class="waitingVerificationText">
                         Waiting for verification...
                       </div>
                     </div>
                   </div>
-                </div>
-              </ZKCard>
 
-              <ZKButton
-                label="I'd rather verify with my phone number"
-                text-color="primary"
-                @click="goToPhoneVerification()"
-              />
-            </template>
-          </StepperLayout>
-        </WidthWrapper>
-      </q-scroll-area>
+                  <div
+                    v-if="quasar.platform.is.mobile"
+                    class="verificationProcedureBlock"
+                  >
+                    <ZKButton
+                      label="Verify"
+                      color="primary"
+                      @click="clickedVerifyButton()"
+                    />
+                    <div class="waitingVerificationText">
+                      Waiting for verification...
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ZKCard>
+
+            <ZKButton
+              label="I'd rather verify with my phone number"
+              text-color="primary"
+              @click="goToPhoneVerification()"
+            />
+          </template>
+        </StepperLayout>
+      </WidthWrapper>
     </template>
   </OnboardingLayout>
 </template>
