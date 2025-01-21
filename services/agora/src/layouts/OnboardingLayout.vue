@@ -3,48 +3,61 @@
     <q-layout view="hHh lpR fFf">
       <q-page-container>
         <div
-          class="baseContainer"
+          class="backgroundContainer"
           :style="{
             backgroundImage: 'url(' + welcomeBackgroundImagePath + ')',
           }"
         >
           <q-page>
-            <WidthWrapper width="25rem">
-              <slot name="body" />
-            </WidthWrapper>
+            <div class="baseLayer">
+              <div class="containerPaddings">
+                <slot name="body" />
+              </div>
+              <div class="topLayer">
+                <div class="widthLimiter">
+                  <slot name="footer" />
+                </div>
+              </div>
+            </div>
           </q-page>
         </div>
       </q-page-container>
-
-      <q-footer bordered class="footerContainer">
-        <WidthWrapper :width="limitWidth ? '25rem' : '100%'">
-          <slot name="footer" />
-        </WidthWrapper>
-      </q-footer>
     </q-layout>
   </div>
 </template>
 
 <script setup lang="ts">
-import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-
 const welcomeBackgroundImagePath =
   process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
-
-defineProps<{
-  limitWidth: boolean;
-}>();
 </script>
 
 <style scoped lang="scss">
-.footerContainer {
-  background-color: white;
-  color: black;
+.backgroundContainer {
+  background-size: cover;
 }
 
-.baseContainer {
-  background-size: cover;
-  padding-right: 1rem;
+.baseLayer {
+  position: relative;
+  height: 100dvh;
+}
+
+.topLayer {
+  position: absolute;
+  width: 100%;
+  max-height: 70dvh;
+  bottom: 0rem;
+  display: flex;
+  justify-content: center;
+  background-color: white;
+  border-top: 1px solid $secondary;
+}
+
+.containerPaddings {
   padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.widthLimiter {
+  width: min(calc(100vw - 1rem), 25rem);
 }
 </style>
