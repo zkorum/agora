@@ -1,5 +1,5 @@
 {
-  "id": "efb17285-7ee9-428d-b282-b030a2b0f88a",
+  "id": "2b46945d-97dc-4b57-b29a-4dccb22f2692",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2530,6 +2530,122 @@
       },
       "checkConstraints": {}
     },
+    "public.user_notification": {
+      "name": "user_notification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "user_notification_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trigger_user_id": {
+          "name": "trigger_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(250)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "varchar(250)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notification_type": {
+          "name": "notification_type",
+          "type": "notification_message_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_idx_notification": {
+          "name": "user_idx_notification",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_notification_owner_user_id_user_id_fk": {
+          "name": "user_notification_owner_user_id_user_id_fk",
+          "tableFrom": "user_notification",
+          "tableTo": "user",
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_notification_trigger_user_id_user_id_fk": {
+          "name": "user_notification_trigger_user_id_user_id_fk",
+          "tableFrom": "user_notification",
+          "tableTo": "user",
+          "columnsFrom": [
+            "trigger_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -3072,6 +3188,14 @@
         "doxing",
         "sexual",
         "spam"
+      ]
+    },
+    "public.notification_message_type_enum": {
+      "name": "notification_message_type_enum",
+      "schema": "public",
+      "values": [
+        "user_agree_disagree_on_opinion",
+        "new_opinion"
       ]
     },
     "public.opinion_moderation_action": {

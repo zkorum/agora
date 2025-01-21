@@ -21,6 +21,8 @@ const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 40;
 const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
+const MAX_LENGTH_NOTIFICATION_TITLE = 250;
+const MAX_LENGTH_NOTIFICATION_MESSAGE = 250;
 
 export const bytea = customType<{
     data: string;
@@ -1385,3 +1387,41 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
         .defaultNow()
         .notNull(),
 });
+
+export const notificationMessageTypeEnum = pgEnum(
+    "notification_message_type_enum",
+    ["user_agree_disagree_on_opinion", "new_opinion"],
+);
+
+export const userNotificationTable = pgTable(
+    "user_notification",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        ownerUserId: uuid("owner_user_id") // the user who owns this notification
+            .references(() => userTable.id)
+            .notNull(),
+        triggerUserId: uuid("trigger_user_id") // the user that triggered this notification
+            .references(() => userTable.id)
+            .notNull(),
+        isRead: boolean("is_read").notNull().default(false),
+        title: varchar("title", {
+            length: MAX_LENGTH_NOTIFICATION_TITLE,
+        }).notNull(),
+        message: varchar("message", {
+            length: MAX_LENGTH_NOTIFICATION_MESSAGE,
+        }).notNull(),
+        notificationType:
+            notificationMessageTypeEnum("notification_type").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => {
+        return {
+            userIdx: index("user_idx_notification").on(t.ownerUserId),
+        };
+    },
+);

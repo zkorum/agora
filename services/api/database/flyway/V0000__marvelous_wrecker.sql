@@ -2,6 +2,7 @@ CREATE TYPE "public"."auth_type" AS ENUM('register', 'login_known_device', 'logi
 CREATE TYPE "public"."conversation_moderation_action" AS ENUM('lock');--> statement-breakpoint
 CREATE TYPE "public"."email_type" AS ENUM('primary', 'backup', 'secondary', 'other');--> statement-breakpoint
 CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');--> statement-breakpoint
+CREATE TYPE "public"."notification_message_type_enum" AS ENUM('user_agree_disagree_on_opinion', 'new_opinion');--> statement-breakpoint
 CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');--> statement-breakpoint
 CREATE TYPE "public"."phone_country_code" AS ENUM('AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW');--> statement-breakpoint
 CREATE TYPE "public"."proof_type" AS ENUM('creation', 'edit', 'deletion');--> statement-breakpoint
@@ -278,6 +279,17 @@ CREATE TABLE IF NOT EXISTS "user_mute_preference" (
 	"target_user_id" uuid NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "user_unique_mute" UNIQUE("source_user_id","target_user_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "user_notification" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_notification_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"owner_user_id" uuid NOT NULL,
+	"trigger_user_id" uuid NOT NULL,
+	"is_read" boolean DEFAULT false NOT NULL,
+	"title" varchar(250) NOT NULL,
+	"message" varchar(250) NOT NULL,
+	"notification_type" "notification_message_type_enum" NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user" (
@@ -631,6 +643,18 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_owner_user_id_user_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_trigger_user_id_user_id_fk" FOREIGN KEY ("trigger_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "user" ADD CONSTRAINT "user_organisation_id_organisation_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -694,4 +718,5 @@ CREATE INDEX IF NOT EXISTS "conversation_id_idx" ON "conversation_report" USING 
 CREATE INDEX IF NOT EXISTS "opinion_id_idx" ON "opinion_report" USING btree ("opinion_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");
+CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "user_notification" USING btree ("owner_user_id");
