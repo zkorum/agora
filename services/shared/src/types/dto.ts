@@ -27,6 +27,7 @@ import {
     zodUserReportItem,
     zodUserMuteAction,
     zodUserMuteItem,
+    zodNotificationItem,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -340,6 +341,11 @@ export class Dto {
     static checkUsernameInUseResponse = z.boolean();
     static isUsernameInUseResponse = z.boolean();
     static generateUnusedRandomUsernameResponse = z.string();
+    static fetchUserNotificationsResponse = z
+        .object({
+            notificationList: z.array(zodNotificationItem),
+        })
+        .strict();
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
     //     "rarimoStatus",

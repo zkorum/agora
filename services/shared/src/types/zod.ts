@@ -7,6 +7,8 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
+    MAX_LENGTH_NOTIFICATION_TITLE,
+    MAX_LENGTH_NOTIFICATION_MESSAGE,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
@@ -141,6 +143,19 @@ export const zodUserReportItem = z.object({
     explanation: zodUserReportExplanation.optional(),
     createdAt: z.date(),
     id: z.number(),
+});
+
+export const zodNotificationType = z.enum(["opinion_agreement", "new_opinion"]);
+export const zodNotificationItem = z.object({
+    associatedUsername: zodUsername,
+    associatedConversationSlugId: zodSlugId,
+    associatedOpinionSlugId: zodSlugId,
+    isRead: z.boolean(),
+    title: z.string().max(MAX_LENGTH_NOTIFICATION_TITLE),
+    message: z.string().max(MAX_LENGTH_NOTIFICATION_MESSAGE),
+    iconName: z.string().max(50),
+    notificationType: zodNotificationType,
+    createdAt: z.date(),
 });
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
