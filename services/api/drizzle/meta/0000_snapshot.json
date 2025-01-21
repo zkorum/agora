@@ -1,5 +1,5 @@
 {
-  "id": "2b46945d-97dc-4b57-b29a-4dccb22f2692",
+  "id": "17f73bd4-dd46-4528-899a-b5a0aeea98c8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2557,11 +2557,23 @@
           "primaryKey": false,
           "notNull": true
         },
-        "trigger_user_id": {
-          "name": "trigger_user_id",
+        "associated_user_id": {
+          "name": "associated_user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "associated_conversation_id": {
+          "name": "associated_conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "associated_opinion_id": {
+          "name": "associated_opinion_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "is_read": {
           "name": "is_read",
@@ -2579,6 +2591,12 @@
         "message": {
           "name": "message",
           "type": "varchar(250)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "icon_name": {
+          "name": "icon_name",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
         },
@@ -2628,12 +2646,38 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "user_notification_trigger_user_id_user_id_fk": {
-          "name": "user_notification_trigger_user_id_user_id_fk",
+        "user_notification_associated_user_id_user_id_fk": {
+          "name": "user_notification_associated_user_id_user_id_fk",
           "tableFrom": "user_notification",
           "tableTo": "user",
           "columnsFrom": [
-            "trigger_user_id"
+            "associated_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_notification_associated_conversation_id_conversation_id_fk": {
+          "name": "user_notification_associated_conversation_id_conversation_id_fk",
+          "tableFrom": "user_notification",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "associated_conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_notification_associated_opinion_id_opinion_id_fk": {
+          "name": "user_notification_associated_opinion_id_opinion_id_fk",
+          "tableFrom": "user_notification",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "associated_opinion_id"
           ],
           "columnsTo": [
             "id"
@@ -3194,7 +3238,7 @@
       "name": "notification_message_type_enum",
       "schema": "public",
       "values": [
-        "user_agree_disagree_on_opinion",
+        "opinion_agreement",
         "new_opinion"
       ]
     },

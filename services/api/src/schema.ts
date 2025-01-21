@@ -1390,7 +1390,7 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
 
 export const notificationMessageTypeEnum = pgEnum(
     "notification_message_type_enum",
-    ["user_agree_disagree_on_opinion", "new_opinion"],
+    ["opinion_agreement", "new_opinion"],
 );
 
 export const userNotificationTable = pgTable(
@@ -1400,9 +1400,14 @@ export const userNotificationTable = pgTable(
         ownerUserId: uuid("owner_user_id") // the user who owns this notification
             .references(() => userTable.id)
             .notNull(),
-        triggerUserId: uuid("trigger_user_id") // the user that triggered this notification
-            .references(() => userTable.id)
-            .notNull(),
+        associatedUserId: uuid("associated_user_id") // the user that triggered this notification
+            .references(() => userTable.id),
+        associatedConversationId: integer(
+            "associated_conversation_id",
+        ).references(() => conversationTable.id),
+        associatedOpinionId: integer("associated_opinion_id").references(
+            () => opinionTable.id,
+        ),
         isRead: boolean("is_read").notNull().default(false),
         title: varchar("title", {
             length: MAX_LENGTH_NOTIFICATION_TITLE,
@@ -1410,6 +1415,7 @@ export const userNotificationTable = pgTable(
         message: varchar("message", {
             length: MAX_LENGTH_NOTIFICATION_MESSAGE,
         }).notNull(),
+        iconName: varchar("icon_name", { length: 50 }).notNull(),
         notificationType:
             notificationMessageTypeEnum("notification_type").notNull(),
         createdAt: timestamp("created_at", {
