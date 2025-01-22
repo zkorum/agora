@@ -1,5 +1,5 @@
 {
-  "id": "17f73bd4-dd46-4528-899a-b5a0aeea98c8",
+  "id": "9f9485f6-719e-4f9b-b1a6-d3363b4aa794",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -949,6 +949,253 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.notification_message_new_opinion": {
+      "name": "notification_message_new_opinion",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "notification_message_new_opinion_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_notification_id": {
+          "name": "user_notification_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opinion_id": {
+          "name": "opinion_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notification_message_new_opinion_user_notification_id_user_notification_id_fk": {
+          "name": "notification_message_new_opinion_user_notification_id_user_notification_id_fk",
+          "tableFrom": "notification_message_new_opinion",
+          "tableTo": "user_notification",
+          "columnsFrom": [
+            "user_notification_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_message_new_opinion_user_id_user_id_fk": {
+          "name": "notification_message_new_opinion_user_id_user_id_fk",
+          "tableFrom": "notification_message_new_opinion",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_message_new_opinion_opinion_id_opinion_id_fk": {
+          "name": "notification_message_new_opinion_opinion_id_opinion_id_fk",
+          "tableFrom": "notification_message_new_opinion",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "opinion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_message_new_opinion_conversation_id_conversation_id_fk": {
+          "name": "notification_message_new_opinion_conversation_id_conversation_id_fk",
+          "tableFrom": "notification_message_new_opinion",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "notification_message_new_opinion_conversation_id_unique": {
+          "name": "notification_message_new_opinion_conversation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id"
+          ]
+        }
+      },
+      "checkConstraints": {}
+    },
+    "public.notification_message_opinion_agreement": {
+      "name": "notification_message_opinion_agreement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "notification_message_opinion_agreement_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_notification_id": {
+          "name": "user_notification_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opinion_id": {
+          "name": "opinion_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_agree": {
+          "name": "is_agree",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notification_message_opinion_agreement_user_notification_id_user_notification_id_fk": {
+          "name": "notification_message_opinion_agreement_user_notification_id_user_notification_id_fk",
+          "tableFrom": "notification_message_opinion_agreement",
+          "tableTo": "user_notification",
+          "columnsFrom": [
+            "user_notification_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_message_opinion_agreement_user_id_user_id_fk": {
+          "name": "notification_message_opinion_agreement_user_id_user_id_fk",
+          "tableFrom": "notification_message_opinion_agreement",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_message_opinion_agreement_opinion_id_opinion_id_fk": {
+          "name": "notification_message_opinion_agreement_opinion_id_opinion_id_fk",
+          "tableFrom": "notification_message_opinion_agreement",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "opinion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_message_opinion_agreement_conversation_id_conversation_id_fk": {
+          "name": "notification_message_opinion_agreement_conversation_id_conversation_id_fk",
+          "tableFrom": "notification_message_opinion_agreement",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "notification_message_opinion_agreement_conversation_id_unique": {
+          "name": "notification_message_opinion_agreement_conversation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id"
+          ]
+        }
+      },
       "checkConstraints": {}
     },
     "public.opinion_content": {
@@ -2551,29 +2798,11 @@
             "cycle": false
           }
         },
-        "owner_user_id": {
-          "name": "owner_user_id",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
-        },
-        "associated_user_id": {
-          "name": "associated_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "associated_conversation_id": {
-          "name": "associated_conversation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "associated_opinion_id": {
-          "name": "associated_opinion_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "is_read": {
           "name": "is_read",
@@ -2581,24 +2810,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "title": {
-          "name": "title",
-          "type": "varchar(250)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message": {
-          "name": "message",
-          "type": "varchar(250)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "icon_name": {
-          "name": "icon_name",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
         },
         "notification_type": {
           "name": "notification_type",
@@ -2620,7 +2831,7 @@
           "name": "user_idx_notification",
           "columns": [
             {
-              "expression": "owner_user_id",
+              "expression": "user_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2633,51 +2844,12 @@
         }
       },
       "foreignKeys": {
-        "user_notification_owner_user_id_user_id_fk": {
-          "name": "user_notification_owner_user_id_user_id_fk",
+        "user_notification_user_id_user_id_fk": {
+          "name": "user_notification_user_id_user_id_fk",
           "tableFrom": "user_notification",
           "tableTo": "user",
           "columnsFrom": [
-            "owner_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "user_notification_associated_user_id_user_id_fk": {
-          "name": "user_notification_associated_user_id_user_id_fk",
-          "tableFrom": "user_notification",
-          "tableTo": "user",
-          "columnsFrom": [
-            "associated_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "user_notification_associated_conversation_id_conversation_id_fk": {
-          "name": "user_notification_associated_conversation_id_conversation_id_fk",
-          "tableFrom": "user_notification",
-          "tableTo": "conversation",
-          "columnsFrom": [
-            "associated_conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "user_notification_associated_opinion_id_opinion_id_fk": {
-          "name": "user_notification_associated_opinion_id_opinion_id_fk",
-          "tableFrom": "user_notification",
-          "tableTo": "opinion",
-          "columnsFrom": [
-            "associated_opinion_id"
+            "user_id"
           ],
           "columnsTo": [
             "id"

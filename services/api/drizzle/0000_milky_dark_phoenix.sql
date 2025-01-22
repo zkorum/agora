@@ -119,6 +119,27 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notification_message_new_opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_message_new_opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_notification_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_message_new_opinion_conversation_id_unique" UNIQUE("conversation_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notification_message_opinion_agreement" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_message_opinion_agreement_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_notification_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"is_agree" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_message_opinion_agreement_conversation_id_unique" UNIQUE("conversation_id")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "opinion_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"opinion_id" integer NOT NULL,
@@ -283,14 +304,8 @@ CREATE TABLE IF NOT EXISTS "user_mute_preference" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_notification" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_notification_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"owner_user_id" uuid NOT NULL,
-	"associated_user_id" uuid,
-	"associated_conversation_id" integer,
-	"associated_opinion_id" integer,
+	"user_id" uuid NOT NULL,
 	"is_read" boolean DEFAULT false NOT NULL,
-	"title" varchar(250) NOT NULL,
-	"message" varchar(250) NOT NULL,
-	"icon_name" varchar(50) NOT NULL,
 	"notification_type" "notification_message_type_enum" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
@@ -449,6 +464,54 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "id_proof" ADD CONSTRAINT "id_proof_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_user_notification_id_user_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."user_notification"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_user_notification_id_user_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."user_notification"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -646,25 +709,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_owner_user_id_user_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_associated_user_id_user_id_fk" FOREIGN KEY ("associated_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_associated_conversation_id_conversation_id_fk" FOREIGN KEY ("associated_conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_associated_opinion_id_opinion_id_fk" FOREIGN KEY ("associated_opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -734,4 +779,4 @@ CREATE INDEX IF NOT EXISTS "opinion_id_idx" ON "opinion_report" USING btree ("op
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "user_notification" USING btree ("owner_user_id");
+CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "user_notification" USING btree ("user_id");

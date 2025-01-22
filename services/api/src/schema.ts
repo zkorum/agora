@@ -21,8 +21,6 @@ const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 40;
 const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
-const MAX_LENGTH_NOTIFICATION_TITLE = 250;
-const MAX_LENGTH_NOTIFICATION_MESSAGE = 250;
 
 export const bytea = customType<{
     data: string;
@@ -1393,29 +1391,67 @@ export const notificationMessageTypeEnum = pgEnum(
     ["opinion_agreement", "new_opinion"],
 );
 
+export const notificationMessageOpinionAgreementTable = pgTable(
+    "notification_message_opinion_agreement",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userNotificationId: integer("user_notification_id")
+            .references(() => userNotificationTable.id)
+            .notNull(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        opinionId: integer("opinion_id")
+            .references(() => opinionTable.id)
+            .notNull(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .unique()
+            .notNull(),
+        isAgree: boolean("is_agree").notNull().default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
+
+export const notificationMessageNewOpinionTable = pgTable(
+    "notification_message_new_opinion",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userNotificationId: integer("user_notification_id")
+            .references(() => userNotificationTable.id)
+            .notNull(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        opinionId: integer("opinion_id")
+            .references(() => opinionTable.id)
+            .notNull(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .unique()
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
+
 export const userNotificationTable = pgTable(
     "user_notification",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        ownerUserId: uuid("owner_user_id") // the user who owns this notification
+        userId: uuid("user_id") // the user who owns this notification
             .references(() => userTable.id)
             .notNull(),
-        associatedUserId: uuid("associated_user_id") // the user that triggered this notification
-            .references(() => userTable.id),
-        associatedConversationId: integer(
-            "associated_conversation_id",
-        ).references(() => conversationTable.id),
-        associatedOpinionId: integer("associated_opinion_id").references(
-            () => opinionTable.id,
-        ),
         isRead: boolean("is_read").notNull().default(false),
-        title: varchar("title", {
-            length: MAX_LENGTH_NOTIFICATION_TITLE,
-        }).notNull(),
-        message: varchar("message", {
-            length: MAX_LENGTH_NOTIFICATION_MESSAGE,
-        }).notNull(),
-        iconName: varchar("icon_name", { length: 50 }).notNull(),
         notificationType:
             notificationMessageTypeEnum("notification_type").notNull(),
         createdAt: timestamp("created_at", {
@@ -1427,7 +1463,7 @@ export const userNotificationTable = pgTable(
     },
     (t) => {
         return {
-            userIdx: index("user_idx_notification").on(t.ownerUserId),
+            userIdx: index("user_idx_notification").on(t.userId),
         };
     },
 );
