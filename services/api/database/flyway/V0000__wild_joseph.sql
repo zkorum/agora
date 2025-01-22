@@ -125,8 +125,7 @@ CREATE TABLE IF NOT EXISTS "notification_message_new_opinion" (
 	"user_id" uuid NOT NULL,
 	"opinion_id" integer NOT NULL,
 	"conversation_id" integer NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "notification_message_new_opinion_conversation_id_unique" UNIQUE("conversation_id")
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "notification_message_opinion_agreement" (
@@ -136,8 +135,7 @@ CREATE TABLE IF NOT EXISTS "notification_message_opinion_agreement" (
 	"opinion_id" integer NOT NULL,
 	"conversation_id" integer NOT NULL,
 	"is_agree" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "notification_message_opinion_agreement_conversation_id_unique" UNIQUE("conversation_id")
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "opinion_content" (

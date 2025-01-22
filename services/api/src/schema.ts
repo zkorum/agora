@@ -1406,7 +1406,6 @@ export const notificationMessageOpinionAgreementTable = pgTable(
             .notNull(),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
-            .unique()
             .notNull(),
         isAgree: boolean("is_agree").notNull().default(false),
         createdAt: timestamp("created_at", {
@@ -1433,7 +1432,6 @@ export const notificationMessageNewOpinionTable = pgTable(
             .notNull(),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
-            .unique()
             .notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",

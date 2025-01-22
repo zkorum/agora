@@ -34,8 +34,8 @@ export async function moderateByPostSlugId({
     moderationExplanation,
     moderationAction,
 }: ModerateByPostSlugIdProps) {
-    const { getPostAndContentIdFromSlugId } = useCommonPost();
-    const postDetails = await getPostAndContentIdFromSlugId({
+    const { getPostMetadataFromSlugId } = useCommonPost();
+    const postDetails = await getPostMetadataFromSlugId({
         db: db,
         postSlugId: postSlugId,
     });
@@ -216,8 +216,8 @@ export async function withdrawModerationReportByPostSlugId({
     db,
     postSlugId,
 }: WithdrawModerationReportByPostSlugIdProps) {
-    const { getPostAndContentIdFromSlugId } = useCommonPost();
-    const postDetails = await getPostAndContentIdFromSlugId({
+    const { getPostMetadataFromSlugId } = useCommonPost();
+    const postDetails = await getPostMetadataFromSlugId({
         db: db,
         postSlugId: postSlugId,
     });

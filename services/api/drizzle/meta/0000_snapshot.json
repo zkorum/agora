@@ -1,5 +1,5 @@
 {
-  "id": "9f9485f6-719e-4f9b-b1a6-d3363b4aa794",
+  "id": "b8af9fd6-94f7-400b-ab76-e525bed671ba",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1060,15 +1060,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "notification_message_new_opinion_conversation_id_unique": {
-          "name": "notification_message_new_opinion_conversation_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "checkConstraints": {}
     },
     "public.notification_message_opinion_agreement": {
@@ -1187,15 +1179,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "notification_message_opinion_agreement_conversation_id_unique": {
-          "name": "notification_message_opinion_agreement_conversation_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "checkConstraints": {}
     },
     "public.opinion_content": {

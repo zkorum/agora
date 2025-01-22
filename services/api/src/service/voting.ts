@@ -4,6 +4,8 @@ import {
     voteContentTable,
     voteProofTable,
     voteTable,
+    userNotificationTable,
+    notificationMessageOpinionAgreementTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and } from "drizzle-orm";
@@ -13,24 +15,26 @@ import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
 
-interface GetCommentIdAndContentIdFromCommentSlugIdProps {
+interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
     commentSlugId: string;
 }
 
-interface GetCommentIdAndContentIdFromCommentSlugIdReturn {
+interface GetCommentMetadataFromCommentSlugIdReturn {
     commentId: number;
     contentId: number;
+    userId: string;
 }
 
-async function getCommentIdAndContentIdFromCommentSlugId({
+async function getCommentMetadataFromCommentSlugId({
     db,
     commentSlugId,
-}: GetCommentIdAndContentIdFromCommentSlugIdProps): Promise<GetCommentIdAndContentIdFromCommentSlugIdReturn> {
+}: GetCommentMetadataFromCommentSlugIdProps): Promise<GetCommentMetadataFromCommentSlugIdReturn> {
     const response = await db
         .select({
             opinionId: opinionTable.id,
             contentId: opinionTable.currentContentId,
+            userId: opinionTable.authorId,
         })
         .from(opinionTable)
         .where(eq(opinionTable.slugId, commentSlugId));
@@ -42,6 +46,7 @@ async function getCommentIdAndContentIdFromCommentSlugId({
             return {
                 commentId: commentData.opinionId,
                 contentId: commentData.contentId,
+                userId: commentData.userId,
             };
         }
     } else {
@@ -68,13 +73,13 @@ export async function castVoteForCommentSlugId({
     proof,
     votingAction,
 }: CastVoteForCommentSlugIdProps): Promise<boolean> {
-    {
-        const postSlugId =
-            await useCommonComment().getPostSlugIdFromCommentSlugId({
-                commentSlugId: commentSlugId,
-                db: db,
-            });
+    const postSlugId = await useCommonComment().getPostSlugIdFromCommentSlugId({
+        commentSlugId: commentSlugId,
+        db: db,
+    });
 
+    // Check if the post is locked
+    {
         const isLocked = await useCommonPost().isPostSlugIdLocked({
             db: db,
             postSlugId: postSlugId,
@@ -85,7 +90,12 @@ export async function castVoteForCommentSlugId({
         }
     }
 
-    const commentData = await getCommentIdAndContentIdFromCommentSlugId({
+    const postMetadata = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        postSlugId: postSlugId,
+    });
+
+    const commentData = await getCommentMetadataFromCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,
     });
@@ -226,6 +236,30 @@ export async function castVoteForCommentSlugId({
                         currentContentId: voteContentTableId,
                     })
                     .where(eq(voteTable.id, voteTableId));
+
+                // Create notification for the opinion owner
+                const userNotificationTableResponse = await tx
+                    .insert(userNotificationTable)
+                    .values({
+                        userId: commentData.userId,
+                        notificationType: "opinion_agreement",
+                    })
+                    .returning({
+                        userNotificationId: userNotificationTable.id,
+                    });
+
+                const userNotificationId =
+                    userNotificationTableResponse[0].userNotificationId;
+
+                await tx
+                    .insert(notificationMessageOpinionAgreementTable)
+                    .values({
+                        userNotificationId: userNotificationId,
+                        userId: userId,
+                        opinionId: commentData.commentId,
+                        conversationId: postMetadata.id,
+                        isAgree: votingAction == "agree" ? true : false,
+                    });
             }
 
             await tx

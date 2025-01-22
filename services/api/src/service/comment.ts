@@ -6,6 +6,8 @@ import {
     conversationTable,
     userTable,
     opinionModerationTable,
+    userNotificationTable,
+    notificationMessageNewOpinionTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
@@ -286,11 +288,14 @@ export async function postNewOpinion({
         }
     }
 
-    const { id: postId, contentId: postContentId } =
-        await useCommonPost().getPostAndContentIdFromSlugId({
-            db: db,
-            postSlugId: postSlugId,
-        });
+    const {
+        id: postId,
+        contentId: postContentId,
+        authorId: postAuthorId,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        postSlugId: postSlugId,
+    });
     if (postContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
@@ -358,6 +363,27 @@ export async function postNewOpinion({
                 totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
             })
             .where(eq(userTable.id, userId));
+
+        // Create notification for the conversation owner
+        const userNotificationTableResponse = await tx
+            .insert(userNotificationTable)
+            .values({
+                userId: postAuthorId,
+                notificationType: "new_opinion",
+            })
+            .returning({
+                userNotificationId: userNotificationTable.id,
+            });
+
+        const userNotificationId =
+            userNotificationTableResponse[0].userNotificationId;
+
+        await tx.insert(notificationMessageNewOpinionTable).values({
+            userNotificationId: userNotificationId,
+            userId: userId,
+            opinionId: commentId,
+            conversationId: postId,
+        });
     });
 
     return {
