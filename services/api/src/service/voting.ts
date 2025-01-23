@@ -237,29 +237,33 @@ export async function castVoteForCommentSlugId({
                     })
                     .where(eq(voteTable.id, voteTableId));
 
-                // Create notification for the opinion owner
-                const userNotificationTableResponse = await tx
-                    .insert(userNotificationTable)
-                    .values({
-                        userId: commentData.userId,
-                        notificationType: "opinion_agreement",
-                    })
-                    .returning({
-                        userNotificationId: userNotificationTable.id,
-                    });
+                {
+                    // Create notification for the opinion owner
+                    if (userId !== commentData.userId) {
+                        const userNotificationTableResponse = await tx
+                            .insert(userNotificationTable)
+                            .values({
+                                userId: commentData.userId,
+                                notificationType: "opinion_agreement",
+                            })
+                            .returning({
+                                userNotificationId: userNotificationTable.id,
+                            });
 
-                const userNotificationId =
-                    userNotificationTableResponse[0].userNotificationId;
+                        const userNotificationId =
+                            userNotificationTableResponse[0].userNotificationId;
 
-                await tx
-                    .insert(notificationMessageOpinionAgreementTable)
-                    .values({
-                        userNotificationId: userNotificationId,
-                        userId: userId,
-                        opinionId: commentData.commentId,
-                        conversationId: postMetadata.id,
-                        isAgree: votingAction == "agree" ? true : false,
-                    });
+                        await tx
+                            .insert(notificationMessageOpinionAgreementTable)
+                            .values({
+                                userNotificationId: userNotificationId,
+                                userId: userId,
+                                opinionId: commentData.commentId,
+                                conversationId: postMetadata.id,
+                                isAgree: votingAction == "agree" ? true : false,
+                            });
+                    }
+                }
             }
 
             await tx

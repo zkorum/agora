@@ -364,26 +364,30 @@ export async function postNewOpinion({
             })
             .where(eq(userTable.id, userId));
 
-        // Create notification for the conversation owner
-        const userNotificationTableResponse = await tx
-            .insert(userNotificationTable)
-            .values({
-                userId: postAuthorId,
-                notificationType: "new_opinion",
-            })
-            .returning({
-                userNotificationId: userNotificationTable.id,
-            });
+        {
+            // Create notification for the conversation owner
+            if (userId !== postAuthorId) {
+                const userNotificationTableResponse = await tx
+                    .insert(userNotificationTable)
+                    .values({
+                        userId: postAuthorId,
+                        notificationType: "new_opinion",
+                    })
+                    .returning({
+                        userNotificationId: userNotificationTable.id,
+                    });
 
-        const userNotificationId =
-            userNotificationTableResponse[0].userNotificationId;
+                const userNotificationId =
+                    userNotificationTableResponse[0].userNotificationId;
 
-        await tx.insert(notificationMessageNewOpinionTable).values({
-            userNotificationId: userNotificationId,
-            userId: userId,
-            opinionId: commentId,
-            conversationId: postId,
-        });
+                await tx.insert(notificationMessageNewOpinionTable).values({
+                    userNotificationId: userNotificationId,
+                    userId: userId,
+                    opinionId: commentId,
+                    conversationId: postId,
+                });
+            }
+        }
     });
 
     return {
