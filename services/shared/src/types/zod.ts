@@ -144,16 +144,25 @@ export const zodUserReportItem = z.object({
 });
 
 export const zodNotificationType = z.enum(["opinion_agreement", "new_opinion"]);
+
+export const zodRouteTarget = z.discriminatedUnion("target", [
+    z
+        .object({
+            target: z.literal("opinion"),
+            conversationSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
+        })
+        .strict(),
+]);
+
 export const zodNotificationItem = z.object({
-    associatedUsername: zodUsername,
-    associatedConversationSlugId: zodSlugId,
-    associatedOpinionSlugId: zodSlugId,
     isRead: z.boolean(),
     title: z.string(),
     message: z.string(),
     iconName: z.string().max(50),
     notificationType: zodNotificationType,
     createdAt: z.date(),
+    routeTarget: zodRouteTarget,
 });
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
@@ -548,3 +557,4 @@ export type CommentFeedFilter = z.infer<typeof zodCommentFeedFilter>;
 export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
 export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;
+export type NotificationItem = z.infer<typeof zodNotificationItem>;

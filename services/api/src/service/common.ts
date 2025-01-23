@@ -172,14 +172,7 @@ export function useCommonPost() {
         let extendedPostList: ExtendedConversation[] = [];
         postItems.forEach((postItem) => {
             if (enableCompactBody && postItem.body != null) {
-                postItem.body = sanitizeHtml(postItem.body, {
-                    allowedTags: ["b", "i", "strike", "u"],
-                    allowedAttributes: {},
-                    textFilter: function (text) {
-                        // , tagName
-                        return text + " ";
-                    },
-                });
+                postItem.body = createCompactHtmlBody(postItem.body);
             }
 
             const moderationProperties = createPostModerationPropertyObject(
@@ -332,6 +325,17 @@ export function useCommonPost() {
         return extendedPostList;
     }
 
+    function createCompactHtmlBody(htmlString: string) {
+        return sanitizeHtml(htmlString, {
+            allowedTags: ["b", "i", "strike", "u"],
+            allowedAttributes: {},
+            textFilter: function (text) {
+                // , tagName
+                return text + " ";
+            },
+        });
+    }
+
     interface PostMetadata {
         id: number;
         contentId: number | null;
@@ -373,6 +377,7 @@ export function useCommonPost() {
         fetchPostItems,
         getPostMetadataFromSlugId,
         isPostSlugIdLocked,
+        createCompactHtmlBody,
     };
 }
 

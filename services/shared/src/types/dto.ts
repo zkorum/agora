@@ -437,3 +437,6 @@ export type GetOpinionBySlugIdListRequest = z.infer<
 export type GetOpinionBySlugIdListResponse = z.infer<
     typeof Dto.getOpinionBySlugIdListResponse
 >;
+export type FetchUserNotificationsResponse = z.infer<
+    typeof Dto.fetchUserNotificationsResponse
+>;
