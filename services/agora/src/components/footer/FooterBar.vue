@@ -42,29 +42,27 @@
       </div>
     </div>
 
-    <RouterLink to="/notification">
-      <div class="iconStyle">
-        <q-icon
-          name="mdi-bell"
-          size="1.6rem"
-          :color="
-            route.name === '/notification/'
-              ? 'color-highlight'
-              : 'color-text-weak'
-          "
-        />
-        <div
-          :class="
-            'text-' +
-            (route.name === '/notification/'
-              ? 'color-highlight'
-              : 'color-text-weak')
-          "
-        >
-          Dings
-        </div>
+    <div class="iconStyle" @click="accessNotifications()">
+      <q-icon
+        name="mdi-bell"
+        size="1.6rem"
+        :color="
+          route.name === '/notification/'
+            ? 'color-highlight'
+            : 'color-text-weak'
+        "
+      />
+      <div
+        :class="
+          'text-' +
+          (route.name === '/notification/'
+            ? 'color-highlight'
+            : 'color-text-weak')
+        "
+      >
+        Dings
       </div>
-    </RouterLink>
+    </div>
   </div>
 </template>
 
@@ -86,6 +84,14 @@ async function accessProfile() {
     dialog.showLoginConfirmationDialog();
   } else {
     await router.push({ name: "/user-profile/opinions/" });
+  }
+}
+
+async function accessNotifications() {
+  if (!isAuthenticated.value) {
+    dialog.showLoginConfirmationDialog();
+  } else {
+    await router.push({ name: "/notification/" });
   }
 }
 </script>
