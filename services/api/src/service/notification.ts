@@ -25,6 +25,8 @@ export async function getUserNotifications({
 }: GetUserNotificationsProps): Promise<FetchUserNotificationsResponse> {
     const notificationItemList: NotificationItem[] = [];
 
+    const fetchLimit = 30;
+
     {
         const userNotificationTableResponse = await db
             .select({
@@ -69,7 +71,7 @@ export async function getUserNotifications({
                 eq(userTable.id, notificationMessageNewOpinionTable.userId),
             )
             .where(eq(userNotificationTable.userId, userId))
-            .limit(100);
+            .limit(fetchLimit);
 
         userNotificationTableResponse.forEach((notificationItem) => {
             if (
@@ -141,7 +143,7 @@ export async function getUserNotifications({
                 ),
             )
             .where(eq(userNotificationTable.userId, userId))
-            .limit(100);
+            .limit(fetchLimit);
 
         userNotificationTableResponse.forEach((notificationItem) => {
             if (
@@ -170,6 +172,10 @@ export async function getUserNotifications({
             }
         });
     }
+
+    notificationItemList.sort(function (a, b) {
+        return a.createdAt.getTime() - b.createdAt.getTime();
+    });
 
     return {
         notificationList: notificationItemList,
