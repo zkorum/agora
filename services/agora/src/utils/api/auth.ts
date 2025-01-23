@@ -17,6 +17,7 @@ import { useQuasar } from "quasar";
 import { getPlatform } from "../common";
 import { useNotify } from "../ui/notify";
 import { RouteMap, useRoute, useRouter } from "vue-router";
+import { useNotificationStore } from "src/stores/notification";
 
 export interface AuthenticateReturn {
   isSuccessful: boolean;
@@ -40,6 +41,7 @@ export function useBackendAuthApi() {
   const { isAuthenticated } = storeToRefs(useAuthenticationStore());
   const { loadPostData } = usePostStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
+  const { loadNotificationData } = useNotificationStore();
 
   const $q = useQuasar();
 
@@ -128,7 +130,11 @@ export function useBackendAuthApi() {
   }
 
   async function loadAuthenticatedModules() {
-    await Promise.all([loadUserProfile(), loadPostData(false)]);
+    await Promise.all([
+      loadUserProfile(),
+      loadPostData(false),
+      loadNotificationData(),
+    ]);
   }
 
   async function initializeAuthState() {

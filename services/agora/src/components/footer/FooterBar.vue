@@ -41,6 +41,30 @@
         Profile
       </div>
     </div>
+
+    <RouterLink to="/notification">
+      <div class="iconStyle">
+        <q-icon
+          name="mdi-bell"
+          size="1.6rem"
+          :color="
+            route.name === '/notification/'
+              ? 'color-highlight'
+              : 'color-text-weak'
+          "
+        />
+        <div
+          :class="
+            'text-' +
+            (route.name === '/notification/'
+              ? 'color-highlight'
+              : 'color-text-weak')
+          "
+        >
+          Dings
+        </div>
+      </div>
+    </RouterLink>
   </div>
 </template>
 

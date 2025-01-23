@@ -2998,6 +2998,104 @@
                     }
                 }
             }
+        },
+        "/api/v1/notification/fetch": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "notificationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "isRead": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "iconName": {
+                                                        "type": "string",
+                                                        "maxLength": 50
+                                                    },
+                                                    "notificationType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "opinion_agreement",
+                                                            "new_opinion"
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "routeTarget": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "target": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "opinion"
+                                                                        ]
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "opinionSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "target",
+                                                                    "conversationSlugId",
+                                                                    "opinionSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "isRead",
+                                                    "title",
+                                                    "message",
+                                                    "iconName",
+                                                    "notificationType",
+                                                    "createdAt",
+                                                    "routeTarget"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "notificationList"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "servers": [],

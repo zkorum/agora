@@ -157,6 +157,7 @@ export const zodRouteTarget = z.discriminatedUnion("target", [
 ]);
 
 export const zodNotificationItem = z.object({
+    id: zodSlugId,
     isRead: z.boolean(),
     title: z.string(),
     message: z.string(),

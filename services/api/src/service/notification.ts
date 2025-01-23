@@ -13,6 +13,7 @@ import type { NotificationItem } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
+import { generateRandomSlugId } from "@/crypto.js";
 
 interface GetUserNotificationsProps {
     db: PostgresJsDatabase;
@@ -81,6 +82,7 @@ export async function getUserNotifications({
                 notificationItem.conversationTitle
             ) {
                 const parsedItem: NotificationItem = {
+                    id: generateRandomSlugId(),
                     title: `${notificationItem.username} replied to your opinion on:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-check",
@@ -153,6 +155,7 @@ export async function getUserNotifications({
                 notificationItem.opinionContent
             ) {
                 const parsedItem: NotificationItem = {
+                    id: generateRandomSlugId(),
                     title: `${notificationItem.username} have voted on your opinion on:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-check",
