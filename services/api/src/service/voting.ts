@@ -240,28 +240,65 @@ export async function castVoteForCommentSlugId({
                 {
                     // Create notification for the opinion owner
                     if (userId !== commentData.userId) {
-                        const userNotificationTableResponse = await tx
-                            .insert(userNotificationTable)
-                            .values({
-                                userId: commentData.userId,
-                                notificationType: "opinion_agreement",
-                            })
-                            .returning({
-                                userNotificationId: userNotificationTable.id,
-                            });
+                        // Check if an agree/disagree notification already exist previously to the owner
+                        const existanceCheckResponse = await db
+                            .select({})
+                            .from(userNotificationTable)
+                            .leftJoin(
+                                notificationMessageOpinionAgreementTable,
+                                eq(
+                                    notificationMessageOpinionAgreementTable.userNotificationId,
+                                    userNotificationTable.id,
+                                ),
+                            )
+                            .where(
+                                and(
+                                    eq(userNotificationTable.userId, userId),
+                                    eq(
+                                        notificationMessageOpinionAgreementTable.userId,
+                                        commentData.userId,
+                                    ),
+                                    eq(
+                                        notificationMessageOpinionAgreementTable.opinionId,
+                                        commentData.commentId,
+                                    ),
+                                ),
+                            );
+                        if (existanceCheckResponse.length > 1) {
+                            throw httpErrors.internalServerError(
+                                `An unexpected number of voting notification entries had been detected: ${existanceCheckResponse.length.toString()}`,
+                            );
+                        } else if (existanceCheckResponse.length == 1) {
+                            // do nothing because a notification was sent previously
+                        } else {
+                            const userNotificationTableResponse = await tx
+                                .insert(userNotificationTable)
+                                .values({
+                                    userId: commentData.userId,
+                                    notificationType: "opinion_agreement",
+                                })
+                                .returning({
+                                    userNotificationId:
+                                        userNotificationTable.id,
+                                });
 
-                        const userNotificationId =
-                            userNotificationTableResponse[0].userNotificationId;
+                            const userNotificationId =
+                                userNotificationTableResponse[0]
+                                    .userNotificationId;
 
-                        await tx
-                            .insert(notificationMessageOpinionAgreementTable)
-                            .values({
-                                userNotificationId: userNotificationId,
-                                userId: userId,
-                                opinionId: commentData.commentId,
-                                conversationId: postMetadata.id,
-                                isAgree: votingAction == "agree" ? true : false,
-                            });
+                            await tx
+                                .insert(
+                                    notificationMessageOpinionAgreementTable,
+                                )
+                                .values({
+                                    userNotificationId: userNotificationId,
+                                    userId: userId,
+                                    opinionId: commentData.commentId,
+                                    conversationId: postMetadata.id,
+                                    isAgree:
+                                        votingAction == "agree" ? true : false,
+                                });
+                        }
                     }
                 }
             }
