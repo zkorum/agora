@@ -55,5 +55,25 @@ export function useBackendNotificationApi() {
     }
   }
 
-  return { getUserNotification };
+  async function markAllNotificationsAsRead() {
+    try {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1NotificationMarkAllReadPost();
+      const encodedUcan = await buildEncodedUcan(url, options);
+      await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1NotificationMarkAllReadPost({
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to mark user notifications as read");
+    }
+  }
+
+  return { getUserNotification, markAllNotificationsAsRead };
 }

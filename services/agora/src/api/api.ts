@@ -2531,6 +2531,39 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationMarkAllReadPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/notification/mark-all-read`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3470,6 +3503,17 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1NotificationMarkAllReadPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationMarkAllReadPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationMarkAllReadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3876,6 +3920,14 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationMarkAllReadPost(options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1NotificationMarkAllReadPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4266,6 +4318,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1NotificationFetchPost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1NotificationMarkAllReadPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationMarkAllReadPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

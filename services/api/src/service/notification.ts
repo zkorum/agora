@@ -14,6 +14,32 @@ import { eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { generateRandomSlugId } from "@/crypto.js";
+import { httpErrors } from "@fastify/sensible";
+import { log } from "@/app.js";
+
+interface MarkAllNotificationsAsReadProps {
+    db: PostgresJsDatabase;
+    userId: string;
+}
+
+export async function markAllNotificationsAsRead({
+    db,
+    userId,
+}: MarkAllNotificationsAsReadProps) {
+    try {
+        await db
+            .update(userNotificationTable)
+            .set({
+                isRead: true,
+            })
+            .where(eq(userNotificationTable.userId, userId));
+    } catch (error) {
+        log.error(error);
+        throw httpErrors.internalServerError(
+            "Failed to update user notifications as read for user",
+        );
+    }
+}
 
 interface GetUserNotificationsProps {
     db: PostgresJsDatabase;

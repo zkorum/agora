@@ -79,7 +79,10 @@ import {
     getUserMutePreferences,
     muteUserByUsername,
 } from "./service/muteUser.js";
-import { getUserNotifications } from "./service/notification.js";
+import {
+    getUserNotifications,
+    markAllNotificationsAsRead,
+} from "./service/notification.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -1599,6 +1602,26 @@ server.after(() => {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
                 return await getUserNotifications({
+                    db: db,
+                    userId: status.userId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/notification/mark-all-read`,
+        schema: {},
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                await markAllNotificationsAsRead({
                     db: db,
                     userId: status.userId,
                 });

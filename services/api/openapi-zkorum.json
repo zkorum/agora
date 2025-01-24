@@ -3104,6 +3104,15 @@
                     }
                 }
             }
+        },
+        "/api/v1/notification/mark-all-read": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
         }
     },
     "servers": [],

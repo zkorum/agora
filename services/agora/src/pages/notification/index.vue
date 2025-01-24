@@ -59,14 +59,17 @@ import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import MainLayout from "src/layouts/MainLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";
+import { useBackendNotificationApi } from "src/utils/api/notification";
 import { onMounted } from "vue";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { loadNotificationData } = useNotificationStore();
 
 const { profileData } = useUserStore();
+const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
 onMounted(async () => {
+  await markAllNotificationsAsRead();
   await loadNotificationData();
 });
 </script>
