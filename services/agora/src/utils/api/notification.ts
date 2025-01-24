@@ -4,13 +4,16 @@ import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import { NotificationItem } from "src/shared/types/zod";
+import { FetchUserNotificationsResponse } from "src/shared/types/dto";
 
 export function useBackendNotificationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
 
-  async function getUserNotification() {
+  async function getUserNotification(): Promise<
+    FetchUserNotificationsResponse | undefined
+  > {
     try {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1NotificationFetchPost();
@@ -26,7 +29,6 @@ export function useBackendNotificationApi() {
       });
 
       const notificationItemList: NotificationItem[] = [];
-      console.log(response.data);
       response.data.notificationList.forEach((notificationItem) => {
         const parsedItem: NotificationItem = {
           id: notificationItem.id,
@@ -42,7 +44,10 @@ export function useBackendNotificationApi() {
         notificationItemList.push(parsedItem);
       });
 
-      return notificationItemList;
+      return {
+        notificationList: notificationItemList,
+        numNewNotifications: response.data.numNewNotifications,
+      };
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user notifications");

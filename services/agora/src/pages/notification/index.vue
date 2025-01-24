@@ -18,32 +18,35 @@
         <UserAvatar :user-name="profileData.userName" :size="40" />
       </div>
       <div class="title">Notifications</div>
-      <div></div>
+      <div :style="{ width: '4rem' }"></div>
     </div>
 
     <div class="notificaitonListFlexStyle">
       <div
         v-for="notificationItem in notificationList"
         :key="notificationItem.id"
-        class="notificationItemBase"
       >
-        <q-icon :name="notificationItem.iconName" size="1.8rem" />
-        <div class="notificationRightPortion">
-          <div>
-            <UserAvatar
-              v-if="notificationItem.username"
-              :user-name="notificationItem.username"
-              :size="30"
-            />
-          </div>
-          <div>
-            {{ notificationItem.title }}
-          </div>
+        <ZKHoverEffect :enable-hover="true">
+          <div class="notificationItemBase">
+            <q-icon :name="notificationItem.iconName" size="1.8rem" />
+            <div class="notificationRightPortion">
+              <div>
+                <UserAvatar
+                  v-if="notificationItem.username"
+                  :user-name="notificationItem.username"
+                  :size="30"
+                />
+              </div>
+              <div>
+                {{ notificationItem.title }}
+              </div>
 
-          <div class="messageStyle">
-            {{ notificationItem.message }}
+              <div class="messageStyle">
+                {{ notificationItem.message }}
+              </div>
+            </div>
           </div>
-        </div>
+        </ZKHoverEffect>
       </div>
     </div>
   </MainLayout>
@@ -52,6 +55,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
+import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import MainLayout from "src/layouts/MainLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";

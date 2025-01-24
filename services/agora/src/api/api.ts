@@ -1099,6 +1099,12 @@ export interface ApiV1MuteUserGetPost200ResponseInner {
 export interface ApiV1NotificationFetchPost200Response {
     /**
      * 
+     * @type {number}
+     * @memberof ApiV1NotificationFetchPost200Response
+     */
+    'numNewNotifications': number;
+    /**
+     * 
      * @type {Array<ApiV1NotificationFetchPost200ResponseNotificationListInner>}
      * @memberof ApiV1NotificationFetchPost200Response
      */

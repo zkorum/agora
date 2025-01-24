@@ -344,6 +344,7 @@ export class Dto {
     static generateUnusedRandomUsernameResponse = z.string();
     static fetchUserNotificationsResponse = z
         .object({
+            numNewNotifications: z.number(),
             notificationList: z.array(zodNotificationItem),
         })
         .strict();

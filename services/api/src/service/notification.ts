@@ -28,6 +28,8 @@ export async function getUserNotifications({
 
     const fetchLimit = 30;
 
+    let numNewNotifications = 0;
+
     {
         const userNotificationTableResponse = await db
             .select({
@@ -98,6 +100,10 @@ export async function getUserNotifications({
                 };
 
                 notificationItemList.push(parsedItem);
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
             }
         });
     }
@@ -174,6 +180,10 @@ export async function getUserNotifications({
                 };
 
                 notificationItemList.push(parsedItem);
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
             }
         });
     }
@@ -183,6 +193,7 @@ export async function getUserNotifications({
     });
 
     return {
+        numNewNotifications: numNewNotifications,
         notificationList: notificationItemList,
     };
 }

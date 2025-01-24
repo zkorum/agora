@@ -7,13 +7,15 @@ export const useNotificationStore = defineStore("notification", () => {
   const { getUserNotification } = useBackendNotificationApi();
 
   const notificationList = ref<NotificationItem[]>([]);
+  const numNewNotifications = ref(0);
 
   async function loadNotificationData() {
     const response = await getUserNotification();
     if (response) {
-      notificationList.value = response;
+      notificationList.value = response.notificationList;
+      numNewNotifications.value = response.numNewNotifications;
     }
   }
 
-  return { loadNotificationData, notificationList };
+  return { loadNotificationData, numNewNotifications, notificationList };
 });

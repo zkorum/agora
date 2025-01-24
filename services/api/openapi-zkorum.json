@@ -3009,6 +3009,9 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
+                                        "numNewNotifications": {
+                                            "type": "number"
+                                        },
                                         "notificationList": {
                                             "type": "array",
                                             "items": {
@@ -3091,6 +3094,7 @@
                                         }
                                     },
                                     "required": [
+                                        "numNewNotifications",
                                         "notificationList"
                                     ],
                                     "additionalProperties": false
