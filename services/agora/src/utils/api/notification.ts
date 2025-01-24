@@ -37,6 +37,7 @@ export function useBackendNotificationApi() {
           notificationType: notificationItem.notificationType,
           routeTarget: notificationItem.routeTarget,
           title: notificationItem.title,
+          username: notificationItem.username,
         };
         notificationItemList.push(parsedItem);
       });

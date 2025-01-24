@@ -163,6 +163,7 @@ export const zodNotificationItem = z.object({
     iconName: z.string().max(50),
     notificationType: zodNotificationType,
     createdAt: z.date(),
+    username: zodUsername.optional(),
     routeTarget: zodRouteTarget,
 });
 

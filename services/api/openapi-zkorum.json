@@ -3042,6 +3042,10 @@
                                                         "type": "string",
                                                         "format": "date-time"
                                                     },
+                                                    "username": {
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
+                                                    },
                                                     "routeTarget": {
                                                         "anyOf": [
                                                             {

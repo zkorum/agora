@@ -85,10 +85,11 @@ export async function getUserNotifications({
                     id: generateRandomSlugId(),
                     title: `${notificationItem.username} replied to your opinion on:`,
                     createdAt: notificationItem.createdAt,
-                    iconName: "mdi-check",
+                    iconName: "mdi-chat-outline",
                     isRead: notificationItem.isRead,
                     message: notificationItem.conversationTitle,
                     notificationType: "new_opinion",
+                    username: notificationItem.username,
                     routeTarget: {
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
@@ -158,12 +159,13 @@ export async function getUserNotifications({
                     id: generateRandomSlugId(),
                     title: `${notificationItem.username} have voted on your opinion on:`,
                     createdAt: notificationItem.createdAt,
-                    iconName: "mdi-check",
+                    iconName: "mdi-checkbox-marked-circle-outline",
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
                     ),
                     notificationType: "opinion_agreement",
+                    username: notificationItem.username,
                     routeTarget: {
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,

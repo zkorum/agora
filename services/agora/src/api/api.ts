@@ -1154,6 +1154,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'createdAt': string;
     /**
      * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'username'?: string;
+    /**
+     * 
      * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
