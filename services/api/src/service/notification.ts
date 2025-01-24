@@ -1,5 +1,4 @@
 import {
-    conversationContentTable,
     conversationTable,
     notificationMessageNewOpinionTable,
     notificationMessageOpinionAgreementTable,
@@ -64,7 +63,7 @@ export async function getUserNotifications({
                 conversationSlugId: conversationTable.slugId,
                 opinionSlugId: opinionTable.slugId,
                 username: userTable.username,
-                conversationTitle: conversationContentTable.title,
+                opinionContent: opinionContentTable.content,
             })
             .from(userNotificationTable)
             .leftJoin(
@@ -75,24 +74,21 @@ export async function getUserNotifications({
                 ),
             )
             .leftJoin(
-                conversationTable,
-                eq(
-                    conversationTable.id,
-                    notificationMessageNewOpinionTable.conversationId,
-                ),
-            )
-            .leftJoin(
-                conversationContentTable,
-                eq(
-                    conversationContentTable.conversationId,
-                    conversationTable.id,
-                ),
-            )
-            .leftJoin(
                 opinionTable,
                 eq(
                     opinionTable.id,
                     notificationMessageNewOpinionTable.opinionId,
+                ),
+            )
+            .leftJoin(
+                opinionContentTable,
+                eq(opinionContentTable.opinionId, opinionTable.id),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    notificationMessageNewOpinionTable.conversationId,
                 ),
             )
             .leftJoin(
@@ -107,15 +103,17 @@ export async function getUserNotifications({
                 notificationItem.conversationSlugId &&
                 notificationItem.opinionSlugId &&
                 notificationItem.username &&
-                notificationItem.conversationTitle
+                notificationItem.opinionContent
             ) {
                 const parsedItem: NotificationItem = {
                     id: generateRandomSlugId(),
-                    title: `${notificationItem.username} replied to your opinion on:`,
+                    title: `${notificationItem.username} added an opinion to your conversation:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-chat-outline",
                     isRead: notificationItem.isRead,
-                    message: notificationItem.conversationTitle,
+                    message: useCommonPost().createCompactHtmlBody(
+                        notificationItem.opinionContent,
+                    ),
                     notificationType: "new_opinion",
                     username: notificationItem.username,
                     routeTarget: {
@@ -220,7 +218,7 @@ export async function getUserNotifications({
     }
 
     notificationItemList.sort(function (a, b) {
-        return a.createdAt.getTime() - b.createdAt.getTime();
+        return b.createdAt.getTime() - a.createdAt.getTime();
     });
 
     return {
