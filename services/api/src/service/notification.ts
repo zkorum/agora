@@ -143,6 +143,7 @@ export async function getUserNotifications({
                 opinionSlugId: opinionTable.slugId,
                 username: userTable.username,
                 opinionContent: opinionContentTable.content,
+                isAgree: notificationMessageOpinionAgreementTable.isAgree,
             })
             .from(userNotificationTable)
             .leftJoin(
@@ -187,9 +188,13 @@ export async function getUserNotifications({
                 notificationItem.username &&
                 notificationItem.opinionContent
             ) {
+                const userAction = notificationItem.isAgree
+                    ? "agree"
+                    : "disagree";
+
                 const parsedItem: NotificationItem = {
                     id: generateRandomSlugId(),
-                    title: `${notificationItem.username} have voted on your opinion on:`,
+                    title: `${notificationItem.username} have ${userAction} on your opinion:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-checkbox-marked-circle-outline",
                     isRead: notificationItem.isRead,
