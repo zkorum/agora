@@ -9,7 +9,7 @@ import {
 } from "@/schema.js";
 import type { FetchUserNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -39,6 +39,32 @@ export async function markAllNotificationsAsRead({
     }
 }
 
+interface GetNotificationSlugIdLastCreatedAtProps {
+    lastSlugId: string | undefined;
+    db: PostgresJsDatabase;
+}
+
+async function getNotificationSlugIdLastCreatedAt({
+    lastSlugId,
+    db,
+}: GetNotificationSlugIdLastCreatedAtProps) {
+    let lastCreatedAt = new Date();
+
+    if (lastSlugId) {
+        const selectResponse = await db
+            .select({ createdAt: userNotificationTable.createdAt })
+            .from(userNotificationTable)
+            .where(eq(userNotificationTable.slugId, lastSlugId));
+        if (selectResponse.length == 1) {
+            lastCreatedAt = selectResponse[0].createdAt;
+        } else {
+            // Ignore the slug ID if it cannot be found
+        }
+    }
+
+    return lastCreatedAt;
+}
+
 interface GetUserNotificationsProps {
     db: PostgresJsDatabase;
     userId: string;
@@ -52,9 +78,21 @@ export async function getUserNotifications({
 }: GetUserNotificationsProps): Promise<FetchUserNotificationsResponse> {
     const notificationItemList: NotificationItem[] = [];
 
-    const fetchLimit = 30;
+    const fetchLimit = 10;
 
     let numNewNotifications = 0;
+
+    const lastCreatedAt = await getNotificationSlugIdLastCreatedAt({
+        db: db,
+        lastSlugId: lastSlugId,
+    });
+
+    const whereClause = and(
+        eq(userNotificationTable.userId, userId),
+        lt(userNotificationTable.createdAt, lastCreatedAt),
+    );
+
+    const orderByClause = desc(userNotificationTable.createdAt);
 
     {
         const userNotificationTableResponse = await db
@@ -97,7 +135,8 @@ export async function getUserNotifications({
                 userTable,
                 eq(userTable.id, notificationMessageNewOpinionTable.userId),
             )
-            .where(eq(userNotificationTable.userId, userId))
+            .where(whereClause)
+            .orderBy(orderByClause)
             .limit(fetchLimit);
 
         userNotificationTableResponse.forEach((notificationItem) => {
@@ -179,7 +218,8 @@ export async function getUserNotifications({
                     notificationMessageOpinionAgreementTable.userId,
                 ),
             )
-            .where(eq(userNotificationTable.userId, userId))
+            .where(whereClause)
+            .orderBy(orderByClause)
             .limit(fetchLimit);
 
         userNotificationTableResponse.forEach((notificationItem) => {
