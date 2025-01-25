@@ -13,7 +13,7 @@
       hasSettingsButton: true,
     }"
   >
-    <div>
+    <div class="container">
       <q-form @submit="onSubmit()">
         <TopMenuWrapper :reveal="false">
           <div class="menuFlexGroup">
@@ -36,7 +36,7 @@
           </div>
         </TopMenuWrapper>
 
-        <div class="container">
+        <div>
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -50,12 +50,13 @@
             :maxlength="MAX_LENGTH_TITLE"
             required
           >
+            <template #after>
+              <div class="wordCountDiv">
+                {{ postDraft.postTitle.length }} /
+                {{ MAX_LENGTH_TITLE }}
+              </div>
+            </template>
           </q-input>
-
-          <div class="wordCountDiv">
-            {{ postDraft.postTitle.length }} /
-            {{ MAX_LENGTH_TITLE }}
-          </div>
 
           <div>
             <div :class="{ editorPadding: !postDraft.enablePolling }">
@@ -389,10 +390,6 @@ onBeforeRouteLeave((to) => {
   justify-content: right;
 }
 
-.container {
-  padding: 1rem;
-}
-
 .editorPadding {
   padding-bottom: 6rem;
 }
@@ -432,5 +429,10 @@ onBeforeRouteLeave((to) => {
   justify-content: space-between;
   font-size: 1rem;
   font-weight: bold;
+}
+
+.container {
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 </style>

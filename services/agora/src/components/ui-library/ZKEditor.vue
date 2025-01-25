@@ -9,6 +9,7 @@
       <q-editor
         ref="editorRef"
         v-model="commentText"
+        :style="{ backgroundColor: '#f6f5f8' }"
         :placeholder="placeholder"
         :min-height="minHeight"
         flat
