@@ -1,5 +1,5 @@
 {
-  "id": "b8af9fd6-94f7-400b-ab76-e525bed671ba",
+  "id": "a704455c-9850-4f88-8f3e-dc736b9ded20",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2782,6 +2782,12 @@
             "cycle": false
           }
         },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
@@ -2843,7 +2849,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "user_notification_slug_id_unique": {
+          "name": "user_notification_slug_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug_id"
+          ]
+        }
+      },
       "checkConstraints": {}
     },
     "public.user": {

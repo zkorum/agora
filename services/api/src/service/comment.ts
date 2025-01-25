@@ -370,6 +370,7 @@ export async function postNewOpinion({
                 const userNotificationTableResponse = await tx
                     .insert(userNotificationTable)
                     .values({
+                        slugId: generateRandomSlugId(),
                         userId: postAuthorId,
                         notificationType: "new_opinion",
                     })

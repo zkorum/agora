@@ -99,7 +99,7 @@ export class Dto {
         .optional();
     static fetchFeedRequest = z
         .object({
-            lastSlugId: z.string().optional(),
+            lastSlugId: zodSlugId.optional(),
             isAuthenticatedRequest: z.boolean(),
         })
         .strict();
@@ -341,6 +341,11 @@ export class Dto {
     static checkUsernameInUseResponse = z.boolean();
     static isUsernameInUseResponse = z.boolean();
     static generateUnusedRandomUsernameResponse = z.string();
+    static fetchUserNotificationsRequest = z
+        .object({
+            lastSlugId: zodSlugId.optional(),
+        })
+        .strict();
     static fetchUserNotificationsResponse = z
         .object({
             numNewNotifications: z.number(),

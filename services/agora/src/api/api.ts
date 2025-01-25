@@ -1121,7 +1121,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'id': string;
+    'slugId': string;
     /**
      * 
      * @type {boolean}
@@ -1211,6 +1211,19 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarg
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum];
 
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPostRequest
+ */
+export interface ApiV1NotificationFetchPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPostRequest
+     */
+    'lastSlugId'?: string;
+}
 /**
  * 
  * @export
@@ -2498,10 +2511,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationFetchPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1NotificationFetchPost: async (apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/v1/notification/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2520,9 +2534,12 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1NotificationFetchPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3492,11 +3509,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1NotificationFetchPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationFetchPost(options);
+        async apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationFetchPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3912,11 +3930,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationFetchPost(options?: any): AxiosPromise<ApiV1NotificationFetchPost200Response> {
-            return localVarFp.apiV1NotificationFetchPost(options).then((request) => request(axios, basePath));
+        apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: any): AxiosPromise<ApiV1NotificationFetchPost200Response> {
+            return localVarFp.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -4312,12 +4331,13 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1NotificationFetchPost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(options).then((request) => request(this.axios, this.basePath));
+    public apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

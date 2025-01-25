@@ -231,7 +231,8 @@
                                 "type": "object",
                                 "properties": {
                                     "lastSlugId": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 10
                                     },
                                     "isAuthenticatedRequest": {
                                         "type": "boolean"
@@ -3001,6 +3002,22 @@
         },
         "/api/v1/notification/fetch": {
             "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "lastSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -3017,7 +3034,7 @@
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "id": {
+                                                    "slugId": {
                                                         "type": "string",
                                                         "maxLength": 10
                                                     },
@@ -3080,7 +3097,7 @@
                                                     }
                                                 },
                                                 "required": [
-                                                    "id",
+                                                    "slugId",
                                                     "isRead",
                                                     "title",
                                                     "message",

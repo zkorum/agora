@@ -1589,6 +1589,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/notification/fetch`,
         schema: {
+            body: Dto.fetchUserNotificationsRequest,
             response: {
                 200: Dto.fetchUserNotificationsResponse,
             },

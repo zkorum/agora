@@ -14,6 +14,7 @@ import { log } from "@/app.js";
 import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
+import { generateRandomSlugId } from "@/crypto.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -274,6 +275,7 @@ export async function castVoteForCommentSlugId({
                             const userNotificationTableResponse = await tx
                                 .insert(userNotificationTable)
                                 .values({
+                                    slugId: generateRandomSlugId(),
                                     userId: commentData.userId,
                                     notificationType: "opinion_agreement",
                                 })

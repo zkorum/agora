@@ -1,6 +1,10 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import {
+  ApiV1NotificationFetchPostRequest,
+  DefaultApiAxiosParamCreator,
+  DefaultApiFactory,
+} from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import { NotificationItem } from "src/shared/types/zod";
@@ -15,14 +19,15 @@ export function useBackendNotificationApi() {
     FetchUserNotificationsResponse | undefined
   > {
     try {
+      const params: ApiV1NotificationFetchPostRequest = {};
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1NotificationFetchPost();
+        await DefaultApiAxiosParamCreator().apiV1NotificationFetchPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1NotificationFetchPost({
+      ).apiV1NotificationFetchPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -31,7 +36,7 @@ export function useBackendNotificationApi() {
       const notificationItemList: NotificationItem[] = [];
       response.data.notificationList.forEach((notificationItem) => {
         const parsedItem: NotificationItem = {
-          id: notificationItem.id,
+          slugId: notificationItem.slugId,
           createdAt: new Date(notificationItem.createdAt),
           iconName: notificationItem.iconName,
           isRead: notificationItem.isRead,

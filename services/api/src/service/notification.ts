@@ -12,7 +12,6 @@ import type { NotificationItem } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
-import { generateRandomSlugId } from "@/crypto.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 
@@ -64,6 +63,7 @@ export async function getUserNotifications({
                 opinionSlugId: opinionTable.slugId,
                 username: userTable.username,
                 opinionContent: opinionContentTable.content,
+                slugId: userNotificationTable.slugId,
             })
             .from(userNotificationTable)
             .leftJoin(
@@ -106,7 +106,7 @@ export async function getUserNotifications({
                 notificationItem.opinionContent
             ) {
                 const parsedItem: NotificationItem = {
-                    id: generateRandomSlugId(),
+                    slugId: notificationItem.slugId,
                     title: `${notificationItem.username} added an opinion to your conversation:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-chat-outline",
@@ -142,6 +142,7 @@ export async function getUserNotifications({
                 username: userTable.username,
                 opinionContent: opinionContentTable.content,
                 isAgree: notificationMessageOpinionAgreementTable.isAgree,
+                slugId: userNotificationTable.slugId,
             })
             .from(userNotificationTable)
             .leftJoin(
@@ -191,7 +192,7 @@ export async function getUserNotifications({
                     : "disagree";
 
                 const parsedItem: NotificationItem = {
-                    id: generateRandomSlugId(),
+                    slugId: notificationItem.slugId,
                     title: `${notificationItem.username} have ${userAction} on your opinion:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-checkbox-marked-circle-outline",

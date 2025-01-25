@@ -1446,6 +1446,7 @@ export const userNotificationTable = pgTable(
     "user_notification",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
         userId: uuid("user_id") // the user who owns this notification
             .references(() => userTable.id)
             .notNull(),

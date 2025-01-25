@@ -302,10 +302,12 @@ CREATE TABLE IF NOT EXISTS "user_mute_preference" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_notification" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_notification_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
 	"user_id" uuid NOT NULL,
 	"is_read" boolean DEFAULT false NOT NULL,
 	"notification_type" "notification_message_type_enum" NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "user_notification_slug_id_unique" UNIQUE("slug_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user" (

@@ -24,7 +24,7 @@
     <div class="notificaitonListFlexStyle">
       <div
         v-for="notificationItem in notificationList"
-        :key="notificationItem.id"
+        :key="notificationItem.slugId"
       >
         <ZKHoverEffect :enable-hover="true">
           <div class="notificationItemBase">
