@@ -1605,6 +1605,7 @@ server.after(() => {
                 return await getUserNotifications({
                     db: db,
                     userId: status.userId,
+                    lastSlugId: request.body.lastSlugId,
                 });
             }
         },

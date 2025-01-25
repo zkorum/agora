@@ -42,11 +42,13 @@ export async function markAllNotificationsAsRead({
 interface GetUserNotificationsProps {
     db: PostgresJsDatabase;
     userId: string;
+    lastSlugId: string | undefined;
 }
 
 export async function getUserNotifications({
     db,
     userId,
+    lastSlugId,
 }: GetUserNotificationsProps): Promise<FetchUserNotificationsResponse> {
     const notificationItemList: NotificationItem[] = [];
 

@@ -1,5 +1,5 @@
 {
-  "id": "a704455c-9850-4f88-8f3e-dc736b9ded20",
+  "id": "49fce31e-b2ed-47e7-b9f3-d3ff506520d9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -635,7 +635,23 @@
           "default": 0
         }
       },
-      "indexes": {},
+      "indexes": {
+        "conversation_createdAt_idx": {
+          "name": "conversation_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "conversation_author_id_user_id_fk": {
           "name": "conversation_author_id_user_id_fk",
@@ -1705,7 +1721,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "opinion_createdAt_idx": {
+          "name": "opinion_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "opinion_author_id_user_id_fk": {
           "name": "opinion_author_id_user_id_fk",
@@ -2822,6 +2854,21 @@
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_createdAt_idx": {
+          "name": "notification_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

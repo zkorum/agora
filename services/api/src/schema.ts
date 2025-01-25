@@ -980,36 +980,46 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull(),
 });
 
-export const conversationTable = pgTable("conversation", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-    authorId: uuid("author_id") // "postAs"
-        .notNull()
-        .references(() => userTable.id), // the author of the poll
-    currentContentId: integer("current_content_id")
-        .references((): AnyPgColumn => conversationContentTable.id)
-        .unique(), // null if conversation was deleted
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    lastReactedAt: timestamp("last_reacted_at", {
-        // latest response to poll or opinion
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    opinionCount: integer("opinion_count").notNull().default(0),
-});
+export const conversationTable = pgTable(
+    "conversation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
+        authorId: uuid("author_id") // "postAs"
+            .notNull()
+            .references(() => userTable.id), // the author of the poll
+        currentContentId: integer("current_content_id")
+            .references((): AnyPgColumn => conversationContentTable.id)
+            .unique(), // null if conversation was deleted
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        lastReactedAt: timestamp("last_reacted_at", {
+            // latest response to poll or opinion
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        opinionCount: integer("opinion_count").notNull().default(0),
+    },
+    (table) => {
+        return {
+            createdAtIdx: index("conversation_createdAt_idx").on(
+                table.createdAt,
+            ),
+        };
+    },
+);
 
 export const pollResponseTable = pgTable(
     "poll_response",
@@ -1110,40 +1120,48 @@ export const opinionProofTable = pgTable("opinion_proof", {
         .notNull(),
 });
 
-export const opinionTable = pgTable("opinion", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-    authorId: uuid("author_id")
-        .notNull()
-        .references(() => userTable.id),
-    conversationId: integer("conversation_id")
-        .references(() => conversationTable.id)
-        .notNull(),
-    currentContentId: integer("current_content_id").references(
-        (): AnyPgColumn => opinionContentTable.id,
-    ), // null if opinion was deleted
-    numAgrees: integer("num_agrees").notNull().default(0),
-    numDisagrees: integer("num_disagrees").notNull().default(0),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    lastReactedAt: timestamp("last_reacted_at", {
-        // latest like or dislike
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const opinionTable = pgTable(
+    "opinion",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
+        authorId: uuid("author_id")
+            .notNull()
+            .references(() => userTable.id),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        currentContentId: integer("current_content_id").references(
+            (): AnyPgColumn => opinionContentTable.id,
+        ), // null if opinion was deleted
+        numAgrees: integer("num_agrees").notNull().default(0),
+        numDisagrees: integer("num_disagrees").notNull().default(0),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        lastReactedAt: timestamp("last_reacted_at", {
+            // latest like or dislike
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => {
+        return {
+            createdAtIdx: index("opinion_createdAt_idx").on(table.createdAt),
+        };
+    },
+);
 
 export const opinionContentTable = pgTable("opinion_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1463,6 +1481,7 @@ export const userNotificationTable = pgTable(
     (t) => {
         return {
             userIdx: index("user_idx_notification").on(t.userId),
+            createdAtIdx: index("notification_createdAt_idx").on(t.createdAt),
         };
     },
 );

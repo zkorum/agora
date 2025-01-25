@@ -775,8 +775,11 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "conversation_id_idx" ON "conversation_report" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversation_createdAt_idx" ON "conversation" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "opinion_id_idx" ON "opinion_report" USING btree ("opinion_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "opinion_createdAt_idx" ON "opinion" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "user_notification" USING btree ("user_id");
+CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "user_notification" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notification_createdAt_idx" ON "user_notification" USING btree ("created_at");
