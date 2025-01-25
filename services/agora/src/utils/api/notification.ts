@@ -19,7 +19,9 @@ export function useBackendNotificationApi() {
     FetchUserNotificationsResponse | undefined
   > {
     try {
-      const params: ApiV1NotificationFetchPostRequest = {};
+      const params: ApiV1NotificationFetchPostRequest = {
+        lastSlugId: undefined,
+      };
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1NotificationFetchPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
