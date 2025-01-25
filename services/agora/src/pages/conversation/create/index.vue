@@ -73,7 +73,7 @@
           </q-input>
 
           <div>
-            <div :class="{ editorPadding: postDraft.enablePolling }">
+            <div class="editorPadding">
               <ZKEditor
                 v-model="postDraft.postBody"
                 placeholder="body text"
@@ -381,7 +381,7 @@ onBeforeRouteLeave((to) => {
 }
 
 .editorPadding {
-  padding-bottom: 3rem;
+  padding-bottom: 8rem;
 }
 
 .wordCountDiv {
