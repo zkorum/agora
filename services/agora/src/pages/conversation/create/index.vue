@@ -26,7 +26,21 @@
           </div>
 
           <div class="menuFlexGroup">
-            <HelpButton />
+            <div
+              :class="{ weakColor: postDraft.enablePolling }"
+              :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
+            >
+              <ZKButton
+                unelevated
+                rounded
+                :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
+                icon="mdi-poll"
+                color="grey-8"
+                text-color="white"
+                @click="togglePolling()"
+              />
+            </div>
+
             <ZKButton
               color="primary"
               label="Post"
@@ -59,7 +73,7 @@
           </q-input>
 
           <div>
-            <div :class="{ editorPadding: !postDraft.enablePolling }">
+            <div :class="{ editorPadding: postDraft.enablePolling }">
               <ZKEditor
                 v-model="postDraft.postBody"
                 placeholder="body text"
@@ -149,22 +163,6 @@
         <div ref="endOfForm"></div>
       </q-form>
 
-      <div
-        class="addPollBar"
-        :class="{ weakColor: postDraft.enablePolling }"
-        :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
-      >
-        <ZKButton
-          unelevated
-          rounded
-          :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
-          icon="mdi-poll"
-          color="grey-8"
-          text-color="white"
-          @click="togglePolling()"
-        />
-      </div>
-
       <q-dialog v-model="showExitDialog">
         <ZKCard padding="1rem">
           <div class="exitDialogStyle">
@@ -198,7 +196,6 @@ import {
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/TopMenuWrapper.vue";
-import HelpButton from "src/components/navigation/buttons/HelpButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
@@ -383,15 +380,8 @@ onBeforeRouteLeave((to) => {
   gap: 1.5rem;
 }
 
-.addPollBar {
-  position: absolute;
-  right: 1rem;
-  display: flex;
-  justify-content: right;
-}
-
 .editorPadding {
-  padding-bottom: 6rem;
+  padding-bottom: 3rem;
 }
 
 .wordCountDiv {
