@@ -15,12 +15,12 @@ export function useBackendNotificationApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function getUserNotification(): Promise<
-    FetchUserNotificationsResponse | undefined
-  > {
+  async function getUserNotification(
+    lastSlugId: string | undefined
+  ): Promise<FetchUserNotificationsResponse | undefined> {
     try {
       const params: ApiV1NotificationFetchPostRequest = {
-        lastSlugId: undefined,
+        lastSlugId: lastSlugId,
       };
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1NotificationFetchPost(params);

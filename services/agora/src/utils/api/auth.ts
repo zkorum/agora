@@ -133,7 +133,7 @@ export function useBackendAuthApi() {
     await Promise.all([
       loadUserProfile(),
       loadPostData(false),
-      loadNotificationData(),
+      loadNotificationData(false),
     ]);
   }
 

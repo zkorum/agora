@@ -13,42 +13,44 @@
       hasLoginButton: false,
     }"
   >
-    <div class="topBar">
-      <div>
-        <UserAvatar :user-name="profileData.userName" :size="40" />
+    <q-pull-to-refresh @refresh="refreshData">
+      <div class="topBar">
+        <div>
+          <UserAvatar :user-name="profileData.userName" :size="40" />
+        </div>
+        <div class="title">Notifications</div>
+        <div :style="{ width: '4rem' }"></div>
       </div>
-      <div class="title">Notifications</div>
-      <div :style="{ width: '4rem' }"></div>
-    </div>
 
-    <div class="notificaitonListFlexStyle">
-      <div
-        v-for="notificationItem in notificationList"
-        :key="notificationItem.slugId"
-      >
-        <ZKHoverEffect :enable-hover="true">
-          <div class="notificationItemBase">
-            <q-icon :name="notificationItem.iconName" size="1.8rem" />
-            <div class="notificationRightPortion">
-              <div>
-                <UserAvatar
-                  v-if="notificationItem.username"
-                  :user-name="notificationItem.username"
-                  :size="30"
-                />
-              </div>
-              <div>
-                {{ notificationItem.title }}
-              </div>
+      <div class="notificaitonListFlexStyle">
+        <div
+          v-for="notificationItem in notificationList"
+          :key="notificationItem.slugId"
+        >
+          <ZKHoverEffect :enable-hover="true">
+            <div class="notificationItemBase">
+              <q-icon :name="notificationItem.iconName" size="1.8rem" />
+              <div class="notificationRightPortion">
+                <div>
+                  <UserAvatar
+                    v-if="notificationItem.username"
+                    :user-name="notificationItem.username"
+                    :size="30"
+                  />
+                </div>
+                <div>
+                  {{ notificationItem.title }}
+                </div>
 
-              <div class="messageStyle">
-                {{ notificationItem.message }}
+                <div class="messageStyle">
+                  {{ notificationItem.message }}
+                </div>
               </div>
             </div>
-          </div>
-        </ZKHoverEffect>
+          </ZKHoverEffect>
+        </div>
       </div>
-    </div>
+    </q-pull-to-refresh>
   </MainLayout>
 </template>
 
@@ -70,8 +72,14 @@ const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
 onMounted(async () => {
   await markAllNotificationsAsRead();
-  await loadNotificationData();
+  await loadNotificationData(false);
 });
+
+function refreshData(done: () => void) {
+  setTimeout(() => {
+    done();
+  }, 1000);
+}
 </script>
 
 <style lang="scss" scoped>

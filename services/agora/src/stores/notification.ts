@@ -9,10 +9,22 @@ export const useNotificationStore = defineStore("notification", () => {
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
 
-  async function loadNotificationData() {
-    const response = await getUserNotification();
+  async function loadNotificationData(loadMore: boolean) {
+    let lastSlugId: string | undefined = undefined;
+    if (loadMore) {
+      const lastItem = notificationList.value.at(-1);
+      if (lastItem) {
+        lastSlugId = lastItem.slugId;
+      }
+    }
+
+    const response = await getUserNotification(lastSlugId);
     if (response) {
-      notificationList.value = response.notificationList;
+      if (loadMore) {
+        notificationList.value = response.notificationList;
+      } else {
+        notificationList.value = response.notificationList;
+      }
       numNewNotifications.value = response.numNewNotifications;
     }
   }
