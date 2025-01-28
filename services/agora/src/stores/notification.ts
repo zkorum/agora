@@ -21,12 +21,23 @@ export const useNotificationStore = defineStore("notification", () => {
     const response = await getUserNotification(lastSlugId);
     if (response) {
       if (loadMore) {
-        notificationList.value = response.notificationList;
+        notificationList.value.push(...response.notificationList);
       } else {
         notificationList.value = response.notificationList;
       }
-      numNewNotifications.value = response.numNewNotifications;
+      calculateNumNewNotification();
     }
+  }
+
+  function calculateNumNewNotification() {
+    let newNotificationCount = 0;
+    notificationList.value.forEach((notificationItem) => {
+      if (!notificationItem.isRead) {
+        newNotificationCount += 1;
+      }
+    });
+
+    numNewNotifications.value = newNotificationCount;
   }
 
   return { loadNotificationData, numNewNotifications, notificationList };
