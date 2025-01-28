@@ -27,6 +27,7 @@
           <div
             v-for="notificationItem in notificationList"
             :key="notificationItem.slugId"
+            @click="redirectPage(notificationItem.routeTarget)"
           >
             <ZKHoverEffect :enable-hover="true">
               <div class="notificationItemBase">
@@ -74,11 +75,13 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import MainLayout from "src/layouts/MainLayout.vue";
+import { RouteTarget } from "src/shared/types/zod";
 import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";
 import { useBackendNotificationApi } from "src/utils/api/notification";
 import { usePullDownToRefresh } from "src/utils/ui/pullDownToRefresh";
 import { onMounted, useTemplateRef } from "vue";
+import { useRouter } from "vue-router";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { loadNotificationData } = useNotificationStore();
@@ -91,6 +94,8 @@ const el = useTemplateRef<HTMLElement>("el");
 const { loadingVisible } = usePullDownToRefresh(refreshData, el);
 
 let canLoadMore = true;
+
+const router = useRouter();
 
 useInfiniteScroll(
   el,
@@ -113,6 +118,16 @@ onMounted(async () => {
 
 async function refreshData() {
   await loadNotificationData(false);
+}
+
+async function redirectPage(routeTarget: RouteTarget) {
+  if (routeTarget.target == "opinion") {
+    await router.push({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: routeTarget.conversationSlugId },
+      query: { opinionSlugId: routeTarget.opinionSlugId },
+    });
+  }
 }
 </script>
 
