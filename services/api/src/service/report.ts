@@ -31,8 +31,8 @@ export async function createUserReportByPostSlugId({
     userReportReason,
     userReportExplanation,
 }: CreateUserReportByPostSlugIdProps) {
-    const { getPostAndContentIdFromSlugId } = useCommonPost();
-    const postDetails = await getPostAndContentIdFromSlugId({
+    const { getPostMetadataFromSlugId } = useCommonPost();
+    const postDetails = await getPostMetadataFromSlugId({
         db: db,
         postSlugId: postSlugId,
     });

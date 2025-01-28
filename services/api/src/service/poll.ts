@@ -27,12 +27,10 @@ export async function getUserPollResponse({
     const resultList: GetUserPollResponseByConversations200 = [];
 
     for (const postSlugId of postSlugIdList) {
-        const postDetails = await useCommonPost().getPostAndContentIdFromSlugId(
-            {
-                db: db,
-                postSlugId: postSlugId,
-            },
-        );
+        const postDetails = await useCommonPost().getPostMetadataFromSlugId({
+            db: db,
+            postSlugId: postSlugId,
+        });
 
         if (postDetails.contentId == null) {
             throw httpErrors.notFound(
@@ -92,7 +90,7 @@ export async function submitPollResponse({
     proof,
 }: SubmitPollResponseProps) {
     const { id: postId, contentId: postContentId } =
-        await useCommonPost().getPostAndContentIdFromSlugId({
+        await useCommonPost().getPostMetadataFromSlugId({
             db: db,
             postSlugId: postSlugId,
         });

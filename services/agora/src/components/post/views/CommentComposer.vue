@@ -9,6 +9,7 @@
           :min-height="innerFocus ? '6rem' : '2rem'"
           :focus-editor="showControls"
           :show-toolbar="innerFocus || showControls"
+          :add-background-color="true"
           @update:model-value="checkWordCount()"
           @manually-focused="editorFocused()"
         />

@@ -4,7 +4,7 @@
       addBottomPadding: false,
       enableFooter: false,
       enableHeader: true,
-      reducedWidth: false,
+      reducedWidth: true,
     }"
     :menu-bar-props="{
       hasBackButton: false,
@@ -13,7 +13,7 @@
       hasSettingsButton: true,
     }"
   >
-    <div>
+    <div class="container">
       <q-form @submit="onSubmit()">
         <TopMenuWrapper :reveal="false">
           <div class="menuFlexGroup">
@@ -26,7 +26,21 @@
           </div>
 
           <div class="menuFlexGroup">
-            <HelpButton />
+            <div
+              :class="{ weakColor: postDraft.enablePolling }"
+              :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
+            >
+              <ZKButton
+                unelevated
+                rounded
+                :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
+                icon="mdi-poll"
+                color="grey-8"
+                text-color="white"
+                @click="togglePolling()"
+              />
+            </div>
+
             <ZKButton
               color="primary"
               label="Post"
@@ -36,7 +50,7 @@
           </div>
         </TopMenuWrapper>
 
-        <div class="container">
+        <div>
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -50,21 +64,23 @@
             :maxlength="MAX_LENGTH_TITLE"
             required
           >
+            <template #after>
+              <div class="wordCountDiv">
+                {{ postDraft.postTitle.length }} /
+                {{ MAX_LENGTH_TITLE }}
+              </div>
+            </template>
           </q-input>
 
-          <div class="wordCountDiv">
-            {{ postDraft.postTitle.length }} /
-            {{ MAX_LENGTH_TITLE }}
-          </div>
-
           <div>
-            <div :class="{ editorPadding: !postDraft.enablePolling }">
+            <div class="editorPadding">
               <ZKEditor
                 v-model="postDraft.postBody"
                 placeholder="body text"
                 min-height="5rem"
                 :focus-editor="false"
                 :show-toolbar="true"
+                :add-background-color="false"
                 @update:model-value="checkWordCount()"
               />
 
@@ -148,22 +164,6 @@
         <div ref="endOfForm"></div>
       </q-form>
 
-      <div
-        class="addPollBar"
-        :class="{ weakColor: postDraft.enablePolling }"
-        :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
-      >
-        <ZKButton
-          unelevated
-          rounded
-          :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
-          icon="mdi-poll"
-          color="grey-8"
-          text-color="white"
-          @click="togglePolling()"
-        />
-      </div>
-
       <q-dialog v-model="showExitDialog">
         <ZKCard padding="1rem">
           <div class="exitDialogStyle">
@@ -197,7 +197,6 @@ import {
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/TopMenuWrapper.vue";
-import HelpButton from "src/components/navigation/buttons/HelpButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
@@ -382,19 +381,8 @@ onBeforeRouteLeave((to) => {
   gap: 1.5rem;
 }
 
-.addPollBar {
-  position: absolute;
-  right: 1rem;
-  display: flex;
-  justify-content: right;
-}
-
-.container {
-  padding: 1rem;
-}
-
 .editorPadding {
-  padding-bottom: 6rem;
+  padding-bottom: 8rem;
 }
 
 .wordCountDiv {
@@ -432,5 +420,10 @@ onBeforeRouteLeave((to) => {
   justify-content: space-between;
   font-size: 1rem;
   font-weight: bold;
+}
+
+.container {
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 </style>

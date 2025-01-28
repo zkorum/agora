@@ -2,7 +2,13 @@
 <template>
   <div>
     <ZKHoverEffect :enable-hover="compactMode">
-      <div class="container postPadding">
+      <div
+        class="container postPadding"
+        :class="{
+          compactBackground: compactMode,
+          standardBackground: !compactMode,
+        }"
+      >
         <div class="innerContainer">
           <PostMetadata
             :poster-user-name="extendedPostData.metadata.authorUsername"
@@ -295,6 +301,18 @@ async function shareClicked() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.standardBackground {
+  background-color: white;
+}
+
+.compactBackground {
+  background-color: white;
+}
+
+.compactBackground:hover {
+  background-color: $mouse-hover-color;
 }
 
 .leftButtonCluster {

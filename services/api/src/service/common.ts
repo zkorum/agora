@@ -59,8 +59,8 @@ export function useCommonPost() {
         db,
         postSlugId,
     }: IsPostSlugIdLockedProps) {
-        const { getPostAndContentIdFromSlugId } = useCommonPost();
-        const postDetails = await getPostAndContentIdFromSlugId({
+        const { getPostMetadataFromSlugId } = useCommonPost();
+        const postDetails = await getPostMetadataFromSlugId({
             db: db,
             postSlugId: postSlugId,
         });
@@ -172,14 +172,7 @@ export function useCommonPost() {
         let extendedPostList: ExtendedConversation[] = [];
         postItems.forEach((postItem) => {
             if (enableCompactBody && postItem.body != null) {
-                postItem.body = sanitizeHtml(postItem.body, {
-                    allowedTags: ["b", "i", "strike", "u"],
-                    allowedAttributes: {},
-                    textFilter: function (text) {
-                        // , tagName
-                        return text + " ";
-                    },
-                });
+                postItem.body = createCompactHtmlBody(postItem.body);
             }
 
             const moderationProperties = createPostModerationPropertyObject(
@@ -332,24 +325,37 @@ export function useCommonPost() {
         return extendedPostList;
     }
 
-    interface IdAndContentId {
-        id: number;
-        contentId: number | null;
+    function createCompactHtmlBody(htmlString: string) {
+        return sanitizeHtml(htmlString, {
+            allowedTags: ["b", "i", "strike", "u"],
+            allowedAttributes: {},
+            textFilter: function (text) {
+                // , tagName
+                return text + " ";
+            },
+        });
     }
 
-    interface GetPostAndContentIdFromSlugIdProps {
+    interface PostMetadata {
+        id: number;
+        contentId: number | null;
+        authorId: string;
+    }
+
+    interface GetPostMetadataFromSlugIdProps {
         db: PostgresJsDatabase;
         postSlugId: string;
     }
 
-    async function getPostAndContentIdFromSlugId({
+    async function getPostMetadataFromSlugId({
         db,
         postSlugId,
-    }: GetPostAndContentIdFromSlugIdProps): Promise<IdAndContentId> {
+    }: GetPostMetadataFromSlugIdProps): Promise<PostMetadata> {
         const postTableResponse = await db
             .select({
                 id: conversationTable.id,
                 currentContentId: conversationTable.currentContentId,
+                authorId: conversationTable.authorId,
             })
             .from(conversationTable)
             .where(eq(conversationTable.slugId, postSlugId));
@@ -358,6 +364,7 @@ export function useCommonPost() {
             return {
                 contentId: postTableResponse[0].currentContentId,
                 id: postTableResponse[0].id,
+                authorId: postTableResponse[0].authorId,
             };
         } else {
             throw httpErrors.notFound(
@@ -368,8 +375,9 @@ export function useCommonPost() {
 
     return {
         fetchPostItems,
-        getPostAndContentIdFromSlugId,
+        getPostMetadataFromSlugId,
         isPostSlugIdLocked,
+        createCompactHtmlBody,
     };
 }
 

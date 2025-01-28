@@ -18,5 +18,6 @@ defineProps<{
   border-style: solid;
   border-width: 1px;
   border-color: #e7e5e4;
+  background-color: $app-background-color;
 }
 </style>

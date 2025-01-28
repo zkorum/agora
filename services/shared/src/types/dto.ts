@@ -27,6 +27,7 @@ import {
     zodUserReportItem,
     zodUserMuteAction,
     zodUserMuteItem,
+    zodNotificationItem,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -98,7 +99,7 @@ export class Dto {
         .optional();
     static fetchFeedRequest = z
         .object({
-            lastSlugId: z.string().optional(),
+            lastSlugId: zodSlugId.optional(),
             isAuthenticatedRequest: z.boolean(),
         })
         .strict();
@@ -340,6 +341,17 @@ export class Dto {
     static checkUsernameInUseResponse = z.boolean();
     static isUsernameInUseResponse = z.boolean();
     static generateUnusedRandomUsernameResponse = z.string();
+    static fetchNotificationsRequest = z
+        .object({
+            lastSlugId: zodSlugId.optional(),
+        })
+        .strict();
+    static fetchNotificationsResponse = z
+        .object({
+            numNewNotifications: z.number(),
+            notificationList: z.array(zodNotificationItem),
+        })
+        .strict();
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
     //     "rarimoStatus",
@@ -430,4 +442,7 @@ export type GetOpinionBySlugIdListRequest = z.infer<
 >;
 export type GetOpinionBySlugIdListResponse = z.infer<
     typeof Dto.getOpinionBySlugIdListResponse
+>;
+export type FetchNotificationsResponse = z.infer<
+    typeof Dto.fetchNotificationsResponse
 >;

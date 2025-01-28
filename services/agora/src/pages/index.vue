@@ -1,7 +1,7 @@
 <template>
   <MainLayout
     :general-props="{
-      addBottomPadding: true,
+      addBottomPadding: false,
       enableFooter: true,
       enableHeader: true,
       reducedWidth: false,

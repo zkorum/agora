@@ -1094,6 +1094,125 @@ export interface ApiV1MuteUserGetPost200ResponseInner {
 /**
  * 
  * @export
+ * @interface ApiV1NotificationFetchPost200Response
+ */
+export interface ApiV1NotificationFetchPost200Response {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1NotificationFetchPost200Response
+     */
+    'numNewNotifications': number;
+    /**
+     * 
+     * @type {Array<ApiV1NotificationFetchPost200ResponseNotificationListInner>}
+     * @memberof ApiV1NotificationFetchPost200Response
+     */
+    'notificationList': Array<ApiV1NotificationFetchPost200ResponseNotificationListInner>;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInner
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'iconName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'username'?: string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+     */
+    'target': ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+     */
+    'opinionSlugId': string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum = {
+    Opinion: 'opinion'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPostRequest
+ */
+export interface ApiV1NotificationFetchPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPostRequest
+     */
+    'lastSlugId'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1OpinionCreatePost200Response
  */
 export interface ApiV1OpinionCreatePost200Response {
@@ -2378,6 +2497,76 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationFetchPost: async (apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/notification/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1NotificationFetchPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationMarkAllReadPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/notification/mark-all-read`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3306,6 +3495,29 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1NotificationMarkAllReadPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationMarkAllReadPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationMarkAllReadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3704,6 +3916,23 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: any): AxiosPromise<ApiV1NotificationFetchPost200Response> {
+            return localVarFp.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationMarkAllReadPost(options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1NotificationMarkAllReadPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1OpinionCreatePostRequest} apiV1OpinionCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4084,6 +4313,27 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1MuteUserGetPost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1MuteUserGetPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1NotificationMarkAllReadPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationMarkAllReadPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

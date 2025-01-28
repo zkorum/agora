@@ -14,8 +14,6 @@ defineProps<{
 @media (hover: hover) and (pointer: fine) {
   .desktopHoverEffect:hover {
     cursor: pointer;
-    background-color: #f3f4f6;
-    border-radius: 15px;
   }
 }
 </style>

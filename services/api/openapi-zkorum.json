@@ -231,7 +231,8 @@
                                 "type": "object",
                                 "properties": {
                                     "lastSlugId": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 10
                                     },
                                     "isAuthenticatedRequest": {
                                         "type": "boolean"
@@ -2992,6 +2993,129 @@
                     },
                     "required": true
                 },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/notification/fetch": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "lastSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "numNewNotifications": {
+                                            "type": "number"
+                                        },
+                                        "notificationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "slugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "isRead": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "iconName": {
+                                                        "type": "string",
+                                                        "maxLength": 50
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "username": {
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "routeTarget": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "target": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "opinion"
+                                                                        ]
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "opinionSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "target",
+                                                                    "conversationSlugId",
+                                                                    "opinionSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "slugId",
+                                                    "isRead",
+                                                    "title",
+                                                    "message",
+                                                    "iconName",
+                                                    "createdAt",
+                                                    "routeTarget"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "numNewNotifications",
+                                        "notificationList"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/notification/mark-all-read": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Default Response"

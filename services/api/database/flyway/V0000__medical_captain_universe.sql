@@ -2,6 +2,7 @@ CREATE TYPE "public"."auth_type" AS ENUM('register', 'login_known_device', 'logi
 CREATE TYPE "public"."conversation_moderation_action" AS ENUM('lock');--> statement-breakpoint
 CREATE TYPE "public"."email_type" AS ENUM('primary', 'backup', 'secondary', 'other');--> statement-breakpoint
 CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');--> statement-breakpoint
+CREATE TYPE "public"."notification_message_type_enum" AS ENUM('opinion_agreement', 'new_opinion');--> statement-breakpoint
 CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');--> statement-breakpoint
 CREATE TYPE "public"."phone_country_code" AS ENUM('AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW');--> statement-breakpoint
 CREATE TYPE "public"."proof_type" AS ENUM('creation', 'edit', 'deletion');--> statement-breakpoint
@@ -116,6 +117,35 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 	"proof_version" integer NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notification_new_opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_new_opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_notification_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notification_opinion_vote" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_opinion_vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_notification_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"vote" "vote_enum" NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notification" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
+	"user_id" uuid NOT NULL,
+	"is_read" boolean DEFAULT false NOT NULL,
+	"notification_type" "notification_message_type_enum" NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_slug_id_unique" UNIQUE("slug_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "opinion_content" (
@@ -301,7 +331,7 @@ CREATE TABLE IF NOT EXISTS "vote_content" (
 	"vote_id" integer NOT NULL,
 	"vote_proof_id" integer NOT NULL,
 	"opinion_content_id" integer NOT NULL,
-	"option_chosen" "vote_enum" NOT NULL,
+	"vote" "vote_enum" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -434,6 +464,60 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "id_proof" ADD CONSTRAINT "id_proof_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_user_notification_id_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."notification"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_user_notification_id_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."notification"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification" ADD CONSTRAINT "notification_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -691,7 +775,11 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "conversation_id_idx" ON "conversation_report" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversation_createdAt_idx" ON "conversation" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "notification" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notification_createdAt_idx" ON "notification" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "opinion_id_idx" ON "opinion_report" USING btree ("opinion_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "opinion_createdAt_idx" ON "opinion" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");

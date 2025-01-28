@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="container">
+    <div ref="postContainerRef" class="containerBase">
       <div
         v-if="masterPostDataList.length == 0 && dataReady"
         class="emptyDivPadding"
@@ -19,42 +19,34 @@
         </div>
       </div>
 
-      <q-pull-to-refresh @refresh="refreshPage">
-        <div ref="postContainerRef">
-          <div v-if="hasPendingNewPosts" class="floatingButton">
-            <ZKButton
-              icon="mdi-arrow-up"
-              label="New"
-              color="secondary"
-              @click="refreshPage(() => {})"
+      <div class="widthConstraint">
+        <div v-if="hasPendingNewPosts" class="floatingButton">
+          <ZKButton
+            icon="mdi-arrow-up"
+            label="New"
+            color="primary"
+            @click="refreshPage(() => {})"
+          />
+        </div>
+
+        <div v-if="masterPostDataList.length > 0" class="postListFlex">
+          <div
+            v-for="postData in masterPostDataList"
+            :key="postData.metadata.conversationSlugId"
+          >
+            <PostDetails
+              :extended-post-data="postData"
+              :compact-mode="true"
+              :show-comment-section="false"
+              :skeleton-mode="!dataReady"
+              class="showCursor"
+              :show-author="true"
+              :display-absolute-time="false"
+              @click="openPost(postData.metadata.conversationSlugId)"
             />
           </div>
-
-          <div v-if="masterPostDataList.length > 0" class="postListFlex">
-            <div
-              v-for="postData in masterPostDataList"
-              :key="postData.metadata.conversationSlugId"
-            >
-              <PostDetails
-                :extended-post-data="postData"
-                :compact-mode="true"
-                :show-comment-section="false"
-                :skeleton-mode="!dataReady"
-                class="showCursor"
-                :show-author="true"
-                :display-absolute-time="false"
-                @click="openPost(postData.metadata.conversationSlugId)"
-              />
-
-              <div class="seperator">
-                <q-separator :inset="false" />
-              </div>
-            </div>
-          </div>
         </div>
-      </q-pull-to-refresh>
-
-      <div ref="bottomOfPageDiv"></div>
+      </div>
 
       <div
         v-if="endOfFeed && masterPostDataList.length > 0"
@@ -68,6 +60,10 @@
 
         <div>You have seen all the new conversations.</div>
       </div>
+
+      <q-inner-loading :showing="loadingVisible">
+        <q-spinner-gears size="50px" color="primary" />
+      </q-inner-loading>
     </div>
   </div>
 </template>
@@ -76,49 +72,43 @@
 import PostDetails from "../post/PostDetails.vue";
 import { usePostStore } from "src/stores/post";
 import ZKButton from "../ui-library/ZKButton.vue";
-import { onBeforeUnmount, ref, watch } from "vue";
+import { ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
-import {
-  useDocumentVisibility,
-  useElementSize,
-  useElementVisibility,
-  useWindowScroll,
-} from "@vueuse/core";
+import { useDocumentVisibility, useInfiniteScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
+import { usePullDownToRefresh } from "src/utils/ui/pullDownToRefresh";
 
-const { masterPostDataList, dataReady, endOfFeed, lastSavedHomeFeedPosition } =
+const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
+
+const { loadingVisible } = usePullDownToRefresh(
+  pullDownTriggered,
+  postContainerRef
+);
+
+const { masterPostDataList, dataReady, endOfFeed } =
   storeToRefs(usePostStore());
 const { loadPostData, hasNewPosts } = usePostStore();
 
 const router = useRouter();
 
-const bottomOfPageDiv = ref(null);
-const targetIsVisible = useElementVisibility(bottomOfPageDiv);
-
 const pageIsVisible = useDocumentVisibility();
-const reachedEndOfPage = ref(false);
 
 const hasPendingNewPosts = ref(false);
 
-const windowScroll = useWindowScroll();
-let isExpandingPosts = false;
+let canLoadMore = true;
 
-const postContainerRef = ref(null);
-const postContainerSize = useElementSize(postContainerRef);
-
-watch(windowScroll.y, async () => {
-  if (
-    windowScroll.y.value > postContainerSize.height.value - 1000 &&
-    !isExpandingPosts &&
-    !endOfFeed.value
-  ) {
-    isExpandingPosts = true;
-    await loadPostData(true);
-    setTimeout(function () {
-      isExpandingPosts = false;
-    }, 500);
+useInfiniteScroll(
+  postContainerRef,
+  async () => {
+    canLoadMore = await loadPostData(true);
+  },
+  {
+    distance: 1000,
+    canLoadMore: () => {
+      return canLoadMore;
+    },
   }
-});
+);
 
 watch(pageIsVisible, async () => {
   if (pageIsVisible.value && !endOfFeed.value) {
@@ -126,19 +116,9 @@ watch(pageIsVisible, async () => {
   }
 });
 
-watch(targetIsVisible, async () => {
-  if (!reachedEndOfPage.value && !isExpandingPosts && !endOfFeed.value) {
-    if (targetIsVisible.value) {
-      isExpandingPosts = true;
-      await loadPostData(true);
-      isExpandingPosts = false;
-    }
-  }
-});
-
-onBeforeUnmount(() => {
-  lastSavedHomeFeedPosition.value = -document.body.getBoundingClientRect().top;
-});
+async function pullDownTriggered() {
+  await loadPostData(true);
+}
 
 async function newPostCheck() {
   if (
@@ -160,18 +140,17 @@ async function openPost(postSlugId: string) {
 }
 
 async function refreshPage(done: () => void) {
-  hasPendingNewPosts.value = false;
+  if (postContainerRef.value) {
+    postContainerRef.value.scrollTop = 0;
+  }
 
-  window.scrollTo({
-    top: 0,
-    behavior: "instant",
-  });
-
-  await loadPostData(false);
+  canLoadMore = await loadPostData(false);
 
   setTimeout(() => {
     done();
-  }, 1000);
+  }, 500);
+
+  hasPendingNewPosts.value = false;
 }
 </script>
 
@@ -179,16 +158,7 @@ async function refreshPage(done: () => void) {
 .postListFlex {
   display: flex;
   flex-direction: column;
-}
-
-a {
-  text-decoration: none;
-  color: unset;
-}
-
-.seperator {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
 }
 
 .emptyDivPadding {
@@ -205,17 +175,13 @@ a {
   font-size: 1.2rem;
 }
 
-.container {
-  padding-top: 0.5rem;
-  padding-bottom: 20rem;
-}
-
 .centerMessage {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
   padding-top: 8rem;
+  padding-bottom: 8rem;
   flex-direction: column;
 }
 
@@ -231,5 +197,17 @@ a {
   justify-content: center;
   margin: auto;
   left: calc(50% - 3rem);
+}
+
+.widthConstraint {
+  max-width: 35rem;
+  margin: auto;
+}
+
+.containerBase {
+  position: relative;
+  margin: auto;
+  height: calc(100dvh - 7rem);
+  overflow-y: scroll;
 }
 </style>

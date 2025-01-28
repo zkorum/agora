@@ -6,6 +6,8 @@ import {
     conversationTable,
     userTable,
     opinionModerationTable,
+    notificationTable,
+    notificationNewOpinionTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
@@ -286,11 +288,14 @@ export async function postNewOpinion({
         }
     }
 
-    const { id: postId, contentId: postContentId } =
-        await useCommonPost().getPostAndContentIdFromSlugId({
-            db: db,
-            postSlugId: postSlugId,
-        });
+    const {
+        id: postId,
+        contentId: postContentId,
+        authorId: postAuthorId,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        postSlugId: postSlugId,
+    });
     if (postContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
@@ -358,6 +363,32 @@ export async function postNewOpinion({
                 totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
             })
             .where(eq(userTable.id, userId));
+
+        {
+            // Create notification for the conversation owner
+            if (userId !== postAuthorId) {
+                const notificationTableResponse = await tx
+                    .insert(notificationTable)
+                    .values({
+                        slugId: generateRandomSlugId(),
+                        userId: postAuthorId, // owner of the notification
+                        notificationType: "new_opinion",
+                    })
+                    .returning({
+                        notificationId: notificationTable.id,
+                    });
+
+                const notificationId =
+                    notificationTableResponse[0].notificationId;
+
+                await tx.insert(notificationNewOpinionTable).values({
+                    notificationId: notificationId,
+                    authorId: userId, // the author of the opinion is the current user!
+                    opinionId: commentId,
+                    conversationId: postId,
+                });
+            }
+        }
     });
 
     return {

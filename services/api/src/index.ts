@@ -79,6 +79,10 @@ import {
     getUserMutePreferences,
     muteUserByUsername,
 } from "./service/muteUser.js";
+import {
+    getNotifications,
+    markAllNotificationsAsRead,
+} from "./service/notification.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -1576,6 +1580,52 @@ server.after(() => {
                     muteAction: request.body.action,
                     sourceUserId: status.userId,
                     targetUsername: request.body.targetUsername,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/notification/fetch`,
+        schema: {
+            body: Dto.fetchNotificationsRequest,
+            response: {
+                200: Dto.fetchNotificationsResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                return await getNotifications({
+                    db: db,
+                    userId: status.userId,
+                    lastSlugId: request.body.lastSlugId,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/notification/mark-all-read`,
+        schema: {},
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                await markAllNotificationsAsRead({
+                    db: db,
+                    userId: status.userId,
                 });
             }
         },

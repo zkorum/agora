@@ -4,6 +4,8 @@ import {
     voteContentTable,
     voteProofTable,
     voteTable,
+    notificationTable,
+    notificationOpinionVoteTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and } from "drizzle-orm";
@@ -12,25 +14,28 @@ import { log } from "@/app.js";
 import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
+import { generateRandomSlugId } from "@/crypto.js";
 
-interface GetCommentIdAndContentIdFromCommentSlugIdProps {
+interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
     commentSlugId: string;
 }
 
-interface GetCommentIdAndContentIdFromCommentSlugIdReturn {
+interface GetCommentMetadataFromCommentSlugIdReturn {
     commentId: number;
     contentId: number;
+    userId: string;
 }
 
-async function getCommentIdAndContentIdFromCommentSlugId({
+async function getCommentMetadataFromCommentSlugId({
     db,
     commentSlugId,
-}: GetCommentIdAndContentIdFromCommentSlugIdProps): Promise<GetCommentIdAndContentIdFromCommentSlugIdReturn> {
+}: GetCommentMetadataFromCommentSlugIdProps): Promise<GetCommentMetadataFromCommentSlugIdReturn> {
     const response = await db
         .select({
             opinionId: opinionTable.id,
             contentId: opinionTable.currentContentId,
+            userId: opinionTable.authorId,
         })
         .from(opinionTable)
         .where(eq(opinionTable.slugId, commentSlugId));
@@ -42,6 +47,7 @@ async function getCommentIdAndContentIdFromCommentSlugId({
             return {
                 commentId: commentData.opinionId,
                 contentId: commentData.contentId,
+                userId: commentData.userId,
             };
         }
     } else {
@@ -68,13 +74,13 @@ export async function castVoteForCommentSlugId({
     proof,
     votingAction,
 }: CastVoteForCommentSlugIdProps): Promise<boolean> {
-    {
-        const postSlugId =
-            await useCommonComment().getPostSlugIdFromCommentSlugId({
-                commentSlugId: commentSlugId,
-                db: db,
-            });
+    const postSlugId = await useCommonComment().getPostSlugIdFromCommentSlugId({
+        commentSlugId: commentSlugId,
+        db: db,
+    });
 
+    // Check if the post is locked
+    {
         const isLocked = await useCommonPost().isPostSlugIdLocked({
             db: db,
             postSlugId: postSlugId,
@@ -85,14 +91,19 @@ export async function castVoteForCommentSlugId({
         }
     }
 
-    const commentData = await getCommentIdAndContentIdFromCommentSlugId({
+    const postMetadata = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        postSlugId: postSlugId,
+    });
+
+    const commentData = await getCommentMetadataFromCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,
     });
 
     const existingVoteTableResponse = await db
         .select({
-            optionChosen: voteContentTable.optionChosen,
+            optionChosen: voteContentTable.vote,
             voteTableId: voteTable.id,
         })
         .from(voteTable)
@@ -212,8 +223,7 @@ export async function castVoteForCommentSlugId({
                         voteId: voteTableId,
                         voteProofId: voteProofTableId,
                         opinionContentId: commentData.contentId,
-                        optionChosen:
-                            votingAction == "agree" ? "agree" : "disagree",
+                        vote: votingAction,
                     })
                     .returning({ voteContentTableId: voteContentTable.id });
 
@@ -226,6 +236,67 @@ export async function castVoteForCommentSlugId({
                         currentContentId: voteContentTableId,
                     })
                     .where(eq(voteTable.id, voteTableId));
+
+                {
+                    // Create notification for the opinion owner
+                    if (userId !== commentData.userId) {
+                        // Check if an agree/disagree notification already exist previously to the owner
+                        const existanceCheckResponse = await db
+                            .select({})
+                            .from(notificationTable)
+                            .leftJoin(
+                                notificationOpinionVoteTable,
+                                eq(
+                                    notificationOpinionVoteTable.notificationId,
+                                    notificationTable.id,
+                                ),
+                            )
+                            .where(
+                                and(
+                                    eq(notificationTable.userId, userId),
+                                    eq(
+                                        notificationOpinionVoteTable.authorId,
+                                        commentData.userId,
+                                    ),
+                                    eq(
+                                        notificationOpinionVoteTable.opinionId,
+                                        commentData.commentId,
+                                    ),
+                                ),
+                            );
+                        if (existanceCheckResponse.length > 1) {
+                            throw httpErrors.internalServerError(
+                                `An unexpected number of voting notification entries had been detected: ${existanceCheckResponse.length.toString()}`,
+                            );
+                        } else if (existanceCheckResponse.length == 1) {
+                            // do nothing because a notification was sent previously
+                        } else {
+                            const notificationTableResponse = await tx
+                                .insert(notificationTable)
+                                .values({
+                                    slugId: generateRandomSlugId(),
+                                    userId: commentData.userId,
+                                    notificationType: "opinion_vote",
+                                })
+                                .returning({
+                                    notificationId: notificationTable.id,
+                                });
+
+                            const notificationId =
+                                notificationTableResponse[0].notificationId;
+
+                            await tx
+                                .insert(notificationOpinionVoteTable)
+                                .values({
+                                    notificationId: notificationId,
+                                    authorId: userId,
+                                    opinionId: commentData.commentId,
+                                    conversationId: postMetadata.id,
+                                    vote: votingAction,
+                                });
+                        }
+                    }
+                }
             }
 
             await tx
@@ -264,7 +335,7 @@ export async function getUserVotesForPostSlugIds({
     for (const postSlugId of postSlugIdList) {
         const userResponses = await db
             .select({
-                optionChosen: voteContentTable.optionChosen,
+                optionChosen: voteContentTable.vote,
                 opinionSlugId: opinionTable.slugId,
             })
             .from(voteTable)

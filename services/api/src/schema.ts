@@ -980,36 +980,46 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull(),
 });
 
-export const conversationTable = pgTable("conversation", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-    authorId: uuid("author_id") // "postAs"
-        .notNull()
-        .references(() => userTable.id), // the author of the poll
-    currentContentId: integer("current_content_id")
-        .references((): AnyPgColumn => conversationContentTable.id)
-        .unique(), // null if conversation was deleted
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    lastReactedAt: timestamp("last_reacted_at", {
-        // latest response to poll or opinion
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    opinionCount: integer("opinion_count").notNull().default(0),
-});
+export const conversationTable = pgTable(
+    "conversation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
+        authorId: uuid("author_id") // "postAs"
+            .notNull()
+            .references(() => userTable.id), // the author of the poll
+        currentContentId: integer("current_content_id")
+            .references((): AnyPgColumn => conversationContentTable.id)
+            .unique(), // null if conversation was deleted
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        lastReactedAt: timestamp("last_reacted_at", {
+            // latest response to poll or opinion
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        opinionCount: integer("opinion_count").notNull().default(0),
+    },
+    (table) => {
+        return {
+            createdAtIdx: index("conversation_createdAt_idx").on(
+                table.createdAt,
+            ),
+        };
+    },
+);
 
 export const pollResponseTable = pgTable(
     "poll_response",
@@ -1110,40 +1120,48 @@ export const opinionProofTable = pgTable("opinion_proof", {
         .notNull(),
 });
 
-export const opinionTable = pgTable("opinion", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-    authorId: uuid("author_id")
-        .notNull()
-        .references(() => userTable.id),
-    conversationId: integer("conversation_id")
-        .references(() => conversationTable.id)
-        .notNull(),
-    currentContentId: integer("current_content_id").references(
-        (): AnyPgColumn => opinionContentTable.id,
-    ), // null if opinion was deleted
-    numAgrees: integer("num_agrees").notNull().default(0),
-    numDisagrees: integer("num_disagrees").notNull().default(0),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    lastReactedAt: timestamp("last_reacted_at", {
-        // latest like or dislike
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const opinionTable = pgTable(
+    "opinion",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
+        authorId: uuid("author_id")
+            .notNull()
+            .references(() => userTable.id),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        currentContentId: integer("current_content_id").references(
+            (): AnyPgColumn => opinionContentTable.id,
+        ), // null if opinion was deleted
+        numAgrees: integer("num_agrees").notNull().default(0),
+        numDisagrees: integer("num_disagrees").notNull().default(0),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        lastReactedAt: timestamp("last_reacted_at", {
+            // latest like or dislike
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => {
+        return {
+            createdAtIdx: index("opinion_createdAt_idx").on(table.createdAt),
+        };
+    },
+);
 
 export const opinionContentTable = pgTable("opinion_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1232,7 +1250,7 @@ export const voteContentTable = pgTable("vote_content", {
     opinionContentId: integer("opinion_content_id")
         .references(() => opinionContentTable.id)
         .notNull(), // exact opinion content that existed when this vote was cast. Cascade delete from opinionContent if opinionContent was deleted.
-    optionChosen: voteEnum("option_chosen").notNull(),
+    vote: voteEnum("vote").notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1385,3 +1403,81 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
         .defaultNow()
         .notNull(),
 });
+
+export const notificationTypeEnum = pgEnum("notification_type_enum", [
+    "opinion_vote",
+    "new_opinion",
+]);
+
+export const notificationOpinionVoteTable = pgTable(
+    "notification_opinion_vote",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        notificationId: integer("notification_id")
+            .references(() => notificationTable.id)
+            .notNull(),
+        authorId: uuid("author_id")
+            .references(() => userTable.id)
+            .notNull(),
+        opinionId: integer("opinion_id")
+            .references(() => opinionTable.id)
+            .notNull(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        vote: voteEnum("vote").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
+
+export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    notificationId: integer("notification_id")
+        .references(() => notificationTable.id)
+        .notNull(),
+    authorId: uuid("author_id")
+        .references(() => userTable.id)
+        .notNull(),
+    opinionId: integer("opinion_id")
+        .references(() => opinionTable.id)
+        .notNull(),
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
+        .notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const notificationTable = pgTable(
+    "notification",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        userId: uuid("user_id") // the user who owns this notification
+            .references(() => userTable.id)
+            .notNull(),
+        isRead: boolean("is_read").notNull().default(false),
+        notificationType: notificationTypeEnum("notification_type").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => {
+        return {
+            userIdx: index("user_idx_notification").on(t.userId),
+            createdAtIdx: index("notification_createdAt_idx").on(t.createdAt),
+        };
+    },
+);
