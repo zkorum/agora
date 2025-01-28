@@ -9,7 +9,7 @@ export const useNotificationStore = defineStore("notification", () => {
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
 
-  async function loadNotificationData(loadMore: boolean) {
+  async function loadNotificationData(loadMore: boolean): Promise<boolean> {
     let lastSlugId: string | undefined = undefined;
     if (loadMore) {
       const lastItem = notificationList.value.at(-1);
@@ -26,6 +26,14 @@ export const useNotificationStore = defineStore("notification", () => {
         notificationList.value = response.notificationList;
       }
       calculateNumNewNotification();
+
+      if (response.notificationList.length > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
     }
   }
 
@@ -40,5 +48,9 @@ export const useNotificationStore = defineStore("notification", () => {
     numNewNotifications.value = newNotificationCount;
   }
 
-  return { loadNotificationData, numNewNotifications, notificationList };
+  return {
+    loadNotificationData,
+    numNewNotifications,
+    notificationList,
+  };
 });

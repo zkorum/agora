@@ -1,7 +1,7 @@
 <template>
   <MainLayout
     :general-props="{
-      addBottomPadding: false,
+      addBottomPadding: true,
       enableHeader: true,
       enableFooter: true,
       reducedWidth: false,
@@ -14,7 +14,7 @@
     }"
   >
     <q-pull-to-refresh @refresh="refreshData">
-      <div class="topBar">
+      <div class="topBar container">
         <div>
           <UserAvatar :user-name="profileData.userName" :size="40" />
         </div>
@@ -22,7 +22,7 @@
         <div :style="{ width: '4rem' }"></div>
       </div>
 
-      <div class="notificaitonListFlexStyle">
+      <div ref="el" class="notificaitonListFlexStyle">
         <div
           v-for="notificationItem in notificationList"
           :key="notificationItem.slugId"
@@ -50,11 +50,20 @@
           </ZKHoverEffect>
         </div>
       </div>
+
+      <div v-if="notificationList.length > 0" class="endOfFeed">
+        End of notification feed
+      </div>
+
+      <div v-if="notificationList.length == 0" class="endOfFeed">
+        You have no notifications
+      </div>
     </q-pull-to-refresh>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
+import { useInfiniteScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
@@ -62,7 +71,7 @@ import MainLayout from "src/layouts/MainLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";
 import { useBackendNotificationApi } from "src/utils/api/notification";
-import { onMounted } from "vue";
+import { onMounted, useTemplateRef } from "vue";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { loadNotificationData } = useNotificationStore();
@@ -70,9 +79,29 @@ const { loadNotificationData } = useNotificationStore();
 const { profileData } = useUserStore();
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
+const el = useTemplateRef<HTMLElement>("el");
+
+let canLoadMore = true;
+
+useInfiniteScroll(
+  el,
+  async () => {
+    // load more
+    canLoadMore = await loadNotificationData(true);
+  },
+  {
+    distance: 10,
+    canLoadMore: () => {
+      // inidicate when there is no more content to load so onLoadMore stops triggering
+      // if (noMoreContent) return false
+      return canLoadMore; // for demo purposes
+    },
+  }
+);
+
 onMounted(async () => {
   await markAllNotificationsAsRead();
-  await loadNotificationData(false);
+  canLoadMore = await loadNotificationData(false);
 });
 
 function refreshData(done: () => void) {
@@ -118,5 +147,12 @@ function refreshData(done: () => void) {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+.endOfFeed {
+  max-width: 15rem;
+  margin: auto;
+  padding: 2rem;
+  text-align: center;
 }
 </style>
