@@ -151,6 +151,10 @@ async function redirectPage(routeTarget: RouteTarget) {
   background-color: white;
 }
 
+.notificationItemBase:hover {
+  background-color: $mouse-hover-color;
+}
+
 .notificationRightPortion {
   display: flex;
   flex-direction: column;

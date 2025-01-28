@@ -44,10 +44,6 @@
               :display-absolute-time="false"
               @click="openPost(postData.metadata.conversationSlugId)"
             />
-
-            <div class="seperator">
-              <q-separator :inset="false" />
-            </div>
           </div>
         </div>
       </div>
@@ -162,11 +158,7 @@ async function refreshPage(done: () => void) {
 .postListFlex {
   display: flex;
   flex-direction: column;
-}
-
-.seperator {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
 }
 
 .emptyDivPadding {
