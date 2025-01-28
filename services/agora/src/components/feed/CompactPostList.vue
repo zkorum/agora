@@ -64,11 +64,11 @@
 
         <div>You have seen all the new conversations.</div>
       </div>
-    </div>
 
-    <q-inner-loading :showing="loadingVisible">
-      <q-spinner-gears size="50px" color="primary" />
-    </q-inner-loading>
+      <q-inner-loading :showing="loadingVisible">
+        <q-spinner-gears size="50px" color="primary" />
+      </q-inner-loading>
+    </div>
   </div>
 </template>
 
@@ -78,13 +78,16 @@ import { usePostStore } from "src/stores/post";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
-import {
-  useDocumentVisibility,
-  useInfiniteScroll,
-  useScroll,
-  useSwipe,
-} from "@vueuse/core";
+import { useDocumentVisibility, useInfiniteScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
+import { usePullDownToRefresh } from "src/utils/ui/pullDownToRefresh";
+
+const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
+
+const { loadingVisible } = usePullDownToRefresh(
+  pullDownTriggered,
+  postContainerRef
+);
 
 const { masterPostDataList, dataReady, endOfFeed } =
   storeToRefs(usePostStore());
@@ -95,13 +98,6 @@ const router = useRouter();
 const pageIsVisible = useDocumentVisibility();
 
 const hasPendingNewPosts = ref(false);
-
-const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
-
-const postContainerScroll = useScroll(postContainerRef);
-const postContainerSwipe = useSwipe(postContainerRef);
-
-const loadingVisible = ref(false);
 
 let canLoadMore = true;
 
@@ -118,24 +114,15 @@ useInfiniteScroll(
   }
 );
 
-watch(postContainerSwipe.isSwiping, async () => {
-  if (
-    postContainerScroll.y.value == 0 &&
-    postContainerSwipe.direction.value == "down"
-  ) {
-    loadingVisible.value = true;
-    setTimeout(() => {
-      loadingVisible.value = false;
-    }, 500);
-    await loadPostData(true);
-  }
-});
-
 watch(pageIsVisible, async () => {
   if (pageIsVisible.value && !endOfFeed.value) {
     await newPostCheck();
   }
 });
+
+async function pullDownTriggered() {
+  await loadPostData(true);
+}
 
 async function newPostCheck() {
   if (
@@ -230,6 +217,5 @@ async function refreshPage(done: () => void) {
   margin: auto;
   height: calc(100dvh - 7rem);
   overflow-y: scroll;
-  scroll-snap-type: none;
 }
 </style>
