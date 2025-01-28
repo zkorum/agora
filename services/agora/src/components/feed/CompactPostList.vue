@@ -107,7 +107,7 @@ useInfiniteScroll(
     canLoadMore = await loadPostData(true);
   },
   {
-    distance: 0,
+    distance: 1000,
     canLoadMore: () => {
       return canLoadMore;
     },

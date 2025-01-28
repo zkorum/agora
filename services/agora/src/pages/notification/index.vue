@@ -104,7 +104,7 @@ useInfiniteScroll(
     canLoadMore = await loadNotificationData(true);
   },
   {
-    distance: 10,
+    distance: 1000,
     canLoadMore: () => {
       return canLoadMore;
     },
