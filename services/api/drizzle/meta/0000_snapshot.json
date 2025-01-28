@@ -1,5 +1,5 @@
 {
-  "id": "49fce31e-b2ed-47e7-b9f3-d3ff506520d9",
+  "id": "6843004e-d0be-46ed-9898-76788877a553",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -967,8 +967,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.notification_message_new_opinion": {
-      "name": "notification_message_new_opinion",
+    "public.notification_new_opinion": {
+      "name": "notification_new_opinion",
       "schema": "",
       "columns": {
         "id": {
@@ -978,7 +978,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "notification_message_new_opinion_id_seq",
+            "name": "notification_new_opinion_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -1022,10 +1022,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "notification_message_new_opinion_user_notification_id_user_notification_id_fk": {
-          "name": "notification_message_new_opinion_user_notification_id_user_notification_id_fk",
-          "tableFrom": "notification_message_new_opinion",
-          "tableTo": "user_notification",
+        "notification_new_opinion_user_notification_id_notification_id_fk": {
+          "name": "notification_new_opinion_user_notification_id_notification_id_fk",
+          "tableFrom": "notification_new_opinion",
+          "tableTo": "notification",
           "columnsFrom": [
             "user_notification_id"
           ],
@@ -1035,9 +1035,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_message_new_opinion_user_id_user_id_fk": {
-          "name": "notification_message_new_opinion_user_id_user_id_fk",
-          "tableFrom": "notification_message_new_opinion",
+        "notification_new_opinion_user_id_user_id_fk": {
+          "name": "notification_new_opinion_user_id_user_id_fk",
+          "tableFrom": "notification_new_opinion",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -1048,9 +1048,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_message_new_opinion_opinion_id_opinion_id_fk": {
-          "name": "notification_message_new_opinion_opinion_id_opinion_id_fk",
-          "tableFrom": "notification_message_new_opinion",
+        "notification_new_opinion_opinion_id_opinion_id_fk": {
+          "name": "notification_new_opinion_opinion_id_opinion_id_fk",
+          "tableFrom": "notification_new_opinion",
           "tableTo": "opinion",
           "columnsFrom": [
             "opinion_id"
@@ -1061,9 +1061,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_message_new_opinion_conversation_id_conversation_id_fk": {
-          "name": "notification_message_new_opinion_conversation_id_conversation_id_fk",
-          "tableFrom": "notification_message_new_opinion",
+        "notification_new_opinion_conversation_id_conversation_id_fk": {
+          "name": "notification_new_opinion_conversation_id_conversation_id_fk",
+          "tableFrom": "notification_new_opinion",
           "tableTo": "conversation",
           "columnsFrom": [
             "conversation_id"
@@ -1079,8 +1079,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "public.notification_message_opinion_agreement": {
-      "name": "notification_message_opinion_agreement",
+    "public.notification_opinion_vote": {
+      "name": "notification_opinion_vote",
       "schema": "",
       "columns": {
         "id": {
@@ -1090,7 +1090,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "notification_message_opinion_agreement_id_seq",
+            "name": "notification_opinion_vote_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -1124,12 +1124,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_agree": {
-          "name": "is_agree",
-          "type": "boolean",
+        "vote": {
+          "name": "vote",
+          "type": "vote_enum",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1141,10 +1141,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "notification_message_opinion_agreement_user_notification_id_user_notification_id_fk": {
-          "name": "notification_message_opinion_agreement_user_notification_id_user_notification_id_fk",
-          "tableFrom": "notification_message_opinion_agreement",
-          "tableTo": "user_notification",
+        "notification_opinion_vote_user_notification_id_notification_id_fk": {
+          "name": "notification_opinion_vote_user_notification_id_notification_id_fk",
+          "tableFrom": "notification_opinion_vote",
+          "tableTo": "notification",
           "columnsFrom": [
             "user_notification_id"
           ],
@@ -1154,9 +1154,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_message_opinion_agreement_user_id_user_id_fk": {
-          "name": "notification_message_opinion_agreement_user_id_user_id_fk",
-          "tableFrom": "notification_message_opinion_agreement",
+        "notification_opinion_vote_user_id_user_id_fk": {
+          "name": "notification_opinion_vote_user_id_user_id_fk",
+          "tableFrom": "notification_opinion_vote",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -1167,9 +1167,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_message_opinion_agreement_opinion_id_opinion_id_fk": {
-          "name": "notification_message_opinion_agreement_opinion_id_opinion_id_fk",
-          "tableFrom": "notification_message_opinion_agreement",
+        "notification_opinion_vote_opinion_id_opinion_id_fk": {
+          "name": "notification_opinion_vote_opinion_id_opinion_id_fk",
+          "tableFrom": "notification_opinion_vote",
           "tableTo": "opinion",
           "columnsFrom": [
             "opinion_id"
@@ -1180,9 +1180,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_message_opinion_agreement_conversation_id_conversation_id_fk": {
-          "name": "notification_message_opinion_agreement_conversation_id_conversation_id_fk",
-          "tableFrom": "notification_message_opinion_agreement",
+        "notification_opinion_vote_conversation_id_conversation_id_fk": {
+          "name": "notification_opinion_vote_conversation_id_conversation_id_fk",
+          "tableFrom": "notification_opinion_vote",
           "tableTo": "conversation",
           "columnsFrom": [
             "conversation_id"
@@ -1196,6 +1196,120 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "public.notification": {
+      "name": "notification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "notification_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "notification_type": {
+          "name": "notification_type",
+          "type": "notification_message_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_idx_notification": {
+          "name": "user_idx_notification",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_createdAt_idx": {
+          "name": "notification_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notification_user_id_user_id_fk": {
+          "name": "notification_user_id_user_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "notification_slug_id_unique": {
+          "name": "notification_slug_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug_id"
+          ]
+        }
+      },
       "checkConstraints": {}
     },
     "public.opinion_content": {
@@ -2793,120 +2907,6 @@
       },
       "checkConstraints": {}
     },
-    "public.user_notification": {
-      "name": "user_notification",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "user_notification_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "slug_id": {
-          "name": "slug_id",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "notification_type": {
-          "name": "notification_type",
-          "type": "notification_message_type_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "user_idx_notification": {
-          "name": "user_idx_notification",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "notification_createdAt_idx": {
-          "name": "notification_createdAt_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "user_notification_user_id_user_id_fk": {
-          "name": "user_notification_user_id_user_id_fk",
-          "tableFrom": "user_notification",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "user_notification_slug_id_unique": {
-          "name": "user_notification_slug_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug_id"
-          ]
-        }
-      },
-      "checkConstraints": {}
-    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -3060,8 +3060,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "option_chosen": {
-          "name": "option_chosen",
+        "vote": {
+          "name": "vote",
           "type": "vote_enum",
           "typeSchema": "public",
           "primaryKey": false,

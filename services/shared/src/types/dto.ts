@@ -341,12 +341,12 @@ export class Dto {
     static checkUsernameInUseResponse = z.boolean();
     static isUsernameInUseResponse = z.boolean();
     static generateUnusedRandomUsernameResponse = z.string();
-    static fetchUserNotificationsRequest = z
+    static fetchNotificationsRequest = z
         .object({
             lastSlugId: zodSlugId.optional(),
         })
         .strict();
-    static fetchUserNotificationsResponse = z
+    static fetchNotificationsResponse = z
         .object({
             numNewNotifications: z.number(),
             notificationList: z.array(zodNotificationItem),
@@ -443,6 +443,6 @@ export type GetOpinionBySlugIdListRequest = z.infer<
 export type GetOpinionBySlugIdListResponse = z.infer<
     typeof Dto.getOpinionBySlugIdListResponse
 >;
-export type FetchUserNotificationsResponse = z.infer<
-    typeof Dto.fetchUserNotificationsResponse
+export type FetchNotificationsResponse = z.infer<
+    typeof Dto.fetchNotificationsResponse
 >;

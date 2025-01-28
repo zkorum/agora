@@ -8,16 +8,16 @@ import {
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import { NotificationItem } from "src/shared/types/zod";
-import { FetchUserNotificationsResponse } from "src/shared/types/dto";
+import { FetchNotificationsResponse } from "src/shared/types/dto";
 
 export function useBackendNotificationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
 
-  async function getUserNotification(
+  async function fetchNotifications(
     lastSlugId: string | undefined
-  ): Promise<FetchUserNotificationsResponse | undefined> {
+  ): Promise<FetchNotificationsResponse | undefined> {
     try {
       const params: ApiV1NotificationFetchPostRequest = {
         lastSlugId: lastSlugId,
@@ -81,5 +81,8 @@ export function useBackendNotificationApi() {
     }
   }
 
-  return { getUserNotification, markAllNotificationsAsRead };
+  return {
+    fetchNotifications,
+    markAllNotificationsAsRead,
+  };
 }

@@ -4,8 +4,8 @@ import {
     voteContentTable,
     voteProofTable,
     voteTable,
-    userNotificationTable,
-    notificationMessageOpinionAgreementTable,
+    notificationTable,
+    notificationOpinionVoteTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and } from "drizzle-orm";
@@ -103,7 +103,7 @@ export async function castVoteForCommentSlugId({
 
     const existingVoteTableResponse = await db
         .select({
-            optionChosen: voteContentTable.optionChosen,
+            optionChosen: voteContentTable.vote,
             voteTableId: voteTable.id,
         })
         .from(voteTable)
@@ -223,8 +223,7 @@ export async function castVoteForCommentSlugId({
                         voteId: voteTableId,
                         voteProofId: voteProofTableId,
                         opinionContentId: commentData.contentId,
-                        optionChosen:
-                            votingAction == "agree" ? "agree" : "disagree",
+                        vote: votingAction,
                     })
                     .returning({ voteContentTableId: voteContentTable.id });
 
@@ -244,23 +243,23 @@ export async function castVoteForCommentSlugId({
                         // Check if an agree/disagree notification already exist previously to the owner
                         const existanceCheckResponse = await db
                             .select({})
-                            .from(userNotificationTable)
+                            .from(notificationTable)
                             .leftJoin(
-                                notificationMessageOpinionAgreementTable,
+                                notificationOpinionVoteTable,
                                 eq(
-                                    notificationMessageOpinionAgreementTable.userNotificationId,
-                                    userNotificationTable.id,
+                                    notificationOpinionVoteTable.notificationId,
+                                    notificationTable.id,
                                 ),
                             )
                             .where(
                                 and(
-                                    eq(userNotificationTable.userId, userId),
+                                    eq(notificationTable.userId, userId),
                                     eq(
-                                        notificationMessageOpinionAgreementTable.userId,
+                                        notificationOpinionVoteTable.authorId,
                                         commentData.userId,
                                     ),
                                     eq(
-                                        notificationMessageOpinionAgreementTable.opinionId,
+                                        notificationOpinionVoteTable.opinionId,
                                         commentData.commentId,
                                     ),
                                 ),
@@ -272,33 +271,28 @@ export async function castVoteForCommentSlugId({
                         } else if (existanceCheckResponse.length == 1) {
                             // do nothing because a notification was sent previously
                         } else {
-                            const userNotificationTableResponse = await tx
-                                .insert(userNotificationTable)
+                            const notificationTableResponse = await tx
+                                .insert(notificationTable)
                                 .values({
                                     slugId: generateRandomSlugId(),
                                     userId: commentData.userId,
-                                    notificationType: "opinion_agreement",
+                                    notificationType: "opinion_vote",
                                 })
                                 .returning({
-                                    userNotificationId:
-                                        userNotificationTable.id,
+                                    notificationId: notificationTable.id,
                                 });
 
-                            const userNotificationId =
-                                userNotificationTableResponse[0]
-                                    .userNotificationId;
+                            const notificationId =
+                                notificationTableResponse[0].notificationId;
 
                             await tx
-                                .insert(
-                                    notificationMessageOpinionAgreementTable,
-                                )
+                                .insert(notificationOpinionVoteTable)
                                 .values({
-                                    userNotificationId: userNotificationId,
-                                    userId: userId,
+                                    notificationId: notificationId,
+                                    authorId: userId,
                                     opinionId: commentData.commentId,
                                     conversationId: postMetadata.id,
-                                    isAgree:
-                                        votingAction == "agree" ? true : false,
+                                    vote: votingAction,
                                 });
                         }
                     }
@@ -341,7 +335,7 @@ export async function getUserVotesForPostSlugIds({
     for (const postSlugId of postSlugIdList) {
         const userResponses = await db
             .select({
-                optionChosen: voteContentTable.optionChosen,
+                optionChosen: voteContentTable.vote,
                 opinionSlugId: opinionTable.slugId,
             })
             .from(voteTable)

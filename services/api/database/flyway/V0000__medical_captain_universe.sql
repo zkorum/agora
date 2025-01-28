@@ -119,8 +119,8 @@ CREATE TABLE IF NOT EXISTS "id_proof" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "notification_message_new_opinion" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_message_new_opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+CREATE TABLE IF NOT EXISTS "notification_new_opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_new_opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_notification_id" integer NOT NULL,
 	"user_id" uuid NOT NULL,
 	"opinion_id" integer NOT NULL,
@@ -128,14 +128,24 @@ CREATE TABLE IF NOT EXISTS "notification_message_new_opinion" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "notification_message_opinion_agreement" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_message_opinion_agreement_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+CREATE TABLE IF NOT EXISTS "notification_opinion_vote" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_opinion_vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_notification_id" integer NOT NULL,
 	"user_id" uuid NOT NULL,
 	"opinion_id" integer NOT NULL,
 	"conversation_id" integer NOT NULL,
-	"is_agree" boolean DEFAULT false NOT NULL,
+	"vote" "vote_enum" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notification" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "notification_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
+	"user_id" uuid NOT NULL,
+	"is_read" boolean DEFAULT false NOT NULL,
+	"notification_type" "notification_message_type_enum" NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_slug_id_unique" UNIQUE("slug_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "opinion_content" (
@@ -300,16 +310,6 @@ CREATE TABLE IF NOT EXISTS "user_mute_preference" (
 	CONSTRAINT "user_unique_mute" UNIQUE("source_user_id","target_user_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "user_notification" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_notification_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"slug_id" varchar(8) NOT NULL,
-	"user_id" uuid NOT NULL,
-	"is_read" boolean DEFAULT false NOT NULL,
-	"notification_type" "notification_message_type_enum" NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "user_notification_slug_id_unique" UNIQUE("slug_id")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organisation_id" integer,
@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS "vote_content" (
 	"vote_id" integer NOT NULL,
 	"vote_proof_id" integer NOT NULL,
 	"opinion_content_id" integer NOT NULL,
-	"option_chosen" "vote_enum" NOT NULL,
+	"vote" "vote_enum" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -469,49 +469,55 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_user_notification_id_user_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."user_notification"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_user_notification_id_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."notification"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_new_opinion" ADD CONSTRAINT "notification_message_new_opinion_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_new_opinion" ADD CONSTRAINT "notification_new_opinion_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_user_notification_id_user_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."user_notification"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_user_notification_id_notification_id_fk" FOREIGN KEY ("user_notification_id") REFERENCES "public"."notification"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "notification_message_opinion_agreement" ADD CONSTRAINT "notification_message_opinion_agreement_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notification_opinion_vote" ADD CONSTRAINT "notification_opinion_vote_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "notification" ADD CONSTRAINT "notification_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -709,12 +715,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "user_notification" ADD CONSTRAINT "user_notification_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "user" ADD CONSTRAINT "user_organisation_id_organisation_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisation"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -776,10 +776,10 @@ END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "conversation_id_idx" ON "conversation_report" USING btree ("conversation_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "conversation_createdAt_idx" ON "conversation" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "notification" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notification_createdAt_idx" ON "notification" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "opinion_id_idx" ON "opinion_report" USING btree ("opinion_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "opinion_createdAt_idx" ON "opinion" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "user_idx_notification" ON "user_notification" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "notification_createdAt_idx" ON "user_notification" USING btree ("created_at");
+CREATE INDEX IF NOT EXISTS "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");

@@ -80,7 +80,7 @@ import {
     muteUserByUsername,
 } from "./service/muteUser.js";
 import {
-    getUserNotifications,
+    getNotifications,
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
@@ -1589,9 +1589,9 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/notification/fetch`,
         schema: {
-            body: Dto.fetchUserNotificationsRequest,
+            body: Dto.fetchNotificationsRequest,
             response: {
-                200: Dto.fetchUserNotificationsResponse,
+                200: Dto.fetchNotificationsResponse,
             },
         },
         handler: async (request) => {
@@ -1602,7 +1602,7 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                return await getUserNotifications({
+                return await getNotifications({
                     db: db,
                     userId: status.userId,
                     lastSlugId: request.body.lastSlugId,

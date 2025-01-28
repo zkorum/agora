@@ -6,8 +6,8 @@ import {
     conversationTable,
     userTable,
     opinionModerationTable,
-    userNotificationTable,
-    notificationMessageNewOpinionTable,
+    notificationTable,
+    notificationNewOpinionTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
@@ -367,23 +367,23 @@ export async function postNewOpinion({
         {
             // Create notification for the conversation owner
             if (userId !== postAuthorId) {
-                const userNotificationTableResponse = await tx
-                    .insert(userNotificationTable)
+                const notificationTableResponse = await tx
+                    .insert(notificationTable)
                     .values({
                         slugId: generateRandomSlugId(),
-                        userId: postAuthorId,
+                        userId: postAuthorId, // owner of the notification
                         notificationType: "new_opinion",
                     })
                     .returning({
-                        userNotificationId: userNotificationTable.id,
+                        notificationId: notificationTable.id,
                     });
 
-                const userNotificationId =
-                    userNotificationTableResponse[0].userNotificationId;
+                const notificationId =
+                    notificationTableResponse[0].notificationId;
 
-                await tx.insert(notificationMessageNewOpinionTable).values({
-                    userNotificationId: userNotificationId,
-                    userId: userId,
+                await tx.insert(notificationNewOpinionTable).values({
+                    notificationId: notificationId,
+                    authorId: userId, // the author of the opinion is the current user!
                     opinionId: commentId,
                     conversationId: postId,
                 });

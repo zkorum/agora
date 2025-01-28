@@ -1250,7 +1250,7 @@ export const voteContentTable = pgTable("vote_content", {
     opinionContentId: integer("opinion_content_id")
         .references(() => opinionContentTable.id)
         .notNull(), // exact opinion content that existed when this vote was cast. Cascade delete from opinionContent if opinionContent was deleted.
-    optionChosen: voteEnum("option_chosen").notNull(),
+    vote: voteEnum("vote").notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1404,19 +1404,19 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
         .notNull(),
 });
 
-export const notificationMessageTypeEnum = pgEnum(
-    "notification_message_type_enum",
-    ["opinion_agreement", "new_opinion"],
-);
+export const notificationTypeEnum = pgEnum("notification_type_enum", [
+    "opinion_vote",
+    "new_opinion",
+]);
 
-export const notificationMessageOpinionAgreementTable = pgTable(
-    "notification_message_opinion_agreement",
+export const notificationOpinionVoteTable = pgTable(
+    "notification_opinion_vote",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userNotificationId: integer("user_notification_id")
-            .references(() => userNotificationTable.id)
+        notificationId: integer("notification_id")
+            .references(() => notificationTable.id)
             .notNull(),
-        userId: uuid("user_id")
+        authorId: uuid("author_id")
             .references(() => userTable.id)
             .notNull(),
         opinionId: integer("opinion_id")
@@ -1425,7 +1425,7 @@ export const notificationMessageOpinionAgreementTable = pgTable(
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
-        isAgree: boolean("is_agree").notNull().default(false),
+        vote: voteEnum("vote").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1435,33 +1435,30 @@ export const notificationMessageOpinionAgreementTable = pgTable(
     },
 );
 
-export const notificationMessageNewOpinionTable = pgTable(
-    "notification_message_new_opinion",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userNotificationId: integer("user_notification_id")
-            .references(() => userNotificationTable.id)
-            .notNull(),
-        userId: uuid("user_id")
-            .references(() => userTable.id)
-            .notNull(),
-        opinionId: integer("opinion_id")
-            .references(() => opinionTable.id)
-            .notNull(),
-        conversationId: integer("conversation_id")
-            .references(() => conversationTable.id)
-            .notNull(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-);
+export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    notificationId: integer("notification_id")
+        .references(() => notificationTable.id)
+        .notNull(),
+    authorId: uuid("author_id")
+        .references(() => userTable.id)
+        .notNull(),
+    opinionId: integer("opinion_id")
+        .references(() => opinionTable.id)
+        .notNull(),
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
+        .notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
 
-export const userNotificationTable = pgTable(
-    "user_notification",
+export const notificationTable = pgTable(
+    "notification",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
@@ -1469,8 +1466,7 @@ export const userNotificationTable = pgTable(
             .references(() => userTable.id)
             .notNull(),
         isRead: boolean("is_read").notNull().default(false),
-        notificationType:
-            notificationMessageTypeEnum("notification_type").notNull(),
+        notificationType: notificationTypeEnum("notification_type").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

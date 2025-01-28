@@ -1,13 +1,13 @@
 import {
     conversationTable,
-    notificationMessageNewOpinionTable,
-    notificationMessageOpinionAgreementTable,
+    notificationNewOpinionTable,
+    notificationOpinionVoteTable,
     opinionContentTable,
     opinionTable,
-    userNotificationTable,
+    notificationTable,
     userTable,
 } from "@/schema.js";
-import type { FetchUserNotificationsResponse } from "@/shared/types/dto.js";
+import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
 import { and, desc, eq, lt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -26,11 +26,11 @@ export async function markAllNotificationsAsRead({
 }: MarkAllNotificationsAsReadProps) {
     try {
         await db
-            .update(userNotificationTable)
+            .update(notificationTable)
             .set({
                 isRead: true,
             })
-            .where(eq(userNotificationTable.userId, userId));
+            .where(eq(notificationTable.userId, userId));
     } catch (error) {
         log.error(error);
         throw httpErrors.internalServerError(
@@ -52,9 +52,9 @@ async function getNotificationSlugIdLastCreatedAt({
 
     if (lastSlugId) {
         const selectResponse = await db
-            .select({ createdAt: userNotificationTable.createdAt })
-            .from(userNotificationTable)
-            .where(eq(userNotificationTable.slugId, lastSlugId));
+            .select({ createdAt: notificationTable.createdAt })
+            .from(notificationTable)
+            .where(eq(notificationTable.slugId, lastSlugId));
         if (selectResponse.length == 1) {
             lastCreatedAt = selectResponse[0].createdAt;
         } else {
@@ -65,17 +65,17 @@ async function getNotificationSlugIdLastCreatedAt({
     return lastCreatedAt;
 }
 
-interface GetUserNotificationsProps {
+interface GetNotificationsProps {
     db: PostgresJsDatabase;
     userId: string;
     lastSlugId: string | undefined;
 }
 
-export async function getUserNotifications({
+export async function getNotifications({
     db,
     userId,
     lastSlugId,
-}: GetUserNotificationsProps): Promise<FetchUserNotificationsResponse> {
+}: GetNotificationsProps): Promise<FetchNotificationsResponse> {
     const notificationItemList: NotificationItem[] = [];
 
     const fetchLimit = 10;
@@ -88,37 +88,34 @@ export async function getUserNotifications({
     });
 
     const whereClause = and(
-        eq(userNotificationTable.userId, userId),
-        lt(userNotificationTable.createdAt, lastCreatedAt),
+        eq(notificationTable.userId, userId),
+        lt(notificationTable.createdAt, lastCreatedAt),
     );
 
-    const orderByClause = desc(userNotificationTable.createdAt);
+    const orderByClause = desc(notificationTable.createdAt);
 
     {
-        const userNotificationTableResponse = await db
+        const notificationTableResponse = await db
             .select({
-                createdAt: userNotificationTable.createdAt,
-                isRead: userNotificationTable.isRead,
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
                 conversationSlugId: conversationTable.slugId,
                 opinionSlugId: opinionTable.slugId,
                 username: userTable.username,
                 opinionContent: opinionContentTable.content,
-                slugId: userNotificationTable.slugId,
+                slugId: notificationTable.slugId,
             })
-            .from(userNotificationTable)
+            .from(notificationTable)
             .leftJoin(
-                notificationMessageNewOpinionTable,
+                notificationNewOpinionTable,
                 eq(
-                    notificationMessageNewOpinionTable.userNotificationId,
-                    userNotificationTable.id,
+                    notificationNewOpinionTable.notificationId,
+                    notificationTable.id,
                 ),
             )
             .leftJoin(
                 opinionTable,
-                eq(
-                    opinionTable.id,
-                    notificationMessageNewOpinionTable.opinionId,
-                ),
+                eq(opinionTable.id, notificationNewOpinionTable.opinionId),
             )
             .leftJoin(
                 opinionContentTable,
@@ -128,18 +125,18 @@ export async function getUserNotifications({
                 conversationTable,
                 eq(
                     conversationTable.id,
-                    notificationMessageNewOpinionTable.conversationId,
+                    notificationNewOpinionTable.conversationId,
                 ),
             )
             .leftJoin(
                 userTable,
-                eq(userTable.id, notificationMessageNewOpinionTable.userId),
+                eq(userTable.id, notificationNewOpinionTable.authorId),
             )
             .where(whereClause)
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
-        userNotificationTableResponse.forEach((notificationItem) => {
+        notificationTableResponse.forEach((notificationItem) => {
             if (
                 notificationItem.conversationSlugId &&
                 notificationItem.opinionSlugId &&
@@ -148,7 +145,7 @@ export async function getUserNotifications({
             ) {
                 const parsedItem: NotificationItem = {
                     slugId: notificationItem.slugId,
-                    title: `${notificationItem.username} added an opinion to your conversation:`,
+                    title: `${notificationItem.username} contributed an opinion to your conversation:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-chat-outline",
                     isRead: notificationItem.isRead,
@@ -173,31 +170,28 @@ export async function getUserNotifications({
     }
 
     {
-        const userNotificationTableResponse = await db
+        const notificationTableResponse = await db
             .select({
-                createdAt: userNotificationTable.createdAt,
-                isRead: userNotificationTable.isRead,
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
                 conversationSlugId: conversationTable.slugId,
                 opinionSlugId: opinionTable.slugId,
                 username: userTable.username,
                 opinionContent: opinionContentTable.content,
-                isAgree: notificationMessageOpinionAgreementTable.isAgree,
-                slugId: userNotificationTable.slugId,
+                vote: notificationOpinionVoteTable.vote,
+                slugId: notificationTable.slugId,
             })
-            .from(userNotificationTable)
+            .from(notificationTable)
             .leftJoin(
-                notificationMessageOpinionAgreementTable,
+                notificationOpinionVoteTable,
                 eq(
-                    notificationMessageOpinionAgreementTable.userNotificationId,
-                    userNotificationTable.id,
+                    notificationOpinionVoteTable.notificationId,
+                    notificationTable.id,
                 ),
             )
             .leftJoin(
                 opinionTable,
-                eq(
-                    opinionTable.id,
-                    notificationMessageOpinionAgreementTable.opinionId,
-                ),
+                eq(opinionTable.id, notificationOpinionVoteTable.opinionId),
             )
             .leftJoin(
                 opinionContentTable,
@@ -207,34 +201,28 @@ export async function getUserNotifications({
                 conversationTable,
                 eq(
                     conversationTable.id,
-                    notificationMessageOpinionAgreementTable.conversationId,
+                    notificationOpinionVoteTable.conversationId,
                 ),
             )
             .leftJoin(
                 userTable,
-                eq(
-                    userTable.id,
-                    notificationMessageOpinionAgreementTable.userId,
-                ),
+                eq(userTable.id, notificationOpinionVoteTable.authorId),
             )
             .where(whereClause)
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
-        userNotificationTableResponse.forEach((notificationItem) => {
+        notificationTableResponse.forEach((notificationItem) => {
             if (
                 notificationItem.conversationSlugId &&
                 notificationItem.opinionSlugId &&
                 notificationItem.username &&
-                notificationItem.opinionContent
+                notificationItem.opinionContent &&
+                notificationItem.vote
             ) {
-                const userAction = notificationItem.isAgree
-                    ? "agree"
-                    : "disagree";
-
                 const parsedItem: NotificationItem = {
                     slugId: notificationItem.slugId,
-                    title: `${notificationItem.username} have ${userAction} on your opinion:`,
+                    title: `${notificationItem.username} ${notificationItem.vote}d with your opinion:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-checkbox-marked-circle-outline",
                     isRead: notificationItem.isRead,

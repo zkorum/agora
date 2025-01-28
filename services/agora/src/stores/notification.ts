@@ -4,7 +4,7 @@ import { useBackendNotificationApi } from "src/utils/api/notification";
 import { ref } from "vue";
 
 export const useNotificationStore = defineStore("notification", () => {
-  const { getUserNotification } = useBackendNotificationApi();
+  const { fetchNotifications } = useBackendNotificationApi();
 
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
@@ -18,7 +18,7 @@ export const useNotificationStore = defineStore("notification", () => {
       }
     }
 
-    const response = await getUserNotification(lastSlugId);
+    const response = await fetchNotifications(lastSlugId);
     if (response) {
       if (loadMore) {
         notificationList.value.push(...response.notificationList);

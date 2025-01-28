@@ -39,3 +39,5 @@ lerna-debug.log*
 flyway.conf
 
 swagger-spec.json
+
+docker-compose.yml.bak
