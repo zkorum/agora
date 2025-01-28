@@ -4,7 +4,7 @@
       addBottomPadding: false,
       enableFooter: false,
       enableHeader: true,
-      reducedWidth: false,
+      reducedWidth: true,
     }"
     :menu-bar-props="{
       hasBackButton: false,

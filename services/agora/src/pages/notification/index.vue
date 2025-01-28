@@ -4,7 +4,7 @@
       addBottomPadding: true,
       enableHeader: true,
       enableFooter: true,
-      reducedWidth: false,
+      reducedWidth: true,
     }"
     :menu-bar-props="{
       hasBackButton: false,
@@ -92,16 +92,13 @@ useInfiniteScroll(
   {
     distance: 10,
     canLoadMore: () => {
-      // inidicate when there is no more content to load so onLoadMore stops triggering
-      // if (noMoreContent) return false
-      return canLoadMore; // for demo purposes
+      return canLoadMore;
     },
   }
 );
 
 onMounted(async () => {
   await markAllNotificationsAsRead();
-  canLoadMore = await loadNotificationData(false);
 });
 
 function refreshData(done: () => void) {

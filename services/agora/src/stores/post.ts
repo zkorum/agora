@@ -125,7 +125,7 @@ export const usePostStore = defineStore("post", () => {
     0
   );
 
-  async function loadPostData(loadMoreData: boolean) {
+  async function loadPostData(loadMoreData: boolean): Promise<boolean> {
     let lastSlugId: undefined | string = undefined;
 
     if (loadMoreData) {
@@ -150,8 +150,15 @@ export const usePostStore = defineStore("post", () => {
 
       endOfFeed.value = response.reachedEndOfFeed;
       dataReady.value = true;
+
+      if (response.postDataList.length > 0) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
       dataReady.value = false;
+      return false;
     }
   }
 

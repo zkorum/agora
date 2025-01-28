@@ -14,7 +14,7 @@
           />
 
           <WidthWrapper
-            :width="props.generalProps.reducedWidth ? '25rem' : '35rem'"
+            :width="props.generalProps.reducedWidth ? '35rem' : '100%'"
           >
             <slot />
           </WidthWrapper>
