@@ -77,14 +77,20 @@
 </template>
 
 <script setup lang="ts">
+import { useDocumentVisibility } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useDialog } from "src/utils/ui/dialog";
+import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { numNewNotifications } = storeToRefs(useNotificationStore());
+
+const documentVisibility = useDocumentVisibility();
+
+const { loadNotificationData } = useNotificationStore();
 
 const dialog = useDialog();
 
@@ -106,6 +112,12 @@ async function accessNotifications() {
     await router.push({ name: "/notification/" });
   }
 }
+
+watch(documentVisibility, async () => {
+  if (documentVisibility.value == "visible") {
+    await loadNotificationData(false);
+  }
+});
 </script>
 
 <style scoped lang="scss">

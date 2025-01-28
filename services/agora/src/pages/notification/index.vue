@@ -108,6 +108,7 @@ useInfiniteScroll(
 
 onMounted(async () => {
   await markAllNotificationsAsRead();
+  await loadNotificationData(false);
 });
 
 async function refreshData() {
