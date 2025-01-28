@@ -80,6 +80,7 @@
                 min-height="5rem"
                 :focus-editor="false"
                 :show-toolbar="true"
+                :add-background-color="false"
                 @update:model-value="checkWordCount()"
               />
 

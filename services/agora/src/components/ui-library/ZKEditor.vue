@@ -9,7 +9,10 @@
       <q-editor
         ref="editorRef"
         v-model="commentText"
-        :style="{ backgroundColor: '#f6f5f8' }"
+        :class="{
+          whiteBackground: addBackgroundColor,
+          plainBackground: !addBackgroundColor,
+        }"
         :placeholder="placeholder"
         :min-height="minHeight"
         flat
@@ -29,6 +32,7 @@ defineProps<{
   placeholder: string;
   minHeight: string;
   focusEditor: boolean;
+  addBackgroundColor: boolean;
 }>();
 
 const emit = defineEmits(["manuallyFocused"]);
@@ -102,3 +106,13 @@ function onPaste(evt: Event) {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.whiteBackground {
+  background-color: white;
+}
+
+.plainBackground {
+  background-color: $app-background-color;
+}
+</style>
