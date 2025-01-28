@@ -3051,13 +3051,6 @@
                                                         "type": "string",
                                                         "maxLength": 50
                                                     },
-                                                    "notificationType": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "opinion_agreement",
-                                                            "new_opinion"
-                                                        ]
-                                                    },
                                                     "createdAt": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -3102,7 +3095,6 @@
                                                     "title",
                                                     "message",
                                                     "iconName",
-                                                    "notificationType",
                                                     "createdAt",
                                                     "routeTarget"
                                                 ],

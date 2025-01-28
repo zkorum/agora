@@ -155,7 +155,6 @@ export async function getUserNotifications({
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
                     ),
-                    notificationType: "new_opinion",
                     username: notificationItem.username,
                     routeTarget: {
                         conversationSlugId: notificationItem.conversationSlugId,
@@ -242,7 +241,6 @@ export async function getUserNotifications({
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
                     ),
-                    notificationType: "opinion_agreement",
                     username: notificationItem.username,
                     routeTarget: {
                         conversationSlugId: notificationItem.conversationSlugId,

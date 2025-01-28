@@ -143,8 +143,6 @@ export const zodUserReportItem = z.object({
     id: z.number(),
 });
 
-export const zodNotificationType = z.enum(["opinion_agreement", "new_opinion"]);
-
 export const zodRouteTarget = z.discriminatedUnion("target", [
     z
         .object({
@@ -161,7 +159,6 @@ export const zodNotificationItem = z.object({
     title: z.string(),
     message: z.string(),
     iconName: z.string().max(50),
-    notificationType: zodNotificationType,
     createdAt: z.date(),
     username: zodUsername.optional(),
     routeTarget: zodRouteTarget,

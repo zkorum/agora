@@ -1151,12 +1151,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'notificationType': ApiV1NotificationFetchPost200ResponseNotificationListInnerNotificationTypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
-     */
     'createdAt': string;
     /**
      * 
@@ -1171,14 +1165,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget;
 }
-
-export const ApiV1NotificationFetchPost200ResponseNotificationListInnerNotificationTypeEnum = {
-    OpinionAgreement: 'opinion_agreement',
-    NewOpinion: 'new_opinion'
-} as const;
-
-export type ApiV1NotificationFetchPost200ResponseNotificationListInnerNotificationTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerNotificationTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerNotificationTypeEnum];
-
 /**
  * 
  * @export

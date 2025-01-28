@@ -43,7 +43,6 @@ export function useBackendNotificationApi() {
           iconName: notificationItem.iconName,
           isRead: notificationItem.isRead,
           message: notificationItem.message,
-          notificationType: notificationItem.notificationType,
           routeTarget: notificationItem.routeTarget,
           title: notificationItem.title,
           username: notificationItem.username,
