@@ -1,31 +1,27 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div
-      v-for="postData in profileData.userPostList"
-      :key="postData.metadata.conversationSlugId"
-    >
-      <ZKHoverEffect :enable-hover="true">
-        <PostDetails
-          :extended-post-data="postData"
-          :compact-mode="true"
-          :show-comment-section="false"
-          :skeleton-mode="false"
-          class="showCursor"
-          :show-author="false"
-          :display-absolute-time="true"
-          @click="openPost(postData.metadata.conversationSlugId)"
-        />
+    <div class="container">
+      <div
+        v-for="postData in profileData.userPostList"
+        :key="postData.metadata.conversationSlugId"
+      >
+        <ZKHoverEffect :enable-hover="true">
+          <PostDetails
+            :extended-post-data="postData"
+            :compact-mode="true"
+            :show-comment-section="false"
+            :skeleton-mode="false"
+            class="showCursor"
+            :show-author="false"
+            :display-absolute-time="true"
+            @click="openPost(postData.metadata.conversationSlugId)"
+          />
+        </ZKHoverEffect>
+      </div>
 
-        <div>
-          <q-separator :inset="false" />
-        </div>
-      </ZKHoverEffect>
-
-      <q-separator :inset="false" />
+      <div ref="bottomOfPostDiv"></div>
     </div>
-
-    <div ref="bottomOfPostDiv"></div>
   </div>
 </template>
 
@@ -82,37 +78,9 @@ async function openPost(postSlugId: string) {
 </script>
 
 <style scoped lang="scss">
-.postTitle {
-  width: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  padding-top: 1rem;
-  padding-bottom: 0.5rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
-.commentMetadata {
-  color: $color-text-weak;
-  font-size: 0.9rem;
-}
-
-.commentBody {
-  padding-top: 0.5rem;
-}
-
-.topRowFlex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
 }
 </style>

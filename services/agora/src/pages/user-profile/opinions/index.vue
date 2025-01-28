@@ -1,60 +1,60 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div
-      v-for="commentItem in profileData.userCommentList"
-      :key="commentItem.opinionItem.opinionSlugId"
-    >
-      <ZKHoverEffect :enable-hover="true">
-        <div
-          class="container"
-          @click="
-            openComment(
-              commentItem.conversationData.metadata.conversationSlugId,
-              commentItem.opinionItem.opinionSlugId
-            )
-          "
-        >
-          <div class="topRowFlex">
-            <div class="postTitle">
-              {{ commentItem.conversationData.payload.title }}
-            </div>
-            <div>
-              <CommentActionOptions
-                :comment-item="commentItem.opinionItem"
-                :post-slug-id="
-                  commentItem.conversationData.metadata.conversationSlugId
-                "
-                @deleted="commentDeleted()"
-              />
-            </div>
-          </div>
-
-          <div class="commentMetadata">
-            <span :style="{ fontWeight: 'bold' }">{{
-              commentItem.opinionItem.username
-            }}</span>
-            commented
-            {{ useTimeAgo(commentItem.opinionItem.createdAt) }}
-          </div>
-
-          <div class="commentBody">
-            <span v-html="commentItem.opinionItem.opinion"></span>
-          </div>
-
-          <CommentModeration
-            :comment-item="commentItem.opinionItem"
-            :post-slug-id="
-              commentItem.conversationData.metadata.conversationSlugId
+    <div class="container">
+      <div
+        v-for="commentItem in profileData.userCommentList"
+        :key="commentItem.opinionItem.opinionSlugId"
+      >
+        <ZKHoverEffect :enable-hover="true">
+          <div
+            class="commentItemStyle"
+            @click="
+              openComment(
+                commentItem.conversationData.metadata.conversationSlugId,
+                commentItem.opinionItem.opinionSlugId
+              )
             "
-          />
-        </div>
-      </ZKHoverEffect>
+          >
+            <div class="topRowFlex">
+              <div class="postTitle">
+                {{ commentItem.conversationData.payload.title }}
+              </div>
+              <div>
+                <CommentActionOptions
+                  :comment-item="commentItem.opinionItem"
+                  :post-slug-id="
+                    commentItem.conversationData.metadata.conversationSlugId
+                  "
+                  @deleted="commentDeleted()"
+                />
+              </div>
+            </div>
 
-      <q-separator :inset="false" />
+            <div class="commentMetadata">
+              <span :style="{ fontWeight: 'bold' }">{{
+                commentItem.opinionItem.username
+              }}</span>
+              commented
+              {{ useTimeAgo(commentItem.opinionItem.createdAt) }}
+            </div>
+
+            <div class="commentBody">
+              <span v-html="commentItem.opinionItem.opinion"></span>
+            </div>
+
+            <CommentModeration
+              :comment-item="commentItem.opinionItem"
+              :post-slug-id="
+                commentItem.conversationData.metadata.conversationSlugId
+              "
+            />
+          </div>
+        </ZKHoverEffect>
+      </div>
+
+      <div ref="bottomOfPostDiv"></div>
     </div>
-
-    <div ref="bottomOfPostDiv"></div>
   </div>
 </template>
 
@@ -130,11 +130,18 @@ async function commentDeleted() {
 .container {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+}
+
+.commentItemStyle {
+  display: flex;
+  flex-direction: column;
   gap: 0.3rem;
   padding-top: 1rem;
   padding-bottom: 0.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+  background-color: white;
 }
 
 .commentMetadata {
