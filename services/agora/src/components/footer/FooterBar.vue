@@ -101,7 +101,7 @@ async function accessProfile() {
   if (!isAuthenticated.value) {
     dialog.showLoginConfirmationDialog();
   } else {
-    await router.push({ name: "/user-profile/opinions/" });
+    await router.push({ name: "/user-profile/conversations/" });
   }
 }
 
