@@ -118,7 +118,7 @@ useInfiniteScroll(
   }
 );
 
-watch(postContainerSwipe.isSwiping, () => {
+watch(postContainerSwipe.isSwiping, async () => {
   if (
     postContainerScroll.y.value == 0 &&
     postContainerSwipe.direction.value == "down"
@@ -127,6 +127,7 @@ watch(postContainerSwipe.isSwiping, () => {
     setTimeout(() => {
       loadingVisible.value = false;
     }, 500);
+    await loadPostData(true);
   }
 });
 
