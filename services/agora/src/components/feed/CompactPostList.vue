@@ -24,7 +24,7 @@
           <ZKButton
             icon="mdi-arrow-up"
             label="New"
-            color="secondary"
+            color="primary"
             @click="refreshPage(() => {})"
           />
         </div>
@@ -166,6 +166,8 @@ async function refreshPage(done: () => void) {
   setTimeout(() => {
     done();
   }, 500);
+
+  hasPendingNewPosts.value = false;
 }
 </script>
 
@@ -224,6 +226,7 @@ async function refreshPage(done: () => void) {
 }
 
 .containerBase {
+  position: relative;
   margin: auto;
   height: calc(100dvh - 7rem);
   overflow-y: scroll;
