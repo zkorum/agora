@@ -222,7 +222,7 @@ export async function getNotifications({
             ) {
                 const parsedItem: NotificationItem = {
                     slugId: notificationItem.slugId,
-                    title: `${notificationItem.username} ${notificationItem.vote}d with your opinion:`,
+                    title: `${notificationItem.username} voted on your opinion:`,
                     createdAt: notificationItem.createdAt,
                     iconName: "mdi-checkbox-marked-circle-outline",
                     isRead: notificationItem.isRead,
