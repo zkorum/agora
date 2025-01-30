@@ -23,6 +23,8 @@ import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
+import type { AxiosInstance } from "axios";
+import * as polisService from "@/service/polis.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -247,27 +249,31 @@ async function getPostIdFromPostSlugId(
     return postId;
 }
 
-interface PostNewCommentProps {
+interface PostNewOpinionProps {
     db: PostgresJsDatabase;
     commentBody: string;
-    postSlugId: string;
+    conversationSlugId: string;
     userId: string;
     didWrite: string;
     proof: string;
+    axiosPolis?: AxiosInstance;
+    polisDelayToFetch: number;
     httpErrors: HttpErrors;
 }
 
 export async function postNewOpinion({
     db,
     commentBody,
-    postSlugId,
+    conversationSlugId,
     userId,
     didWrite,
     proof,
+    axiosPolis,
+    polisDelayToFetch,
     httpErrors,
-}: PostNewCommentProps): Promise<CreateCommentResponse> {
+}: PostNewOpinionProps): Promise<CreateCommentResponse> {
     const isLocked = await useCommonPost().isPostSlugIdLocked({
-        postSlugId: postSlugId,
+        postSlugId: conversationSlugId,
         db: db,
     });
 
@@ -289,36 +295,36 @@ export async function postNewOpinion({
     }
 
     const {
-        id: postId,
-        contentId: postContentId,
-        authorId: postAuthorId,
+        id: conversationId,
+        contentId: conversationContentId,
+        authorId: conversationAuthorId,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
-        postSlugId: postSlugId,
+        conversationSlugId: conversationSlugId,
     });
-    if (postContentId == null) {
+    if (conversationContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
-    const commentSlugId = generateRandomSlugId();
+    const opinionSlugId = generateRandomSlugId();
 
     await db.transaction(async (tx) => {
         const insertCommentResponse = await tx
             .insert(opinionTable)
             .values({
-                slugId: commentSlugId,
+                slugId: opinionSlugId,
                 authorId: userId,
                 currentContentId: null,
-                conversationId: postId,
+                conversationId: conversationId,
             })
-            .returning({ commentId: opinionTable.id });
+            .returning({ opinionId: opinionTable.id });
 
-        const commentId = insertCommentResponse[0].commentId;
+        const opinionId = insertCommentResponse[0].opinionId;
 
         const insertProofResponse = await tx
             .insert(opinionProofTable)
             .values({
                 type: "creation",
-                opinionId: commentId,
+                opinionId: opinionId,
                 authorDid: didWrite,
                 proof: proof,
                 proofVersion: 1,
@@ -331,8 +337,8 @@ export async function postNewOpinion({
             .insert(opinionContentTable)
             .values({
                 opinionProofId: proofId,
-                opinionId: commentId,
-                conversationContentId: postContentId,
+                opinionId: opinionId,
+                conversationContentId: conversationContentId,
                 parentId: null,
                 content: commentBody,
             })
@@ -346,7 +352,7 @@ export async function postNewOpinion({
             .set({
                 currentContentId: commentContentTableId,
             })
-            .where(eq(opinionTable.id, commentId));
+            .where(eq(opinionTable.id, opinionId));
 
         // Update the post's comment count
         await tx
@@ -354,7 +360,7 @@ export async function postNewOpinion({
             .set({
                 opinionCount: sql`${conversationTable.opinionCount} + 1`,
             })
-            .where(eq(conversationTable.slugId, postSlugId));
+            .where(eq(conversationTable.slugId, conversationSlugId));
 
         // Update the user profile's comment count
         await tx
@@ -366,12 +372,12 @@ export async function postNewOpinion({
 
         {
             // Create notification for the conversation owner
-            if (userId !== postAuthorId) {
+            if (userId !== conversationAuthorId) {
                 const notificationTableResponse = await tx
                     .insert(notificationTable)
                     .values({
                         slugId: generateRandomSlugId(),
-                        userId: postAuthorId, // owner of the notification
+                        userId: conversationAuthorId, // owner of the notification
                         notificationType: "new_opinion",
                     })
                     .returning({
@@ -384,16 +390,33 @@ export async function postNewOpinion({
                 await tx.insert(notificationNewOpinionTable).values({
                     notificationId: notificationId,
                     authorId: userId, // the author of the opinion is the current user!
-                    opinionId: commentId,
-                    conversationId: postId,
+                    opinionId: opinionId,
+                    conversationId: conversationId,
                 });
             }
         }
+
+        if (axiosPolis !== undefined) {
+            await polisService.createOpinion({
+                axiosPolis,
+                userId,
+                opinionSlugId,
+                conversationSlugId,
+            });
+        }
     });
+
+    if (axiosPolis !== undefined) {
+        void polisService.delayedPolisGetAndUpdateMath({
+            conversationSlugId,
+            axiosPolis,
+            polisDelayToFetch,
+        });
+    }
 
     return {
         success: true,
-        opinionSlugId: commentSlugId,
+        opinionSlugId: opinionSlugId,
     };
 }
 

@@ -93,6 +93,10 @@ interface VerifyUserStatusProps {
     db: PostgresDatabase;
     didWrite: string;
     axiosVerificatorSvc: AxiosInstance;
+    axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
     userAgent: string;
 }
 
@@ -198,6 +202,10 @@ export async function verifyUserStatusAndAuthenticate({
     db,
     didWrite,
     axiosVerificatorSvc,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
     userAgent,
 }: VerifyUserStatusProps): Promise<VerifyUserStatusAndAuthenticate200> {
     const now = nowZeroMs();
@@ -253,6 +261,10 @@ export async function verifyUserStatusAndAuthenticate({
                 userAgent,
                 userId,
                 sessionExpiry: loginSessionExpiry,
+                axiosPolis,
+                polisUserEmailDomain,
+                polisUserEmailLocalPart,
+                polisUserPassword,
             });
             break;
         case "login_known_device":

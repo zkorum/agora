@@ -1,5 +1,5 @@
 {
-  "id": "6843004e-d0be-46ed-9898-76788877a553",
+  "id": "804e7ec0-e052-4de3-a1c5-7280435a5d06",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -988,14 +988,14 @@
             "cycle": false
           }
         },
-        "user_notification_id": {
-          "name": "user_notification_id",
+        "notification_id": {
+          "name": "notification_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
+        "author_id": {
+          "name": "author_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1022,12 +1022,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "notification_new_opinion_user_notification_id_notification_id_fk": {
-          "name": "notification_new_opinion_user_notification_id_notification_id_fk",
+        "notification_new_opinion_notification_id_notification_id_fk": {
+          "name": "notification_new_opinion_notification_id_notification_id_fk",
           "tableFrom": "notification_new_opinion",
           "tableTo": "notification",
           "columnsFrom": [
-            "user_notification_id"
+            "notification_id"
           ],
           "columnsTo": [
             "id"
@@ -1035,12 +1035,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_new_opinion_user_id_user_id_fk": {
-          "name": "notification_new_opinion_user_id_user_id_fk",
+        "notification_new_opinion_author_id_user_id_fk": {
+          "name": "notification_new_opinion_author_id_user_id_fk",
           "tableFrom": "notification_new_opinion",
           "tableTo": "user",
           "columnsFrom": [
-            "user_id"
+            "author_id"
           ],
           "columnsTo": [
             "id"
@@ -1100,14 +1100,14 @@
             "cycle": false
           }
         },
-        "user_notification_id": {
-          "name": "user_notification_id",
+        "notification_id": {
+          "name": "notification_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
+        "author_id": {
+          "name": "author_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1141,12 +1141,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "notification_opinion_vote_user_notification_id_notification_id_fk": {
-          "name": "notification_opinion_vote_user_notification_id_notification_id_fk",
+        "notification_opinion_vote_notification_id_notification_id_fk": {
+          "name": "notification_opinion_vote_notification_id_notification_id_fk",
           "tableFrom": "notification_opinion_vote",
           "tableTo": "notification",
           "columnsFrom": [
-            "user_notification_id"
+            "notification_id"
           ],
           "columnsTo": [
             "id"
@@ -1154,12 +1154,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_opinion_vote_user_id_user_id_fk": {
-          "name": "notification_opinion_vote_user_id_user_id_fk",
+        "notification_opinion_vote_author_id_user_id_fk": {
+          "name": "notification_opinion_vote_author_id_user_id_fk",
           "tableFrom": "notification_opinion_vote",
           "tableTo": "user",
           "columnsFrom": [
-            "user_id"
+            "author_id"
           ],
           "columnsTo": [
             "id"
@@ -1240,7 +1240,7 @@
         },
         "notification_type": {
           "name": "notification_type",
-          "type": "notification_message_type_enum",
+          "type": "notification_type_enum",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -3451,11 +3451,11 @@
         "spam"
       ]
     },
-    "public.notification_message_type_enum": {
-      "name": "notification_message_type_enum",
+    "public.notification_type_enum": {
+      "name": "notification_type_enum",
       "schema": "public",
       "values": [
-        "opinion_agreement",
+        "opinion_vote",
         "new_opinion"
       ]
     },

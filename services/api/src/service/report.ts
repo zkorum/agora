@@ -34,7 +34,7 @@ export async function createUserReportByPostSlugId({
     const { getPostMetadataFromSlugId } = useCommonPost();
     const postDetails = await getPostMetadataFromSlugId({
         db: db,
-        postSlugId: postSlugId,
+        conversationSlugId: postSlugId,
     });
 
     await db.insert(conversationReportTable).values({

@@ -62,7 +62,7 @@ export function useCommonPost() {
         const { getPostMetadataFromSlugId } = useCommonPost();
         const postDetails = await getPostMetadataFromSlugId({
             db: db,
-            postSlugId: postSlugId,
+            conversationSlugId: postSlugId,
         });
 
         const moderationPostsTableResponse = await db
@@ -344,12 +344,12 @@ export function useCommonPost() {
 
     interface GetPostMetadataFromSlugIdProps {
         db: PostgresJsDatabase;
-        postSlugId: string;
+        conversationSlugId: string;
     }
 
     async function getPostMetadataFromSlugId({
         db,
-        postSlugId,
+        conversationSlugId,
     }: GetPostMetadataFromSlugIdProps): Promise<PostMetadata> {
         const postTableResponse = await db
             .select({
@@ -358,7 +358,7 @@ export function useCommonPost() {
                 authorId: conversationTable.authorId,
             })
             .from(conversationTable)
-            .where(eq(conversationTable.slugId, postSlugId));
+            .where(eq(conversationTable.slugId, conversationSlugId));
 
         if (postTableResponse.length == 1) {
             return {

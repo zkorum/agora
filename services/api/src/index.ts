@@ -40,7 +40,7 @@ import {
 } from "./service/comment.js";
 import { getUserPollResponse, submitPollResponse } from "./service/poll.js";
 import {
-    castVoteForCommentSlugId,
+    castVoteForOpinionSlugId,
     getUserVotesForPostSlugIds as getUserVotesByConversations,
 } from "./service/voting.js";
 import {
@@ -123,6 +123,13 @@ const speciallyAuthorizedPhones: string[] =
 const axiosVerificatorSvc: AxiosInstance = axios.create({
     baseURL: config.VERIFICATOR_SVC_BASE_URL,
 });
+
+const axiosPolis: AxiosInstance | undefined =
+    config.POLIS_BASE_URL !== undefined
+        ? axios.create({
+              baseURL: config.POLIS_BASE_URL,
+          })
+        : undefined;
 
 // Websocket polyfill necessary on nodejs to avoid
 // .pnpm/nostr-tools@2.10.4_typescript@5.2.2/node_modules/nostr-tools/lib/esm/relay.js:260
@@ -442,6 +449,10 @@ server.after(() => {
                 maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
                 didWrite,
                 code: request.body.code,
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
                 httpErrors: server.httpErrors,
             });
         },
@@ -829,13 +840,15 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const castVoteResponse = await castVoteForCommentSlugId({
+                const castVoteResponse = await castVoteForOpinionSlugId({
                     db: db,
-                    commentSlugId: request.body.opinionSlugId,
+                    opinionSlugId: request.body.opinionSlugId,
                     userId: status.userId,
                     didWrite: didWrite,
                     proof: encodedUcan,
                     votingAction: request.body.chosenOption,
+                    axiosPolis: axiosPolis,
+                    polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
                 });
                 reply.send(castVoteResponse);
                 const proofChannel40EventId =
@@ -1001,16 +1014,18 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                const newCommentResponse = await postNewOpinion({
+                const newOpinionResponse = await postNewOpinion({
                     db: db,
                     commentBody: request.body.opinionBody,
-                    postSlugId: request.body.conversationSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                     userId: status.userId,
                     didWrite: didWrite,
                     proof: encodedUcan,
+                    axiosPolis: axiosPolis,
+                    polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
                     httpErrors: server.httpErrors,
                 });
-                reply.send(newCommentResponse);
+                reply.send(newOpinionResponse);
                 const proofChannel40EventId =
                     config.NOSTR_PROOF_CHANNEL_EVENT_ID;
                 if (proofChannel40EventId !== undefined) {
@@ -1198,6 +1213,7 @@ server.after(() => {
                     authorId: status.userId,
                     didWrite: didWrite,
                     proof: encodedUcan,
+                    axiosPolis: axiosPolis,
                 });
                 reply.send(postResponse);
                 const proofChannel40EventId =
@@ -1308,6 +1324,10 @@ server.after(() => {
                     db,
                     didWrite: didWrite,
                     axiosVerificatorSvc,
+                    axiosPolis: axiosPolis,
+                    polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                    polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                    polisUserPassword: config.POLIS_USER_PASSWORD,
                     userAgent,
                 });
             return verificationStatusAndNullifier;

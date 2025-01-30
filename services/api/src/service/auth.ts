@@ -29,11 +29,17 @@ import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
 import type { HttpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
 import { isLoggedIn } from "./authUtil.js";
+import * as polisService from "@/service/polis.js";
+import type { AxiosInstance } from "axios";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
     maxAttempt: number;
     didWrite: string;
+    axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
     code: number;
     httpErrors: HttpErrors;
 }
@@ -48,6 +54,10 @@ interface RegisterWithPhoneNumberProps {
     pepperVersion: number;
     userAgent: string;
     userId: string;
+    axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
     now: Date;
     sessionExpiry: Date;
 }
@@ -61,6 +71,10 @@ interface RegisterWithZKPProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
+    axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
 }
 
 interface LoginProps {
@@ -192,6 +206,10 @@ export async function verifyPhoneOtp({
     db,
     maxAttempt,
     didWrite,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
     code,
     httpErrors,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
@@ -265,6 +283,10 @@ export async function verifyPhoneOtp({
                     pepperVersion: resultOtp[0].pepperVersion,
                     userAgent: resultOtp[0].userAgent,
                     userId: userId,
+                    axiosPolis: axiosPolis,
+                    polisUserEmailDomain,
+                    polisUserEmailLocalPart,
+                    polisUserPassword,
                     now,
                     sessionExpiry: loginSessionExpiry,
                 });
@@ -355,6 +377,10 @@ export async function registerWithPhoneNumber({
     pepperVersion,
     userAgent,
     userId,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
     now,
     sessionExpiry,
 }: RegisterWithPhoneNumberProps): Promise<void> {
@@ -385,6 +411,15 @@ export async function registerWithPhoneNumber({
             pepperVersion: pepperVersion,
             phoneHash: phoneHash,
         });
+        if (axiosPolis !== undefined) {
+            await polisService.createUser({
+                axiosPolis,
+                polisUserEmailDomain,
+                polisUserEmailLocalPart,
+                polisUserPassword,
+                userId,
+            });
+        }
     });
 }
 
@@ -397,6 +432,10 @@ export async function registerWithZKP({
     userAgent,
     userId,
     sessionExpiry,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
 }: RegisterWithZKPProps): Promise<void> {
     log.info("Register with ZKP");
     await db.transaction(async (tx) => {
@@ -416,6 +455,15 @@ export async function registerWithZKP({
             nullifier: nullifier,
             sex: sex,
         });
+        if (axiosPolis !== undefined) {
+            await polisService.createUser({
+                axiosPolis,
+                polisUserEmailDomain,
+                polisUserEmailLocalPart,
+                polisUserPassword,
+                userId,
+            });
+        }
     });
 }
 

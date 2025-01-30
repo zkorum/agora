@@ -29,7 +29,7 @@ export async function getUserPollResponse({
     for (const postSlugId of postSlugIdList) {
         const postDetails = await useCommonPost().getPostMetadataFromSlugId({
             db: db,
-            postSlugId: postSlugId,
+            conversationSlugId: postSlugId,
         });
 
         if (postDetails.contentId == null) {
@@ -92,7 +92,7 @@ export async function submitPollResponse({
     const { id: postId, contentId: postContentId } =
         await useCommonPost().getPostMetadataFromSlugId({
             db: db,
-            postSlugId: postSlugId,
+            conversationSlugId: postSlugId,
         });
 
     if (postContentId == null) {

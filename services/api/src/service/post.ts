@@ -17,6 +17,8 @@ import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
 import type { ExtendedConversation } from "@/shared/types/zod.js";
+import type { AxiosInstance } from "axios";
+import * as polisService from "@/service/polis.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -26,6 +28,7 @@ interface CreateNewPostProps {
     authorId: string;
     didWrite: string;
     proof: string;
+    axiosPolis?: AxiosInstance;
 }
 
 export async function createNewPost({
@@ -36,6 +39,7 @@ export async function createNewPost({
     didWrite,
     proof,
     pollingOptionList,
+    axiosPolis,
 }: CreateNewPostProps): Promise<CreateNewConversationResponse> {
     try {
         const conversationSlugId = generateRandomSlugId();
@@ -134,6 +138,14 @@ export async function createNewPost({
                     totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
                 })
                 .where(eq(userTable.id, authorId));
+
+            if (axiosPolis !== undefined) {
+                await polisService.createConversation({
+                    userId: authorId,
+                    conversationSlugId: conversationSlugId,
+                    axiosPolis,
+                });
+            }
         });
 
         return {

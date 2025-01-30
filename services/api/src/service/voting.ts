@@ -10,11 +10,12 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
-import { log } from "@/app.js";
 import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import { generateRandomSlugId } from "@/crypto.js";
+import type { AxiosInstance } from "axios";
+import * as polisService from "@/service/polis.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -57,33 +58,38 @@ async function getCommentMetadataFromCommentSlugId({
     }
 }
 
-interface CastVoteForCommentSlugIdProps {
+interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
-    commentSlugId: string;
+    opinionSlugId: string;
     userId: string;
     didWrite: string;
     proof: string;
     votingAction: VotingAction;
+    axiosPolis?: AxiosInstance;
+    polisDelayToFetch: number;
 }
 
-export async function castVoteForCommentSlugId({
+export async function castVoteForOpinionSlugId({
     db,
     userId,
-    commentSlugId,
+    opinionSlugId,
     didWrite,
     proof,
     votingAction,
-}: CastVoteForCommentSlugIdProps): Promise<boolean> {
-    const postSlugId = await useCommonComment().getPostSlugIdFromCommentSlugId({
-        commentSlugId: commentSlugId,
-        db: db,
-    });
+    axiosPolis,
+    polisDelayToFetch,
+}: CastVoteForOpinionSlugIdProps): Promise<boolean> {
+    const conversationSlugId =
+        await useCommonComment().getPostSlugIdFromCommentSlugId({
+            commentSlugId: opinionSlugId,
+            db: db,
+        });
 
     // Check if the post is locked
     {
         const isLocked = await useCommonPost().isPostSlugIdLocked({
             db: db,
-            postSlugId: postSlugId,
+            postSlugId: conversationSlugId,
         });
 
         if (isLocked) {
@@ -93,12 +99,12 @@ export async function castVoteForCommentSlugId({
 
     const postMetadata = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
-        postSlugId: postSlugId,
+        conversationSlugId: conversationSlugId,
     });
 
     const commentData = await getCommentMetadataFromCommentSlugId({
         db: db,
-        commentSlugId: commentSlugId,
+        commentSlugId: opinionSlugId,
     });
 
     const existingVoteTableResponse = await db
@@ -170,150 +176,157 @@ export async function castVoteForCommentSlugId({
         throw httpErrors.internalServerError("Database relation error");
     }
 
-    try {
-        await db.transaction(async (tx) => {
-            let voteTableId = 0;
+    await db.transaction(async (tx) => {
+        let voteTableId = 0;
 
-            if (existingVoteTableResponse.length == 0) {
-                // There are no votes yet
-                const voteTableResponse = await tx
-                    .insert(voteTable)
-                    .values({
-                        authorId: userId,
-                        opinionId: commentData.commentId,
-                        currentContentId: null,
-                    })
-                    .returning({ voteTableId: voteTable.id });
-                voteTableId = voteTableResponse[0].voteTableId;
-            } else {
-                if (votingAction == "cancel") {
-                    await tx
-                        .update(voteTable)
-                        .set({
-                            currentContentId: null,
-                        })
-                        .where(
-                            eq(
-                                voteTable.id,
-                                existingVoteTableResponse[0].voteTableId,
-                            ),
-                        );
-                }
-
-                voteTableId = existingVoteTableResponse[0].voteTableId;
-            }
-
-            const voteProofTableResponse = await tx
-                .insert(voteProofTable)
+        if (existingVoteTableResponse.length == 0) {
+            // There are no votes yet
+            const voteTableResponse = await tx
+                .insert(voteTable)
                 .values({
-                    type: votingAction == "cancel" ? "deletion" : "creation",
-                    voteId: voteTableId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
+                    authorId: userId,
+                    opinionId: commentData.commentId,
+                    currentContentId: null,
                 })
-                .returning({ voteProofTableId: voteProofTable.id });
-
-            const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
-
-            if (votingAction != "cancel") {
-                const voteContentTableResponse = await tx
-                    .insert(voteContentTable)
-                    .values({
-                        voteId: voteTableId,
-                        voteProofId: voteProofTableId,
-                        opinionContentId: commentData.contentId,
-                        vote: votingAction,
-                    })
-                    .returning({ voteContentTableId: voteContentTable.id });
-
-                const voteContentTableId =
-                    voteContentTableResponse[0].voteContentTableId;
-
+                .returning({ voteTableId: voteTable.id });
+            voteTableId = voteTableResponse[0].voteTableId;
+        } else {
+            if (votingAction == "cancel") {
                 await tx
                     .update(voteTable)
                     .set({
-                        currentContentId: voteContentTableId,
+                        currentContentId: null,
                     })
-                    .where(eq(voteTable.id, voteTableId));
+                    .where(
+                        eq(
+                            voteTable.id,
+                            existingVoteTableResponse[0].voteTableId,
+                        ),
+                    );
+            }
 
-                {
-                    // Create notification for the opinion owner
-                    if (userId !== commentData.userId) {
-                        // Check if an agree/disagree notification already exist previously to the owner
-                        const existanceCheckResponse = await db
-                            .select({})
-                            .from(notificationTable)
-                            .leftJoin(
-                                notificationOpinionVoteTable,
+            voteTableId = existingVoteTableResponse[0].voteTableId;
+        }
+
+        const voteProofTableResponse = await tx
+            .insert(voteProofTable)
+            .values({
+                type: votingAction == "cancel" ? "deletion" : "creation",
+                voteId: voteTableId,
+                authorDid: didWrite,
+                proof: proof,
+                proofVersion: 1,
+            })
+            .returning({ voteProofTableId: voteProofTable.id });
+
+        const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
+
+        if (votingAction != "cancel") {
+            const voteContentTableResponse = await tx
+                .insert(voteContentTable)
+                .values({
+                    voteId: voteTableId,
+                    voteProofId: voteProofTableId,
+                    opinionContentId: commentData.contentId,
+                    vote: votingAction,
+                })
+                .returning({ voteContentTableId: voteContentTable.id });
+
+            const voteContentTableId =
+                voteContentTableResponse[0].voteContentTableId;
+
+            await tx
+                .update(voteTable)
+                .set({
+                    currentContentId: voteContentTableId,
+                })
+                .where(eq(voteTable.id, voteTableId));
+
+            {
+                // Create notification for the opinion owner
+                if (userId !== commentData.userId) {
+                    // Check if an agree/disagree notification already exist previously to the owner
+                    const existanceCheckResponse = await db
+                        .select({})
+                        .from(notificationTable)
+                        .leftJoin(
+                            notificationOpinionVoteTable,
+                            eq(
+                                notificationOpinionVoteTable.notificationId,
+                                notificationTable.id,
+                            ),
+                        )
+                        .where(
+                            and(
+                                eq(notificationTable.userId, userId),
                                 eq(
-                                    notificationOpinionVoteTable.notificationId,
-                                    notificationTable.id,
+                                    notificationOpinionVoteTable.authorId,
+                                    commentData.userId,
                                 ),
-                            )
-                            .where(
-                                and(
-                                    eq(notificationTable.userId, userId),
-                                    eq(
-                                        notificationOpinionVoteTable.authorId,
-                                        commentData.userId,
-                                    ),
-                                    eq(
-                                        notificationOpinionVoteTable.opinionId,
-                                        commentData.commentId,
-                                    ),
+                                eq(
+                                    notificationOpinionVoteTable.opinionId,
+                                    commentData.commentId,
                                 ),
-                            );
-                        if (existanceCheckResponse.length > 1) {
-                            throw httpErrors.internalServerError(
-                                `An unexpected number of voting notification entries had been detected: ${existanceCheckResponse.length.toString()}`,
-                            );
-                        } else if (existanceCheckResponse.length == 1) {
-                            // do nothing because a notification was sent previously
-                        } else {
-                            const notificationTableResponse = await tx
-                                .insert(notificationTable)
-                                .values({
-                                    slugId: generateRandomSlugId(),
-                                    userId: commentData.userId,
-                                    notificationType: "opinion_vote",
-                                })
-                                .returning({
-                                    notificationId: notificationTable.id,
-                                });
+                            ),
+                        );
+                    if (existanceCheckResponse.length > 1) {
+                        throw httpErrors.internalServerError(
+                            `An unexpected number of voting notification entries had been detected: ${existanceCheckResponse.length.toString()}`,
+                        );
+                    } else if (existanceCheckResponse.length == 1) {
+                        // do nothing because a notification was sent previously
+                    } else {
+                        const notificationTableResponse = await tx
+                            .insert(notificationTable)
+                            .values({
+                                slugId: generateRandomSlugId(),
+                                userId: commentData.userId,
+                                notificationType: "opinion_vote",
+                            })
+                            .returning({
+                                notificationId: notificationTable.id,
+                            });
 
-                            const notificationId =
-                                notificationTableResponse[0].notificationId;
+                        const notificationId =
+                            notificationTableResponse[0].notificationId;
 
-                            await tx
-                                .insert(notificationOpinionVoteTable)
-                                .values({
-                                    notificationId: notificationId,
-                                    authorId: userId,
-                                    opinionId: commentData.commentId,
-                                    conversationId: postMetadata.id,
-                                    vote: votingAction,
-                                });
-                        }
+                        await tx.insert(notificationOpinionVoteTable).values({
+                            notificationId: notificationId,
+                            authorId: userId,
+                            opinionId: commentData.commentId,
+                            conversationId: postMetadata.id,
+                            vote: votingAction,
+                        });
                     }
                 }
             }
+        }
 
-            await tx
-                .update(opinionTable)
-                .set({
-                    numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
-                    numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
-                })
-                .where(
-                    eq(opinionTable.currentContentId, commentData.contentId),
-                );
+        await tx
+            .update(opinionTable)
+            .set({
+                numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
+                numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
+            })
+            .where(eq(opinionTable.currentContentId, commentData.contentId));
+
+        if (axiosPolis !== undefined) {
+            await polisService.createOrUpdateVote({
+                userId,
+                conversationSlugId,
+                opinionSlugId,
+                votingAction,
+                axiosPolis,
+            });
+        }
+    });
+
+    if (axiosPolis !== undefined) {
+        void polisService.delayedPolisGetAndUpdateMath({
+            conversationSlugId,
+            axiosPolis,
+            polisDelayToFetch,
         });
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Database error while casting new vote",
-        );
     }
 
     return true;

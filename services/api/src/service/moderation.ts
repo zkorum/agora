@@ -37,7 +37,7 @@ export async function moderateByPostSlugId({
     const { getPostMetadataFromSlugId } = useCommonPost();
     const postDetails = await getPostMetadataFromSlugId({
         db: db,
-        postSlugId: postSlugId,
+        conversationSlugId: postSlugId,
     });
 
     const moderationStatus = await fetchModerationReportByPostSlugId({
@@ -219,7 +219,7 @@ export async function withdrawModerationReportByPostSlugId({
     const { getPostMetadataFromSlugId } = useCommonPost();
     const postDetails = await getPostMetadataFromSlugId({
         db: db,
-        postSlugId: postSlugId,
+        conversationSlugId: postSlugId,
     });
 
     const moderationPostTableResponse = await db

@@ -22,8 +22,6 @@ export function useCommonApi() {
 
     platform = getPlatform($q.platform);
 
-    console.log("Build UCAN");
-
     let did: string;
     let prefixedKey: string;
     switch (keyAction) {
