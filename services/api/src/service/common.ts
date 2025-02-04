@@ -6,12 +6,16 @@ import {
     userTable,
     opinionTable,
     conversationModerationTable,
+    polisContentTable,
+    polisClusterTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
     ConversationMetadata,
     ExtendedConversationPayload,
     PollOptionWithResult,
+    ExtendedConversationPolis,
+    ExtendedConversationPerSlugId,
     ExtendedConversation,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
@@ -105,7 +109,7 @@ export function useCommonPost() {
         personalizationUserId,
         excludeLockedPosts,
         removeMutedAuthors,
-    }: FetchPostItemsProps): Promise<ExtendedConversation[]> {
+    }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
         const postItems = await db
             .select({
                 title: conversationContentTable.title,
@@ -136,6 +140,12 @@ export function useCommonPost() {
                 moderationReason: conversationModerationTable.moderationReason,
                 moderationCreatedAt: conversationModerationTable.createdAt,
                 moderationUpdatedAt: conversationModerationTable.updatedAt,
+                // polis
+                conversationAiSummary: polisContentTable.aiSummary,
+                polisClusterKey: polisClusterTable.key,
+                polisClusterIndex: polisClusterTable.index,
+                polisClusterAiLabel: polisClusterTable.aiLabel,
+                polisClusterAiSummary: polisClusterTable.aiSummary,
             })
             .from(conversationTable)
             .innerJoin(
@@ -164,13 +174,44 @@ export function useCommonPost() {
                     pollTable.conversationContentId,
                 ),
             )
+            .leftJoin(
+                polisContentTable,
+                eq(
+                    polisContentTable.id,
+                    conversationTable.currentPolisContentId,
+                ),
+            )
+            .leftJoin(
+                polisClusterTable,
+                eq(polisClusterTable.polisContentId, polisContentTable.id),
+            )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(where)
             .orderBy(desc(conversationTable.createdAt))
             .limit(limit);
 
-        let extendedPostList: ExtendedConversation[] = [];
+        const extendedConversationMap: ExtendedConversationPerSlugId = new Map<
+            string,
+            ExtendedConversation
+        >();
+
         postItems.forEach((postItem) => {
+            if (
+                extendedConversationMap.has(postItem.slugId) &&
+                postItem.polisClusterIndex !== null &&
+                postItem.polisClusterKey !== null
+            ) {
+                const extendedPost = extendedConversationMap.get(
+                    postItem.slugId,
+                );
+                extendedPost?.polis.clusters.push({
+                    index: postItem.polisClusterIndex,
+                    key: postItem.polisClusterKey,
+                    aiLabel: toUnionUndefined(postItem.polisClusterAiLabel),
+                    aiSummary: toUnionUndefined(postItem.polisClusterAiSummary),
+                });
+                return;
+            }
             if (enableCompactBody && postItem.body != null) {
                 postItem.body = createCompactHtmlBody(postItem.body);
             }
@@ -191,6 +232,28 @@ export function useCommonPost() {
                 lastReactedAt: postItem.lastReactedAt,
                 opinionCount: postItem.opinionCount,
                 authorUsername: postItem.authorName,
+            };
+
+            const polis: ExtendedConversationPolis = {
+                conversationAiSummary: toUnionUndefined(
+                    postItem.conversationAiSummary,
+                ),
+                clusters:
+                    postItem.polisClusterIndex !== null &&
+                    postItem.polisClusterKey !== null
+                        ? [
+                              {
+                                  index: postItem.polisClusterIndex,
+                                  key: postItem.polisClusterKey,
+                                  aiLabel: toUnionUndefined(
+                                      postItem.polisClusterAiLabel,
+                                  ),
+                                  aiSummary: toUnionUndefined(
+                                      postItem.polisClusterAiSummary,
+                                  ),
+                              },
+                          ]
+                        : [],
             };
 
             let payload: ExtendedConversationPayload;
@@ -256,13 +319,14 @@ export function useCommonPost() {
             if (excludeLockedPosts && postItem.moderationAction == "lock") {
                 // Skip
             } else {
-                extendedPostList.push({
+                extendedConversationMap.set(postItem.slugId, {
                     metadata: metadata,
                     payload: payload,
                     interaction: {
                         hasVoted: false,
                         votedIndex: 0,
                     },
+                    polis: polis,
                 });
             }
         });
@@ -273,7 +337,7 @@ export function useCommonPost() {
                 const pollResponseMap = new Map<string, number>();
 
                 const postSlugIdList: string[] = [];
-                extendedPostList.forEach((post) => {
+                extendedConversationMap.forEach((post) => {
                     postSlugIdList.push(post.metadata.conversationSlugId);
                 });
 
@@ -291,7 +355,7 @@ export function useCommonPost() {
                     );
                 });
 
-                extendedPostList.forEach((post) => {
+                extendedConversationMap.forEach((post) => {
                     const voteIndex = pollResponseMap.get(
                         post.metadata.conversationSlugId,
                     );
@@ -308,21 +372,23 @@ export function useCommonPost() {
                     db: db,
                     userId: personalizationUserId,
                 });
-                extendedPostList = extendedPostList.filter((postItem) => {
-                    for (const muteItem of mutedUserItems) {
+                extendedConversationMap.forEach(
+                    (postItem, conversationSlugId, map) => {
                         if (
-                            muteItem.username ==
-                            postItem.metadata.authorUsername
+                            mutedUserItems.some(
+                                (muteItem) =>
+                                    muteItem.username ===
+                                    postItem.metadata.authorUsername,
+                            )
                         ) {
-                            return false;
+                            map.delete(conversationSlugId);
                         }
-                    }
-                    return true;
-                });
+                    },
+                );
             }
         }
 
-        return extendedPostList;
+        return extendedConversationMap;
     }
 
     function createCompactHtmlBody(htmlString: string) {

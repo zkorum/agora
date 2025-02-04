@@ -47,7 +47,7 @@ interface VerifyOtpProps {
 interface RegisterWithPhoneNumberProps {
     db: PostgresDatabase;
     didWrite: string;
-    lastTwoDigits: string;
+    lastTwoDigits: number;
     countryCallingCode: string;
     phoneCountryCode?: CountryCode;
     phoneHash: string;
@@ -980,7 +980,6 @@ export async function insertAuthAttemptCode({
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
-    const lastTwoDigits = authenticateRequestBody.phoneNumber.slice(-2);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
@@ -1001,10 +1000,11 @@ export async function insertAuthAttemptCode({
             ? phoneNumber.getPossibleCountries()[0]
             : undefined;
     const countryCallingCode = phoneNumber.countryCallingCode;
+    const lastTwoDigits = phoneNumber.number.slice(-2);
     await db.insert(authAttemptPhoneTable).values({
         didWrite: didWrite,
         type: type,
-        lastTwoDigits: lastTwoDigits,
+        lastTwoDigits: parseInt(lastTwoDigits),
         countryCallingCode: countryCallingCode,
         phoneCountryCode: phoneCountryCode,
         phoneHash: phoneHash,
@@ -1076,7 +1076,6 @@ export async function updateAuthAttemptCode({
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
-    const lastTwoDigits = authenticateRequestBody.phoneNumber.slice(-2);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
@@ -1097,12 +1096,13 @@ export async function updateAuthAttemptCode({
             ? phoneNumber.getPossibleCountries()[0]
             : undefined;
     const countryCallingCode = phoneNumber.countryCallingCode;
+    const lastTwoDigits = phoneNumber.number.slice(-2);
     await db
         .update(authAttemptPhoneTable)
         .set({
             userId: userId,
             type: type,
-            lastTwoDigits: lastTwoDigits,
+            lastTwoDigits: parseInt(lastTwoDigits),
             countryCallingCode: countryCallingCode,
             phoneCountryCode: phoneCountryCode,
             phoneHash: phoneHash,

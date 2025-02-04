@@ -428,12 +428,50 @@
                                                             "votedIndex"
                                                         ],
                                                         "additionalProperties": false
+                                                    },
+                                                    "polis": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "conversationAiSummary": {
+                                                                "type": "string"
+                                                            },
+                                                            "clusters": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "index": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "key": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "aiLabel": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "aiSummary": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "index",
+                                                                        "key"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "clusters"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
                                                     "metadata",
                                                     "payload",
-                                                    "interaction"
+                                                    "interaction",
+                                                    "polis"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -1058,12 +1096,50 @@
                                                     "votedIndex"
                                                 ],
                                                 "additionalProperties": false
+                                            },
+                                            "polis": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "conversationAiSummary": {
+                                                        "type": "string"
+                                                    },
+                                                    "clusters": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "index": {
+                                                                    "type": "number"
+                                                                },
+                                                                "key": {
+                                                                    "type": "string"
+                                                                },
+                                                                "aiLabel": {
+                                                                    "type": "string"
+                                                                },
+                                                                "aiSummary": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "index",
+                                                                "key"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "clusters"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         },
                                         "required": [
                                             "metadata",
                                             "payload",
-                                            "interaction"
+                                            "interaction",
+                                            "polis"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -1273,12 +1349,50 @@
                                                             "votedIndex"
                                                         ],
                                                         "additionalProperties": false
+                                                    },
+                                                    "polis": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "conversationAiSummary": {
+                                                                "type": "string"
+                                                            },
+                                                            "clusters": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "index": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "key": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "aiLabel": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "aiSummary": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "index",
+                                                                        "key"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "clusters"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
                                                     "metadata",
                                                     "payload",
-                                                    "interaction"
+                                                    "interaction",
+                                                    "polis"
                                                 ],
                                                 "additionalProperties": false
                                             },
@@ -1312,6 +1426,47 @@
                                                     "username": {
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "clusters": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "index": {
+                                                                    "type": "number"
+                                                                },
+                                                                "key": {
+                                                                    "type": "string"
+                                                                },
+                                                                "aiLabel": {
+                                                                    "type": "string"
+                                                                },
+                                                                "opinionAgreementType": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
+                                                                },
+                                                                "opinionPercentageAgreement": {
+                                                                    "type": "number",
+                                                                    "minimum": 0,
+                                                                    "maximum": 1
+                                                                },
+                                                                "opinionNumAgreement": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "index",
+                                                                "key",
+                                                                "opinionAgreementType",
+                                                                "opinionPercentageAgreement",
+                                                                "opinionNumAgreement"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
                                                     },
                                                     "moderation": {
                                                         "anyOf": [
@@ -1391,6 +1546,7 @@
                                                     "numAgrees",
                                                     "numDisagrees",
                                                     "username",
+                                                    "clusters",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1714,7 +1870,8 @@
                                         "type": "string",
                                         "enum": [
                                             "moderated",
-                                            "new"
+                                            "new",
+                                            "discover"
                                         ]
                                     },
                                     "isAuthenticatedRequest": {
@@ -1769,6 +1926,47 @@
                                             "username": {
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "clusters": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "index": {
+                                                            "type": "number"
+                                                        },
+                                                        "key": {
+                                                            "type": "string"
+                                                        },
+                                                        "aiLabel": {
+                                                            "type": "string"
+                                                        },
+                                                        "opinionAgreementType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
+                                                        },
+                                                        "opinionPercentageAgreement": {
+                                                            "type": "number",
+                                                            "minimum": 0,
+                                                            "maximum": 1
+                                                        },
+                                                        "opinionNumAgreement": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "index",
+                                                        "key",
+                                                        "opinionAgreementType",
+                                                        "opinionPercentageAgreement",
+                                                        "opinionNumAgreement"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
                                             },
                                             "moderation": {
                                                 "anyOf": [
@@ -1848,6 +2046,7 @@
                                             "numAgrees",
                                             "numDisagrees",
                                             "username",
+                                            "clusters",
                                             "moderation"
                                         ],
                                         "additionalProperties": false
@@ -1922,6 +2121,47 @@
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
+                                            "clusters": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "index": {
+                                                            "type": "number"
+                                                        },
+                                                        "key": {
+                                                            "type": "string"
+                                                        },
+                                                        "aiLabel": {
+                                                            "type": "string"
+                                                        },
+                                                        "opinionAgreementType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
+                                                        },
+                                                        "opinionPercentageAgreement": {
+                                                            "type": "number",
+                                                            "minimum": 0,
+                                                            "maximum": 1
+                                                        },
+                                                        "opinionNumAgreement": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "index",
+                                                        "key",
+                                                        "opinionAgreementType",
+                                                        "opinionPercentageAgreement",
+                                                        "opinionNumAgreement"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
                                             "moderation": {
                                                 "anyOf": [
                                                     {
@@ -2000,6 +2240,7 @@
                                             "numAgrees",
                                             "numDisagrees",
                                             "username",
+                                            "clusters",
                                             "moderation"
                                         ],
                                         "additionalProperties": false
@@ -2075,6 +2316,47 @@
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
+                                            "clusters": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "index": {
+                                                            "type": "number"
+                                                        },
+                                                        "key": {
+                                                            "type": "string"
+                                                        },
+                                                        "aiLabel": {
+                                                            "type": "string"
+                                                        },
+                                                        "opinionAgreementType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
+                                                        },
+                                                        "opinionPercentageAgreement": {
+                                                            "type": "number",
+                                                            "minimum": 0,
+                                                            "maximum": 1
+                                                        },
+                                                        "opinionNumAgreement": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "index",
+                                                        "key",
+                                                        "opinionAgreementType",
+                                                        "opinionPercentageAgreement",
+                                                        "opinionNumAgreement"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
                                             "moderation": {
                                                 "anyOf": [
                                                     {
@@ -2153,6 +2435,7 @@
                                             "numAgrees",
                                             "numDisagrees",
                                             "username",
+                                            "clusters",
                                             "moderation"
                                         ],
                                         "additionalProperties": false
@@ -2455,18 +2738,123 @@
                                                         "votedIndex"
                                                     ],
                                                     "additionalProperties": false
+                                                },
+                                                "polis": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "conversationAiSummary": {
+                                                            "type": "string"
+                                                        },
+                                                        "clusters": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "index": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "key": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "aiLabel": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "aiSummary": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "index",
+                                                                    "key"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "clusters"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "required": [
                                                 "metadata",
                                                 "payload",
-                                                "interaction"
+                                                "interaction",
+                                                "polis"
                                             ],
                                             "additionalProperties": false
                                         }
                                     },
                                     "required": [
                                         "conversationData"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/get-polis-clusters-info": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "clusters": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "index": {
+                                                        "type": "number"
+                                                    },
+                                                    "key": {
+                                                        "type": "string"
+                                                    },
+                                                    "aiLabel": {
+                                                        "type": "string"
+                                                    },
+                                                    "aiSummary": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "index",
+                                                    "key"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "clusters"
                                     ],
                                     "additionalProperties": false
                                 }

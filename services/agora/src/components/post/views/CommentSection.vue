@@ -12,6 +12,19 @@
         />
       </div>
 
+      <!-- TODO: use the filtering algorithm but with sortAlgorithm==cluster.index -->
+
+      <CommentGroup
+        v-if="sortAlgorithm == 'discover'"
+        :comment-item-list="commentItemsDiscover"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="commentSlugIdQuery"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
+      />
+
       <CommentGroup
         v-if="sortAlgorithm == 'new'"
         :comment-item-list="commentItemsNew"
@@ -50,10 +63,15 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
+import { useBackendPolisApi } from "src/utils/api/polis";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { type CommentFeedFilter, type OpinionItem } from "src/shared/types/zod";
+import {
+  type ClusterMetadata,
+  type CommentFeedFilter,
+  type OpinionItem,
+} from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -62,7 +80,7 @@ import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
 
-type CommentFilterOptions = "new" | "moderated" | "hidden";
+type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover";
 
 const emit = defineEmits(["deleted"]);
 
@@ -84,6 +102,7 @@ const router = useRouter();
 const sortAlgorithm = ref<CommentFilterOptions>("new");
 updateCommentFilter();
 
+const { getPolisClustersInfo } = useBackendPolisApi();
 const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
@@ -93,13 +112,17 @@ const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 let commentItemsNew = ref<OpinionItem[]>([]);
+let commentItemsDiscover = ref<OpinionItem[]>([]);
 let commentItemsModerated = ref<OpinionItem[]>([]);
 let commentItemsHidden = ref<OpinionItem[]>([]);
+
+let clusters = ref<ClusterMetadata[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
 const baseFilters: { name: string; value: CommentFilterOptions }[] = [
   { name: "New", value: "new" },
+  { name: "Discover", value: "discover" },
   { name: "Moderation History", value: "moderated" },
 ];
 const filterOptions = ref(baseFilters);
@@ -125,6 +148,7 @@ function updateCommentFilter() {
   if (
     commentFilterQuery.value == "new" ||
     commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "discover" ||
     commentFilterQuery.value == "hidden"
   ) {
     sortAlgorithm.value = commentFilterQuery.value;
@@ -132,14 +156,16 @@ function updateCommentFilter() {
     // do nothing keep the default value
   } else {
     console.log("Unknown comment filter detected: " + commentFilterQuery.value);
-    return "new";
+    return "discover";
   }
 }
 
 async function initializeData() {
   await Promise.all([
+    getClusters(),
     initializeModeratorMenu(),
     fetchCommentList("new"),
+    fetchCommentList("discover"),
     fetchCommentList("moderated"),
   ]);
 
@@ -209,15 +235,27 @@ async function fetchHiddenComments() {
   }
 }
 
+async function getClusters() {
+  if (props.postSlugId.length > 0) {
+    clusters.value = await getPolisClustersInfo(props.postSlugId);
+  }
+}
+
 async function fetchCommentList(filter: CommentFeedFilter) {
   if (props.postSlugId.length > 0) {
     const response = await fetchCommentsForPost(props.postSlugId, filter);
 
     if (response != null) {
-      if (filter == "moderated") {
-        commentItemsModerated.value = response;
-      } else {
-        commentItemsNew.value = response;
+      switch (filter) {
+        case "moderated":
+          commentItemsModerated.value = response;
+          break;
+        case "new":
+          commentItemsNew.value = response;
+          break;
+        case "discover":
+          commentItemsDiscover.value = response;
+          break;
       }
     }
   }
@@ -226,6 +264,11 @@ async function fetchCommentList(filter: CommentFeedFilter) {
 function autoDetectCommentFilter(
   commentSlugId: string
 ): CommentFilterOptions | "not_found" {
+  for (const commentItem of commentItemsDiscover.value) {
+    if (commentItem.opinionSlugId == commentSlugId) {
+      return "discover";
+    }
+  }
   for (const commentItem of commentItemsNew.value) {
     if (commentItem.opinionSlugId == commentSlugId) {
       return "new";
@@ -239,8 +282,8 @@ function autoDetectCommentFilter(
   }
 
   if (!isAuthenticated.value) {
-    showNotifyMessage("This comment had been removed by the moderator");
-    return "new";
+    showNotifyMessage("This opinion has been removed by the moderators");
+    return "discover";
   } else {
     for (const commentItem of commentItemsHidden.value) {
       if (commentItem.opinionSlugId == commentSlugId) {

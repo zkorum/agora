@@ -663,7 +663,7 @@ export async function deleteUserAccount({
                 userId: userId,
                 lastPostSlugId: undefined,
             });
-            for (const post of userPosts) {
+            for (const post of userPosts.values()) {
                 await deletePostBySlugId({
                     proof: proof,
                     db: tx,

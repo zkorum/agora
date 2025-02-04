@@ -1,5 +1,5 @@
 import { conversationTable } from "@/schema.js";
-import type { ExtendedConversation } from "@/shared/types/zod.js";
+import type { ExtendedConversationPerSlugId } from "@/shared/types/zod.js";
 import { and, eq, lt, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -62,7 +62,7 @@ export async function fetchFeed({
 
     const { fetchPostItems } = useCommonPost();
 
-    const posts: ExtendedConversation[] = await fetchPostItems({
+    const conversations: ExtendedConversationPerSlugId = await fetchPostItems({
         db: db,
         limit: targetLimit + 1,
         where: whereClause,
@@ -73,13 +73,16 @@ export async function fetchFeed({
     });
 
     let reachedEndOfFeed = true;
-    if (posts.length == targetLimit + 1) {
-        posts.pop();
+    if (conversations.size === targetLimit + 1) {
+        const lastKey = Array.from(conversations.keys()).pop(); // Get the last key--here Map respecting order is important!
+        if (lastKey !== undefined) {
+            conversations.delete(lastKey);
+        }
         reachedEndOfFeed = false;
     }
 
     return {
-        conversationDataList: posts,
+        conversationDataList: Array.from(conversations.values()),
         reachedEndOfFeed: reachedEndOfFeed,
     };
 }

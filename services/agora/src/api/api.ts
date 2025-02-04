@@ -470,6 +470,12 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
      * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
      */
     'interaction': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction;
+    /**
+     * 
+     * @type {ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
+     */
+    'polis': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis;
 }
 /**
  * 
@@ -742,6 +748,56 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 /**
  * 
  * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
+     */
+    'conversationAiSummary'?: string;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
+     */
+    'clusters': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
+ */
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
+     */
+    'index': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
+     */
+    'key': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
+     */
+    'aiLabel'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
+     */
+    'aiSummary'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationFetchRecentPostRequest
  */
 export interface ApiV1ConversationFetchRecentPostRequest {
@@ -757,6 +813,19 @@ export interface ApiV1ConversationFetchRecentPostRequest {
      * @memberof ApiV1ConversationFetchRecentPostRequest
      */
     'isAuthenticatedRequest': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationGetPolisClustersInfoPost200Response
+ */
+export interface ApiV1ConversationGetPolisClustersInfoPost200Response {
+    /**
+     * 
+     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>}
+     * @memberof ApiV1ConversationGetPolisClustersInfoPost200Response
+     */
+    'clusters': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>;
 }
 /**
  * 
@@ -1334,7 +1403,8 @@ export interface ApiV1OpinionFetchByConversationPostRequest {
 
 export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
     Moderated: 'moderated',
-    New: 'new'
+    New: 'new',
+    Discover: 'discover'
 } as const;
 
 export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum];
@@ -1595,11 +1665,68 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     'username': string;
     /**
      * 
+     * @type {Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner>}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+     */
+    'clusters': Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner>;
+    /**
+     * 
      * @type {ApiV1ModerationOpinionGetPost200Response}
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
     'moderation': ApiV1ModerationOpinionGetPost200Response;
 }
+/**
+ * 
+ * @export
+ * @interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+ */
+export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     */
+    'index': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     */
+    'key': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     */
+    'aiLabel'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     */
+    'opinionAgreementType': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     */
+    'opinionPercentageAgreement': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     */
+    'opinionNumAgreement': number;
+}
+
+export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum = {
+    Agree: 'agree',
+    Disagree: 'disagree'
+} as const;
+
+export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum = typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum[keyof typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum];
+
 /**
  * 
  * @export
@@ -2144,6 +2271,45 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationFetchRecentPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationGetPolisClustersInfoPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationGetPolisClustersInfoPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/conversation/get-polis-clusters-info`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3388,6 +3554,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPolisClustersInfoPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationGetPolisClustersInfoPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3836,6 +4014,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<ApiV1ConversationGetPolisClustersInfoPost200Response> {
+            return localVarFp.apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4215,6 +4402,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

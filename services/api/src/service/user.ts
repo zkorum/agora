@@ -5,15 +5,18 @@ import {
     opinionModerationTable,
     conversationTable,
     userTable,
+    polisContentTable,
+    polisClusterTable,
+    polisClusterOpinionTable,
 } from "@/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type {
     OpinionItem,
     ExtendedOpinion,
-    ExtendedConversation,
+    ExtendedConversationPerSlugId,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, lt, desc } from "drizzle-orm";
+import { and, eq, lt, desc, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCreatedAt } from "./feed.js";
@@ -55,6 +58,10 @@ export async function getUserComments({
                 moderationReason: opinionModerationTable.moderationReason,
                 moderationCreatedAt: opinionModerationTable.createdAt,
                 moderationUpdatedAt: opinionModerationTable.updatedAt,
+                rankWithinCluster:
+                    sql`ROW_NUMBER() OVER (PARTITION BY ${polisClusterTable.id} ORDER BY ${polisClusterOpinionTable.percentageAgreement} DESC)`.as(
+                        "rankWithinCluster",
+                    ), // TODO: improve that-- copy from the fetch opinions algorithm
             })
             .from(opinionTable)
             .innerJoin(
@@ -65,6 +72,26 @@ export async function getUserComments({
             .innerJoin(
                 conversationTable,
                 eq(conversationTable.id, opinionTable.conversationId),
+            )
+            .leftJoin(
+                // must not be innerJoin because at the beginning there is no polisContent!
+                polisContentTable,
+                eq(
+                    polisContentTable.id,
+                    conversationTable.currentPolisContentId,
+                ),
+            )
+            .leftJoin(
+                polisClusterTable,
+                eq(polisClusterTable.polisContentId, polisContentTable.id),
+            )
+            .leftJoin(
+                polisClusterOpinionTable, // TODO: improve that
+
+                eq(
+                    polisClusterOpinionTable.polisClusterId,
+                    polisClusterTable.id,
+                ),
             )
             .leftJoin(
                 opinionModerationTable,
@@ -99,6 +126,7 @@ export async function getUserComments({
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
                 moderation: moderationProperties,
+                clusters: [], // TODO: change that!
             };
 
             const postItem = await fetchPostBySlugId({
@@ -134,7 +162,7 @@ export async function getUserPosts({
     db,
     userId,
     lastPostSlugId,
-}: GetUserPostProps): Promise<ExtendedConversation[]> {
+}: GetUserPostProps): Promise<ExtendedConversationPerSlugId> {
     try {
         const { fetchPostItems } = useCommonPost();
 
@@ -148,17 +176,18 @@ export async function getUserPosts({
             lt(conversationTable.createdAt, lastCreatedAt),
         );
 
-        const posts: ExtendedConversation[] = await fetchPostItems({
-            db: db,
-            limit: 10,
-            where: whereClause,
-            enableCompactBody: true,
-            personalizationUserId: userId,
-            excludeLockedPosts: false,
-            removeMutedAuthors: false,
-        });
+        const conversations: ExtendedConversationPerSlugId =
+            await fetchPostItems({
+                db: db,
+                limit: 10,
+                where: whereClause,
+                enableCompactBody: true,
+                personalizationUserId: userId,
+                excludeLockedPosts: false,
+                removeMutedAuthors: false,
+            });
 
-        return posts;
+        return conversations;
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(

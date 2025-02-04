@@ -323,7 +323,9 @@ export async function castVoteForOpinionSlugId({
 
     if (axiosPolis !== undefined) {
         void polisService.delayedPolisGetAndUpdateMath({
+            db: db,
             conversationSlugId,
+            conversationId: postMetadata.id,
             axiosPolis,
             polisDelayToFetch,
         });

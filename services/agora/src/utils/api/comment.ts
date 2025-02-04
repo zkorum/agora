@@ -51,6 +51,7 @@ export function useBackendCommentApi() {
           createdAt: new Date(item.moderation.createdAt),
           updatedAt: new Date(item.moderation.updatedAt),
         },
+        clusters: item.clusters,
       });
     });
 
@@ -100,6 +101,7 @@ export function useBackendCommentApi() {
             createdAt: new Date(item.moderation.createdAt),
             updatedAt: new Date(item.moderation.updatedAt),
           },
+          clusters: item.clusters,
         });
       });
 

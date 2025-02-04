@@ -100,7 +100,7 @@ export const zodPollResponse = z
     .strict();
 export const zodSlugId = z.string().max(10);
 export const zodOpinionCount = z.number().int().nonnegative();
-export const zodCommentFeedFilter = z.enum(["moderated", "new"]);
+export const zodCommentFeedFilter = z.enum(["moderated", "new", "discover"]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
@@ -216,6 +216,39 @@ export const zodConversationMetadata = z
     })
     .strict();
 export const zodOpinionContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
+export const zodClusterMetadata = z.object({
+    index: z.number(),
+    key: z.string(),
+    aiLabel: z.string().optional(),
+    aiSummary: z.string().optional(),
+});
+export const zodNullableClusterMetadata = z.object({
+    index: z.number().nullable(),
+    key: z.string().nullable(),
+    aiLabel: z.string().nullable(),
+    aiSummary: z.string().nullable(),
+});
+export const zodClusterWithOpinion = z.object({
+    index: z.number(),
+    key: z.string(),
+    aiLabel: z.string().optional(),
+    opinionAgreementType: z.enum(["agree", "disagree"]),
+    opinionPercentageAgreement: z.number().gte(0).lte(1),
+    opinionNumAgreement: z.number().int().nonnegative(),
+});
+export const zodNullableClusterWithOpinion = z.object({
+    index: z.number().nullable(),
+    key: z.string().nullable(),
+    aiLabel: z.string().nullable(),
+    opinionAgreementType: z.enum(["agree", "disagree"]).nullable(),
+    opinionPercentageAgreement: z.string().nullable(),
+});
+export const zodConversationPolis = z
+    .object({
+        conversationAiSummary: z.string().optional(),
+        clusters: zodClusterMetadata.array(),
+    })
+    .strict();
 export const zodOpinionItem = z
     .object({
         opinionSlugId: zodSlugId,
@@ -225,9 +258,11 @@ export const zodOpinionItem = z
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
         username: zodUsername,
+        clusters: z.array(zodClusterWithOpinion),
         moderation: zodOpinionModerationProperties,
     })
     .strict();
+export const zodOpinionItemPerSlugId = z.map(zodSlugId, zodOpinionItem);
 export const zodUserInteraction = z
     .object({
         hasVoted: z.boolean(),
@@ -239,8 +274,13 @@ export const zodExtendedConversationData = z
         metadata: zodConversationMetadata,
         payload: zodConversationDataWithResult,
         interaction: zodUserInteraction,
+        polis: zodConversationPolis,
     })
     .strict();
+export const zodExtendedConversationPerSlugId = z.map(
+    zodSlugId,
+    zodExtendedConversationData,
+); // we use map because order is important, and we don't want list because fast access is also important
 export const zodExtendedOpinionData = z
     .object({
         conversationData: zodExtendedConversationData,
@@ -521,14 +561,27 @@ export const zodCountryCodeEnum = z.enum([
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
+export type ExtendedConversationPerSlugId = z.infer<
+    typeof zodExtendedConversationPerSlugId
+>;
 export type UserInteraction = z.infer<typeof zodUserInteraction>;
 export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
+export type ExtendedConversationPolis = z.infer<typeof zodConversationPolis>;
 export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
 export type CommentContent = z.infer<typeof zodOpinionContent>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
+export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
+export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
+export type NullableClusterMetadata = z.infer<
+    typeof zodNullableClusterMetadata
+>;
+export type ClusterWithOpinion = z.infer<typeof zodClusterWithOpinion>;
+export type NullableClusterWithOpinion = z.infer<
+    typeof zodNullableClusterWithOpinion
+>;
 export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;
 export type SlugId = z.infer<typeof zodSlugId>;
 export type VotingOption = z.infer<typeof zodVotingOption>;

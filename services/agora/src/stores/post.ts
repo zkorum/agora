@@ -101,6 +101,10 @@ export const usePostStore = defineStore("post", () => {
       hasVoted: false,
       votedIndex: 0,
     },
+    polis: {
+      conversationAiSummary: undefined,
+      clusters: [],
+    },
     userInteraction: {
       commentRanking: {
         assignedRankingItems: [],

@@ -1,7 +1,25 @@
 import { log } from "@/app.js";
-import type { VotingAction } from "@/shared/types/zod.js";
+import type { ClusterMetadata, VotingAction } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import { setTimeout } from "timers/promises";
+import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import {
+    polisClusterOpinionTable,
+    polisClusterUserTable,
+    polisContentTable,
+    opinionTable,
+    conversationTable,
+} from "@/schema.js";
+import { polisClusterTable } from "@/schema.js";
+import { and, eq, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
+import { nowZeroMs } from "@/shared/common/util.js";
+import {
+    type PolisMathAndMetadata,
+    zodPolisMathAndMetadata,
+    type CommentPriorities,
+} from "@/shared/types/polis.js";
+import type { GetPolisClustersInfoResponse } from "@/shared/types/dto.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 
 interface PolisCreateUserProps {
     userId: string;
@@ -35,110 +53,6 @@ interface PolisCreateOrUpdateVoteProps {
 interface PolisGetMathResultsProps {
     axiosPolis: AxiosInstance;
     conversationSlugId: string;
-}
-
-interface PCA {
-    comps: number[][];
-    center: number[];
-    "comment-extremity": number[];
-    "comment-projection": number[][];
-}
-
-interface RepnessEntry {
-    tid: number;
-    "p-test": number;
-    repness: number;
-    "n-trials": number;
-    "n-success": number;
-    "p-success": number;
-    "repful-for": "agree" | "disagree";
-    "repness-test": number;
-}
-
-type Repness = Record<string, RepnessEntry[]>;
-
-interface ConsensusEntry {
-    tid: number;
-    "p-test": number;
-    "n-trials": number;
-    "n-success": number;
-    "p-success": number;
-}
-
-interface Consensus {
-    agree: ConsensusEntry[];
-    disagree: ConsensusEntry[];
-}
-
-interface VotesBase {
-    A: number[];
-    D: number[];
-    S: number[];
-}
-
-type VotesBaseMap = Record<string, VotesBase>;
-
-type GroupVotesMap = Record<
-    string,
-    {
-        votes: Record<
-            string,
-            {
-                A: number;
-                D: number;
-                S: number;
-            }
-        >;
-        "n-members": number;
-        id: number;
-    }
->;
-
-interface BaseClusters {
-    x: number[];
-    y: number[];
-    id: number[];
-    count: number[];
-    members: number[][];
-}
-
-interface GroupCluster {
-    id: number;
-    center: number[];
-    members: number[];
-}
-
-type UserVoteCounts = Record<string, number>;
-type CommentPriorities = Record<string, number>;
-type GroupAwareConsensus = Record<string, number>;
-
-interface MathResults {
-    n: number;
-    pca: PCA;
-    tids: number[];
-    "mod-in": unknown[];
-    "n-cmts": number;
-    "in-conv": number[];
-    "mod-out": unknown[];
-    repness: Repness;
-    consensus: Consensus;
-    "meta-tids": number[];
-    "votes-base": VotesBaseMap;
-    "group-votes": GroupVotesMap;
-    "base-clusters": BaseClusters;
-    "group-clusters": GroupCluster[];
-    lastModTimestamp: number | null;
-    "user-vote-counts": UserVoteCounts;
-    lastVoteTimestamp: number;
-    "comment-priorities": CommentPriorities;
-    "group-aware-consensus": GroupAwareConsensus;
-    math_tick: number;
-}
-
-interface PolisMathAndMetadata {
-    pca: MathResults;
-    pidToHnames: Record<number, string>;
-    tidToTxts: Record<number, string>;
 }
 
 export async function createUser({
@@ -261,28 +175,208 @@ async function getMathResults({
     conversationSlugId,
 }: PolisGetMathResultsProps): Promise<PolisMathAndMetadata> {
     const getMathResultsRequest = `/api/v3/participationInit?conversation_id=${conversationSlugId}`;
-    const response = await axiosPolis.get<PolisMathAndMetadata>(
-        getMathResultsRequest,
-    );
-    return response.data;
+    const response = await axiosPolis.get(getMathResultsRequest);
+    return zodPolisMathAndMetadata.parse(response.data);
 }
 
 interface DelayedPolisGetAndUpdateMathProps {
+    db: PostgresDatabase;
     conversationSlugId: string;
+    conversationId: number;
     axiosPolis: AxiosInstance;
     polisDelayToFetch: number;
 }
 
 export async function delayedPolisGetAndUpdateMath({
+    db,
     conversationSlugId,
+    conversationId,
     axiosPolis,
     polisDelayToFetch,
 }: DelayedPolisGetAndUpdateMathProps) {
     await setTimeout(polisDelayToFetch);
-    const polisMathResults = await getMathResults({
-        axiosPolis,
-        conversationSlugId,
+    let polisMathResults: PolisMathAndMetadata;
+    try {
+        polisMathResults = await getMathResults({
+            axiosPolis,
+            conversationSlugId,
+        });
+    } catch (e) {
+        log.error("Error while parsing math results from Polis:");
+        log.error(e);
+        return;
+    }
+    await db.transaction(async (tx) => {
+        const polisContentQuery = await tx
+            .insert(polisContentTable)
+            .values({
+                conversationId,
+                mathTick: polisMathResults.pca.math_tick,
+                rawData: polisMathResults,
+            })
+            .returning({ polisContentId: polisContentTable.id });
+        const userIdByPid = polisMathResults.pidToHnames;
+        const opinionSlugIdByTid = polisMathResults.tidToTxts;
+        const polisContentId = polisContentQuery[0].polisContentId;
+        const repnessEntries = Object.entries(polisMathResults.pca.repness);
+        const groupClustersEntries = Object.entries(
+            polisMathResults.pca["group-clusters"],
+        );
+        await tx
+            .update(conversationTable)
+            .set({
+                currentPolisContentId: polisContentId,
+                updatedAt: nowZeroMs(),
+            })
+            .where(eq(conversationTable.id, conversationId));
+
+        //// add comment priorities with a bulk-update
+        const commentPriorities: CommentPriorities =
+            polisMathResults.pca["comment-priorities"];
+        // You have to be sure that inputs array is not empty
+        const tids = Object.keys(commentPriorities);
+        if (tids.length === 0) {
+            log.warn(
+                `No opinion priority to update for polisContentId=${String(
+                    polisContentId,
+                )}`,
+            );
+        } else {
+            const opinionSlugIds = tids.map((tid) => opinionSlugIdByTid[tid]);
+            const sqlChunks: SQL[] = [];
+            sqlChunks.push(sql`(CASE`);
+            for (const [tid, priority] of Object.entries(commentPriorities)) {
+                const opinionSlugId = opinionSlugIdByTid[tid];
+                sqlChunks.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${priority}`,
+                );
+            }
+            sqlChunks.push(sql`ELSE polis_priority`);
+            sqlChunks.push(sql`END)`);
+            const finalSql: SQL = sql.join(sqlChunks, sql.raw(" "));
+            await tx
+                .update(opinionTable)
+                .set({ polisPriority: finalSql, updatedAt: nowZeroMs() })
+                .where(inArray(opinionTable.slugId, opinionSlugIds));
+        }
+        /////
+
+        const minNumberOfClusters =
+            repnessEntries.length > groupClustersEntries.length
+                ? groupClustersEntries.length
+                : repnessEntries.length;
+        if (repnessEntries.length !== groupClustersEntries.length) {
+            log.warn(
+                `polis math repness has ${String(
+                    repnessEntries.length,
+                )} clusters while group-clusters has ${String(
+                    groupClustersEntries.length,
+                )} clusters`,
+            );
+        }
+        for (let index = 0; index < minNumberOfClusters; index++) {
+            const clusterEntry = groupClustersEntries[index];
+            const polisClusterQuery = await tx
+                .insert(polisClusterTable)
+                .values({
+                    polisContentId: polisContentId,
+                    key: clusterEntry[0],
+                    index: index,
+                    mathCenter: clusterEntry[1].center,
+                })
+                .returning({ polisClusterId: polisClusterTable.id });
+            const polisClusterId = polisClusterQuery[0].polisClusterId;
+
+            for (const member of clusterEntry[1].members) {
+                if (!(member in userIdByPid)) {
+                    log.warn(
+                        `The pid ${String(member)} from clusterId ${String(
+                            polisClusterId,
+                        )} does not correspond to any userId`,
+                    );
+                } else {
+                    await tx.insert(polisClusterUserTable).values({
+                        polisContentId: polisContentId,
+                        polisClusterId: polisClusterId,
+                        userId: userIdByPid[member],
+                    });
+                }
+            }
+
+            const repnessEntry = repnessEntries[index];
+            for (const repness of repnessEntry[1]) {
+                if (!(repness.tid in opinionSlugIdByTid)) {
+                    log.warn(
+                        `The tid ${String(repness.tid)} from clusterId ${String(
+                            polisClusterId,
+                        )} does not correspond to any opinionId`,
+                    );
+                } else {
+                    await tx.insert(polisClusterOpinionTable).values({
+                        polisClusterId: polisClusterId,
+                        opinionSlugId: opinionSlugIdByTid[repness.tid],
+                        agreementType: repness["repful-for"],
+                        percentageAgreement: repness["p-success"],
+                        numAgreement: repness["n-success"],
+                        rawRepness: repness,
+                    });
+                }
+            }
+        }
     });
-    console.log(polisMathResults);
-    // TODO: insert to update results in database
+}
+
+interface GetPolisClustersInfoProps {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+}
+
+export async function getPolisClustersInfo({
+    db,
+    conversationSlugId,
+}: GetPolisClustersInfoProps): Promise<GetPolisClustersInfoResponse> {
+    const results = await db
+        .select({
+            polisClusterKey: polisClusterTable.key,
+            polisClusterIndex: polisClusterTable.index,
+            polisClusterAiLabel: polisClusterTable.aiLabel,
+            polisClusterAiSummary: polisClusterTable.aiSummary,
+        })
+        .from(conversationTable)
+        .leftJoin(
+            polisContentTable,
+            eq(polisContentTable.id, conversationTable.currentPolisContentId),
+        )
+        .leftJoin(
+            polisClusterTable,
+            and(
+                eq(polisClusterTable.polisContentId, polisContentTable.id),
+                isNotNull(polisClusterTable.key),
+                isNotNull(polisClusterTable.index),
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNotNull(polisClusterTable.key),
+                isNotNull(polisClusterTable.index),
+            ),
+        );
+    const clusters: ClusterMetadata[] = [];
+    for (const result of results) {
+        if (
+            result.polisClusterIndex !== null && // this should not be necessary for typescript to get the types, because of the isNotNull above but drizzle is !$*@#*jdk
+            result.polisClusterKey !== null
+        ) {
+            clusters.push({
+                index: result.polisClusterIndex,
+                key: result.polisClusterKey,
+                aiLabel: toUnionUndefined(result.polisClusterAiLabel),
+                aiSummary: toUnionUndefined(result.polisClusterAiSummary),
+            });
+        }
+    }
+    return {
+        clusters: clusters,
+    };
 }

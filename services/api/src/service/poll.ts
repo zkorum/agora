@@ -118,7 +118,6 @@ export async function submitPollResponse({
                 .values({
                     type: "creation",
                     conversationId: postId,
-                    parentId: null,
                     authorDid: didWrite,
                     proof: proof,
                     proofVersion: 1,
@@ -134,7 +133,6 @@ export async function submitPollResponse({
                     pollResponseId: pollResponseTableId,
                     pollResponseProofId: pollResponseProofTableId,
                     conversationContentId: postContentId,
-                    parentId: null,
                     optionChosen: voteOptionChoice,
                 })
                 .returning({ id: pollResponseContentTable.id });

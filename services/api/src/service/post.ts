@@ -69,6 +69,7 @@ export async function createNewPost({
                     slugId: conversationSlugId,
                     opinionCount: 0,
                     currentContentId: null,
+                    currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
                     lastReactedAt: new Date(),
                 })
                 .returning({ conversationId: conversationTable.id });
@@ -93,7 +94,6 @@ export async function createNewPost({
                 .values({
                     conversationProofId: proofId,
                     conversationId: conversationId,
-                    parentId: null,
                     title: conversationTitle,
                     body: conversationBody,
                     pollId: null,
@@ -182,8 +182,15 @@ export async function fetchPostBySlugId({
             removeMutedAuthors: false,
         });
 
-        if (postData.length == 1) {
-            return postData[0];
+        if (postData.size == 1) {
+            const [firstPost] = postData.values();
+            return firstPost;
+        } else if (postData.size > 1) {
+            const [firstPost] = postData.values();
+            log.warn(
+                `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
+            );
+            return firstPost;
         } else {
             throw httpErrors.notFound(
                 "Failed to locate conversation slug ID in the database: " +

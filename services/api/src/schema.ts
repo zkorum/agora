@@ -11,7 +11,12 @@ import {
     type AnyPgColumn,
     unique,
     index,
+    jsonb,
+    check,
+    smallint,
+    real,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm/sql";
 // import { MAX_LENGTH_OPTION, MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING - change this in shared.ts as well
 const MAX_LENGTH_OPTION = 30;
@@ -609,15 +614,15 @@ export const userMutePreferenceTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => {
-        return {
+    (t) => [
+        {
             userIdx: index("user_idx_mute").on(t.sourceUserId),
             unqPreference: unique("user_unique_mute").on(
                 t.sourceUserId,
                 t.targetUserId,
             ),
-        };
-    },
+        },
+    ],
 );
 
 export const userLanguagePreferenceTable = pgTable(
@@ -637,15 +642,15 @@ export const userLanguagePreferenceTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => {
-        return {
+    (t) => [
+        {
             userIdx: index("user_idx_lang").on(t.userId),
             unqPreference: unique("user_unique_language").on(
                 t.userId,
                 t.langId,
             ),
-        };
-    },
+        },
+    ],
 );
 
 export const userLanguageTable = pgTable("user_language", {
@@ -689,15 +694,15 @@ export const userConversationTopicPreferenceTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => {
-        return {
+    (t) => [
+        {
             userIdx: index("user_idx_topic").on(t.userId),
             unqPreference: unique("user_unique_topic").on(
                 t.userId,
                 t.conversationTagId,
             ),
-        };
-    },
+        },
+    ],
 );
 
 export const organisationTable = pgTable("organisation", {
@@ -744,29 +749,40 @@ export const zkPassportTable = pgTable("zk_passport", {
         .notNull(),
 });
 
-export const phoneTable = pgTable("phone", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: uuid("user_id")
-        .references(() => userTable.id)
-        .notNull(),
-    lastTwoDigits: varchar("last_two_digits", { length: 2 }).notNull(), // add check for it to be numbers?
-    countryCallingCode: varchar("", { length: 10 }).notNull(),
-    phoneCountryCode: phoneCountryCodeEnum("phone_country_code"),
-    phoneHash: text("phone_hash").notNull(), // base64 encoded hash of phone + pepper
-    pepperVersion: integer("pepper_version").notNull().default(0), // used pepper version - we rotate app-wide pepper one in a while
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const phoneTable = pgTable(
+    "phone",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        lastTwoDigits: smallint("last_two_digits").notNull(),
+        countryCallingCode: varchar("", { length: 10 }).notNull(),
+        phoneCountryCode: phoneCountryCodeEnum("phone_country_code"),
+        phoneHash: text("phone_hash").notNull(), // base64 encoded hash of phone + pepper
+        pepperVersion: integer("pepper_version").notNull().default(0), // used pepper version - we rotate app-wide pepper one in a while
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        {
+            checkTwoDigits: check(
+                "check_two_digits",
+                sql`${table.lastTwoDigits} BETWEEN 0 and 99`,
+            ),
+        },
+    ],
+);
 
 // if user explicity logs in with the primary or any backup emails, the validation email is sent to the specified address on login.
 // if user logs in by entering a "secondary" or "other" type of email associated with their account, send validation email to the primary email associated with their account.
@@ -867,33 +883,46 @@ export const authType = pgEnum("auth_type", [
 // This table serves as a transitory store of information between the intial register attempt and the validation of the one-time code sent to the email address (no multi-factor because it is register)
 // the record will be first created as "register" or "login_new_device", and latter updated to "login_known_device" on next authenticate action
 // TODO: this table may have to be broke down when introducing 2FA
-export const authAttemptPhoneTable = pgTable("auth_attempt_phone", {
-    didWrite: varchar("did_write", { length: 1000 }).primaryKey(), // TODO: make sure of length
-    type: authType("type").notNull(),
-    lastTwoDigits: varchar("last_two_digits", { length: 2 }).notNull(), // add check for it to be numbers?
-    countryCallingCode: varchar("", { length: 10 }).notNull(),
-    phoneCountryCode: phoneCountryCodeEnum("phone_country_code"),
-    phoneHash: text("phone_hash").notNull(), // base64 encoded hash of phone + pepper
-    pepperVersion: integer("pepper_version").notNull().default(0), // used pepper - we rotate app-wide pepper once in a while
-    userId: uuid("user_id").notNull(),
-    userAgent: text("user_agent").notNull(), // user-agent length is not fixed
-    code: integer("code").notNull(), // one-time password sent to the email ("otp")
-    codeExpiry: timestamp("code_expiry").notNull(),
-    guessAttemptAmount: integer("guess_attempt_amount").default(0).notNull(),
-    lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const authAttemptPhoneTable = pgTable(
+    "auth_attempt_phone",
+    {
+        didWrite: varchar("did_write", { length: 1000 }).primaryKey(), // TODO: make sure of length
+        type: authType("type").notNull(),
+        lastTwoDigits: smallint("last_two_digits").notNull(),
+        countryCallingCode: varchar("", { length: 10 }).notNull(),
+        phoneCountryCode: phoneCountryCodeEnum("phone_country_code"),
+        phoneHash: text("phone_hash").notNull(), // base64 encoded hash of phone + pepper
+        pepperVersion: integer("pepper_version").notNull().default(0), // used pepper - we rotate app-wide pepper once in a while
+        userId: uuid("user_id").notNull(),
+        userAgent: text("user_agent").notNull(), // user-agent length is not fixed
+        code: integer("code").notNull(), // one-time password sent to the email ("otp")
+        codeExpiry: timestamp("code_expiry").notNull(),
+        guessAttemptAmount: integer("guess_attempt_amount")
+            .default(0)
+            .notNull(),
+        lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        {
+            checkTwoDigits: check(
+                "check_two_digits",
+                sql`${table.lastTwoDigits} BETWEEN 0 and 99`,
+            ),
+        },
+    ],
+);
 
 // conceptually, it is a "pollContentTable"
 export const pollTable = pgTable("poll", {
@@ -941,9 +970,6 @@ export const conversationProofTable = pgTable("conversation_proof", {
     conversationId: integer("conversation_id")
         .notNull()
         .references(() => conversationTable.id), // the conversationTable never gets deleted
-    parentId: integer("parent_id").references(
-        (): AnyPgColumn => conversationProofTable.id,
-    ), // not null if edit or delete, else null
     authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
         .notNull()
         .references(() => deviceTable.didWrite),
@@ -966,9 +992,6 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull()
         .unique()
         .references(() => conversationProofTable.id), // cannot point to deletion proof
-    parentId: integer("parent_id").references(
-        (): AnyPgColumn => conversationContentTable.id,
-    ), // not null if edit
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
     body: varchar("body"),
     pollId: integer("poll_id").references((): AnyPgColumn => pollTable.id), // for now there is only one poll per conversation at most
@@ -991,6 +1014,9 @@ export const conversationTable = pgTable(
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
+        currentPolisContentId: integer("current_polis_content_id")
+            .references((): AnyPgColumn => polisContentTable.id)
+            .unique(), // null if conversation was deleted or if conversation was just started (no opinion/vote was cast)
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1012,13 +1038,13 @@ export const conversationTable = pgTable(
             .notNull(),
         opinionCount: integer("opinion_count").notNull().default(0),
     },
-    (table) => {
-        return {
+    (table) => [
+        {
             createdAtIdx: index("conversation_createdAt_idx").on(
                 table.createdAt,
             ),
-        };
-    },
+        },
+    ],
 );
 
 export const pollResponseTable = pgTable(
@@ -1047,9 +1073,11 @@ export const pollResponseTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => ({
-        onePollResponsePerAuthor: unique().on(t.authorId, t.conversationId),
-    }),
+    (t) => [
+        {
+            onePollResponsePerAuthor: unique().on(t.authorId, t.conversationId),
+        },
+    ],
 );
 
 export const pollResponseProofTable = pgTable("poll_response_proof", {
@@ -1058,9 +1086,6 @@ export const pollResponseProofTable = pgTable("poll_response_proof", {
     conversationId: integer("conversation_id")
         .notNull()
         .references(() => conversationTable.id), // the conversationTable never gets deleted
-    parentId: integer("parent_id").references(
-        (): AnyPgColumn => pollResponseProofTable.id,
-    ), // not null if edit or delete, else null
     authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
         .notNull()
         .references(() => deviceTable.didWrite),
@@ -1086,9 +1111,6 @@ export const pollResponseContentTable = pgTable("poll_response_content", {
     conversationContentId: integer("conversation_content_id")
         .references(() => conversationContentTable.id)
         .notNull(), // exact conversation content and associated poll that existed when this poll was responded.
-    parentId: integer("parent_id").references(
-        (): AnyPgColumn => pollResponseContentTable.id,
-    ), // not null if edit
     optionChosen: integer("option_chosen").notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -1104,9 +1126,6 @@ export const opinionProofTable = pgTable("opinion_proof", {
     opinionId: integer("opinion_id")
         .notNull()
         .references(() => opinionTable.id), // the opinionTable never gets deleted
-    parentId: integer("parent_id").references(
-        (): AnyPgColumn => opinionProofTable.id,
-    ), // not null if edit or delete, else null
     authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
         .notNull()
         .references(() => deviceTable.didWrite),
@@ -1136,6 +1155,7 @@ export const opinionTable = pgTable(
         ), // null if opinion was deleted
         numAgrees: integer("num_agrees").notNull().default(0),
         numDisagrees: integer("num_disagrees").notNull().default(0),
+        polisPriority: real("polis_priority"), // will contain pol.is comment-priorities
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1156,11 +1176,12 @@ export const opinionTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => {
-        return {
+    (table) => [
+        {
             createdAtIdx: index("opinion_createdAt_idx").on(table.createdAt),
-        };
-    },
+            slugIdIdx: index("opinion_slugId_idx").on(table.slugId),
+        },
+    ],
 );
 
 export const opinionContentTable = pgTable("opinion_content", {
@@ -1174,9 +1195,6 @@ export const opinionContentTable = pgTable("opinion_content", {
     opinionProofId: integer("opinion_proof_id")
         .notNull()
         .references(() => opinionProofTable.id), // cannot point to deletion proof
-    parentId: integer("parent_id").references(
-        (): AnyPgColumn => opinionContentTable.id,
-    ), // not null if edit
     content: varchar("content").notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -1213,9 +1231,11 @@ export const voteTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => ({
-        oneOpinionVotePerUser: unique().on(t.authorId, t.opinionId),
-    }),
+    (t) => [
+        {
+            oneOpinionVotePerUser: unique().on(t.authorId, t.opinionId),
+        },
+    ],
 );
 
 export const voteProofTable = pgTable("vote_proof", {
@@ -1309,13 +1329,13 @@ export const conversationReportTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => {
-        return {
+    (table) => [
+        {
             conversationIdInx: index("conversation_id_idx").on(
                 table.conversationId,
             ),
-        };
-    },
+        },
+    ],
 );
 
 export const opinionReportTable = pgTable(
@@ -1339,11 +1359,11 @@ export const opinionReportTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => {
-        return {
+    (table) => [
+        {
             opinionIdInx: index("opinion_id_idx").on(table.opinionId),
-        };
-    },
+        },
+    ],
 );
 
 export const conversationModerationTable = pgTable("conversation_moderation", {
@@ -1356,8 +1376,8 @@ export const conversationModerationTable = pgTable("conversation_moderation", {
         .references(() => userTable.id)
         .notNull(),
     moderationAction:
-        conversationModerationActionEnum("moderation_action").notNull(), // add check
-    moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
+        conversationModerationActionEnum("moderation_action").notNull(),
+    moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
     moderationExplanation: varchar("moderation_explanation", {
         length: MAX_LENGTH_BODY,
     }),
@@ -1385,8 +1405,8 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
         .references(() => userTable.id)
         .notNull(),
     moderationAction:
-        opinionModerationActionEnum("moderation_action").notNull(), // add check
-    moderationReason: moderationReasonsEnum("moderation_reason").notNull(), // add check: if not nothing above, must not be nothing here
+        opinionModerationActionEnum("moderation_action").notNull(),
+    moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
     moderationExplanation: varchar("moderation_explanation", {
         length: MAX_LENGTH_BODY,
     }),
@@ -1474,10 +1494,125 @@ export const notificationTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => {
-        return {
+    (t) => [
+        {
             userIdx: index("user_idx_notification").on(t.userId),
             createdAtIdx: index("notification_createdAt_idx").on(t.createdAt),
-        };
+        },
+    ],
+);
+
+// content changes over time as much as the conversation receives opinions and votes
+export const polisContentTable = pgTable("polis_content", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
+        .notNull(), // not unique, there will be multiple rows over the life of the conversation
+    mathTick: integer("math_tick").notNull().default(0), // external polis-specific value
+    rawData: jsonb("raw_data").notNull(), // from external polis system
+    aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        // aiSummary may be set at a later data
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+// one polisContent has many polisClusters
+export const polisClusterTable = pgTable("polis_cluster", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    polisContentId: integer("polis_content_id")
+        .notNull()
+        .references(() => polisContentTable.id), // the conversationTable never gets deleted
+    index: integer("index").notNull(), // arbitrary position created by external polis system
+    key: varchar("key", { length: 20 }).notNull(), // key value representing the group, created by polis system, likely "0", "1", "2", etc
+    aiLabel: varchar("ai_label", { length: 30 }), // TODO: set max-length appropriately
+    aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
+    mathCenter: real("math_center").array().notNull(), // extracted from external polis system
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        // aiSummary and aiLabel may be set at a later data
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+// one user can belong to only one cluster per polisContent
+// one user can belong to many cluster across conversations (across polisContent)
+// many users can belong to one cluster per polisContent
+// => many-to-many relationship with a user uniquely belonging to a unique cluster per conversation at a time (= per polisContent.id)
+export const polisClusterUserTable = pgTable(
+    "polis_cluster_user",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        polisContentId: integer("polis_content_id")
+            .notNull()
+            .references(() => polisContentTable.id), // must match with polisContentId of polisClusterId's entity
+        polisClusterId: integer("polis_cluster_id")
+            .notNull()
+            .references(() => polisClusterTable.id),
+        userId: uuid("user_id")
+            .notNull()
+            .references(() => userTable.id),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
     },
+    (t) => [
+        {
+            unqBelongPerConvAtATime: unique(
+                "unique_belong_per_conv_at_a_time",
+            ).on(t.polisContentId, t.userId),
+        },
+    ],
+);
+
+// representative opinions for each cluster
+export const polisClusterOpinionTable = pgTable(
+    "polis_cluster_opinion",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        polisClusterId: integer("polis_cluster_id")
+            .notNull()
+            .references(() => polisClusterTable.id),
+        opinionSlugId: varchar("opinion_slug_id", { length: 8 })
+            .notNull()
+            .references(() => opinionTable.slugId),
+        agreementType: voteEnum("agreement_type").notNull(),
+        percentageAgreement: real("percentage_agreement").notNull(), // example: 0.257, 0.013, 0, 1, 0.876 -- in practice should be larger than 0.5
+        numAgreement: integer("number_agreement").notNull(), // example: 0, 1, 2...etc (number or agrees or disagrees)
+        rawRepness: jsonb("raw_repness").notNull(), // from external polis system
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        {
+            checkPercBtwn0And1: check(
+                "check_perc_btwn_0_and_1",
+                sql`${table.percentageAgreement} => 0 AND ${table.percentageAgreement} <= 1`,
+            ),
+        },
+    ],
 );

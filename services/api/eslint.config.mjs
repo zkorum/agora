@@ -22,6 +22,14 @@ export default tseslint.config(
         files: ["src/**"],
         rules: {
             "linebreak-style": ["error", "unix"],
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {
+                    argsIgnorePattern: "^_",
+                    varsIgnorePattern: "^_",
+                    caughtErrorsIgnorePattern: "^_",
+                },
+            ],
         },
     },
     {

@@ -23,6 +23,7 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import * as polisService from "@/service/polis.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 import WebSocket from "ws";
@@ -34,7 +35,7 @@ import {
 } from "./shared/ucan/ucan.js";
 import {
     deleteOpinionBySlugId,
-    fetchCommentsByPostSlugId,
+    fetchOpinionsByConversationSlugId,
     fetchOpinionsByOpinionSlugIdList,
     postNewOpinion,
 } from "./service/comment.js";
@@ -761,11 +762,12 @@ server.after(() => {
             if (!status.isLoggedIn) {
                 throw server.httpErrors.unauthorized("Device is not logged in");
             } else {
-                return await getUserPosts({
+                const conversationsMap = await getUserPosts({
                     db: db,
                     userId: status.userId,
                     lastPostSlugId: request.body.lastConversationSlugId,
                 });
+                return Array.from(conversationsMap.values());
             }
         },
     });
@@ -1070,19 +1072,23 @@ server.after(() => {
                         "User is not logged in",
                     );
                 } else {
-                    return await fetchCommentsByPostSlugId({
+                    const opinionItemsPerSlugId =
+                        await fetchOpinionsByConversationSlugId({
+                            db: db,
+                            postSlugId: request.body.conversationSlugId,
+                            fetchTarget: request.body.filter,
+                            personalizationUserId: status.userId,
+                        });
+                    return Array.from(opinionItemsPerSlugId.values());
+                }
+            } else {
+                const opinionItemsPerSlugId =
+                    await fetchOpinionsByConversationSlugId({
                         db: db,
                         postSlugId: request.body.conversationSlugId,
                         fetchTarget: request.body.filter,
-                        personalizationUserId: status.userId,
                     });
-                }
-            } else {
-                return await fetchCommentsByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                    fetchTarget: request.body.filter,
-                });
+                return Array.from(opinionItemsPerSlugId.values());
             }
         },
     });
@@ -1131,12 +1137,13 @@ server.after(() => {
                         "User is not a moderator",
                     );
                 }
-
-                return await fetchCommentsByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                    fetchTarget: "hidden",
-                });
+                const opinionItemsPerSlugId =
+                    await fetchOpinionsByConversationSlugId({
+                        db: db,
+                        postSlugId: request.body.conversationSlugId,
+                        fetchTarget: "hidden",
+                    });
+                return Array.from(opinionItemsPerSlugId.values());
             }
         },
     });
@@ -1284,6 +1291,22 @@ server.after(() => {
                 };
                 return response;
             }
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/get-polis-clusters-info`,
+        schema: {
+            body: Dto.getPolisClustersInfoRequest,
+            response: {
+                200: Dto.getPolisClustersInfoResponse,
+            },
+        },
+        handler: async (request) => {
+            return await polisService.getPolisClustersInfo({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({

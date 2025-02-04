@@ -19,7 +19,7 @@ import {
     zodModerationExplanation,
     zodConversationModerationAction,
     zodOpinionModerationAction,
-    zodConversationModerationProperties as zodConversationModerationProperties,
+    zodConversationModerationProperties,
     zodOpinionModerationProperties,
     zodCommentFeedFilter,
     zodUserReportReason,
@@ -28,6 +28,7 @@ import {
     zodUserMuteAction,
     zodUserMuteItem,
     zodNotificationItem,
+    zodClusterMetadata,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -389,6 +390,16 @@ export class Dto {
             }),
         ],
     );
+    static getPolisClustersInfoRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static getPolisClustersInfoResponse = z
+        .object({
+            clusters: z.array(zodClusterMetadata),
+        })
+        .strict();
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -445,4 +456,7 @@ export type GetOpinionBySlugIdListResponse = z.infer<
 >;
 export type FetchNotificationsResponse = z.infer<
     typeof Dto.fetchNotificationsResponse
+>;
+export type GetPolisClustersInfoResponse = z.infer<
+    typeof Dto.getPolisClustersInfoResponse
 >;

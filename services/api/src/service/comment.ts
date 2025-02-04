@@ -8,6 +8,9 @@ import {
     opinionModerationTable,
     notificationTable,
     notificationNewOpinionTable,
+    polisContentTable,
+    polisClusterTable,
+    polisClusterOpinionTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
@@ -15,10 +18,14 @@ import type {
 } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
-import type { OpinionItem, SlugId } from "@/shared/types/zod.js";
+import type {
+    OpinionItem,
+    OpinionItemPerSlugId,
+    SlugId,
+} from "@/shared/types/zod.js";
 import { httpErrors, type HttpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
-import { MAX_LENGTH_COMMENT } from "@/shared/shared.js";
+import { MAX_LENGTH_COMMENT, toUnionUndefined } from "@/shared/shared.js";
 import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
@@ -52,90 +59,387 @@ export async function getCommentSlugIdLastCreatedAt({
     return lastCreatedAt;
 }
 
-interface FetchCommentsByPostSlugIdProps {
+interface FetchOpinionsByConversationSlugIdProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
-    fetchTarget: "moderated" | "new" | "hidden";
+    fetchTarget: "moderated" | "new" | "hidden" | "discover" | number; // if number, then we filter by cluster index
     personalizationUserId?: string;
 }
 
-export async function fetchCommentsByPostSlugId({
+export async function fetchOpinionsByConversationSlugId({
     db,
     postSlugId,
     fetchTarget,
     personalizationUserId,
-}: FetchCommentsByPostSlugIdProps): Promise<OpinionItem[]> {
+}: FetchOpinionsByConversationSlugIdProps): Promise<OpinionItemPerSlugId> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
 
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
 
-    if (fetchTarget == "moderated") {
-        whereClause = and(
-            whereClause,
-            ne(opinionModerationTable.moderationAction, "hide"),
-            isNotNull(opinionModerationTable.id),
-        );
-    } else if (fetchTarget == "new") {
-        whereClause = and(whereClause, isNull(opinionModerationTable.id));
-    } else {
-        whereClause = and(
-            whereClause,
-            eq(opinionModerationTable.moderationAction, "hide"),
-            isNotNull(opinionModerationTable.id),
-        );
+    switch (fetchTarget) {
+        case "moderated":
+            whereClause = and(
+                whereClause,
+                ne(opinionModerationTable.moderationAction, "hide"),
+                isNotNull(opinionModerationTable.id),
+            );
+            break;
+        case "hidden":
+            whereClause = and(
+                whereClause,
+                eq(opinionModerationTable.moderationAction, "hide"),
+                isNotNull(opinionModerationTable.id),
+            );
+            break;
+        default:
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            break;
     }
 
-    const results = await db
-        .select({
-            // comment payload
-            commentSlugId: opinionTable.slugId,
-            createdAt: opinionTable.createdAt,
-            updatedAt: opinionTable.updatedAt,
-            comment: opinionContentTable.content,
-            numLikes: opinionTable.numAgrees,
-            numDislikes: opinionTable.numDisagrees,
-            username: userTable.username,
-            moderationAction: opinionModerationTable.moderationAction,
-            moderationExplanation: opinionModerationTable.moderationExplanation,
-            moderationReason: opinionModerationTable.moderationReason,
-            moderationCreatedAt: opinionModerationTable.createdAt,
-            moderationUpdatedAt: opinionModerationTable.updatedAt,
-        })
-        .from(opinionTable)
-        .innerJoin(conversationTable, eq(conversationTable.id, postId))
-        .innerJoin(
-            opinionContentTable,
-            eq(opinionContentTable.id, opinionTable.currentContentId),
-        )
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
-        )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-        .orderBy(desc(opinionTable.createdAt))
-        .where(whereClause);
+    let results;
+    if (fetchTarget === "discover") {
+        results = await db
+            .select({
+                // comment payload
+                commentSlugId: opinionTable.slugId,
+                createdAt: opinionTable.createdAt,
+                updatedAt: opinionTable.updatedAt,
+                comment: opinionContentTable.content,
+                numLikes: opinionTable.numAgrees,
+                numDislikes: opinionTable.numDisagrees,
+                username: userTable.username,
+                moderationAction: opinionModerationTable.moderationAction,
+                moderationExplanation:
+                    opinionModerationTable.moderationExplanation,
+                moderationReason: opinionModerationTable.moderationReason,
+                moderationCreatedAt: opinionModerationTable.createdAt,
+                moderationUpdatedAt: opinionModerationTable.updatedAt,
+                polisClusterIndex: polisClusterTable.index,
+                polisClusterKey: polisClusterTable.key,
+                polisClusterAiLabel: polisClusterTable.aiLabel,
+                polisClusterOpinionAgreementType:
+                    polisClusterOpinionTable.agreementType,
+                polisClusterOpinionPercentageAgreement:
+                    polisClusterOpinionTable.percentageAgreement,
+                polisClusterOpinionNumAgreement:
+                    polisClusterOpinionTable.numAgreement, // example: 0, 1, 2...etc (number or agrees or disagrees)
+                rankNumAgrees:
+                    sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC)`.as(
+                        "rankNumAgrees",
+                    ),
+                rankNumDisagrees:
+                    sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numDisagrees} DESC)`.as(
+                        "rankNumDisagrees",
+                    ),
+                rankClusterPercentageAgreement:
+                    sql`ROW_NUMBER() OVER (ORDER BY COALESCE(${polisClusterOpinionTable.percentageAgreement}, -1) DESC)`.as(
+                        "rankClusterPercentageAgreement",
+                    ),
+                rankPolisPriority:
+                    sql`ROW_NUMBER() OVER (ORDER BY COALESCE(${opinionTable.polisPriority}, -1) DESC)`.as(
+                        "rankPolisPriority",
+                    ),
+                rankCreatedAt:
+                    sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.createdAt} DESC)`.as(
+                        "rankCreatedAt",
+                    ),
+            })
+            .from(opinionTable)
+            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .innerJoin(conversationTable, eq(conversationTable.id, postId))
+            .innerJoin(
+                opinionContentTable,
+                eq(opinionContentTable.id, opinionTable.currentContentId),
+            )
+            .leftJoin(
+                polisContentTable,
+                eq(
+                    polisContentTable.id,
+                    conversationTable.currentPolisContentId,
+                ),
+            )
+            .leftJoin(
+                polisClusterTable,
+                eq(polisClusterTable.polisContentId, polisContentTable.id),
+            )
+            .leftJoin(
+                polisClusterOpinionTable,
+                and(
+                    eq(
+                        polisClusterOpinionTable.polisClusterId,
+                        polisClusterTable.id,
+                    ),
+                    eq(
+                        polisClusterOpinionTable.opinionSlugId,
+                        opinionTable.slugId,
+                    ),
+                ),
+            )
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
+            .orderBy(
+                sql`LEAST(
+            ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC), 
+            ROW_NUMBER() OVER (ORDER BY ${opinionTable.numDisagrees} DESC), 
+            ROW_NUMBER() OVER (ORDER BY COALESCE(${polisClusterOpinionTable.percentageAgreement}, -1) DESC), 
+            ROW_NUMBER() OVER (ORDER BY ${opinionTable.createdAt} DESC)
+        )`,
+                sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC)`,
+                sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numDisagrees} DESC)`,
+                sql`ROW_NUMBER() OVER (ORDER BY COALESCE(${polisClusterOpinionTable.percentageAgreement}, -1) DESC)`,
+                sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.createdAt} DESC)`,
+            )
+            // .orderBy(
+            //     desc(polisClusterOpinionTable.percentageAgreement),
+            //     desc(opinionTable.polisPriority),
+            //     desc(opinionTable.createdAt),
+            // )
+            .where(whereClause);
+    } else if (typeof fetchTarget === "number") {
+        results = await db
+            .select({
+                // comment payload
+                commentSlugId: opinionTable.slugId,
+                createdAt: opinionTable.createdAt,
+                updatedAt: opinionTable.updatedAt,
+                comment: opinionContentTable.content,
+                numLikes: opinionTable.numAgrees,
+                numDislikes: opinionTable.numDisagrees,
+                username: userTable.username,
+                moderationAction: opinionModerationTable.moderationAction,
+                moderationExplanation:
+                    opinionModerationTable.moderationExplanation,
+                moderationReason: opinionModerationTable.moderationReason,
+                moderationCreatedAt: opinionModerationTable.createdAt,
+                moderationUpdatedAt: opinionModerationTable.updatedAt,
+                polisClusterIndex: polisClusterTable.index,
+                polisClusterKey: polisClusterTable.key,
+                polisClusterAiLabel: polisClusterTable.aiLabel,
+                polisClusterOpinionAgreementType:
+                    polisClusterOpinionTable.agreementType,
+                polisClusterOpinionPercentageAgreement:
+                    polisClusterOpinionTable.percentageAgreement,
+                polisClusterOpinionNumAgreement:
+                    polisClusterOpinionTable.numAgreement, // example: 0, 1, 2...etc (number or agrees or disagrees)
+                rankNumAgrees:
+                    sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC)`.as(
+                        "rankNumAgrees",
+                    ),
+                rankNumDisagrees:
+                    sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numDisagrees} DESC)`.as(
+                        "rankNumDisagrees",
+                    ),
+                rankClusterPercentageAgreement:
+                    sql`ROW_NUMBER() OVER (ORDER BY COALESCE(${polisClusterOpinionTable.percentageAgreement}, -1) DESC)`.as(
+                        "rankClusterPercentageAgreement",
+                    ),
+                rankPolisPriority:
+                    sql`ROW_NUMBER() OVER (ORDER BY COALESCE(${opinionTable.polisPriority}, -1) DESC)`.as(
+                        "rankPolisPriority",
+                    ),
+                rankCreatedAt:
+                    sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.createdAt} DESC)`.as(
+                        "rankCreatedAt",
+                    ),
+            })
+            .from(opinionTable)
+            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .innerJoin(conversationTable, eq(conversationTable.id, postId))
+            .innerJoin(
+                opinionContentTable,
+                eq(opinionContentTable.id, opinionTable.currentContentId),
+            )
+            .leftJoin(
+                polisContentTable,
+                eq(
+                    polisContentTable.id,
+                    conversationTable.currentPolisContentId,
+                ),
+            )
+            .leftJoin(
+                polisClusterTable,
+                eq(polisClusterTable.polisContentId, polisContentTable.id),
+            )
+            .leftJoin(
+                polisClusterOpinionTable,
+                and(
+                    eq(
+                        polisClusterOpinionTable.polisClusterId,
+                        polisClusterTable.id,
+                    ),
+                    eq(
+                        polisClusterOpinionTable.opinionSlugId,
+                        opinionTable.slugId,
+                    ),
+                ),
+            )
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
+            .orderBy(
+                sql`CASE ${polisClusterTable.index} 
+                    WHEN ${fetchTarget} THEN 1
+                    ELSE 2 END`,
+                sql`LEAST(
+            ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC), 
+            ROW_NUMBER() OVER (ORDER BY ${opinionTable.numDisagrees} DESC), 
+            ROW_NUMBER() OVER (ORDER BY COALESCE(${polisClusterOpinionTable.percentageAgreement}, -1) DESC), 
+            ROW_NUMBER() OVER (ORDER BY ${opinionTable.createdAt} DESC)
+        )`,
+                sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC)`,
+                sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numDisagrees} DESC)`,
+                sql`ROW_NUMBER() OVER (ORDER BY COALESCE(${polisClusterOpinionTable.percentageAgreement}, -1) DESC)`,
+                sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.createdAt} DESC)`,
+            )
+            // .orderBy(
+            //     desc(polisClusterOpinionTable.percentageAgreement),
+            //     desc(opinionTable.polisPriority),
+            //     desc(opinionTable.createdAt),
+            // )
+            .where(whereClause);
+    } else {
+        results = await db
+            .select({
+                // comment payload
+                commentSlugId: opinionTable.slugId,
+                createdAt: opinionTable.createdAt,
+                updatedAt: opinionTable.updatedAt,
+                comment: opinionContentTable.content,
+                numLikes: opinionTable.numAgrees,
+                numDislikes: opinionTable.numDisagrees,
+                username: userTable.username,
+                moderationAction: opinionModerationTable.moderationAction,
+                moderationExplanation:
+                    opinionModerationTable.moderationExplanation,
+                moderationReason: opinionModerationTable.moderationReason,
+                moderationCreatedAt: opinionModerationTable.createdAt,
+                moderationUpdatedAt: opinionModerationTable.updatedAt,
+                polisClusterIndex: polisClusterTable.index,
+                polisClusterKey: polisClusterTable.key,
+                polisClusterAiLabel: polisClusterTable.aiLabel,
+                polisClusterOpinionAgreementType:
+                    polisClusterOpinionTable.agreementType,
+                polisClusterOpinionPercentageAgreement:
+                    polisClusterOpinionTable.percentageAgreement,
+                polisClusterOpinionNumAgreement:
+                    polisClusterOpinionTable.numAgreement, // example: 0, 1, 2...etc (number or agrees or disagrees)
+            })
+            .from(opinionTable)
+            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .innerJoin(conversationTable, eq(conversationTable.id, postId))
+            .innerJoin(
+                opinionContentTable,
+                eq(opinionContentTable.id, opinionTable.currentContentId),
+            )
+            .leftJoin(
+                polisContentTable,
+                eq(
+                    polisContentTable.id,
+                    conversationTable.currentPolisContentId,
+                ),
+            )
+            .leftJoin(
+                polisClusterTable,
+                eq(polisClusterTable.polisContentId, polisContentTable.id),
+            )
+            .leftJoin(
+                polisClusterOpinionTable,
+                and(
+                    eq(
+                        polisClusterOpinionTable.polisClusterId,
+                        polisClusterTable.id,
+                    ),
+                    eq(
+                        polisClusterOpinionTable.opinionSlugId,
+                        opinionTable.slugId,
+                    ),
+                ),
+            )
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
+            .orderBy(desc(opinionTable.createdAt))
+            .where(whereClause);
+    }
 
-    let commentItemList: OpinionItem[] = [];
-    results.map((commentResponse) => {
+    const opinionItemMap: OpinionItemPerSlugId = new Map<string, OpinionItem>();
+    results.map((opinionResponse) => {
+        if (opinionItemMap.has(opinionResponse.commentSlugId)) {
+            if (
+                opinionResponse.polisClusterIndex !== null &&
+                opinionResponse.polisClusterKey !== null &&
+                opinionResponse.polisClusterOpinionAgreementType !== null &&
+                opinionResponse.polisClusterOpinionNumAgreement !== null &&
+                opinionResponse.polisClusterOpinionPercentageAgreement !== null
+            ) {
+                const opinionItem = opinionItemMap.get(
+                    opinionResponse.commentSlugId,
+                );
+                opinionItem?.clusters.push({
+                    index: opinionResponse.polisClusterIndex,
+                    key: opinionResponse.polisClusterKey,
+                    aiLabel: toUnionUndefined(
+                        opinionResponse.polisClusterAiLabel,
+                    ),
+                    opinionAgreementType:
+                        opinionResponse.polisClusterOpinionAgreementType,
+                    opinionPercentageAgreement:
+                        opinionResponse.polisClusterOpinionPercentageAgreement,
+                    opinionNumAgreement:
+                        opinionResponse.polisClusterOpinionNumAgreement,
+                });
+                return;
+            } else {
+                // happens because of the left joins, we just ignore those
+                return;
+            }
+        }
         const moderationProperties = createCommentModerationPropertyObject(
-            commentResponse.moderationAction,
-            commentResponse.moderationExplanation,
-            commentResponse.moderationReason,
-            commentResponse.moderationCreatedAt,
-            commentResponse.moderationUpdatedAt,
+            opinionResponse.moderationAction,
+            opinionResponse.moderationExplanation,
+            opinionResponse.moderationReason,
+            opinionResponse.moderationCreatedAt,
+            opinionResponse.moderationUpdatedAt,
         );
 
         const item: OpinionItem = {
-            opinion: commentResponse.comment,
-            opinionSlugId: commentResponse.commentSlugId,
-            createdAt: commentResponse.createdAt,
-            numDisagrees: commentResponse.numDislikes,
-            numAgrees: commentResponse.numLikes,
-            updatedAt: commentResponse.updatedAt,
-            username: commentResponse.username,
+            opinion: opinionResponse.comment,
+            opinionSlugId: opinionResponse.commentSlugId,
+            createdAt: opinionResponse.createdAt,
+            numDisagrees: opinionResponse.numDislikes,
+            numAgrees: opinionResponse.numLikes,
+            updatedAt: opinionResponse.updatedAt,
+            username: opinionResponse.username,
             moderation: moderationProperties,
+            clusters:
+                opinionResponse.polisClusterIndex !== null &&
+                opinionResponse.polisClusterKey !== null &&
+                opinionResponse.polisClusterOpinionAgreementType !== null &&
+                opinionResponse.polisClusterOpinionPercentageAgreement !==
+                    null &&
+                opinionResponse.polisClusterOpinionNumAgreement !== null
+                    ? [
+                          {
+                              index: opinionResponse.polisClusterIndex,
+                              key: opinionResponse.polisClusterKey,
+                              aiLabel: toUnionUndefined(
+                                  opinionResponse.polisClusterAiLabel,
+                              ),
+                              opinionAgreementType:
+                                  opinionResponse.polisClusterOpinionAgreementType,
+                              opinionPercentageAgreement:
+                                  opinionResponse.polisClusterOpinionPercentageAgreement,
+                              opinionNumAgreement:
+                                  opinionResponse.polisClusterOpinionNumAgreement,
+                          },
+                      ]
+                    : [],
         };
-        commentItemList.push(item);
+        opinionItemMap.set(opinionResponse.commentSlugId, item);
     });
 
     if (personalizationUserId) {
@@ -144,17 +448,18 @@ export async function fetchCommentsByPostSlugId({
             userId: personalizationUserId,
         });
 
-        commentItemList = commentItemList.filter((commentItem) => {
-            for (const muteItem of mutedUserItems) {
-                if (muteItem.username == commentItem.username) {
-                    return false;
-                }
+        opinionItemMap.forEach((opinionItem, opinionSlugId, map) => {
+            if (
+                mutedUserItems.some(
+                    (muteItem) => muteItem.username === opinionItem.username,
+                )
+            ) {
+                map.delete(opinionSlugId);
             }
-            return true;
         });
     }
 
-    return commentItemList;
+    return opinionItemMap;
 }
 
 interface FetchOpinionsByOpinionSlugIdListProps {
@@ -171,7 +476,6 @@ export async function fetchOpinionsByOpinionSlugIdList({
     for (const opinionSlugId of opinionSlugIdList) {
         const results = await db
             .select({
-                // comment payload
                 commentSlugId: opinionTable.slugId,
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
@@ -200,6 +504,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 eq(opinionModerationTable.opinionId, opinionTable.id),
             )
             .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            // TODO: join with cluster tables
             .orderBy(desc(opinionTable.createdAt))
             .where(eq(opinionTable.slugId, opinionSlugId));
 
@@ -221,6 +526,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
                 moderation: moderationProperties,
+                clusters: [], //TODO: change this!
             };
             opinionItemList.push(item);
         });
@@ -339,7 +645,6 @@ export async function postNewOpinion({
                 opinionProofId: proofId,
                 opinionId: opinionId,
                 conversationContentId: conversationContentId,
-                parentId: null,
                 content: commentBody,
             })
             .returning({ commentContentTableId: opinionContentTable.id });
@@ -408,6 +713,8 @@ export async function postNewOpinion({
 
     if (axiosPolis !== undefined) {
         void polisService.delayedPolisGetAndUpdateMath({
+            db,
+            conversationId,
             conversationSlugId,
             axiosPolis,
             polisDelayToFetch,

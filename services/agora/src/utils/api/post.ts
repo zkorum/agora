@@ -207,6 +207,7 @@ export function useBackendPostApi() {
           hasVoted: item.interaction.hasVoted,
           votedIndex: item.interaction.votedIndex - 1,
         },
+        polis: item.polis,
       };
 
       parsedList.push(newPost);
