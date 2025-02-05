@@ -67,3 +67,47 @@ $lightweight-text-color: #6d6a74;
 $app-background-color: #f6f5f8;
 
 $mouse-hover-color: #fafafa;
+
+.text-button-disagree-background-unselected {
+  color: #ffefd7 !important;
+}
+.bg-button-disagree-background-unselected {
+  background: #ffefd7 !important;
+}
+
+.text-button-agree-background-unselected {
+  color: #e7e7ff !important;
+}
+.bg-button-agree-background-unselected {
+  background: #e7e7ff !important;
+}
+
+.text-button-disagree-background-selected {
+  color: #ffb323 !important;
+}
+.bg-button-disagree-background-selected {
+  background: #ffb323 !important;
+}
+
+.text-button-agree-background-selected {
+  color: #6b4eff !important;
+}
+.bg-button-agree-background-selected {
+  background: #6b4eff !important;
+}
+
+$button-disgree-text: #a05e03;
+.text-button-disagree-text {
+  color: $button-disgree-text !important;
+}
+.bg-button-disagree-text {
+  background: $button-disgree-text !important;
+}
+
+$button-agree-text: #6547ff;
+.text-button-agree-text {
+  color: $button-agree-text !important;
+}
+.bg-button-agree-text {
+  background: $button-agree-text !important;
+}

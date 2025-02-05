@@ -1,5 +1,53 @@
 <template>
   <div>
+    <div class="agreementButtons">
+      <div class="buttonContainer">
+        <ZKButton
+          class="maxWidth"
+          :disable="isPostLocked"
+          label="Disagree"
+          :text-color="downvoteIcon.textColor"
+          :color="downvoteIcon.backgroundColor"
+          size="0.8rem"
+          @click.stop.prevent="
+            castPersonalVote(props.commentItem.opinionSlugId, false)
+          "
+        >
+        </ZKButton>
+
+        <div v-if="userCastedVote" class="voteCountLabelDisagree">
+          {{ numDislikesLocal }} ({{
+            Math.round(
+              (numDislikesLocal / (numDislikesLocal + numLikesLocal)) * 100
+            )
+          }}%)
+        </div>
+      </div>
+
+      <div class="buttonContainer">
+        <ZKButton
+          class="maxWidth"
+          :disable="isPostLocked"
+          label="Agree"
+          :text-color="upvoteIcon.textColor"
+          :color="upvoteIcon.backgroundColor"
+          size="0.8rem"
+          @click.stop.prevent="
+            castPersonalVote(props.commentItem.opinionSlugId, true)
+          "
+        >
+        </ZKButton>
+
+        <div v-if="userCastedVote" class="voteCountLabelAgree">
+          {{ numLikesLocal }} ({{
+            Math.round(
+              (numLikesLocal / (numDislikesLocal + numLikesLocal)) * 100
+            )
+          }}%)
+        </div>
+      </div>
+    </div>
+
     <div class="actionButtonCluster">
       <CommentActionOptions
         :comment-item="props.commentItem"
@@ -15,35 +63,6 @@
         size="0.8rem"
         @click.stop.prevent="shareButtonClicked()"
       />
-      <ZKButton
-        :disable="isPostLocked"
-        flat
-        :text-color="downvoteIcon.color"
-        :icon="downvoteIcon.icon"
-        size="0.8rem"
-        @click.stop.prevent="
-          castPersonalVote(props.commentItem.opinionSlugId, false)
-        "
-      >
-        <div v-if="userCastedVote" class="voteCountLabel">
-          {{ numDislikesLocal }}
-        </div>
-      </ZKButton>
-
-      <ZKButton
-        :disable="isPostLocked"
-        flat
-        :text-color="upvoteIcon.color"
-        :icon="upvoteIcon.icon"
-        size="0.8rem"
-        @click.stop.prevent="
-          castPersonalVote(props.commentItem.opinionSlugId, true)
-        "
-      >
-        <div v-if="userCastedVote" class="voteCountLabel">
-          {{ numLikesLocal }}
-        </div>
-      </ZKButton>
     </div>
   </div>
 </template>
@@ -87,7 +106,8 @@ const userCastedVote = computed(() => {
 
 interface IconObject {
   icon: string;
-  color: string;
+  textColor: string;
+  backgroundColor: string;
 }
 
 const downvoteIcon = computed<IconObject>(() => {
@@ -97,12 +117,14 @@ const downvoteIcon = computed<IconObject>(() => {
   if (userAction == "disagree") {
     return {
       icon: "mdi-thumb-down",
-      color: "primary",
+      textColor: "white",
+      backgroundColor: "button-disagree-background-selected",
     };
   } else {
     return {
       icon: "mdi-thumb-down-outline",
-      color: "color-text-weak",
+      textColor: "button-disagree-text",
+      backgroundColor: "button-disagree-background-unselected",
     };
   }
 });
@@ -114,12 +136,14 @@ const upvoteIcon = computed<IconObject>(() => {
   if (userAction == "agree") {
     return {
       icon: "mdi-thumb-up",
-      color: "primary",
+      textColor: "white",
+      backgroundColor: "button-agree-background-selected",
     };
   } else {
     return {
       icon: "mdi-thumb-up-outline",
-      color: "color-text-weak",
+      textColor: "button-agree-text",
+      backgroundColor: "button-agree-background-unselected",
     };
   }
 });
@@ -226,5 +250,36 @@ async function castPersonalVote(
 
 .voteCountLabel {
   padding-left: 0.5rem;
+}
+
+.agreementButtons {
+  display: grid;
+  grid-template-columns: calc(50% - 0.5rem) calc(50% - 0.5rem);
+  grid-template-rows: 1fr;
+  gap: 0px 1rem;
+  grid-template-areas: ". .";
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.maxWidth {
+  width: 100%;
+}
+
+.buttonContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.voteCountLabelDisagree {
+  color: $button-disgree-text;
+}
+
+.voteCountLabelAgree {
+  color: $button-agree-text;
 }
 </style>
