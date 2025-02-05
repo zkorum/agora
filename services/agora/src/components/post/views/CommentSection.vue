@@ -6,7 +6,7 @@
 
         <CommentSortingSelector
           :filter-value="sortAlgorithm"
-          @changed-algorithm="(value) => (sortAlgorithm = value)"
+          @changed-algorithm="(filterValue) => changeFilter(filterValue)"
         />
       </div>
 
@@ -123,7 +123,9 @@ watch(commentFilterQuery, () => {
 });
 
 async function selectedNewFilter(optionValue: CommentFilterOptions) {
-  await router.replace({ query: { filter: optionValue } });
+  await router.replace({
+    query: { filter: optionValue },
+  });
   sortAlgorithm.value = optionValue;
 }
 
@@ -135,11 +137,10 @@ function updateCommentFilter() {
     commentFilterQuery.value == "hidden"
   ) {
     sortAlgorithm.value = commentFilterQuery.value;
-  } else if (commentFilterQuery.value == "") {
-    // do nothing keep the default value
   } else {
-    console.log("Unknown comment filter detected: " + commentFilterQuery.value);
-    return "discover";
+    console.error(
+      "Unknown comment filter detected: " + commentFilterQuery.value
+    );
   }
 }
 
@@ -173,14 +174,15 @@ async function resetRouteParams() {
   if (
     commentFilterQuery.value == "new" ||
     commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "discover" ||
     commentFilterQuery.value == "hidden"
   ) {
     // clear the existing route params
     await selectedNewFilter(commentFilterQuery.value);
-  } else if (commentFilterQuery.value == "") {
-    await selectedNewFilter("new");
   } else {
-    // don't change the existing filter
+    console.error(
+      "Unknown comment filter detected: " + commentFilterQuery.value
+    );
   }
 }
 
@@ -300,6 +302,12 @@ async function scrollToComment() {
       }, 1000);
     }
   }
+}
+
+async function changeFilter(filterValue: CommentFilterOptions) {
+  sortAlgorithm.value = filterValue;
+  await resetRouteParams();
+  commentFilterQuery.value = filterValue;
 }
 </script>
 
