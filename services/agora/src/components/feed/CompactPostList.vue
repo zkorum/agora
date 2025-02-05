@@ -41,7 +41,6 @@
               :skeleton-mode="true"
               class="showCursor"
               :show-author="true"
-              :display-absolute-time="false"
               @click="openPost(postData.metadata.conversationSlugId)"
             />
           </div>
@@ -60,9 +59,7 @@
               :compact-mode="true"
               :show-comment-section="false"
               :skeleton-mode="false"
-              class="showCursor"
               :show-author="true"
-              :display-absolute-time="false"
               @click="openPost(postData.metadata.conversationSlugId)"
             />
           </div>
@@ -204,10 +201,6 @@ async function refreshPage(done: () => void) {
   padding-top: 8rem;
   padding-bottom: 8rem;
   flex-direction: column;
-}
-
-.showCursor:hover {
-  cursor: pointer;
 }
 
 .floatingButton {
