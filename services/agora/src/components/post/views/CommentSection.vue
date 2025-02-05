@@ -1,14 +1,12 @@
 <template>
   <div>
     <div class="container">
-      <div class="filterButtonCluster">
-        <ZKButton
-          v-for="option in filterOptions"
-          :key="option.value"
-          :label="option.name"
-          :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
-          :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
-          @click="selectedNewFilter(option.value)"
+      <div class="commentSectionToolbar">
+        <div></div>
+
+        <CommentSortingSelector
+          :filter-value="sortAlgorithm"
+          @changed-algorithm="(value) => (sortAlgorithm = value)"
         />
       </div>
 
@@ -74,13 +72,11 @@ import {
 } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useUserStore } from "src/stores/user";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
-
-type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover";
+import CommentSortingSelector from "./CommentSortingSelector.vue";
+import { CommentFilterOptions } from "src/utils/component/opinion";
 
 const emit = defineEmits(["deleted"]);
 
@@ -99,7 +95,7 @@ const commentFilterQuery = useRouteQuery("filter", "", {
 const { showNotifyMessage } = useNotify();
 const router = useRouter();
 
-const sortAlgorithm = ref<CommentFilterOptions>("new");
+const sortAlgorithm = ref<CommentFilterOptions>("discover");
 updateCommentFilter();
 
 const { getPolisClustersInfo } = useBackendPolisApi();
@@ -108,8 +104,6 @@ const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-
-const { profileData } = storeToRefs(useUserStore());
 
 let commentItemsNew = ref<OpinionItem[]>([]);
 let commentItemsDiscover = ref<OpinionItem[]>([]);
@@ -120,23 +114,12 @@ let clusters = ref<ClusterMetadata[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
-const baseFilters: { name: string; value: CommentFilterOptions }[] = [
-  { name: "New", value: "new" },
-  { name: "Discover", value: "discover" },
-  { name: "Moderation History", value: "moderated" },
-];
-const filterOptions = ref(baseFilters);
-
 onMounted(async () => {
   await Promise.all([initializeData(), fetchPersonalLikes()]);
 });
 
 watch(commentFilterQuery, () => {
   updateCommentFilter();
-});
-
-watch(profileData, async () => {
-  await initializeModeratorMenu();
 });
 
 async function selectedNewFilter(optionValue: CommentFilterOptions) {
@@ -173,16 +156,7 @@ async function initializeData() {
 }
 
 async function initializeModeratorMenu() {
-  if (profileData.value.isModerator) {
-    filterOptions.value = baseFilters.concat([
-      {
-        name: "⚔️ Hidden",
-        value: "hidden",
-      },
-    ]);
-
-    await fetchHiddenComments();
-  }
+  await fetchHiddenComments();
 }
 
 async function mutedComment() {
@@ -336,9 +310,8 @@ async function scrollToComment() {
   gap: 1rem;
 }
 
-.filterButtonCluster {
+.commentSectionToolbar {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
 }
 </style>
