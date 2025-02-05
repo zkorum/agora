@@ -2,18 +2,27 @@
 <template>
   <div>
     <div class="container background">
-      <div class="metadata">
-        <UserAvatar
-          :user-name="commentItem.username"
-          :size="30"
-          class="avatarIcon"
-        />
+      <div class="topBar">
+        <div class="metadata">
+          <UserAvatar
+            :user-name="commentItem.username"
+            :size="30"
+            class="avatarIcon"
+          />
 
-        <div class="userNameTime">
-          <div>
-            {{ commentItem.username }}
+          <div class="userNameTime">
+            <div>
+              {{ commentItem.username }}
+            </div>
           </div>
         </div>
+
+        <CommentActionOptions
+          :comment-item="commentItem"
+          :post-slug-id="postSlugId"
+          @deleted="deletedComment()"
+          @muted-comment="mutedComment()"
+        />
       </div>
 
       <div>
@@ -32,8 +41,6 @@
             :post-slug-id="postSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
             :is-post-locked="isPostLocked"
-            @deleted="deletedComment()"
-            @muted-comment="mutedComment()"
           />
         </div>
       </div>
@@ -47,6 +54,7 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
+import CommentActionOptions from "./CommentActionOptions.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -91,11 +99,6 @@ function mutedComment() {
   padding-bottom: 1rem;
 }
 
-.actionBarPaddings {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
 .highlightComment {
   background-color: #ccfbf1;
   border-radius: 15px;
@@ -110,10 +113,17 @@ function mutedComment() {
   font-size: 0.8rem;
   display: flex;
   flex-direction: column;
+  word-break: break-all;
 }
 
 .background {
   background-color: white;
   border-radius: 1.5rem;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 </style>
