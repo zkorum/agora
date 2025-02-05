@@ -47,38 +47,17 @@
         </div>
       </div>
     </div>
-
-    <div class="actionButtonCluster">
-      <CommentActionOptions
-        :comment-item="props.commentItem"
-        :post-slug-id="props.postSlugId"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-      />
-
-      <ZKButton
-        flat
-        text-color="color-text-weak"
-        icon="mdi-export-variant"
-        size="0.8rem"
-        @click.stop.prevent="shareButtonClicked()"
-      />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useWebShare } from "src/utils/share/WebShare";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { computed, ref } from "vue";
 import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
-import CommentActionOptions from "./CommentActionOptions.vue";
-
-const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -86,8 +65,6 @@ const props = defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
-
-const webShare = useWebShare();
 
 const { showLoginConfirmationDialog } = useDialog();
 
@@ -147,25 +124,6 @@ const upvoteIcon = computed<IconObject>(() => {
     };
   }
 });
-
-function mutedComment() {
-  emit("mutedComment");
-}
-
-async function shareButtonClicked() {
-  const sharePostUrl =
-    window.location.origin +
-    process.env.VITE_PUBLIC_DIR +
-    "/conversation/" +
-    props.postSlugId +
-    "?opinionSlugId=" +
-    props.commentItem.opinionSlugId;
-  await webShare.share("Agora Opinion", sharePostUrl);
-}
-
-function deletedComment() {
-  emit("deleted");
-}
 
 async function castPersonalVote(
   commentSlugId: string,
@@ -237,17 +195,6 @@ async function castPersonalVote(
 </script>
 
 <style scoped lang="scss">
-.actionButtonCluster {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: right;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: $color-text-weak;
-}
-
 .voteCountLabel {
   padding-left: 0.5rem;
 }

@@ -33,13 +33,13 @@ export const useBottomSheet = () => {
   }
 
   async function showCommentOptionSelector(
-    commentSlugId: string,
     posterUserName: string,
     deleteCommentCallback: () => void,
     reportCommentCallback: () => void,
     openUserReportsCallback: () => void,
     muteUserCallback: () => void,
-    moderateCommentCallback: () => void
+    moderateCommentCallback: () => void,
+    shareOpinionCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -79,6 +79,12 @@ export const useBottomSheet = () => {
       });
     }
 
+    actionList.push({
+      label: "Share",
+      icon: "mdi-export-variant",
+      id: "share",
+    });
+
     quasar
       .bottomSheet({
         message: "Select an action for this comment",
@@ -101,6 +107,8 @@ export const useBottomSheet = () => {
           openUserReportsCallback();
         } else if (action.id == "muteUser") {
           muteUserCallback();
+        } else if (action.id == "share") {
+          shareOpinionCallback();
         }
       })
       .onCancel(() => {
