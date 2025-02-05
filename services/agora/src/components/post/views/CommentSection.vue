@@ -77,6 +77,7 @@ import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./CommentSortingSelector.vue";
 import { CommentFilterOptions } from "src/utils/component/opinion";
+import { useUserStore } from "src/stores/user";
 
 const emit = defineEmits(["deleted"]);
 
@@ -84,6 +85,8 @@ const props = defineProps<{
   postSlugId: string;
   isPostLocked: boolean;
 }>();
+
+const { profileData } = storeToRefs(useUserStore());
 
 const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
   transform: String,
@@ -157,7 +160,9 @@ async function initializeData() {
 }
 
 async function initializeModeratorMenu() {
-  await fetchHiddenComments();
+  if (profileData.value.isModerator) {
+    await fetchHiddenComments();
+  }
 }
 
 async function mutedComment() {
