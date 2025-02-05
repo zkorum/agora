@@ -13,8 +13,7 @@
             :show-comment-section="false"
             :skeleton-mode="false"
             class="showCursor"
-            :show-author="false"
-            :display-absolute-time="true"
+            :show-author="true"
             @click="openPost(postData.metadata.conversationSlugId)"
           />
         </ZKHoverEffect>

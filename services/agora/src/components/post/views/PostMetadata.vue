@@ -24,14 +24,7 @@
 
           <div>
             <div v-if="!skeletonMode">
-              <div v-if="displayAbsoluteTime">
-                <Tag>
-                  {{ getDateString(new Date(createdAt)) }}
-                </Tag>
-              </div>
-              <div v-if="!displayAbsoluteTime">
-                {{ formatTimeAgo(new Date(createdAt)) }}
-              </div>
+              {{ formatTimeAgo(new Date(createdAt)) }}
             </div>
             <Skeleton v-if="skeletonMode" width="2rem"></Skeleton>
           </div>
@@ -71,9 +64,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import Skeleton from "primevue/skeleton";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import Tag from "primevue/tag";
 import { formatTimeAgo } from "@vueuse/core";
-import { getDateString } from "src/utils/common";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRouter } from "vue-router";
@@ -85,7 +76,6 @@ const props = defineProps<{
   createdAt: Date;
   skeletonMode: boolean;
   showAuthor: boolean;
-  displayAbsoluteTime: boolean;
   postSlugId: string;
 }>();
 

@@ -19,7 +19,6 @@
       :compact-mode="false"
       :skeleton-mode="false"
       :show-author="true"
-      :display-absolute-time="false"
     />
   </MainLayout>
 </template>
