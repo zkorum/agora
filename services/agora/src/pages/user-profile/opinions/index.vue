@@ -32,7 +32,7 @@
             </div>
 
             <div class="commentMetadata">
-              <span :style="{ fontWeight: 'bold' }">{{
+              <span :style="{ fontWeight: '500' }">{{
                 commentItem.opinionItem.username
               }}</span>
               commented
