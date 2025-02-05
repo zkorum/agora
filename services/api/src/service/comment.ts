@@ -11,6 +11,8 @@ import {
     polisContentTable,
     polisClusterTable,
     polisClusterOpinionTable,
+    polisClusterUserTable,
+    voteContentTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
@@ -32,6 +34,7 @@ import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
+import { voteTable } from "@/schema.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -105,6 +108,7 @@ export async function fetchOpinionsByConversationSlugId({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                authorId: opinionTable.authorId,
                 numLikes: opinionTable.numAgrees,
                 numDislikes: opinionTable.numDisagrees,
                 username: userTable.username,
@@ -114,8 +118,8 @@ export async function fetchOpinionsByConversationSlugId({
                 moderationReason: opinionModerationTable.moderationReason,
                 moderationCreatedAt: opinionModerationTable.createdAt,
                 moderationUpdatedAt: opinionModerationTable.updatedAt,
-                polisClusterIndex: polisClusterTable.index,
                 polisClusterKey: polisClusterTable.key,
+                polisClusterNumUsers: polisClusterTable.numUsers,
                 polisClusterAiLabel: polisClusterTable.aiLabel,
                 polisClusterOpinionAgreementType:
                     polisClusterOpinionTable.agreementType,
@@ -123,6 +127,8 @@ export async function fetchOpinionsByConversationSlugId({
                     polisClusterOpinionTable.percentageAgreement,
                 polisClusterOpinionNumAgreement:
                     polisClusterOpinionTable.numAgreement, // example: 0, 1, 2...etc (number or agrees or disagrees)
+                polisClusterUserId: polisClusterUserTable.userId,
+                polisClusterUserVote: voteContentTable.vote,
                 rankNumAgrees:
                     sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC)`.as(
                         "rankNumAgrees",
@@ -163,6 +169,7 @@ export async function fetchOpinionsByConversationSlugId({
                 eq(polisClusterTable.polisContentId, polisContentTable.id),
             )
             .leftJoin(
+                // TODO: don't join, select this from cache in the opinionTable directly, tha'ts populated upon reception of the data from polis external system
                 polisClusterOpinionTable,
                 and(
                     eq(
@@ -174,6 +181,32 @@ export async function fetchOpinionsByConversationSlugId({
                         opinionTable.slugId,
                     ),
                 ),
+            )
+            .leftJoin(
+                polisClusterUserTable,
+
+                and(
+                    eq(
+                        polisClusterUserTable.polisClusterId,
+                        polisClusterTable.id,
+                    ),
+                    eq(
+                        polisClusterUserTable.polisContentId,
+                        polisContentTable.id,
+                    ),
+                ),
+            )
+            .leftJoin(
+                // TODO: don't join, select that directly from the opinionTable, by populating it via the "group-votes" field upon data reception from polis system
+                voteTable,
+                and(
+                    eq(voteTable.authorId, polisClusterUserTable.userId),
+                    eq(voteTable.opinionId, opinionTable.id),
+                ),
+            )
+            .leftJoin(
+                voteContentTable,
+                eq(voteContentTable.id, voteTable.currentContentId),
             )
             .leftJoin(
                 opinionModerationTable,
@@ -205,6 +238,7 @@ export async function fetchOpinionsByConversationSlugId({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                authorId: opinionTable.authorId,
                 numLikes: opinionTable.numAgrees,
                 numDislikes: opinionTable.numDisagrees,
                 username: userTable.username,
@@ -214,8 +248,8 @@ export async function fetchOpinionsByConversationSlugId({
                 moderationReason: opinionModerationTable.moderationReason,
                 moderationCreatedAt: opinionModerationTable.createdAt,
                 moderationUpdatedAt: opinionModerationTable.updatedAt,
-                polisClusterIndex: polisClusterTable.index,
                 polisClusterKey: polisClusterTable.key,
+                polisClusterNumUsers: polisClusterTable.numUsers,
                 polisClusterAiLabel: polisClusterTable.aiLabel,
                 polisClusterOpinionAgreementType:
                     polisClusterOpinionTable.agreementType,
@@ -223,6 +257,8 @@ export async function fetchOpinionsByConversationSlugId({
                     polisClusterOpinionTable.percentageAgreement,
                 polisClusterOpinionNumAgreement:
                     polisClusterOpinionTable.numAgreement, // example: 0, 1, 2...etc (number or agrees or disagrees)
+                polisClusterUserId: polisClusterUserTable.userId,
+                polisClusterUserVote: voteContentTable.vote,
                 rankNumAgrees:
                     sql`ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC)`.as(
                         "rankNumAgrees",
@@ -276,11 +312,35 @@ export async function fetchOpinionsByConversationSlugId({
                 ),
             )
             .leftJoin(
+                polisClusterUserTable,
+                and(
+                    eq(
+                        polisClusterUserTable.polisClusterId,
+                        polisClusterTable.id,
+                    ),
+                    eq(
+                        polisClusterUserTable.polisContentId,
+                        polisContentTable.id,
+                    ),
+                ),
+            )
+            .leftJoin(
+                voteTable,
+                and(
+                    eq(voteTable.authorId, polisClusterUserTable.userId),
+                    eq(voteTable.opinionId, opinionTable.id),
+                ),
+            )
+            .leftJoin(
+                voteContentTable,
+                eq(voteContentTable.id, voteTable.currentContentId),
+            )
+            .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),
             )
             .orderBy(
-                sql`CASE ${polisClusterTable.index} 
+                sql`CASE ${polisClusterTable.key} 
                     WHEN ${fetchTarget} THEN 1
                     ELSE 2 END`,
                 sql`LEAST(
@@ -308,6 +368,7 @@ export async function fetchOpinionsByConversationSlugId({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                authorId: opinionTable.authorId,
                 numLikes: opinionTable.numAgrees,
                 numDislikes: opinionTable.numDisagrees,
                 username: userTable.username,
@@ -317,8 +378,8 @@ export async function fetchOpinionsByConversationSlugId({
                 moderationReason: opinionModerationTable.moderationReason,
                 moderationCreatedAt: opinionModerationTable.createdAt,
                 moderationUpdatedAt: opinionModerationTable.updatedAt,
-                polisClusterIndex: polisClusterTable.index,
                 polisClusterKey: polisClusterTable.key,
+                polisClusterNumUsers: polisClusterTable.numUsers,
                 polisClusterAiLabel: polisClusterTable.aiLabel,
                 polisClusterOpinionAgreementType:
                     polisClusterOpinionTable.agreementType,
@@ -326,6 +387,8 @@ export async function fetchOpinionsByConversationSlugId({
                     polisClusterOpinionTable.percentageAgreement,
                 polisClusterOpinionNumAgreement:
                     polisClusterOpinionTable.numAgreement, // example: 0, 1, 2...etc (number or agrees or disagrees)
+                polisClusterUserId: polisClusterUserTable.userId,
+                polisClusterUserVote: voteContentTable.vote,
             })
             .from(opinionTable)
             .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
@@ -359,6 +422,30 @@ export async function fetchOpinionsByConversationSlugId({
                 ),
             )
             .leftJoin(
+                polisClusterUserTable,
+                and(
+                    eq(
+                        polisClusterUserTable.polisClusterId,
+                        polisClusterTable.id,
+                    ),
+                    eq(
+                        polisClusterUserTable.polisContentId,
+                        polisContentTable.id,
+                    ),
+                ),
+            )
+            .leftJoin(
+                voteTable,
+                and(
+                    eq(voteTable.authorId, polisClusterUserTable.userId),
+                    eq(voteTable.opinionId, opinionTable.id),
+                ),
+            )
+            .leftJoin(
+                voteContentTable,
+                eq(voteContentTable.id, voteTable.currentContentId),
+            )
+            .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),
             )
@@ -369,29 +456,73 @@ export async function fetchOpinionsByConversationSlugId({
     const opinionItemMap: OpinionItemPerSlugId = new Map<string, OpinionItem>();
     results.map((opinionResponse) => {
         if (opinionItemMap.has(opinionResponse.commentSlugId)) {
-            if (
-                opinionResponse.polisClusterIndex !== null &&
-                opinionResponse.polisClusterKey !== null &&
-                opinionResponse.polisClusterOpinionAgreementType !== null &&
-                opinionResponse.polisClusterOpinionNumAgreement !== null &&
-                opinionResponse.polisClusterOpinionPercentageAgreement !== null
-            ) {
-                const opinionItem = opinionItemMap.get(
-                    opinionResponse.commentSlugId,
-                );
-                opinionItem?.clusters.push({
-                    index: opinionResponse.polisClusterIndex,
-                    key: opinionResponse.polisClusterKey,
-                    aiLabel: toUnionUndefined(
-                        opinionResponse.polisClusterAiLabel,
-                    ),
-                    opinionAgreementType:
-                        opinionResponse.polisClusterOpinionAgreementType,
-                    opinionPercentageAgreement:
-                        opinionResponse.polisClusterOpinionPercentageAgreement,
-                    opinionNumAgreement:
-                        opinionResponse.polisClusterOpinionNumAgreement,
-                });
+            const opinionItem = opinionItemMap.get(
+                opinionResponse.commentSlugId,
+            );
+            if (opinionResponse.polisClusterKey !== null) {
+                if (
+                    opinionResponse.polisClusterOpinionAgreementType !== null &&
+                    opinionResponse.polisClusterOpinionNumAgreement !== null &&
+                    opinionResponse.polisClusterOpinionPercentageAgreement !==
+                        null
+                ) {
+                    opinionItem?.coreOpinionFor.push({
+                        key: opinionResponse.polisClusterKey,
+                        aiLabel: toUnionUndefined(
+                            opinionResponse.polisClusterAiLabel,
+                        ),
+                        agreementType:
+                            opinionResponse.polisClusterOpinionAgreementType,
+                        percentageAgreement:
+                            opinionResponse.polisClusterOpinionPercentageAgreement,
+                        numAgreement:
+                            opinionResponse.polisClusterOpinionNumAgreement,
+                    });
+                }
+                if (
+                    opinionResponse.polisClusterNumUsers !== null &&
+                    opinionResponse.polisClusterUserId !== null &&
+                    opinionResponse.polisClusterUserVote !== null
+                ) {
+                    const existingClusterStats =
+                        opinionItem?.clustersStats.find(
+                            (c) => c.key === opinionResponse.polisClusterKey,
+                        );
+                    if (existingClusterStats !== undefined) {
+                        (existingClusterStats.isAuthorInCluster =
+                            opinionResponse.authorId ===
+                            opinionResponse.polisClusterUserId),
+                            (existingClusterStats.numAgrees +=
+                                opinionResponse.polisClusterUserVote === "agree"
+                                    ? 1
+                                    : 0),
+                            (existingClusterStats.numDisagrees +=
+                                opinionResponse.polisClusterUserVote ===
+                                "disagree"
+                                    ? 1
+                                    : 0);
+                    } else {
+                        opinionItem?.clustersStats.push({
+                            key: opinionResponse.polisClusterKey,
+                            numUsers: opinionResponse.polisClusterNumUsers,
+                            aiLabel: toUnionUndefined(
+                                opinionResponse.polisClusterAiLabel,
+                            ),
+                            isAuthorInCluster:
+                                opinionResponse.authorId ===
+                                opinionResponse.polisClusterUserId,
+                            numAgrees:
+                                opinionResponse.polisClusterUserVote === "agree"
+                                    ? 1
+                                    : 0,
+                            numDisagrees:
+                                opinionResponse.polisClusterUserVote ===
+                                "disagree"
+                                    ? 1
+                                    : 0,
+                        });
+                    }
+                }
                 return;
             } else {
                 // happens because of the left joins, we just ignore those
@@ -415,8 +546,34 @@ export async function fetchOpinionsByConversationSlugId({
             updatedAt: opinionResponse.updatedAt,
             username: opinionResponse.username,
             moderation: moderationProperties,
-            clusters:
-                opinionResponse.polisClusterIndex !== null &&
+            clustersStats:
+                opinionResponse.polisClusterKey !== null &&
+                opinionResponse.polisClusterNumUsers !== null &&
+                opinionResponse.polisClusterUserId !== null
+                    ? [
+                          {
+                              key: opinionResponse.polisClusterKey,
+                              numUsers: opinionResponse.polisClusterNumUsers,
+                              aiLabel: toUnionUndefined(
+                                  opinionResponse.polisClusterAiLabel,
+                              ),
+                              isAuthorInCluster:
+                                  opinionResponse.authorId ===
+                                  opinionResponse.polisClusterUserId,
+                              numAgrees:
+                                  opinionResponse.polisClusterUserVote ===
+                                  "agree"
+                                      ? 1
+                                      : 0,
+                              numDisagrees:
+                                  opinionResponse.polisClusterUserVote ===
+                                  "disagree"
+                                      ? 1
+                                      : 0,
+                          },
+                      ]
+                    : [],
+            coreOpinionFor:
                 opinionResponse.polisClusterKey !== null &&
                 opinionResponse.polisClusterOpinionAgreementType !== null &&
                 opinionResponse.polisClusterOpinionPercentageAgreement !==
@@ -424,16 +581,15 @@ export async function fetchOpinionsByConversationSlugId({
                 opinionResponse.polisClusterOpinionNumAgreement !== null
                     ? [
                           {
-                              index: opinionResponse.polisClusterIndex,
                               key: opinionResponse.polisClusterKey,
                               aiLabel: toUnionUndefined(
                                   opinionResponse.polisClusterAiLabel,
                               ),
-                              opinionAgreementType:
+                              agreementType:
                                   opinionResponse.polisClusterOpinionAgreementType,
-                              opinionPercentageAgreement:
+                              percentageAgreement:
                                   opinionResponse.polisClusterOpinionPercentageAgreement,
-                              opinionNumAgreement:
+                              numAgreement:
                                   opinionResponse.polisClusterOpinionNumAgreement,
                           },
                       ]
@@ -526,7 +682,8 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
                 moderation: moderationProperties,
-                clusters: [], //TODO: change this!
+                coreOpinionFor: [], //TODO: change this!
+                clustersStats: [], //TODO: change this!
             };
             opinionItemList.push(item);
         });

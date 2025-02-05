@@ -775,13 +775,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
      * @type {number}
      * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
      */
-    'index': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
-     */
-    'key': string;
+    'key': number;
     /**
      * 
      * @type {string}
@@ -1665,10 +1659,16 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     'username': string;
     /**
      * 
-     * @type {Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner>}
+     * @type {Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner>}
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
-    'clusters': Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner>;
+    'coreOpinionFor': Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner>;
+    /**
+     * 
+     * @type {Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner>}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+     */
+    'clustersStats': Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner>;
     /**
      * 
      * @type {ApiV1ModerationOpinionGetPost200Response}
@@ -1679,53 +1679,90 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
 /**
  * 
  * @export
- * @interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+ * @interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
  */
-export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner {
+export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner {
     /**
      * 
      * @type {number}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
      */
-    'index': number;
+    'key': number;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
      */
-    'key': string;
+    'aiLabel'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'isAuthorInCluster': boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'numUsers': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'numAgrees': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'numDisagrees': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner
+ */
+export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner
+     */
+    'key': number;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner
      */
     'aiLabel'?: string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner
      */
-    'opinionAgreementType': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum;
+    'agreementType': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInnerAgreementTypeEnum;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner
      */
-    'opinionPercentageAgreement': number;
+    'percentageAgreement': number;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInner
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInner
      */
-    'opinionNumAgreement': number;
+    'numAgreement': number;
 }
 
-export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum = {
+export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInnerAgreementTypeEnum = {
     Agree: 'agree',
     Disagree: 'disagree'
 } as const;
 
-export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum = typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum[keyof typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersInnerOpinionAgreementTypeEnum];
+export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInnerAgreementTypeEnum = typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInnerAgreementTypeEnum[keyof typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemCoreOpinionForInnerAgreementTypeEnum];
 
 /**
  * 

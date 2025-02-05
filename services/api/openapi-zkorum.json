@@ -440,11 +440,9 @@
                                                                 "items": {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "index": {
-                                                                            "type": "number"
-                                                                        },
                                                                         "key": {
-                                                                            "type": "string"
+                                                                            "type": "integer",
+                                                                            "minimum": 0
                                                                         },
                                                                         "aiLabel": {
                                                                             "type": "string"
@@ -454,7 +452,6 @@
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "index",
                                                                         "key"
                                                                     ],
                                                                     "additionalProperties": false
@@ -1108,11 +1105,9 @@
                                                         "items": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "index": {
-                                                                    "type": "number"
-                                                                },
                                                                 "key": {
-                                                                    "type": "string"
+                                                                    "type": "integer",
+                                                                    "minimum": 0
                                                                 },
                                                                 "aiLabel": {
                                                                     "type": "string"
@@ -1122,7 +1117,6 @@
                                                                 }
                                                             },
                                                             "required": [
-                                                                "index",
                                                                 "key"
                                                             ],
                                                             "additionalProperties": false
@@ -1361,11 +1355,9 @@
                                                                 "items": {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "index": {
-                                                                            "type": "number"
-                                                                        },
                                                                         "key": {
-                                                                            "type": "string"
+                                                                            "type": "integer",
+                                                                            "minimum": 0
                                                                         },
                                                                         "aiLabel": {
                                                                             "type": "string"
@@ -1375,7 +1367,6 @@
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "index",
                                                                         "key"
                                                                     ],
                                                                     "additionalProperties": false
@@ -1427,43 +1418,78 @@
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
                                                     },
-                                                    "clusters": {
+                                                    "coreOpinionFor": {
                                                         "type": "array",
                                                         "items": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "index": {
-                                                                    "type": "number"
-                                                                },
                                                                 "key": {
-                                                                    "type": "string"
+                                                                    "type": "integer",
+                                                                    "minimum": 0
                                                                 },
                                                                 "aiLabel": {
                                                                     "type": "string"
                                                                 },
-                                                                "opinionAgreementType": {
+                                                                "agreementType": {
                                                                     "type": "string",
                                                                     "enum": [
                                                                         "agree",
                                                                         "disagree"
                                                                     ]
                                                                 },
-                                                                "opinionPercentageAgreement": {
+                                                                "percentageAgreement": {
                                                                     "type": "number",
                                                                     "minimum": 0,
                                                                     "maximum": 1
                                                                 },
-                                                                "opinionNumAgreement": {
+                                                                "numAgreement": {
                                                                     "type": "integer",
                                                                     "minimum": 0
                                                                 }
                                                             },
                                                             "required": [
-                                                                "index",
                                                                 "key",
-                                                                "opinionAgreementType",
-                                                                "opinionPercentageAgreement",
-                                                                "opinionNumAgreement"
+                                                                "agreementType",
+                                                                "percentageAgreement",
+                                                                "numAgreement"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "clustersStats": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "key": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "aiLabel": {
+                                                                    "type": "string"
+                                                                },
+                                                                "isAuthorInCluster": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "numUsers": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "numAgrees": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "numDisagrees": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "key",
+                                                                "isAuthorInCluster",
+                                                                "numUsers",
+                                                                "numAgrees",
+                                                                "numDisagrees"
                                                             ],
                                                             "additionalProperties": false
                                                         }
@@ -1546,7 +1572,8 @@
                                                     "numAgrees",
                                                     "numDisagrees",
                                                     "username",
-                                                    "clusters",
+                                                    "coreOpinionFor",
+                                                    "clustersStats",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1927,43 +1954,78 @@
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
-                                            "clusters": {
+                                            "coreOpinionFor": {
                                                 "type": "array",
                                                 "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "index": {
-                                                            "type": "number"
-                                                        },
                                                         "key": {
-                                                            "type": "string"
+                                                            "type": "integer",
+                                                            "minimum": 0
                                                         },
                                                         "aiLabel": {
                                                             "type": "string"
                                                         },
-                                                        "opinionAgreementType": {
+                                                        "agreementType": {
                                                             "type": "string",
                                                             "enum": [
                                                                 "agree",
                                                                 "disagree"
                                                             ]
                                                         },
-                                                        "opinionPercentageAgreement": {
+                                                        "percentageAgreement": {
                                                             "type": "number",
                                                             "minimum": 0,
                                                             "maximum": 1
                                                         },
-                                                        "opinionNumAgreement": {
+                                                        "numAgreement": {
                                                             "type": "integer",
                                                             "minimum": 0
                                                         }
                                                     },
                                                     "required": [
-                                                        "index",
                                                         "key",
-                                                        "opinionAgreementType",
-                                                        "opinionPercentageAgreement",
-                                                        "opinionNumAgreement"
+                                                        "agreementType",
+                                                        "percentageAgreement",
+                                                        "numAgreement"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "clustersStats": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "key": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "aiLabel": {
+                                                            "type": "string"
+                                                        },
+                                                        "isAuthorInCluster": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "numUsers": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "numAgrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "numDisagrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "key",
+                                                        "isAuthorInCluster",
+                                                        "numUsers",
+                                                        "numAgrees",
+                                                        "numDisagrees"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -2046,7 +2108,8 @@
                                             "numAgrees",
                                             "numDisagrees",
                                             "username",
-                                            "clusters",
+                                            "coreOpinionFor",
+                                            "clustersStats",
                                             "moderation"
                                         ],
                                         "additionalProperties": false
@@ -2121,43 +2184,78 @@
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
-                                            "clusters": {
+                                            "coreOpinionFor": {
                                                 "type": "array",
                                                 "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "index": {
-                                                            "type": "number"
-                                                        },
                                                         "key": {
-                                                            "type": "string"
+                                                            "type": "integer",
+                                                            "minimum": 0
                                                         },
                                                         "aiLabel": {
                                                             "type": "string"
                                                         },
-                                                        "opinionAgreementType": {
+                                                        "agreementType": {
                                                             "type": "string",
                                                             "enum": [
                                                                 "agree",
                                                                 "disagree"
                                                             ]
                                                         },
-                                                        "opinionPercentageAgreement": {
+                                                        "percentageAgreement": {
                                                             "type": "number",
                                                             "minimum": 0,
                                                             "maximum": 1
                                                         },
-                                                        "opinionNumAgreement": {
+                                                        "numAgreement": {
                                                             "type": "integer",
                                                             "minimum": 0
                                                         }
                                                     },
                                                     "required": [
-                                                        "index",
                                                         "key",
-                                                        "opinionAgreementType",
-                                                        "opinionPercentageAgreement",
-                                                        "opinionNumAgreement"
+                                                        "agreementType",
+                                                        "percentageAgreement",
+                                                        "numAgreement"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "clustersStats": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "key": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "aiLabel": {
+                                                            "type": "string"
+                                                        },
+                                                        "isAuthorInCluster": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "numUsers": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "numAgrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "numDisagrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "key",
+                                                        "isAuthorInCluster",
+                                                        "numUsers",
+                                                        "numAgrees",
+                                                        "numDisagrees"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -2240,7 +2338,8 @@
                                             "numAgrees",
                                             "numDisagrees",
                                             "username",
-                                            "clusters",
+                                            "coreOpinionFor",
+                                            "clustersStats",
                                             "moderation"
                                         ],
                                         "additionalProperties": false
@@ -2316,43 +2415,78 @@
                                                 "type": "string",
                                                 "pattern": "^[a-z0-9_]*$"
                                             },
-                                            "clusters": {
+                                            "coreOpinionFor": {
                                                 "type": "array",
                                                 "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "index": {
-                                                            "type": "number"
-                                                        },
                                                         "key": {
-                                                            "type": "string"
+                                                            "type": "integer",
+                                                            "minimum": 0
                                                         },
                                                         "aiLabel": {
                                                             "type": "string"
                                                         },
-                                                        "opinionAgreementType": {
+                                                        "agreementType": {
                                                             "type": "string",
                                                             "enum": [
                                                                 "agree",
                                                                 "disagree"
                                                             ]
                                                         },
-                                                        "opinionPercentageAgreement": {
+                                                        "percentageAgreement": {
                                                             "type": "number",
                                                             "minimum": 0,
                                                             "maximum": 1
                                                         },
-                                                        "opinionNumAgreement": {
+                                                        "numAgreement": {
                                                             "type": "integer",
                                                             "minimum": 0
                                                         }
                                                     },
                                                     "required": [
-                                                        "index",
                                                         "key",
-                                                        "opinionAgreementType",
-                                                        "opinionPercentageAgreement",
-                                                        "opinionNumAgreement"
+                                                        "agreementType",
+                                                        "percentageAgreement",
+                                                        "numAgreement"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "clustersStats": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "key": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "aiLabel": {
+                                                            "type": "string"
+                                                        },
+                                                        "isAuthorInCluster": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "numUsers": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "numAgrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "numDisagrees": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "key",
+                                                        "isAuthorInCluster",
+                                                        "numUsers",
+                                                        "numAgrees",
+                                                        "numDisagrees"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -2435,7 +2569,8 @@
                                             "numAgrees",
                                             "numDisagrees",
                                             "username",
-                                            "clusters",
+                                            "coreOpinionFor",
+                                            "clustersStats",
                                             "moderation"
                                         ],
                                         "additionalProperties": false
@@ -2750,11 +2885,9 @@
                                                             "items": {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "index": {
-                                                                        "type": "number"
-                                                                    },
                                                                     "key": {
-                                                                        "type": "string"
+                                                                        "type": "integer",
+                                                                        "minimum": 0
                                                                     },
                                                                     "aiLabel": {
                                                                         "type": "string"
@@ -2764,7 +2897,6 @@
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "index",
                                                                     "key"
                                                                 ],
                                                                 "additionalProperties": false
@@ -2832,11 +2964,9 @@
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "index": {
-                                                        "type": "number"
-                                                    },
                                                     "key": {
-                                                        "type": "string"
+                                                        "type": "integer",
+                                                        "minimum": 0
                                                     },
                                                     "aiLabel": {
                                                         "type": "string"
@@ -2846,7 +2976,6 @@
                                                     }
                                                 },
                                                 "required": [
-                                                    "index",
                                                     "key"
                                                 ],
                                                 "additionalProperties": false

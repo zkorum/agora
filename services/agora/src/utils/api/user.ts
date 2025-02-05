@@ -134,7 +134,8 @@ export function useBackendUserApi() {
                 responseItem.opinionItem.moderation.updatedAt
               ),
             },
-            clusters: responseItem.opinionItem.clusters,
+            coreOpinionFor: responseItem.opinionItem.coreOpinionFor,
+            clustersStats: responseItem.opinionItem.clustersStats,
           },
         };
         extendedCommentList.push(extendedComment);

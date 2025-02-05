@@ -280,8 +280,8 @@ export async function delayedPolisGetAndUpdateMath({
                 .insert(polisClusterTable)
                 .values({
                     polisContentId: polisContentId,
-                    key: clusterEntry[0],
-                    index: index,
+                    key: clusterEntry[1].id,
+                    numUsers: clusterEntry[1].members.length,
                     mathCenter: clusterEntry[1].center,
                 })
                 .returning({ polisClusterId: polisClusterTable.id });
@@ -338,7 +338,6 @@ export async function getPolisClustersInfo({
     const results = await db
         .select({
             polisClusterKey: polisClusterTable.key,
-            polisClusterIndex: polisClusterTable.index,
             polisClusterAiLabel: polisClusterTable.aiLabel,
             polisClusterAiSummary: polisClusterTable.aiSummary,
         })
@@ -352,24 +351,20 @@ export async function getPolisClustersInfo({
             and(
                 eq(polisClusterTable.polisContentId, polisContentTable.id),
                 isNotNull(polisClusterTable.key),
-                isNotNull(polisClusterTable.index),
             ),
         )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 isNotNull(polisClusterTable.key),
-                isNotNull(polisClusterTable.index),
             ),
         );
     const clusters: ClusterMetadata[] = [];
     for (const result of results) {
         if (
-            result.polisClusterIndex !== null && // this should not be necessary for typescript to get the types, because of the isNotNull above but drizzle is !$*@#*jdk
-            result.polisClusterKey !== null
+            result.polisClusterKey !== null // this should not be necessary for typescript to get the types, because of the isNotNull above but drizzle is !$*@#*jdk
         ) {
             clusters.push({
-                index: result.polisClusterIndex,
                 key: result.polisClusterKey,
                 aiLabel: toUnionUndefined(result.polisClusterAiLabel),
                 aiSummary: toUnionUndefined(result.polisClusterAiSummary),

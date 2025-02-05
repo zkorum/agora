@@ -126,7 +126,8 @@ export async function getUserComments({
                 updatedAt: commentResponse.updatedAt,
                 username: commentResponse.username,
                 moderation: moderationProperties,
-                clusters: [], // TODO: change that!
+                coreOpinionFor: [], //TODO: change this!
+                clustersStats: [], //TODO: change this!
             };
 
             const postItem = await fetchPostBySlugId({

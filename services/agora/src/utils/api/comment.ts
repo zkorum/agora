@@ -51,7 +51,8 @@ export function useBackendCommentApi() {
           createdAt: new Date(item.moderation.createdAt),
           updatedAt: new Date(item.moderation.updatedAt),
         },
-        clusters: item.clusters,
+        coreOpinionFor: item.coreOpinionFor,
+        clustersStats: item.clustersStats,
       });
     });
 
@@ -101,7 +102,8 @@ export function useBackendCommentApi() {
             createdAt: new Date(item.moderation.createdAt),
             updatedAt: new Date(item.moderation.updatedAt),
           },
-          clusters: item.clusters,
+          coreOpinionFor: item.coreOpinionFor,
+          clustersStats: item.clustersStats,
         });
       });
 

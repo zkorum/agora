@@ -1532,8 +1532,8 @@ export const polisClusterTable = pgTable("polis_cluster", {
     polisContentId: integer("polis_content_id")
         .notNull()
         .references(() => polisContentTable.id), // the conversationTable never gets deleted
-    index: integer("index").notNull(), // arbitrary position created by external polis system
-    key: varchar("key", { length: 20 }).notNull(), // key value representing the group, created by polis system, likely "0", "1", "2", etc
+    key: integer("key").notNull(), // arbitrary id created by external polis system
+    numUsers: integer("numUsers").notNull(),
     aiLabel: varchar("ai_label", { length: 30 }), // TODO: set max-length appropriately
     aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
     mathCenter: real("math_center").array().notNull(), // extracted from external polis system

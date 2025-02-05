@@ -239,8 +239,8 @@ CREATE TABLE "polis_cluster_opinion" (
 CREATE TABLE "polis_cluster" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "polis_cluster_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"polis_content_id" integer NOT NULL,
-	"index" integer NOT NULL,
-	"key" varchar(20) NOT NULL,
+	"key" integer NOT NULL,
+	"numUsers" integer NOT NULL,
 	"ai_label" varchar(30),
 	"ai_summary" varchar(500),
 	"math_center" real[] NOT NULL,

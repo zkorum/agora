@@ -143,7 +143,6 @@ export function useCommonPost() {
                 // polis
                 conversationAiSummary: polisContentTable.aiSummary,
                 polisClusterKey: polisClusterTable.key,
-                polisClusterIndex: polisClusterTable.index,
                 polisClusterAiLabel: polisClusterTable.aiLabel,
                 polisClusterAiSummary: polisClusterTable.aiSummary,
             })
@@ -198,14 +197,13 @@ export function useCommonPost() {
         postItems.forEach((postItem) => {
             if (
                 extendedConversationMap.has(postItem.slugId) &&
-                postItem.polisClusterIndex !== null &&
+                postItem.polisClusterKey !== null &&
                 postItem.polisClusterKey !== null
             ) {
                 const extendedPost = extendedConversationMap.get(
                     postItem.slugId,
                 );
                 extendedPost?.polis.clusters.push({
-                    index: postItem.polisClusterIndex,
                     key: postItem.polisClusterKey,
                     aiLabel: toUnionUndefined(postItem.polisClusterAiLabel),
                     aiSummary: toUnionUndefined(postItem.polisClusterAiSummary),
@@ -239,11 +237,9 @@ export function useCommonPost() {
                     postItem.conversationAiSummary,
                 ),
                 clusters:
-                    postItem.polisClusterIndex !== null &&
                     postItem.polisClusterKey !== null
                         ? [
                               {
-                                  index: postItem.polisClusterIndex,
                                   key: postItem.polisClusterKey,
                                   aiLabel: toUnionUndefined(
                                       postItem.polisClusterAiLabel,

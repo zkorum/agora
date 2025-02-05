@@ -111,7 +111,8 @@ const opinionItem = ref<OpinionItem>({
   moderation: {
     status: "unmoderated",
   },
-  clusters: [],
+  coreOpinionFor: [],
+  clustersStats: [],
 });
 
 onMounted(async () => {
