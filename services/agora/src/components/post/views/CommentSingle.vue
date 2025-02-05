@@ -1,11 +1,11 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div class="container">
+    <div class="container background">
       <div class="metadata">
         <UserAvatar
           :user-name="commentItem.username"
-          :size="40"
+          :size="30"
           class="avatarIcon"
         />
 
@@ -72,7 +72,7 @@ function mutedComment() {
 
 <style scoped lang="scss">
 .container {
-  padding: 0.5rem;
+  padding: 1.5rem;
 }
 
 .contentLayout {
@@ -110,5 +110,10 @@ function mutedComment() {
   font-size: 0.8rem;
   display: flex;
   flex-direction: column;
+}
+
+.background {
+  background-color: white;
+  border-radius: 1.5rem;
 }
 </style>
