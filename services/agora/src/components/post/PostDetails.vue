@@ -61,7 +61,10 @@
             </ZKCard>
           </div>
 
-          <div v-if="extendedPostData.payload.poll" class="pollContainer">
+          <div
+            v-if="extendedPostData.payload.poll && !skeletonMode"
+            class="pollContainer"
+          >
             <PollWrapper
               :poll-options="extendedPostData.payload.poll"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"

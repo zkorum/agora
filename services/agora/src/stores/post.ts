@@ -117,7 +117,8 @@ export const usePostStore = defineStore("post", () => {
     },
   };
 
-  const masterPostDataList = ref<ExtendedConversation[]>([
+  const masterPostDataList = ref<ExtendedConversation[]>([]);
+  const emptyPostDataList = ref<ExtendedConversation[]>([
     emptyPost,
     emptyPost,
     emptyPost,
@@ -207,6 +208,7 @@ export const usePostStore = defineStore("post", () => {
     hasNewPosts,
     resetPostData,
     masterPostDataList,
+    emptyPostDataList,
     emptyPost,
     lastSavedHomeFeedPosition,
     dataReady,

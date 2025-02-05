@@ -29,7 +29,28 @@
           />
         </div>
 
-        <div v-if="masterPostDataList.length > 0" class="postListFlex">
+        <div v-if="!dataReady" class="postListFlex">
+          <div
+            v-for="postData in emptyPostDataList"
+            :key="postData.metadata.conversationSlugId"
+          >
+            <PostDetails
+              :extended-post-data="postData"
+              :compact-mode="true"
+              :show-comment-section="false"
+              :skeleton-mode="true"
+              class="showCursor"
+              :show-author="true"
+              :display-absolute-time="false"
+              @click="openPost(postData.metadata.conversationSlugId)"
+            />
+          </div>
+        </div>
+
+        <div
+          v-if="dataReady && masterPostDataList.length > 0"
+          class="postListFlex"
+        >
           <div
             v-for="postData in masterPostDataList"
             :key="postData.metadata.conversationSlugId"
@@ -38,7 +59,7 @@
               :extended-post-data="postData"
               :compact-mode="true"
               :show-comment-section="false"
-              :skeleton-mode="!dataReady"
+              :skeleton-mode="false"
               class="showCursor"
               :show-author="true"
               :display-absolute-time="false"
@@ -49,7 +70,7 @@
       </div>
 
       <div
-        v-if="endOfFeed && masterPostDataList.length > 0"
+        v-if="dataReady && endOfFeed && masterPostDataList.length > 0"
         class="centerMessage"
       >
         <div>
@@ -85,7 +106,7 @@ const { loadingVisible } = usePullDownToRefresh(
   postContainerRef
 );
 
-const { masterPostDataList, dataReady, endOfFeed } =
+const { masterPostDataList, emptyPostDataList, dataReady, endOfFeed } =
   storeToRefs(usePostStore());
 const { loadPostData, hasNewPosts } = usePostStore();
 
@@ -158,7 +179,7 @@ async function refreshPage(done: () => void) {
 .postListFlex {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 .emptyDivPadding {
