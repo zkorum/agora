@@ -7,7 +7,7 @@
       </ZKButton>
     </div>
 
-    <q-dialog v-model="showDialog">
+    <q-dialog v-model="showDialog" position="bottom">
       <div class="dialogContainer">
         <div class="titleStyle">Filter Responses by:</div>
 
@@ -116,9 +116,7 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   gap: 1rem;
   padding: 1rem;
   background-color: white;
-  min-width: 15rem;
-  min-height: 10rem;
-  max-width: 25rem;
+  border-radius: 25px;
 }
 
 .optionFlexStyle {
