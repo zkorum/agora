@@ -304,7 +304,7 @@ async function shareClicked() {
 }
 
 .standardBackground {
-  background-color: white;
+  background-color: none;
 }
 
 .compactBackground {
