@@ -279,9 +279,11 @@ async function getClusters() {
   if (props.postSlugId.length > 0) {
     clusterMetadataList.value = await getPolisClustersInfo(props.postSlugId);
 
-    clusterMetadataList.value.forEach(async (clusterItem) => {
-      await fetchCommentList("cluster", clusterItem.key);
-    });
+    await Promise.all(
+      clusterMetadataList.value.map(async (clusterItem) => {
+        await fetchCommentList("cluster", clusterItem.key);
+      })
+    );
   }
 }
 
@@ -308,7 +310,7 @@ async function fetchCommentList(
           commentItemsDiscover.value = response;
           break;
         case "cluster":
-          if (clusterKey) {
+          if (clusterKey != undefined) {
             clusterCommentItemsMap.value.set(clusterKey, response);
           }
       }

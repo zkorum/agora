@@ -98,11 +98,15 @@ export async function fetchOpinionsByConversationSlugId({
             );
             break;
         case "cluster":
-            if (clusterKey) {
+            if (clusterKey != undefined) {
                 whereClause = and(
                     whereClause,
                     isNull(opinionModerationTable.id),
                     eq(polisClusterTable.key, clusterKey),
+                );
+            } else {
+                httpErrors.badRequest(
+                    "Missing cluster key input for the cluster filter algorithm",
                 );
             }
             break;
