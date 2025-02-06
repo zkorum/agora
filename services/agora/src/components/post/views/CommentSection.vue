@@ -173,6 +173,7 @@ watch(currentClusterTab, async () => {
     if (cachedCommentItems) {
       commentItemsCluster.value = cachedCommentItems;
     } else {
+      commentItemsCluster.value = [];
       console.error(
         `Failed to locate comment items for cluster key: ${clusterKey}`
       );
@@ -207,6 +208,8 @@ function updateCommentFilter() {
 }
 
 async function initializeData() {
+  clusterCommentItemsMap.value.clear();
+
   await Promise.all([
     getClusters(),
     initializeModeratorMenu(),
