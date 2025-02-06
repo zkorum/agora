@@ -4,8 +4,18 @@
       <div v-if="showClusterMap" class="clusterFliterTabStyle">
         <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
           <ZKButton
+            class="clusterButton"
             :label="encodeClusterIndexToName(clusterItem.key)"
-            color="red"
+            :color="
+              currentClusterTab === clusterItem.key.toString()
+                ? 'primary'
+                : 'secondary'
+            "
+            :text-color="
+              currentClusterTab === clusterItem.key.toString()
+                ? 'white'
+                : 'black'
+            "
             @click="toggleClusterSelection(clusterItem.key)"
           />
         </div>
@@ -399,12 +409,9 @@ function encodeClusterIndexToName(index: number) {
 }
 
 function toggleClusterSelection(index: number) {
-  console.log(index);
   if (currentClusterTab.value == index.toString()) {
-    console.log("reset");
     currentClusterTab.value = "all";
   } else {
-    console.log("SET");
     currentClusterTab.value = index.toString();
   }
 }
@@ -436,5 +443,10 @@ function toggleClusterSelection(index: number) {
   text-decoration-line: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 0.5rem;
+}
+
+.clusterButton {
+  width: 10rem;
+  height: 10rem;
 }
 </style>
