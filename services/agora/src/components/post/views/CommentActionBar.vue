@@ -16,11 +16,7 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelDisagree">
-          {{ numDislikesLocal }} ({{
-            Math.round(
-              (numDislikesLocal / (numDislikesLocal + numLikesLocal)) * 100
-            )
-          }}%)
+          {{ numDislikesLocal }} ({{ totalDownvotePercentage }}%)
         </div>
       </div>
 
@@ -39,11 +35,7 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelAgree">
-          {{ numLikesLocal }} ({{
-            Math.round(
-              (numLikesLocal / (numDislikesLocal + numLikesLocal)) * 100
-            )
-          }}%)
+          {{ numLikesLocal }} ({{ totalUpvotePercentage }}%)
         </div>
       </div>
     </div>
@@ -122,6 +114,24 @@ const upvoteIcon = computed<IconObject>(() => {
       textColor: "button-agree-text",
       backgroundColor: "button-agree-background-unselected",
     };
+  }
+});
+
+const totalUpvotePercentage = computed(() => {
+  const totalVotes = numDislikesLocal.value + numLikesLocal.value;
+  if (totalVotes > 0) {
+    return Math.round((numLikesLocal.value / totalVotes) * 100);
+  } else {
+    return 0;
+  }
+});
+
+const totalDownvotePercentage = computed(() => {
+  const totalVotes = numDislikesLocal.value + numLikesLocal.value;
+  if (totalVotes > 0) {
+    return Math.round((numDislikesLocal.value / totalVotes) * 100);
+  } else {
+    return 0;
   }
 });
 

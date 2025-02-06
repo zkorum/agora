@@ -45,8 +45,6 @@
         </div>
       </div>
 
-      <!-- TODO: use the filtering algorithm but with sortAlgorithm==cluster.index -->
-
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'discover'"
         :comment-item-list="commentItemsDiscover"
