@@ -120,7 +120,10 @@ import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./CommentSortingSelector.vue";
-import { CommentFilterOptions } from "src/utils/component/opinion";
+import {
+  CommentFilterOptions,
+  encodeClusterIndexToName,
+} from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 
@@ -400,10 +403,6 @@ async function changeFilter(filterValue: CommentFilterOptions) {
   sortAlgorithm.value = filterValue;
   await resetRouteParams();
   commentFilterQuery.value = filterValue;
-}
-
-function encodeClusterIndexToName(index: number) {
-  return String.fromCharCode(65 + index);
 }
 
 function toggleClusterSelection(index: number) {

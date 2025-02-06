@@ -16,7 +16,21 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelDisagree">
-          {{ numDislikesLocal }} ({{ totalDownvotePercentage }}%)
+          <div>
+            Total: {{ numDislikesLocal }} ({{ totalDownvotePercentage }}%)
+          </div>
+          <div
+            v-for="clusterItem in commentItem.clustersStats"
+            :key="clusterItem.key"
+          >
+            Group {{ encodeClusterIndexToName(clusterItem.key) }}:
+            {{ clusterItem.numDisagrees }} ({{
+              calculatePercentage(
+                clusterItem.numDisagrees,
+                clusterItem.numAgrees + clusterItem.numDisagrees
+              )
+            }})
+          </div>
         </div>
       </div>
 
@@ -35,7 +49,19 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelAgree">
-          {{ numLikesLocal }} ({{ totalUpvotePercentage }}%)
+          <div>Total: {{ numLikesLocal }} ({{ totalUpvotePercentage }}%)</div>
+          <div
+            v-for="clusterItem in commentItem.clustersStats"
+            :key="clusterItem.key"
+          >
+            Group {{ encodeClusterIndexToName(clusterItem.key) }}:
+            {{ clusterItem.numAgrees }} ({{
+              calculatePercentage(
+                clusterItem.numAgrees,
+                clusterItem.numAgrees + clusterItem.numDisagrees
+              )
+            }})
+          </div>
         </div>
       </div>
     </div>
@@ -50,6 +76,7 @@ import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
+import { encodeClusterIndexToName } from "src/utils/component/opinion";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -118,18 +145,22 @@ const upvoteIcon = computed<IconObject>(() => {
 });
 
 const totalUpvotePercentage = computed(() => {
-  return calculateTotalVotePercentage(true);
+  return calculatePercentage(
+    numLikesLocal.value,
+    numDislikesLocal.value + numLikesLocal.value
+  );
 });
 
 const totalDownvotePercentage = computed(() => {
-  return calculateTotalVotePercentage(false);
+  return calculatePercentage(
+    numDislikesLocal.value,
+    numDislikesLocal.value + numLikesLocal.value
+  );
 });
 
-function calculateTotalVotePercentage(isUpvote: boolean) {
-  const totalVotes = numDislikesLocal.value + numLikesLocal.value;
-  const numerator = isUpvote ? numLikesLocal.value : numDislikesLocal.value;
-  if (totalVotes > 0) {
-    return Math.round((numerator / totalVotes) * 100);
+function calculatePercentage(numerator: number, denominator: number) {
+  if (denominator > 0) {
+    return Math.round((numerator / denominator) * 100);
   } else {
     return 0;
   }
