@@ -1078,6 +1078,7 @@ server.after(() => {
                             postSlugId: request.body.conversationSlugId,
                             fetchTarget: request.body.filter,
                             personalizationUserId: status.userId,
+                            clusterKey: request.body.clusterKey,
                         });
                     return Array.from(opinionItemsPerSlugId.values());
                 }
@@ -1087,6 +1088,7 @@ server.after(() => {
                         db: db,
                         postSlugId: request.body.conversationSlugId,
                         fetchTarget: request.body.filter,
+                        clusterKey: request.body.clusterKey,
                     });
                 return Array.from(opinionItemsPerSlugId.values());
             }
@@ -1142,6 +1144,7 @@ server.after(() => {
                         db: db,
                         postSlugId: request.body.conversationSlugId,
                         fetchTarget: "hidden",
+                        clusterKey: undefined,
                     });
                 return Array.from(opinionItemsPerSlugId.values());
             }

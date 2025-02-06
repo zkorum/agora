@@ -21,6 +21,7 @@ import type {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type {
+    CommentFeedFilter,
     OpinionItem,
     OpinionItemPerSlugId,
     SlugId,
@@ -65,8 +66,9 @@ export async function getCommentSlugIdLastCreatedAt({
 interface FetchOpinionsByConversationSlugIdProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
-    fetchTarget: "moderated" | "new" | "hidden" | "discover" | number; // if number, then we filter by cluster index
+    fetchTarget: CommentFeedFilter; // if cluster, then we filter by clusterKey
     personalizationUserId?: string;
+    clusterKey: number | undefined;
 }
 
 export async function fetchOpinionsByConversationSlugId({
@@ -74,6 +76,7 @@ export async function fetchOpinionsByConversationSlugId({
     postSlugId,
     fetchTarget,
     personalizationUserId,
+    clusterKey,
 }: FetchOpinionsByConversationSlugIdProps): Promise<OpinionItemPerSlugId> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
 
@@ -93,6 +96,15 @@ export async function fetchOpinionsByConversationSlugId({
                 eq(opinionModerationTable.moderationAction, "hide"),
                 isNotNull(opinionModerationTable.id),
             );
+            break;
+        case "cluster":
+            if (clusterKey) {
+                whereClause = and(
+                    whereClause,
+                    isNull(opinionModerationTable.id),
+                    eq(polisClusterTable.key, clusterKey),
+                );
+            }
             break;
         default:
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
@@ -230,7 +242,7 @@ export async function fetchOpinionsByConversationSlugId({
             //     desc(opinionTable.createdAt),
             // )
             .where(whereClause);
-    } else if (typeof fetchTarget === "number") {
+    } else if (fetchTarget === "cluster") {
         results = await db
             .select({
                 // comment payload
@@ -341,7 +353,7 @@ export async function fetchOpinionsByConversationSlugId({
             )
             .orderBy(
                 sql`CASE ${polisClusterTable.key} 
-                    WHEN ${fetchTarget} THEN 1
+                    WHEN ${clusterKey} THEN 1
                     ELSE 2 END`,
                 sql`LEAST(
             ROW_NUMBER() OVER (ORDER BY ${opinionTable.numAgrees} DESC), 
@@ -489,6 +501,7 @@ export async function fetchOpinionsByConversationSlugId({
                             (c) => c.key === opinionResponse.polisClusterKey,
                         );
                     if (existingClusterStats !== undefined) {
+                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                         (existingClusterStats.isAuthorInCluster =
                             opinionResponse.authorId ===
                             opinionResponse.polisClusterUserId),

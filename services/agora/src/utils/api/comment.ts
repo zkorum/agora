@@ -117,13 +117,15 @@ export function useBackendCommentApi() {
 
   async function fetchCommentsForPost(
     postSlugId: string,
-    filter: CommentFeedFilter
+    filter: CommentFeedFilter,
+    clusterKey: number | undefined
   ) {
     try {
       const params: ApiV1OpinionFetchByConversationPostRequest = {
         conversationSlugId: postSlugId,
         filter: filter,
         isAuthenticatedRequest: isAuthenticated.value,
+        clusterKey: clusterKey,
       };
 
       if (isAuthenticated.value) {
