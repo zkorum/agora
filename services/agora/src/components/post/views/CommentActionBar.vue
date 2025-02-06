@@ -118,22 +118,22 @@ const upvoteIcon = computed<IconObject>(() => {
 });
 
 const totalUpvotePercentage = computed(() => {
-  const totalVotes = numDislikesLocal.value + numLikesLocal.value;
-  if (totalVotes > 0) {
-    return Math.round((numLikesLocal.value / totalVotes) * 100);
-  } else {
-    return 0;
-  }
+  return calculateTotalVotePercentage(true);
 });
 
 const totalDownvotePercentage = computed(() => {
+  return calculateTotalVotePercentage(false);
+});
+
+function calculateTotalVotePercentage(isUpvote: boolean) {
   const totalVotes = numDislikesLocal.value + numLikesLocal.value;
+  const numerator = isUpvote ? numLikesLocal.value : numDislikesLocal.value;
   if (totalVotes > 0) {
-    return Math.round((numDislikesLocal.value / totalVotes) * 100);
+    return Math.round((numerator / totalVotes) * 100);
   } else {
     return 0;
   }
-});
+}
 
 async function castPersonalVote(
   commentSlugId: string,
