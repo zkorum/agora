@@ -30,7 +30,7 @@ CREATE TABLE "auth_attempt_phone" (
 CREATE TABLE "conversation_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
-	"conversation_proof_id" integer NOT NULL,
+	"conversation_proof_id" integer,
 	"title" varchar(130) NOT NULL,
 	"body" varchar,
 	"poll_id" integer,
@@ -152,7 +152,7 @@ CREATE TABLE "opinion_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"opinion_id" integer NOT NULL,
 	"conversation_content_id" integer NOT NULL,
-	"opinion_proof_id" integer NOT NULL,
+	"opinion_proof_id" integer,
 	"content" varchar NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
@@ -350,6 +350,7 @@ CREATE TABLE "user" (
 	"username" varchar(40) NOT NULL,
 	"is_moderator" boolean DEFAULT false NOT NULL,
 	"is_anonymous" boolean DEFAULT true NOT NULL,
+	"is_seed" boolean DEFAULT false NOT NULL,
 	"show_flagged_content" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
 	"active_conversation_count" integer DEFAULT 0 NOT NULL,
@@ -363,7 +364,7 @@ CREATE TABLE "user" (
 CREATE TABLE "vote_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"vote_id" integer NOT NULL,
-	"vote_proof_id" integer NOT NULL,
+	"vote_proof_id" integer,
 	"opinion_content_id" integer NOT NULL,
 	"vote" "vote_enum" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL

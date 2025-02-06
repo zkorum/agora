@@ -717,8 +717,8 @@ interface PostNewOpinionProps {
     commentBody: string;
     conversationSlugId: string;
     userId: string;
-    didWrite: string;
-    proof: string;
+    didWrite?: string;
+    proof?: string;
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
     httpErrors: HttpErrors;
@@ -783,19 +783,21 @@ export async function postNewOpinion({
 
         const opinionId = insertCommentResponse[0].opinionId;
 
-        const insertProofResponse = await tx
-            .insert(opinionProofTable)
-            .values({
-                type: "creation",
-                opinionId: opinionId,
-                authorDid: didWrite,
-                proof: proof,
-                proofVersion: 1,
-            })
-            .returning({ proofId: opinionProofTable.id });
-
-        const proofId = insertProofResponse[0].proofId;
-
+        let proofId;
+        if (didWrite !== undefined && proof !== undefined) {
+            // this happens only if the opinion doesn't originate from a seed user (imported from an exsiting polis conversation)!
+            const insertProofResponse = await tx
+                .insert(opinionProofTable)
+                .values({
+                    type: "creation",
+                    opinionId: opinionId,
+                    authorDid: didWrite,
+                    proof: proof,
+                    proofVersion: 1,
+                })
+                .returning({ proofId: opinionProofTable.id });
+            proofId = insertProofResponse[0].proofId;
+        }
         const commentContentTableResponse = await tx
             .insert(opinionContentTable)
             .values({

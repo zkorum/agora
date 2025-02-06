@@ -62,8 +62,8 @@ interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
     opinionSlugId: string;
     userId: string;
-    didWrite: string;
-    proof: string;
+    didWrite?: string;
+    proof?: string;
     votingAction: VotingAction;
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
@@ -208,18 +208,21 @@ export async function castVoteForOpinionSlugId({
             voteTableId = existingVoteTableResponse[0].voteTableId;
         }
 
-        const voteProofTableResponse = await tx
-            .insert(voteProofTable)
-            .values({
-                type: votingAction == "cancel" ? "deletion" : "creation",
-                voteId: voteTableId,
-                authorDid: didWrite,
-                proof: proof,
-                proofVersion: 1,
-            })
-            .returning({ voteProofTableId: voteProofTable.id });
+        let voteProofTableId;
+        if (didWrite !== undefined && proof !== undefined) {
+            const voteProofTableResponse = await tx
+                .insert(voteProofTable)
+                .values({
+                    type: votingAction == "cancel" ? "deletion" : "creation",
+                    voteId: voteTableId,
+                    authorDid: didWrite,
+                    proof: proof,
+                    proofVersion: 1,
+                })
+                .returning({ voteProofTableId: voteProofTable.id });
 
-        const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
+            voteProofTableId = voteProofTableResponse[0].voteProofTableId;
+        }
 
         if (votingAction != "cancel") {
             const voteContentTableResponse = await tx

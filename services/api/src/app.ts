@@ -61,7 +61,20 @@ const configSchema = z.object({
     POLIS_USER_EMAIL_DOMAIN: z.string().default("zkorum.com"),
     POLIS_USER_EMAIL_LOCAL_PART: z.string().default("hackerman"),
     POLIS_USER_PASSWORD: z.string().default("the_best_password_of_all_time"),
-    POLIS_DELAY_TO_FETCH: z.coerce.number().int().default(3000), // milliseconds
+    POLIS_DELAY_TO_FETCH: z
+        .literal(-1)
+        .or(z.coerce.number().int())
+        .default(3000), // milliseconds
+    POLIS_CONV_TO_IMPORT_ON_RUN: z.undefined().or(
+        z
+            .string()
+            .transform((value) =>
+                value.split(",").map((item) => {
+                    return item.trim();
+                }),
+            )
+            .pipe(z.array(z.string()).min(3).max(3)), // summary, comments, votes csv
+    ),
 });
 
 export const config = configSchema.parse(process.env);

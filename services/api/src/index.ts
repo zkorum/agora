@@ -84,6 +84,7 @@ import {
     getNotifications,
     markAllNotificationsAsRead,
 } from "./service/notification.js";
+import { loadAndImportToAgora } from "./commands/polis/import.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -125,7 +126,7 @@ const axiosVerificatorSvc: AxiosInstance = axios.create({
     baseURL: config.VERIFICATOR_SVC_BASE_URL,
 });
 
-const axiosPolis: AxiosInstance | undefined =
+export const axiosPolis: AxiosInstance | undefined =
     config.POLIS_BASE_URL !== undefined
         ? axios.create({
               baseURL: config.POLIS_BASE_URL,
@@ -230,7 +231,7 @@ server.setErrorHandler((error, _request, reply) => {
 // await node.waitForPeers([Protocols.LightPush]);
 
 const client = postgres(config.CONNECTION_STRING);
-const db = drizzle(client, {
+export const db = drizzle(client, {
     logger: new DrizzleFastifyLogger(log),
 });
 
@@ -1675,30 +1676,48 @@ server.after(() => {
     });
 });
 
-server.ready((e) => {
-    if (e) {
-        log.error(e);
-        // await node.stop();
-        process.exit(1);
-    }
-    if (config.NODE_ENV === "development") {
-        const swaggerObj = server.swagger({ yaml: false });
-        const swaggerJson = JSON.stringify(swaggerObj, null, 4);
-        fs.writeFileSync("./openapi-zkorum.json", swaggerJson);
-    }
-});
+if (
+    config.POLIS_CONV_TO_IMPORT_ON_RUN !== undefined &&
+    axiosPolis !== undefined
+) {
+    const polisConv = config.POLIS_CONV_TO_IMPORT_ON_RUN;
+    await loadAndImportToAgora({
+        db,
+        axiosPolis,
+        polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+        polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+        polisUserPassword: config.POLIS_USER_PASSWORD,
+        summaryFilePath: polisConv[0],
+        commentFilePath: polisConv[1],
+        voteFilePath: polisConv[2],
+        polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+    });
+} else {
+    server.ready((e) => {
+        if (e) {
+            log.error(e);
+            // await node.stop();
+            process.exit(1);
+        }
+        if (config.NODE_ENV === "development") {
+            const swaggerObj = server.swagger({ yaml: false });
+            const swaggerJson = JSON.stringify(swaggerObj, null, 4);
+            fs.writeFileSync("./openapi-zkorum.json", swaggerJson);
+        }
+    });
 
-const host =
-    config.NODE_ENV === "development"
-        ? config.MODE === "capacitor"
-            ? "192.168.1.96"
-            : "0.0.0.0"
-        : "0.0.0.0";
+    const host =
+        config.NODE_ENV === "development"
+            ? config.MODE === "capacitor"
+                ? "192.168.1.96"
+                : "0.0.0.0"
+            : "0.0.0.0";
 
-server.listen({ port: config.PORT, host: host }, (err) => {
-    if (err) {
-        log.error(err);
-        // await node.stop();
-        process.exit(1);
-    }
-});
+    server.listen({ port: config.PORT, host: host }, (err) => {
+        if (err) {
+            log.error(err);
+            // await node.stop();
+            process.exit(1);
+        }
+    });
+}

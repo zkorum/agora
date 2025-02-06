@@ -40,4 +40,7 @@ flyway.conf
 
 swagger-spec.json
 
-docker-compose.yml.bak
+*.bak
+
+examples/polis_csv/*.csv
+Bruno/*

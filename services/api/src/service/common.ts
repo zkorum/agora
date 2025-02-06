@@ -197,7 +197,6 @@ export function useCommonPost() {
         postItems.forEach((postItem) => {
             if (
                 extendedConversationMap.has(postItem.slugId) &&
-                postItem.polisClusterKey !== null &&
                 postItem.polisClusterKey !== null
             ) {
                 const extendedPost = extendedConversationMap.get(
@@ -428,10 +427,12 @@ export function useCommonPost() {
                 id: postTableResponse[0].id,
                 authorId: postTableResponse[0].authorId,
             };
-        } else {
+        } else if (postTableResponse.length > 1) {
             throw httpErrors.notFound(
-                "Post slugId does not exist, or incorrect response count from database",
+                "Conversation slug id contains multiple duplicates",
             );
+        } else {
+            throw httpErrors.notFound("Conversation slugId not found");
         }
     }
 
