@@ -214,7 +214,7 @@ export async function importNewVote({
         })
         .where(eq(opinionTable.currentContentId, opinionContentId));
 
-    void polisService.createOrUpdateVote({
+    await polisService.createOrUpdateVote({
         userId,
         conversationSlugId,
         opinionSlugId,
