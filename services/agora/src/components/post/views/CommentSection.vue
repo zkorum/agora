@@ -1,6 +1,8 @@
 <template>
   <div>
     <div class="container">
+      <CommentClusterGraph :num-clusters="2" />
+
       <div v-if="showClusterMap" class="clusterFliterTabStyle">
         <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
           <ZKButton
@@ -131,6 +133,7 @@ import {
 } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import CommentClusterGraph from "./CommentClusterGraph.vue";
 
 const emit = defineEmits(["deleted"]);
 
