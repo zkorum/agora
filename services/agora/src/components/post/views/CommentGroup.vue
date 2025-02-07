@@ -19,8 +19,6 @@
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
         />
-
-        <q-separator />
       </div>
     </div>
   </div>
@@ -59,6 +57,6 @@ function mutedComment() {
 .commentListFlex {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 </style>

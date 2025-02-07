@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-extraneous-class */
 import { z } from "zod";
 import {
     zodExtendedConversationData,
@@ -32,6 +31,7 @@ import {
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static checkLoginStatusResponse = z
         .object({ isLoggedIn: z.boolean() })
@@ -124,8 +124,24 @@ export class Dto {
             conversationSlugId: zodSlugId, // z.object() does not exist :(
             filter: zodCommentFeedFilter,
             isAuthenticatedRequest: z.boolean(),
+            clusterKey: z.number().optional(),
         })
-        .strict();
+        .strict()
+        .refine(
+            (val) => {
+                if (val.filter === "cluster") {
+                    return val.clusterKey === undefined || val.clusterKey < 0
+                        ? false
+                        : true;
+                } else {
+                    return true;
+                }
+            },
+            {
+                message:
+                    "User must specify a valid cluster key for the cluster filter",
+            },
+        );
     static fetchOpinionsResponse = z.array(zodOpinionItem);
     static fetchHiddenOpinionsRequest = z
         .object({

@@ -1,21 +1,52 @@
 <template>
   <div>
     <div class="container">
-      <div class="filterButtonCluster">
-        <ZKButton
-          v-for="option in filterOptions"
-          :key="option.value"
-          :label="option.name"
-          :color="sortAlgorithm == option.value ? 'primary' : 'secondary'"
-          :text-color="sortAlgorithm == option.value ? 'white' : 'primary'"
-          @click="selectedNewFilter(option.value)"
-        />
+      <div v-if="showClusterMap" class="clusterFliterTabStyle">
+        <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
+          <ZKButton
+            class="clusterButton"
+            :label="encodeClusterIndexToName(clusterItem.key)"
+            :color="
+              currentClusterTab === clusterItem.key.toString()
+                ? 'primary'
+                : 'secondary'
+            "
+            :text-color="
+              currentClusterTab === clusterItem.key.toString()
+                ? 'white'
+                : 'black'
+            "
+            @click="toggleClusterSelection(clusterItem.key)"
+          />
+        </div>
       </div>
 
-      <!-- TODO: use the filtering algorithm but with sortAlgorithm==cluster.index -->
+      <div class="commentSectionToolbar">
+        <div class="clusterFliterTabStyle">
+          <q-tabs v-if="showClusterMap" v-model="currentClusterTab" dense>
+            <q-tab name="all" label="All" no-caps />
+            <q-tab
+              v-for="clusterItem in clusterMetadataList"
+              :key="clusterItem.key"
+              :name="clusterItem.key.toString()"
+              :label="encodeClusterIndexToName(clusterItem.key)"
+            />
+          </q-tabs>
+        </div>
+
+        <div>
+          <CommentSortingSelector
+            v-if="currentClusterTab == 'all'"
+            :filter-value="sortAlgorithm"
+            @changed-algorithm="
+              (filterValue: CommentFilterOptions) => changeFilter(filterValue)
+            "
+          />
+        </div>
+      </div>
 
       <CommentGroup
-        v-if="sortAlgorithm == 'discover'"
+        v-if="currentClusterTab == 'all' && sortAlgorithm == 'discover'"
         :comment-item-list="commentItemsDiscover"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
@@ -26,7 +57,7 @@
       />
 
       <CommentGroup
-        v-if="sortAlgorithm == 'new'"
+        v-if="currentClusterTab == 'all' && sortAlgorithm == 'new'"
         :comment-item-list="commentItemsNew"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
@@ -37,7 +68,7 @@
       />
 
       <CommentGroup
-        v-if="sortAlgorithm == 'moderated'"
+        v-if="currentClusterTab == 'all' && sortAlgorithm == 'moderated'"
         :comment-item-list="commentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
@@ -48,8 +79,19 @@
       />
 
       <CommentGroup
-        v-if="sortAlgorithm == 'hidden'"
+        v-if="currentClusterTab == 'all' && sortAlgorithm == 'hidden'"
         :comment-item-list="commentItemsHidden"
+        :post-slug-id="postSlugId"
+        :initial-comment-slug-id="commentSlugIdQuery"
+        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :is-post-locked="isPostLocked"
+        @deleted="deletedComment()"
+        @muted-comment="mutedComment()"
+      />
+
+      <CommentGroup
+        v-if="currentClusterTab != 'all'"
+        :comment-item-list="commentItemsCluster"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -62,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useBackendPolisApi } from "src/utils/api/polis";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
@@ -74,13 +116,16 @@ import {
 } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useUserStore } from "src/stores/user";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
-
-type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover";
+import CommentSortingSelector from "./CommentSortingSelector.vue";
+import {
+  CommentFilterOptions,
+  encodeClusterIndexToName,
+} from "src/utils/component/opinion";
+import { useUserStore } from "src/stores/user";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const emit = defineEmits(["deleted"]);
 
@@ -88,6 +133,10 @@ const props = defineProps<{
   postSlugId: string;
   isPostLocked: boolean;
 }>();
+
+const currentClusterTab = ref("all");
+
+const { profileData } = storeToRefs(useUserStore());
 
 const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
   transform: String,
@@ -99,7 +148,7 @@ const commentFilterQuery = useRouteQuery("filter", "", {
 const { showNotifyMessage } = useNotify();
 const router = useRouter();
 
-const sortAlgorithm = ref<CommentFilterOptions>("new");
+const sortAlgorithm = ref<CommentFilterOptions>("discover");
 updateCommentFilter();
 
 const { getPolisClustersInfo } = useBackendPolisApi();
@@ -109,23 +158,16 @@ const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const { profileData } = storeToRefs(useUserStore());
+const commentItemsNew = ref<OpinionItem[]>([]);
+const commentItemsDiscover = ref<OpinionItem[]>([]);
+const commentItemsModerated = ref<OpinionItem[]>([]);
+const commentItemsHidden = ref<OpinionItem[]>([]);
+const commentItemsCluster = ref<OpinionItem[]>([]);
 
-let commentItemsNew = ref<OpinionItem[]>([]);
-let commentItemsDiscover = ref<OpinionItem[]>([]);
-let commentItemsModerated = ref<OpinionItem[]>([]);
-let commentItemsHidden = ref<OpinionItem[]>([]);
-
-let clusters = ref<ClusterMetadata[]>([]);
+const clusterCommentItemsMap = ref<Map<number, OpinionItem[]>>(new Map()); // Key is the cluster key
+const clusterMetadataList = ref<ClusterMetadata[]>([]);
 
 const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
-
-const baseFilters: { name: string; value: CommentFilterOptions }[] = [
-  { name: "New", value: "new" },
-  { name: "Discover", value: "discover" },
-  { name: "Moderation History", value: "moderated" },
-];
-const filterOptions = ref(baseFilters);
 
 onMounted(async () => {
   await Promise.all([initializeData(), fetchPersonalLikes()]);
@@ -135,12 +177,29 @@ watch(commentFilterQuery, () => {
   updateCommentFilter();
 });
 
-watch(profileData, async () => {
-  await initializeModeratorMenu();
+watch(currentClusterTab, async () => {
+  if (currentClusterTab.value !== "all") {
+    const clusterKey = Number(currentClusterTab.value);
+    const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
+    if (cachedCommentItems) {
+      commentItemsCluster.value = cachedCommentItems;
+    } else {
+      commentItemsCluster.value = [];
+      console.error(
+        `Failed to locate comment items for cluster key: ${clusterKey}`
+      );
+    }
+  }
+});
+
+const showClusterMap = computed(() => {
+  return clusterMetadataList.value.length >= 2;
 });
 
 async function selectedNewFilter(optionValue: CommentFilterOptions) {
-  await router.replace({ query: { filter: optionValue } });
+  await router.replace({
+    query: { filter: optionValue },
+  });
   sortAlgorithm.value = optionValue;
 }
 
@@ -152,21 +211,22 @@ function updateCommentFilter() {
     commentFilterQuery.value == "hidden"
   ) {
     sortAlgorithm.value = commentFilterQuery.value;
-  } else if (commentFilterQuery.value == "") {
-    // do nothing keep the default value
   } else {
-    console.log("Unknown comment filter detected: " + commentFilterQuery.value);
-    return "discover";
+    console.error(
+      "Unknown comment filter detected: " + commentFilterQuery.value
+    );
   }
 }
 
 async function initializeData() {
+  clusterCommentItemsMap.value.clear();
+
   await Promise.all([
     getClusters(),
     initializeModeratorMenu(),
-    fetchCommentList("new"),
-    fetchCommentList("discover"),
-    fetchCommentList("moderated"),
+    fetchCommentList("new", undefined),
+    fetchCommentList("discover", undefined),
+    fetchCommentList("moderated", undefined),
   ]);
 
   await scrollToComment();
@@ -174,13 +234,6 @@ async function initializeData() {
 
 async function initializeModeratorMenu() {
   if (profileData.value.isModerator) {
-    filterOptions.value = baseFilters.concat([
-      {
-        name: "⚔️ Hidden",
-        value: "hidden",
-      },
-    ]);
-
     await fetchHiddenComments();
   }
 }
@@ -199,14 +252,15 @@ async function resetRouteParams() {
   if (
     commentFilterQuery.value == "new" ||
     commentFilterQuery.value == "moderated" ||
+    commentFilterQuery.value == "discover" ||
     commentFilterQuery.value == "hidden"
   ) {
     // clear the existing route params
     await selectedNewFilter(commentFilterQuery.value);
-  } else if (commentFilterQuery.value == "") {
-    await selectedNewFilter("new");
   } else {
-    // don't change the existing filter
+    console.error(
+      "Unknown comment filter detected: " + commentFilterQuery.value
+    );
   }
 }
 
@@ -237,13 +291,26 @@ async function fetchHiddenComments() {
 
 async function getClusters() {
   if (props.postSlugId.length > 0) {
-    clusters.value = await getPolisClustersInfo(props.postSlugId);
+    clusterMetadataList.value = await getPolisClustersInfo(props.postSlugId);
+
+    await Promise.all(
+      clusterMetadataList.value.map(async (clusterItem) => {
+        await fetchCommentList("cluster", clusterItem.key);
+      })
+    );
   }
 }
 
-async function fetchCommentList(filter: CommentFeedFilter) {
+async function fetchCommentList(
+  filter: CommentFeedFilter,
+  clusterKey: number | undefined
+) {
   if (props.postSlugId.length > 0) {
-    const response = await fetchCommentsForPost(props.postSlugId, filter);
+    const response = await fetchCommentsForPost(
+      props.postSlugId,
+      filter,
+      clusterKey
+    );
 
     if (response != null) {
       switch (filter) {
@@ -256,6 +323,10 @@ async function fetchCommentList(filter: CommentFeedFilter) {
         case "discover":
           commentItemsDiscover.value = response;
           break;
+        case "cluster":
+          if (clusterKey != undefined) {
+            clusterCommentItemsMap.value.set(clusterKey, response);
+          }
       }
     }
   }
@@ -327,6 +398,20 @@ async function scrollToComment() {
     }
   }
 }
+
+async function changeFilter(filterValue: CommentFilterOptions) {
+  sortAlgorithm.value = filterValue;
+  await resetRouteParams();
+  commentFilterQuery.value = filterValue;
+}
+
+function toggleClusterSelection(index: number) {
+  if (currentClusterTab.value == index.toString()) {
+    currentClusterTab.value = "all";
+  } else {
+    currentClusterTab.value = index.toString();
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -336,9 +421,29 @@ async function scrollToComment() {
   gap: 1rem;
 }
 
-.filterButtonCluster {
+.commentSectionToolbar {
   display: flex;
-  gap: 1rem;
+  justify-content: space-between;
+}
+
+.clusterFliterTabStyle {
+  display: flex;
   flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.clusterTabSelector {
+  padding-bottom: 0.5rem;
+}
+
+.clusterTabUnderline {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.5rem;
+}
+
+.clusterButton {
+  width: 10rem;
+  height: 10rem;
 }
 </style>

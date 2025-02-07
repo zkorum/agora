@@ -1393,12 +1393,20 @@ export interface ApiV1OpinionFetchByConversationPostRequest {
      * @memberof ApiV1OpinionFetchByConversationPostRequest
      */
     'isAuthenticatedRequest': boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1OpinionFetchByConversationPostRequest
+     */
+    'clusterKey'?: number;
 }
 
 export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
     Moderated: 'moderated',
     New: 'new',
-    Discover: 'discover'
+    Discover: 'discover',
+    Cluster: 'cluster',
+    Hidden: 'hidden'
 } as const;
 
 export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum];

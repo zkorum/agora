@@ -22,6 +22,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import { useWebShare } from "src/utils/share/WebShare";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
@@ -33,6 +34,8 @@ const props = defineProps<{
   postSlugId: string;
   commentItem: OpinionItem;
 }>();
+
+const webShare = useWebShare();
 
 const { showNotifyMessage } = useNotify();
 
@@ -58,6 +61,17 @@ async function openUserReportsCallback() {
       conversationSlugId: props.postSlugId,
     },
   });
+}
+
+async function shareOpinionCallback() {
+  const sharePostUrl =
+    window.location.origin +
+    process.env.VITE_PUBLIC_DIR +
+    "/conversation/" +
+    props.postSlugId +
+    "?opinionSlugId=" +
+    props.commentItem.opinionSlugId;
+  await webShare.share("Agora Opinion", sharePostUrl);
 }
 
 async function muteUserCallback() {
@@ -87,13 +101,13 @@ async function deleteCommentCallback() {
 
 async function optionButtonClicked() {
   await showCommentOptionSelector(
-    props.commentItem.opinionSlugId,
     props.commentItem.username,
     deleteCommentCallback,
     reportContentCallback,
     openUserReportsCallback,
     muteUserCallback,
-    moderateCommentCallback
+    moderateCommentCallback,
+    shareOpinionCallback
   );
 }
 </script>

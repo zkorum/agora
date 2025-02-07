@@ -15,7 +15,6 @@
             :created-at="new Date(extendedPostData.metadata.createdAt)"
             :skeleton-mode="skeletonMode"
             :show-author="showAuthor"
-            :display-absolute-time="displayAbsoluteTime"
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
           />
 
@@ -61,7 +60,10 @@
             </ZKCard>
           </div>
 
-          <div v-if="extendedPostData.payload.poll" class="pollContainer">
+          <div
+            v-if="extendedPostData.payload.poll && !skeletonMode"
+            class="pollContainer"
+          >
             <PollWrapper
               :poll-options="extendedPostData.payload.poll"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
@@ -170,7 +172,6 @@ const props = defineProps<{
   compactMode: boolean;
   skeletonMode: boolean;
   showAuthor: boolean;
-  displayAbsoluteTime: boolean;
 }>();
 
 const { isAuthenticated } = useAuthenticationStore();
@@ -304,7 +305,7 @@ async function shareClicked() {
 }
 
 .standardBackground {
-  background-color: white;
+  background-color: none;
 }
 
 .compactBackground {

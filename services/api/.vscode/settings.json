@@ -7,7 +7,7 @@
     },
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "always"
+        "source.fixAll.eslint": "never"
     },
     "eslint.validate": ["javascript", "typescript"],
     "eslint.codeActionsOnSave.rules": ["quotes", "semi", "indent"],

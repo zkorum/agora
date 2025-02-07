@@ -1,65 +1,82 @@
 <template>
   <div>
-    <div class="actionButtonCluster">
-      <CommentActionOptions
-        :comment-item="props.commentItem"
-        :post-slug-id="props.postSlugId"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-      />
+    <div class="agreementButtons">
+      <div class="buttonContainer">
+        <ZKButton
+          class="maxWidth"
+          :disable="isPostLocked"
+          label="Disagree"
+          :text-color="downvoteIcon.textColor"
+          :color="downvoteIcon.backgroundColor"
+          size="0.8rem"
+          @click.stop.prevent="
+            castPersonalVote(props.commentItem.opinionSlugId, false)
+          "
+        >
+        </ZKButton>
 
-      <ZKButton
-        flat
-        text-color="color-text-weak"
-        icon="mdi-export-variant"
-        size="0.8rem"
-        @click.stop.prevent="shareButtonClicked()"
-      />
-      <ZKButton
-        :disable="isPostLocked"
-        flat
-        :text-color="downvoteIcon.color"
-        :icon="downvoteIcon.icon"
-        size="0.8rem"
-        @click.stop.prevent="
-          castPersonalVote(props.commentItem.opinionSlugId, false)
-        "
-      >
-        <div v-if="userCastedVote" class="voteCountLabel">
-          {{ numDislikesLocal }}
+        <div v-if="userCastedVote" class="voteCountLabelDisagree">
+          <div>
+            Total: {{ numDislikesLocal }} ({{ totalDownvotePercentage }}%)
+          </div>
+          <div
+            v-for="clusterItem in commentItem.clustersStats"
+            :key="clusterItem.key"
+          >
+            Group {{ encodeClusterIndexToName(clusterItem.key) }}:
+            {{ clusterItem.numDisagrees }} ({{
+              calculatePercentage(
+                clusterItem.numDisagrees,
+                clusterItem.numAgrees + clusterItem.numDisagrees
+              )
+            }})
+          </div>
         </div>
-      </ZKButton>
+      </div>
 
-      <ZKButton
-        :disable="isPostLocked"
-        flat
-        :text-color="upvoteIcon.color"
-        :icon="upvoteIcon.icon"
-        size="0.8rem"
-        @click.stop.prevent="
-          castPersonalVote(props.commentItem.opinionSlugId, true)
-        "
-      >
-        <div v-if="userCastedVote" class="voteCountLabel">
-          {{ numLikesLocal }}
+      <div class="buttonContainer">
+        <ZKButton
+          class="maxWidth"
+          :disable="isPostLocked"
+          label="Agree"
+          :text-color="upvoteIcon.textColor"
+          :color="upvoteIcon.backgroundColor"
+          size="0.8rem"
+          @click.stop.prevent="
+            castPersonalVote(props.commentItem.opinionSlugId, true)
+          "
+        >
+        </ZKButton>
+
+        <div v-if="userCastedVote" class="voteCountLabelAgree">
+          <div>Total: {{ numLikesLocal }} ({{ totalUpvotePercentage }}%)</div>
+          <div
+            v-for="clusterItem in commentItem.clustersStats"
+            :key="clusterItem.key"
+          >
+            Group {{ encodeClusterIndexToName(clusterItem.key) }}:
+            {{ clusterItem.numAgrees }} ({{
+              calculatePercentage(
+                clusterItem.numAgrees,
+                clusterItem.numAgrees + clusterItem.numDisagrees
+              )
+            }})
+          </div>
         </div>
-      </ZKButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useWebShare } from "src/utils/share/WebShare";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { computed, ref } from "vue";
 import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { storeToRefs } from "pinia";
-import CommentActionOptions from "./CommentActionOptions.vue";
-
-const emit = defineEmits(["deleted", "mutedComment"]);
+import { encodeClusterIndexToName } from "src/utils/component/opinion";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -67,8 +84,6 @@ const props = defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
-
-const webShare = useWebShare();
 
 const { showLoginConfirmationDialog } = useDialog();
 
@@ -87,7 +102,8 @@ const userCastedVote = computed(() => {
 
 interface IconObject {
   icon: string;
-  color: string;
+  textColor: string;
+  backgroundColor: string;
 }
 
 const downvoteIcon = computed<IconObject>(() => {
@@ -97,12 +113,14 @@ const downvoteIcon = computed<IconObject>(() => {
   if (userAction == "disagree") {
     return {
       icon: "mdi-thumb-down",
-      color: "primary",
+      textColor: "white",
+      backgroundColor: "button-disagree-background-selected",
     };
   } else {
     return {
       icon: "mdi-thumb-down-outline",
-      color: "color-text-weak",
+      textColor: "button-disagree-text",
+      backgroundColor: "button-disagree-background-unselected",
     };
   }
 });
@@ -114,33 +132,38 @@ const upvoteIcon = computed<IconObject>(() => {
   if (userAction == "agree") {
     return {
       icon: "mdi-thumb-up",
-      color: "primary",
+      textColor: "white",
+      backgroundColor: "button-agree-background-selected",
     };
   } else {
     return {
       icon: "mdi-thumb-up-outline",
-      color: "color-text-weak",
+      textColor: "button-agree-text",
+      backgroundColor: "button-agree-background-unselected",
     };
   }
 });
 
-function mutedComment() {
-  emit("mutedComment");
-}
+const totalUpvotePercentage = computed(() => {
+  return calculatePercentage(
+    numLikesLocal.value,
+    numDislikesLocal.value + numLikesLocal.value
+  );
+});
 
-async function shareButtonClicked() {
-  const sharePostUrl =
-    window.location.origin +
-    process.env.VITE_PUBLIC_DIR +
-    "/conversation/" +
-    props.postSlugId +
-    "?opinionSlugId=" +
-    props.commentItem.opinionSlugId;
-  await webShare.share("Agora Opinion", sharePostUrl);
-}
+const totalDownvotePercentage = computed(() => {
+  return calculatePercentage(
+    numDislikesLocal.value,
+    numDislikesLocal.value + numLikesLocal.value
+  );
+});
 
-function deletedComment() {
-  emit("deleted");
+function calculatePercentage(numerator: number, denominator: number) {
+  if (denominator > 0) {
+    return Math.round((numerator / denominator) * 100);
+  } else {
+    return 0;
+  }
 }
 
 async function castPersonalVote(
@@ -213,18 +236,38 @@ async function castPersonalVote(
 </script>
 
 <style scoped lang="scss">
-.actionButtonCluster {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: right;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: $color-text-weak;
-}
-
 .voteCountLabel {
   padding-left: 0.5rem;
+}
+
+.agreementButtons {
+  display: grid;
+  grid-template-columns: calc(50% - 0.5rem) calc(50% - 0.5rem);
+  grid-template-rows: 1fr;
+  gap: 0px 1rem;
+  grid-template-areas: ". .";
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.maxWidth {
+  width: 100%;
+}
+
+.buttonContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.voteCountLabelDisagree {
+  color: $button-disgree-text;
+}
+
+.voteCountLabelAgree {
+  color: $button-agree-text;
 }
 </style>
