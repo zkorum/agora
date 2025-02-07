@@ -1,5 +1,5 @@
 {
-  "id": "5a6a7a02-85e5-47a4-9846-0f20a5a77f1f",
+  "id": "18744ad5-4b26-4c96-b585-7dedfeb696b5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -144,7 +144,7 @@
           "name": "conversation_proof_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "title": {
           "name": "title",
@@ -1300,7 +1300,7 @@
           "name": "opinion_proof_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "content": {
           "name": "content",
@@ -3112,6 +3112,13 @@
           "notNull": true,
           "default": true
         },
+        "is_seed": {
+          "name": "is_seed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "show_flagged_content": {
           "name": "show_flagged_content",
           "type": "boolean",
@@ -3223,7 +3230,7 @@
           "name": "vote_proof_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "opinion_content_id": {
           "name": "opinion_content_id",

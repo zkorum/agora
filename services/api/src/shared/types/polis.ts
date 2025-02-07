@@ -1,7 +1,7 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 
-const stringToJSONSchema = z
+export const stringToJSONSchema = z
     .string()
     .transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
         try {

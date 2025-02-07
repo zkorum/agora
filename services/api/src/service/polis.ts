@@ -194,6 +194,10 @@ export async function delayedPolisGetAndUpdateMath({
     axiosPolis,
     polisDelayToFetch,
 }: DelayedPolisGetAndUpdateMathProps) {
+    if (polisDelayToFetch === -1) {
+        log.info("Get polis math results is turned off");
+        return;
+    }
     await setTimeout(polisDelayToFetch);
     let polisMathResults: PolisMathAndMetadata;
     try {

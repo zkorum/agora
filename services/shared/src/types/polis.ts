@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const stringToJSONSchema = z
+export const stringToJSONSchema = z
     .string()
     .transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
         try {

@@ -26,8 +26,8 @@ interface CreateNewPostProps {
     conversationBody: string | null;
     pollingOptionList: string[] | null;
     authorId: string;
-    didWrite: string;
-    proof: string;
+    didWrite?: string;
+    proof?: string;
     axiosPolis?: AxiosInstance;
 }
 
@@ -76,18 +76,21 @@ export async function createNewPost({
 
             const conversationId = insertPostResponse[0].conversationId;
 
-            const masterProofTableResponse = await tx
-                .insert(conversationProofTable)
-                .values({
-                    type: "creation",
-                    conversationId: conversationId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
-                })
-                .returning({ proofId: conversationProofTable.id });
+            let proofId;
+            if (proof !== undefined && didWrite !== undefined) {
+                const masterProofTableResponse = await tx
+                    .insert(conversationProofTable)
+                    .values({
+                        type: "creation",
+                        conversationId: conversationId,
+                        authorDid: didWrite,
+                        proof: proof,
+                        proofVersion: 1,
+                    })
+                    .returning({ proofId: conversationProofTable.id });
 
-            const proofId = masterProofTableResponse[0].proofId;
+                proofId = masterProofTableResponse[0].proofId;
+            }
 
             const conversationContentTableResponse = await tx
                 .insert(conversationContentTable)
@@ -278,3 +281,22 @@ export async function deletePostBySlugId({
         );
     }
 }
+
+// interface CreateConversationFromPolisProps {
+//     db: PostgresDatabase;
+//     externalPolisConversationId: string;
+//     axiosExternalPolis: AxiosInstance;
+// }
+
+// export async function createConversationFromPolis({
+//     axiosExternalPolis,
+//     externalPolisConversationId,
+// }: CreateConversationFromPolisProps) {
+//     console.log("Sending request");
+//     const polisParticipationInit =
+//         await externalPolisService.getParticipationInit({
+//             axiosExternalPolis,
+//             externalPolisConversationId,
+//         });
+//     console.log(polisParticipationInit.pca["votes-base"]["0"].A.length);
+// }
