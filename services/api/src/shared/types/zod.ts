@@ -112,23 +112,23 @@ export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
 export const zodUsername = z
-    .string()
-    .regex(
-        usernameRegex,
-        'Username may only contain lower-cased letters, numbers and "_"',
-    )
-    .refine((val) => /(?=.*[a-z])/.test(val) || /(?=.*[0-9])/.test(val), {
-        message: "Username must contain at least one character or number",
-    })
-    .refine((val) => !/__+/.test(val), {
-        message: "Username must not contain two consecutive underscores",
-    })
-    .refine((val) => val.length >= MIN_LENGTH_USERNAME, {
-        message: `Username must contain at least ${MIN_LENGTH_USERNAME.toString()} characters`,
-    })
-    .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
-        message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
-    });
+    .string();
+    // .regex(
+    //     usernameRegex,
+    //     'Username may only contain lower-cased letters, numbers and "_"',
+    // )
+    // .refine((val) => /(?=.*[a-z])/.test(val) || /(?=.*[0-9])/.test(val), {
+    //     message: "Username must contain at least one character or number",
+    // })
+    // .refine((val) => !/__+/.test(val), {
+    //     message: "Username must not contain two consecutive underscores",
+    // })
+    // .refine((val) => val.length >= MIN_LENGTH_USERNAME, {
+    //     message: `Username must contain at least ${MIN_LENGTH_USERNAME.toString()} characters`,
+    // })
+    // .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
+    //     message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
+    // });
 
 export const zodUserMuteAction = z.enum(["mute", "unmute"]);
 export const zodUserMuteItem = z
