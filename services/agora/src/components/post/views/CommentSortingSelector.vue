@@ -2,8 +2,10 @@
   <div>
     <div class="currentLabel">
       <ZKButton @click="showDialog = true">
-        {{ currentFilterAlgorithm }}
-        <q-icon name="mdi-chevron-down" size="1.3rem" class="iconPadding" />
+        <div>
+          {{ currentFilterAlgorithm }}
+          <q-icon name="mdi-chevron-down" size="1.3rem" class="iconPadding" />
+        </div>
       </ZKButton>
     </div>
 
