@@ -1,31 +1,21 @@
 <template>
   <div>
     <div class="container">
-      <CommentClusterGraph :num-clusters="2" />
-
-      <div v-if="showClusterMap" class="clusterFliterTabStyle">
-        <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
-          <ZKButton
-            class="clusterButton"
-            :label="encodeClusterIndexToName(clusterItem.key)"
-            :color="
-              currentClusterTab === clusterItem.key.toString()
-                ? 'primary'
-                : 'secondary'
-            "
-            :text-color="
-              currentClusterTab === clusterItem.key.toString()
-                ? 'white'
-                : 'black'
-            "
-            @click="toggleClusterSelection(clusterItem.key)"
-          />
-        </div>
-      </div>
+      <CommentClusterGraph
+        v-if="showClusterMap"
+        :num-clusters="clusterMetadataList.length"
+        :current-cluster-tab="currentClusterTab"
+        @selected-cluster="(value: number) => toggleClusterSelection(value)"
+      />
 
       <div class="commentSectionToolbar">
         <div class="clusterFliterTabStyle">
-          <q-tabs v-if="showClusterMap" v-model="currentClusterTab" dense>
+          <q-tabs
+            v-if="showClusterMap"
+            v-model="currentClusterTab"
+            :style="{ maxWidth: '100%' }"
+            dense
+          >
             <q-tab name="all" label="All" no-caps />
             <q-tab
               v-for="clusterItem in clusterMetadataList"
@@ -132,7 +122,6 @@ import {
   encodeClusterIndexToName,
 } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
 
 const emit = defineEmits(["deleted"]);
@@ -457,6 +446,8 @@ function toggleClusterSelection(index: number) {
 
 .commentSectionToolbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   justify-content: space-between;
 }
 
@@ -464,6 +455,7 @@ function toggleClusterSelection(index: number) {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  max-width: 90dvw;
 }
 
 .clusterTabSelector {
@@ -474,10 +466,5 @@ function toggleClusterSelection(index: number) {
   text-decoration-line: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 0.5rem;
-}
-
-.clusterButton {
-  width: 10rem;
-  height: 10rem;
 }
 </style>
