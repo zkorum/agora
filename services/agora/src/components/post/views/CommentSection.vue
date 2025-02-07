@@ -22,8 +22,8 @@
       </div>
 
       <div class="commentSectionToolbar">
-        <div v-if="showClusterMap" class="clusterFliterTabStyle">
-          <q-tabs v-model="currentClusterTab" dense>
+        <div class="clusterFliterTabStyle">
+          <q-tabs v-if="showClusterMap" v-model="currentClusterTab" dense>
             <q-tab name="all" label="All" no-caps />
             <q-tab
               v-for="clusterItem in clusterMetadataList"
