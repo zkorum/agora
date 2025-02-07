@@ -8,9 +8,7 @@ import type { AxiosInstance } from "axios";
 import * as opinionService from "@/service/comment.js";
 import * as conversationService from "@/service/post.js";
 import * as votingService from "@/service/voting.js";
-import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
-import { useCommonPost } from "@/service/common.js";
 
 // type PolisSummaryCsv = {
 //     topic: string;
@@ -250,6 +248,12 @@ interface ImportToAgoraProps {
 //         typeof error.status === "number"
 //     );
 // }
+//
+interface OpinionMetadata {
+    opinionId: number;
+    opinionSlugId: string;
+    opinionContentId: number;
+}
 
 async function importToAgora({
     axiosPolis,
@@ -266,61 +270,59 @@ async function importToAgora({
 }: ImportToAgoraProps) {
     await db.transaction(async (tx) => {
         // create users
+        const userPromises = [];
         await tx
             .insert(userTable)
             .values([...Object.values(users), conversationAuthor]);
-        await polisService.createUser({
+        const createConvAuthorInExternalPolisPromise = polisService.createUser({
             axiosPolis,
             polisUserEmailDomain,
             polisUserEmailLocalPart,
             polisUserPassword,
             userId: conversationAuthor.id,
         });
+        userPromises.push(createConvAuthorInExternalPolisPromise);
         for (const user of Object.values(users)) {
-            await polisService.createUser({
-                axiosPolis,
-                polisUserEmailDomain,
-                polisUserEmailLocalPart,
-                polisUserPassword,
-                userId: user.id,
-            });
+            const createParticipantInExternalPolisPromise =
+                polisService.createUser({
+                    axiosPolis,
+                    polisUserEmailDomain,
+                    polisUserEmailLocalPart,
+                    polisUserPassword,
+                    userId: user.id,
+                });
+            userPromises.push(createParticipantInExternalPolisPromise);
         }
+        await Promise.allSettled(userPromises);
 
         // create conversation
-        const { conversationSlugId } = await conversationService.createNewPost({
-            db: tx,
-            conversationTitle,
-            conversationBody,
-            authorId: conversationAuthor.id,
-            pollingOptionList: null,
-            axiosPolis,
-        });
-        const { getPostMetadataFromSlugId } = useCommonPost();
-        const { id } = await getPostMetadataFromSlugId({
-            db: tx,
-            conversationSlugId,
-        });
+        const { conversationId, conversationSlugId, conversationContentId } =
+            await conversationService.importNewPost({
+                db: tx,
+                conversationTitle,
+                conversationBody,
+                authorId: conversationAuthor.id,
+                axiosPolis,
+            });
 
         // create opinions
-        const opinionSlugIdByCommentIds: Record<string, string> = {};
+        const opinionMetadataByCommentIds: Record<string, OpinionMetadata> = {};
         for (const comment of Object.values(comments)) {
-            const response = await opinionService.postNewOpinion({
+            const opinionMetadata = await opinionService.importNewOpinion({
                 db: tx,
+                commentId: comment["comment-id"],
                 commentBody: comment["comment-body"],
                 conversationSlugId,
+                conversationId,
+                conversationContentId,
                 userId: users[comment["author-id"]].id,
                 axiosPolis,
-                polisDelayToFetch: -1,
-                httpErrors: httpErrors,
             });
-            if (!response.success) {
-                throw new Error(
-                    `Error while adding opinion to conversation: ${response.reason}`,
-                );
-            } else {
-                opinionSlugIdByCommentIds[comment["comment-id"]] =
-                    response.opinionSlugId;
-            }
+            opinionMetadataByCommentIds[opinionMetadata.commentId] = {
+                opinionSlugId: opinionMetadata.opinionSlugId,
+                opinionId: opinionMetadata.opinionId,
+                opinionContentId: opinionMetadata.opinionContentId,
+            };
         }
 
         // create votes
@@ -332,17 +334,24 @@ async function importToAgora({
                 voteForCommentByUserId,
             )) {
                 if (vote !== 0) {
-                    log.info(
-                        `Casting vote for user ${userId} and comment ${commentId}`,
-                    );
                     votePromises.push(
-                        votingService.castVoteForOpinionSlugId({
+                        votingService.importNewVote({
                             db: tx,
+                            conversationSlugId,
                             userId: users[userId].id,
-                            opinionSlugId: opinionSlugIdByCommentIds[commentId],
+                            externalUserId: userId,
+                            externalCommentId: commentId,
+                            opinionSlugId:
+                                opinionMetadataByCommentIds[commentId]
+                                    .opinionSlugId,
+                            opinionId:
+                                opinionMetadataByCommentIds[commentId]
+                                    .opinionId,
+                            opinionContentId:
+                                opinionMetadataByCommentIds[commentId]
+                                    .opinionContentId,
                             votingAction: vote === -1 ? "agree" : "disagree", // in Polis, -1 = agree oO
                             axiosPolis,
-                            polisDelayToFetch: -1,
                         }),
                     );
                 } else {
@@ -352,12 +361,12 @@ async function importToAgora({
                 }
             }
         }
-        await Promise.all(votePromises);
+        await Promise.allSettled(votePromises);
 
         // get math
         await polisService.delayedPolisGetAndUpdateMath({
             db: tx,
-            conversationId: id,
+            conversationId,
             conversationSlugId,
             axiosPolis,
             polisDelayToFetch: 3000,

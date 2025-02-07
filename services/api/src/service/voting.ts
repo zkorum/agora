@@ -16,6 +16,7 @@ import { useCommonComment, useCommonPost } from "./common.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
+import { log } from "@/app.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -58,12 +59,176 @@ async function getCommentMetadataFromCommentSlugId({
     }
 }
 
+interface ImportNewVoteProps {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    opinionSlugId: string;
+    opinionId: number;
+    externalCommentId: string; // from imported polis system
+    externalUserId: string; // from imported polis system
+    opinionContentId: number;
+    userId: string;
+    votingAction: VotingAction;
+    axiosPolis: AxiosInstance;
+}
+
+export async function importNewVote({
+    db,
+    conversationSlugId,
+    userId,
+    opinionId,
+    externalCommentId,
+    externalUserId,
+    opinionContentId,
+    opinionSlugId,
+    votingAction,
+    axiosPolis,
+}: ImportNewVoteProps) {
+    log.info(
+        `Casting vote for user ${externalUserId} and comment ${externalCommentId}`,
+    );
+
+    const existingVoteTableResponse = await db
+        .select({
+            optionChosen: voteContentTable.vote,
+            voteTableId: voteTable.id,
+        })
+        .from(voteTable)
+        .leftJoin(
+            voteContentTable,
+            eq(voteContentTable.id, voteTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(voteTable.authorId, userId),
+                eq(voteTable.opinionId, opinionId),
+            ),
+        );
+
+    let numAgreesDiff = 0;
+    let numDisagreesDiff = 0;
+
+    if (existingVoteTableResponse.length == 0) {
+        // No existing vote
+        if (votingAction == "cancel") {
+            throw httpErrors.badRequest(
+                "Cannot cancel a vote that does not exist",
+            );
+        } else {
+            if (votingAction == "agree") {
+                numAgreesDiff = 1;
+            } else {
+                numDisagreesDiff = 1;
+            }
+        }
+    } else if (existingVoteTableResponse.length == 1) {
+        const existingResponse = existingVoteTableResponse[0].optionChosen;
+        if (existingResponse == "agree") {
+            if (votingAction == "agree") {
+                throw httpErrors.badRequest(
+                    "User already agreed the target opinion",
+                );
+            } else if (votingAction == "cancel") {
+                numAgreesDiff = -1;
+            } else {
+                numDisagreesDiff = 1;
+                numAgreesDiff = -1;
+            }
+        } else if (existingResponse == "disagree") {
+            if (votingAction == "disagree") {
+                throw httpErrors.badRequest(
+                    "User already disagreed the target opinion",
+                );
+            } else if (votingAction == "cancel") {
+                numDisagreesDiff = -1;
+            } else {
+                numDisagreesDiff = -1;
+                numAgreesDiff = 1;
+            }
+        } else {
+            // null case meaning user cancelled
+            if (votingAction == "agree") {
+                numAgreesDiff = 1;
+            } else {
+                numDisagreesDiff = 1;
+            }
+        }
+    } else {
+        throw httpErrors.internalServerError("Database relation error");
+    }
+
+    let voteTableId = 0;
+
+    if (existingVoteTableResponse.length == 0) {
+        // There are no votes yet
+        const voteTableResponse = await db
+            .insert(voteTable)
+            .values({
+                authorId: userId,
+                opinionId: opinionId,
+                currentContentId: null,
+            })
+            .returning({ voteTableId: voteTable.id });
+        voteTableId = voteTableResponse[0].voteTableId;
+    } else {
+        if (votingAction == "cancel") {
+            await db
+                .update(voteTable)
+                .set({
+                    currentContentId: null,
+                })
+                .where(
+                    eq(voteTable.id, existingVoteTableResponse[0].voteTableId),
+                );
+        }
+
+        voteTableId = existingVoteTableResponse[0].voteTableId;
+    }
+
+    if (votingAction != "cancel") {
+        const voteContentTableResponse = await db
+            .insert(voteContentTable)
+            .values({
+                voteId: voteTableId,
+                opinionContentId: opinionContentId,
+                vote: votingAction,
+            })
+            .returning({ voteContentTableId: voteContentTable.id });
+
+        const voteContentTableId =
+            voteContentTableResponse[0].voteContentTableId;
+
+        await db
+            .update(voteTable)
+            .set({
+                currentContentId: voteContentTableId,
+            })
+            .where(eq(voteTable.id, voteTableId));
+    }
+
+    await db
+        .update(opinionTable)
+        .set({
+            numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
+            numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
+        })
+        .where(eq(opinionTable.currentContentId, opinionContentId));
+
+    void polisService.createOrUpdateVote({
+        userId,
+        conversationSlugId,
+        opinionSlugId,
+        votingAction,
+        axiosPolis,
+    });
+}
+
 interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
     opinionSlugId: string;
     userId: string;
-    didWrite?: string;
-    proof?: string;
+    didWrite: string;
+    proof: string;
     votingAction: VotingAction;
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
@@ -208,21 +373,18 @@ export async function castVoteForOpinionSlugId({
             voteTableId = existingVoteTableResponse[0].voteTableId;
         }
 
-        let voteProofTableId;
-        if (didWrite !== undefined && proof !== undefined) {
-            const voteProofTableResponse = await tx
-                .insert(voteProofTable)
-                .values({
-                    type: votingAction == "cancel" ? "deletion" : "creation",
-                    voteId: voteTableId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
-                })
-                .returning({ voteProofTableId: voteProofTable.id });
+        const voteProofTableResponse = await tx
+            .insert(voteProofTable)
+            .values({
+                type: votingAction == "cancel" ? "deletion" : "creation",
+                voteId: voteTableId,
+                authorDid: didWrite,
+                proof: proof,
+                proofVersion: 1,
+            })
+            .returning({ voteProofTableId: voteProofTable.id });
 
-            voteProofTableId = voteProofTableResponse[0].voteProofTableId;
-        }
+        const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
 
         if (votingAction != "cancel") {
             const voteContentTableResponse = await tx

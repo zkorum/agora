@@ -734,11 +734,100 @@ interface PostNewOpinionProps {
     commentBody: string;
     conversationSlugId: string;
     userId: string;
-    didWrite?: string;
-    proof?: string;
+    didWrite: string;
+    proof: string;
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
     httpErrors: HttpErrors;
+}
+
+interface ImportNewOpinionProps {
+    db: PostgresJsDatabase;
+    commentBody: string;
+    commentId: string; // external imported Polis commentId
+    conversationSlugId: string;
+    conversationId: number;
+    conversationContentId: number;
+    userId: string;
+    axiosPolis: AxiosInstance;
+}
+
+interface ImportNewOpinionReturn {
+    commentId: string; // external imported Polis commentId
+    opinionId: number;
+    opinionSlugId: string;
+    opinionContentId: number;
+}
+
+export async function importNewOpinion({
+    db,
+    commentBody,
+    commentId, // external imported Polis commentId
+    conversationSlugId,
+    conversationId,
+    conversationContentId,
+    userId,
+    axiosPolis,
+}: ImportNewOpinionProps): Promise<ImportNewOpinionReturn> {
+    const opinionSlugId = generateRandomSlugId();
+    const insertCommentResponse = await db
+        .insert(opinionTable)
+        .values({
+            slugId: opinionSlugId,
+            authorId: userId,
+            currentContentId: null,
+            conversationId: conversationId,
+        })
+        .returning({ opinionId: opinionTable.id });
+
+    const opinionId = insertCommentResponse[0].opinionId;
+    const commentContentTableResponse = await db
+        .insert(opinionContentTable)
+        .values({
+            opinionId: opinionId,
+            conversationContentId: conversationContentId,
+            content: commentBody,
+        })
+        .returning({ commentContentTableId: opinionContentTable.id });
+
+    const commentContentTableId =
+        commentContentTableResponse[0].commentContentTableId;
+    await db
+        .update(opinionTable)
+        .set({
+            currentContentId: commentContentTableId,
+        })
+        .where(eq(opinionTable.id, opinionId));
+
+    // Update the post's comment count
+    await db
+        .update(conversationTable)
+        .set({
+            opinionCount: sql`${conversationTable.opinionCount} + 1`,
+        })
+        .where(eq(conversationTable.slugId, conversationSlugId));
+
+    // Update the user profile's comment count
+    await db
+        .update(userTable)
+        .set({
+            totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
+        })
+        .where(eq(userTable.id, userId));
+
+    await polisService.createOpinion({
+        axiosPolis,
+        userId,
+        opinionSlugId,
+        conversationSlugId,
+    });
+
+    return {
+        commentId,
+        opinionId,
+        opinionSlugId,
+        opinionContentId: commentContentTableId,
+    };
 }
 
 export async function postNewOpinion({
@@ -800,21 +889,17 @@ export async function postNewOpinion({
 
         const opinionId = insertCommentResponse[0].opinionId;
 
-        let proofId;
-        if (didWrite !== undefined && proof !== undefined) {
-            // this happens only if the opinion doesn't originate from a seed user (imported from an exsiting polis conversation)!
-            const insertProofResponse = await tx
-                .insert(opinionProofTable)
-                .values({
-                    type: "creation",
-                    opinionId: opinionId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
-                })
-                .returning({ proofId: opinionProofTable.id });
-            proofId = insertProofResponse[0].proofId;
-        }
+        const insertProofResponse = await tx
+            .insert(opinionProofTable)
+            .values({
+                type: "creation",
+                opinionId: opinionId,
+                authorDid: didWrite,
+                proof: proof,
+                proofVersion: 1,
+            })
+            .returning({ proofId: opinionProofTable.id });
+        const proofId = insertProofResponse[0].proofId;
         const commentContentTableResponse = await tx
             .insert(opinionContentTable)
             .values({

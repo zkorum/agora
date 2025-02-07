@@ -26,9 +26,91 @@ interface CreateNewPostProps {
     conversationBody: string | null;
     pollingOptionList: string[] | null;
     authorId: string;
-    didWrite?: string;
-    proof?: string;
+    didWrite: string;
+    proof: string;
     axiosPolis?: AxiosInstance;
+}
+
+interface ImportNewPostProps {
+    db: PostgresDatabase;
+    conversationTitle: string;
+    conversationBody: string | null;
+    authorId: string;
+    axiosPolis: AxiosInstance;
+}
+
+interface ImportNewPostResponse {
+    conversationSlugId: string;
+    conversationId: number;
+    conversationContentId: number;
+}
+
+export async function importNewPost({
+    db,
+    conversationTitle,
+    conversationBody,
+    authorId,
+    axiosPolis,
+}: ImportNewPostProps): Promise<ImportNewPostResponse> {
+    const conversationSlugId = generateRandomSlugId();
+    return await db.transaction(async (tx) => {
+        const insertPostResponse = await tx
+            .insert(conversationTable)
+            .values({
+                authorId: authorId,
+                slugId: conversationSlugId,
+                opinionCount: 0,
+                currentContentId: null,
+                currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
+                lastReactedAt: new Date(),
+            })
+            .returning({ conversationId: conversationTable.id });
+
+        const conversationId = insertPostResponse[0].conversationId;
+
+        const conversationContentTableResponse = await tx
+            .insert(conversationContentTable)
+            .values({
+                conversationId: conversationId,
+                title: conversationTitle,
+                body: conversationBody,
+                pollId: null,
+            })
+            .returning({
+                conversationContentId: conversationContentTable.id,
+            });
+
+        const conversationContentId =
+            conversationContentTableResponse[0].conversationContentId;
+
+        await tx
+            .update(conversationTable)
+            .set({
+                currentContentId: conversationContentId,
+            })
+            .where(eq(conversationTable.id, conversationId));
+
+        // Update the user profile's conversation count
+        await tx
+            .update(userTable)
+            .set({
+                activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
+                totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
+            })
+            .where(eq(userTable.id, authorId));
+
+        await polisService.createConversation({
+            userId: authorId,
+            conversationSlugId: conversationSlugId,
+            axiosPolis,
+        });
+
+        return {
+            conversationId,
+            conversationSlugId,
+            conversationContentId,
+        };
+    });
 }
 
 export async function createNewPost({
@@ -76,21 +158,18 @@ export async function createNewPost({
 
             const conversationId = insertPostResponse[0].conversationId;
 
-            let proofId;
-            if (proof !== undefined && didWrite !== undefined) {
-                const masterProofTableResponse = await tx
-                    .insert(conversationProofTable)
-                    .values({
-                        type: "creation",
-                        conversationId: conversationId,
-                        authorDid: didWrite,
-                        proof: proof,
-                        proofVersion: 1,
-                    })
-                    .returning({ proofId: conversationProofTable.id });
+            const masterProofTableResponse = await tx
+                .insert(conversationProofTable)
+                .values({
+                    type: "creation",
+                    conversationId: conversationId,
+                    authorDid: didWrite,
+                    proof: proof,
+                    proofVersion: 1,
+                })
+                .returning({ proofId: conversationProofTable.id });
 
-                proofId = masterProofTableResponse[0].proofId;
-            }
+            const proofId = masterProofTableResponse[0].proofId;
 
             const conversationContentTableResponse = await tx
                 .insert(conversationContentTable)
