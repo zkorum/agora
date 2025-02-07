@@ -46,7 +46,6 @@ import { ref, watch } from "vue";
 
 const emit = defineEmits<{
   (e: "selectedCluster", clusterKey: number): void;
-  (e: "deselectedCluster"): void;
 }>();
 
 const props = defineProps<{
