@@ -1,10 +1,19 @@
 <template>
   <div>
-    <div v-if="commentItemList.length == 0" class="noCommentMessage">
+    <div v-if="isLoading" class="noCommentMessage">
+      <q-spinner-gears size="50px" color="primary" />
+    </div>
+    <div
+      v-if="commentItemList.length == 0 && !isLoading"
+      class="noCommentMessage"
+    >
       There are no opinions in this conversation filter.
     </div>
 
-    <div v-if="commentItemList.length > 0" class="commentListFlex">
+    <div
+      v-if="commentItemList.length > 0 && !isLoading"
+      class="commentListFlex"
+    >
       <div
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
@@ -36,6 +45,7 @@ defineProps<{
   initialCommentSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
+  isLoading: boolean;
 }>();
 
 function deletedComment() {

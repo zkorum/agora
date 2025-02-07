@@ -48,6 +48,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'discover'"
         :comment-item-list="commentItemsDiscover"
+        :is-loading="isLoadingCommentItemsDiscover"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -59,6 +60,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'new'"
         :comment-item-list="commentItemsNew"
+        :is-loading="isLoadingCommentItemsNew"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -70,6 +72,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'moderated'"
         :comment-item-list="commentItemsModerated"
+        :is-loading="isLoadingCommentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -81,6 +84,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'hidden'"
         :comment-item-list="commentItemsHidden"
+        :is-loading="isLoadingCommentItemsHidden"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -92,6 +96,7 @@
       <CommentGroup
         v-if="currentClusterTab != 'all'"
         :comment-item-list="commentItemsCluster"
+        :is-loading="isLoadingCommentItemsCluster"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -158,6 +163,11 @@ const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
+const isLoadingCommentItemsNew = ref<boolean>(true);
+const isLoadingCommentItemsDiscover = ref<boolean>(true);
+const isLoadingCommentItemsModerated = ref<boolean>(true);
+const isLoadingCommentItemsHidden = ref<boolean>(true);
+const isLoadingCommentItemsCluster = ref<boolean>(true);
 const commentItemsNew = ref<OpinionItem[]>([]);
 const commentItemsDiscover = ref<OpinionItem[]>([]);
 const commentItemsModerated = ref<OpinionItem[]>([]);
@@ -234,7 +244,9 @@ async function initializeData() {
 
 async function initializeModeratorMenu() {
   if (profileData.value.isModerator) {
+    isLoadingCommentItemsHidden.value = true;
     await fetchHiddenComments();
+    isLoadingCommentItemsHidden.value = false;
   }
 }
 
@@ -306,6 +318,21 @@ async function fetchCommentList(
   clusterKey: number | undefined
 ) {
   if (props.postSlugId.length > 0) {
+    switch (filter) {
+      case "moderated":
+        isLoadingCommentItemsModerated.value = true;
+        break;
+      case "new":
+        isLoadingCommentItemsNew.value = true;
+        break;
+      case "discover":
+        isLoadingCommentItemsDiscover.value = true;
+        break;
+      case "cluster":
+        if (clusterKey != undefined) {
+          isLoadingCommentItemsCluster.value = true;
+        }
+    }
     const response = await fetchCommentsForPost(
       props.postSlugId,
       filter,
@@ -316,16 +343,20 @@ async function fetchCommentList(
       switch (filter) {
         case "moderated":
           commentItemsModerated.value = response;
+          isLoadingCommentItemsModerated.value = false;
           break;
         case "new":
           commentItemsNew.value = response;
+          isLoadingCommentItemsNew.value = false;
           break;
         case "discover":
           commentItemsDiscover.value = response;
+          isLoadingCommentItemsDiscover.value = false;
           break;
         case "cluster":
           if (clusterKey != undefined) {
             clusterCommentItemsMap.value.set(clusterKey, response);
+            isLoadingCommentItemsCluster.value = false;
           }
       }
     }
