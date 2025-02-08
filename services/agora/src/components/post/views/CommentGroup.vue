@@ -28,6 +28,7 @@
         class="commentItemBackground"
       >
         <CommentSingle
+          :show-push-reason-label="false"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :highlight="initialCommentSlugId == commentItem.opinionSlugId"
@@ -76,7 +77,7 @@ function mutedComment() {
 .commentListFlex {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 1.5rem;
 }
 
 .commentItemBackground {

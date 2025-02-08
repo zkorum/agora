@@ -2,6 +2,11 @@
 <template>
   <div>
     <div class="container">
+      <!-- TODO: Add push reason label -->
+      <div v-if="showPushReasonLabel" class="pushReasonDiv">
+        Majority Opinion (Total)
+      </div>
+
       <div class="topBar">
         <div class="metadata">
           <UserAvatar
@@ -59,6 +64,7 @@ import CommentActionOptions from "./CommentActionOptions.vue";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 defineProps<{
+  showPushReasonLabel: boolean;
   commentItem: OpinionItem;
   postSlugId: string;
   highlight: boolean;
@@ -79,6 +85,26 @@ function mutedComment() {
 </script>
 
 <style scoped lang="scss">
+.container {
+  position: relative;
+}
+
+.pushReasonDiv {
+  position: absolute;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-radius: 0.5rem;
+  top: -2rem;
+  right: -0.2rem;
+  color: $primary;
+  background-color: white;
+  border-style: solid;
+  border-width: 1px;
+  border-color: $primary;
+}
+
 .contentLayout {
   display: flex;
   flex-direction: column;
@@ -116,5 +142,11 @@ function mutedComment() {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
+}
+
+.topRightBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 </style>
