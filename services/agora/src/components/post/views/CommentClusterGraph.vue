@@ -32,7 +32,21 @@
               left: '40%',
             }"
           >
-            {{ encodeClusterIndexToName(imageIndex) }}
+            <div class="clusterOverlayFontBold">
+              {{ encodeClusterIndexToName(imageIndex) }}
+            </div>
+
+            <!-- TODO: Enable the cluster group size label and adjust the positional offset
+            <div class="clusterLabelFlex">
+              <div class="clusterOverlayFontBold">
+                {{ encodeClusterIndexToName(imageIndex) }}
+              </div>
+              <div class="clusterGroupSize">
+                <q-icon name="mdi-account-supervisor-outline" />
+                10
+              </div>
+            </div>
+            -->
           </div>
         </div>
       </div>
@@ -264,7 +278,6 @@ interface ClusterImg {
   top: 0;
   left: 0;
   font-size: min(1.2rem, 4vw);
-  font-weight: 600;
   background-color: white;
   padding-top: min(0.5rem, 1vw);
   padding-bottom: min(0.5rem, 1vw);
@@ -275,5 +288,24 @@ interface ClusterImg {
   border-width: 1px;
   border-color: lightgray;
   user-select: none;
+}
+
+.clusterOverlayFontBold {
+  font-weight: 600;
+}
+
+.clusterLabelFlex {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: column;
+  align-items: center;
+}
+
+.clusterGroupSize {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  gap: min(0.5rem, 1vw);
+  align-items: center;
 }
 </style>
