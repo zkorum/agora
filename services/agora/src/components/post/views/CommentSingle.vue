@@ -3,7 +3,12 @@
   <div>
     <div class="container">
       <!-- TODO: Add push reason label -->
-      <div v-if="showPushReasonLabel" class="pushReasonDiv">
+      <div
+        v-if="showPushReasonLabel"
+        class="pushReasonPosition pushReasonStyle pushReasonFlex"
+        @click="clickedPushReasonLabel()"
+      >
+        <q-icon name="mdi-information-outline" size="1.1rem" />
         Majority Opinion (Total)
       </div>
 
@@ -60,6 +65,7 @@ import type { OpinionItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
+import { useDialog } from "src/utils/ui/dialog";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -72,7 +78,13 @@ defineProps<{
   isPostLocked: boolean;
 }>();
 
+const { showMessage } = useDialog();
+
 const deleted = ref(false);
+
+function clickedPushReasonLabel() {
+  showMessage(undefined, "This is XXX because of YYY.");
+}
 
 function deletedComment() {
   deleted.value = true;
@@ -89,20 +101,33 @@ function mutedComment() {
   position: relative;
 }
 
-.pushReasonDiv {
-  position: absolute;
+.pushReasonFlex {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pushReasonStyle:hover {
+  cursor: pointer;
+}
+
+.pushReasonStyle {
   padding-top: 0.2rem;
   padding-bottom: 0.2rem;
   padding-left: 1rem;
   padding-right: 1rem;
   border-radius: 0.5rem;
-  top: -2rem;
-  right: -0.2rem;
   color: $primary;
   background-color: white;
   border-style: solid;
   border-width: 1px;
   border-color: $primary;
+}
+
+.pushReasonPosition {
+  position: absolute;
+  top: -2rem;
+  right: -0.2rem;
 }
 
 .contentLayout {
