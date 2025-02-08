@@ -36,8 +36,8 @@
               {{ encodeClusterIndexToName(imageIndex) }}
             </div>
 
-            <!-- TODO: Enable the cluster group size label and adjust the positional offset
-            <div class="clusterLabelFlex">
+            <!-- TODO: Enable the cluster group size label and adjust the positional offset -->
+            <div v-if="showClusterGroupSize" class="clusterLabelFlex">
               <div class="clusterOverlayFontBold">
                 {{ encodeClusterIndexToName(imageIndex) }}
               </div>
@@ -46,7 +46,6 @@
                 10
               </div>
             </div>
-            -->
           </div>
         </div>
       </div>
@@ -65,6 +64,7 @@ const emit = defineEmits<{
 const props = defineProps<{
   numClusters: number;
   currentClusterTab: string;
+  showClusterGroupSize: boolean;
 }>();
 
 const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
