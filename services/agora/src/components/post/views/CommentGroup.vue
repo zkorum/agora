@@ -30,7 +30,7 @@
         class="commentItemBackground"
       >
         <CommentSingle
-          :show-push-reason-label="true"
+          :show-push-reason-label="false"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :highlight="initialCommentSlugId == commentItem.opinionSlugId"
