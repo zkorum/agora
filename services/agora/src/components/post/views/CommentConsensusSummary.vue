@@ -9,7 +9,7 @@
             name="mdi-information-outline"
             size="1.5rem"
             class="infoIcon"
-            @click="showHelper = true"
+            @click="infoIconClicked()"
           />
         </div>
         <div>
@@ -22,21 +22,19 @@
 
 <script setup lang="ts">
 import { useDialog } from "src/utils/ui/dialog";
-import { ref, watch } from "vue";
 
-defineProps<{
+const props = defineProps<{
   summary: string;
+  infoText: string;
 }>();
 
 const { showMessage } = useDialog();
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
-const showHelper = ref(false);
-
-watch(showHelper, () => {
-  showMessage("ASDF", "DDDD");
-});
+function infoIconClicked() {
+  showMessage(undefined, props.infoText);
+}
 </script>
 
 <style lang="scss" scoped>

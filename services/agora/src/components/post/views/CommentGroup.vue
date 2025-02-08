@@ -14,11 +14,13 @@
       v-if="commentItemList.length > 0 && !isLoading"
       class="commentListFlex"
     >
-      <!-- TODO: Add consensus summary
+      <!-- TODO: Add consensus summary -->
       <ZKCard padding="1rem" class="commentItemBackground">
-        <CommentConsensusSummary summary="ASDF" />
+        <CommentConsensusSummary
+          summary="This is a summary"
+          info-text="Info text here"
+        />
       </ZKCard>
-      -->
 
       <ZKCard
         v-for="commentItem in commentItemList"
@@ -46,6 +48,7 @@
 import type { OpinionItem } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
