@@ -15,7 +15,7 @@
       class="commentListFlex"
     >
       <!-- TODO: Add consensus summary -->
-      <ZKCard padding="1rem" class="commentItemBackground">
+      <ZKCard v-if="false" padding="1rem" class="commentItemBackground">
         <CommentConsensusSummary
           summary="This is a summary"
           info-text="Info text here"
