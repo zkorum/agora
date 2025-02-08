@@ -11,6 +11,15 @@
           left: imgItem.left + '%',
         }"
       >
+        <!-- TODO: Integration the show me label -->
+        <div
+          v-if="showMeLabel"
+          class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
+        >
+          <q-icon name="mdi-account-outline" />
+          Me
+        </div>
+
         <div
           :style="{ position: 'relative' }"
           @click="emit('selectedCluster', imageIndex)"
@@ -26,7 +35,7 @@
             :style="{ width: '100%' }"
           />
           <div
-            class="clusterNameOverlay"
+            class="clusterNameOverlay borderStyle dynamicFont"
             :style="{
               top: '30%',
               left: '40%',
@@ -62,6 +71,7 @@ const emit = defineEmits<{
 }>();
 
 const props = defineProps<{
+  showMeLabel: boolean;
   numClusters: number;
   currentClusterTab: string;
   showClusterGroupSize: boolean;
@@ -273,20 +283,40 @@ interface ClusterImg {
   cursor: pointer;
 }
 
-.clusterNameOverlay {
+.clusterMeFlex {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.clusterMeLabel {
   position: absolute;
   top: 0;
   left: 0;
-  font-size: min(1.2rem, 4vw);
+  background-color: white;
+  z-index: 100;
+}
+
+.borderStyle {
+  border-radius: 1rem;
+  border-style: solid;
+  border-width: 1px;
+  border-color: lightgray;
   background-color: white;
   padding-top: min(0.5rem, 1vw);
   padding-bottom: min(0.5rem, 1vw);
   padding-left: min(1rem, 3vw);
   padding-right: min(1rem, 3vw);
-  border-radius: 1rem;
-  border-style: solid;
-  border-width: 1px;
-  border-color: lightgray;
+}
+
+.dynamicFont {
+  font-size: min(1.2rem, 4vw);
+}
+
+.clusterNameOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   user-select: none;
 }
 
