@@ -52,6 +52,7 @@
             <ZKCard
               v-if="extendedPostData.metadata.moderation.status == 'moderated'"
               padding="1rem"
+              class="lockCardStyle"
             >
               <PostLockedMessage
                 :moderation-property="extendedPostData.metadata.moderation"
@@ -340,5 +341,9 @@ async function shareClicked() {
 
 .extraTitleBottomPadding {
   padding-bottom: 0.5rem;
+}
+
+.lockCardStyle {
+  background-color: white;
 }
 </style>

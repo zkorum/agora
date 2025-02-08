@@ -103,7 +103,7 @@
             <ZKCard
               v-if="postDraft.enablePolling"
               padding="1rem"
-              :style="{ marginTop: '1rem' }"
+              :style="{ marginTop: '1rem', backgroundColor: 'white' }"
             >
               <div>
                 <div class="pollTopBar">
@@ -165,7 +165,7 @@
       </q-form>
 
       <q-dialog v-model="showExitDialog">
-        <ZKCard padding="1rem">
+        <ZKCard padding="1rem" :style="{ backgroundColor: 'white' }">
           <div class="exitDialogStyle">
             <div class="dialogTitle">Discard this post?</div>
 
@@ -176,7 +176,7 @@
               <ZKButton
                 v-close-popup
                 label="Discard"
-                text-color="warning"
+                text-color="primary"
                 @click="leaveRoute()"
               />
             </div>

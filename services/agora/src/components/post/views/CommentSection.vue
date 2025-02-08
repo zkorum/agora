@@ -3,6 +3,8 @@
     <div class="container">
       <CommentClusterGraph
         v-if="showClusterMap"
+        :show-me-label="false"
+        :show-cluster-group-size="false"
         :num-clusters="clusterMetadataList.length"
         :current-cluster-tab="currentClusterTab"
         @selected-cluster="(value: number) => toggleClusterSelection(value)"

@@ -29,7 +29,7 @@
                 clusterItem.numDisagrees,
                 clusterItem.numAgrees + clusterItem.numDisagrees
               )
-            }})
+            }}%)
           </div>
         </div>
       </div>
@@ -60,7 +60,7 @@
                 clusterItem.numAgrees,
                 clusterItem.numAgrees + clusterItem.numDisagrees
               )
-            }})
+            }}%)
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ export const useDialog = () => {
     });
   }
 
-  function showMessage(title: string, body: string) {
+  function showMessage(title: string | undefined, body: string) {
     quasar.dialog({
       title: title,
       message: body,

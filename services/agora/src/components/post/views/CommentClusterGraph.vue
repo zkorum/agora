@@ -11,6 +11,15 @@
           left: imgItem.left + '%',
         }"
       >
+        <!-- TODO: Integration the show me label -->
+        <div
+          v-if="showMeLabel"
+          class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
+        >
+          <q-icon name="mdi-account-outline" />
+          Me
+        </div>
+
         <div
           :style="{ position: 'relative' }"
           @click="emit('selectedCluster', imageIndex)"
@@ -26,13 +35,26 @@
             :style="{ width: '100%' }"
           />
           <div
-            class="clusterNameOverlay"
+            class="clusterNameOverlay borderStyle dynamicFont"
             :style="{
               top: '30%',
               left: '40%',
             }"
           >
-            {{ encodeClusterIndexToName(imageIndex) }}
+            <div class="clusterOverlayFontBold">
+              {{ encodeClusterIndexToName(imageIndex) }}
+            </div>
+
+            <!-- TODO: Enable the cluster group size label and adjust the positional offset -->
+            <div v-if="showClusterGroupSize" class="clusterLabelFlex">
+              <div class="clusterOverlayFontBold">
+                {{ encodeClusterIndexToName(imageIndex) }}
+              </div>
+              <div class="clusterGroupSize">
+                <q-icon name="mdi-account-supervisor-outline" />
+                10
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -49,8 +71,10 @@ const emit = defineEmits<{
 }>();
 
 const props = defineProps<{
+  showMeLabel: boolean;
   numClusters: number;
   currentClusterTab: string;
+  showClusterGroupSize: boolean;
 }>();
 
 const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
@@ -259,21 +283,59 @@ interface ClusterImg {
   cursor: pointer;
 }
 
-.clusterNameOverlay {
+.clusterMeFlex {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.clusterMeLabel {
   position: absolute;
   top: 0;
   left: 0;
-  font-size: min(1.2rem, 4vw);
-  font-weight: 600;
+  background-color: white;
+  z-index: 100;
+}
+
+.borderStyle {
+  border-radius: 1rem;
+  border-style: solid;
+  border-width: 1px;
+  border-color: lightgray;
   background-color: white;
   padding-top: min(0.5rem, 1vw);
   padding-bottom: min(0.5rem, 1vw);
   padding-left: min(1rem, 3vw);
   padding-right: min(1rem, 3vw);
-  border-radius: 1rem;
-  border-style: solid;
-  border-width: 1px;
-  border-color: lightgray;
+}
+
+.dynamicFont {
+  font-size: min(1.2rem, 4vw);
+}
+
+.clusterNameOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   user-select: none;
+}
+
+.clusterOverlayFontBold {
+  font-weight: 600;
+}
+
+.clusterLabelFlex {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: column;
+  align-items: center;
+}
+
+.clusterGroupSize {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  gap: min(0.5rem, 1vw);
+  align-items: center;
 }
 </style>

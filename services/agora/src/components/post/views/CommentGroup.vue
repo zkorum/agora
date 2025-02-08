@@ -14,12 +14,23 @@
       v-if="commentItemList.length > 0 && !isLoading"
       class="commentListFlex"
     >
-      <div
+      <!-- TODO: Add consensus summary -->
+      <ZKCard v-if="false" padding="1rem" class="commentItemBackground">
+        <CommentConsensusSummary
+          summary="This is a summary"
+          info-text="Info text here"
+        />
+      </ZKCard>
+
+      <ZKCard
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
         :key="commentItem.opinionSlugId"
+        padding="1rem"
+        class="commentItemBackground"
       >
         <CommentSingle
+          :show-push-reason-label="false"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :highlight="initialCommentSlugId == commentItem.opinionSlugId"
@@ -28,7 +39,7 @@
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
         />
-      </div>
+      </ZKCard>
     </div>
   </div>
 </template>
@@ -36,6 +47,8 @@
 <script setup lang="ts">
 import type { OpinionItem } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
+import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -67,6 +80,10 @@ function mutedComment() {
 .commentListFlex {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 1.5rem;
+}
+
+.commentItemBackground {
+  background-color: white;
 }
 </style>
