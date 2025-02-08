@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container">
-      <ZKCard padding="0rem">
+      <ZKCard padding="0rem" class="backgroundColor">
         <div class="flexStyle">
           <div v-for="(item, index) in settingsItemList" :key="item.label">
             <ZKHoverEffect :enable-hover="true">
@@ -67,5 +67,9 @@ defineProps<{
 
 .isNegativeStyle {
   color: $negative;
+}
+
+.backgroundColor {
+  background-color: white;
 }
 </style>

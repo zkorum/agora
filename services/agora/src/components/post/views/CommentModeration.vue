@@ -4,7 +4,7 @@
       v-if="commentItem.moderation?.status == 'moderated'"
       class="moderatedBox"
     >
-      <ZKCard padding="1rem">
+      <ZKCard padding="1rem" class="cardBackground">
         <div class="moderationContainer">
           <div class="moderatedMessage">
             <div class="moderatedFont moderatedItalic">
@@ -96,5 +96,9 @@ const { profileData } = storeToRefs(useUserStore());
 
 .moderatedBox {
   padding-top: 1rem;
+}
+
+.cardBackground {
+  background-color: $app-background-color;
 }
 </style>

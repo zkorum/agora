@@ -1,8 +1,6 @@
 <template>
-  <div>
-    <div class="card-decoration" :style="{ padding: padding }">
-      <slot />
-    </div>
+  <div class="card-decoration" :style="{ padding: padding }">
+    <slot />
   </div>
 </template>
 
@@ -18,6 +16,5 @@ defineProps<{
   border-style: solid;
   border-width: 1px;
   border-color: #e7e5e4;
-  background-color: $app-background-color;
 }
 </style>

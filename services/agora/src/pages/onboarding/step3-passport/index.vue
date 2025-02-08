@@ -22,7 +22,7 @@
           </template>
 
           <template #body>
-            <ZKCard padding="1rem">
+            <ZKCard padding="1rem" class="cardBackground">
               <div class="stepContainer">
                 <div class="stepFlex">
                   <q-icon
@@ -412,5 +412,9 @@ async function goToPhoneVerification() {
   color: $primary;
   font-weight: 500;
   text-decoration: underline;
+}
+
+.cardBackground {
+  background-color: $app-background-color;
 }
 </style>

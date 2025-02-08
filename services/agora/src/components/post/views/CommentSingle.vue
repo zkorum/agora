@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div class="container background">
+    <div class="container">
       <div class="topBar">
         <div class="metadata">
           <UserAvatar
@@ -79,10 +79,6 @@ function mutedComment() {
 </script>
 
 <style scoped lang="scss">
-.container {
-  padding: 1.5rem;
-}
-
 .contentLayout {
   display: flex;
   flex-direction: column;
@@ -114,11 +110,6 @@ function mutedComment() {
   display: flex;
   flex-direction: column;
   word-break: break-all;
-}
-
-.background {
-  background-color: white;
-  border-radius: 1.5rem;
 }
 
 .topBar {
