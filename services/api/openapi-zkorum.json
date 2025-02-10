@@ -292,7 +292,8 @@
                                                                 "minimum": 0
                                                             },
                                                             "authorUsername": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "pattern": "^[a-z0-9_]*$"
                                                             },
                                                             "moderation": {
                                                                 "anyOf": [
@@ -897,7 +898,8 @@
                                             "format": "date-time"
                                         },
                                         "username": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9_]*$"
                                         },
                                         "isModerator": {
                                             "type": "boolean"
@@ -977,7 +979,8 @@
                                                         "minimum": 0
                                                     },
                                                     "authorUsername": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
                                                     },
                                                     "moderation": {
                                                         "anyOf": [
@@ -1248,7 +1251,8 @@
                                                                 "minimum": 0
                                                             },
                                                             "authorUsername": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "pattern": "^[a-z0-9_]*$"
                                                             },
                                                             "moderation": {
                                                                 "anyOf": [
@@ -1480,14 +1484,9 @@
                                                         "type": "integer",
                                                         "minimum": 0
                                                     },
-                                                    "percentageAgrees": {
-                                                        "type": "string"
-                                                    },
-                                                    "percentageDisagrees": {
-                                                        "type": "string"
-                                                    },
                                                     "username": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
                                                     },
                                                     "clustersStats": {
                                                         "type": "array",
@@ -1522,12 +1521,6 @@
                                                                 "numDisagrees": {
                                                                     "type": "integer",
                                                                     "minimum": 0
-                                                                },
-                                                                "percentageAgrees": {
-                                                                    "type": "string"
-                                                                },
-                                                                "percentageDisagrees": {
-                                                                    "type": "string"
                                                                 }
                                                             },
                                                             "required": [
@@ -1535,9 +1528,7 @@
                                                                 "isAuthorInCluster",
                                                                 "numUsers",
                                                                 "numAgrees",
-                                                                "numDisagrees",
-                                                                "percentageAgrees",
-                                                                "percentageDisagrees"
+                                                                "numDisagrees"
                                                             ],
                                                             "additionalProperties": false
                                                         }
@@ -1620,8 +1611,6 @@
                                                     "numParticipants",
                                                     "numAgrees",
                                                     "numDisagrees",
-                                                    "percentageAgrees",
-                                                    "percentageDisagrees",
                                                     "username",
                                                     "clustersStats",
                                                     "moderation"
@@ -2017,14 +2006,9 @@
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
-                                            "percentageAgrees": {
-                                                "type": "string"
-                                            },
-                                            "percentageDisagrees": {
-                                                "type": "string"
-                                            },
                                             "username": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
                                             },
                                             "clustersStats": {
                                                 "type": "array",
@@ -2059,12 +2043,6 @@
                                                         "numDisagrees": {
                                                             "type": "integer",
                                                             "minimum": 0
-                                                        },
-                                                        "percentageAgrees": {
-                                                            "type": "string"
-                                                        },
-                                                        "percentageDisagrees": {
-                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -2072,9 +2050,7 @@
                                                         "isAuthorInCluster",
                                                         "numUsers",
                                                         "numAgrees",
-                                                        "numDisagrees",
-                                                        "percentageAgrees",
-                                                        "percentageDisagrees"
+                                                        "numDisagrees"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -2157,8 +2133,6 @@
                                             "numParticipants",
                                             "numAgrees",
                                             "numDisagrees",
-                                            "percentageAgrees",
-                                            "percentageDisagrees",
                                             "username",
                                             "clustersStats",
                                             "moderation"
@@ -2235,14 +2209,9 @@
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
-                                            "percentageAgrees": {
-                                                "type": "string"
-                                            },
-                                            "percentageDisagrees": {
-                                                "type": "string"
-                                            },
                                             "username": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
                                             },
                                             "clustersStats": {
                                                 "type": "array",
@@ -2277,12 +2246,6 @@
                                                         "numDisagrees": {
                                                             "type": "integer",
                                                             "minimum": 0
-                                                        },
-                                                        "percentageAgrees": {
-                                                            "type": "string"
-                                                        },
-                                                        "percentageDisagrees": {
-                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -2290,9 +2253,7 @@
                                                         "isAuthorInCluster",
                                                         "numUsers",
                                                         "numAgrees",
-                                                        "numDisagrees",
-                                                        "percentageAgrees",
-                                                        "percentageDisagrees"
+                                                        "numDisagrees"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -2375,8 +2336,6 @@
                                             "numParticipants",
                                             "numAgrees",
                                             "numDisagrees",
-                                            "percentageAgrees",
-                                            "percentageDisagrees",
                                             "username",
                                             "clustersStats",
                                             "moderation"
@@ -2454,14 +2413,9 @@
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
-                                            "percentageAgrees": {
-                                                "type": "string"
-                                            },
-                                            "percentageDisagrees": {
-                                                "type": "string"
-                                            },
                                             "username": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
                                             },
                                             "clustersStats": {
                                                 "type": "array",
@@ -2496,12 +2450,6 @@
                                                         "numDisagrees": {
                                                             "type": "integer",
                                                             "minimum": 0
-                                                        },
-                                                        "percentageAgrees": {
-                                                            "type": "string"
-                                                        },
-                                                        "percentageDisagrees": {
-                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -2509,9 +2457,7 @@
                                                         "isAuthorInCluster",
                                                         "numUsers",
                                                         "numAgrees",
-                                                        "numDisagrees",
-                                                        "percentageAgrees",
-                                                        "percentageDisagrees"
+                                                        "numDisagrees"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -2594,8 +2540,6 @@
                                             "numParticipants",
                                             "numAgrees",
                                             "numDisagrees",
-                                            "percentageAgrees",
-                                            "percentageDisagrees",
                                             "username",
                                             "clustersStats",
                                             "moderation"
@@ -2764,7 +2708,8 @@
                                                             "minimum": 0
                                                         },
                                                         "authorUsername": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "pattern": "^[a-z0-9_]*$"
                                                         },
                                                         "moderation": {
                                                             "anyOf": [
@@ -3196,7 +3141,8 @@
                                 "type": "object",
                                 "properties": {
                                     "username": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
                                     }
                                 },
                                 "required": [
@@ -3224,7 +3170,8 @@
                                 "type": "object",
                                 "properties": {
                                     "username": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
                                     }
                                 },
                                 "required": [
@@ -3389,7 +3336,8 @@
                                         "type": "object",
                                         "properties": {
                                             "username": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
                                             },
                                             "reason": {
                                                 "type": "string",
@@ -3462,7 +3410,8 @@
                                         "type": "object",
                                         "properties": {
                                             "username": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
                                             },
                                             "reason": {
                                                 "type": "string",
@@ -3519,7 +3468,8 @@
                                                 "format": "date-time"
                                             },
                                             "username": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
                                             }
                                         },
                                         "required": [
@@ -3544,7 +3494,8 @@
                                 "type": "object",
                                 "properties": {
                                     "targetUsername": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
                                     },
                                     "action": {
                                         "type": "string",
@@ -3627,7 +3578,8 @@
                                                         "format": "date-time"
                                                     },
                                                     "username": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
                                                     },
                                                     "routeTarget": {
                                                         "anyOf": [

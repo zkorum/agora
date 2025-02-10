@@ -121,8 +121,6 @@ export function useBackendUserApi() {
             numParticipants: responseItem.opinionItem.numParticipants,
             numDisagrees: responseItem.opinionItem.numDisagrees,
             numAgrees: responseItem.opinionItem.numAgrees,
-            percentageAgrees: responseItem.opinionItem.percentageAgrees,
-            percentageDisagrees: responseItem.opinionItem.percentageDisagrees,
             updatedAt: new Date(responseItem.opinionItem.updatedAt),
             username: String(responseItem.opinionItem.username),
             moderation: {

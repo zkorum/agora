@@ -129,13 +129,10 @@ export async function fetchOpinions({
         case "majority": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
             orderByClause = [
-                // Sort by total interactions first
                 desc(
-                    sql`COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0)`,
-                ),
-                // Sort equally by most agreed and disagreed
-                desc(
-                    sql`ABS(COALESCE(${opinionTable.polisCluster0NumAgrees}, 0) - COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0))`,
+                    // we ponderate by the number of votes (if just 1-0 then it's not interesting....)
+                    sql`(COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0)) * 
+                    ABS(COALESCE(${opinionTable.polisCluster0NumAgrees}, 0) - COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0))`,
                 ),
             ];
             break;
@@ -143,13 +140,15 @@ export async function fetchOpinions({
         case "controversial": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
             orderByClause = [
-                // Sort by total interactions first
-                desc(
-                    sql`COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0)`,
-                ),
-                // Sort by controversial
                 asc(
-                    sql`ABS(COALESCE(${opinionTable.polisCluster0NumAgrees}, 0) - COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0))`,
+                    sql`
+                        CASE 
+                          WHEN (COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0)) = 0 
+                          THEN 'Infinity'::float -- Assign a large value when no interactions so it will be picked last
+                          ELSE ABS(COALESCE(${opinionTable.polisCluster0NumAgrees}, 0) - COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0)) 
+                               / (COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0))
+                        END
+              `,
                 ),
             ];
             break;
@@ -236,20 +235,6 @@ export async function fetchOpinions({
             numParticipants: conversationTable.participantCount,
             numAgrees: opinionTable.numAgrees,
             numDisagrees: opinionTable.numDisagrees,
-            percentageAgrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>` 
-              CASE 
-                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numAgrees} IS NULL THEN NULL
-                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.numAgrees}::decimal / ${conversationTable.participantCount}) * 100)::decimal, 2)
-              END
-            `,
-            percentageDisagrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>`
-              CASE 
-                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numDisagrees} IS NULL THEN NULL
-                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.numDisagrees}::decimal / ${conversationTable.participantCount}) * 100)::decimal, 2)
-              END
-            `,
             username: userTable.username,
             moderationAction: opinionModerationTable.moderationAction,
             moderationExplanation: opinionModerationTable.moderationExplanation,
@@ -262,120 +247,36 @@ export async function fetchOpinions({
             polisCluster0NumUsers: polisClusterTableAlias0.numUsers,
             polisCluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
             polisCluster0NumDisagrees: opinionTable.polisCluster0NumDisagrees,
-            polisCluster0PercentageAgrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias0.numUsers} IS NULL OR ${opinionTable.polisCluster0NumAgrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias0.numUsers} = 0 OR ${opinionTable.polisCluster0NumAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster0NumAgrees}::decimal / ${polisClusterTableAlias0.numUsers}) * 100)::decimal, 2)
-              END
-            `,
-            polisCluster0PercentageDisagrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias0.numUsers} IS NULL OR ${opinionTable.polisCluster0NumDisagrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias0.numUsers} = 0 OR ${opinionTable.polisCluster0NumDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster0NumDisagrees}::decimal / ${polisClusterTableAlias0.numUsers}) * 100)::decimal, 2)
-              END
-            `,
             polisCluster1Id: polisClusterTableAlias1.id,
             polisCluster1Key: polisClusterTableAlias1.key,
             polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
             polisCluster1NumUsers: polisClusterTableAlias1.numUsers,
             polisCluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
             polisCluster1NumDisagrees: opinionTable.polisCluster1NumDisagrees,
-            polisCluster1PercentageAgrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias1.numUsers} IS NULL OR ${opinionTable.polisCluster1NumAgrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias1.numUsers} = 0 OR ${opinionTable.polisCluster1NumAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster1NumAgrees}::decimal / ${polisClusterTableAlias1.numUsers}) * 100)::decimal, 2)
-              END
-            `,
-            polisCluster1PercentageDisagrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias1.numUsers} IS NULL OR ${opinionTable.polisCluster1NumDisagrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias1.numUsers} = 0 OR ${opinionTable.polisCluster1NumDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster1NumDisagrees}::decimal / ${polisClusterTableAlias1.numUsers}) * 100)::decimal, 2)
-              END
-            `,
             polisCluster2Id: polisClusterTableAlias2.id,
             polisCluster2Key: polisClusterTableAlias2.key,
             polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
             polisCluster2NumUsers: polisClusterTableAlias2.numUsers,
             polisCluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
             polisCluster2NumDisagrees: opinionTable.polisCluster2NumDisagrees,
-            polisCluster2PercentageAgrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias2.numUsers} IS NULL OR ${opinionTable.polisCluster2NumAgrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias2.numUsers} = 0 OR ${opinionTable.polisCluster2NumAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster2NumAgrees}::decimal / ${polisClusterTableAlias2.numUsers}) * 100)::decimal, 2)
-              END
-            `,
-            polisCluster2PercentageDisagrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias2.numUsers} IS NULL OR ${opinionTable.polisCluster2NumDisagrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias2.numUsers} = 0 OR ${opinionTable.polisCluster2NumDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster2NumDisagrees}::decimal / ${polisClusterTableAlias2.numUsers}) * 100)::decimal, 2)
-              END
-            `,
             polisCluster3Id: polisClusterTableAlias3.id,
             polisCluster3Key: polisClusterTableAlias3.key,
             polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
             polisCluster3NumUsers: polisClusterTableAlias3.numUsers,
             polisCluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
             polisCluster3NumDisagrees: opinionTable.polisCluster3NumDisagrees,
-            polisCluster3PercentageAgrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias3.numUsers} IS NULL OR ${opinionTable.polisCluster3NumAgrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias3.numUsers} = 0 OR ${opinionTable.polisCluster3NumAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster3NumAgrees}::decimal / ${polisClusterTableAlias3.numUsers}) * 100)::decimal, 2)
-              END
-            `,
-            polisCluster3PercentageDisagrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias3.numUsers} IS NULL OR ${opinionTable.polisCluster3NumDisagrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias3.numUsers} = 0 OR ${opinionTable.polisCluster3NumDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster3NumDisagrees}::decimal / ${polisClusterTableAlias3.numUsers}) * 100)::decimal, 2)
-              END
-            `,
             polisCluster4Id: polisClusterTableAlias4.id,
             polisCluster4Key: polisClusterTableAlias4.key,
             polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
             polisCluster4NumUsers: polisClusterTableAlias4.numUsers,
             polisCluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
             polisCluster4NumDisagrees: opinionTable.polisCluster4NumDisagrees,
-            polisCluster4PercentageAgrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias4.numUsers} IS NULL OR ${opinionTable.polisCluster4NumAgrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias4.numUsers} = 0 OR ${opinionTable.polisCluster4NumAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster4NumAgrees}::decimal / ${polisClusterTableAlias4.numUsers}) * 100)::decimal, 2)
-              END
-            `,
-            polisCluster4PercentageDisagrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias4.numUsers} IS NULL OR ${opinionTable.polisCluster4NumDisagrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias4.numUsers} = 0 OR ${opinionTable.polisCluster4NumDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster4NumDisagrees}::decimal / ${polisClusterTableAlias4.numUsers}) * 100)::decimal, 2)
-              END
-            `,
             polisCluster5Id: polisClusterTableAlias5.id,
             polisCluster5Key: polisClusterTableAlias5.key,
             polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
             polisCluster5NumUsers: polisClusterTableAlias5.numUsers,
             polisCluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
             polisCluster5NumDisagrees: opinionTable.polisCluster5NumDisagrees,
-            polisCluster5PercentageAgrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias5.numUsers} IS NULL OR ${opinionTable.polisCluster5NumAgrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias5.numUsers} = 0 OR ${opinionTable.polisCluster5NumAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster5NumAgrees}::decimal / ${polisClusterTableAlias5.numUsers}) * 100)::decimal, 2)
-              END
-            `,
-            polisCluster5PercentageDisagrees: sql<string | null>`
-              CASE 
-                WHEN ${polisClusterTableAlias5.numUsers} IS NULL OR ${opinionTable.polisCluster5NumDisagrees} IS NULL THEN NULL
-                WHEN ${polisClusterTableAlias5.numUsers} = 0 OR ${opinionTable.polisCluster5NumDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.polisCluster5NumDisagrees}::decimal / ${polisClusterTableAlias5.numUsers}) * 100)::decimal, 2)
-              END
-            `,
             opinionAuthorPolisClusterId: polisClusterUserTable.polisClusterId,
         })
         .from(opinionTable)
@@ -443,9 +344,7 @@ export async function fetchOpinions({
             opinionResponse.polisCluster0Key !== null &&
             opinionResponse.polisCluster0NumUsers !== null &&
             opinionResponse.polisCluster0NumAgrees !== null &&
-            opinionResponse.polisCluster0NumDisagrees !== null &&
-            opinionResponse.polisCluster0PercentageAgrees !== null &&
-            opinionResponse.polisCluster0PercentageDisagrees !== null
+            opinionResponse.polisCluster0NumDisagrees !== null
         ) {
             clustersStats.push({
                 key: opinionResponse.polisCluster0Key,
@@ -456,18 +355,13 @@ export async function fetchOpinions({
                 numUsers: opinionResponse.polisCluster0NumUsers,
                 numAgrees: opinionResponse.polisCluster0NumAgrees,
                 numDisagrees: opinionResponse.polisCluster0NumDisagrees,
-                percentageAgrees: opinionResponse.polisCluster0PercentageAgrees,
-                percentageDisagrees:
-                    opinionResponse.polisCluster0PercentageDisagrees,
             });
         }
         if (
             opinionResponse.polisCluster1Key !== null &&
             opinionResponse.polisCluster1NumUsers !== null &&
             opinionResponse.polisCluster1NumAgrees !== null &&
-            opinionResponse.polisCluster1NumDisagrees !== null &&
-            opinionResponse.polisCluster1PercentageAgrees !== null &&
-            opinionResponse.polisCluster1PercentageDisagrees !== null
+            opinionResponse.polisCluster1NumDisagrees !== null
         ) {
             clustersStats.push({
                 key: opinionResponse.polisCluster1Key,
@@ -478,18 +372,13 @@ export async function fetchOpinions({
                 numUsers: opinionResponse.polisCluster1NumUsers,
                 numAgrees: opinionResponse.polisCluster1NumAgrees,
                 numDisagrees: opinionResponse.polisCluster1NumDisagrees,
-                percentageAgrees: opinionResponse.polisCluster1PercentageAgrees,
-                percentageDisagrees:
-                    opinionResponse.polisCluster1PercentageDisagrees,
             });
         }
         if (
             opinionResponse.polisCluster2Key !== null &&
             opinionResponse.polisCluster2NumUsers !== null &&
             opinionResponse.polisCluster2NumAgrees !== null &&
-            opinionResponse.polisCluster2NumDisagrees !== null &&
-            opinionResponse.polisCluster2PercentageAgrees !== null &&
-            opinionResponse.polisCluster2PercentageDisagrees !== null
+            opinionResponse.polisCluster2NumDisagrees !== null
         ) {
             clustersStats.push({
                 key: opinionResponse.polisCluster2Key,
@@ -500,18 +389,13 @@ export async function fetchOpinions({
                 numUsers: opinionResponse.polisCluster2NumUsers,
                 numAgrees: opinionResponse.polisCluster2NumAgrees,
                 numDisagrees: opinionResponse.polisCluster2NumDisagrees,
-                percentageAgrees: opinionResponse.polisCluster2PercentageAgrees,
-                percentageDisagrees:
-                    opinionResponse.polisCluster2PercentageDisagrees,
             });
         }
         if (
             opinionResponse.polisCluster3Key !== null &&
             opinionResponse.polisCluster3NumUsers !== null &&
             opinionResponse.polisCluster3NumAgrees !== null &&
-            opinionResponse.polisCluster3NumDisagrees !== null &&
-            opinionResponse.polisCluster3PercentageAgrees !== null &&
-            opinionResponse.polisCluster3PercentageDisagrees !== null
+            opinionResponse.polisCluster3NumDisagrees !== null
         ) {
             clustersStats.push({
                 key: opinionResponse.polisCluster3Key,
@@ -522,18 +406,13 @@ export async function fetchOpinions({
                 numUsers: opinionResponse.polisCluster3NumUsers,
                 numAgrees: opinionResponse.polisCluster3NumAgrees,
                 numDisagrees: opinionResponse.polisCluster3NumDisagrees,
-                percentageAgrees: opinionResponse.polisCluster3PercentageAgrees,
-                percentageDisagrees:
-                    opinionResponse.polisCluster3PercentageDisagrees,
             });
         }
         if (
             opinionResponse.polisCluster4Key !== null &&
             opinionResponse.polisCluster4NumUsers !== null &&
             opinionResponse.polisCluster4NumAgrees !== null &&
-            opinionResponse.polisCluster4NumDisagrees !== null &&
-            opinionResponse.polisCluster4PercentageAgrees !== null &&
-            opinionResponse.polisCluster4PercentageDisagrees !== null
+            opinionResponse.polisCluster4NumDisagrees !== null
         ) {
             clustersStats.push({
                 key: opinionResponse.polisCluster4Key,
@@ -544,18 +423,13 @@ export async function fetchOpinions({
                 numUsers: opinionResponse.polisCluster4NumUsers,
                 numAgrees: opinionResponse.polisCluster4NumAgrees,
                 numDisagrees: opinionResponse.polisCluster4NumDisagrees,
-                percentageAgrees: opinionResponse.polisCluster4PercentageAgrees,
-                percentageDisagrees:
-                    opinionResponse.polisCluster4PercentageDisagrees,
             });
         }
         if (
             opinionResponse.polisCluster5Key !== null &&
             opinionResponse.polisCluster5NumUsers !== null &&
             opinionResponse.polisCluster5NumAgrees !== null &&
-            opinionResponse.polisCluster5NumDisagrees !== null &&
-            opinionResponse.polisCluster5PercentageAgrees !== null &&
-            opinionResponse.polisCluster5PercentageDisagrees !== null
+            opinionResponse.polisCluster5NumDisagrees !== null
         ) {
             clustersStats.push({
                 key: opinionResponse.polisCluster5Key,
@@ -566,9 +440,6 @@ export async function fetchOpinions({
                 numUsers: opinionResponse.polisCluster5NumUsers,
                 numAgrees: opinionResponse.polisCluster5NumAgrees,
                 numDisagrees: opinionResponse.polisCluster5NumDisagrees,
-                percentageAgrees: opinionResponse.polisCluster5PercentageAgrees,
-                percentageDisagrees:
-                    opinionResponse.polisCluster5PercentageDisagrees,
             });
         }
         const item: OpinionItem = {
@@ -578,8 +449,6 @@ export async function fetchOpinions({
             numParticipants: opinionResponse.numParticipants,
             numDisagrees: opinionResponse.numDisagrees,
             numAgrees: opinionResponse.numAgrees,
-            percentageAgrees: opinionResponse.percentageAgrees,
-            percentageDisagrees: opinionResponse.percentageDisagrees,
             updatedAt: opinionResponse.updatedAt,
             username: opinionResponse.username,
             moderation: moderationProperties,
@@ -1068,20 +937,6 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 numParticipants: conversationTable.participantCount,
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
-                percentageAgrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>` 
-              CASE 
-                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numAgrees} IS NULL THEN NULL
-                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numAgrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.numAgrees}::decimal / ${conversationTable.participantCount}) * 100)::decimal, 2)
-              END
-            `,
-                percentageDisagrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>`
-              CASE 
-                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numDisagrees} IS NULL THEN NULL
-                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numDisagrees} = 0 THEN 0::decimal
-                ELSE ROUND(((${opinionTable.numDisagrees}::decimal / ${conversationTable.participantCount}) * 100)::decimal, 2)
-              END
-            `,
                 username: userTable.username,
                 moderationAction: opinionModerationTable.moderationAction,
                 moderationExplanation:
@@ -1125,8 +980,6 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 numParticipants: commentResponse.numParticipants,
                 numDisagrees: commentResponse.numDisagrees,
                 numAgrees: commentResponse.numAgrees,
-                percentageAgrees: commentResponse.percentageAgrees,
-                percentageDisagrees: commentResponse.percentageDisagrees,
                 username: commentResponse.username,
                 moderation: moderationProperties,
                 clustersStats: [], //TODO: change this!
@@ -1338,19 +1191,20 @@ export async function postNewOpinion({
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
 
-    // both values are 0 if the user is a new participant!
-    const {
-        voteCount: participantCurrentVoteCount,
-        opinionCount: participantCurrentOpinionCount,
-    } = await useCommonComment().getCountsForParticipant({
-        db,
-        conversationId,
-        userId,
-    });
-
     const opinionSlugId = generateRandomSlugId();
 
     await db.transaction(async (tx) => {
+        // both values are 0 if the user is a new participant!
+        // important to do this in the transaction to make sure the number of participant is consistent
+        const {
+            voteCount: participantCurrentVoteCount,
+            opinionCount: participantCurrentOpinionCount,
+        } = await useCommonComment().getCountsForParticipant({
+            db: tx,
+            conversationId,
+            userId,
+        });
+
         const insertCommentResponse = await tx
             .insert(opinionTable)
             .values({
@@ -1416,13 +1270,6 @@ export async function postNewOpinion({
                 })
                 .where(eq(conversationTable.slugId, conversationSlugId));
         }
-        await tx
-            .update(conversationTable)
-            .set({
-                opinionCount: sql`${conversationTable.opinionCount} + 1`,
-                participantCount: sql`${conversationTable.participantCount} + 1`,
-            })
-            .where(eq(conversationTable.slugId, conversationSlugId));
 
         // Update the user profile's comment count
         await tx

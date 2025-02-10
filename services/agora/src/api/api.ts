@@ -1710,18 +1710,6 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
      * @type {string}
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
-    'percentageAgrees': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
-     */
-    'percentageDisagrees': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
-     */
     'username': string;
     /**
      * 
@@ -1778,18 +1766,6 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersSta
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
      */
     'numDisagrees': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
-     */
-    'percentageAgrees': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
-     */
-    'percentageDisagrees': string;
 }
 
 export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum = {

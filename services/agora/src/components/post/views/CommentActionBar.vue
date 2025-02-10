@@ -30,7 +30,12 @@
               Group
               {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
               {{ clusterItem.numDisagrees }} ({{
-                formatPercentage(clusterItem.percentageDisagrees)
+                formatPercentage(
+                  calculatePercentage(
+                    clusterItem.numDisagrees,
+                    clusterItem.numUsers
+                  )
+                )
               }})
             </div>
           </div>
@@ -65,7 +70,12 @@
               Group
               {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
               {{ clusterItem.numAgrees }} ({{
-                formatPercentage(clusterItem.percentageAgrees)
+                formatPercentage(
+                  calculatePercentage(
+                    clusterItem.numAgrees,
+                    clusterItem.numUsers
+                  )
+                )
               }})
             </div>
           </div>

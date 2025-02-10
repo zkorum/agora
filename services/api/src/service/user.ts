@@ -16,7 +16,7 @@ import type {
     ExtendedConversationPerSlugId,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, lt, desc, sql } from "drizzle-orm";
+import { and, eq, lt, desc } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCreatedAt } from "./feed.js";
@@ -51,20 +51,6 @@ export async function getUserComments({
                 numParticipants: conversationTable.participantCount,
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
-                percentageAgrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>` 
-              CASE 
-                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numAgrees} IS NULL THEN NULL
-                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numAgrees} = 0 THEN 0::smallint
-                ELSE ROUND(((${opinionTable.numAgrees}::smallint / ${conversationTable.participantCount}) * 100)::smallint, 2)
-              END
-            `,
-                percentageDisagrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>`
-              CASE 
-                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numDisagrees} IS NULL THEN NULL
-                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numDisagrees} = 0 THEN 0::smallint
-                ELSE ROUND(((${opinionTable.numDisagrees}::smallint / ${conversationTable.participantCount}) * 100)::smallint, 2)
-              END
-            `,
                 username: userTable.username,
                 postSlugId: conversationTable.slugId,
                 moderationAction: opinionModerationTable.moderationAction,
@@ -73,10 +59,6 @@ export async function getUserComments({
                 moderationReason: opinionModerationTable.moderationReason,
                 moderationCreatedAt: opinionModerationTable.createdAt,
                 moderationUpdatedAt: opinionModerationTable.updatedAt,
-                rankWithinCluster:
-                    sql`ROW_NUMBER() OVER (PARTITION BY ${polisClusterTable.id} ORDER BY ${polisClusterOpinionTable.percentageAgreement} DESC)`.as(
-                        "rankWithinCluster",
-                    ), // TODO: improve that-- copy from the fetch opinions algorithm
             })
             .from(opinionTable)
             .innerJoin(
@@ -140,8 +122,6 @@ export async function getUserComments({
                 numParticipants: commentResponse.numParticipants,
                 numDisagrees: commentResponse.numDisagrees,
                 numAgrees: commentResponse.numAgrees,
-                percentageAgrees: commentResponse.percentageAgrees,
-                percentageDisagrees: commentResponse.percentageDisagrees,
                 username: commentResponse.username,
                 moderation: moderationProperties,
                 clustersStats: [], //TODO: change this!

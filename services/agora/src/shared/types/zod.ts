@@ -238,15 +238,6 @@ export const zodConversationPolis = z
         clusters: zodClusterMetadata.array(),
     })
     .strict();
-const zodPercentage = z.string().refine(
-    (value) => {
-        const num = Number(value);
-        return !isNaN(num) && num >= 0 && num <= 100;
-    },
-    {
-        message: "Percentage must be a number between 0 and 100",
-    },
-);
 export const zodClusterStats = z.object({
     key: zodPolisKey,
     aiLabel: z.string().optional(),
@@ -254,8 +245,6 @@ export const zodClusterStats = z.object({
     numUsers: z.number().int().nonnegative(),
     numAgrees: z.number().int().nonnegative(),
     numDisagrees: z.number().int().nonnegative(),
-    percentageAgrees: zodPercentage,
-    percentageDisagrees: zodPercentage,
 });
 export const zodOpinionItem = z
     .object({
@@ -266,8 +255,6 @@ export const zodOpinionItem = z
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
-        percentageAgrees: zodPercentage,
-        percentageDisagrees: zodPercentage,
         username: zodUsername,
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,

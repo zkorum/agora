@@ -256,7 +256,6 @@ export async function fetchPostBySlugId({
         const { fetchPostItems } = useCommonPost();
         const postData = await fetchPostItems({
             db: db,
-            limit: 1,
             where: eq(conversationTable.slugId, conversationSlugId),
             enableCompactBody: false,
             personalizationUserId: personalizationUserId,

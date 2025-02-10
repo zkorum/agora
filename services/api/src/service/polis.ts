@@ -379,7 +379,11 @@ export async function delayedPolisGetAndUpdateMath({
                         userId: userIdByPid[member],
                     };
                 });
-            await tx.insert(polisClusterUserTable).values(members);
+            if (members.length > 0) {
+                await tx.insert(polisClusterUserTable).values(members);
+            } else {
+                log.warn("No members to insert in polisClusterUserTable");
+            }
             for (const member of members) {
                 tx.update(participantTable)
                     .set({
@@ -418,7 +422,11 @@ export async function delayedPolisGetAndUpdateMath({
                         rawRepness: repness,
                     };
                 });
-            await tx.insert(polisClusterOpinionTable).values(repnesses);
+            if (repnesses.length > 0) {
+                await tx.insert(polisClusterOpinionTable).values(repnesses);
+            } else {
+                log.warn("No repnesses to insert in polisClusterOpinionTable");
+            }
 
             const groupVotes = groupVotesEntries[clusterKey][1].votes;
             // building bulk updates for numAgrees & num Disagrees

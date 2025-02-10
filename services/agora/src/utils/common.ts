@@ -53,13 +53,10 @@ export function getPlatform(platform: Platform): SupportedPlatform {
   return "web";
 }
 
-export function formatPercentage(percentageStr: string) {
-  const percentage = parseFloat(percentageStr);
-
-  // Step 3: Format the number
+export function formatPercentage(percentage: number) {
   const formattedPercentage = Number.isInteger(percentage)
     ? percentage.toFixed(0)
-    : percentage.toString();
+    : percentage.toFixed(2);
 
   // Step 4: Append the '%' sign
   return `${formattedPercentage}%`;
@@ -68,8 +65,8 @@ export function formatPercentage(percentageStr: string) {
 export function calculatePercentage(numerator: number, denominator: number) {
   if (denominator > 0) {
     const percentage = (numerator / denominator) * 100;
-    return percentage.toFixed(2);
+    return percentage;
   } else {
-    return "0";
+    return 0;
   }
 }

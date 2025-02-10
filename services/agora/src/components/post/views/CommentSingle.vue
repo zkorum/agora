@@ -69,6 +69,7 @@ import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import { formatTimeAgo } from "@vueuse/core";
 import { formatClusterLabel } from "src/utils/component/opinion";
+import { calculatePercentage } from "src/utils/common";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -86,9 +87,13 @@ const deleted = ref(false);
 const reasonLabel = calculateReasonLabel();
 
 function calculateReasonLabel() {
-  const totalPercentageAgrees = parseFloat(props.commentItem.percentageAgrees);
-  const totalPercentageDisagrees = parseFloat(
-    props.commentItem.percentageDisagrees
+  const totalPercentageAgrees = calculatePercentage(
+    props.commentItem.numAgrees,
+    props.commentItem.numParticipants
+  );
+  const totalPercentageDisagrees = calculatePercentage(
+    props.commentItem.numDisagrees,
+    props.commentItem.numParticipants
   );
   if (totalPercentageAgrees > 50 || totalPercentageDisagrees > 50) {
     return "Majority (Total)";
@@ -101,9 +106,13 @@ function calculateReasonLabel() {
   }
   if (props.commentItem.clustersStats.length >= 2) {
     for (const clusterStat of props.commentItem.clustersStats) {
-      const clusterPercentageAgrees = parseFloat(clusterStat.percentageAgrees);
-      const clusterPercentageDisagrees = parseFloat(
-        clusterStat.percentageDisagrees
+      const clusterPercentageAgrees = calculatePercentage(
+        clusterStat.numAgrees,
+        clusterStat.numUsers
+      );
+      const clusterPercentageDisagrees = calculatePercentage(
+        clusterStat.numDisagrees,
+        clusterStat.numUsers
       );
       const labelCluster =
         clusterStat.aiLabel ??

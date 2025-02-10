@@ -1,0 +1,149 @@
+/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
+import { z } from "zod";
+
+export const stringToJSONSchema = z
+    .string()
+    .nullish()
+    .transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
+        try {
+            if (str !== undefined) {
+                return JSON.parse(str);
+            } else {
+                return {};
+            }
+        } catch (_e) {
+            ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+            return z.NEVER;
+        }
+    });
+
+export const zodPCA = z
+    .object({
+        comps: z.array(z.array(z.number().nullish()).nullish()).nullish(),
+        center: z.array(z.number().nullish()).nullish(),
+        "comment-extremity": z.array(z.number().nullish()).nullish(),
+        "comment-projection": z
+            .array(z.array(z.number().nullish()).nullish())
+            .nullish(),
+    })
+    .nullish();
+
+export const zodRepnessEntry = z
+    .object({
+        tid: z.number().nullish(),
+        "p-test": z.number().nullish(),
+        repness: z.number().nullish(),
+        "n-trials": z.number().nullish(),
+        "n-success": z.number().nullish(),
+        "p-success": z.number().nullish(),
+        "repful-for": z.enum(["agree", "disagree"]).nullish(),
+        "repness-test": z.number().nullish(),
+    })
+    .nullish();
+
+export const zodRepness = z
+    .record(z.array(zodRepnessEntry).nullish())
+    .nullish();
+
+export const zodConsensusEntry = z
+    .object({
+        tid: z.number().nullish(),
+        "p-test": z.number().nullish(),
+        "n-trials": z.number().nullish(),
+        "n-success": z.number().nullish(),
+        "p-success": z.number().nullish(),
+    })
+    .nullish();
+
+export const zodConsensus = z.object({
+    agree: z.array(zodConsensusEntry).nullish(),
+    disagree: z.array(zodConsensusEntry).nullish(),
+});
+
+const zodVotesBase = z
+    .object({
+        A: z.array(z.number().nullish()).nullish(),
+        D: z.array(z.number().nullish()).nullish(),
+        S: z.array(z.number().nullish()).nullish(),
+    })
+    .nullish();
+
+export const zodVotesBaseMap = z.record(zodVotesBase).nullish();
+
+export const zodGroupVotesMap = z.record(
+    z
+        .object({
+            votes: z.record(
+                z
+                    .object({
+                        A: z.number().nullish(),
+                        D: z.number().nullish(),
+                        S: z.number().nullish(),
+                    })
+                    .nullish(),
+            ),
+            "n-members": z.number().nullish(),
+            id: z.number().nullish(),
+        })
+        .nullish(),
+);
+
+export const zodBaseClusters = z
+    .object({
+        x: z.array(z.number().nullish()).nullish(),
+        y: z.array(z.number().nullish()).nullish(),
+        id: z.array(z.number().nullish()).nullish(),
+        count: z.array(z.number().nullish()).nullish(),
+        members: z.array(z.array(z.number().nullish()).nullish()).nullish(),
+    })
+    .nullish();
+
+export const zodGroupCluster = z
+    .object({
+        id: z.number(),
+        center: z.array(z.number().nullish()).nullish(),
+        members: z.array(z.number().nullish()).nullish(),
+    })
+    .nullish();
+
+export const zodUserVoteCounts = z.record(z.number().nullish()).nullish();
+
+export const zodCommentPriorities = z.record(z.number().nullish()).nullish();
+export const zodCommentPrioritiesNotNullish = z.record(z.number());
+
+export const zodGroupAwareConsensus = z.record(z.number().nullish()).nullish();
+
+export const zodMathResults = z
+    .object({
+        n: z.number().nullish(),
+        pca: zodPCA.nullish(),
+        tids: z.array(z.number().nullish()).nullish(),
+        "mod-in": z.array(z.unknown().nullish()).nullish(),
+        "n-cmts": z.number().nullish(),
+        "in-conv": z.array(z.number().nullish()).nullish(),
+        "mod-out": z.array(z.unknown().nullish()).nullish(),
+        repness: zodRepness,
+        consensus: zodConsensus,
+        "meta-tids": z.array(z.number()).nullish(),
+        "votes-base": zodVotesBaseMap,
+        "group-votes": zodGroupVotesMap,
+        "base-clusters": zodBaseClusters,
+        "group-clusters": z.array(zodGroupCluster).nullish(),
+        lastModTimestamp: z.union([z.number(), z.null()]).nullish(),
+        "user-vote-counts": zodUserVoteCounts,
+        lastVoteTimestamp: z.number().nullish(),
+        "comment-priorities": zodCommentPriorities.nullish(),
+        "group-aware-consensus": zodGroupAwareConsensus.nullish(),
+        math_tick: z.number().nullish(),
+    })
+    .nullish();
+
+export const zodPolisMathAndMetadata = z.object({
+    pca: stringToJSONSchema.pipe(zodMathResults), // see https://github.com/colinhacks/zod/discussions/2215#discussioncomment-5356286 and https://github.com/colinhacks/zod/discussions/2215#discussioncomment-7812655
+    pidToHnames: z.record(z.string().nullish()).nullish(),
+    tidToTxts: z.record(z.string().nullish()).nullish(),
+});
+
+export type PolisMathAndMetadata = z.infer<typeof zodPolisMathAndMetadata>;
+export type CommentPrioritiesNullish = z.infer<typeof zodCommentPriorities>;
+export type CommentPriorities = z.infer<typeof zodCommentPrioritiesNotNullish>;

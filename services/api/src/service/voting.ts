@@ -465,6 +465,18 @@ export async function castVoteForOpinionSlugId({
             })
             .returning({ voteProofTableId: voteProofTable.id });
 
+        // update conversation counts
+        // both values are 0 if the user is a new participant!
+        const {
+            voteCount: participantCurrentVoteCount,
+            opinionCount: participantCurrentOpinionCount,
+        } = await useCommonComment().getCountsForParticipant({
+            db: tx,
+            conversationId,
+            userId,
+        });
+
+        // important to run AFTER the above select
         await db
             .insert(participantTable)
             .values({
@@ -485,16 +497,6 @@ export async function castVoteForOpinionSlugId({
                 },
             });
 
-        // update conversation counts
-        // both values are 0 if the user is a new participant!
-        const {
-            voteCount: participantCurrentVoteCount,
-            opinionCount: participantCurrentOpinionCount,
-        } = await useCommonComment().getCountsForParticipant({
-            db: tx,
-            conversationId,
-            userId,
-        });
         if (votingAction === "cancel") {
             // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
             const participantVoteCountAfterDeletion =

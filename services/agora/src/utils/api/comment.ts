@@ -43,8 +43,6 @@ export function useBackendCommentApi() {
         numParticipants: item.numParticipants,
         numDisagrees: item.numDisagrees,
         numAgrees: item.numAgrees,
-        percentageAgrees: item.percentageAgrees,
-        percentageDisagrees: item.percentageDisagrees,
         updatedAt: new Date(item.updatedAt),
         username: String(item.username),
         moderation: {
@@ -96,8 +94,6 @@ export function useBackendCommentApi() {
           numParticipants: item.numParticipants,
           numDisagrees: item.numDisagrees,
           numAgrees: item.numAgrees,
-          percentageAgrees: item.percentageAgrees,
-          percentageDisagrees: item.percentageDisagrees,
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
           moderation: {

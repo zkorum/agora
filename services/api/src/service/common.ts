@@ -9,7 +9,6 @@ import {
     polisContentTable,
     polisClusterTable,
     participantTable,
-    polisClusterUserTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -95,7 +94,7 @@ export function useCommonPost() {
 
     interface FetchPostItemsProps {
         db: PostgresJsDatabase;
-        limit: number;
+        limit?: number;
         where: SQL | undefined;
         enableCompactBody: boolean;
         personalizationUserId?: string;
@@ -112,7 +111,8 @@ export function useCommonPost() {
         excludeLockedPosts,
         removeMutedAuthors,
     }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
-        const postItems = await db
+        let postItems;
+        const postItemsQuery = db
             .select({
                 title: conversationContentTable.title,
                 body: conversationContentTable.body,
@@ -201,8 +201,12 @@ export function useCommonPost() {
             // )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(where)
-            .orderBy(desc(conversationTable.createdAt))
-            .limit(limit);
+            .orderBy(desc(conversationTable.createdAt));
+        if (limit !== undefined) {
+            postItems = await postItemsQuery.$dynamic().limit(limit);
+        } else {
+            postItems = await postItemsQuery;
+        }
 
         const extendedConversationMap: ExtendedConversationPerSlugId = new Map<
             string,
