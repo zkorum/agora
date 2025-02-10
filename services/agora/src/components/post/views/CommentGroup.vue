@@ -25,7 +25,7 @@
       <ZKCard
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
-        :key="commentItem.opinionSlugId"
+        :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
         padding="1rem"
         class="commentItemBackground"
       >
