@@ -25,6 +25,7 @@
             <div
               v-for="clusterItem in commentItem.clustersStats"
               :key="clusterItem.key"
+              :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
             >
               Group
               {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
@@ -78,7 +79,11 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { computed, ref } from "vue";
-import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
+import {
+  PolisKey,
+  type OpinionItem,
+  type VotingAction,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
@@ -86,6 +91,7 @@ import { storeToRefs } from "pinia";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
 const props = defineProps<{
+  selectedClusterKey?: PolisKey;
   commentItem: OpinionItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
@@ -268,5 +274,9 @@ async function castPersonalVote(
 
 .voteCountLabelAgree {
   color: $button-agree-text;
+}
+
+.highlightStat {
+  font-weight: bold;
 }
 </style>

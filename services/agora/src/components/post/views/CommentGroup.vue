@@ -30,6 +30,7 @@
         class="commentItemBackground"
       >
         <CommentSingle
+          :selected-cluster-key="selectedClusterKey"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :highlight="initialCommentSlugId == commentItem.opinionSlugId"
@@ -44,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem } from "src/shared/types/zod";
+import type { OpinionItem, PolisKey } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import CommentConsensusSummary from "./CommentConsensusSummary.vue";
@@ -52,6 +53,7 @@ import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 defineProps<{
+  selectedClusterKey?: PolisKey;
   commentItemList: OpinionItem[];
   postSlugId: string;
   aiSummary?: string;

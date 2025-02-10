@@ -48,6 +48,7 @@
 
         <div class="actionBarPaddings">
           <CommentActionBar
+            :selected-cluster-key="selectedClusterKey"
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -62,7 +63,7 @@
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { OpinionItem, PolisKey } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
@@ -72,6 +73,7 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
+  selectedClusterKey?: PolisKey;
   commentItem: OpinionItem;
   postSlugId: string;
   highlight: boolean;

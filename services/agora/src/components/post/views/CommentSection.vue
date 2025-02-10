@@ -91,6 +91,7 @@
 
       <CommentGroup
         v-if="currentClusterTab != 'all'"
+        :selected-cluster-key:="currentClusterTab"
         :comment-item-list="commentItemsCluster"
         :is-loading="isLoadingCommentItemsCluster"
         :post-slug-id="postSlugId"

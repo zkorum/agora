@@ -293,13 +293,15 @@ export async function importNewVote({
         }
     }
 
-    void polisService.createOrUpdateVote({
-        userId,
-        conversationSlugId,
-        opinionSlugId,
-        votingAction,
-        axiosPolis,
-    });
+    Promise.allSettled([
+        polisService.createOrUpdateVote({
+            userId,
+            conversationSlugId,
+            opinionSlugId,
+            votingAction,
+            axiosPolis,
+        }),
+    ]);
 }
 
 interface CastVoteForOpinionSlugIdProps {
