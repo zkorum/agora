@@ -86,7 +86,7 @@ const deleted = ref(false);
 
 const reasonLabel = calculateReasonLabel();
 
-function calculateReasonLabel() {
+function calculateTotalReasonLabel() {
   const totalPercentageAgrees = calculatePercentage(
     props.commentItem.numAgrees,
     props.commentItem.numParticipants
@@ -104,8 +104,45 @@ function calculateReasonLabel() {
   ) {
     return "Controversial (Total)";
   }
+}
+
+function calculateClusterReasonLabel() {
   if (props.commentItem.clustersStats.length >= 2) {
+    if (props.selectedClusterKey !== undefined) {
+      const clusterStat =
+        props.commentItem.clustersStats[props.selectedClusterKey];
+      const selectedClusterPercentageAgrees = calculatePercentage(
+        clusterStat.numAgrees,
+        clusterStat.numUsers
+      );
+      const selectedClusterPercentageDisagrees = calculatePercentage(
+        clusterStat.numDisagrees,
+        clusterStat.numUsers
+      );
+      const labelCluster =
+        clusterStat.aiLabel ??
+        formatClusterLabel(clusterStat.key, clusterStat.aiLabel);
+      if (
+        selectedClusterPercentageAgrees > 50 ||
+        selectedClusterPercentageDisagrees > 50
+      ) {
+        return `Majority (Group ${labelCluster})`;
+      }
+      if (
+        selectedClusterPercentageDisagrees + selectedClusterPercentageAgrees >
+          50 &&
+        Math.abs(
+          selectedClusterPercentageAgrees - selectedClusterPercentageDisagrees
+        ) < 50
+      ) {
+        return `Controversial (Group ${labelCluster})`;
+      }
+    }
     for (const clusterStat of props.commentItem.clustersStats) {
+      if (clusterStat.key === props.selectedClusterKey) {
+        // already done
+        continue;
+      }
       const clusterPercentageAgrees = calculatePercentage(
         clusterStat.numAgrees,
         clusterStat.numUsers
@@ -127,6 +164,16 @@ function calculateReasonLabel() {
         return `Controversial (Group ${labelCluster})`;
       }
     }
+  }
+}
+
+function calculateReasonLabel() {
+  const totalReasonLabel = calculateTotalReasonLabel();
+  const clusterReasonLabel = calculateClusterReasonLabel();
+  if (props.selectedClusterKey !== undefined) {
+    return clusterReasonLabel ?? totalReasonLabel;
+  } else {
+    return totalReasonLabel ?? clusterReasonLabel;
   }
 }
 
