@@ -12,7 +12,7 @@ export const useOpinionScrollableStore = defineStore(
 
     function loadMore() {
       const endSliceIndex = Math.min(
-        opinionItemListPartial.value.length + 5,
+        opinionItemListPartial.value.length + 10,
         opinionItemListFull.value.length
       );
 

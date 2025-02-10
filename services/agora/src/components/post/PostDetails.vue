@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div ref="postContainerRef" class="containerBase">
+    <div ref="postContainerRef" :class="{ fixedHeightContainer: !compactMode }">
       <WidthWrapper :width="'35rem'">
         <ZKHoverEffect :enable-hover="compactMode">
           <div
@@ -377,9 +377,7 @@ async function shareClicked() {
   background-color: white;
 }
 
-.containerBase {
-  position: relative;
-  margin: auto;
+.fixedHeightContainer {
   height: calc(100dvh - 3.5rem);
   overflow-y: scroll;
 }
