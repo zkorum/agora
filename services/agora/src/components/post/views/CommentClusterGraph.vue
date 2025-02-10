@@ -242,9 +242,12 @@ const clusterConfig: ClusterConfig[] = [
     ],
   },
 ];
-const result = zodClusterConfig.safeParse(clusterConfig);
+const result = z.array(zodClusterConfig).safeParse(clusterConfig);
 if (!result.success) {
-  console.warn("Too many clusters, the backend is not ready to support them");
+  console.log(
+    "Too many clusters, the backend is not ready to support them",
+    result.error
+  );
 } // TODO: do this properly...
 
 let targetClusterIndex = 0;

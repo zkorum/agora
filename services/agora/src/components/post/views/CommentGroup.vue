@@ -53,7 +53,7 @@ import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 defineProps<{
-  selectedClusterKey?: PolisKey;
+  selectedClusterKey: PolisKey | undefined;
   commentItemList: OpinionItem[];
   postSlugId: string;
   aiSummary?: string;

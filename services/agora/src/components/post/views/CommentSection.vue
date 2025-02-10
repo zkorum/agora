@@ -41,6 +41,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'discover'"
+        :selected-cluster-key="undefined"
         :comment-item-list="commentItemsDiscover"
         :is-loading="isLoadingCommentItemsDiscover"
         :post-slug-id="postSlugId"
@@ -54,6 +55,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'new'"
+        :selected-cluster-key="undefined"
         :comment-item-list="commentItemsNew"
         :is-loading="isLoadingCommentItemsNew"
         :post-slug-id="postSlugId"
@@ -67,6 +69,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'moderated'"
+        :selected-cluster-key="undefined"
         :comment-item-list="commentItemsModerated"
         :is-loading="isLoadingCommentItemsModerated"
         :post-slug-id="postSlugId"
@@ -79,6 +82,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'hidden'"
+        :selected-cluster-key="undefined"
         :comment-item-list="commentItemsHidden"
         :is-loading="isLoadingCommentItemsHidden"
         :post-slug-id="postSlugId"
@@ -91,7 +95,7 @@
 
       <CommentGroup
         v-if="currentClusterTab != 'all'"
-        :selected-cluster-key:="currentClusterTab"
+        :selected-cluster-key="currentClusterTab"
         :comment-item-list="commentItemsCluster"
         :is-loading="isLoadingCommentItemsCluster"
         :post-slug-id="postSlugId"

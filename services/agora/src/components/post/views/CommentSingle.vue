@@ -74,7 +74,7 @@ import { calculatePercentage } from "src/utils/common";
 const emit = defineEmits(["deleted", "mutedComment"]);
 
 const props = defineProps<{
-  selectedClusterKey?: PolisKey;
+  selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
   highlight: boolean;

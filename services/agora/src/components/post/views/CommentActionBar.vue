@@ -66,6 +66,7 @@
             <div
               v-for="clusterItem in commentItem.clustersStats"
               :key="clusterItem.key"
+              :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
             >
               Group
               {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
@@ -101,7 +102,7 @@ import { storeToRefs } from "pinia";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
 const props = defineProps<{
-  selectedClusterKey?: PolisKey;
+  selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
