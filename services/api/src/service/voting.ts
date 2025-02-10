@@ -217,6 +217,16 @@ export async function importNewVote({
         })
         .where(eq(opinionTable.currentContentId, opinionContentId));
 
+    const {
+        voteCount: participantCurrentVoteCount,
+        opinionCount: participantCurrentOpinionCount,
+    } = await useCommonComment().getCountsForParticipant({
+        db: db,
+        conversationId,
+        userId,
+    });
+
+    // important to run AFTER the above select
     await db
         .insert(participantTable)
         .values({
@@ -234,17 +244,6 @@ export async function importNewVote({
             },
         });
 
-    // WARN: might need to do this in a transaction...
-    // update conversation counts
-    // both values are 0 if the user is a new participant!
-    const {
-        voteCount: participantCurrentVoteCount,
-        opinionCount: participantCurrentOpinionCount,
-    } = await useCommonComment().getCountsForParticipant({
-        db: db,
-        conversationId,
-        userId,
-    });
     if (votingAction === "cancel") {
         // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
         const participantVoteCountAfterDeletion =
@@ -293,15 +292,18 @@ export async function importNewVote({
         }
     }
 
-    Promise.allSettled([
-        polisService.createOrUpdateVote({
+    try {
+        await polisService.createOrUpdateVote({
             userId,
             conversationSlugId,
             opinionSlugId,
             votingAction,
             axiosPolis,
-        }),
-    ]);
+        });
+    } catch (e) {
+        log.error(e);
+        log.warn("Error while importing vote to Polis--continuing");
+    }
 }
 
 interface CastVoteForOpinionSlugIdProps {
