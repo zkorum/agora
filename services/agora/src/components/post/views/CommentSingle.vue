@@ -64,7 +64,6 @@
 import CommentActionBar from "./CommentActionBar.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { OpinionItem, PolisKey } from "src/shared/types/zod";
-import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import { formatTimeAgo } from "@vueuse/core";
@@ -81,8 +80,6 @@ const props = defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
-
-const deleted = ref(false);
 
 const reasonLabel = calculateReasonLabel();
 
@@ -179,7 +176,6 @@ function calculateReasonLabel() {
 }
 
 function deletedComment() {
-  deleted.value = true;
   emit("deleted");
 }
 
