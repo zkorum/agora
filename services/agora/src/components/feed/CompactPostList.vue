@@ -176,7 +176,8 @@ async function refreshPage(done: () => void) {
 .postListFlex {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 
 .emptyDivPadding {

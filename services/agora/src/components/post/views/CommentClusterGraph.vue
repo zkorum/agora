@@ -45,7 +45,7 @@
             class="clusterNameOverlay borderStyle dynamicFont"
             :style="{
               top: '30%',
-              left: '40%',
+              left: '25%',
             }"
           >
             <div class="clusterLabelFlex">
@@ -336,7 +336,7 @@ function composeImagePath(
 }
 
 .dynamicFont {
-  font-size: min(1.2rem, 4vw);
+  font-size: min(0.8rem, 3vw);
 }
 
 .clusterNameOverlay {
@@ -363,5 +363,6 @@ function composeImagePath(
   flex-direction: row;
   gap: min(0.5rem, 1vw);
   align-items: center;
+  white-space: nowrap;
 }
 </style>
