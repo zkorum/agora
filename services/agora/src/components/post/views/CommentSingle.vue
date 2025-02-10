@@ -165,7 +165,6 @@ function calculateClusterReasonLabel() {
 }
 
 function calculateReasonLabel() {
-  console.log(props.selectedClusterKey);
   const totalReasonLabel = calculateTotalReasonLabel();
   const clusterReasonLabel = calculateClusterReasonLabel();
   if (props.selectedClusterKey !== undefined) {

@@ -42,7 +42,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'discover'"
         :selected-cluster-key="undefined"
-        :comment-item-list="commentItemsDiscover"
+        :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsDiscover"
         :post-slug-id="postSlugId"
         :ai-summary="polis.aiSummary"
@@ -56,7 +56,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'new'"
         :selected-cluster-key="undefined"
-        :comment-item-list="commentItemsNew"
+        :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsNew"
         :post-slug-id="postSlugId"
         :ai-summary="polis.aiSummary"
@@ -70,7 +70,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'moderated'"
         :selected-cluster-key="undefined"
-        :comment-item-list="commentItemsModerated"
+        :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
@@ -83,7 +83,7 @@
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'hidden'"
         :selected-cluster-key="undefined"
-        :comment-item-list="commentItemsHidden"
+        :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsHidden"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="commentSlugIdQuery"
@@ -96,7 +96,7 @@
       <CommentGroup
         v-if="currentClusterTab != 'all'"
         :selected-cluster-key="currentClusterTab"
-        :comment-item-list="commentItemsCluster"
+        :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsCluster"
         :post-slug-id="postSlugId"
         :ai-summary="
@@ -137,6 +137,7 @@ import {
 } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
+import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 
 const emit = defineEmits(["deleted"]);
 
@@ -175,17 +176,21 @@ const isLoadingCommentItemsDiscover = ref<boolean>(true);
 const isLoadingCommentItemsModerated = ref<boolean>(true);
 const isLoadingCommentItemsHidden = ref<boolean>(true);
 const isLoadingCommentItemsCluster = ref<boolean>(true);
-const commentItemsNew = ref<OpinionItem[]>([]);
-const commentItemsDiscover = ref<OpinionItem[]>([]);
-const commentItemsModerated = ref<OpinionItem[]>([]);
-const commentItemsHidden = ref<OpinionItem[]>([]);
-const commentItemsCluster = ref<OpinionItem[]>([]);
+let commentItemsNew: OpinionItem[] = [];
+let commentItemsDiscover: OpinionItem[] = [];
+let commentItemsModerated: OpinionItem[] = [];
+let commentItemsHidden: OpinionItem[] = [];
+// let commentItemsCluster: OpinionItem[] = [];
 
 const clusterCommentItemsMap = ref<Map<PolisKey, OpinionItem[]>>(new Map());
 const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
+const { setupOpinionlist } = useOpinionScrollableStore();
+const { opinionItemListPartial } = storeToRefs(useOpinionScrollableStore());
+
 onMounted(async () => {
   await Promise.all([initializeData(), fetchPersonalLikes()]);
+  updateInfiniteScrollingList(sortAlgorithm.value);
 });
 
 watch(commentFilterQuery, () => {
@@ -197,19 +202,40 @@ watch(currentClusterTab, async () => {
     const clusterKey = currentClusterTab.value;
     const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
     if (cachedCommentItems) {
-      commentItemsCluster.value = cachedCommentItems;
+      setupOpinionlist(cachedCommentItems);
     } else {
-      commentItemsCluster.value = [];
+      setupOpinionlist([]);
       console.error(
         `Failed to locate comment items for cluster key: ${clusterKey}`
       );
     }
+  } else {
+    updateInfiniteScrollingList(sortAlgorithm.value);
   }
 });
 
 const showClusterMap = computed(() => {
   return props.polis.clusters.length >= 2;
 });
+
+function updateInfiniteScrollingList(optionValue: CommentFilterOptions) {
+  switch (optionValue) {
+    case "new":
+      setupOpinionlist(commentItemsNew);
+      break;
+    case "discover":
+      setupOpinionlist(commentItemsDiscover);
+      break;
+    case "hidden":
+      setupOpinionlist(commentItemsHidden);
+      break;
+    case "moderated":
+      setupOpinionlist(commentItemsModerated);
+      break;
+    default:
+      console.error("Unknown sort algorithm: " + sortAlgorithm.value);
+  }
+}
 
 async function selectedNewFilter(optionValue: CommentFilterOptions) {
   await router.replace({
@@ -301,7 +327,7 @@ async function fetchHiddenComments() {
     const response = await fetchHiddenCommentsForPost(props.postSlugId);
 
     if (response != null) {
-      commentItemsHidden.value = response;
+      commentItemsHidden = response;
     }
   }
 }
@@ -333,6 +359,7 @@ async function fetchCommentList(
         if (clusterKey != undefined) {
           isLoadingCommentItemsCluster.value = true;
         }
+        break;
     }
     const response = await fetchCommentsForPost(
       props.postSlugId,
@@ -343,15 +370,15 @@ async function fetchCommentList(
     if (response != null) {
       switch (filter) {
         case "moderated":
-          commentItemsModerated.value = response;
+          commentItemsModerated = response;
           isLoadingCommentItemsModerated.value = false;
           break;
         case "new":
-          commentItemsNew.value = response;
+          commentItemsNew = response;
           isLoadingCommentItemsNew.value = false;
           break;
         case "discover":
-          commentItemsDiscover.value = response;
+          commentItemsDiscover = response;
           isLoadingCommentItemsDiscover.value = false;
           break;
         case "cluster":
@@ -359,6 +386,7 @@ async function fetchCommentList(
             clusterCommentItemsMap.value.set(clusterKey, response);
             isLoadingCommentItemsCluster.value = false;
           }
+          break;
       }
     }
   }
@@ -367,18 +395,18 @@ async function fetchCommentList(
 function autoDetectCommentFilter(
   commentSlugId: string
 ): CommentFilterOptions | "not_found" {
-  for (const commentItem of commentItemsDiscover.value) {
+  for (const commentItem of commentItemsDiscover) {
     if (commentItem.opinionSlugId == commentSlugId) {
       return "discover";
     }
   }
-  for (const commentItem of commentItemsNew.value) {
+  for (const commentItem of commentItemsNew) {
     if (commentItem.opinionSlugId == commentSlugId) {
       return "new";
     }
   }
 
-  for (const commentItem of commentItemsModerated.value) {
+  for (const commentItem of commentItemsModerated) {
     if (commentItem.opinionSlugId == commentSlugId) {
       return "moderated";
     }
@@ -388,7 +416,7 @@ function autoDetectCommentFilter(
     showNotifyMessage("This opinion has been removed by the moderators");
     return "discover";
   } else {
-    for (const commentItem of commentItemsHidden.value) {
+    for (const commentItem of commentItemsHidden) {
       if (commentItem.opinionSlugId == commentSlugId) {
         return "hidden";
       }
@@ -435,6 +463,8 @@ async function changeFilter(filterValue: CommentFilterOptions) {
   sortAlgorithm.value = filterValue;
   await resetRouteParams();
   commentFilterQuery.value = filterValue;
+
+  updateInfiniteScrollingList(filterValue);
 }
 
 function toggleClusterSelection(clusterKey: PolisKey) {

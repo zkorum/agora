@@ -1,10 +1,10 @@
 <template>
   <MainLayout
     :general-props="{
-      addBottomPadding: true,
+      addBottomPadding: false,
       enableHeader: true,
       enableFooter: false,
-      reducedWidth: true,
+      reducedWidth: false,
     }"
     :menu-bar-props="{
       hasBackButton: true,
