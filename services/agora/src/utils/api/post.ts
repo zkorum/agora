@@ -185,6 +185,8 @@ export function useBackendPostApi() {
         metadata: {
           authorUsername: String(item.metadata.authorUsername),
           opinionCount: item.metadata.opinionCount,
+          voteCount: item.metadata.voteCount,
+          participantCount: item.metadata.participantCount,
           createdAt: new Date(item.metadata.createdAt),
           lastReactedAt: new Date(item.metadata.lastReactedAt),
           conversationSlugId: item.metadata.conversationSlugId,

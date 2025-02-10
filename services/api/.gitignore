@@ -42,5 +42,5 @@ swagger-spec.json
 
 *.bak
 
-examples/polis_csv/*.csv
+examples/polis_csv/*.csv*
 Bruno/*

@@ -99,7 +99,7 @@ export const zodPollResponse = z
     })
     .strict();
 export const zodSlugId = z.string().max(10);
-export const zodOpinionCount = z.number().int().nonnegative();
+export const zodCount = z.number().int().nonnegative();
 export const zodCommentFeedFilter = z.enum([
     "moderated",
     "new",
@@ -216,63 +216,58 @@ export const zodConversationMetadata = z
         createdAt: z.date(),
         updatedAt: z.date(),
         lastReactedAt: z.date(),
-        opinionCount: zodOpinionCount,
+        opinionCount: zodCount,
+        voteCount: zodCount,
+        participantCount: zodCount,
         authorUsername: zodUsername,
         moderation: zodConversationModerationProperties,
     })
     .strict();
+export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
 export const zodOpinionContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
 export const zodClusterMetadata = z.object({
-    key: z.number().int().nonnegative(),
+    key: zodPolisKey,
+    numUsers: z.number().int().nonnegative(),
     aiLabel: z.string().optional(),
     aiSummary: z.string().optional(),
 });
-export const zodNullableClusterMetadata = z.object({
-    index: z.number().int().nonnegative(),
-    key: z.string().nullable(),
-    aiLabel: z.string().nullable(),
-    aiSummary: z.string().nullable(),
-});
-export const zodCoreOpinionDataForCluster = z.object({
-    key: z.number().int().nonnegative(),
-    aiLabel: z.string().optional(),
-    agreementType: z.enum(["agree", "disagree"]),
-    percentageAgreement: z.number().gte(0).lte(1),
-    numAgreement: z.number().int().nonnegative(),
-});
-export const zodNullableClusterWithOpinion = z.object({
-    index: z.number().int().nonnegative(),
-    key: z.string().nullable(),
-    aiLabel: z.string().nullable(),
-    agreementType: z.enum(["agree", "disagree"]).nullable(),
-    percentageAgreement: z.string().nullable(),
-});
 export const zodConversationPolis = z
     .object({
-        conversationAiSummary: z.string().optional(),
+        aiSummary: z.string().optional(),
         clusters: zodClusterMetadata.array(),
     })
     .strict();
-export const zodClusterStats = z
-    .object({
-        key: z.number().int().nonnegative(),
-        aiLabel: z.string().optional(),
-        isAuthorInCluster: z.boolean(),
-        numUsers: z.number().int().nonnegative(),
-        numAgrees: z.number().int().nonnegative(),
-        numDisagrees: z.number().int().nonnegative(),
-    })
-    .strict();
+const zodPercentage = z.string().refine(
+    (value) => {
+        const num = Number(value);
+        return !isNaN(num) && num >= 0 && num <= 100;
+    },
+    {
+        message: "Percentage must be a number between 0 and 100",
+    },
+);
+export const zodClusterStats = z.object({
+    key: zodPolisKey,
+    aiLabel: z.string().optional(),
+    isAuthorInCluster: z.boolean(),
+    numUsers: z.number().int().nonnegative(),
+    numAgrees: z.number().int().nonnegative(),
+    numDisagrees: z.number().int().nonnegative(),
+    percentageAgrees: zodPercentage,
+    percentageDisagrees: zodPercentage,
+});
 export const zodOpinionItem = z
     .object({
         opinionSlugId: zodSlugId,
         createdAt: z.date(),
         updatedAt: z.date(),
         opinion: zodOpinionContent,
+        numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
+        percentageAgrees: zodPercentage,
+        percentageDisagrees: zodPercentage,
         username: zodUsername,
-        coreOpinionFor: z.array(zodCoreOpinionDataForCluster),
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,
     })
@@ -590,15 +585,6 @@ export type CommentContent = z.infer<typeof zodOpinionContent>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
-export type NullableClusterMetadata = z.infer<
-    typeof zodNullableClusterMetadata
->;
-export type CoreOpinionDataForCluster = z.infer<
-    typeof zodCoreOpinionDataForCluster
->;
-export type NullableClusterWithOpinion = z.infer<
-    typeof zodNullableClusterWithOpinion
->;
 export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;
 export type SlugId = z.infer<typeof zodSlugId>;
 export type VotingOption = z.infer<typeof zodVotingOption>;
@@ -628,3 +614,5 @@ export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;
 export type NotificationItem = z.infer<typeof zodNotificationItem>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
+export type ClusterStats = z.infer<typeof zodClusterStats>;
+export type PolisKey = z.infer<typeof zodPolisKey>;

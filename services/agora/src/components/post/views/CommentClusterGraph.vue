@@ -22,7 +22,14 @@
 
         <div
           :style="{ position: 'relative' }"
-          @click="emit('selectedCluster', imageIndex)"
+          @click="
+            emit(
+              'selectedCluster',
+              String(
+                imageIndex
+              ) as PolisKey /* this is enforce because of the zod type below */
+            )
+          "
         >
           <img
             :src="
@@ -41,18 +48,25 @@
               left: '40%',
             }"
           >
-            <div class="clusterOverlayFontBold">
-              {{ encodeClusterIndexToName(imageIndex) }}
-            </div>
-
-            <!-- TODO: Enable the cluster group size label and adjust the positional offset -->
-            <div v-if="showClusterGroupSize" class="clusterLabelFlex">
+            <div class="clusterLabelFlex">
               <div class="clusterOverlayFontBold">
-                {{ encodeClusterIndexToName(imageIndex) }}
+                {{
+                  formatClusterLabel(
+                    clusters[imageIndex].key,
+                    clusters[imageIndex].aiLabel
+                  )
+                }}
               </div>
               <div class="clusterGroupSize">
                 <q-icon name="mdi-account-supervisor-outline" />
-                10
+                {{ clusters[imageIndex].numUsers }} ({{
+                  formatPercentage(
+                    calculatePercentage(
+                      clusters[imageIndex].numUsers,
+                      totalParticipantCount
+                    )
+                  )
+                }})
               </div>
             </div>
           </div>
@@ -63,21 +77,38 @@
 </template>
 
 <script setup lang="ts">
-import { encodeClusterIndexToName } from "src/utils/component/opinion";
+import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
+import { formatClusterLabel } from "src/utils/component/opinion";
+import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { ref, watch } from "vue";
+import { z } from "zod";
 
 const emit = defineEmits<{
-  (e: "selectedCluster", clusterKey: number): void;
+  (e: "selectedCluster", clusterKey: PolisKey): void;
 }>();
 
 const props = defineProps<{
   showMeLabel: boolean;
-  numClusters: number;
+  clusters: ClusterMetadata[];
   currentClusterTab: string;
-  showClusterGroupSize: boolean;
+  totalParticipantCount: number;
 }>();
 
 const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
+
+const zodClusterImg = z.object({
+  top: z.number(),
+  left: z.number(),
+  isSelected: z.boolean(),
+});
+
+const zodClusterConfig = z.object({
+  numNodes: z.number(),
+  clusterWidthPercent: z.number(),
+  imgList: z.array(zodClusterImg).max(5).min(0),
+});
+
+type ClusterConfig = z.infer<typeof zodClusterConfig>;
 
 const clusterConfig: ClusterConfig[] = [
   {
@@ -211,10 +242,14 @@ const clusterConfig: ClusterConfig[] = [
     ],
   },
 ];
+const result = zodClusterConfig.safeParse(clusterConfig);
+if (!result.success) {
+  console.warn("Too many clusters, the backend is not ready to support them");
+} // TODO: do this properly...
 
 let targetClusterIndex = 0;
-if (props.numClusters >= 2 && props.numClusters <= 6) {
-  targetClusterIndex = props.numClusters - 2;
+if (props.clusters.length >= 2 && props.clusters.length <= 6) {
+  targetClusterIndex = props.clusters.length - 2;
 }
 const activeCluster = ref<ClusterConfig>(clusterConfig[targetClusterIndex]);
 
@@ -253,18 +288,6 @@ function composeImagePath(
     imgSuffix +
     ".svg"
   );
-}
-
-interface ClusterConfig {
-  numNodes: number;
-  clusterWidthPercent: number;
-  imgList: ClusterImg[];
-}
-
-interface ClusterImg {
-  top: number;
-  left: number;
-  isSelected: boolean;
 }
 </script>
 

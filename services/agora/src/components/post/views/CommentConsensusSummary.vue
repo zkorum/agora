@@ -23,9 +23,8 @@
 <script setup lang="ts">
 import { useDialog } from "src/utils/ui/dialog";
 
-const props = defineProps<{
+defineProps<{
   summary: string;
-  infoText: string;
 }>();
 
 const { showMessage } = useDialog();
@@ -33,7 +32,10 @@ const { showMessage } = useDialog();
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
 function infoIconClicked() {
-  showMessage(undefined, props.infoText);
+  const title = "Consensus Groups";
+  const infoText =
+    "Consensus groups are created based on how people agree and disagree with responses.\n\n We use machine learning to identify the responses that define each group, and input those responses to an AI to create the labels and AI-generated summary for each consensus group.";
+  showMessage(title, infoText);
 }
 </script>
 

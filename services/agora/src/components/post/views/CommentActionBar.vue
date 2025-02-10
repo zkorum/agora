@@ -17,19 +17,21 @@
 
         <div v-if="userCastedVote" class="voteCountLabelDisagree">
           <div>
-            Total: {{ numDislikesLocal }} ({{ totalDownvotePercentage }}%)
+            Total: {{ numDisagreesLocal }} ({{
+              formatPercentage(totalPercentageDisagrees)
+            }})
           </div>
-          <div
-            v-for="clusterItem in commentItem.clustersStats"
-            :key="clusterItem.key"
-          >
-            Group {{ encodeClusterIndexToName(clusterItem.key) }}:
-            {{ clusterItem.numDisagrees }} ({{
-              calculatePercentage(
-                clusterItem.numDisagrees,
-                clusterItem.numAgrees + clusterItem.numDisagrees
-              )
-            }}%)
+          <div v-if="commentItem.clustersStats.length >= 2">
+            <div
+              v-for="clusterItem in commentItem.clustersStats"
+              :key="clusterItem.key"
+            >
+              Group
+              {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
+              {{ clusterItem.numDisagrees }} ({{
+                formatPercentage(clusterItem.percentageDisagrees)
+              }})
+            </div>
           </div>
         </div>
       </div>
@@ -49,18 +51,22 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelAgree">
-          <div>Total: {{ numLikesLocal }} ({{ totalUpvotePercentage }}%)</div>
-          <div
-            v-for="clusterItem in commentItem.clustersStats"
-            :key="clusterItem.key"
-          >
-            Group {{ encodeClusterIndexToName(clusterItem.key) }}:
-            {{ clusterItem.numAgrees }} ({{
-              calculatePercentage(
-                clusterItem.numAgrees,
-                clusterItem.numAgrees + clusterItem.numDisagrees
-              )
-            }}%)
+          <div>
+            Total: {{ numAgreesLocal }} ({{
+              formatPercentage(totalPercentageAgrees)
+            }})
+          </div>
+          <div v-if="commentItem.clustersStats.length >= 2">
+            <div
+              v-for="clusterItem in commentItem.clustersStats"
+              :key="clusterItem.key"
+            >
+              Group
+              {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
+              {{ clusterItem.numAgrees }} ({{
+                formatPercentage(clusterItem.percentageAgrees)
+              }})
+            </div>
           </div>
         </div>
       </div>
@@ -75,8 +81,9 @@ import { computed, ref } from "vue";
 import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
+import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { storeToRefs } from "pinia";
-import { encodeClusterIndexToName } from "src/utils/component/opinion";
+import { formatClusterLabel } from "src/utils/component/opinion";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -90,8 +97,8 @@ const { showLoginConfirmationDialog } = useDialog();
 const { castVoteForComment } = useBackendVoteApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const numLikesLocal = ref(props.commentItem.numAgrees);
-const numDislikesLocal = ref(props.commentItem.numDisagrees);
+const numAgreesLocal = ref(props.commentItem.numAgrees);
+const numDisagreesLocal = ref(props.commentItem.numDisagrees);
 
 const userCastedVote = computed(() => {
   const hasEntry = props.commentSlugIdLikedMap.has(
@@ -144,27 +151,19 @@ const upvoteIcon = computed<IconObject>(() => {
   }
 });
 
-const totalUpvotePercentage = computed(() => {
+const totalPercentageAgrees = computed(() => {
   return calculatePercentage(
-    numLikesLocal.value,
-    numDislikesLocal.value + numLikesLocal.value
+    numAgreesLocal.value,
+    numDisagreesLocal.value + numAgreesLocal.value
   );
 });
 
-const totalDownvotePercentage = computed(() => {
+const totalPercentageDisagrees = computed(() => {
   return calculatePercentage(
-    numDislikesLocal.value,
-    numDislikesLocal.value + numLikesLocal.value
+    numDisagreesLocal.value,
+    numDisagreesLocal.value + numAgreesLocal.value
   );
 });
-
-function calculatePercentage(numerator: number, denominator: number) {
-  if (denominator > 0) {
-    return Math.round((numerator / denominator) * 100);
-  } else {
-    return 0;
-  }
-}
 
 async function castPersonalVote(
   commentSlugId: string,
@@ -173,8 +172,8 @@ async function castPersonalVote(
   if (!isAuthenticated.value) {
     showLoginConfirmationDialog();
   } else {
-    const numLikesBackup = numLikesLocal.value;
-    const numDislikesBackup = numDislikesLocal.value;
+    const numLikesBackup = numAgreesLocal.value;
+    const numDislikesBackup = numDisagreesLocal.value;
 
     let targetState: VotingAction = "cancel";
     const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
@@ -199,22 +198,22 @@ async function castPersonalVote(
     if (targetState == "cancel") {
       props.commentSlugIdLikedMap.delete(commentSlugId);
       if (originalSelection == "agree") {
-        numLikesLocal.value = numLikesLocal.value - 1;
+        numAgreesLocal.value = numAgreesLocal.value - 1;
       } else {
-        numDislikesLocal.value = numDislikesLocal.value - 1;
+        numDisagreesLocal.value = numDisagreesLocal.value - 1;
       }
     } else {
       if (targetState == "agree") {
         props.commentSlugIdLikedMap.set(commentSlugId, "agree");
-        numLikesLocal.value = numLikesLocal.value + 1;
+        numAgreesLocal.value = numAgreesLocal.value + 1;
         if (originalSelection == "disagree") {
-          numDislikesLocal.value = numDislikesLocal.value - 1;
+          numDisagreesLocal.value = numDisagreesLocal.value - 1;
         }
       } else {
         props.commentSlugIdLikedMap.set(commentSlugId, "disagree");
-        numDislikesLocal.value = numDislikesLocal.value + 1;
+        numDisagreesLocal.value = numDisagreesLocal.value + 1;
         if (originalSelection == "agree") {
-          numLikesLocal.value = numLikesLocal.value - 1;
+          numAgreesLocal.value = numAgreesLocal.value - 1;
         }
       }
     }
@@ -228,8 +227,8 @@ async function castPersonalVote(
         props.commentSlugIdLikedMap.set(commentSlugId, originalSelection);
       }
 
-      numLikesLocal.value = numLikesBackup;
-      numDislikesLocal.value = numDislikesBackup;
+      numAgreesLocal.value = numLikesBackup;
+      numDisagreesLocal.value = numDislikesBackup;
     }
   }
 }

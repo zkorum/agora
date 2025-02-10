@@ -84,6 +84,8 @@ export const usePostStore = defineStore("post", () => {
     metadata: {
       createdAt: new Date(),
       opinionCount: 0,
+      voteCount: 0,
+      participantCount: 0,
       authorUsername: "",
       lastReactedAt: new Date(),
       conversationSlugId: "",
@@ -102,7 +104,7 @@ export const usePostStore = defineStore("post", () => {
       votedIndex: 0,
     },
     polis: {
-      conversationAiSummary: undefined,
+      aiSummary: undefined,
       clusters: [],
     },
     userInteraction: {

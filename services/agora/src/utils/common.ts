@@ -52,3 +52,24 @@ export function getPlatform(platform: Platform): SupportedPlatform {
   console.warn("This platform is not supported");
   return "web";
 }
+
+export function formatPercentage(percentageStr: string) {
+  const percentage = parseFloat(percentageStr);
+
+  // Step 3: Format the number
+  const formattedPercentage = Number.isInteger(percentage)
+    ? percentage.toFixed(0)
+    : percentage.toString();
+
+  // Step 4: Append the '%' sign
+  return `${formattedPercentage}%`;
+}
+
+export function calculatePercentage(numerator: number, denominator: number) {
+  if (denominator > 0) {
+    const percentage = (numerator / denominator) * 100;
+    return percentage.toFixed(2);
+  } else {
+    return "0";
+  }
+}

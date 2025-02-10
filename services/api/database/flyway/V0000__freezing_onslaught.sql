@@ -5,6 +5,7 @@ CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial'
 CREATE TYPE "public"."notification_type_enum" AS ENUM('opinion_vote', 'new_opinion');--> statement-breakpoint
 CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');--> statement-breakpoint
 CREATE TYPE "public"."phone_country_code" AS ENUM('AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW');--> statement-breakpoint
+CREATE TYPE "public"."polis_key_enum" AS ENUM('0', '1', '2', '3', '4', '5');--> statement-breakpoint
 CREATE TYPE "public"."proof_type" AS ENUM('creation', 'edit', 'deletion');--> statement-breakpoint
 CREATE TYPE "public"."report_reason_enum" AS ENUM('illegal', 'doxing', 'sexual', 'spam', 'misleading', 'antisocial');--> statement-breakpoint
 CREATE TYPE "public"."sex" AS ENUM('F', 'M', 'X');--> statement-breakpoint
@@ -79,6 +80,8 @@ CREATE TABLE "conversation" (
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
 	"opinion_count" integer DEFAULT 0 NOT NULL,
+	"vote_count" integer DEFAULT 0 NOT NULL,
+	"participant_count" integer DEFAULT 0 NOT NULL,
 	CONSTRAINT "conversation_slug_id_unique" UNIQUE("slug_id"),
 	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id"),
 	CONSTRAINT "conversation_current_polis_content_id_unique" UNIQUE("current_polis_content_id")
@@ -197,6 +200,24 @@ CREATE TABLE "opinion" (
 	"num_agrees" integer DEFAULT 0 NOT NULL,
 	"num_disagrees" integer DEFAULT 0 NOT NULL,
 	"polis_priority" real,
+	"cluster_0_id" integer,
+	"cluster_0_num_agrees" integer,
+	"cluster_0_num_disagrees" integer,
+	"cluster_1_id" integer,
+	"cluster_1_num_agrees" integer,
+	"cluster_1_num_disagrees" integer,
+	"cluster_2_id" integer,
+	"cluster_2_num_agrees" integer,
+	"cluster_2_num_disagrees" integer,
+	"cluster_3_id" integer,
+	"cluster_3_num_agrees" integer,
+	"cluster_3_num_disagrees" integer,
+	"cluster_4_id" integer,
+	"cluster_4_num_agrees" integer,
+	"cluster_4_num_disagrees" integer,
+	"cluster_5_id" integer,
+	"cluster_5_num_agrees" integer,
+	"cluster_5_num_disagrees" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -211,6 +232,18 @@ CREATE TABLE "organisation" (
 	"description" varchar(280),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "participant" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "participant_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"polis_cluster_id" integer,
+	"opinion_count" integer DEFAULT 0 NOT NULL,
+	"vote_count" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "unique_cluster_per_participant" UNIQUE("conversation_id", "user_id") -- added manually...
 );
 --> statement-breakpoint
 CREATE TABLE "phone" (
@@ -239,7 +272,8 @@ CREATE TABLE "polis_cluster_opinion" (
 CREATE TABLE "polis_cluster" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "polis_cluster_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"polis_content_id" integer NOT NULL,
-	"key" integer NOT NULL,
+	"key" "polis_key_enum" NOT NULL,
+	"external_id" integer NOT NULL,
 	"numUsers" integer NOT NULL,
 	"ai_label" varchar(30),
 	"ai_summary" varchar(500),
@@ -437,6 +471,15 @@ ALTER TABLE "opinion_report" ADD CONSTRAINT "opinion_report_author_id_user_id_fk
 ALTER TABLE "opinion" ADD CONSTRAINT "opinion_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opinion" ADD CONSTRAINT "opinion_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opinion" ADD CONSTRAINT "opinion_current_content_id_opinion_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."opinion_content"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opinion" ADD CONSTRAINT "opinion_cluster_0_id_polis_cluster_id_fk" FOREIGN KEY ("cluster_0_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opinion" ADD CONSTRAINT "opinion_cluster_1_id_polis_cluster_id_fk" FOREIGN KEY ("cluster_1_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opinion" ADD CONSTRAINT "opinion_cluster_2_id_polis_cluster_id_fk" FOREIGN KEY ("cluster_2_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opinion" ADD CONSTRAINT "opinion_cluster_3_id_polis_cluster_id_fk" FOREIGN KEY ("cluster_3_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opinion" ADD CONSTRAINT "opinion_cluster_4_id_polis_cluster_id_fk" FOREIGN KEY ("cluster_4_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opinion" ADD CONSTRAINT "opinion_cluster_5_id_polis_cluster_id_fk" FOREIGN KEY ("cluster_5_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "participant" ADD CONSTRAINT "participant_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "participant" ADD CONSTRAINT "participant_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "participant" ADD CONSTRAINT "participant_polis_cluster_id_polis_cluster_id_fk" FOREIGN KEY ("polis_cluster_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "phone" ADD CONSTRAINT "phone_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "polis_cluster_opinion" ADD CONSTRAINT "polis_cluster_opinion_polis_cluster_id_polis_cluster_id_fk" FOREIGN KEY ("polis_cluster_id") REFERENCES "public"."polis_cluster"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "polis_cluster_opinion" ADD CONSTRAINT "polis_cluster_opinion_opinion_slug_id_opinion_slug_id_fk" FOREIGN KEY ("opinion_slug_id") REFERENCES "public"."opinion"("slug_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

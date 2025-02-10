@@ -1026,7 +1026,6 @@ server.after(() => {
                     proof: encodedUcan,
                     axiosPolis: axiosPolis,
                     polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
-                    httpErrors: server.httpErrors,
                 });
                 reply.send(newOpinionResponse);
                 const proofChannel40EventId =
@@ -1145,7 +1144,6 @@ server.after(() => {
                         db: db,
                         postSlugId: request.body.conversationSlugId,
                         fetchTarget: "hidden",
-                        clusterKey: undefined,
                     });
                 return Array.from(opinionItemsPerSlugId.values());
             }

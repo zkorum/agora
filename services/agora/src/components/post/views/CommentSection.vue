@@ -4,10 +4,10 @@
       <CommentClusterGraph
         v-if="showClusterMap"
         :show-me-label="false"
-        :show-cluster-group-size="false"
-        :num-clusters="clusterMetadataList.length"
+        :clusters="polis.clusters"
+        :total-participant-count="participantCount"
         :current-cluster-tab="currentClusterTab"
-        @selected-cluster="(value: number) => toggleClusterSelection(value)"
+        @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
       />
 
       <div class="commentSectionToolbar">
@@ -20,10 +20,10 @@
           >
             <q-tab name="all" label="All" no-caps />
             <q-tab
-              v-for="clusterItem in clusterMetadataList"
+              v-for="clusterItem in props.polis.clusters"
               :key="clusterItem.key"
               :name="clusterItem.key.toString()"
-              :label="encodeClusterIndexToName(clusterItem.key)"
+              :label="formatClusterLabel(clusterItem.key, clusterItem.aiLabel)"
             />
           </q-tabs>
         </div>
@@ -44,6 +44,7 @@
         :comment-item-list="commentItemsDiscover"
         :is-loading="isLoadingCommentItemsDiscover"
         :post-slug-id="postSlugId"
+        :ai-summary="polis.aiSummary"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
@@ -56,6 +57,7 @@
         :comment-item-list="commentItemsNew"
         :is-loading="isLoadingCommentItemsNew"
         :post-slug-id="postSlugId"
+        :ai-summary="polis.aiSummary"
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
@@ -92,6 +94,11 @@
         :comment-item-list="commentItemsCluster"
         :is-loading="isLoadingCommentItemsCluster"
         :post-slug-id="postSlugId"
+        :ai-summary="
+          parseInt(currentClusterTab) in polis.clusters
+            ? polis.clusters[parseInt(currentClusterTab)].aiSummary
+            : undefined
+        "
         :initial-comment-slug-id="commentSlugIdQuery"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
@@ -104,12 +111,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { useBackendPolisApi } from "src/utils/api/polis";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
 import {
-  type ClusterMetadata,
+  ExtendedConversationPolis,
+  PolisKey,
   type CommentFeedFilter,
   type OpinionItem,
 } from "src/shared/types/zod";
@@ -121,7 +128,7 @@ import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./CommentSortingSelector.vue";
 import {
   CommentFilterOptions,
-  encodeClusterIndexToName,
+  formatClusterLabel,
 } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
@@ -130,10 +137,12 @@ const emit = defineEmits(["deleted"]);
 
 const props = defineProps<{
   postSlugId: string;
+  participantCount: number;
+  polis: ExtendedConversationPolis;
   isPostLocked: boolean;
 }>();
 
-const currentClusterTab = ref("all");
+const currentClusterTab = ref<PolisKey | "all">("all");
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -150,7 +159,6 @@ const router = useRouter();
 const sortAlgorithm = ref<CommentFilterOptions>("discover");
 updateCommentFilter();
 
-const { getPolisClustersInfo } = useBackendPolisApi();
 const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
@@ -168,9 +176,7 @@ const commentItemsModerated = ref<OpinionItem[]>([]);
 const commentItemsHidden = ref<OpinionItem[]>([]);
 const commentItemsCluster = ref<OpinionItem[]>([]);
 
-const clusterCommentItemsMap = ref<Map<number, OpinionItem[]>>(new Map()); // Key is the cluster key
-const clusterMetadataList = ref<ClusterMetadata[]>([]);
-
+const clusterCommentItemsMap = ref<Map<PolisKey, OpinionItem[]>>(new Map());
 const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
 onMounted(async () => {
@@ -183,7 +189,7 @@ watch(commentFilterQuery, () => {
 
 watch(currentClusterTab, async () => {
   if (currentClusterTab.value !== "all") {
-    const clusterKey = Number(currentClusterTab.value);
+    const clusterKey = currentClusterTab.value;
     const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
     if (cachedCommentItems) {
       commentItemsCluster.value = cachedCommentItems;
@@ -197,7 +203,7 @@ watch(currentClusterTab, async () => {
 });
 
 const showClusterMap = computed(() => {
-  return clusterMetadataList.value.length >= 2;
+  return props.polis.clusters.length >= 2;
 });
 
 async function selectedNewFilter(optionValue: CommentFilterOptions) {
@@ -296,20 +302,16 @@ async function fetchHiddenComments() {
 }
 
 async function getClusters() {
-  if (props.postSlugId.length > 0) {
-    clusterMetadataList.value = await getPolisClustersInfo(props.postSlugId);
-
-    await Promise.all(
-      clusterMetadataList.value.map(async (clusterItem) => {
-        await fetchCommentList("cluster", clusterItem.key);
-      })
-    );
-  }
+  await Promise.all(
+    props.polis.clusters.map(async (clusterItem) => {
+      await fetchCommentList("cluster", clusterItem.key);
+    })
+  );
 }
 
 async function fetchCommentList(
   filter: CommentFeedFilter,
-  clusterKey: number | undefined
+  clusterKey: PolisKey | undefined
 ) {
   if (props.postSlugId.length > 0) {
     switch (filter) {
@@ -430,11 +432,11 @@ async function changeFilter(filterValue: CommentFilterOptions) {
   commentFilterQuery.value = filterValue;
 }
 
-function toggleClusterSelection(index: number) {
-  if (currentClusterTab.value == index.toString()) {
+function toggleClusterSelection(clusterKey: PolisKey) {
+  if (currentClusterTab.value == clusterKey) {
     currentClusterTab.value = "all";
   } else {
-    currentClusterTab.value = index.toString();
+    currentClusterTab.value = clusterKey;
   }
 }
 </script>

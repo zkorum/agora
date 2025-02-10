@@ -326,7 +326,6 @@ async function importToAgora({
         }
 
         // create votes
-        const votePromises = [];
         for (const [commentId, voteForCommentByUserId] of Object.entries(
             votesByCommentId,
         )) {
@@ -334,26 +333,24 @@ async function importToAgora({
                 voteForCommentByUserId,
             )) {
                 if (vote !== 0) {
-                    votePromises.push(
-                        votingService.importNewVote({
-                            db: tx,
-                            conversationSlugId,
-                            userId: users[userId].id,
-                            externalUserId: userId,
-                            externalCommentId: commentId,
-                            opinionSlugId:
-                                opinionMetadataByCommentIds[commentId]
-                                    .opinionSlugId,
-                            opinionId:
-                                opinionMetadataByCommentIds[commentId]
-                                    .opinionId,
-                            opinionContentId:
-                                opinionMetadataByCommentIds[commentId]
-                                    .opinionContentId,
-                            votingAction: vote === -1 ? "agree" : "disagree", // in Polis, -1 = agree oO
-                            axiosPolis,
-                        }),
-                    );
+                    await votingService.importNewVote({
+                        db: tx,
+                        conversationId,
+                        conversationSlugId,
+                        userId: users[userId].id,
+                        externalUserId: userId,
+                        externalCommentId: commentId,
+                        opinionSlugId:
+                            opinionMetadataByCommentIds[commentId]
+                                .opinionSlugId,
+                        opinionId:
+                            opinionMetadataByCommentIds[commentId].opinionId,
+                        opinionContentId:
+                            opinionMetadataByCommentIds[commentId]
+                                .opinionContentId,
+                        votingAction: vote === -1 ? "agree" : "disagree", // in Polis, -1 = agree oO
+                        axiosPolis,
+                    });
                 } else {
                     log.info(
                         `Ignoring pass for user ${userId} and comment ${commentId}`,
@@ -361,7 +358,6 @@ async function importToAgora({
                 }
             }
         }
-        await Promise.allSettled(votePromises);
 
         // get math
         await polisService.delayedPolisGetAndUpdateMath({

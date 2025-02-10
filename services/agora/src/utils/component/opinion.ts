@@ -1,5 +1,8 @@
+import { PolisKey } from "src/shared/types/zod";
+
 export type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover";
 
-export function encodeClusterIndexToName(index: number) {
-  return String.fromCharCode(65 + index);
+export function formatClusterLabel(index: PolisKey, aiLabel?: string) {
+  const clusterKeyName = String.fromCharCode(65 + parseInt(index));
+  return aiLabel ?? clusterKeyName;
 }

@@ -48,8 +48,23 @@ export async function getUserComments({
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
+                numParticipants: conversationTable.participantCount,
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
+                percentageAgrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>` 
+              CASE 
+                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numAgrees} IS NULL THEN NULL
+                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numAgrees} = 0 THEN 0::smallint
+                ELSE ROUND(((${opinionTable.numAgrees}::smallint / ${conversationTable.participantCount}) * 100)::smallint, 2)
+              END
+            `,
+                percentageDisagrees: sql<string /* this shouldn't be null because the tables it relies on are never null */>`
+              CASE 
+                WHEN ${conversationTable.participantCount} IS NULL OR ${opinionTable.numDisagrees} IS NULL THEN NULL
+                WHEN ${conversationTable.participantCount} = 0 OR ${opinionTable.numDisagrees} = 0 THEN 0::smallint
+                ELSE ROUND(((${opinionTable.numDisagrees}::smallint / ${conversationTable.participantCount}) * 100)::smallint, 2)
+              END
+            `,
                 username: userTable.username,
                 postSlugId: conversationTable.slugId,
                 moderationAction: opinionModerationTable.moderationAction,
@@ -121,12 +136,14 @@ export async function getUserComments({
                 opinion: commentResponse.comment,
                 opinionSlugId: commentResponse.commentSlugId,
                 createdAt: commentResponse.createdAt,
+                updatedAt: commentResponse.updatedAt,
+                numParticipants: commentResponse.numParticipants,
                 numDisagrees: commentResponse.numDisagrees,
                 numAgrees: commentResponse.numAgrees,
-                updatedAt: commentResponse.updatedAt,
+                percentageAgrees: commentResponse.percentageAgrees,
+                percentageDisagrees: commentResponse.percentageDisagrees,
                 username: commentResponse.username,
                 moderation: moderationProperties,
-                coreOpinionFor: [], //TODO: change this!
                 clustersStats: [], //TODO: change this!
             };
 

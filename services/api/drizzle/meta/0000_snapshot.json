@@ -1,5 +1,5 @@
 {
-  "id": "18744ad5-4b26-4c96-b585-7dedfeb696b5",
+  "id": "5d4e86cf-57c4-4a6b-908f-c68b82fc8eda",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -591,6 +591,20 @@
         },
         "opinion_count": {
           "name": "opinion_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "vote_count": {
+          "name": "vote_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "participant_count": {
+          "name": "participant_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -1724,6 +1738,114 @@
           "primaryKey": false,
           "notNull": false
         },
+        "cluster_0_id": {
+          "name": "cluster_0_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_0_num_agrees": {
+          "name": "cluster_0_num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_0_num_disagrees": {
+          "name": "cluster_0_num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_1_id": {
+          "name": "cluster_1_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_1_num_agrees": {
+          "name": "cluster_1_num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_1_num_disagrees": {
+          "name": "cluster_1_num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_2_id": {
+          "name": "cluster_2_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_2_num_agrees": {
+          "name": "cluster_2_num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_2_num_disagrees": {
+          "name": "cluster_2_num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_3_id": {
+          "name": "cluster_3_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_3_num_agrees": {
+          "name": "cluster_3_num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_3_num_disagrees": {
+          "name": "cluster_3_num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_4_id": {
+          "name": "cluster_4_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_4_num_agrees": {
+          "name": "cluster_4_num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_4_num_disagrees": {
+          "name": "cluster_4_num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_5_id": {
+          "name": "cluster_5_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_5_num_agrees": {
+          "name": "cluster_5_num_agrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_5_num_disagrees": {
+          "name": "cluster_5_num_disagrees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -1780,6 +1902,84 @@
           "tableTo": "opinion_content",
           "columnsFrom": [
             "current_content_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_cluster_0_id_polis_cluster_id_fk": {
+          "name": "opinion_cluster_0_id_polis_cluster_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "cluster_0_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_cluster_1_id_polis_cluster_id_fk": {
+          "name": "opinion_cluster_1_id_polis_cluster_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "cluster_1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_cluster_2_id_polis_cluster_id_fk": {
+          "name": "opinion_cluster_2_id_polis_cluster_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "cluster_2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_cluster_3_id_polis_cluster_id_fk": {
+          "name": "opinion_cluster_3_id_polis_cluster_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "cluster_3_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_cluster_4_id_polis_cluster_id_fk": {
+          "name": "opinion_cluster_4_id_polis_cluster_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "cluster_4_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_cluster_5_id_polis_cluster_id_fk": {
+          "name": "opinion_cluster_5_id_polis_cluster_id_fk",
+          "tableFrom": "opinion",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "cluster_5_id"
           ],
           "columnsTo": [
             "id"
@@ -1864,6 +2064,122 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.participant": {
+      "name": "participant",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "participant_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "polis_cluster_id": {
+          "name": "polis_cluster_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opinion_count": {
+          "name": "opinion_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "vote_count": {
+          "name": "vote_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participant_conversation_id_conversation_id_fk": {
+          "name": "participant_conversation_id_conversation_id_fk",
+          "tableFrom": "participant",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "participant_user_id_user_id_fk": {
+          "name": "participant_user_id_user_id_fk",
+          "tableFrom": "participant",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "participant_polis_cluster_id_polis_cluster_id_fk": {
+          "name": "participant_polis_cluster_id_polis_cluster_id_fk",
+          "tableFrom": "participant",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "polis_cluster_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2096,6 +2412,13 @@
         },
         "key": {
           "name": "key",
+          "type": "polis_key_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -3893,6 +4216,18 @@
         "ZA",
         "ZM",
         "ZW"
+      ]
+    },
+    "public.polis_key_enum": {
+      "name": "polis_key_enum",
+      "schema": "public",
+      "values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
       ]
     },
     "public.proof_type": {

@@ -11,6 +11,7 @@ import {
 } from "src/api";
 import { useCommonApi } from "./common";
 import {
+  PolisKey,
   type CommentFeedFilter,
   type OpinionItem,
   type moderationStatusOptionsType,
@@ -39,8 +40,11 @@ export function useBackendCommentApi() {
         opinion: item.opinion,
         opinionSlugId: item.opinionSlugId,
         createdAt: new Date(item.createdAt),
+        numParticipants: item.numParticipants,
         numDisagrees: item.numDisagrees,
         numAgrees: item.numAgrees,
+        percentageAgrees: item.percentageAgrees,
+        percentageDisagrees: item.percentageDisagrees,
         updatedAt: new Date(item.updatedAt),
         username: String(item.username),
         moderation: {
@@ -51,7 +55,6 @@ export function useBackendCommentApi() {
           createdAt: new Date(item.moderation.createdAt),
           updatedAt: new Date(item.moderation.updatedAt),
         },
-        coreOpinionFor: item.coreOpinionFor,
         clustersStats: item.clustersStats,
       });
     });
@@ -90,8 +93,11 @@ export function useBackendCommentApi() {
           opinion: item.opinion,
           opinionSlugId: item.opinionSlugId,
           createdAt: new Date(item.createdAt),
+          numParticipants: item.numParticipants,
           numDisagrees: item.numDisagrees,
           numAgrees: item.numAgrees,
+          percentageAgrees: item.percentageAgrees,
+          percentageDisagrees: item.percentageDisagrees,
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
           moderation: {
@@ -102,7 +108,6 @@ export function useBackendCommentApi() {
             createdAt: new Date(item.moderation.createdAt),
             updatedAt: new Date(item.moderation.updatedAt),
           },
-          coreOpinionFor: item.coreOpinionFor,
           clustersStats: item.clustersStats,
         });
       });
@@ -118,7 +123,7 @@ export function useBackendCommentApi() {
   async function fetchCommentsForPost(
     postSlugId: string,
     filter: CommentFeedFilter,
-    clusterKey: number | undefined
+    clusterKey: PolisKey | undefined
   ) {
     try {
       const params: ApiV1OpinionFetchByConversationPostRequest = {

@@ -104,14 +104,16 @@ const opinionItem = ref<OpinionItem>({
   opinion: "",
   opinionSlugId: "",
   createdAt: new Date(),
+  numParticipants: 0,
   numDisagrees: 0,
   numAgrees: 0,
+  percentageAgrees: "0", // it can have 2 digits after `,` so `number` wouldn't fit
+  percentageDisagrees: "0",
   updatedAt: new Date(),
   username: "",
   moderation: {
     status: "unmoderated",
   },
-  coreOpinionFor: [],
   clustersStats: [],
 });
 

@@ -29,6 +29,7 @@ import {
     zodUserMuteItem,
     zodNotificationItem,
     zodClusterMetadata,
+    zodPolisKey,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -125,24 +126,9 @@ export class Dto {
             conversationSlugId: zodSlugId, // z.object() does not exist :(
             filter: zodCommentFeedFilter,
             isAuthenticatedRequest: z.boolean(),
-            clusterKey: z.number().optional(),
+            clusterKey: zodPolisKey.optional(),
         })
-        .strict()
-        .refine(
-            (val) => {
-                if (val.filter === "cluster") {
-                    return val.clusterKey === undefined || val.clusterKey < 0
-                        ? false
-                        : true;
-                } else {
-                    return true;
-                }
-            },
-            {
-                message:
-                    "User must specify a valid cluster key for the cluster filter",
-            },
-        );
+        .strict();
     static fetchOpinionsResponse = z.array(zodOpinionItem);
     static fetchHiddenOpinionsRequest = z
         .object({

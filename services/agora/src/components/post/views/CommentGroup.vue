@@ -14,12 +14,12 @@
       v-if="commentItemList.length > 0 && !isLoading"
       class="commentListFlex"
     >
-      <!-- TODO: Add consensus summary -->
-      <ZKCard v-if="false" padding="1rem" class="commentItemBackground">
-        <CommentConsensusSummary
-          summary="This is a summary"
-          info-text="Info text here"
-        />
+      <ZKCard
+        v-if="aiSummary !== undefined"
+        padding="1rem"
+        class="commentItemBackground"
+      >
+        <CommentConsensusSummary :summary="aiSummary" />
       </ZKCard>
 
       <ZKCard
@@ -30,7 +30,6 @@
         class="commentItemBackground"
       >
         <CommentSingle
-          :show-push-reason-label="false"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :highlight="initialCommentSlugId == commentItem.opinionSlugId"
@@ -55,6 +54,7 @@ const emit = defineEmits(["deleted", "mutedComment"]);
 defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
+  aiSummary?: string;
   initialCommentSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;

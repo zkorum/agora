@@ -4,12 +4,10 @@
     <div class="container">
       <!-- TODO: Add push reason label -->
       <div
-        v-if="showPushReasonLabel"
+        v-if="reasonLabel !== undefined"
         class="pushReasonPosition pushReasonStyle pushReasonFlex"
-        @click="clickedPushReasonLabel()"
       >
-        <q-icon name="mdi-information-outline" size="1.1rem" />
-        Majority Opinion (Total)
+        {{ reasonLabel }}
       </div>
 
       <div class="topBar">
@@ -23,6 +21,9 @@
           <div class="userNameTime">
             <div>
               {{ commentItem.username }}
+            </div>
+            <div>
+              {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
             </div>
           </div>
         </div>
@@ -65,12 +66,12 @@ import type { OpinionItem } from "src/shared/types/zod";
 import { ref } from "vue";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
-import { useDialog } from "src/utils/ui/dialog";
+import { formatTimeAgo } from "@vueuse/core";
+import { formatClusterLabel } from "src/utils/component/opinion";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
-defineProps<{
-  showPushReasonLabel: boolean;
+const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
   highlight: boolean;
@@ -78,12 +79,44 @@ defineProps<{
   isPostLocked: boolean;
 }>();
 
-const { showMessage } = useDialog();
-
 const deleted = ref(false);
 
-function clickedPushReasonLabel() {
-  showMessage(undefined, "This is XXX because of YYY.");
+const reasonLabel = calculateReasonLabel();
+
+function calculateReasonLabel() {
+  const totalPercentageAgrees = parseFloat(props.commentItem.percentageAgrees);
+  const totalPercentageDisagrees = parseFloat(
+    props.commentItem.percentageDisagrees
+  );
+  if (totalPercentageAgrees > 50 || totalPercentageDisagrees > 50) {
+    return "Majority (Total)";
+  }
+  if (
+    totalPercentageDisagrees + totalPercentageAgrees > 50 &&
+    Math.abs(totalPercentageAgrees - totalPercentageDisagrees) < 50
+  ) {
+    return "Controversial (Total)";
+  }
+  if (props.commentItem.clustersStats.length >= 2) {
+    for (const clusterStat of props.commentItem.clustersStats) {
+      const clusterPercentageAgrees = parseFloat(clusterStat.percentageAgrees);
+      const clusterPercentageDisagrees = parseFloat(
+        clusterStat.percentageDisagrees
+      );
+      const labelCluster =
+        clusterStat.aiLabel ??
+        formatClusterLabel(clusterStat.key, clusterStat.aiLabel);
+      if (clusterPercentageAgrees > 50 || clusterPercentageDisagrees > 50) {
+        return `Majority (Group ${labelCluster})`;
+      }
+      if (
+        clusterPercentageDisagrees + clusterPercentageAgrees > 50 &&
+        Math.abs(clusterPercentageAgrees - clusterPercentageDisagrees) < 50
+      ) {
+        return `Controversial (Group ${labelCluster})`;
+      }
+    }
+  }
 }
 
 function deletedComment() {
@@ -105,10 +138,6 @@ function mutedComment() {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-}
-
-.pushReasonStyle:hover {
-  cursor: pointer;
 }
 
 .pushReasonStyle {

@@ -1,5 +1,9 @@
 import { log } from "@/app.js";
-import type { ClusterMetadata, VotingAction } from "@/shared/types/zod.js";
+import type {
+    ClusterMetadata,
+    PolisKey,
+    VotingAction,
+} from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import { setTimeout } from "timers/promises";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
@@ -9,9 +13,10 @@ import {
     polisContentTable,
     opinionTable,
     conversationTable,
+    participantTable,
 } from "@/schema.js";
 import { polisClusterTable } from "@/schema.js";
-import { and, eq, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
+import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/common/util.js";
 import {
     type PolisMathAndMetadata,
@@ -226,6 +231,9 @@ export async function delayedPolisGetAndUpdateMath({
         const groupClustersEntries = Object.entries(
             polisMathResults.pca["group-clusters"],
         );
+        const groupVotesEntries = Object.entries(
+            polisMathResults.pca["group-votes"], // key is cluster key, while the value is the # of agrees/disagrees for each opinions by all the people in this cluster
+        );
         await tx
             .update(conversationTable)
             .set({
@@ -265,67 +273,467 @@ export async function delayedPolisGetAndUpdateMath({
         }
         /////
 
-        const minNumberOfClusters =
-            repnessEntries.length > groupClustersEntries.length
-                ? groupClustersEntries.length
-                : repnessEntries.length;
-        if (repnessEntries.length !== groupClustersEntries.length) {
+        let minNumberOfClusters = Math.min(
+            repnessEntries.length,
+            groupClustersEntries.length,
+            groupVotesEntries.length,
+        );
+        log.info(
+            `Received ${String(
+                minNumberOfClusters,
+            )} clusters for conversationSlugId = ${conversationSlugId}`,
+        );
+        if (minNumberOfClusters > 6) {
+            log.warn(
+                "Received unexpectedly large amount of clusters, ignoring those after 6",
+            );
+            minNumberOfClusters = 6;
+        }
+        if (
+            repnessEntries.length !== groupClustersEntries.length &&
+            repnessEntries.length !== groupVotesEntries.length
+        ) {
             log.warn(
                 `polis math repness has ${String(
                     repnessEntries.length,
                 )} clusters while group-clusters has ${String(
                     groupClustersEntries.length,
+                )} clusters and group-votes has ${String(
+                    groupVotesEntries.length,
                 )} clusters`,
             );
         }
-        for (let index = 0; index < minNumberOfClusters; index++) {
-            const clusterEntry = groupClustersEntries[index];
+        for (
+            let clusterKey = 0;
+            clusterKey < minNumberOfClusters;
+            clusterKey++
+        ) {
+            const clusterEntry = groupClustersEntries[clusterKey];
+            const polisClusterExternalId = clusterEntry[1].id;
+            let polisClusterKeyStr: PolisKey;
+            switch (clusterKey) {
+                case 0: {
+                    polisClusterKeyStr = "0";
+                    break;
+                }
+                case 1: {
+                    polisClusterKeyStr = "1";
+                    break;
+                }
+                case 2: {
+                    polisClusterKeyStr = "2";
+                    break;
+                }
+                case 3: {
+                    polisClusterKeyStr = "3";
+                    break;
+                }
+                case 4: {
+                    polisClusterKeyStr = "4";
+                    break;
+                }
+                case 5: {
+                    polisClusterKeyStr = "5";
+                    break;
+                }
+                default: {
+                    log.warn(
+                        `Ignoring the received ${String(
+                            clusterKey,
+                        )}th cluster of external id ${String(
+                            polisClusterExternalId,
+                        )}`,
+                    );
+                    continue;
+                }
+            }
             const polisClusterQuery = await tx
                 .insert(polisClusterTable)
                 .values({
                     polisContentId: polisContentId,
-                    key: clusterEntry[1].id,
+                    key: polisClusterKeyStr,
+                    externalId: polisClusterExternalId,
                     numUsers: clusterEntry[1].members.length,
                     mathCenter: clusterEntry[1].center,
                 })
                 .returning({ polisClusterId: polisClusterTable.id });
             const polisClusterId = polisClusterQuery[0].polisClusterId;
 
-            for (const member of clusterEntry[1].members) {
-                if (!(member in userIdByPid)) {
-                    log.warn(
-                        `The pid ${String(member)} from clusterId ${String(
-                            polisClusterId,
-                        )} does not correspond to any userId`,
-                    );
-                } else {
-                    await tx.insert(polisClusterUserTable).values({
+            const members = clusterEntry[1].members
+                .filter((member) => {
+                    if (!(member in userIdByPid)) {
+                        log.warn(
+                            `The pid ${String(member)} from clusterId ${String(
+                                polisClusterId,
+                            )} does not correspond to any userId`,
+                        );
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })
+                .map((member) => {
+                    return {
                         polisContentId: polisContentId,
                         polisClusterId: polisClusterId,
                         userId: userIdByPid[member],
-                    });
-                }
+                    };
+                });
+            await tx.insert(polisClusterUserTable).values(members);
+            for (const member of members) {
+                tx.update(participantTable)
+                    .set({
+                        polisClusterId: polisClusterId,
+                    })
+                    .where(
+                        and(
+                            eq(participantTable.userId, member.userId),
+                            eq(participantTable.conversationId, conversationId),
+                        ),
+                    );
             }
 
-            const repnessEntry = repnessEntries[index];
-            for (const repness of repnessEntry[1]) {
-                if (!(repness.tid in opinionSlugIdByTid)) {
-                    log.warn(
-                        `The tid ${String(repness.tid)} from clusterId ${String(
-                            polisClusterId,
-                        )} does not correspond to any opinionId`,
-                    );
-                } else {
-                    await tx.insert(polisClusterOpinionTable).values({
+            const repnesses = repnessEntries[clusterKey][1]
+                .filter((repness) => {
+                    if (!(repness.tid in opinionSlugIdByTid)) {
+                        log.warn(
+                            `The tid ${String(
+                                repness.tid,
+                            )} from clusterId ${String(
+                                polisClusterId,
+                            )} does not correspond to any opinionId`,
+                        );
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })
+                .map((repness) => {
+                    return {
                         polisClusterId: polisClusterId,
                         opinionSlugId: opinionSlugIdByTid[repness.tid],
                         agreementType: repness["repful-for"],
                         percentageAgreement: repness["p-success"],
                         numAgreement: repness["n-success"],
                         rawRepness: repness,
-                    });
+                    };
+                });
+            await tx.insert(polisClusterOpinionTable).values(repnesses);
+
+            const groupVotes = groupVotesEntries[clusterKey][1].votes;
+            // building bulk updates for numAgrees & num Disagrees
+            const sqlChunksForNumAgrees: SQL[] = [];
+            const sqlChunksForNumDisagrees: SQL[] = [];
+            sqlChunksForNumAgrees.push(sql`(CASE`);
+            sqlChunksForNumDisagrees.push(sql`(CASE`);
+            const opinionSlugIds = Object.keys(groupVotes).map(
+                (tid) => opinionSlugIdByTid[tid],
+            );
+            for (const [tid, numVotesByCategory] of Object.entries(
+                groupVotes,
+            )) {
+                const opinionSlugId = opinionSlugIdByTid[tid];
+                sqlChunksForNumAgrees.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${numVotesByCategory.A}`,
+                );
+                sqlChunksForNumDisagrees.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${numVotesByCategory.D}`,
+                );
+            }
+            switch (polisClusterKeyStr) {
+                case "0": {
+                    sqlChunksForNumAgrees.push(
+                        sql`ELSE ${opinionTable.polisCluster0NumAgrees}`,
+                    );
+                    sqlChunksForNumDisagrees.push(
+                        sql`ELSE ${opinionTable.polisCluster0NumDisagrees}`,
+                    );
+                    sqlChunksForNumAgrees.push(sql`END)`);
+                    sqlChunksForNumDisagrees.push(sql`END)`);
+                    const finalSqlNumAgrees: SQL = sql.join(
+                        sqlChunksForNumAgrees,
+                        sql.raw(" "),
+                    );
+                    const finalSqlNumDisagrees: SQL = sql.join(
+                        sqlChunksForNumDisagrees,
+                        sql.raw(" "),
+                    );
+                    await tx
+                        .update(opinionTable)
+                        .set({
+                            polisCluster0Id: polisClusterId,
+                            polisCluster0NumAgrees: finalSqlNumAgrees,
+                            polisCluster0NumDisagrees: finalSqlNumDisagrees,
+                            updatedAt: nowZeroMs(),
+                        })
+                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    break;
+                }
+                case "1": {
+                    sqlChunksForNumAgrees.push(
+                        sql`ELSE ${opinionTable.polisCluster1NumAgrees}`,
+                    );
+                    sqlChunksForNumDisagrees.push(
+                        sql`ELSE ${opinionTable.polisCluster1NumDisagrees}`,
+                    );
+                    sqlChunksForNumAgrees.push(sql`END)`);
+                    sqlChunksForNumDisagrees.push(sql`END)`);
+                    const finalSqlNumAgrees: SQL = sql.join(
+                        sqlChunksForNumAgrees,
+                        sql.raw(" "),
+                    );
+                    const finalSqlNumDisagrees: SQL = sql.join(
+                        sqlChunksForNumDisagrees,
+                        sql.raw(" "),
+                    );
+                    await tx
+                        .update(opinionTable)
+                        .set({
+                            polisCluster1Id: polisClusterId,
+                            polisCluster1NumAgrees: finalSqlNumAgrees,
+                            polisCluster1NumDisagrees: finalSqlNumDisagrees,
+                            updatedAt: nowZeroMs(),
+                        })
+                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    break;
+                }
+                case "2": {
+                    sqlChunksForNumAgrees.push(
+                        sql`ELSE ${opinionTable.polisCluster2NumAgrees}`,
+                    );
+                    sqlChunksForNumDisagrees.push(
+                        sql`ELSE ${opinionTable.polisCluster2NumDisagrees}`,
+                    );
+                    sqlChunksForNumAgrees.push(sql`END)`);
+                    sqlChunksForNumDisagrees.push(sql`END)`);
+                    const finalSqlNumAgrees: SQL = sql.join(
+                        sqlChunksForNumAgrees,
+                        sql.raw(" "),
+                    );
+                    const finalSqlNumDisagrees: SQL = sql.join(
+                        sqlChunksForNumDisagrees,
+                        sql.raw(" "),
+                    );
+                    await tx
+                        .update(opinionTable)
+                        .set({
+                            polisCluster2Id: polisClusterId,
+                            polisCluster2NumAgrees: finalSqlNumAgrees,
+                            polisCluster2NumDisagrees: finalSqlNumDisagrees,
+                            updatedAt: nowZeroMs(),
+                        })
+                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    break;
+                }
+                case "3": {
+                    sqlChunksForNumAgrees.push(
+                        sql`ELSE ${opinionTable.polisCluster3NumAgrees}`,
+                    );
+                    sqlChunksForNumDisagrees.push(
+                        sql`ELSE ${opinionTable.polisCluster3NumDisagrees}`,
+                    );
+                    sqlChunksForNumAgrees.push(sql`END)`);
+                    sqlChunksForNumDisagrees.push(sql`END)`);
+                    const finalSqlNumAgrees: SQL = sql.join(
+                        sqlChunksForNumAgrees,
+                        sql.raw(" "),
+                    );
+                    const finalSqlNumDisagrees: SQL = sql.join(
+                        sqlChunksForNumDisagrees,
+                        sql.raw(" "),
+                    );
+                    await tx
+                        .update(opinionTable)
+                        .set({
+                            polisCluster3Id: polisClusterId,
+                            polisCluster3NumAgrees: finalSqlNumAgrees,
+                            polisCluster3NumDisagrees: finalSqlNumDisagrees,
+                            updatedAt: nowZeroMs(),
+                        })
+                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    break;
+                }
+                case "4": {
+                    sqlChunksForNumAgrees.push(
+                        sql`ELSE ${opinionTable.polisCluster4NumAgrees}`,
+                    );
+                    sqlChunksForNumDisagrees.push(
+                        sql`ELSE ${opinionTable.polisCluster4NumDisagrees}`,
+                    );
+                    sqlChunksForNumAgrees.push(sql`END)`);
+                    sqlChunksForNumDisagrees.push(sql`END)`);
+                    const finalSqlNumAgrees: SQL = sql.join(
+                        sqlChunksForNumAgrees,
+                        sql.raw(" "),
+                    );
+                    const finalSqlNumDisagrees: SQL = sql.join(
+                        sqlChunksForNumDisagrees,
+                        sql.raw(" "),
+                    );
+                    await tx
+                        .update(opinionTable)
+                        .set({
+                            polisCluster4Id: polisClusterId,
+                            polisCluster4NumAgrees: finalSqlNumAgrees,
+                            polisCluster4NumDisagrees: finalSqlNumDisagrees,
+                            updatedAt: nowZeroMs(),
+                        })
+                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    break;
+                }
+                case "5": {
+                    sqlChunksForNumAgrees.push(
+                        sql`ELSE ${opinionTable.polisCluster5NumAgrees}`,
+                    );
+                    sqlChunksForNumDisagrees.push(
+                        sql`ELSE ${opinionTable.polisCluster5NumDisagrees}`,
+                    );
+                    sqlChunksForNumAgrees.push(sql`END)`);
+                    sqlChunksForNumDisagrees.push(sql`END)`);
+                    const finalSqlNumAgrees: SQL = sql.join(
+                        sqlChunksForNumAgrees,
+                        sql.raw(" "),
+                    );
+                    const finalSqlNumDisagrees: SQL = sql.join(
+                        sqlChunksForNumDisagrees,
+                        sql.raw(" "),
+                    );
+                    await tx
+                        .update(opinionTable)
+                        .set({
+                            polisCluster5Id: polisClusterId,
+                            polisCluster5NumAgrees: finalSqlNumAgrees,
+                            polisCluster5NumDisagrees: finalSqlNumDisagrees,
+                            updatedAt: nowZeroMs(),
+                        })
+                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    break;
                 }
             }
+        }
+        // remove outdated polisClusterCache from opinionTable
+        const opinionSlugIds = Object.values(opinionSlugIdByTid);
+        switch (minNumberOfClusters) {
+            case 0:
+                await tx
+                    .update(opinionTable)
+                    .set({
+                        polisCluster0Id: null,
+                        polisCluster0NumAgrees: null,
+                        polisCluster0NumDisagrees: null,
+                        polisCluster1Id: null,
+                        polisCluster1NumAgrees: null,
+                        polisCluster1NumDisagrees: null,
+                        polisCluster2Id: null,
+                        polisCluster2NumAgrees: null,
+                        polisCluster2NumDisagrees: null,
+                        polisCluster3Id: null,
+                        polisCluster3NumAgrees: null,
+                        polisCluster3NumDisagrees: null,
+                        polisCluster4Id: null,
+                        polisCluster4NumAgrees: null,
+                        polisCluster4NumDisagrees: null,
+                        polisCluster5Id: null,
+                        polisCluster5NumAgrees: null,
+                        polisCluster5NumDisagrees: null,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                break;
+            case 1:
+                await tx
+                    .update(opinionTable)
+                    .set({
+                        polisCluster1Id: null,
+                        polisCluster1NumAgrees: null,
+                        polisCluster1NumDisagrees: null,
+                        polisCluster2Id: null,
+                        polisCluster2NumAgrees: null,
+                        polisCluster2NumDisagrees: null,
+                        polisCluster3Id: null,
+                        polisCluster3NumAgrees: null,
+                        polisCluster3NumDisagrees: null,
+                        polisCluster4Id: null,
+                        polisCluster4NumAgrees: null,
+                        polisCluster4NumDisagrees: null,
+                        polisCluster5Id: null,
+                        polisCluster5NumAgrees: null,
+                        polisCluster5NumDisagrees: null,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                break;
+            case 2:
+                await tx
+                    .update(opinionTable)
+                    .set({
+                        polisCluster2Id: null,
+                        polisCluster2NumAgrees: null,
+                        polisCluster2NumDisagrees: null,
+                        polisCluster3Id: null,
+                        polisCluster3NumAgrees: null,
+                        polisCluster3NumDisagrees: null,
+                        polisCluster4Id: null,
+                        polisCluster4NumAgrees: null,
+                        polisCluster4NumDisagrees: null,
+                        polisCluster5Id: null,
+                        polisCluster5NumAgrees: null,
+                        polisCluster5NumDisagrees: null,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                break;
+            case 3:
+                await tx
+                    .update(opinionTable)
+                    .set({
+                        polisCluster3Id: null,
+                        polisCluster3NumAgrees: null,
+                        polisCluster3NumDisagrees: null,
+                        polisCluster4Id: null,
+                        polisCluster4NumAgrees: null,
+                        polisCluster4NumDisagrees: null,
+                        polisCluster5Id: null,
+                        polisCluster5NumAgrees: null,
+                        polisCluster5NumDisagrees: null,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                break;
+            case 4:
+                await tx
+                    .update(opinionTable)
+                    .set({
+                        polisCluster4Id: null,
+                        polisCluster4NumAgrees: null,
+                        polisCluster4NumDisagrees: null,
+                        polisCluster5Id: null,
+                        polisCluster5NumAgrees: null,
+                        polisCluster5NumDisagrees: null,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                break;
+            case 5:
+                await tx
+                    .update(opinionTable)
+                    .set({
+                        polisCluster5Id: null,
+                        polisCluster5NumAgrees: null,
+                        polisCluster5NumDisagrees: null,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                break;
+            case 6:
+                log.info("No cluster cache to empty");
+                break;
+            default:
+                log.warn(
+                    `There are an unexpectecly high minimum number of clusters: ${String(
+                        minNumberOfClusters,
+                    )}`,
+                );
         }
     });
 }
@@ -344,36 +752,26 @@ export async function getPolisClustersInfo({
             polisClusterKey: polisClusterTable.key,
             polisClusterAiLabel: polisClusterTable.aiLabel,
             polisClusterAiSummary: polisClusterTable.aiSummary,
+            polisClusterNumUsers: polisClusterTable.numUsers,
         })
         .from(conversationTable)
-        .leftJoin(
+        .innerJoin(
             polisContentTable,
             eq(polisContentTable.id, conversationTable.currentPolisContentId),
         )
-        .leftJoin(
+        .innerJoin(
             polisClusterTable,
-            and(
-                eq(polisClusterTable.polisContentId, polisContentTable.id),
-                isNotNull(polisClusterTable.key),
-            ),
+            eq(polisClusterTable.polisContentId, polisContentTable.id),
         )
-        .where(
-            and(
-                eq(conversationTable.slugId, conversationSlugId),
-                isNotNull(polisClusterTable.key),
-            ),
-        );
+        .where(eq(conversationTable.slugId, conversationSlugId));
     const clusters: ClusterMetadata[] = [];
     for (const result of results) {
-        if (
-            result.polisClusterKey !== null // this should not be necessary for typescript to get the types, because of the isNotNull above but drizzle is !$*@#*jdk
-        ) {
-            clusters.push({
-                key: result.polisClusterKey,
-                aiLabel: toUnionUndefined(result.polisClusterAiLabel),
-                aiSummary: toUnionUndefined(result.polisClusterAiSummary),
-            });
-        }
+        clusters.push({
+            key: result.polisClusterKey,
+            aiLabel: toUnionUndefined(result.polisClusterAiLabel),
+            aiSummary: toUnionUndefined(result.polisClusterAiSummary),
+            numUsers: result.polisClusterNumUsers,
+        });
     }
     return {
         clusters: clusters,

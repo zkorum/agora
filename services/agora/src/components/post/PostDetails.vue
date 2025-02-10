@@ -124,6 +124,8 @@
           <CommentSection
             :key="commentSectionKey"
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
+            :participant-count="extendedPostData.metadata.participantCount"
+            :polis="extendedPostData.polis"
             :is-post-locked="
               extendedPostData.metadata.moderation.status == 'moderated'
             "

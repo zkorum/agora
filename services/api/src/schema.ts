@@ -555,6 +555,17 @@ export const phoneCountryCodeEnum = pgEnum("phone_country_code", [
     "ZW",
 ]);
 
+export const voteEnum = pgEnum("vote_enum", ["agree", "disagree"]);
+
+export const polisKeyEnum = pgEnum("polis_key_enum", [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -777,6 +788,7 @@ export const phoneTable = pgTable(
     },
     (table) => [
         {
+            // WARN:checks are not generated correctly
             checkTwoDigits: check(
                 "check_two_digits",
                 sql`${table.lastTwoDigits} BETWEEN 0 and 99`,
@@ -917,6 +929,7 @@ export const authAttemptPhoneTable = pgTable(
     },
     (table) => [
         {
+            // WARN:checks are not generated correctly
             checkTwoDigits: check(
                 "check_two_digits",
                 sql`${table.lastTwoDigits} BETWEEN 0 and 99`,
@@ -1038,6 +1051,8 @@ export const conversationTable = pgTable(
             .defaultNow()
             .notNull(),
         opinionCount: integer("opinion_count").notNull().default(0),
+        voteCount: integer("vote_count").notNull().default(0),
+        participantCount: integer("participant_count").notNull().default(0),
     },
     (table) => [
         {
@@ -1121,6 +1136,44 @@ export const pollResponseContentTable = pgTable("poll_response_content", {
         .notNull(),
 });
 
+export const participantTable = pgTable(
+    "participant",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(), // used to delete all opinionContent when deleting an opinion
+        userId: uuid("user_id") // the user who owns this notification
+            .references(() => userTable.id)
+            .notNull(),
+        polisClusterId: integer("polis_cluster_id").references(
+            () => polisClusterTable.id,
+        ), // cluster the participant belongs for the given conversation
+        opinionCount: integer("opinion_count").notNull().default(0),
+        voteCount: integer("vote_count").notNull().default(0),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        {
+            // WARN:checks are not generated correctly
+            unqClusterPerParticipant: unique(
+                "unique_cluster_per_participant",
+            ).on(table.conversationId, table.userId),
+        },
+    ],
+);
+
 export const opinionProofTable = pgTable("opinion_proof", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: proofTypeEnum("proof_type").notNull(),
@@ -1157,6 +1210,37 @@ export const opinionTable = pgTable(
         numAgrees: integer("num_agrees").notNull().default(0),
         numDisagrees: integer("num_disagrees").notNull().default(0),
         polisPriority: real("polis_priority"), // will contain pol.is comment-priorities
+        // cache polis values to optimize fetch queries
+        polisCluster0Id: integer("cluster_0_id").references(
+            () => polisClusterTable.id,
+        ),
+        polisCluster0NumAgrees: integer("cluster_0_num_agrees"),
+        polisCluster0NumDisagrees: integer("cluster_0_num_disagrees"),
+        polisCluster1Id: integer("cluster_1_id").references(
+            () => polisClusterTable.id,
+        ),
+        polisCluster1NumAgrees: integer("cluster_1_num_agrees"),
+        polisCluster1NumDisagrees: integer("cluster_1_num_disagrees"),
+        polisCluster2Id: integer("cluster_2_id").references(
+            () => polisClusterTable.id,
+        ),
+        polisCluster2NumAgrees: integer("cluster_2_num_agrees"),
+        polisCluster2NumDisagrees: integer("cluster_2_num_disagrees"),
+        polisCluster3Id: integer("cluster_3_id").references(
+            () => polisClusterTable.id,
+        ),
+        polisCluster3NumAgrees: integer("cluster_3_num_agrees"),
+        polisCluster3NumDisagrees: integer("cluster_3_num_disagrees"),
+        polisCluster4Id: integer("cluster_4_id").references(
+            () => polisClusterTable.id,
+        ),
+        polisCluster4NumAgrees: integer("cluster_4_num_agrees"),
+        polisCluster4NumDisagrees: integer("cluster_4_num_disagrees"),
+        polisCluster5Id: integer("cluster_5_id").references(
+            () => polisClusterTable.id,
+        ),
+        polisCluster5NumAgrees: integer("cluster_5_num_agrees"),
+        polisCluster5NumDisagrees: integer("cluster_5_num_disagrees"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1181,6 +1265,23 @@ export const opinionTable = pgTable(
         {
             createdAtIdx: index("opinion_createdAt_idx").on(table.createdAt),
             slugIdIdx: index("opinion_slugId_idx").on(table.slugId),
+        },
+        {
+            // WARN:checks are not generated correctly
+            checkPolisNull: check(
+                "check_polis_null",
+                sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL))
+                AND 
+                ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL)) 
+                AND 
+                ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL))
+                AND 
+                ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL)) 
+                AND 
+                ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL)) 
+                AND 
+                ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL))`,
+            ),
         },
     ],
 );
@@ -1257,8 +1358,6 @@ export const voteProofTable = pgTable("vote_proof", {
         .defaultNow()
         .notNull(),
 });
-
-export const voteEnum = pgEnum("vote_enum", ["agree", "disagree"]);
 
 export const voteContentTable = pgTable("vote_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1533,7 +1632,8 @@ export const polisClusterTable = pgTable("polis_cluster", {
     polisContentId: integer("polis_content_id")
         .notNull()
         .references(() => polisContentTable.id), // the conversationTable never gets deleted
-    key: integer("key").notNull(), // arbitrary id created by external polis system
+    key: polisKeyEnum("key").notNull(), // arbitrary id created by external polis system
+    externalId: integer("external_id").notNull(),
     numUsers: integer("numUsers").notNull(),
     aiLabel: varchar("ai_label", { length: 30 }), // TODO: set max-length appropriately
     aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
@@ -1610,6 +1710,7 @@ export const polisClusterOpinionTable = pgTable(
     },
     (table) => [
         {
+            // WARN:checks are not generated correctly
             checkPercBtwn0And1: check(
                 "check_perc_btwn_0_and_1",
                 sql`${table.percentageAgreement} => 0 AND ${table.percentageAgreement} <= 1`,

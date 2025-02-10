@@ -8,6 +8,8 @@ import {
     conversationModerationTable,
     polisContentTable,
     polisClusterTable,
+    participantTable,
+    polisClusterUserTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -132,6 +134,8 @@ export function useCommonPost() {
                 updatedAt: conversationTable.updatedAt,
                 lastReactedAt: conversationTable.lastReactedAt,
                 opinionCount: conversationTable.opinionCount,
+                voteCount: conversationTable.voteCount,
+                participantCount: conversationTable.participantCount,
                 authorName: userTable.username,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
@@ -145,6 +149,7 @@ export function useCommonPost() {
                 polisClusterKey: polisClusterTable.key,
                 polisClusterAiLabel: polisClusterTable.aiLabel,
                 polisClusterAiSummary: polisClusterTable.aiSummary,
+                polisClusterNumUsers: polisClusterTable.numUsers,
             })
             .from(conversationTable)
             .innerJoin(
@@ -184,6 +189,16 @@ export function useCommonPost() {
                 polisClusterTable,
                 eq(polisClusterTable.polisContentId, polisContentTable.id),
             )
+            // .leftJoin(
+            //     polisClusterUserTable,
+            //     and(
+            //         eq(polisClusterUserTable.userId, personalizationUserId),
+            //         eq(
+            //             polisClusterUserTable.polisContentId,
+            //             conversationTable.currentPolisContentId, // TODO: create the unique index myself...
+            //         ),
+            //     ),
+            // )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(where)
             .orderBy(desc(conversationTable.createdAt))
@@ -195,18 +210,24 @@ export function useCommonPost() {
         >();
 
         postItems.forEach((postItem) => {
-            if (
-                extendedConversationMap.has(postItem.slugId) &&
-                postItem.polisClusterKey !== null
-            ) {
-                const extendedPost = extendedConversationMap.get(
-                    postItem.slugId,
-                );
-                extendedPost?.polis.clusters.push({
-                    key: postItem.polisClusterKey,
-                    aiLabel: toUnionUndefined(postItem.polisClusterAiLabel),
-                    aiSummary: toUnionUndefined(postItem.polisClusterAiSummary),
-                });
+            if (extendedConversationMap.has(postItem.slugId)) {
+                if (
+                    postItem.polisClusterKey !== null &&
+                    postItem.polisClusterNumUsers !== null
+                ) {
+                    const extendedPost = extendedConversationMap.get(
+                        postItem.slugId,
+                    );
+                    extendedPost?.polis.clusters.push({
+                        key: postItem.polisClusterKey,
+                        aiLabel: toUnionUndefined(postItem.polisClusterAiLabel),
+                        aiSummary: toUnionUndefined(
+                            postItem.polisClusterAiSummary,
+                        ),
+                        numUsers: postItem.polisClusterNumUsers,
+                    });
+                }
+                // skip
                 return;
             }
             if (enableCompactBody && postItem.body != null) {
@@ -228,15 +249,16 @@ export function useCommonPost() {
                 updatedAt: postItem.updatedAt,
                 lastReactedAt: postItem.lastReactedAt,
                 opinionCount: postItem.opinionCount,
+                voteCount: postItem.voteCount,
+                participantCount: postItem.participantCount,
                 authorUsername: postItem.authorName,
             };
 
             const polis: ExtendedConversationPolis = {
-                conversationAiSummary: toUnionUndefined(
-                    postItem.conversationAiSummary,
-                ),
+                aiSummary: toUnionUndefined(postItem.conversationAiSummary),
                 clusters:
-                    postItem.polisClusterKey !== null
+                    postItem.polisClusterKey !== null &&
+                    postItem.polisClusterNumUsers !== null
                         ? [
                               {
                                   key: postItem.polisClusterKey,
@@ -246,6 +268,7 @@ export function useCommonPost() {
                                   aiSummary: toUnionUndefined(
                                       postItem.polisClusterAiSummary,
                                   ),
+                                  numUsers: postItem.polisClusterNumUsers,
                               },
                           ]
                         : [],
@@ -401,6 +424,7 @@ export function useCommonPost() {
         id: number;
         contentId: number | null;
         authorId: string;
+        participantCount: number;
     }
 
     interface GetPostMetadataFromSlugIdProps {
@@ -417,6 +441,7 @@ export function useCommonPost() {
                 id: conversationTable.id,
                 currentContentId: conversationTable.currentContentId,
                 authorId: conversationTable.authorId,
+                participantCount: conversationTable.participantCount,
             })
             .from(conversationTable)
             .where(eq(conversationTable.slugId, conversationSlugId));
@@ -426,6 +451,7 @@ export function useCommonPost() {
                 contentId: postTableResponse[0].currentContentId,
                 id: postTableResponse[0].id,
                 authorId: postTableResponse[0].authorId,
+                participantCount: postTableResponse[0].participantCount,
             };
         } else if (postTableResponse.length > 1) {
             throw httpErrors.notFound(
@@ -444,10 +470,51 @@ export function useCommonPost() {
     };
 }
 
+interface GetCountForParticipantProps {
+    db: PostgresJsDatabase;
+    conversationId: number;
+    userId: string;
+}
+
 export function useCommonComment() {
     interface GetCommentIdFromCommentSlugIdProps {
         db: PostgresJsDatabase;
         commentSlugId: string;
+    }
+
+    async function getCountsForParticipant({
+        db,
+        conversationId,
+        userId,
+    }: GetCountForParticipantProps) {
+        const response = await db
+            .select({
+                voteCount: participantTable.voteCount,
+                opinionCount: participantTable.opinionCount,
+            })
+            .from(participantTable)
+            .where(
+                and(
+                    eq(participantTable.conversationId, conversationId),
+                    eq(participantTable.userId, userId),
+                ),
+            );
+        if (response.length == 1) {
+            return {
+                voteCount: response[0].voteCount,
+                opinionCount: response[0].opinionCount,
+            };
+        } else if (response.length > 1) {
+            throw httpErrors.internalServerError(
+                "Participant contains multiple duplicates",
+            );
+        } else {
+            // not found
+            return {
+                voteCount: 0,
+                opinionCount: 0,
+            };
+        }
     }
 
     async function getCommentIdFromCommentSlugId({
@@ -471,35 +538,43 @@ export function useCommonComment() {
         return commentTableResponse[0].commentId;
     }
 
-    interface GetPostIdFromCommentSlugIdProps {
+    interface GetConversationIdFromOpinionSlugIdProps {
         db: PostgresJsDatabase;
-        commentSlugId: string;
+        opinionSlugId: string;
     }
 
-    async function getPostSlugIdFromCommentSlugId({
+    async function getConversationMetadataFromOpinionSlugId({
         db,
-        commentSlugId,
-    }: GetPostIdFromCommentSlugIdProps) {
-        const commentTableResponse = await db
+        opinionSlugId,
+    }: GetConversationIdFromOpinionSlugIdProps) {
+        const opinionTableResponse = await db
             .select({
-                postSlugId: conversationTable.slugId,
+                conversationSlugId: conversationTable.slugId,
+                conversationId: conversationTable.id,
             })
             .from(opinionTable)
             .innerJoin(
                 conversationTable,
                 eq(conversationTable.id, opinionTable.conversationId),
             )
-            .where(eq(opinionTable.slugId, commentSlugId));
+            .where(eq(opinionTable.slugId, opinionSlugId));
 
-        if (commentTableResponse.length != 1) {
+        if (opinionTableResponse.length != 1) {
             throw httpErrors.internalServerError(
-                "Failed to locate post slug ID from comment slug ID: " +
-                    commentSlugId,
+                "Failed to locate conversation slug ID from opinio slug ID: " +
+                    opinionSlugId,
             );
         }
 
-        return commentTableResponse[0].postSlugId;
+        return {
+            conversationSlugId: opinionTableResponse[0].conversationSlugId,
+            conversationId: opinionTableResponse[0].conversationId,
+        };
     }
 
-    return { getPostSlugIdFromCommentSlugId, getCommentIdFromCommentSlugId };
+    return {
+        getConversationMetadataFromOpinionSlugId,
+        getCommentIdFromCommentSlugId,
+        getCountsForParticipant,
+    };
 }

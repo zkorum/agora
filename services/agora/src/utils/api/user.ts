@@ -118,8 +118,11 @@ export function useBackendUserApi() {
             opinion: responseItem.opinionItem.opinion,
             opinionSlugId: responseItem.opinionItem.opinionSlugId,
             createdAt: new Date(responseItem.opinionItem.createdAt),
+            numParticipants: responseItem.opinionItem.numParticipants,
             numDisagrees: responseItem.opinionItem.numDisagrees,
             numAgrees: responseItem.opinionItem.numAgrees,
+            percentageAgrees: responseItem.opinionItem.percentageAgrees,
+            percentageDisagrees: responseItem.opinionItem.percentageDisagrees,
             updatedAt: new Date(responseItem.opinionItem.updatedAt),
             username: String(responseItem.opinionItem.username),
             moderation: {
@@ -134,7 +137,6 @@ export function useBackendUserApi() {
                 responseItem.opinionItem.moderation.updatedAt
               ),
             },
-            coreOpinionFor: responseItem.opinionItem.coreOpinionFor,
             clustersStats: responseItem.opinionItem.clustersStats,
           },
         };

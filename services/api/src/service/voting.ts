@@ -6,6 +6,7 @@ import {
     voteTable,
     notificationTable,
     notificationOpinionVoteTable,
+    participantTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and } from "drizzle-orm";
@@ -61,6 +62,7 @@ async function getCommentMetadataFromCommentSlugId({
 
 interface ImportNewVoteProps {
     db: PostgresJsDatabase;
+    conversationId: number;
     conversationSlugId: string;
     opinionSlugId: string;
     opinionId: number;
@@ -74,6 +76,7 @@ interface ImportNewVoteProps {
 
 export async function importNewVote({
     db,
+    conversationId,
     conversationSlugId,
     userId,
     opinionId,
@@ -214,7 +217,83 @@ export async function importNewVote({
         })
         .where(eq(opinionTable.currentContentId, opinionContentId));
 
-    await polisService.createOrUpdateVote({
+    await db
+        .insert(participantTable)
+        .values({
+            conversationId: conversationId,
+            userId: userId,
+            voteCount: 1,
+        })
+        .onConflictDoUpdate({
+            target: [participantTable.conversationId, participantTable.userId],
+            set: {
+                voteCount:
+                    votingAction == "cancel"
+                        ? sql`${participantTable.voteCount} - 1`
+                        : sql`${participantTable.voteCount} + 1`,
+            },
+        });
+
+    // WARN: might need to do this in a transaction...
+    // update conversation counts
+    // both values are 0 if the user is a new participant!
+    const {
+        voteCount: participantCurrentVoteCount,
+        opinionCount: participantCurrentOpinionCount,
+    } = await useCommonComment().getCountsForParticipant({
+        db: db,
+        conversationId,
+        userId,
+    });
+    if (votingAction === "cancel") {
+        // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
+        const participantVoteCountAfterDeletion =
+            participantCurrentVoteCount - 1;
+        /* <= to account for potential sync errors though it should not happen with db transactions... */
+        const isParticipantDeleted =
+            participantVoteCountAfterDeletion <= 0 &&
+            participantCurrentOpinionCount <= 0;
+        if (isParticipantDeleted) {
+            await db
+                .update(conversationTable)
+                .set({
+                    voteCount: sql`${conversationTable.voteCount} - 1`,
+                    participantCount: sql`${conversationTable.participantCount} - 1`,
+                })
+                .where(eq(conversationTable.id, conversationId));
+        } else {
+            await db
+                .update(conversationTable)
+                .set({
+                    voteCount: sql`${conversationTable.voteCount} - 1`,
+                })
+                .where(eq(conversationTable.id, conversationId));
+        }
+    } else {
+        if (
+            participantCurrentVoteCount === 0 &&
+            participantCurrentOpinionCount === 0
+        ) {
+            // new participant!
+            await db
+                .update(conversationTable)
+                .set({
+                    voteCount: sql`${conversationTable.voteCount} + 1`,
+                    participantCount: sql`${conversationTable.participantCount} + 1`,
+                })
+                .where(eq(conversationTable.slugId, conversationSlugId));
+        } else {
+            // existing participant!
+            await db
+                .update(conversationTable)
+                .set({
+                    voteCount: sql`${conversationTable.voteCount} + 1`,
+                })
+                .where(eq(conversationTable.slugId, conversationSlugId));
+        }
+    }
+
+    void polisService.createOrUpdateVote({
         userId,
         conversationSlugId,
         opinionSlugId,
@@ -244,9 +323,9 @@ export async function castVoteForOpinionSlugId({
     axiosPolis,
     polisDelayToFetch,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
-    const conversationSlugId =
-        await useCommonComment().getPostSlugIdFromCommentSlugId({
-            commentSlugId: opinionSlugId,
+    const { conversationSlugId, conversationId } =
+        await useCommonComment().getConversationMetadataFromOpinionSlugId({
+            opinionSlugId: opinionSlugId,
             db: db,
         });
 
@@ -384,6 +463,84 @@ export async function castVoteForOpinionSlugId({
             })
             .returning({ voteProofTableId: voteProofTable.id });
 
+        await db
+            .insert(participantTable)
+            .values({
+                conversationId: postMetadata.id,
+                userId: userId,
+                voteCount: 1,
+            })
+            .onConflictDoUpdate({
+                target: [
+                    participantTable.conversationId,
+                    participantTable.userId,
+                ],
+                set: {
+                    voteCount:
+                        votingAction == "cancel"
+                            ? sql`${participantTable.voteCount} - 1`
+                            : sql`${participantTable.voteCount} + 1`,
+                },
+            });
+
+        // update conversation counts
+        // both values are 0 if the user is a new participant!
+        const {
+            voteCount: participantCurrentVoteCount,
+            opinionCount: participantCurrentOpinionCount,
+        } = await useCommonComment().getCountsForParticipant({
+            db: tx,
+            conversationId,
+            userId,
+        });
+        if (votingAction === "cancel") {
+            // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
+            const participantVoteCountAfterDeletion =
+                participantCurrentVoteCount - 1;
+            /* <= to account for potential sync errors though it should not happen with db transactions... */
+            const isParticipantDeleted =
+                participantVoteCountAfterDeletion <= 0 &&
+                participantCurrentOpinionCount <= 0;
+            if (isParticipantDeleted) {
+                await tx
+                    .update(conversationTable)
+                    .set({
+                        voteCount: sql`${conversationTable.voteCount} - 1`,
+                        participantCount: sql`${conversationTable.participantCount} - 1`,
+                    })
+                    .where(eq(conversationTable.id, conversationId));
+            } else {
+                await tx
+                    .update(conversationTable)
+                    .set({
+                        voteCount: sql`${conversationTable.voteCount} - 1`,
+                    })
+                    .where(eq(conversationTable.id, conversationId));
+            }
+        } else {
+            if (
+                participantCurrentVoteCount === 0 &&
+                participantCurrentOpinionCount === 0
+            ) {
+                // new participant!
+                await tx
+                    .update(conversationTable)
+                    .set({
+                        voteCount: sql`${conversationTable.voteCount} + 1`,
+                        participantCount: sql`${conversationTable.participantCount} + 1`,
+                    })
+                    .where(eq(conversationTable.slugId, conversationSlugId));
+            } else {
+                // existing participant!
+                await tx
+                    .update(conversationTable)
+                    .set({
+                        voteCount: sql`${conversationTable.voteCount} + 1`,
+                    })
+                    .where(eq(conversationTable.slugId, conversationSlugId));
+            }
+        }
+
         const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
 
         if (votingAction != "cancel") {
@@ -466,6 +623,8 @@ export async function castVoteForOpinionSlugId({
                 }
             }
         }
+
+        // TODO: delete vote from external Polis system on cancel!
 
         await tx
             .update(opinionTable)
