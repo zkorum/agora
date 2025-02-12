@@ -26,6 +26,7 @@ defineProps<{
   display: flex;
   gap: 0.3rem;
   align-items: center;
+  font-size: 1rem;
 }
 
 .verifiedIconStyle {

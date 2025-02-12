@@ -14,11 +14,13 @@
     }"
   >
     <div class="topBar">
-      <UserAvatar :user-name="profileData.userName" :size="60" />
+      <div class="usernameBar">
+        <UserAvatar :user-name="profileData.userName" :size="40" />
 
-      <div class="userName">
-        <!-- TODO: Map author verified status here -->
-        <Username :author-verified="false" :user-name="profileData.userName" />
+        <div class="userNameStyle">
+          <!-- TODO: Map author verified status here -->
+          <Username :author-verified="true" :user-name="profileData.userName" />
+        </div>
       </div>
 
       <div class="profileMetadataBar">
@@ -95,17 +97,20 @@ function applyCurrentTab() {
 .topBar {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
   justify-content: space-between;
-  padding: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .tabPanelPadding {
   padding-top: 0.5rem;
 }
 
-.userName {
-  font-size: 1.2rem;
+.userNameStyle {
+  font-size: 1.1rem;
 }
 
 .showCursor:hover {
@@ -115,5 +120,12 @@ function applyCurrentTab() {
 .seperator {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.usernameBar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  align-items: center;
 }
 </style>
