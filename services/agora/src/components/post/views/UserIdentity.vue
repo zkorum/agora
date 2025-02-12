@@ -30,7 +30,6 @@ defineProps<{
 
 <style lang="scss" scoped>
 .userNameTimeContainer {
-  font-size: 0.8rem;
   display: flex;
   flex-direction: column;
 }
@@ -39,7 +38,6 @@ defineProps<{
   display: flex;
   gap: 1rem;
   align-items: center;
-  font-size: 0.9rem;
   color: $color-text-weak;
 }
 </style>
