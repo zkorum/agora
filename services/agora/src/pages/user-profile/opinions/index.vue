@@ -32,7 +32,7 @@
             </div>
 
             <div class="commentMetadata">
-              <span :style="{ fontWeight: '500' }">{{
+              <span class="usernameStyle">{{
                 commentItem.opinionItem.username
               }}</span>
               commented
@@ -157,5 +157,10 @@ async function commentDeleted() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.usernameStyle {
+  font-weight: 500;
+  word-break: break-all;
 }
 </style>
