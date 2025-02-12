@@ -3,7 +3,11 @@
     <ZKButton @click="showDialog = true">
       <div class="buttonText gradientFont">
         {{ currentFilterAlgorithm }}
-        <q-icon name="mdi-chevron-down" size="1.3rem" class="iconStyle" />
+        <q-icon
+          name="mdi-chevron-down"
+          size="1.3rem"
+          class="iconStyle gradientFont"
+        />
       </div>
     </ZKButton>
 
@@ -104,11 +108,9 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   background-image: $gradient-hero;
   color: transparent;
   background-clip: text;
-  font-weight: 600;
 }
 
 .iconStyle {
-  color: $primary;
   padding-bottom: 0rem;
   padding-left: 0.2rem;
 }
@@ -133,6 +135,7 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 }
 
 .buttonText {
+  font-weight: 600;
   display: flex;
   align-items: center;
 }
