@@ -18,7 +18,6 @@
       :extended-post-data="postData"
       :compact-mode="false"
       :skeleton-mode="false"
-      :show-author="true"
     />
   </MainLayout>
 </template>

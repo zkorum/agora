@@ -40,7 +40,6 @@
               :show-comment-section="false"
               :skeleton-mode="true"
               class="showCursor"
-              :show-author="true"
               @click="openPost(postData.metadata.conversationSlugId)"
             />
           </div>
@@ -59,7 +58,6 @@
               :compact-mode="true"
               :show-comment-section="false"
               :skeleton-mode="false"
-              :show-author="true"
               @click="openPost(postData.metadata.conversationSlugId)"
             />
           </div>

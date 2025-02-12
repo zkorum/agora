@@ -12,12 +12,13 @@
             }"
           >
             <div class="innerContainer">
+              <!-- TODO: Pass author verified flag here -->
               <PostMetadata
                 :poster-user-name="extendedPostData.metadata.authorUsername"
                 :created-at="new Date(extendedPostData.metadata.createdAt)"
                 :skeleton-mode="skeletonMode"
-                :show-author="showAuthor"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
+                :author-verified="false"
               />
 
               <div class="postDiv">
@@ -185,7 +186,6 @@ const props = defineProps<{
   extendedPostData: ExtendedConversation;
   compactMode: boolean;
   skeletonMode: boolean;
-  showAuthor: boolean;
 }>();
 
 const { isAuthenticated } = useAuthenticationStore();

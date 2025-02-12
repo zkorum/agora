@@ -118,7 +118,7 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   gap: 1rem;
   padding: 1rem;
   background-color: white;
-  border-radius: 25px;
+  border-radius: 25px 25px 0 0;
 }
 
 .optionFlexStyle {

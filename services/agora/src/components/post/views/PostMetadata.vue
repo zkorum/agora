@@ -1,33 +1,18 @@
 <template>
   <div>
     <div class="container">
-      <div class="metadata">
-        <div v-if="showAuthor">
-          <UserAvatar
-            v-if="!skeletonMode"
-            :user-name="posterUserName"
-            :size="40"
-            class="avatarIcon"
-          />
+      <div>
+        <UserIdentity
+          v-if="!skeletonMode"
+          :author-verified="authorVerified"
+          :created-at="createdAt"
+          :username="posterUserName"
+          :show-verified-text="false"
+        />
 
-          <Skeleton v-if="skeletonMode" shape="circle" size="2.5rem">
-          </Skeleton>
-        </div>
-
-        <div class="userNameTime">
-          <div v-if="showAuthor">
-            <div v-if="!skeletonMode">
-              {{ posterUserName }}
-            </div>
-            <Skeleton v-if="skeletonMode" width="5rem"></Skeleton>
-          </div>
-
-          <div>
-            <div v-if="!skeletonMode">
-              {{ formatTimeAgo(new Date(createdAt)) }}
-            </div>
-            <Skeleton v-if="skeletonMode" width="2rem"></Skeleton>
-          </div>
+        <div v-if="skeletonMode" class="identityFlex">
+          <Skeleton shape="circle" size="2rem" />
+          <Skeleton width="10rem" height="2rem" />
         </div>
       </div>
 
@@ -63,19 +48,18 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import Skeleton from "primevue/skeleton";
-import UserAvatar from "src/components/account/UserAvatar.vue";
-import { formatTimeAgo } from "@vueuse/core";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
+import UserIdentity from "./UserIdentity.vue";
 
 const props = defineProps<{
+  authorVerified: boolean;
   posterUserName: string;
   createdAt: Date;
   skeletonMode: boolean;
-  showAuthor: boolean;
   postSlugId: string;
 }>();
 
@@ -132,7 +116,7 @@ function clickedMoreIcon() {
 .container {
   display: flex;
   gap: 1rem;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   color: $color-text-weak;
 }
@@ -141,23 +125,13 @@ function clickedMoreIcon() {
   width: 4rem;
 }
 
-.avatarIcon {
-  margin-right: 0.5rem;
-}
-
-.metadata {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
 .reportDialog {
   background-color: white;
 }
 
-.userNameTime {
-  font-size: 0.8rem;
+.identityFlex {
   display: flex;
-  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
 }
 </style>

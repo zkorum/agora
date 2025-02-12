@@ -11,22 +11,13 @@
       </div>
 
       <div class="topBar">
-        <div class="metadata">
-          <UserAvatar
-            :user-name="commentItem.username"
-            :size="30"
-            class="avatarIcon"
-          />
-
-          <div class="userNameTime">
-            <div>
-              {{ commentItem.username }}
-            </div>
-            <div>
-              {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
-            </div>
-          </div>
-        </div>
+        <!-- TODO: Pass author verified flag here -->
+        <UserIdentity
+          :author-verified="false"
+          :created-at="commentItem.createdAt"
+          :username="commentItem.username"
+          :show-verified-text="false"
+        />
 
         <CommentActionOptions
           :comment-item="commentItem"
@@ -46,7 +37,7 @@
           :post-slug-id="postSlugId"
         />
 
-        <div class="actionBarPaddings">
+        <div>
           <CommentActionBar
             :selected-cluster-key="selectedClusterKey"
             :comment-item="commentItem"
@@ -62,13 +53,12 @@
 
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { OpinionItem, PolisKey } from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
-import { formatTimeAgo } from "@vueuse/core";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/utils/common";
+import UserIdentity from "./UserIdentity.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -186,6 +176,9 @@ function mutedComment() {
 <style scoped lang="scss">
 .container {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .pushReasonFlex {
@@ -220,15 +213,6 @@ function mutedComment() {
   gap: 1rem;
 }
 
-.metadata {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.9rem;
-  color: $color-text-weak;
-  padding-bottom: 1rem;
-}
-
 .highlightComment {
   background-color: #ccfbf1;
   border-radius: 15px;
@@ -239,17 +223,10 @@ function mutedComment() {
   margin-right: 0.5rem;
 }
 
-.userNameTime {
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  word-break: break-all;
-}
-
 .topBar {
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .topRightBar {
