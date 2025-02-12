@@ -46,10 +46,10 @@ function clickedTab(tabKey: PolisKey | "all") {
 
 .tabStyle {
   cursor: pointer;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-  padding-top: 0.3rem;
-  padding-bottom: 0.3rem;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 6px;
+  padding-bottom: 6px;
   font-weight: 500;
   color: #7d7a85;
   user-select: none;
