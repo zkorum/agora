@@ -31,15 +31,13 @@
               </div>
             </div>
 
-            <div class="commentMetadata">
-              <span class="usernameStyle">{{
-                commentItem.opinionItem.username
-              }}</span>
-              commented
-              {{ useTimeAgo(commentItem.opinionItem.createdAt) }}
-            </div>
+            <UserIdentity
+              :author-verified="false"
+              :created-at="commentItem.opinionItem.createdAt"
+              :user-name="commentItem.opinionItem.username"
+            />
 
-            <div class="commentBody">
+            <div>
               <span v-html="commentItem.opinionItem.opinion"></span>
             </div>
 
@@ -59,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { useElementVisibility, useTimeAgo } from "@vueuse/core";
+import { useElementVisibility } from "@vueuse/core";
 import { useUserStore } from "src/stores/user";
 import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
@@ -67,6 +65,7 @@ import CommentActionOptions from "src/components/post/views/CommentActionOptions
 import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
+import UserIdentity from "src/components/post/views/UserIdentity.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
@@ -124,7 +123,7 @@ async function commentDeleted() {
   white-space: nowrap;
   overflow: hidden;
   font-size: 1.2rem;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .container {
@@ -136,7 +135,7 @@ async function commentDeleted() {
 .commentItemStyle {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 1rem;
   padding-top: 1rem;
   padding-bottom: 0.5rem;
   padding-left: 0.5rem;
@@ -144,23 +143,9 @@ async function commentDeleted() {
   background-color: white;
 }
 
-.commentMetadata {
-  color: $color-text-weak;
-  font-size: 0.9rem;
-}
-
-.commentBody {
-  padding-top: 0.5rem;
-}
-
 .topRowFlex {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.usernameStyle {
-  font-weight: 500;
-  word-break: break-all;
 }
 </style>

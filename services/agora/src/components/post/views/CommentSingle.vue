@@ -175,6 +175,9 @@ function mutedComment() {
 <style scoped lang="scss">
 .container {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .pushReasonFlex {

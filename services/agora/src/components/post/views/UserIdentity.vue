@@ -67,6 +67,5 @@ defineProps<{
   align-items: center;
   font-size: 0.9rem;
   color: $color-text-weak;
-  padding-bottom: 1rem;
 }
 </style>
