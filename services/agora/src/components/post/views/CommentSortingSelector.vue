@@ -2,7 +2,7 @@
   <div>
     <div class="currentLabel">
       <ZKButton @click="showDialog = true">
-        <div>
+        <div class="buttonText">
           {{ currentFilterAlgorithm }}
           <q-icon name="mdi-chevron-down" size="1.3rem" class="iconPadding" />
         </div>
@@ -103,7 +103,9 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 
 <style lang="scss" scoped>
 .currentLabel {
-  color: $primary;
+  background-image: $gradient-hero;
+  color: transparent;
+  background-clip: text;
   font-weight: 600;
 }
 
@@ -129,5 +131,11 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 
 .titleStyle {
   font-weight: 500;
+}
+
+.buttonText {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 </style>

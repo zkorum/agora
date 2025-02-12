@@ -45,7 +45,7 @@
             class="clusterNameOverlay borderStyle dynamicFont"
             :style="{
               top: '30%',
-              left: '25%',
+              left: '22%',
             }"
           >
             <div class="clusterLabelFlex">
