@@ -6,7 +6,11 @@
 
     <div class="userNameTimeContainer">
       <div>
-        <Username :author-verified="authorVerified" :user-name="username" />
+        <Username
+          :author-verified="authorVerified"
+          :user-name="username"
+          :show-verified-text="showVerifiedText"
+        />
       </div>
 
       <div>
@@ -25,6 +29,7 @@ defineProps<{
   username: string;
   authorVerified: boolean;
   createdAt: Date;
+  showVerifiedText: boolean;
 }>();
 </script>
 

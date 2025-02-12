@@ -36,6 +36,7 @@
               :author-verified="false"
               :created-at="commentItem.opinionItem.createdAt"
               :username="commentItem.opinionItem.username"
+              :show-verified-text="false"
             />
 
             <div>

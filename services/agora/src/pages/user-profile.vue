@@ -22,6 +22,7 @@
           <Username
             :author-verified="false"
             :user-name="profileData.userName"
+            :show-verified-text="true"
           />
         </div>
       </div>

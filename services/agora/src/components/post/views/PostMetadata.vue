@@ -7,6 +7,7 @@
           :author-verified="authorVerified"
           :created-at="createdAt"
           :username="posterUserName"
+          :show-verified-text="false"
         />
 
         <div v-if="skeletonMode" class="identityFlex">

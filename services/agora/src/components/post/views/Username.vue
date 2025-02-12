@@ -5,7 +5,7 @@
     </div>
     <div v-if="authorVerified" class="verifiedMessage">
       <q-icon name="mdi-check-decagram" class="verifiedIconStyle" />
-      <div>ID verified</div>
+      <div v-if="showVerifiedText">ID verified</div>
     </div>
   </div>
 </template>
@@ -14,6 +14,7 @@
 defineProps<{
   userName: string;
   authorVerified: boolean;
+  showVerifiedText: boolean;
 }>();
 </script>
 
