@@ -31,10 +31,11 @@
               </div>
             </div>
 
+            <!-- TODO: Map author verification status -->
             <UserIdentity
               :author-verified="false"
               :created-at="commentItem.opinionItem.createdAt"
-              :user-name="commentItem.opinionItem.username"
+              :username="commentItem.opinionItem.username"
             />
 
             <div>

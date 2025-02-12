@@ -6,7 +6,7 @@
           v-if="!skeletonMode"
           :author-verified="authorVerified"
           :created-at="createdAt"
-          :user-name="posterUserName"
+          :username="posterUserName"
         />
 
         <div v-if="skeletonMode" class="identityFlex">

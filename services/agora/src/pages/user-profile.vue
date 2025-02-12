@@ -17,7 +17,8 @@
       <UserAvatar :user-name="profileData.userName" :size="60" />
 
       <div class="userName">
-        {{ profileData.userName }}
+        <!-- TODO: Map author verified status here -->
+        <Username :author-verified="false" :user-name="profileData.userName" />
       </div>
 
       <div class="profileMetadataBar">
@@ -54,6 +55,7 @@ import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import MainLayout from "src/layouts/MainLayout.vue";
+import Username from "src/components/post/views/Username.vue";
 
 const { profileData } = storeToRefs(useUserStore());
 

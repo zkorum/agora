@@ -15,7 +15,7 @@
         <UserIdentity
           :author-verified="false"
           :created-at="commentItem.createdAt"
-          :user-name="commentItem.username"
+          :username="commentItem.username"
         />
 
         <CommentActionOptions
