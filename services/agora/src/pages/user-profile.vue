@@ -19,7 +19,10 @@
 
         <div class="userNameStyle">
           <!-- TODO: Map author verified status here -->
-          <Username :author-verified="true" :user-name="profileData.userName" />
+          <Username
+            :author-verified="false"
+            :user-name="profileData.userName"
+          />
         </div>
       </div>
 
