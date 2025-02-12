@@ -11,22 +11,10 @@
       />
 
       <div class="commentSectionToolbar">
-        <div class="clusterFliterTabStyle">
-          <q-tabs
-            v-if="showClusterMap"
-            v-model="currentClusterTab"
-            :style="{ maxWidth: '100%' }"
-            dense
-          >
-            <q-tab name="all" label="All" no-caps />
-            <q-tab
-              v-for="clusterItem in props.polis.clusters"
-              :key="clusterItem.key"
-              :name="clusterItem.key.toString()"
-              :label="formatClusterLabel(clusterItem.key, clusterItem.aiLabel)"
-            />
-          </q-tabs>
-        </div>
+        <ClusterTabs
+          v-model="currentClusterTab"
+          :cluster-metadata-list="props.polis.clusters"
+        />
 
         <div>
           <CommentSortingSelector
@@ -131,13 +119,11 @@ import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./CommentSortingSelector.vue";
-import {
-  CommentFilterOptions,
-  formatClusterLabel,
-} from "src/utils/component/opinion";
+import { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
+import ClusterTabs from "./cluster/ClusterTabs.vue";
 
 const emit = defineEmits(["deleted"]);
 
@@ -485,16 +471,10 @@ function toggleClusterSelection(clusterKey: PolisKey) {
 
 .commentSectionToolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 1rem;
+  align-items: end;
   justify-content: space-between;
-}
-
-.clusterFliterTabStyle {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  max-width: 90dvw;
 }
 
 .clusterTabSelector {

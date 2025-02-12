@@ -1,13 +1,15 @@
 <template>
   <div>
-    <div class="currentLabel">
-      <ZKButton @click="showDialog = true">
-        <div>
-          {{ currentFilterAlgorithm }}
-          <q-icon name="mdi-chevron-down" size="1.3rem" class="iconPadding" />
-        </div>
-      </ZKButton>
-    </div>
+    <ZKButton @click="showDialog = true">
+      <div class="buttonText gradientFont">
+        {{ currentFilterAlgorithm }}
+        <q-icon
+          name="mdi-chevron-down"
+          size="1.3rem"
+          class="iconStyle gradientFont"
+        />
+      </div>
+    </ZKButton>
 
     <q-dialog v-model="showDialog" position="bottom">
       <div class="dialogContainer">
@@ -102,12 +104,13 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 </script>
 
 <style lang="scss" scoped>
-.currentLabel {
-  color: $primary;
-  font-weight: 600;
+.gradientFont {
+  background-image: $gradient-hero;
+  color: transparent;
+  background-clip: text;
 }
 
-.iconPadding {
+.iconStyle {
   padding-bottom: 0rem;
   padding-left: 0.2rem;
 }
@@ -129,5 +132,11 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 
 .titleStyle {
   font-weight: 500;
+}
+
+.buttonText {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 </style>
