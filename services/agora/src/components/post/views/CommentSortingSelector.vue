@@ -135,7 +135,7 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 }
 
 .buttonText {
-  font-weight: 600;
+  font-weight: 500;
   display: flex;
   align-items: center;
 }
