@@ -2,7 +2,7 @@
   <div>
     <div class="container">
       <div class="metadata">
-        <div v-if="showAuthor">
+        <div>
           <UserAvatar
             v-if="!skeletonMode"
             :user-name="posterUserName"
@@ -14,21 +14,13 @@
           </Skeleton>
         </div>
 
-        <div class="userNameTime">
-          <div v-if="showAuthor">
-            <div v-if="!skeletonMode">
-              {{ posterUserName }}
-            </div>
-            <Skeleton v-if="skeletonMode" width="5rem"></Skeleton>
-          </div>
-
-          <div>
-            <div v-if="!skeletonMode">
-              {{ formatTimeAgo(new Date(createdAt)) }}
-            </div>
-            <Skeleton v-if="skeletonMode" width="2rem"></Skeleton>
-          </div>
-        </div>
+        <UserIdentity
+          v-if="!skeletonMode"
+          :author-verified="authorVerified"
+          :created-at="createdAt"
+          :user-name="posterUserName"
+        />
+        <Skeleton v-if="skeletonMode" width="10rem" height="2rem"></Skeleton>
       </div>
 
       <div>
@@ -64,18 +56,18 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import Skeleton from "primevue/skeleton";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import { formatTimeAgo } from "@vueuse/core";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
+import UserIdentity from "./UserIdentity.vue";
 
 const props = defineProps<{
+  authorVerified: boolean;
   posterUserName: string;
   createdAt: Date;
   skeletonMode: boolean;
-  showAuthor: boolean;
   postSlugId: string;
 }>();
 
@@ -132,7 +124,7 @@ function clickedMoreIcon() {
 .container {
   display: flex;
   gap: 1rem;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   color: $color-text-weak;
 }
@@ -147,17 +139,12 @@ function clickedMoreIcon() {
 
 .metadata {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.5rem;
 }
 
 .reportDialog {
   background-color: white;
-}
-
-.userNameTime {
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
 }
 </style>
