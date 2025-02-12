@@ -12,20 +12,20 @@
 
       <div class="topBar">
         <div class="metadata">
-          <UserAvatar
-            :user-name="commentItem.username"
-            :size="30"
-            class="avatarIcon"
-          />
-
-          <div class="userNameTime">
-            <div>
-              {{ commentItem.username }}
-            </div>
-            <div>
-              {{ formatTimeAgo(new Date(commentItem.createdAt)) }}
-            </div>
+          <div>
+            <UserAvatar
+              :user-name="commentItem.username"
+              :size="30"
+              class="avatarIcon"
+            />
           </div>
+
+          <!-- TODO: Pass author verified flag here -->
+          <UserIdentity
+            :author-verified="false"
+            :created-at="commentItem.createdAt"
+            :user-name="commentItem.username"
+          />
         </div>
 
         <CommentActionOptions
@@ -46,7 +46,7 @@
           :post-slug-id="postSlugId"
         />
 
-        <div class="actionBarPaddings">
+        <div>
           <CommentActionBar
             :selected-cluster-key="selectedClusterKey"
             :comment-item="commentItem"
@@ -66,9 +66,9 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { OpinionItem, PolisKey } from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
-import { formatTimeAgo } from "@vueuse/core";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/utils/common";
+import UserIdentity from "./UserIdentity.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -239,17 +239,10 @@ function mutedComment() {
   margin-right: 0.5rem;
 }
 
-.userNameTime {
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  word-break: break-all;
-}
-
 .topBar {
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .topRightBar {
