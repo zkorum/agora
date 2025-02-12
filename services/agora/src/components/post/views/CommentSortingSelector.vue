@@ -136,6 +136,5 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 .buttonText {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
 }
 </style>
