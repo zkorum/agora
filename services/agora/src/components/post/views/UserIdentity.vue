@@ -1,23 +1,30 @@
 <template>
-  <div class="userNameTimeContainer">
-    <div class="authorContainer">
-      <div class="usernameStyle">
-        {{ userName }}
-      </div>
-      <div v-if="authorVerified" class="verifiedMessage">
-        <q-icon name="mdi-check-decagram" class="verifiedIconStyle" />
-        <div>ID verified</div>
-      </div>
+  <div class="metadata">
+    <div>
+      <UserAvatar :user-name="userName" :size="30" class="avatarIcon" />
     </div>
 
-    <div>
-      {{ formatTimeAgo(new Date(createdAt)) }}
+    <div class="userNameTimeContainer">
+      <div class="authorContainer">
+        <div class="usernameStyle">
+          {{ userName }}
+        </div>
+        <div v-if="authorVerified" class="verifiedMessage">
+          <q-icon name="mdi-check-decagram" class="verifiedIconStyle" />
+          <div>ID verified</div>
+        </div>
+      </div>
+
+      <div>
+        {{ formatTimeAgo(new Date(createdAt)) }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { formatTimeAgo } from "@vueuse/core";
+import UserAvatar from "src/components/account/UserAvatar.vue";
 
 defineProps<{
   userName: string;
@@ -52,5 +59,14 @@ defineProps<{
 .verifiedIconStyle {
   color: $verified-icon-color;
   font-size: 1rem;
+}
+
+.metadata {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: $color-text-weak;
+  padding-bottom: 1rem;
 }
 </style>

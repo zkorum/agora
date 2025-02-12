@@ -1,26 +1,18 @@
 <template>
   <div>
     <div class="container">
-      <div class="metadata">
-        <div>
-          <UserAvatar
-            v-if="!skeletonMode"
-            :user-name="posterUserName"
-            :size="40"
-            class="avatarIcon"
-          />
-
-          <Skeleton v-if="skeletonMode" shape="circle" size="2.5rem">
-          </Skeleton>
-        </div>
-
+      <div>
         <UserIdentity
           v-if="!skeletonMode"
           :author-verified="authorVerified"
           :created-at="createdAt"
           :user-name="posterUserName"
         />
-        <Skeleton v-if="skeletonMode" width="10rem" height="2rem"></Skeleton>
+
+        <div v-if="skeletonMode" class="identityFlex">
+          <Skeleton shape="circle" size="2rem" />
+          <Skeleton width="10rem" height="2rem" />
+        </div>
       </div>
 
       <div>
@@ -55,7 +47,6 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import Skeleton from "primevue/skeleton";
-import UserAvatar from "src/components/account/UserAvatar.vue";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRouter } from "vue-router";
@@ -133,18 +124,13 @@ function clickedMoreIcon() {
   width: 4rem;
 }
 
-.avatarIcon {
-  margin-right: 0.5rem;
-}
-
-.metadata {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .reportDialog {
   background-color: white;
+}
+
+.identityFlex {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 </style>

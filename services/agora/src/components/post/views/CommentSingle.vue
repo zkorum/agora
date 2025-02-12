@@ -11,22 +11,12 @@
       </div>
 
       <div class="topBar">
-        <div class="metadata">
-          <div>
-            <UserAvatar
-              :user-name="commentItem.username"
-              :size="30"
-              class="avatarIcon"
-            />
-          </div>
-
-          <!-- TODO: Pass author verified flag here -->
-          <UserIdentity
-            :author-verified="false"
-            :created-at="commentItem.createdAt"
-            :user-name="commentItem.username"
-          />
-        </div>
+        <!-- TODO: Pass author verified flag here -->
+        <UserIdentity
+          :author-verified="false"
+          :created-at="commentItem.createdAt"
+          :user-name="commentItem.username"
+        />
 
         <CommentActionOptions
           :comment-item="commentItem"
@@ -62,7 +52,6 @@
 
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
 import type { OpinionItem, PolisKey } from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
@@ -218,15 +207,6 @@ function mutedComment() {
   flex-direction: column;
   justify-content: left;
   gap: 1rem;
-}
-
-.metadata {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.9rem;
-  color: $color-text-weak;
-  padding-bottom: 1rem;
 }
 
 .highlightComment {
