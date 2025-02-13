@@ -5,9 +5,9 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from "vue-router";
-import { useLastNavigatedRouteName } from "src/utils/nav/lastNavigatedRouteName";
 import { useStorage } from "@vueuse/core";
 import { routes } from "vue-router/auto-routes";
+import { useRouteStateStore } from "src/stores/routeState";
 
 /*
  * If not building with SSR mode, you can
@@ -19,8 +19,7 @@ import { routes } from "vue-router/auto-routes";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { lastNavigatedRouteFullPath, lastNavigatedRouteName } =
-    useLastNavigatedRouteName();
+  const { storeFromName } = useRouteStateStore();
 
   const lastSavedHomeFeedPosition = useStorage(
     "last-saved-home-feed-position",
@@ -37,12 +36,14 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     scrollBehavior: (to, from) => {
       // to, from, savedPosition
       const fromRouteName = from.name?.toString() ?? "";
+      const toRouteName = to.name?.toString() ?? "";
+
       if (fromRouteName != "") {
-        lastNavigatedRouteFullPath.value = from.fullPath;
-        lastNavigatedRouteName.value = fromRouteName;
+        if (fromRouteName != toRouteName) {
+          storeFromName(from.name);
+        }
       }
 
-      const toRouteName = to.name?.toString() ?? "";
       if (
         toRouteName == "default-home-feed" &&
         fromRouteName == "single-post"
