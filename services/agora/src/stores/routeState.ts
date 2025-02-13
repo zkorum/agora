@@ -3,12 +3,7 @@ import { RouteMap } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
 export const useRouteStateStore = defineStore("routeState", () => {
-  const unreturnableRoutes: (keyof RouteNamedMap)[] = [
-    "/conversation/create/",
-    "/help/",
-    "/settings/",
-  ];
-
+  const unreturnableRoutes: (keyof RouteNamedMap)[] = ["/conversation/create/"];
   interface GoBackObject {
     routeName?: keyof RouteNamedMap;
     useSpecialRoute: boolean;
@@ -43,8 +38,21 @@ export const useRouteStateStore = defineStore("routeState", () => {
     }
   }
 
-  function storeFromName(name: keyof RouteMap) {
-    routingHistoryList.push(name);
+  function storeFromName(fromName: keyof RouteMap, toName: keyof RouteMap) {
+    if (fromName == toName) {
+      return;
+    }
+    /*
+    const parentPopoutRoutes: (keyof RouteNamedMap)[] = [
+      "/help/",
+      "/settings/",
+    ];
+    if (parentPopoutRoutes.includes(fromName)) {
+    }
+    */
+
+    routingHistoryList.push(fromName);
+    // console.log(routingHistoryList);
   }
 
   return { goBack, storeFromName };

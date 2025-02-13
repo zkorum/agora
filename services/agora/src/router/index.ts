@@ -5,7 +5,6 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from "vue-router";
-import { useStorage } from "@vueuse/core";
 import { routes } from "vue-router/auto-routes";
 import { useRouteStateStore } from "src/stores/routeState";
 
@@ -21,11 +20,6 @@ import { useRouteStateStore } from "src/stores/routeState";
 export default defineRouter(function (/* { store, ssrContext } */) {
   const { storeFromName } = useRouteStateStore();
 
-  const lastSavedHomeFeedPosition = useStorage(
-    "last-saved-home-feed-position",
-    0
-  );
-
   const createHistory = process.env.SERVER
     ? createMemoryHistory
     : process.env.VUE_ROUTER_MODE === "history"
@@ -35,23 +29,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   const Router = createRouter({
     scrollBehavior: (to, from) => {
       // to, from, savedPosition
-      const fromRouteName = from.name?.toString() ?? "";
-      const toRouteName = to.name?.toString() ?? "";
-
-      if (fromRouteName != "") {
-        if (fromRouteName != toRouteName) {
-          storeFromName(from.name);
-        }
+      if (from.name && to.name) {
+        storeFromName(from.name, to.name);
       }
 
-      if (
-        toRouteName == "default-home-feed" &&
-        fromRouteName == "single-post"
-      ) {
-        return { left: 0, top: lastSavedHomeFeedPosition.value };
-      } else {
-        return { left: 0, top: 0 };
-      }
+      return { left: 0, top: 0 };
     },
     routes,
     // Leave this as is and make changes in quasar.conf.js instead!
