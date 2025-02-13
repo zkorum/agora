@@ -1,6 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
-import { useStorage } from "@vueuse/core";
 import { useBackendPostApi } from "src/utils/api/post";
 import { useAuthenticationStore } from "./authentication";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -127,11 +126,6 @@ export const usePostStore = defineStore("post", () => {
     emptyPost,
   ]);
 
-  const lastSavedHomeFeedPosition = useStorage(
-    "last-saved-home-feed-position",
-    0
-  );
-
   async function loadPostData(loadMoreData: boolean): Promise<boolean> {
     let lastSlugId: undefined | string = undefined;
 
@@ -212,7 +206,6 @@ export const usePostStore = defineStore("post", () => {
     masterPostDataList,
     emptyPostDataList,
     emptyPost,
-    lastSavedHomeFeedPosition,
     dataReady,
     endOfFeed,
   };
