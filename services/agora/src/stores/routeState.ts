@@ -62,12 +62,8 @@ export const useRouteStateStore = defineStore("routeState", () => {
     */
 
     routingHistoryList.push(fromName);
-    console.log(routingHistoryList);
+    // console.log(routingHistoryList);
   }
 
-  function clearHistory() {
-    routingHistoryList.length = 0;
-  }
-
-  return { goBack, storeFromName, clearHistory };
+  return { goBack, storeFromName };
 });
