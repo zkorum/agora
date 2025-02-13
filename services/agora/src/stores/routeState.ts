@@ -11,7 +11,11 @@ export const useRouteStateStore = defineStore("routeState", () => {
 
   const routingHistoryList: (keyof RouteNamedMap)[] = [];
 
+  let ignoreNextRouterInsert = false;
+
   async function goBack(): Promise<GoBackObject> {
+    ignoreNextRouterInsert = true;
+
     if (routingHistoryList.length == 0) {
       return {
         routeName: "/",
@@ -25,6 +29,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
         routingHistoryList.pop();
         return await goBack();
       } else {
+        routingHistoryList.pop();
         return {
           useSpecialRoute: true,
           routeName: lastRouteName,
@@ -39,6 +44,11 @@ export const useRouteStateStore = defineStore("routeState", () => {
   }
 
   function storeFromName(fromName: keyof RouteMap, toName: keyof RouteMap) {
+    if (ignoreNextRouterInsert) {
+      ignoreNextRouterInsert = false;
+      return;
+    }
+
     if (fromName == toName) {
       return;
     }
@@ -52,8 +62,12 @@ export const useRouteStateStore = defineStore("routeState", () => {
     */
 
     routingHistoryList.push(fromName);
-    // console.log(routingHistoryList);
+    console.log(routingHistoryList);
   }
 
-  return { goBack, storeFromName };
+  function clearHistory() {
+    routingHistoryList.length = 0;
+  }
+
+  return { goBack, storeFromName, clearHistory };
 });
