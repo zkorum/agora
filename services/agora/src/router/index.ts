@@ -5,9 +5,8 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from "vue-router";
-import { useLastNavigatedRouteName } from "src/utils/nav/lastNavigatedRouteName";
-import { useStorage } from "@vueuse/core";
 import { routes } from "vue-router/auto-routes";
+import { useRouteStateStore } from "src/stores/routeState";
 
 /*
  * If not building with SSR mode, you can
@@ -19,13 +18,7 @@ import { routes } from "vue-router/auto-routes";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { lastNavigatedRouteFullPath, lastNavigatedRouteName } =
-    useLastNavigatedRouteName();
-
-  const lastSavedHomeFeedPosition = useStorage(
-    "last-saved-home-feed-position",
-    0
-  );
+  const { storeFromName } = useRouteStateStore();
 
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -36,21 +29,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   const Router = createRouter({
     scrollBehavior: (to, from) => {
       // to, from, savedPosition
-      const fromRouteName = from.name?.toString() ?? "";
-      if (fromRouteName != "") {
-        lastNavigatedRouteFullPath.value = from.fullPath;
-        lastNavigatedRouteName.value = fromRouteName;
+      if (from.name && to.name) {
+        storeFromName(from.name, to.name);
       }
 
-      const toRouteName = to.name?.toString() ?? "";
-      if (
-        toRouteName == "default-home-feed" &&
-        fromRouteName == "single-post"
-      ) {
-        return { left: 0, top: lastSavedHomeFeedPosition.value };
-      } else {
-        return { left: 0, top: 0 };
-      }
+      return { left: 0, top: 0 };
     },
     routes,
     // Leave this as is and make changes in quasar.conf.js instead!
@@ -59,13 +42,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach(async (to, from) => {
-    const toRouteName = to.name?.toString() ?? "";
-    const fromRouteName = from.name?.toString() ?? "";
-    if (toRouteName == "create-post" && fromRouteName == "single-post") {
-      Router.go(-1);
-    }
-  });
+  Router.beforeEach(async () => {});
 
   /*
   // @see https://stackoverflow.com/questions/69300341/typeerror-failed-to-fetch-dynamically-imported-module-on-vue-vite-vanilla-set

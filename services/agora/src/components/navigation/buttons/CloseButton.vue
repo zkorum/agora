@@ -13,8 +13,8 @@ import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 
 const goBackButtonHandler = useGoBackButtonHandler();
 
-function buttonClicked() {
-  goBackButtonHandler.goBack();
+async function buttonClicked() {
+  await goBackButtonHandler.goBack();
 }
 </script>
 
