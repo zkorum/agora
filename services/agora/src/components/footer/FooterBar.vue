@@ -114,7 +114,7 @@ async function accessNotifications() {
 }
 
 watch(documentVisibility, async () => {
-  if (documentVisibility.value == "visible") {
+  if (isAuthenticated.value && documentVisibility.value == "visible") {
     await loadNotificationData(false);
   }
 });
