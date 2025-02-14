@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="container">
+    <div v-if="clusterMetadataList.length > 1" class="container">
       <div
         class="tabStyle"
         :class="{ highlightTab: model === 'all' }"

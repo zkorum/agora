@@ -2,11 +2,15 @@
 <template>
   <div>
     <div class="container">
-      <div
-        v-if="reasonLabel !== undefined"
-        class="pushReasonPosition pushReasonStyle pushReasonFlex"
-      >
-        {{ reasonLabel }}
+      <div class="pushReasonPosition">
+        <ZKCard padding="0rem" class="labelBackground">
+          <div
+            v-if="reasonLabel !== undefined"
+            class="pushReasonStyle pushReasonFlex"
+          >
+            {{ reasonLabel }}
+          </div>
+        </ZKCard>
       </div>
 
       <div class="topBar">
@@ -58,6 +62,7 @@ import CommentActionOptions from "./CommentActionOptions.vue";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/utils/common";
 import UserIdentity from "./UserIdentity.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -186,17 +191,16 @@ function mutedComment() {
   align-items: center;
 }
 
+.labelBackground {
+  background-color: #f6f5f8;
+}
+
 .pushReasonStyle {
   padding-top: 0.2rem;
   padding-bottom: 0.2rem;
   padding-left: 1rem;
   padding-right: 1rem;
-  border-radius: 0.5rem;
-  color: $primary;
-  background-color: white;
-  border-style: solid;
-  border-width: 1px;
-  border-color: $primary;
+  color: #5c6c74;
 }
 
 .pushReasonPosition {

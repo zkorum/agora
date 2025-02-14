@@ -88,7 +88,7 @@
 import PostDetails from "../post/PostDetails.vue";
 import { usePostStore } from "src/stores/post";
 import ZKButton from "../ui-library/ZKButton.vue";
-import { ref, useTemplateRef, watch } from "vue";
+import { onMounted, ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useDocumentVisibility, useInfiniteScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
@@ -126,14 +126,19 @@ useInfiniteScroll(
   }
 );
 
+onMounted(async () => {
+  await newPostCheck();
+});
+
 watch(pageIsVisible, async () => {
-  if (pageIsVisible.value && !endOfFeed.value) {
+  if (pageIsVisible.value == "visible") {
     await newPostCheck();
   }
 });
 
 async function pullDownTriggered() {
-  await loadPostData(true);
+  await loadPostData(false);
+  hasPendingNewPosts.value = false;
 }
 
 async function newPostCheck() {
@@ -222,5 +227,6 @@ async function refreshPage(done: () => void) {
   margin: auto;
   height: calc(100dvh - 7rem);
   overflow-y: scroll;
+  overscroll-behavior: none;
 }
 </style>

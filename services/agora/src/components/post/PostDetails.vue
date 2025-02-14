@@ -380,5 +380,6 @@ async function shareClicked() {
 .fixedHeightContainer {
   height: calc(100dvh - 3.5rem);
   overflow-y: scroll;
+  overscroll-behavior: none;
 }
 </style>

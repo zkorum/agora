@@ -170,7 +170,8 @@ let commentItemsHidden: OpinionItem[] = [];
 const clusterCommentItemsMap = ref<Map<PolisKey, OpinionItem[]>>(new Map());
 const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
-const { setupOpinionlist } = useOpinionScrollableStore();
+const { setupOpinionlist, detectOpinionFilterBySlugId } =
+  useOpinionScrollableStore();
 const { opinionItemListPartial } = storeToRefs(useOpinionScrollableStore());
 
 onMounted(async () => {
@@ -187,9 +188,9 @@ watch(currentClusterTab, async () => {
     const clusterKey = currentClusterTab.value;
     const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
     if (cachedCommentItems) {
-      setupOpinionlist(cachedCommentItems);
+      setupOpinionlist(cachedCommentItems, commentSlugIdQuery.value);
     } else {
-      setupOpinionlist([]);
+      setupOpinionlist([], commentSlugIdQuery.value);
       console.error(
         `Failed to locate comment items for cluster key: ${clusterKey}`
       );
@@ -206,16 +207,16 @@ const showClusterMap = computed(() => {
 function updateInfiniteScrollingList(optionValue: CommentFilterOptions) {
   switch (optionValue) {
     case "new":
-      setupOpinionlist(commentItemsNew);
+      setupOpinionlist(commentItemsNew, commentSlugIdQuery.value);
       break;
     case "discover":
-      setupOpinionlist(commentItemsDiscover);
+      setupOpinionlist(commentItemsDiscover, commentSlugIdQuery.value);
       break;
     case "hidden":
-      setupOpinionlist(commentItemsHidden);
+      setupOpinionlist(commentItemsHidden, commentSlugIdQuery.value);
       break;
     case "moderated":
-      setupOpinionlist(commentItemsModerated);
+      setupOpinionlist(commentItemsModerated, commentSlugIdQuery.value);
       break;
     default:
       console.error("Unknown sort algorithm: " + sortAlgorithm.value);
@@ -377,43 +378,15 @@ async function fetchCommentList(
   }
 }
 
-function autoDetectCommentFilter(
-  commentSlugId: string
-): CommentFilterOptions | "not_found" {
-  for (const commentItem of commentItemsDiscover) {
-    if (commentItem.opinionSlugId == commentSlugId) {
-      return "discover";
-    }
-  }
-  for (const commentItem of commentItemsNew) {
-    if (commentItem.opinionSlugId == commentSlugId) {
-      return "new";
-    }
-  }
-
-  for (const commentItem of commentItemsModerated) {
-    if (commentItem.opinionSlugId == commentSlugId) {
-      return "moderated";
-    }
-  }
-
-  if (!isAuthenticated.value) {
-    showNotifyMessage("This opinion has been removed by the moderators");
-    return "discover";
-  } else {
-    for (const commentItem of commentItemsHidden) {
-      if (commentItem.opinionSlugId == commentSlugId) {
-        return "hidden";
-      }
-    }
-  }
-
-  return "not_found";
-}
-
 async function scrollToComment() {
   if (commentSlugIdQuery.value != "") {
-    const detectedFilter = autoDetectCommentFilter(commentSlugIdQuery.value);
+    const detectedFilter = detectOpinionFilterBySlugId(
+      commentSlugIdQuery.value,
+      commentItemsNew,
+      commentItemsDiscover,
+      commentItemsModerated,
+      commentItemsHidden
+    );
     if (detectedFilter == "not_found") {
       showNotifyMessage("Opinion not found: " + commentSlugIdQuery.value);
       await resetRouteParams();
