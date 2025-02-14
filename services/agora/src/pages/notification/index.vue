@@ -171,6 +171,7 @@ async function redirectPage(routeTarget: RouteTarget) {
   margin: auto;
   height: calc(100dvh - 7rem);
   overflow-y: scroll;
+  overscroll-behavior: none;
 }
 
 .widthConstraint {

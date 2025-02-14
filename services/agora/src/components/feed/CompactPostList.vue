@@ -138,6 +138,7 @@ watch(pageIsVisible, async () => {
 
 async function pullDownTriggered() {
   await loadPostData(false);
+  hasPendingNewPosts.value = false;
 }
 
 async function newPostCheck() {
@@ -226,5 +227,6 @@ async function refreshPage(done: () => void) {
   margin: auto;
   height: calc(100dvh - 7rem);
   overflow-y: scroll;
+  overscroll-behavior: none;
 }
 </style>
