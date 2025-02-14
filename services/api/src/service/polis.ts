@@ -788,7 +788,7 @@ export async function getClusterIdByUserAndConv({
     polisContentId,
 }: GetClusterIdByUserAndConvProps): Promise<number | undefined> {
     const results = await db
-        .select({ poisClusterId: polisClusterUserTable.polisClusterId })
+        .select({ polisClusterId: polisClusterUserTable.polisClusterId })
         .from(polisClusterUserTable)
         .where(
             and(
@@ -802,10 +802,10 @@ export async function getClusterIdByUserAndConv({
             polisClusterId = undefined;
             break;
         case 1:
-            polisClusterId = results[0].poisClusterId;
+            polisClusterId = results[0].polisClusterId;
             break;
         default:
-            polisClusterId = results[0].poisClusterId;
+            polisClusterId = results[0].polisClusterId;
             log.warn(
                 `User ${userId} in conversation polisContentId ${String(
                     polisContentId,
