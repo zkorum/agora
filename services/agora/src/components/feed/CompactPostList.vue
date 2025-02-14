@@ -88,7 +88,7 @@
 import PostDetails from "../post/PostDetails.vue";
 import { usePostStore } from "src/stores/post";
 import ZKButton from "../ui-library/ZKButton.vue";
-import { ref, useTemplateRef, watch } from "vue";
+import { onMounted, ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useDocumentVisibility, useInfiniteScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
@@ -125,6 +125,10 @@ useInfiniteScroll(
     },
   }
 );
+
+onMounted(async () => {
+  await newPostCheck();
+});
 
 watch(pageIsVisible, async () => {
   if (pageIsVisible.value == "visible") {
