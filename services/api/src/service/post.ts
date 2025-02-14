@@ -244,13 +244,13 @@ export async function createNewPost({
 interface FetchPostBySlugIdProps {
     db: PostgresDatabase;
     conversationSlugId: string;
-    personalizationUserId?: string;
+    personalizedUserId?: string;
 }
 
 export async function fetchPostBySlugId({
     db,
     conversationSlugId,
-    personalizationUserId,
+    personalizedUserId,
 }: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
     try {
         const { fetchPostItems } = useCommonPost();
@@ -258,7 +258,7 @@ export async function fetchPostBySlugId({
             db: db,
             where: eq(conversationTable.slugId, conversationSlugId),
             enableCompactBody: false,
-            personalizationUserId: personalizationUserId,
+            personalizedUserId: personalizedUserId,
             excludeLockedPosts: false,
             removeMutedAuthors: false,
         });

@@ -56,17 +56,21 @@ export function getPlatform(platform: Platform): SupportedPlatform {
 export function formatPercentage(percentage: number) {
   const formattedPercentage = Number.isInteger(percentage)
     ? percentage.toFixed(0)
-    : percentage.toFixed(2);
+    : percentage < 1
+      ? percentage.toFixed(1)
+      : percentage.toFixed(0);
 
   // Step 4: Append the '%' sign
   return `${formattedPercentage}%`;
 }
 
 export function calculatePercentage(numerator: number, denominator: number) {
-  if (denominator > 0) {
-    const percentage = (numerator / denominator) * 100;
-    return percentage;
-  } else {
+  if (denominator <= 0) {
     return 0;
   }
+  const percentage = (numerator / denominator) * 100;
+  if (percentage >= 1) {
+    return Math.round(percentage);
+  }
+  return percentage;
 }

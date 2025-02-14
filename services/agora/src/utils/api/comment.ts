@@ -125,7 +125,6 @@ export function useBackendCommentApi() {
       const params: ApiV1OpinionFetchByConversationPostRequest = {
         conversationSlugId: postSlugId,
         filter: filter,
-        isAuthenticatedRequest: isAuthenticated.value,
         clusterKey: clusterKey,
       };
 

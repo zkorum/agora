@@ -6,7 +6,10 @@ import type {
 } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import { setTimeout } from "timers/promises";
-import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import {
+    PostgresJsDatabase,
+    type PostgresJsDatabase as PostgresDatabase,
+} from "drizzle-orm/postgres-js";
 import {
     polisClusterOpinionTable,
     polisClusterUserTable,
@@ -23,8 +26,6 @@ import {
     zodPolisMathAndMetadata,
     type CommentPriorities,
 } from "@/shared/types/polis.js";
-import type { GetPolisClustersInfoResponse } from "@/shared/types/dto.js";
-import { toUnionUndefined } from "@/shared/shared.js";
 
 interface PolisCreateUserProps {
     userId: string;
@@ -231,6 +232,7 @@ export async function delayedPolisGetAndUpdateMath({
         const groupClustersEntries = Object.entries(
             polisMathResults.pca["group-clusters"],
         );
+        const baseClusters = polisMathResults.pca["base-clusters"];
         const groupVotesEntries = Object.entries(
             polisMathResults.pca["group-votes"], // key is cluster key, while the value is the # of agrees/disagrees for each opinions by all the people in this cluster
         );
@@ -294,7 +296,7 @@ export async function delayedPolisGetAndUpdateMath({
             repnessEntries.length !== groupVotesEntries.length
         ) {
             log.warn(
-                `polis math repness has ${String(
+                `Number of clusters is different for each object, taking the minimum number: polis math repness has ${String(
                     repnessEntries.length,
                 )} clusters while group-clusters has ${String(
                     groupClustersEntries.length,
@@ -308,8 +310,9 @@ export async function delayedPolisGetAndUpdateMath({
             clusterKey < minNumberOfClusters;
             clusterKey++
         ) {
-            const clusterEntry = groupClustersEntries[clusterKey];
-            const polisClusterExternalId = clusterEntry[1].id;
+            const groupVotesEntry = groupVotesEntries[clusterKey];
+            const groupClustersEntry = groupClustersEntries[clusterKey];
+            const polisClusterExternalId = groupClustersEntry[1].id;
             let polisClusterKeyStr: PolisKey;
             switch (clusterKey) {
                 case 0: {
@@ -353,32 +356,50 @@ export async function delayedPolisGetAndUpdateMath({
                     polisContentId: polisContentId,
                     key: polisClusterKeyStr,
                     externalId: polisClusterExternalId,
-                    numUsers: clusterEntry[1].members.length,
-                    mathCenter: clusterEntry[1].center,
+                    // numUsers: clusterEntry[1].members.length, // WARN: members does NOT contain pid but the id defined in base-clusters: https://discordapp.com/channels/815450304421691412/1339699151419478167/1339728081975382169
+                    numUsers: groupVotesEntry[1]["n-members"], // !IMPORTANT
+                    mathCenter: groupClustersEntry[1].center,
                 })
                 .returning({ polisClusterId: polisClusterTable.id });
             const polisClusterId = polisClusterQuery[0].polisClusterId;
 
-            const members = clusterEntry[1].members
-                .filter((member) => {
-                    if (!(member in userIdByPid)) {
-                        log.warn(
-                            `The pid ${String(member)} from clusterId ${String(
-                                polisClusterId,
-                            )} does not correspond to any userId`,
-                        );
-                        return false;
-                    } else {
-                        return true;
-                    }
-                })
-                .map((member) => {
-                    return {
+            const pidsById: Record<number, number[]> = {}; // to each id can correspond multiple pids
+            for (const id of baseClusters.id) {
+                if (id in baseClusters.members) {
+                    pidsById[id] = baseClusters.members[id];
+                } else {
+                    log.warn(
+                        `Base clusters id index (${String(
+                            id,
+                        )}) does not match any base clusters members index: "baseClusters.id.length=${String(
+                            baseClusters.id.length,
+                        )}, baseClusters.members.length=${String(
+                            baseClusters.members.length,
+                        )}"}`,
+                    );
+                    pidsById[id] = [];
+                }
+            }
+            const members = [];
+            for (const member of groupClustersEntry[1].members) {
+                if (!(member in pidsById)) {
+                    // the members in this object are ids, not pids!
+                    log.warn(
+                        `The id ${String(member)} from clusterId ${String(
+                            polisClusterId,
+                        )} does not correspond to any pid in idToPids`,
+                    );
+                    continue;
+                }
+                const pids = pidsById[member];
+                for (const pid of pids) {
+                    members.push({
                         polisContentId: polisContentId,
                         polisClusterId: polisClusterId,
-                        userId: userIdByPid[member],
-                    };
-                });
+                        userId: userIdByPid[pid],
+                    });
+                }
+            }
             if (members.length > 0) {
                 await tx.insert(polisClusterUserTable).values(members);
             } else {
@@ -428,7 +449,7 @@ export async function delayedPolisGetAndUpdateMath({
                 log.warn("No repnesses to insert in polisClusterOpinionTable");
             }
 
-            const groupVotes = groupVotesEntries[clusterKey][1].votes;
+            const groupVotes = groupVotesEntry[1].votes;
             // building bulk updates for numAgrees & num Disagrees
             const sqlChunksForNumAgrees: SQL[] = [];
             const sqlChunksForNumDisagrees: SQL[] = [];
@@ -441,6 +462,15 @@ export async function delayedPolisGetAndUpdateMath({
                 groupVotes,
             )) {
                 const opinionSlugId = opinionSlugIdByTid[tid];
+                const totalVotes = numVotesByCategory.A + numVotesByCategory.D;
+                const numMembers = groupVotesEntry[1]["n-members"];
+                if (totalVotes > numMembers) {
+                    log.warn(
+                        `Number of agrees and disagrees for opinion slug id "${opinionSlugId}" is above the number of members belonging to the cluster "${polisClusterKeyStr}" of conversation slug id "${conversationSlugId}": ${String(
+                            totalVotes,
+                        )} > ${String(numMembers)}`,
+                    );
+                }
                 sqlChunksForNumAgrees.push(
                     sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${numVotesByCategory.A}`,
                 );
@@ -746,42 +776,44 @@ export async function delayedPolisGetAndUpdateMath({
     });
 }
 
-interface GetPolisClustersInfoProps {
-    db: PostgresDatabase;
-    conversationSlugId: string;
+interface GetClusterIdByUserAndConvProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    polisContentId: number;
 }
 
-export async function getPolisClustersInfo({
+export async function getClusterIdByUserAndConv({
     db,
-    conversationSlugId,
-}: GetPolisClustersInfoProps): Promise<GetPolisClustersInfoResponse> {
+    userId,
+    polisContentId,
+}: GetClusterIdByUserAndConvProps): Promise<number | undefined> {
     const results = await db
-        .select({
-            polisClusterKey: polisClusterTable.key,
-            polisClusterAiLabel: polisClusterTable.aiLabel,
-            polisClusterAiSummary: polisClusterTable.aiSummary,
-            polisClusterNumUsers: polisClusterTable.numUsers,
-        })
-        .from(conversationTable)
-        .innerJoin(
-            polisContentTable,
-            eq(polisContentTable.id, conversationTable.currentPolisContentId),
-        )
-        .innerJoin(
-            polisClusterTable,
-            eq(polisClusterTable.polisContentId, polisContentTable.id),
-        )
-        .where(eq(conversationTable.slugId, conversationSlugId));
-    const clusters: ClusterMetadata[] = [];
-    for (const result of results) {
-        clusters.push({
-            key: result.polisClusterKey,
-            aiLabel: toUnionUndefined(result.polisClusterAiLabel),
-            aiSummary: toUnionUndefined(result.polisClusterAiSummary),
-            numUsers: result.polisClusterNumUsers,
-        });
+        .select({ poisClusterId: polisClusterUserTable.polisClusterId })
+        .from(polisClusterUserTable)
+        .where(
+            and(
+                eq(polisClusterUserTable.polisContentId, polisContentId),
+                eq(polisClusterUserTable.userId, userId),
+            ),
+        );
+    let polisClusterId;
+    switch (results.length) {
+        case 0:
+            polisClusterId = undefined;
+            break;
+        case 1:
+            polisClusterId = results[0].poisClusterId;
+            break;
+        default:
+            polisClusterId = results[0].poisClusterId;
+            log.warn(
+                `User ${userId} in conversation polisContentId ${String(
+                    polisContentId,
+                )} belongs to ${String(
+                    results.length,
+                )} clusters instead of 0 or 1!`,
+            );
+            break;
     }
-    return {
-        clusters: clusters,
-    };
+    return polisClusterId;
 }

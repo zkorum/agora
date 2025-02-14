@@ -3,7 +3,6 @@
     <div class="container">
       <CommentClusterGraph
         v-if="showClusterMap"
-        :show-me-label="false"
         :clusters="polis.clusters"
         :total-participant-count="participantCount"
         :current-cluster-tab="currentClusterTab"

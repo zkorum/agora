@@ -103,7 +103,6 @@ export class Dto {
     static fetchFeedRequest = z
         .object({
             lastSlugId: zodSlugId.optional(),
-            isAuthenticatedRequest: z.boolean(),
         })
         .strict();
     static fetchFeedResponse = z.object({
@@ -125,7 +124,6 @@ export class Dto {
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
             filter: zodCommentFeedFilter,
-            isAuthenticatedRequest: z.boolean(),
             clusterKey: zodPolisKey.optional(),
         })
         .strict();
@@ -150,7 +148,6 @@ export class Dto {
     static getConversationRequest = z
         .object({
             conversationSlugId: zodSlugId,
-            isAuthenticatedRequest: z.boolean(),
         })
         .strict();
     static getConversationResponse = z
@@ -393,16 +390,6 @@ export class Dto {
             }),
         ],
     );
-    static getPolisClustersInfoRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
-        })
-        .strict();
-    static getPolisClustersInfoResponse = z
-        .object({
-            clusters: z.array(zodClusterMetadata),
-        })
-        .strict();
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -459,7 +446,4 @@ export type GetOpinionBySlugIdListResponse = z.infer<
 >;
 export type FetchNotificationsResponse = z.infer<
     typeof Dto.fetchNotificationsResponse
->;
-export type GetPolisClustersInfoResponse = z.infer<
-    typeof Dto.getPolisClustersInfoResponse
 >;

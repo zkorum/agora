@@ -6,8 +6,7 @@ import {
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1ConversationGetPostRequest,
-  ApiV1ModerationConversationWithdrawPostRequest,
+  type ApiV1ModerationConversationWithdrawPostRequest,
 } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
@@ -48,9 +47,8 @@ export function useBackendPostApi() {
     loadUserPollResponse: boolean
   ): Promise<ExtendedConversation | null> {
     try {
-      const params: ApiV1ConversationGetPostRequest = {
+      const params: ApiV1ModerationConversationWithdrawPostRequest = {
         conversationSlugId: postSlugId,
-        isAuthenticatedRequest: loadUserPollResponse,
       };
 
       const { url, options } =
@@ -99,7 +97,6 @@ export function useBackendPostApi() {
     try {
       const params: ApiV1ConversationFetchRecentPostRequest = {
         lastSlugId: lastSlugId,
-        isAuthenticatedRequest: loadUserPollData,
       };
 
       if (!loadUserPollData) {

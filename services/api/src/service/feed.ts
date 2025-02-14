@@ -67,7 +67,7 @@ export async function fetchFeed({
         limit: targetLimit + 1,
         where: whereClause,
         enableCompactBody: true,
-        personalizationUserId: personalizationUserId,
+        personalizedUserId: personalizationUserId,
         excludeLockedPosts: true,
         removeMutedAuthors: true,
     });

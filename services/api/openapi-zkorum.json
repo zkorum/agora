@@ -233,19 +233,12 @@
                                     "lastSlugId": {
                                         "type": "string",
                                         "maxLength": 10
-                                    },
-                                    "isAuthenticatedRequest": {
-                                        "type": "boolean"
                                     }
                                 },
-                                "required": [
-                                    "isAuthenticatedRequest"
-                                ],
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -292,8 +285,7 @@
                                                                 "minimum": 0
                                                             },
                                                             "authorUsername": {
-                                                                "type": "string",
-                                                                "pattern": "^[a-z0-9_]*$"
+                                                                "type": "string"
                                                             },
                                                             "moderation": {
                                                                 "anyOf": [
@@ -470,11 +462,15 @@
                                                                         },
                                                                         "aiSummary": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isUserInCluster": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     },
                                                                     "required": [
                                                                         "key",
-                                                                        "numUsers"
+                                                                        "numUsers",
+                                                                        "isUserInCluster"
                                                                     ],
                                                                     "additionalProperties": false
                                                                 }
@@ -898,8 +894,7 @@
                                             "format": "date-time"
                                         },
                                         "username": {
-                                            "type": "string",
-                                            "pattern": "^[a-z0-9_]*$"
+                                            "type": "string"
                                         },
                                         "isModerator": {
                                             "type": "boolean"
@@ -979,8 +974,7 @@
                                                         "minimum": 0
                                                     },
                                                     "authorUsername": {
-                                                        "type": "string",
-                                                        "pattern": "^[a-z0-9_]*$"
+                                                        "type": "string"
                                                     },
                                                     "moderation": {
                                                         "anyOf": [
@@ -1157,11 +1151,15 @@
                                                                 },
                                                                 "aiSummary": {
                                                                     "type": "string"
+                                                                },
+                                                                "isUserInCluster": {
+                                                                    "type": "boolean"
                                                                 }
                                                             },
                                                             "required": [
                                                                 "key",
-                                                                "numUsers"
+                                                                "numUsers",
+                                                                "isUserInCluster"
                                                             ],
                                                             "additionalProperties": false
                                                         }
@@ -1251,8 +1249,7 @@
                                                                 "minimum": 0
                                                             },
                                                             "authorUsername": {
-                                                                "type": "string",
-                                                                "pattern": "^[a-z0-9_]*$"
+                                                                "type": "string"
                                                             },
                                                             "moderation": {
                                                                 "anyOf": [
@@ -1429,11 +1426,15 @@
                                                                         },
                                                                         "aiSummary": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isUserInCluster": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     },
                                                                     "required": [
                                                                         "key",
-                                                                        "numUsers"
+                                                                        "numUsers",
+                                                                        "isUserInCluster"
                                                                     ],
                                                                     "additionalProperties": false
                                                                 }
@@ -1485,8 +1486,7 @@
                                                         "minimum": 0
                                                     },
                                                     "username": {
-                                                        "type": "string",
-                                                        "pattern": "^[a-z0-9_]*$"
+                                                        "type": "string"
                                                     },
                                                     "clustersStats": {
                                                         "type": "array",
@@ -1942,9 +1942,6 @@
                                             "hidden"
                                         ]
                                     },
-                                    "isAuthenticatedRequest": {
-                                        "type": "boolean"
-                                    },
                                     "clusterKey": {
                                         "type": "string",
                                         "enum": [
@@ -1959,8 +1956,7 @@
                                 },
                                 "required": [
                                     "conversationSlugId",
-                                    "filter",
-                                    "isAuthenticatedRequest"
+                                    "filter"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2007,8 +2003,7 @@
                                                 "minimum": 0
                                             },
                                             "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                                "type": "string"
                                             },
                                             "clustersStats": {
                                                 "type": "array",
@@ -2210,8 +2205,7 @@
                                                 "minimum": 0
                                             },
                                             "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                                "type": "string"
                                             },
                                             "clustersStats": {
                                                 "type": "array",
@@ -2414,8 +2408,7 @@
                                                 "minimum": 0
                                             },
                                             "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                                "type": "string"
                                             },
                                             "clustersStats": {
                                                 "type": "array",
@@ -2650,14 +2643,10 @@
                                     "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
-                                    },
-                                    "isAuthenticatedRequest": {
-                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
-                                    "conversationSlugId",
-                                    "isAuthenticatedRequest"
+                                    "conversationSlugId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2708,8 +2697,7 @@
                                                             "minimum": 0
                                                         },
                                                         "authorUsername": {
-                                                            "type": "string",
-                                                            "pattern": "^[a-z0-9_]*$"
+                                                            "type": "string"
                                                         },
                                                         "moderation": {
                                                             "anyOf": [
@@ -2886,11 +2874,15 @@
                                                                     },
                                                                     "aiSummary": {
                                                                         "type": "string"
+                                                                    },
+                                                                    "isUserInCluster": {
+                                                                        "type": "boolean"
                                                                     }
                                                                 },
                                                                 "required": [
                                                                     "key",
-                                                                    "numUsers"
+                                                                    "numUsers",
+                                                                    "isUserInCluster"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -2913,82 +2905,6 @@
                                     },
                                     "required": [
                                         "conversationData"
-                                    ],
-                                    "additionalProperties": false
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/conversation/get-polis-clusters-info": {
-            "post": {
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "conversationSlugId": {
-                                        "type": "string",
-                                        "maxLength": 10
-                                    }
-                                },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
-                                "additionalProperties": false
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "clusters": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "key": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "0",
-                                                            "1",
-                                                            "2",
-                                                            "3",
-                                                            "4",
-                                                            "5"
-                                                        ]
-                                                    },
-                                                    "numUsers": {
-                                                        "type": "integer",
-                                                        "minimum": 0
-                                                    },
-                                                    "aiLabel": {
-                                                        "type": "string"
-                                                    },
-                                                    "aiSummary": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "required": [
-                                                    "key",
-                                                    "numUsers"
-                                                ],
-                                                "additionalProperties": false
-                                            }
-                                        }
-                                    },
-                                    "required": [
-                                        "clusters"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -3141,8 +3057,7 @@
                                 "type": "object",
                                 "properties": {
                                     "username": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
+                                        "type": "string"
                                     }
                                 },
                                 "required": [
@@ -3170,8 +3085,7 @@
                                 "type": "object",
                                 "properties": {
                                     "username": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
+                                        "type": "string"
                                     }
                                 },
                                 "required": [
@@ -3336,8 +3250,7 @@
                                         "type": "object",
                                         "properties": {
                                             "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                                "type": "string"
                                             },
                                             "reason": {
                                                 "type": "string",
@@ -3410,8 +3323,7 @@
                                         "type": "object",
                                         "properties": {
                                             "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                                "type": "string"
                                             },
                                             "reason": {
                                                 "type": "string",
@@ -3468,8 +3380,7 @@
                                                 "format": "date-time"
                                             },
                                             "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                                "type": "string"
                                             }
                                         },
                                         "required": [
@@ -3494,8 +3405,7 @@
                                 "type": "object",
                                 "properties": {
                                     "targetUsername": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
+                                        "type": "string"
                                     },
                                     "action": {
                                         "type": "string",
@@ -3578,8 +3488,7 @@
                                                         "format": "date-time"
                                                     },
                                                     "username": {
-                                                        "type": "string",
-                                                        "pattern": "^[a-z0-9_]*$"
+                                                        "type": "string"
                                                     },
                                                     "routeTarget": {
                                                         "anyOf": [

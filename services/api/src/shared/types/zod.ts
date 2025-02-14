@@ -112,7 +112,7 @@ export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
 export const zodUsername = z
-.string(); // temporary work-around for import to work
+    .string();
     // .regex(
     //     usernameRegex,
     //     'Username may only contain lower-cased letters, numbers and "_"',
@@ -231,6 +231,7 @@ export const zodClusterMetadata = z.object({
     numUsers: z.number().int().nonnegative(),
     aiLabel: z.string().optional(),
     aiSummary: z.string().optional(),
+    isUserInCluster: z.boolean(),
 });
 export const zodConversationPolis = z
     .object({

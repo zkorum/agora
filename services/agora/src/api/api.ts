@@ -806,6 +806,12 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
      * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
      */
     'aiSummary'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner
+     */
+    'isUserInCluster': boolean;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInnerKeyEnum = {
@@ -831,25 +837,6 @@ export interface ApiV1ConversationFetchRecentPostRequest {
      * @memberof ApiV1ConversationFetchRecentPostRequest
      */
     'lastSlugId'?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1ConversationFetchRecentPostRequest
-     */
-    'isAuthenticatedRequest': boolean;
-}
-/**
- * 
- * @export
- * @interface ApiV1ConversationGetPolisClustersInfoPost200Response
- */
-export interface ApiV1ConversationGetPolisClustersInfoPost200Response {
-    /**
-     * 
-     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>}
-     * @memberof ApiV1ConversationGetPolisClustersInfoPost200Response
-     */
-    'clusters': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>;
 }
 /**
  * 
@@ -863,25 +850,6 @@ export interface ApiV1ConversationGetPost200Response {
      * @memberof ApiV1ConversationGetPost200Response
      */
     'conversationData': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner;
-}
-/**
- * 
- * @export
- * @interface ApiV1ConversationGetPostRequest
- */
-export interface ApiV1ConversationGetPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationGetPostRequest
-     */
-    'conversationSlugId': string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1ConversationGetPostRequest
-     */
-    'isAuthenticatedRequest': boolean;
 }
 /**
  * 
@@ -1293,19 +1261,6 @@ export type ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarge
 /**
  * 
  * @export
- * @interface ApiV1NotificationFetchPostRequest
- */
-export interface ApiV1NotificationFetchPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPostRequest
-     */
-    'lastSlugId'?: string;
-}
-/**
- * 
- * @export
  * @interface ApiV1OpinionCreatePost200Response
  */
 export interface ApiV1OpinionCreatePost200Response {
@@ -1417,12 +1372,6 @@ export interface ApiV1OpinionFetchByConversationPostRequest {
      * @memberof ApiV1OpinionFetchByConversationPostRequest
      */
     'filter': ApiV1OpinionFetchByConversationPostRequestFilterEnum;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1OpinionFetchByConversationPostRequest
-     */
-    'isAuthenticatedRequest': boolean;
     /**
      * 
      * @type {string}
@@ -2292,13 +2241,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
+         * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationFetchRecentPost: async (apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ConversationFetchRecentPostRequest' is not null or undefined
-            assertParamExists('apiV1ConversationFetchRecentPost', 'apiV1ConversationFetchRecentPostRequest', apiV1ConversationFetchRecentPostRequest)
+        apiV1ConversationFetchRecentPost: async (apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/v1/conversation/fetch-recent`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2335,48 +2282,9 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationGetPolisClustersInfoPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1ConversationGetPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1ConversationGetPolisClustersInfoPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
-            const localVarPath = `/api/v1/conversation/get-polis-clusters-info`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ConversationGetPost: async (apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ConversationGetPostRequest' is not null or undefined
-            assertParamExists('apiV1ConversationGetPost', 'apiV1ConversationGetPostRequest', apiV1ConversationGetPostRequest)
+            assertParamExists('apiV1ConversationGetPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
             const localVarPath = `/api/v1/conversation/get`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2400,7 +2308,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationGetPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2715,11 +2623,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationFetchPost: async (apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1NotificationFetchPost: async (apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/v1/notification/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2743,7 +2651,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1NotificationFetchPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationFetchRecentPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3594,11 +3502,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
+         * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200Response>> {
+        async apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationFetchRecentPost']?.[localVarOperationServerIndex]?.url;
@@ -3610,20 +3518,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPolisClustersInfoPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationGetPolisClustersInfoPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1ConversationGetPost(apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetPost(apiV1ConversationGetPostRequest, options);
+        async apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationGetPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3725,12 +3621,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options);
+        async apiV1NotificationFetchPost(apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationFetchPost(apiV1ConversationFetchRecentPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationFetchPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -4057,11 +3953,11 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
+         * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: any): AxiosPromise<ApiV1ConversationFetchRecentPost200Response> {
+        apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options?: any): AxiosPromise<ApiV1ConversationFetchRecentPost200Response> {
             return localVarFp.apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -4070,17 +3966,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<ApiV1ConversationGetPolisClustersInfoPost200Response> {
-            return localVarFp.apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1ConversationGetPost(apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options?: any): AxiosPromise<ApiV1ConversationGetPost200Response> {
-            return localVarFp.apiV1ConversationGetPost(apiV1ConversationGetPostRequest, options).then((request) => request(axios, basePath));
+        apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: any): AxiosPromise<ApiV1ConversationGetPost200Response> {
+            return localVarFp.apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -4155,12 +4042,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: any): AxiosPromise<ApiV1NotificationFetchPost200Response> {
-            return localVarFp.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(axios, basePath));
+        apiV1NotificationFetchPost(apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options?: any): AxiosPromise<ApiV1NotificationFetchPost200Response> {
+            return localVarFp.apiV1NotificationFetchPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -4447,12 +4334,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
+     * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig) {
+    public apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationFetchRecentPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4463,19 +4350,8 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ConversationGetPolisClustersInfoPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1ConversationGetPostRequest} apiV1ConversationGetPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public apiV1ConversationGetPost(apiV1ConversationGetPostRequest: ApiV1ConversationGetPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ConversationGetPost(apiV1ConversationGetPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4567,13 +4443,13 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+     * @param {ApiV1ConversationFetchRecentPostRequest} [apiV1ConversationFetchRecentPostRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1NotificationFetchPost(apiV1ConversationFetchRecentPostRequest?: ApiV1ConversationFetchRecentPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(apiV1ConversationFetchRecentPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -1,7 +1,7 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
-  ApiV1NotificationFetchPostRequest,
+  ApiV1ConversationFetchRecentPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -19,7 +19,7 @@ export function useBackendNotificationApi() {
     lastSlugId: string | undefined
   ): Promise<FetchNotificationsResponse | undefined> {
     try {
-      const params: ApiV1NotificationFetchPostRequest = {
+      const params: ApiV1ConversationFetchRecentPostRequest = {
         lastSlugId: lastSlugId,
       };
       const { url, options } =

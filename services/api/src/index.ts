@@ -484,7 +484,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            if (request.body.isAuthenticatedRequest) {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            if (isAuthenticatedRequest) {
                 const { didWrite } = await verifyUCAN(db, request, {
                     expectedDeviceStatus: undefined,
                 });
@@ -1061,7 +1068,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            if (request.body.isAuthenticatedRequest) {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            if (isAuthenticatedRequest) {
                 const { didWrite } = await verifyUCAN(db, request, {
                     expectedDeviceStatus: undefined,
                 });
@@ -1262,7 +1276,14 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            if (request.body.isAuthenticatedRequest) {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            if (isAuthenticatedRequest) {
                 const { didWrite } = await verifyUCAN(db, request, {
                     expectedDeviceStatus: undefined,
                 });
@@ -1274,7 +1295,7 @@ server.after(() => {
                     const postItem = await postService.fetchPostBySlugId({
                         db: db,
                         conversationSlugId: request.body.conversationSlugId,
-                        personalizationUserId: status.userId,
+                        personalizedUserId: status.userId,
                     });
 
                     const response: GetConversationResponse = {
@@ -1293,22 +1314,6 @@ server.after(() => {
                 };
                 return response;
             }
-        },
-    });
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/conversation/get-polis-clusters-info`,
-        schema: {
-            body: Dto.getPolisClustersInfoRequest,
-            response: {
-                200: Dto.getPolisClustersInfoResponse,
-            },
-        },
-        handler: async (request) => {
-            return await polisService.getPolisClustersInfo({
-                db: db,
-                conversationSlugId: request.body.conversationSlugId,
-            });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({

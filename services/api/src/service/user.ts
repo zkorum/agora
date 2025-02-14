@@ -130,7 +130,7 @@ export async function getUserComments({
             const postItem = await fetchPostBySlugId({
                 db: db,
                 conversationSlugId: commentResponse.postSlugId,
-                personalizationUserId: undefined,
+                personalizedUserId: undefined,
             });
 
             const extendedCommentItem: ExtendedOpinion = {
@@ -180,7 +180,7 @@ export async function getUserPosts({
                 limit: 10,
                 where: whereClause,
                 enableCompactBody: true,
-                personalizationUserId: userId,
+                personalizedUserId: userId,
                 excludeLockedPosts: false,
                 removeMutedAuthors: false,
             });

@@ -231,6 +231,7 @@ export const zodClusterMetadata = z.object({
     numUsers: z.number().int().nonnegative(),
     aiLabel: z.string().optional(),
     aiSummary: z.string().optional(),
+    isUserInCluster: z.boolean(),
 });
 export const zodConversationPolis = z
     .object({

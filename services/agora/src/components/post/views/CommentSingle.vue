@@ -2,7 +2,6 @@
 <template>
   <div>
     <div class="container">
-      <!-- TODO: Add push reason label -->
       <div
         v-if="reasonLabel !== undefined"
         class="pushReasonPosition pushReasonStyle pushReasonFlex"

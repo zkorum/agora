@@ -13,7 +13,7 @@
       >
         <!-- TODO: Integration the show me label -->
         <div
-          v-if="showMeLabel"
+          v-if="clusters[imageIndex].isUserInCluster"
           class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
         >
           <q-icon name="mdi-account-outline" />
@@ -88,7 +88,6 @@ const emit = defineEmits<{
 }>();
 
 const props = defineProps<{
-  showMeLabel: boolean;
   clusters: ClusterMetadata[];
   currentClusterTab: string;
   totalParticipantCount: number;
