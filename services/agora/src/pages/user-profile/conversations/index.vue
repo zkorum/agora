@@ -51,7 +51,6 @@ onMounted(async () => {
 });
 
 watch(targetIsVisible, async () => {
-  console.log(endOfFeed.value);
   if (
     targetIsVisible.value &&
     !isExpandingPosts &&
