@@ -42,13 +42,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach(async (to, from) => {
-    const toRouteName = to.name?.toString() ?? "";
-    const fromRouteName = from.name?.toString() ?? "";
-    if (toRouteName == "create-post" && fromRouteName == "single-post") {
-      Router.go(-1);
-    }
-  });
+  Router.beforeEach(async () => {});
 
   /*
   // @see https://stackoverflow.com/questions/69300341/typeerror-failed-to-fetch-dynamically-imported-module-on-vue-vite-vanilla-set
