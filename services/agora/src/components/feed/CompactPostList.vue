@@ -127,7 +127,7 @@ useInfiniteScroll(
 );
 
 watch(pageIsVisible, async () => {
-  if (pageIsVisible.value && !endOfFeed.value) {
+  if (pageIsVisible.value == "visible") {
     await newPostCheck();
   }
 });
