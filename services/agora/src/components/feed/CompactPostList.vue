@@ -137,7 +137,7 @@ watch(pageIsVisible, async () => {
 });
 
 async function pullDownTriggered() {
-  await loadPostData(true);
+  await loadPostData(false);
 }
 
 async function newPostCheck() {
