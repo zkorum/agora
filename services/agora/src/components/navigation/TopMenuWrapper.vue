@@ -1,12 +1,16 @@
 <template>
   <q-header :reveal="reveal" bordered class="menuStyle">
-    <div class="topMenu">
-      <slot />
-    </div>
+    <WidthWrapper :enable="true">
+      <div class="topMenu">
+        <slot />
+      </div>
+    </WidthWrapper>
   </q-header>
 </template>
 
 <script setup lang="ts">
+import WidthWrapper from "./WidthWrapper.vue";
+
 defineProps<{
   reveal: boolean;
 }>();
@@ -15,7 +19,6 @@ defineProps<{
 <style scoped lang="scss">
 .menuStyle {
   background-color: $navigation-bar-color;
-  height: 3.5rem;
 }
 
 .topMenu {
@@ -24,7 +27,8 @@ defineProps<{
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>

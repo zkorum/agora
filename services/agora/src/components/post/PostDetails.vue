@@ -2,7 +2,7 @@
 <template>
   <div>
     <div ref="postContainerRef" :class="{ fixedHeightContainer: !compactMode }">
-      <WidthWrapper :width="'35rem'">
+      <WidthWrapper :enable="true">
         <ZKHoverEffect :enable-hover="compactMode">
           <div
             class="container postPadding"

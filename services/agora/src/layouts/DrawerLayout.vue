@@ -1,24 +1,38 @@
 <template>
   <div>
     <q-layout
-      view="hHh lpR fFf"
+      view="lHh lpR lFf"
       :class="{ bottomPagePadding: props.generalProps.addBottomPadding }"
     >
+      <q-drawer
+        v-model="drawerLeft"
+        show-if-above
+        behavior="mobile"
+        :width="250"
+        :breakpoint="700"
+        elevated
+        overlay
+        :no-swipe-open="noSwipeOpen"
+      >
+        <q-scroll-area class="fit"> </q-scroll-area>
+      </q-drawer>
+
       <q-page-container>
         <q-page>
-          <DefaultMenuBar
-            v-model:show-drawer="drawerLeft"
-            :has-back-button="props.menuBarProps.hasBackButton"
-            :has-close-button="props.menuBarProps.hasCloseButton"
-            :has-login-button="props.menuBarProps.hasLoginButton"
-            :has-settings-button="props.menuBarProps.hasSettingsButton"
-          />
-
-          <WidthWrapper :enable="true">
+          <WidthWrapper :enable="props.generalProps.reducedWidth">
             <slot />
           </WidthWrapper>
         </q-page>
       </q-page-container>
+
+      <DefaultMenuBar
+        v-if="props.generalProps.enableHeader"
+        v-model:show-drawer="drawerLeft"
+        :has-back-button="props.menuBarProps.hasBackButton"
+        :has-close-button="props.menuBarProps.hasCloseButton"
+        :has-login-button="props.menuBarProps.hasLoginButton"
+        :has-settings-button="props.menuBarProps.hasSettingsButton"
+      />
 
       <q-footer
         v-if="props.generalProps.enableFooter"
@@ -41,6 +55,8 @@ import { ref } from "vue";
 const props = defineProps<MainLayoutProps>();
 
 const drawerLeft = ref(false);
+
+const noSwipeOpen = process.env.MODE != "capacitor";
 </script>
 
 <style scoped lang="scss">

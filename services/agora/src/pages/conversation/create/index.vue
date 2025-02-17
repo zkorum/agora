@@ -1,9 +1,9 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableFooter: false,
-      enableHeader: true,
+      enableHeader: false,
       reducedWidth: true,
     }"
     :menu-bar-props="{
@@ -184,7 +184,7 @@
         </ZKCard>
       </q-dialog>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -209,7 +209,7 @@ import {
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
