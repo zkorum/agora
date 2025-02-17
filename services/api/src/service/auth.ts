@@ -23,14 +23,19 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { base64 } from "@/shared/common/index.js";
 import parsePhoneNumberFromString, {
     type CountryCode,
-} from "libphonenumber-js";
+} from "libphonenumber-js/mobile";
 import { log } from "@/app.js";
-import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
-import type { HttpErrors } from "@fastify/sensible";
+import {
+    PEPPER_VERSION,
+    isPhoneNumberTypeSupported,
+    toUnionUndefined,
+} from "@/shared/shared.js";
+import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
 import { isLoggedIn } from "./authUtil.js";
 import * as polisService from "@/service/polis.js";
 import type { AxiosInstance } from "axios";
+import twilio from "twilio";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
@@ -41,7 +46,11 @@ interface VerifyOtpProps {
     polisUserEmailLocalPart: string;
     polisUserPassword: string;
     code: number;
-    httpErrors: HttpErrors;
+    phoneNumber: string;
+    defaultCallingCode: string;
+    twilioClient?: twilio.Twilio;
+    twilioServiceSid?: string;
+    peppers: string[];
 }
 
 interface RegisterWithPhoneNumberProps {
@@ -132,11 +141,11 @@ interface AuthenticateAttemptProps {
     didWrite: string;
     userAgent: string;
     throttleSmsMinutesInterval: number;
-    httpErrors: HttpErrors;
-    doSend: boolean;
     testCode: number;
     doUseTestCode: boolean;
     peppers: string[];
+    twilioClient?: twilio.Twilio;
+    twilioServiceSid?: string;
 }
 
 interface UpdateAuthAttemptCodeProps {
@@ -148,11 +157,11 @@ interface UpdateAuthAttemptCodeProps {
     now: Date;
     authenticateRequestBody: AuthenticateRequestBody;
     throttleSmsMinutesInterval: number;
-    httpErrors: HttpErrors;
-    doSend: boolean;
     testCode: number;
     doUseTestCode: boolean;
     peppers: string[];
+    twilioClient?: twilio.Twilio;
+    twilioServiceSid?: string;
 }
 
 interface InsertAuthAttemptCodeProps {
@@ -165,18 +174,18 @@ interface InsertAuthAttemptCodeProps {
     userAgent: string;
     authenticateRequestBody: AuthenticateRequestBody;
     throttleSmsMinutesInterval: number;
-    httpErrors: HttpErrors;
     testCode: number;
     doUseTestCode: boolean;
-    doSend: boolean;
     peppers: string[];
+    twilioClient?: twilio.Twilio;
+    twilioServiceSid?: string;
 }
 
-// interface SendOtpPhoneNumberProps {
-//     phoneNumber: string;
-//     phoneCountryCode: PhoneCountryCode;
-//     otp: number;
-// }
+interface SendOtpPhoneNumberProps {
+    phoneNumber: string;
+    twilioClient: twilio.Twilio;
+    twilioServiceSid: string;
+}
 
 export async function getDeviceStatus(
     db: PostgresDatabase,
@@ -202,6 +211,97 @@ export async function getDeviceStatus(
     }
 }
 
+interface RegisterOrLoginWithPhoneNumberProps {
+    db: PostgresDatabase;
+    type: AuthenticateType;
+    didWrite: string;
+    lastTwoDigits: number;
+    countryCallingCode: string;
+    phoneCountryCode?: CountryCode;
+    phoneHash: string;
+    pepperVersion: number;
+    userAgent: string;
+    userId: string;
+    axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
+    now: Date;
+}
+
+interface RegisterOrLoginWithPhoneNumberReturn {
+    success: true;
+}
+
+async function registerOrLoginWithPhoneNumber({
+    db,
+    type,
+    didWrite,
+    lastTwoDigits,
+    countryCallingCode,
+    phoneCountryCode,
+    phoneHash,
+    pepperVersion,
+    userAgent,
+    userId,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
+    now,
+}: RegisterOrLoginWithPhoneNumberProps): Promise<RegisterOrLoginWithPhoneNumberReturn> {
+    const loginSessionExpiry = new Date(now);
+    loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
+    switch (type) {
+        case "register": {
+            await registerWithPhoneNumber({
+                db,
+                didWrite,
+                lastTwoDigits: lastTwoDigits,
+                countryCallingCode: countryCallingCode,
+                phoneCountryCode: phoneCountryCode,
+                phoneHash: phoneHash,
+                pepperVersion: pepperVersion,
+                userAgent: userAgent,
+                userId: userId,
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain,
+                polisUserEmailLocalPart,
+                polisUserPassword,
+                now,
+                sessionExpiry: loginSessionExpiry,
+            });
+            return {
+                success: true,
+            };
+        }
+        case "login_known_device": {
+            await loginKnownDevice({
+                db,
+                didWrite,
+                now,
+                sessionExpiry: loginSessionExpiry,
+            });
+            return {
+                success: true,
+            };
+        }
+        case "login_new_device": {
+            await loginNewDevice({
+                db,
+                didWrite,
+                userAgent: userAgent,
+                userId: userId,
+                now,
+                sessionExpiry: loginSessionExpiry,
+            });
+            return {
+                success: true,
+            };
+        }
+    }
+}
+
 export async function verifyPhoneOtp({
     db,
     maxAttempt,
@@ -211,8 +311,19 @@ export async function verifyPhoneOtp({
     polisUserEmailLocalPart,
     polisUserPassword,
     code,
-    httpErrors,
+    phoneNumber,
+    defaultCallingCode,
+    twilioClient,
+    twilioServiceSid,
+    peppers,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
+    if (
+        (twilioClient !== undefined && twilioServiceSid === undefined) ||
+        (twilioClient === undefined && twilioServiceSid !== undefined)
+    ) {
+        log.error("Twilio configuration error");
+        throw httpErrors.internalServerError("Internal Error");
+    }
     const now = nowZeroMs();
     const status = await isLoggedIn(db, didWrite);
     if (status.isLoggedIn) {
@@ -264,15 +375,64 @@ export async function verifyPhoneOtp({
             reason: type,
         };
     }
-    if (resultOtp[0].codeExpiry <= now) {
-        return { success: false, reason: "expired_code" };
-    } else if (resultOtp[0].code === code) {
-        const loginSessionExpiry = new Date(now);
-        loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
-        switch (type) {
-            case "register": {
-                await registerWithPhoneNumber({
+
+    // if we use twilio, we don't use the local code at all.
+    // will change when we migrate to another service
+    if (twilioServiceSid !== undefined && twilioClient !== undefined) {
+        const phoneNumberObj = parsePhoneNumberFromString(phoneNumber, {
+            defaultCallingCode: defaultCallingCode,
+        });
+        if (phoneNumberObj === undefined) {
+            throw httpErrors.badRequest(
+                "Phone number cannot be parsed correctly",
+            );
+        }
+        const phoneHash = await generatePhoneHash({
+            phoneNumber: phoneNumberObj.number,
+            peppers: peppers,
+            pepperVersion: PEPPER_VERSION,
+        });
+        if (phoneHash !== resultOtp[0].phoneHash) {
+            throw httpErrors.badRequest(
+                "The provided phone number is not associated with the user's ongoing device auth flow", // with the DID
+            );
+        }
+        const verificationCheck = await twilioClient.verify.v2
+            .services(twilioServiceSid)
+            .verificationChecks.create({
+                code: codeToString(code),
+                to: phoneNumberObj.number,
+            });
+        switch (verificationCheck.status) {
+            case "pending":
+                return {
+                    success: false,
+                    reason: "wrong_guess",
+                };
+            case "canceled":
+                throw httpErrors.badRequest(
+                    "This phone number verification was canceled",
+                );
+            case "max_attempts_reached":
+                return {
+                    success: false,
+                    reason: "too_many_wrong_guess",
+                };
+            case "deleted":
+                throw httpErrors.badRequest(
+                    "This phone number verification was deleted",
+                );
+            case "failed":
+                log.error(`Unexpected "failed" status received by Twilio`);
+                throw httpErrors.internalServerError(
+                    "Unexpected error from phone number verification",
+                );
+            case "expired":
+                return { success: false, reason: "expired_code" };
+            case "approved":
+                return registerOrLoginWithPhoneNumber({
                     db,
+                    type,
                     didWrite,
                     lastTwoDigits: resultOtp[0].lastTwoDigits,
                     countryCallingCode: resultOtp[0].countryCallingCode,
@@ -288,37 +448,37 @@ export async function verifyPhoneOtp({
                     polisUserEmailLocalPart,
                     polisUserPassword,
                     now,
-                    sessionExpiry: loginSessionExpiry,
                 });
-                return {
-                    success: true,
-                };
-            }
-            case "login_known_device": {
-                await loginKnownDevice({
-                    db,
-                    didWrite,
-                    now,
-                    sessionExpiry: loginSessionExpiry,
-                });
-                return {
-                    success: true,
-                };
-            }
-            case "login_new_device": {
-                await loginNewDevice({
-                    db,
-                    didWrite,
-                    userAgent: resultOtp[0].userAgent,
-                    userId: userId,
-                    now,
-                    sessionExpiry: loginSessionExpiry,
-                });
-                return {
-                    success: true,
-                };
-            }
+            default:
+                log.error(
+                    `Unexpected status received by Twilio: ${JSON.stringify(
+                        verificationCheck.toJSON(),
+                    )}`,
+                );
+                throw httpErrors.internalServerError(
+                    "Unexpected error from phone number verification",
+                );
         }
+    } else if (resultOtp[0].codeExpiry <= now) {
+        return { success: false, reason: "expired_code" };
+    } else if (resultOtp[0].code === code) {
+        return registerOrLoginWithPhoneNumber({
+            db,
+            type,
+            didWrite,
+            lastTwoDigits: resultOtp[0].lastTwoDigits,
+            countryCallingCode: resultOtp[0].countryCallingCode,
+            phoneCountryCode: toUnionUndefined(resultOtp[0].phoneCountryCode),
+            phoneHash: resultOtp[0].phoneHash,
+            pepperVersion: resultOtp[0].pepperVersion,
+            userAgent: resultOtp[0].userAgent,
+            userId: userId,
+            axiosPolis: axiosPolis,
+            polisUserEmailDomain,
+            polisUserEmailLocalPart,
+            polisUserPassword,
+            now,
+        });
     } else {
         await updateCodeGuessAttemptAmount(
             db,
@@ -804,11 +964,11 @@ export async function authenticateAttempt({
     didWrite,
     userAgent,
     throttleSmsMinutesInterval,
-    httpErrors,
     testCode,
     doUseTestCode,
-    doSend,
     peppers,
+    twilioClient,
+    twilioServiceSid,
 }: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
     const now = nowZeroMs();
     // TODO: move this check to verifyUCAN directly in the controller:
@@ -851,11 +1011,11 @@ export async function authenticateAttempt({
             userAgent,
             authenticateRequestBody,
             throttleSmsMinutesInterval,
-            httpErrors,
-            doSend,
             doUseTestCode,
             testCode,
             peppers,
+            twilioClient,
+            twilioServiceSid,
         });
     } else if (authenticateRequestBody.isRequestingNewCode) {
         // if user wants to regenerate new code, do it (if possible according to throttling rules)
@@ -868,12 +1028,12 @@ export async function authenticateAttempt({
             now,
             authenticateRequestBody,
             throttleSmsMinutesInterval,
-            httpErrors,
-            doSend,
             // awsMailConf,
             doUseTestCode,
             testCode,
             peppers,
+            twilioClient,
+            twilioServiceSid,
         });
     } else if (resultHasAttempted[0].codeExpiry > now) {
         // code hasn't expired
@@ -897,20 +1057,37 @@ export async function authenticateAttempt({
             now,
             authenticateRequestBody,
             throttleSmsMinutesInterval,
-            httpErrors,
-            doSend,
             // awsMailConf,
             doUseTestCode,
             testCode,
             peppers,
+            twilioClient,
+            twilioServiceSid,
         });
     }
 }
 
-// export async function sendOtpPhoneNumber({ phoneNumber, phoneCountryCode, otp, awsMailConf }: SendOtpPhoneNumberProps) {
-//     // TODO: verify phone number validity with Twilio
-//     return
-// }
+export async function sendOtpPhoneNumber({
+    phoneNumber,
+    twilioClient,
+    twilioServiceSid,
+}: SendOtpPhoneNumberProps) {
+    // TODO: verify phone number validity with Twilio before sending the SMS
+    const verification = await twilioClient.verify.v2
+        .services(twilioServiceSid)
+        .verifications.create({
+            channel: "sms",
+            to: phoneNumber,
+        });
+    if (verification.status !== "pending") {
+        log.error(
+            `Error while sending SMS with Twilio: ${JSON.stringify(
+                verification.toJSON(),
+            )} `,
+        );
+        throw httpErrors.internalServerError("Error while sending SMS");
+    }
+}
 
 interface GeneratePhoneHashProps {
     phoneNumber: string;
@@ -942,13 +1119,15 @@ export async function insertAuthAttemptCode({
     userAgent,
     authenticateRequestBody,
     throttleSmsMinutesInterval,
-    httpErrors,
     testCode,
     doUseTestCode,
-    doSend,
-    peppers, // awsMailConf,
+    peppers,
+    twilioClient,
+    twilioServiceSid,
 }: InsertAuthAttemptCodeProps): Promise<AuthenticateResponse> {
-    if (doUseTestCode && doSend) {
+    const doSendViaSms =
+        twilioClient !== undefined && twilioServiceSid !== undefined;
+    if (doUseTestCode && doSendViaSms) {
         throw httpErrors.badRequest("Test code shall not be sent via sms");
     }
     const phoneHash = await generatePhoneHash({
@@ -971,25 +1150,47 @@ export async function insertAuthAttemptCode({
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
-    if (doSend) {
-        // may throw errors and return 500 :)
-        // await sendOtpPhoneNumber({
-        //     phoneNumber: authenticateRequestBody.phoneNumber,
-        //     phoneCountryCode: authenticateRequestBody.phoneCountryCode,
-        //     otp: oneTimeCode,
-        //     awsMailConf,
-        // });
-    } else {
-        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
-    }
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
             defaultCallingCode: authenticateRequestBody.defaultCallingCode,
         },
     );
-    if (!phoneNumber) {
-        throw httpErrors.badRequest("Phone number cannot be parsed correctly");
+    if (!phoneNumber?.isValid()) {
+        log.warn("Refused authentication request due to invalid phone number");
+        return {
+            success: false,
+            reason: "invalid_phone_number",
+        };
+    }
+    if (isPhoneNumberTypeSupported(phoneNumber.getType())) {
+        log.info(
+            // TODO: consider moving this to DEBUG logging level
+            `Phone number accepted because its type is ${String(
+                phoneNumber.getType(),
+            )}`,
+        );
+    } else {
+        log.warn(
+            `Phone number refused because its type is ${String(
+                phoneNumber.getType(),
+            )}`,
+        );
+        return {
+            success: false,
+            reason: "restricted_phone_type",
+        };
+    }
+    if (doSendViaSms) {
+        // may throw errors and return 500 :)
+        // TODO: migrate away from Twilio Verify to Pinpoint as currently the oneTimeCode we generate is unused
+        await sendOtpPhoneNumber({
+            phoneNumber: phoneNumber.number,
+            twilioClient,
+            twilioServiceSid,
+        });
+    } else {
+        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
     if (
         phoneNumber.country === undefined &&
@@ -1037,13 +1238,15 @@ export async function updateAuthAttemptCode({
     now,
     authenticateRequestBody,
     throttleSmsMinutesInterval,
-    httpErrors,
-    doSend,
     doUseTestCode,
     testCode,
     peppers,
+    twilioClient,
+    twilioServiceSid,
 }: UpdateAuthAttemptCodeProps): Promise<AuthenticateResponse> {
-    if (doUseTestCode && doSend) {
+    const doSendViaSms =
+        twilioClient !== undefined && twilioServiceSid !== undefined;
+    if (doUseTestCode && doSendViaSms) {
         throw httpErrors.badRequest("Test code shall not be sent via sms");
     }
     const pepperVersion = 0;
@@ -1068,24 +1271,23 @@ export async function updateAuthAttemptCode({
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
-    if (doSend) {
-        // await sendOtpPhoneNumber({
-        //     phoneNumber: authenticateRequestBody.phoneNumber,
-        //     phoneCountryCode: authenticateRequestBody.phoneCountryCode,
-        //     otp: oneTimeCode,
-        //     awsMailConf,
-        // });
-    } else {
-        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
-    }
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
             defaultCallingCode: authenticateRequestBody.defaultCallingCode,
         },
     );
-    if (!phoneNumber) {
+    if (phoneNumber === undefined) {
         throw httpErrors.badRequest("Phone number cannot be parsed correctly");
+    }
+    if (doSendViaSms) {
+        await sendOtpPhoneNumber({
+            phoneNumber: phoneNumber.number,
+            twilioClient,
+            twilioServiceSid,
+        });
+    } else {
+        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
     if (
         phoneNumber.country === undefined &&

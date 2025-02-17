@@ -159,7 +159,7 @@ export async function generateVerificationLink({
             id: userId,
             type: "user",
             attributes: {
-                age_lower_bound: 8,
+                age_lower_bound: 16,
                 uniqueness: true,
                 nationality_check: true,
                 event_id: baseEventId,

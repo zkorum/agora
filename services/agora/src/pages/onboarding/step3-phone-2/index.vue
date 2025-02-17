@@ -130,7 +130,11 @@ async function clickedResendButton() {
 
 async function nextButtonClicked() {
   try {
-    const response = await submitCode(Number(verificationCode.value));
+    const response = await submitCode({
+      code: Number(verificationCode.value),
+      phoneNumber: verificationPhoneNumber.value.phoneNumber,
+      defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+    });
     if (response.success) {
       showNotifyMessage("Verification successful 🎉");
       await userLogin();
@@ -206,6 +210,18 @@ async function requestCodeClicked(
           processRequestCodeResponse(response);
           showNotifyMessage(
             "Too many attempts—please wait before requesting a new code"
+          );
+          break;
+        case "invalid_phone_number":
+          processRequestCodeResponse(response);
+          showNotifyMessage(
+            "Sorry, this phone number is invalid. Please check and try again."
+          );
+          break;
+        case "restricted_phone_type":
+          processRequestCodeResponse(response);
+          showNotifyMessage(
+            "Sorry, this phone number is not supported for security reasons. Please try another."
           );
           break;
       }

@@ -58,7 +58,9 @@ export interface ApiV1AuthAuthenticatePost200Response {
 export const ApiV1AuthAuthenticatePost200ResponseReasonEnum = {
     AlreadyLoggedIn: 'already_logged_in',
     AssociatedWithAnotherUser: 'associated_with_another_user',
-    Throttled: 'throttled'
+    Throttled: 'throttled',
+    InvalidPhoneNumber: 'invalid_phone_number',
+    RestrictedPhoneType: 'restricted_phone_type'
 } as const;
 
 export type ApiV1AuthAuthenticatePost200ResponseReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseReasonEnum];
@@ -111,7 +113,9 @@ export interface ApiV1AuthAuthenticatePost200ResponseAnyOf1 {
 export const ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum = {
     AlreadyLoggedIn: 'already_logged_in',
     AssociatedWithAnotherUser: 'associated_with_another_user',
-    Throttled: 'throttled'
+    Throttled: 'throttled',
+    InvalidPhoneNumber: 'invalid_phone_number',
+    RestrictedPhoneType: 'restricted_phone_type'
 } as const;
 
 export type ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseAnyOf1ReasonEnum];
@@ -133,7 +137,7 @@ export interface ApiV1AuthAuthenticatePostRequest {
      * @type {string}
      * @memberof ApiV1AuthAuthenticatePostRequest
      */
-    'defaultCallingCode': string;
+    'defaultCallingCode': ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum;
     /**
      * 
      * @type {boolean}
@@ -141,6 +145,93 @@ export interface ApiV1AuthAuthenticatePostRequest {
      */
     'isRequestingNewCode': boolean;
 }
+
+export const ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = {
+    _297: '297',
+    _5993: '5993',
+    _1: '1',
+    _299: '299',
+    _590: '590',
+    _596: '596',
+    _599: '599',
+    _5902: '590',
+    _5903: '590',
+    _508: '508',
+    _1721: '1721',
+    _12: '1',
+    _1284: '1284',
+    _1340: '1340',
+    _374: '374',
+    _995: '995',
+    _972: '972',
+    _81: '81',
+    _82: '82',
+    _65: '65',
+    _886: '886',
+    _35818: '35818',
+    _355: '355',
+    _376: '376',
+    _43: '43',
+    _375: '375',
+    _32: '32',
+    _387: '387',
+    _359: '359',
+    _385: '385',
+    _420: '420',
+    _45: '45',
+    _372: '372',
+    _298: '298',
+    _358: '358',
+    _33: '33',
+    _49: '49',
+    _350: '350',
+    _30: '30',
+    _441481: '441481',
+    _3906698: '3906698',
+    _36: '36',
+    _354: '354',
+    _353: '353',
+    _441624: '441624',
+    _39: '39',
+    _441534: '441534',
+    _383: '383',
+    _371: '371',
+    _423: '423',
+    _370: '370',
+    _352: '352',
+    _356: '356',
+    _373: '373',
+    _377: '377',
+    _382: '382',
+    _31: '31',
+    _389: '389',
+    _47: '47',
+    _48: '48',
+    _351: '351',
+    _40: '40',
+    _378: '378',
+    _381: '381',
+    _421: '421',
+    _386: '386',
+    _34: '34',
+    _4779: '4779',
+    _46: '46',
+    _41: '41',
+    _90: '90',
+    _380: '380',
+    _44: '44',
+    _38: '38',
+    _262: '262',
+    _1684: '1684',
+    _61: '61',
+    _5999: '5999',
+    _689: '689',
+    _687: '687',
+    _64: '64'
+} as const;
+
+export type ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = typeof ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum];
+
 /**
  * 
  * @export
@@ -239,7 +330,106 @@ export interface ApiV1AuthPhoneVerifyOtpPostRequest {
      * @memberof ApiV1AuthPhoneVerifyOtpPostRequest
      */
     'code': number;
+    /**
+     * Phone number
+     * @type {string}
+     * @memberof ApiV1AuthPhoneVerifyOtpPostRequest
+     */
+    'phoneNumber': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthPhoneVerifyOtpPostRequest
+     */
+    'defaultCallingCode': ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum;
 }
+
+export const ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = {
+    _297: '297',
+    _5993: '5993',
+    _1: '1',
+    _299: '299',
+    _590: '590',
+    _596: '596',
+    _599: '599',
+    _5902: '590',
+    _5903: '590',
+    _508: '508',
+    _1721: '1721',
+    _12: '1',
+    _1284: '1284',
+    _1340: '1340',
+    _374: '374',
+    _995: '995',
+    _972: '972',
+    _81: '81',
+    _82: '82',
+    _65: '65',
+    _886: '886',
+    _35818: '35818',
+    _355: '355',
+    _376: '376',
+    _43: '43',
+    _375: '375',
+    _32: '32',
+    _387: '387',
+    _359: '359',
+    _385: '385',
+    _420: '420',
+    _45: '45',
+    _372: '372',
+    _298: '298',
+    _358: '358',
+    _33: '33',
+    _49: '49',
+    _350: '350',
+    _30: '30',
+    _441481: '441481',
+    _3906698: '3906698',
+    _36: '36',
+    _354: '354',
+    _353: '353',
+    _441624: '441624',
+    _39: '39',
+    _441534: '441534',
+    _383: '383',
+    _371: '371',
+    _423: '423',
+    _370: '370',
+    _352: '352',
+    _356: '356',
+    _373: '373',
+    _377: '377',
+    _382: '382',
+    _31: '31',
+    _389: '389',
+    _47: '47',
+    _48: '48',
+    _351: '351',
+    _40: '40',
+    _378: '378',
+    _381: '381',
+    _421: '421',
+    _386: '386',
+    _34: '34',
+    _4779: '4779',
+    _46: '46',
+    _41: '41',
+    _90: '90',
+    _380: '380',
+    _44: '44',
+    _38: '38',
+    _262: '262',
+    _1684: '1684',
+    _61: '61',
+    _5999: '5999',
+    _689: '689',
+    _687: '687',
+    _64: '64'
+} as const;
+
+export type ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum];
+
 /**
  * 
  * @export

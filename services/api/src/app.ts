@@ -41,6 +41,9 @@ const configSchema = z.object({
     EMAIL_OTP_MAX_ATTEMPT_AMOUNT: z.number().int().min(1).max(5).default(3),
     THROTTLE_SMS_MINUTES_INTERVAL: z.number().int().min(3).default(3),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
+    TWILIO_ACCOUNT_SID: z.string().optional(),
+    TWILIO_AUTH_TOKEN: z.string().optional(),
+    TWILIO_SERVICE_SID: z.string().optional(),
     // AWS_ACCESS_KEY_ID: z.string().default("CHANGEME"), // only use for prod
     // AWS_SECRET_ACCESS_KEY: z.string().default("CHANGEME"),
     TEST_CODE: z.coerce.number().int().min(0).max(999999).default(0),
@@ -78,7 +81,6 @@ const configSchema = z.object({
 });
 
 export const config = configSchema.parse(process.env);
-
 function envToLogger(env: Environment) {
     switch (env) {
         case "development":

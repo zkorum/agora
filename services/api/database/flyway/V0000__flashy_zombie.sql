@@ -25,7 +25,8 @@ CREATE TABLE "auth_attempt_phone" (
 	"guess_attempt_amount" integer DEFAULT 0 NOT NULL,
 	"last_otp_sent_at" timestamp NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "check_two_digits" CHECK ("auth_attempt_phone"."last_two_digits" BETWEEN 0 and 99)
 );
 --> statement-breakpoint
 CREATE TABLE "conversation_content" (
@@ -221,7 +222,18 @@ CREATE TABLE "opinion" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id")
+	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id"),
+	CONSTRAINT "check_polis_null" CHECK ((("opinion"."cluster_0_id" IS NOT NULL AND "opinion"."cluster_0_num_agrees" IS NOT NULL AND "opinion"."cluster_0_num_disagrees" IS NOT NULL) OR ("opinion"."cluster_0_id" IS NULL AND "opinion"."cluster_0_num_agrees" IS NULL AND "opinion"."cluster_0_num_disagrees" IS NULL))
+                AND 
+                (("opinion"."cluster_1_id" IS NOT NULL AND "opinion"."cluster_1_num_agrees" IS NOT NULL AND "opinion"."cluster_1_num_disagrees" IS NOT NULL) OR ("opinion"."cluster_1_id" IS NULL AND "opinion"."cluster_1_num_agrees" IS NULL AND "opinion"."cluster_1_num_disagrees" IS NULL)) 
+                AND 
+                (("opinion"."cluster_2_id" IS NOT NULL AND "opinion"."cluster_2_num_agrees" IS NOT NULL AND "opinion"."cluster_2_num_disagrees" IS NOT NULL) OR ("opinion"."cluster_2_id" IS NULL AND "opinion"."cluster_2_num_agrees" IS NULL AND "opinion"."cluster_2_num_disagrees" IS NULL))
+                AND 
+                (("opinion"."cluster_3_id" IS NOT NULL AND "opinion"."cluster_3_num_agrees" IS NOT NULL AND "opinion"."cluster_3_num_disagrees" IS NOT NULL) OR ("opinion"."cluster_3_id" IS NULL AND "opinion"."cluster_3_num_agrees" IS NULL AND "opinion"."cluster_3_num_disagrees" IS NULL)) 
+                AND 
+                (("opinion"."cluster_4_id" IS NOT NULL AND "opinion"."cluster_4_num_agrees" IS NOT NULL AND "opinion"."cluster_4_num_disagrees" IS NOT NULL) OR ("opinion"."cluster_4_id" IS NULL AND "opinion"."cluster_4_num_agrees" IS NULL AND "opinion"."cluster_4_num_disagrees" IS NULL)) 
+                AND 
+                (("opinion"."cluster_5_id" IS NOT NULL AND "opinion"."cluster_5_num_agrees" IS NOT NULL AND "opinion"."cluster_5_num_disagrees" IS NOT NULL) OR ("opinion"."cluster_5_id" IS NULL AND "opinion"."cluster_5_num_agrees" IS NULL AND "opinion"."cluster_5_num_disagrees" IS NULL)))
 );
 --> statement-breakpoint
 CREATE TABLE "organisation" (
@@ -243,7 +255,7 @@ CREATE TABLE "participant" (
 	"vote_count" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "unique_cluster_per_participant" UNIQUE("conversation_id", "user_id") -- added manually...
+	CONSTRAINT "unique_cluster_per_participant" UNIQUE("conversation_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "phone" (
@@ -255,7 +267,8 @@ CREATE TABLE "phone" (
 	"phone_hash" text NOT NULL,
 	"pepper_version" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "check_two_digits" CHECK ("phone"."last_two_digits" BETWEEN 0 and 99)
 );
 --> statement-breakpoint
 CREATE TABLE "polis_cluster_opinion" (
@@ -266,7 +279,8 @@ CREATE TABLE "polis_cluster_opinion" (
 	"percentage_agreement" real NOT NULL,
 	"number_agreement" integer NOT NULL,
 	"raw_repness" jsonb NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "check_perc_btwn_0_and_1" CHECK ("polis_cluster_opinion"."percentage_agreement" => 0 AND "polis_cluster_opinion"."percentage_agreement" <= 1)
 );
 --> statement-breakpoint
 CREATE TABLE "polis_cluster" (
@@ -287,7 +301,8 @@ CREATE TABLE "polis_cluster_user" (
 	"polis_content_id" integer NOT NULL,
 	"polis_cluster_id" integer NOT NULL,
 	"user_id" uuid NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "unique_belong_per_conv_at_a_time" UNIQUE("polis_content_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "polis_content" (
@@ -327,7 +342,8 @@ CREATE TABLE "poll_response" (
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "poll_response_current_content_id_unique" UNIQUE("current_content_id")
+	CONSTRAINT "poll_response_current_content_id_unique" UNIQUE("current_content_id"),
+	CONSTRAINT "poll_response_author_id_conversation_id_unique" UNIQUE("author_id","conversation_id")
 );
 --> statement-breakpoint
 CREATE TABLE "poll" (
@@ -354,14 +370,16 @@ CREATE TABLE "user_conversation_topic_preference" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_conversation_topic_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_id" uuid NOT NULL,
 	"conversation_tag_id" integer NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "user_unique_topic" UNIQUE("user_id","conversation_tag_id")
 );
 --> statement-breakpoint
 CREATE TABLE "user_language_preference" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_language_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_id" uuid NOT NULL,
 	"lang_id" integer NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "user_unique_language" UNIQUE("user_id","lang_id")
 );
 --> statement-breakpoint
 CREATE TABLE "user_language" (
@@ -375,13 +393,14 @@ CREATE TABLE "user_mute_preference" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_mute_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"source_user_id" uuid NOT NULL,
 	"target_user_id" uuid NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "user_unique_mute" UNIQUE("source_user_id","target_user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "user" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organisation_id" integer,
-	"username" varchar(40) NOT NULL,
+	"username" varchar(20) NOT NULL,
 	"is_moderator" boolean DEFAULT false NOT NULL,
 	"is_anonymous" boolean DEFAULT true NOT NULL,
 	"is_seed" boolean DEFAULT false NOT NULL,
@@ -420,7 +439,8 @@ CREATE TABLE "vote" (
 	"opinion_id" integer NOT NULL,
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id")
 );
 --> statement-breakpoint
 CREATE TABLE "zk_passport" (
@@ -512,4 +532,14 @@ ALTER TABLE "vote_proof" ADD CONSTRAINT "vote_proof_author_did_device_did_write_
 ALTER TABLE "vote" ADD CONSTRAINT "vote_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "vote" ADD CONSTRAINT "vote_opinion_id_opinion_id_fk" FOREIGN KEY ("opinion_id") REFERENCES "public"."opinion"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "vote" ADD CONSTRAINT "vote_current_content_id_vote_content_id_fk" FOREIGN KEY ("current_content_id") REFERENCES "public"."vote_content"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "zk_passport" ADD CONSTRAINT "zk_passport_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "zk_passport" ADD CONSTRAINT "zk_passport_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "conversation_id_idx" ON "conversation_report" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX "conversation_createdAt_idx" ON "conversation" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "user_idx_notification" ON "notification" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "notification_createdAt_idx" ON "notification" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "opinion_id_idx" ON "opinion_report" USING btree ("opinion_id");--> statement-breakpoint
+CREATE INDEX "opinion_createdAt_idx" ON "opinion" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "opinion_slugId_idx" ON "opinion" USING btree ("slug_id");--> statement-breakpoint
+CREATE INDEX "user_idx_topic" ON "user_conversation_topic_preference" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "user_idx_lang" ON "user_language_preference" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "user_idx_mute" ON "user_mute_preference" USING btree ("source_user_id");

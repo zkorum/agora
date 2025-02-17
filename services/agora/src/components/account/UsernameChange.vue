@@ -33,12 +33,16 @@
 <script setup lang="ts">
 import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { zodUsername } from "src/shared/types/zod";
-import { useBackendAccountApi } from "src/utils/api/account";
+import {
+  NAME_UPDATE_SUCCESS_MESSAGE,
+  useBackendAccountApi,
+} from "src/utils/api/account";
 import { ref, onMounted, watch } from "vue";
 import { ZodError } from "zod";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
+import { useNotify } from "src/utils/ui/notify";
 
 defineProps<{
   showSubmitButton: boolean;
@@ -54,6 +58,8 @@ const isValidUsername = ref(true);
 
 const { isUsernameInUse, generateUnusedRandomUsername, submitUsernameChange } =
   useBackendAccountApi();
+
+const { showNotifyMessage } = useNotify();
 
 const validationMessage = ref("");
 
@@ -74,6 +80,7 @@ watch(isValidUsername, () => {
 
 async function submitButtonClicked() {
   await submitUsernameChange(userName.value, profileData.value.userName);
+  showNotifyMessage(NAME_UPDATE_SUCCESS_MESSAGE);
 }
 
 async function nameContainsValidCharacters(): Promise<boolean> {

@@ -100,6 +100,7 @@ import { useDialog } from "src/utils/ui/dialog";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import { formatClusterLabel } from "src/utils/component/opinion";
+import { useNotify } from "src/utils/ui/notify";
 
 const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -110,6 +111,7 @@ const props = defineProps<{
 }>();
 
 const { showLoginConfirmationDialog } = useDialog();
+const { showNotifyMessage } = useNotify();
 
 const { castVoteForComment } = useBackendVoteApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
@@ -197,41 +199,44 @@ async function castPersonalVote(
     if (originalSelection == undefined) {
       targetState = isUpvoteButton ? "agree" : "disagree";
     } else {
-      if (originalSelection == "agree") {
-        if (isUpvoteButton) {
-          targetState = "cancel";
-        } else {
-          targetState = "disagree";
-        }
-      } else {
-        if (isUpvoteButton) {
-          targetState = "agree";
-        } else {
-          targetState = "cancel";
-        }
-      }
+      // temporarily disabling changing vote, until it is supported in external polis system
+      showNotifyMessage("Vote change temporarily disabled");
+      return;
+      //TODO: remove the above and uncomment what's below
+      // if (originalSelection == "agree") {
+      //   if (isUpvoteButton) {
+      //     targetState = "cancel";
+      //   } else {
+      //     targetState = "disagree";
+      //   }
+      // } else {
+      //   if (isUpvoteButton) {
+      //     targetState = "agree";
+      //   } else {
+      //     targetState = "cancel";
+      //   }
+      // }
     }
 
-    if (targetState == "cancel") {
-      props.commentSlugIdLikedMap.delete(commentSlugId);
-      if (originalSelection == "agree") {
-        numAgreesLocal.value = numAgreesLocal.value - 1;
-      } else {
+    // TODO: uncomment what's below whenever it's fixed:
+    // if (targetState == "cancel") {
+    //   props.commentSlugIdLikedMap.delete(commentSlugId);
+    //   if (originalSelection == "agree") {
+    //     numAgreesLocal.value = numAgreesLocal.value - 1;
+    //   } else {
+    //     numDisagreesLocal.value = numDisagreesLocal.value - 1;
+    //   }
+    /* else */ if (targetState == "agree") {
+      props.commentSlugIdLikedMap.set(commentSlugId, "agree");
+      numAgreesLocal.value = numAgreesLocal.value + 1;
+      if (originalSelection == "disagree") {
         numDisagreesLocal.value = numDisagreesLocal.value - 1;
       }
     } else {
-      if (targetState == "agree") {
-        props.commentSlugIdLikedMap.set(commentSlugId, "agree");
-        numAgreesLocal.value = numAgreesLocal.value + 1;
-        if (originalSelection == "disagree") {
-          numDisagreesLocal.value = numDisagreesLocal.value - 1;
-        }
-      } else {
-        props.commentSlugIdLikedMap.set(commentSlugId, "disagree");
-        numDisagreesLocal.value = numDisagreesLocal.value + 1;
-        if (originalSelection == "agree") {
-          numAgreesLocal.value = numAgreesLocal.value - 1;
-        }
+      props.commentSlugIdLikedMap.set(commentSlugId, "disagree");
+      numDisagreesLocal.value = numDisagreesLocal.value + 1;
+      if (originalSelection == "agree") {
+        numAgreesLocal.value = numAgreesLocal.value - 1;
       }
     }
 

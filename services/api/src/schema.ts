@@ -24,7 +24,7 @@ const MAX_LENGTH_TITLE = 130;
 const MAX_LENGTH_BODY = 260;
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
-const MAX_LENGTH_USERNAME = 40;
+const MAX_LENGTH_USERNAME = 20;
 const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
 
 export const bytea = customType<{
@@ -627,13 +627,8 @@ export const userMutePreferenceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        {
-            userIdx: index("user_idx_mute").on(t.sourceUserId),
-            unqPreference: unique("user_unique_mute").on(
-                t.sourceUserId,
-                t.targetUserId,
-            ),
-        },
+        index("user_idx_mute").on(t.sourceUserId),
+        unique("user_unique_mute").on(t.sourceUserId, t.targetUserId),
     ],
 );
 
@@ -655,13 +650,8 @@ export const userLanguagePreferenceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        {
-            userIdx: index("user_idx_lang").on(t.userId),
-            unqPreference: unique("user_unique_language").on(
-                t.userId,
-                t.langId,
-            ),
-        },
+        index("user_idx_lang").on(t.userId),
+        unique("user_unique_language").on(t.userId, t.langId),
     ],
 );
 
@@ -707,13 +697,8 @@ export const userConversationTopicPreferenceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        {
-            userIdx: index("user_idx_topic").on(t.userId),
-            unqPreference: unique("user_unique_topic").on(
-                t.userId,
-                t.conversationTagId,
-            ),
-        },
+        index("user_idx_topic").on(t.userId),
+        unique("user_unique_topic").on(t.userId, t.conversationTagId),
     ],
 );
 
@@ -787,13 +772,7 @@ export const phoneTable = pgTable(
             .notNull(),
     },
     (table) => [
-        {
-            // WARN:checks are not generated correctly
-            checkTwoDigits: check(
-                "check_two_digits",
-                sql`${table.lastTwoDigits} BETWEEN 0 and 99`,
-            ),
-        },
+        check("check_two_digits", sql`${table.lastTwoDigits} BETWEEN 0 and 99`),
     ],
 );
 
@@ -928,13 +907,7 @@ export const authAttemptPhoneTable = pgTable(
             .notNull(),
     },
     (table) => [
-        {
-            // WARN:checks are not generated correctly
-            checkTwoDigits: check(
-                "check_two_digits",
-                sql`${table.lastTwoDigits} BETWEEN 0 and 99`,
-            ),
-        },
+        check("check_two_digits", sql`${table.lastTwoDigits} BETWEEN 0 and 99`),
     ],
 );
 
@@ -1054,13 +1027,7 @@ export const conversationTable = pgTable(
         voteCount: integer("vote_count").notNull().default(0),
         participantCount: integer("participant_count").notNull().default(0),
     },
-    (table) => [
-        {
-            createdAtIdx: index("conversation_createdAt_idx").on(
-                table.createdAt,
-            ),
-        },
-    ],
+    (table) => [index("conversation_createdAt_idx").on(table.createdAt)],
 );
 
 export const pollResponseTable = pgTable(
@@ -1089,11 +1056,7 @@ export const pollResponseTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [
-        {
-            onePollResponsePerAuthor: unique().on(t.authorId, t.conversationId),
-        },
-    ],
+    (t) => [unique().on(t.authorId, t.conversationId)],
 );
 
 export const pollResponseProofTable = pgTable("poll_response_proof", {
@@ -1165,12 +1128,10 @@ export const participantTable = pgTable(
             .notNull(),
     },
     (table) => [
-        {
-            // WARN:checks are not generated correctly
-            unqClusterPerParticipant: unique(
-                "unique_cluster_per_participant",
-            ).on(table.conversationId, table.userId),
-        },
+        unique("unique_cluster_per_participant").on(
+            table.conversationId,
+            table.userId,
+        ),
     ],
 );
 
@@ -1262,15 +1223,11 @@ export const opinionTable = pgTable(
             .notNull(),
     },
     (table) => [
-        {
-            createdAtIdx: index("opinion_createdAt_idx").on(table.createdAt),
-            slugIdIdx: index("opinion_slugId_idx").on(table.slugId),
-        },
-        {
-            // WARN:checks are not generated correctly
-            checkPolisNull: check(
-                "check_polis_null",
-                sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL))
+        index("opinion_createdAt_idx").on(table.createdAt),
+        index("opinion_slugId_idx").on(table.slugId),
+        check(
+            "check_polis_null",
+            sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL))
                 AND 
                 ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL)) 
                 AND 
@@ -1281,8 +1238,7 @@ export const opinionTable = pgTable(
                 ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL)) 
                 AND 
                 ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL))`,
-            ),
-        },
+        ),
     ],
 );
 
@@ -1333,11 +1289,7 @@ export const voteTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [
-        {
-            oneOpinionVotePerUser: unique().on(t.authorId, t.opinionId),
-        },
-    ],
+    (t) => [unique().on(t.authorId, t.opinionId)],
 );
 
 export const voteProofTable = pgTable("vote_proof", {
@@ -1429,13 +1381,7 @@ export const conversationReportTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => [
-        {
-            conversationIdInx: index("conversation_id_idx").on(
-                table.conversationId,
-            ),
-        },
-    ],
+    (table) => [index("conversation_id_idx").on(table.conversationId)],
 );
 
 export const opinionReportTable = pgTable(
@@ -1459,11 +1405,7 @@ export const opinionReportTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (table) => [
-        {
-            opinionIdInx: index("opinion_id_idx").on(table.opinionId),
-        },
-    ],
+    (table) => [index("opinion_id_idx").on(table.opinionId)],
 );
 
 export const conversationModerationTable = pgTable("conversation_moderation", {
@@ -1595,10 +1537,8 @@ export const notificationTable = pgTable(
             .notNull(),
     },
     (t) => [
-        {
-            userIdx: index("user_idx_notification").on(t.userId),
-            createdAtIdx: index("notification_createdAt_idx").on(t.createdAt),
-        },
+        index("user_idx_notification").on(t.userId),
+        index("notification_createdAt_idx").on(t.createdAt),
     ],
 );
 
@@ -1678,11 +1618,10 @@ export const polisClusterUserTable = pgTable(
             .notNull(),
     },
     (t) => [
-        {
-            unqBelongPerConvAtATime: unique(
-                "unique_belong_per_conv_at_a_time",
-            ).on(t.polisContentId, t.userId),
-        },
+        unique("unique_belong_per_conv_at_a_time").on(
+            t.polisContentId,
+            t.userId,
+        ),
     ],
 );
 
@@ -1709,12 +1648,9 @@ export const polisClusterOpinionTable = pgTable(
             .notNull(),
     },
     (table) => [
-        {
-            // WARN:checks are not generated correctly
-            checkPercBtwn0And1: check(
-                "check_perc_btwn_0_and_1",
-                sql`${table.percentageAgreement} => 0 AND ${table.percentageAgreement} <= 1`,
-            ),
-        },
+        check(
+            "check_perc_btwn_0_and_1",
+            sql`${table.percentageAgreement} => 0 AND ${table.percentageAgreement} <= 1`,
+        ),
     ],
 );

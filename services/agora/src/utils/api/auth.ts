@@ -18,22 +18,19 @@ import { getPlatform } from "../common";
 import { useNotify } from "../ui/notify";
 import { RouteMap, useRoute, useRouter } from "vue-router";
 import { useNotificationStore } from "src/stores/notification";
-
-export interface AuthenticateReturn {
-  isSuccessful: boolean;
-  data: ApiV1AuthAuthenticatePost200Response | null;
-  error:
-    | "already_logged_in"
-    | "throttled"
-    | "associated_with_another_user"
-    | "";
-}
+import { SupportedCountryCallingCode } from "src/shared/types/zod";
 
 interface SendSmsCodeProps {
   phoneNumber: string;
-  defaultCallingCode: string;
+  defaultCallingCode: SupportedCountryCallingCode;
   isRequestingNewCode: boolean;
   keyAction?: KeyAction;
+}
+
+interface VerifyPhoneOtpProps {
+  code: number;
+  phoneNumber: string;
+  defaultCallingCode: SupportedCountryCallingCode;
 }
 
 export function useBackendAuthApi() {
@@ -75,11 +72,15 @@ export function useBackendAuthApi() {
     return otpDetails.data;
   }
 
-  async function verifyPhoneOtp(
-    code: number
-  ): Promise<ApiV1AuthPhoneVerifyOtpPost200Response> {
+  async function verifyPhoneOtp({
+    code,
+    phoneNumber,
+    defaultCallingCode,
+  }: VerifyPhoneOtpProps): Promise<ApiV1AuthPhoneVerifyOtpPost200Response> {
     const params: ApiV1AuthPhoneVerifyOtpPostRequest = {
       code: code,
+      phoneNumber: phoneNumber,
+      defaultCallingCode: defaultCallingCode,
     };
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1AuthPhoneVerifyOtpPost(params);

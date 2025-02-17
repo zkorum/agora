@@ -118,7 +118,7 @@ import {
   parsePhoneNumberFromString,
   getCountries,
   getCountryCallingCode,
-} from "libphonenumber-js";
+} from "libphonenumber-js/mobile";
 import Select from "primevue/select";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -127,6 +127,8 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useNotify } from "src/utils/ui/notify";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import { zodSupportedCountryCallingCode } from "src/shared/types/zod";
+import { isPhoneNumberTypeSupported } from "src/shared/shared";
 
 const inputNumber = ref("");
 
@@ -151,10 +153,16 @@ const { showNotifyMessage } = useNotify();
 const countryList = getCountries();
 for (let i = 0; i < countryList.length; i++) {
   const country = countryList[i];
+  const countryCode = getCountryCallingCode(country);
+  const isNotSupported =
+    !zodSupportedCountryCallingCode.safeParse(countryCode).success;
+  if (isNotSupported) {
+    continue;
+  }
   const countryItem: SelectItem = {
     name: country + " +" + getCountryCallingCode(country),
     country: country,
-    code: getCountryCallingCode(country),
+    code: countryCode,
   };
   countries.value.push(countryItem);
 } // TODO: some phone numbers may not be associated with any country: https://gitlab.com/catamphetamine/libphonenumber-js/-/tree/master?ref_type=heads#non-geographic - probably add those manually in the future
@@ -212,20 +220,41 @@ async function validateNumber() {
     const phoneNumber = parsePhoneNumberFromString(inputNumber.value, {
       defaultCallingCode: selectedCountryCode.value.code,
     });
-    if (phoneNumber && phoneNumber.isValid()) {
-      verificationPhoneNumber.value = {
-        defaultCallingCode: phoneNumber.countryCallingCode,
-        phoneNumber: phoneNumber.number,
-      };
-      await router.push({ name: "/onboarding/step3-phone-2/" });
-    } else {
-      // TODO: make sure this never happen one the first place
-      showNotifyMessage("Invalid phone number");
+    if (!phoneNumber?.isValid()) {
+      showNotifyMessage(
+        "Sorry, this phone number is invalid. Please check and try again."
+      );
+      return;
     }
+    const callingCode = zodSupportedCountryCallingCode.safeParse(
+      phoneNumber.countryCallingCode
+    );
+    if (!callingCode.success) {
+      showNotifyMessage("Sorry, this country code is not supported.");
+      return;
+    }
+    const isPhoneTypeNotSupported = !isPhoneNumberTypeSupported(
+      phoneNumber.getType()
+    );
+    if (isPhoneTypeNotSupported) {
+      showNotifyMessage(
+        "Sorry, this phone number is not supported for security reasons. Please try another."
+      );
+      return;
+    }
+
+    // success
+    verificationPhoneNumber.value = {
+      defaultCallingCode: callingCode.data,
+      phoneNumber: phoneNumber.number,
+    };
+    await router.push({ name: "/onboarding/step3-phone-2/" });
   } catch (e) {
     // TODO: make sure this never happen one the first place
     console.error("Failed to parse phone number", e);
-    showNotifyMessage("Failed to parse phone number");
+    showNotifyMessage(
+      "Sorry, this phone number is invalid. Please check and try again."
+    );
   }
 }
 </script>

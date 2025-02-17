@@ -14,7 +14,13 @@
     }"
   >
     <ZKTitleBodyWrapper title="Privacy Policy">
-      To be added
+      Refer to
+      <a
+        href="https://zkorum.notion.site/Privacy-Policy-ac5d0d7c91f142e481daa8f826b0e2b2"
+        rel="noopener noreferrer"
+        target="_blank"
+        >this external page (WIP)</a
+      >
     </ZKTitleBodyWrapper>
   </MainLayout>
 </template>

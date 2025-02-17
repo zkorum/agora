@@ -23,7 +23,6 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
-import * as polisService from "@/service/polis.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 import WebSocket from "ws";
@@ -85,6 +84,7 @@ import {
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 import { loadAndImportToAgora } from "./commands/polis/import.js";
+import twilio from "twilio";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -154,6 +154,24 @@ let relay: Relay;
 if (config.NOSTR_PROOF_CHANNEL_EVENT_ID !== undefined) {
     relay = await Relay.connect(config.NOSTR_DEFAULT_RELAY_URL);
     log.info(`Connected to ${relay.url}`);
+}
+
+const mustSendActualSms = config.NODE_ENV === "production";
+let twilioClient: twilio.Twilio | undefined;
+if (mustSendActualSms) {
+    if (
+        config.TWILIO_AUTH_TOKEN === undefined ||
+        config.TWILIO_ACCOUNT_SID === undefined ||
+        config.TWILIO_SERVICE_SID === undefined
+    ) {
+        log.error("Twilio configuration must be set for SMS to be sent");
+        process.exit(1);
+    } else {
+        twilioClient = twilio(
+            config.TWILIO_ACCOUNT_SID,
+            config.TWILIO_AUTH_TOKEN,
+        );
+    }
 }
 
 // axiosVerificatorSvc.interceptors.request.use((request) => {
@@ -410,9 +428,10 @@ server.after(() => {
             // backend intentionally does NOT say whether it is a register or a login - in order to protect privacy and give no information to potential attackers
             return await authService.authenticateAttempt({
                 db,
-                doSend: config.NODE_ENV === "production",
+                twilioClient,
+                twilioServiceSid: config.TWILIO_SERVICE_SID,
                 doUseTestCode:
-                    config.NODE_ENV !== "production" &&
+                    !mustSendActualSms &&
                     speciallyAuthorizedPhones.includes(
                         request.body.phoneNumber,
                     ),
@@ -423,7 +442,6 @@ server.after(() => {
                 didWrite,
                 throttleSmsMinutesInterval:
                     config.THROTTLE_SMS_MINUTES_INTERVAL,
-                httpErrors: server.httpErrors,
                 // awsMailConf: awsMailConf,
                 userAgent: userAgent,
                 peppers: config.PEPPERS,
@@ -455,7 +473,11 @@ server.after(() => {
                 polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
                 polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
                 polisUserPassword: config.POLIS_USER_PASSWORD,
-                httpErrors: server.httpErrors,
+                phoneNumber: request.body.phoneNumber,
+                defaultCallingCode: request.body.defaultCallingCode,
+                twilioClient: twilioClient,
+                twilioServiceSid: config.TWILIO_SERVICE_SID,
+                peppers: config.PEPPERS,
             });
         },
     });

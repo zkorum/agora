@@ -1,5 +1,5 @@
 {
-  "id": "5d4e86cf-57c4-4a6b-908f-c68b82fc8eda",
+  "id": "1a654e15-8b94-451a-abc2-8095fe8d6f93",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -110,7 +110,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_two_digits": {
+          "name": "check_two_digits",
+          "value": "\"auth_attempt_phone\".\"last_two_digits\" BETWEEN 0 and 99"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.conversation_content": {
@@ -488,7 +493,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "conversation_id_idx": {
+          "name": "conversation_id_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "conversation_report_conversation_id_conversation_id_fk": {
           "name": "conversation_report_conversation_id_conversation_id_fk",
@@ -611,7 +632,23 @@
           "default": 0
         }
       },
-      "indexes": {},
+      "indexes": {
+        "conversation_createdAt_idx": {
+          "name": "conversation_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "conversation_author_id_user_id_fk": {
           "name": "conversation_author_id_user_id_fk",
@@ -1247,7 +1284,38 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_idx_notification": {
+          "name": "user_idx_notification",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_createdAt_idx": {
+          "name": "notification_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "notification_user_id_user_id_fk": {
           "name": "notification_user_id_user_id_fk",
@@ -1638,7 +1706,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "opinion_id_idx": {
+          "name": "opinion_id_idx",
+          "columns": [
+            {
+              "expression": "opinion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "opinion_report_opinion_id_opinion_id_fk": {
           "name": "opinion_report_opinion_id_opinion_id_fk",
@@ -1868,7 +1952,38 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "opinion_createdAt_idx": {
+          "name": "opinion_createdAt_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "opinion_slugId_idx": {
+          "name": "opinion_slugId_idx",
+          "columns": [
+            {
+              "expression": "slug_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "opinion_author_id_user_id_fk": {
           "name": "opinion_author_id_user_id_fk",
@@ -1999,7 +2114,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_polis_null": {
+          "name": "check_polis_null",
+          "value": "((\"opinion\".\"cluster_0_id\" IS NOT NULL AND \"opinion\".\"cluster_0_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_0_num_disagrees\" IS NOT NULL) OR (\"opinion\".\"cluster_0_id\" IS NULL AND \"opinion\".\"cluster_0_num_agrees\" IS NULL AND \"opinion\".\"cluster_0_num_disagrees\" IS NULL))\n                AND \n                ((\"opinion\".\"cluster_1_id\" IS NOT NULL AND \"opinion\".\"cluster_1_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_1_num_disagrees\" IS NOT NULL) OR (\"opinion\".\"cluster_1_id\" IS NULL AND \"opinion\".\"cluster_1_num_agrees\" IS NULL AND \"opinion\".\"cluster_1_num_disagrees\" IS NULL)) \n                AND \n                ((\"opinion\".\"cluster_2_id\" IS NOT NULL AND \"opinion\".\"cluster_2_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_2_num_disagrees\" IS NOT NULL) OR (\"opinion\".\"cluster_2_id\" IS NULL AND \"opinion\".\"cluster_2_num_agrees\" IS NULL AND \"opinion\".\"cluster_2_num_disagrees\" IS NULL))\n                AND \n                ((\"opinion\".\"cluster_3_id\" IS NOT NULL AND \"opinion\".\"cluster_3_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_3_num_disagrees\" IS NOT NULL) OR (\"opinion\".\"cluster_3_id\" IS NULL AND \"opinion\".\"cluster_3_num_agrees\" IS NULL AND \"opinion\".\"cluster_3_num_disagrees\" IS NULL)) \n                AND \n                ((\"opinion\".\"cluster_4_id\" IS NOT NULL AND \"opinion\".\"cluster_4_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_4_num_disagrees\" IS NOT NULL) OR (\"opinion\".\"cluster_4_id\" IS NULL AND \"opinion\".\"cluster_4_num_agrees\" IS NULL AND \"opinion\".\"cluster_4_num_disagrees\" IS NULL)) \n                AND \n                ((\"opinion\".\"cluster_5_id\" IS NOT NULL AND \"opinion\".\"cluster_5_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_5_num_disagrees\" IS NOT NULL) OR (\"opinion\".\"cluster_5_id\" IS NULL AND \"opinion\".\"cluster_5_num_agrees\" IS NULL AND \"opinion\".\"cluster_5_num_disagrees\" IS NULL))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.organisation": {
@@ -2181,7 +2301,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "unique_cluster_per_participant": {
+          "name": "unique_cluster_per_participant",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id",
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2279,7 +2408,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_two_digits": {
+          "name": "check_two_digits",
+          "value": "\"phone\".\"last_two_digits\" BETWEEN 0 and 99"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.polis_cluster_opinion": {
@@ -2380,7 +2514,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_perc_btwn_0_and_1": {
+          "name": "check_perc_btwn_0_and_1",
+          "value": "\"polis_cluster_opinion\".\"percentage_agreement\" => 0 AND \"polis_cluster_opinion\".\"percentage_agreement\" <= 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.polis_cluster": {
@@ -2574,7 +2713,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "unique_belong_per_conv_at_a_time": {
+          "name": "unique_belong_per_conv_at_a_time",
+          "nullsNotDistinct": false,
+          "columns": [
+            "polis_content_id",
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2970,6 +3118,14 @@
           "columns": [
             "current_content_id"
           ]
+        },
+        "poll_response_author_id_conversation_id_unique": {
+          "name": "poll_response_author_id_conversation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "author_id",
+            "conversation_id"
+          ]
         }
       },
       "policies": {},
@@ -3163,7 +3319,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_idx_topic": {
+          "name": "user_idx_topic",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "user_conversation_topic_preference_user_id_user_id_fk": {
           "name": "user_conversation_topic_preference_user_id_user_id_fk",
@@ -3193,7 +3365,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "user_unique_topic": {
+          "name": "user_unique_topic",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "conversation_tag_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -3239,7 +3420,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_idx_lang": {
+          "name": "user_idx_lang",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "user_language_preference_user_id_user_id_fk": {
           "name": "user_language_preference_user_id_user_id_fk",
@@ -3269,7 +3466,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "user_unique_language": {
+          "name": "user_unique_language",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "lang_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -3364,7 +3570,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_idx_mute": {
+          "name": "user_idx_mute",
+          "columns": [
+            {
+              "expression": "source_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "user_mute_preference_source_user_id_user_id_fk": {
           "name": "user_mute_preference_source_user_id_user_id_fk",
@@ -3394,7 +3616,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "user_unique_mute": {
+          "name": "user_unique_mute",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_user_id",
+            "target_user_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -3417,7 +3648,7 @@
         },
         "username": {
           "name": "username",
-          "type": "varchar(40)",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true
         },
@@ -3816,7 +4047,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "vote_author_id_opinion_id_unique": {
+          "name": "vote_author_id_opinion_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "author_id",
+            "opinion_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

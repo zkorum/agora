@@ -32,6 +32,17 @@
             text-color="primary"
             @click="goToPhoneLogin()"
           />
+
+          <p>
+            By logging in, you agree to our
+            <RouterLink :to="{ name: '/legal/terms/' }">
+              Terms of Service
+            </RouterLink>
+            and
+            <RouterLink :to="{ name: '/legal/privacy/' }">
+              Privacy Policy</RouterLink
+            >.
+          </p>
         </template>
       </StepperLayout>
     </template>

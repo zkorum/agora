@@ -28,8 +28,8 @@ import {
     zodUserMuteAction,
     zodUserMuteItem,
     zodNotificationItem,
-    zodClusterMetadata,
     zodPolisKey,
+    zodSupportedCountryCallingCode,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -41,12 +41,14 @@ export class Dto {
     static authenticateRequestBody = z
         .object({
             phoneNumber: zodPhoneNumber,
-            defaultCallingCode: z.string(),
+            defaultCallingCode: zodSupportedCountryCallingCode,
             isRequestingNewCode: z.boolean(),
         })
         .strict();
     static verifyOtpReqBody = z.object({
         code: zodCode,
+        phoneNumber: zodPhoneNumber,
+        defaultCallingCode: zodSupportedCountryCallingCode,
     });
     static authenticate200 = z.discriminatedUnion("success", [
         z
@@ -62,6 +64,8 @@ export class Dto {
                 "already_logged_in",
                 "associated_with_another_user",
                 "throttled",
+                "invalid_phone_number",
+                "restricted_phone_type",
             ]),
         }),
     ]);
@@ -208,7 +212,7 @@ export class Dto {
         .object({
             activePostCount: z.number().gte(0),
             createdAt: z.date(),
-            username: zodUsername,
+            username: z.string(),
             isModerator: z.boolean(),
         })
         .strict();
@@ -259,7 +263,7 @@ export class Dto {
 
     static muteUserByUsernameRequest = z
         .object({
-            targetUsername: zodUsername,
+            targetUsername: z.string(),
             action: zodUserMuteAction,
         })
         .strict();

@@ -10,6 +10,7 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { usePostStore } from "src/stores/post";
 import { useUserStore } from "src/stores/user";
 
+export const NAME_UPDATE_SUCCESS_MESSAGE = "Username updated";
 export function useBackendAccountApi() {
   const { buildEncodedUcan } = useCommonApi();
 
@@ -22,8 +23,6 @@ export function useBackendAccountApi() {
     username: string,
     profileUsername: string
   ): Promise<boolean> {
-    const NAME_UPDATE_SUCCESS_MESSAGE = "Username updated";
-
     if (username == profileUsername) {
       return true;
     }
@@ -47,7 +46,6 @@ export function useBackendAccountApi() {
       });
       await loadPostData(false);
       await loadUserProfile();
-      showNotifyMessage(NAME_UPDATE_SUCCESS_MESSAGE);
       return true;
     } catch (e) {
       console.error(e);

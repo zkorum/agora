@@ -4,6 +4,7 @@
 // Extracted from: https://github.com/oddsdk/ts-odd/tree/f90bde37416d9986d1c0afed406182a95ce7c1d7
 import localforage from "localforage";
 import { toEncodedCID } from "./common/cid.js";
+import type { NumberType } from "libphonenumber-js/mobile";
 
 /**
  * Is this browser supported?
@@ -69,7 +70,7 @@ export const MAX_LENGTH_TITLE = 130; // 140 is LinkedIn question limit
 export const MAX_LENGTH_BODY = 260;
 export const MAX_LENGTH_NAME_CREATOR = 65;
 export const MAX_LENGTH_COMMENT = 280; // tweet and community notes max length
-export const MAX_LENGTH_USERNAME = 40;
+export const MAX_LENGTH_USERNAME = 20;
 export const MIN_LENGTH_USERNAME = 2;
 export const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
 
@@ -390,4 +391,24 @@ export interface ToxicityClassification {
     insult: number;
     threat: number;
     sexual_explicit: number;
+}
+
+export function isPhoneNumberTypeSupported(type: NumberType): boolean {
+    switch (type) {
+        case "PERSONAL_NUMBER":
+        case "FIXED_LINE_OR_MOBILE":
+        case "FIXED_LINE":
+        case "MOBILE":
+        case undefined:
+            return true;
+        case "PREMIUM_RATE":
+        case "TOLL_FREE":
+        case "SHARED_COST":
+        case "VOIP":
+        case "PAGER":
+        case "UAN":
+        case "VOICEMAIL":
+        default:
+            return false;
+    }
 }

@@ -9,7 +9,7 @@ import {
     MAX_LENGTH_BODY,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
 } from "../shared.js";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { isValidPhoneNumber } from "libphonenumber-js/mobile";
 
 export const zodUserReportReason = z.enum([
     "misleading",
@@ -128,13 +128,28 @@ export const zodUsername = z
     })
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
+    })
+    .refine((val) => !val.startsWith("seed"), {
+        message: "Username must not start with 'seed'",
+    })
+    .refine((val) => val.toLowerCase() !== "agora", {
+        message: "Username must not be 'agora'",
+    })
+    .refine((val) => val.toLowerCase() !== "zkorum", {
+        message: "Username must not be 'zkorum'",
+    })
+    .refine((val) => val.toLowerCase() !== "agoracitizennetwork", {
+        message: "Username must not be 'agoracitizennetwork'",
+    })
+    .refine((val) => val.toLowerCase() !== "agora_citizen_network", {
+        message: "Username must not be 'agora_citizen_network'",
     });
 
 export const zodUserMuteAction = z.enum(["mute", "unmute"]);
 export const zodUserMuteItem = z
     .object({
         createdAt: z.date(),
-        username: zodUsername,
+        username: z.string(),
     })
     .strict();
 
@@ -143,7 +158,7 @@ export const zodUserReportExplanation = z
     .max(MAX_LENGTH_USER_REPORT_EXPLANATION)
     .optional();
 export const zodUserReportItem = z.object({
-    username: zodUsername,
+    username: z.string(),
     reason: zodUserReportReason,
     explanation: zodUserReportExplanation.optional(),
     createdAt: z.date(),
@@ -167,7 +182,7 @@ export const zodNotificationItem = z.object({
     message: z.string(),
     iconName: z.string().max(50),
     createdAt: z.date(),
-    username: zodUsername.optional(),
+    username: z.string().optional(),
     routeTarget: zodRouteTarget,
 });
 
@@ -220,7 +235,7 @@ export const zodConversationMetadata = z
         opinionCount: zodCount,
         voteCount: zodCount,
         participantCount: zodCount,
-        authorUsername: zodUsername,
+        authorUsername: z.string(),
         moderation: zodConversationModerationProperties,
     })
     .strict();
@@ -256,7 +271,7 @@ export const zodOpinionItem = z
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
-        username: zodUsername,
+        username: z.string(),
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,
     })
@@ -557,6 +572,91 @@ export const zodCountryCodeEnum = z.enum([
     "ZMB",
     "ZWE",
 ]);
+
+export const zodSupportedCountryCallingCode = z.enum([
+    "297",
+    "5993",
+    "1",
+    "299",
+    "590",
+    "596",
+    "599",
+    "590",
+    "590",
+    "508",
+    "1721",
+    "1",
+    "1284",
+    "1340",
+    "374",
+    "995",
+    "972",
+    "81",
+    "82",
+    "65",
+    "886",
+    "35818",
+    "355",
+    "376",
+    "43",
+    "375",
+    "32",
+    "387",
+    "359",
+    "385",
+    "420",
+    "45",
+    "372",
+    "298",
+    "358",
+    "33",
+    "49",
+    "350",
+    "30",
+    "441481",
+    "3906698",
+    "36",
+    "354",
+    "353",
+    "441624",
+    "39",
+    "441534",
+    "383",
+    "371",
+    "423",
+    "370",
+    "352",
+    "356",
+    "373",
+    "377",
+    "382",
+    "31",
+    "389",
+    "47",
+    "48",
+    "351",
+    "40",
+    "378",
+    "381",
+    "421",
+    "386",
+    "34",
+    "4779",
+    "46",
+    "41",
+    "90",
+    "380",
+    "44",
+    "38",
+    "262",
+    "1684",
+    "61",
+    "5999",
+    "689",
+    "687",
+    "64",
+]);
+
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
@@ -605,3 +705,6 @@ export type NotificationItem = z.infer<typeof zodNotificationItem>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
+export type SupportedCountryCallingCode = z.infer<
+    typeof zodSupportedCountryCallingCode
+>;
