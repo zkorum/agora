@@ -1,6 +1,14 @@
 <template>
   <TopMenuWrapper :reveal="true">
     <div class="menuButtons">
+      <ZKButton
+        v-if="!hasCloseButton"
+        icon="mdi-menu"
+        color="black"
+        flat
+        @click="showDrawer = !showDrawer"
+      />
+
       <BackButton v-if="hasBackButton" />
 
       <CloseButton v-if="hasCloseButton" />
@@ -37,6 +45,8 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { onMounted, ref } from "vue";
 import CloseButton from "./buttons/CloseButton.vue";
 import { storeToRefs } from "pinia";
+
+const showDrawer = defineModel("showDrawer", { required: true, type: Boolean });
 
 defineProps<DefaultMenuBarProps>();
 
