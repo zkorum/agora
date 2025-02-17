@@ -31,7 +31,7 @@
       </div>
 
       <div>
-        <div :class="{ highlightComment: highlight }">
+        <div>
           <span v-html="commentItem.opinion"></span>
         </div>
 
@@ -70,7 +70,6 @@ const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
-  highlight: boolean;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
@@ -214,12 +213,6 @@ function mutedComment() {
   flex-direction: column;
   justify-content: left;
   gap: 1rem;
-}
-
-.highlightComment {
-  background-color: #ccfbf1;
-  border-radius: 15px;
-  padding: 0.5rem;
 }
 
 .avatarIcon {
