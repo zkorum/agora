@@ -1650,7 +1650,7 @@ export const polisClusterOpinionTable = pgTable(
     (table) => [
         check(
             "check_perc_btwn_0_and_1",
-            sql`${table.percentageAgreement} => 0 AND ${table.percentageAgreement} <= 1`,
+            sql`${table.percentageAgreement} BETWEEN 0 and 1`,
         ),
     ],
 );

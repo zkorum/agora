@@ -44,3 +44,5 @@ swagger-spec.json
 
 examples/polis_csv/*.csv*
 Bruno/*
+
+*.prod

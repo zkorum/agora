@@ -1,5 +1,5 @@
 {
-  "id": "1a654e15-8b94-451a-abc2-8095fe8d6f93",
+  "id": "954e35ab-de4b-4317-be22-271ff1e33e77",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2517,7 +2517,7 @@
       "checkConstraints": {
         "check_perc_btwn_0_and_1": {
           "name": "check_perc_btwn_0_and_1",
-          "value": "\"polis_cluster_opinion\".\"percentage_agreement\" => 0 AND \"polis_cluster_opinion\".\"percentage_agreement\" <= 1"
+          "value": "\"polis_cluster_opinion\".\"percentage_agreement\" BETWEEN 0 and 1"
         }
       },
       "isRLSEnabled": false

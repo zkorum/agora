@@ -280,7 +280,7 @@ CREATE TABLE "polis_cluster_opinion" (
 	"number_agreement" integer NOT NULL,
 	"raw_repness" jsonb NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "check_perc_btwn_0_and_1" CHECK ("polis_cluster_opinion"."percentage_agreement" => 0 AND "polis_cluster_opinion"."percentage_agreement" <= 1)
+	CONSTRAINT "check_perc_btwn_0_and_1" CHECK ("polis_cluster_opinion"."percentage_agreement" BETWEEN 0 and 1)
 );
 --> statement-breakpoint
 CREATE TABLE "polis_cluster" (
