@@ -23,6 +23,7 @@
     "build:ci:ios": "yarn quasar build -m capacitor -T ios --skip-pkg",
     "image:build": "docker build -f Dockerfile.production -t agora-app .",
     "image:build:staging": "docker build -f Dockerfile.staging -t agora-app-staging .",
+    "image:build:production": "docker build -f Dockerfile.production -t agora-app-production .",
     "image:tag": "docker tag zkorum-frontJustForExample:latest zkorum/frontJustForExample:0.1.0",
     "image:push": "docker image push zkorum/frontJustForExample:0.1.0"
   },

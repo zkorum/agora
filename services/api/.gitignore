@@ -46,3 +46,4 @@ examples/polis_csv/*.csv*
 Bruno/*
 
 *.prod
+flyway.conf.dev

@@ -16,7 +16,7 @@ const configSchema = z.object({
             }),
         )
         .pipe(z.string().array()),
-    CONNECTION_STRING: z.string(),
+    CONNECTION_STRING: z.string().optional(),
     PORT: z.coerce.number().int().nonnegative().default(defaultPort),
     NODE_ENV: z
         .enum(["development", "staging", "production"])
@@ -78,6 +78,12 @@ const configSchema = z.object({
             )
             .pipe(z.array(z.string()).min(3).max(3)), // summary, comments, votes csv
     ),
+    // for production
+    AWS_SECRET_ID: z.string().optional(),
+    AWS_SECRET_REGION: z.string().optional(),
+    DB_HOST: z.string().optional(),
+    DB_PORT: z.coerce.number().int().nonnegative().default(5432),
+    DB_NAME: z.string().default("agora"),
 });
 
 export const config = configSchema.parse(process.env);
