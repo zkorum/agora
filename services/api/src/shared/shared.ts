@@ -66,10 +66,10 @@ export function domainFromEmail(email: string): string | undefined {
 // WARNING: this is also used in schema.ts and cannot be imported there so it was copy-pasted
 // IF YOU CHANGE THESE VALUES ALSO CHANGE THEM IN SCHEMA.TS
 export const MAX_LENGTH_OPTION = 30;
-export const MAX_LENGTH_TITLE = 130; // 140 is LinkedIn question limit
-export const MAX_LENGTH_BODY = 260;
+export const MAX_LENGTH_TITLE = 140; // 140 is LinkedIn question limit
+export const MAX_LENGTH_BODY = 1000;
+export const MAX_LENGTH_OPINION = 1000;
 export const MAX_LENGTH_NAME_CREATOR = 65;
-export const MAX_LENGTH_COMMENT = 280; // tweet and community notes max length
 export const MAX_LENGTH_USERNAME = 20;
 export const MIN_LENGTH_USERNAME = 2;
 export const MAX_LENGTH_USER_REPORT_EXPLANATION = 260;
