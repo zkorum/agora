@@ -14,7 +14,7 @@
             :has-settings-button="props.menuBarProps.hasSettingsButton"
           />
 
-          <WidthWrapper :enable="true">
+          <WidthWrapper :enable="props.generalProps.reducedWidth">
             <slot />
           </WidthWrapper>
         </q-page>
