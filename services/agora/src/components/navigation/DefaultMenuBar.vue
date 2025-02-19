@@ -12,10 +12,6 @@
         flat
         @click="menuButtonClicked()"
       />
-
-      <div class="bg-red">
-        {{ showDrawer }}
-      </div>
     </div>
 
     <div class="menuButtons">
@@ -35,7 +31,7 @@ import BackButton from "./buttons/BackButton.vue";
 import { type DefaultMenuBarProps } from "src/utils/model/props";
 import TopMenuWrapper from "./TopMenuWrapper.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import CloseButton from "./buttons/CloseButton.vue";
 import { storeToRefs } from "pinia";
 import { useNavigationStore } from "src/stores/navigation";
@@ -52,10 +48,6 @@ onMounted(() => {
   setTimeout(function () {
     showAuthButton.value = true;
   }, 50);
-});
-
-onUnmounted(() => {
-  showDrawer.value = false;
 });
 
 function menuButtonClicked() {
