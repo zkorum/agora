@@ -1,15 +1,24 @@
 import { defineStore } from "pinia";
-import { RouteMap } from "vue-router";
+import { RouteMap, RouteMapGeneric } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
 export const useRouteStateStore = defineStore("routeState", () => {
   const unreturnableRoutes: (keyof RouteNamedMap)[] = ["/conversation/create/"];
-  interface GoBackObject {
-    routeName?: keyof RouteNamedMap;
-    useSpecialRoute: boolean;
+  type GoBackObject =
+    | {
+        routeItem: RouteItem;
+        useSpecialRoute: true;
+      }
+    | {
+        useSpecialRoute: false;
+      };
+
+  interface RouteItem {
+    name: keyof RouteNamedMap;
+    params: RouteMapGeneric[keyof RouteMap]["params"];
   }
 
-  const routingHistoryList: (keyof RouteNamedMap)[] = [];
+  const routingHistoryList: RouteItem[] = [];
 
   let ignoreNextRouterInsert = false;
 
@@ -18,21 +27,27 @@ export const useRouteStateStore = defineStore("routeState", () => {
 
     if (routingHistoryList.length == 0) {
       return {
-        routeName: "/",
+        routeItem: {
+          name: "/",
+          params: {},
+        },
         useSpecialRoute: true,
       };
     }
 
-    const lastRouteName = routingHistoryList.at(-1);
-    if (lastRouteName) {
-      if (unreturnableRoutes.includes(lastRouteName)) {
+    const lastRouteItem = routingHistoryList.at(-1);
+    if (lastRouteItem) {
+      if (unreturnableRoutes.includes(lastRouteItem.name)) {
         routingHistoryList.pop();
         return await goBack();
       } else {
         routingHistoryList.pop();
         return {
           useSpecialRoute: true,
-          routeName: lastRouteName,
+          routeItem: {
+            name: lastRouteItem.name,
+            params: lastRouteItem.params,
+          },
         };
       }
     } else {
@@ -43,7 +58,11 @@ export const useRouteStateStore = defineStore("routeState", () => {
     }
   }
 
-  function storeFromName(fromName: keyof RouteMap, toName: keyof RouteMap) {
+  function storeFromName(
+    fromName: keyof RouteMap,
+    fromParams: RouteMapGeneric[keyof RouteMap]["params"],
+    toName: keyof RouteMap
+  ) {
     if (ignoreNextRouterInsert) {
       ignoreNextRouterInsert = false;
       return;
@@ -61,7 +80,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
     }
     */
 
-    routingHistoryList.push(fromName);
+    routingHistoryList.push({ name: fromName, params: fromParams });
     // console.log(routingHistoryList);
   }
 
