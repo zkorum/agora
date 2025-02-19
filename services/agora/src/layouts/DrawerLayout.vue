@@ -8,7 +8,7 @@
         v-model="showDrawer"
         show-if-above
         behavior="mobile"
-        :width="250"
+        :width="300"
         :breakpoint="700"
         elevated
         overlay
