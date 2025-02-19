@@ -53,17 +53,12 @@ import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useNavigationStore } from "src/stores/navigation";
 import { type MainLayoutProps } from "src/utils/model/props";
-import { onUnmounted } from "vue";
 
 const props = defineProps<MainLayoutProps>();
 
 const { showDrawer } = storeToRefs(useNavigationStore());
 
 const noSwipeOpen = process.env.MODE != "capacitor";
-
-onUnmounted(() => {
-  showDrawer.value = false;
-});
 </script>
 
 <style scoped lang="scss">
