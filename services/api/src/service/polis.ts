@@ -1,9 +1,5 @@
 import { log } from "@/app.js";
-import type {
-    ClusterMetadata,
-    PolisKey,
-    VotingAction,
-} from "@/shared/types/zod.js";
+import type { PolisKey, VotingAction } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import { setTimeout } from "timers/promises";
 import {
@@ -216,25 +212,30 @@ export async function delayedPolisGetAndUpdateMath({
         log.error(e);
         return;
     }
+    if (polisMathResults.pca === undefined || polisMathResults.pca === null) {
+        log.warn(
+            `Polis returned a null pca: ${JSON.stringify(polisMathResults)}`,
+        );
+        return;
+    }
+    const pca = polisMathResults.pca;
+    const userIdByPid = polisMathResults.pidToHnames;
+    const opinionSlugIdByTid = polisMathResults.tidToTxts;
     await db.transaction(async (tx) => {
         const polisContentQuery = await tx
             .insert(polisContentTable)
             .values({
                 conversationId,
-                mathTick: polisMathResults.pca.math_tick,
+                mathTick: pca.math_tick,
                 rawData: polisMathResults,
             })
             .returning({ polisContentId: polisContentTable.id });
-        const userIdByPid = polisMathResults.pidToHnames;
-        const opinionSlugIdByTid = polisMathResults.tidToTxts;
         const polisContentId = polisContentQuery[0].polisContentId;
-        const repnessEntries = Object.entries(polisMathResults.pca.repness);
-        const groupClustersEntries = Object.entries(
-            polisMathResults.pca["group-clusters"],
-        );
-        const baseClusters = polisMathResults.pca["base-clusters"];
+        const repnessEntries = Object.entries(pca.repness);
+        const groupClustersEntries = Object.entries(pca["group-clusters"]);
+        const baseClusters = pca["base-clusters"];
         const groupVotesEntries = Object.entries(
-            polisMathResults.pca["group-votes"], // key is cluster key, while the value is the # of agrees/disagrees for each opinions by all the people in this cluster
+            pca["group-votes"], // key is cluster key, while the value is the # of agrees/disagrees for each opinions by all the people in this cluster
         );
         await tx
             .update(conversationTable)
@@ -245,33 +246,38 @@ export async function delayedPolisGetAndUpdateMath({
             .where(eq(conversationTable.id, conversationId));
 
         //// add comment priorities with a bulk-update
-        const commentPriorities: CommentPriorities =
-            polisMathResults.pca["comment-priorities"];
-        // You have to be sure that inputs array is not empty
-        const tids = Object.keys(commentPriorities);
-        if (tids.length === 0) {
-            log.warn(
-                `No opinion priority to update for polisContentId=${String(
-                    polisContentId,
-                )}`,
-            );
-        } else {
-            const opinionSlugIds = tids.map((tid) => opinionSlugIdByTid[tid]);
-            const sqlChunks: SQL[] = [];
-            sqlChunks.push(sql`(CASE`);
-            for (const [tid, priority] of Object.entries(commentPriorities)) {
-                const opinionSlugId = opinionSlugIdByTid[tid];
-                sqlChunks.push(
-                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${priority}`,
+        const commentPriorities: CommentPriorities | null | undefined =
+            pca["comment-priorities"];
+        if (commentPriorities !== undefined && commentPriorities !== null) {
+            const tids = Object.keys(commentPriorities);
+            if (tids.length === 0) {
+                log.warn(
+                    `No opinion priority to update for polisContentId=${String(
+                        polisContentId,
+                    )}`,
                 );
+            } else {
+                const opinionSlugIds = tids.map(
+                    (tid) => opinionSlugIdByTid[tid],
+                );
+                const sqlChunks: SQL[] = [];
+                sqlChunks.push(sql`(CASE`);
+                for (const [tid, priority] of Object.entries(
+                    commentPriorities,
+                )) {
+                    const opinionSlugId = opinionSlugIdByTid[tid];
+                    sqlChunks.push(
+                        sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${priority}`,
+                    );
+                }
+                sqlChunks.push(sql`ELSE polis_priority`);
+                sqlChunks.push(sql`END)`);
+                const finalSql: SQL = sql.join(sqlChunks, sql.raw(" "));
+                await tx
+                    .update(opinionTable)
+                    .set({ polisPriority: finalSql, updatedAt: nowZeroMs() })
+                    .where(inArray(opinionTable.slugId, opinionSlugIds));
             }
-            sqlChunks.push(sql`ELSE polis_priority`);
-            sqlChunks.push(sql`END)`);
-            const finalSql: SQL = sql.join(sqlChunks, sql.raw(" "));
-            await tx
-                .update(opinionTable)
-                .set({ polisPriority: finalSql, updatedAt: nowZeroMs() })
-                .where(inArray(opinionTable.slugId, opinionSlugIds));
         }
         /////
 

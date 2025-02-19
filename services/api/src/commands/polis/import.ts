@@ -55,7 +55,7 @@ interface LoadAndImportToAgoraProps {
     polisUserPassword: string;
     summaryFilePath: string;
     commentFilePath: string;
-    voteFilePath: string;
+    voteFilePath?: string;
     polisDelayToFetch: number;
 }
 
@@ -84,7 +84,10 @@ export async function loadAndImportToAgora({
 
     const summaryFile = await fs.readFile(summaryFilePath, "utf8");
     const commentFile = await fs.readFile(commentFilePath, "utf8");
-    const voteFile = await fs.readFile(voteFilePath, "utf8");
+    let voteFile: string | undefined;
+    if (voteFilePath !== undefined) {
+        voteFile = await fs.readFile(voteFilePath, "utf8");
+    }
     // Parse the CSV content
     // const records = parse(summary, { bom: true });
     // const headers = [
@@ -129,8 +132,10 @@ export async function loadAndImportToAgora({
             }
             // console.log("Result", result);
             conversationTitle = result[0][1];
-            const trimmedConvBody = result[7][1].slice(0, 200);
-            conversationBody = `${trimmedConvBody} <br />Imported from ${result[1][1]}`; // we limit to 260 chars
+            conversationBody = result[7][1];
+            if (result[1][1] !== "") {
+                conversationBody = `${conversationBody} <br />Imported from ${result[1][1]}`;
+            }
 
             parse(
                 commentFile,
@@ -144,71 +149,113 @@ export async function loadAndImportToAgora({
                         return;
                     }
                     for (const result of results) {
-                        comments[result["comment-id"]] = result;
-                        userIds.add(result["author-id"]);
+                        if (
+                            result["comment-id"] !== "comment-id" &&
+                            result["author-id"] !== "author-id"
+                        ) {
+                            comments[result["comment-id"]] = result;
+                            userIds.add(result["author-id"]);
+                        }
                     }
 
-                    parse(
-                        voteFile,
-                        {
-                            delimiter: ",",
-                            columns: headersVotes,
-                        },
-                        (error, results: VoteCsv[]) => {
-                            (async () => {
-                                if (error) {
-                                    log.error(error);
-                                    return;
-                                }
-                                for (const result of results) {
-                                    if (
-                                        result["comment-id"] in votesByCommentId
-                                    ) {
-                                        votesByCommentId[result["comment-id"]][
-                                            result["voter-id"]
-                                        ] = result.vote;
-                                    } else {
-                                        votesByCommentId[result["comment-id"]] =
-                                            {};
-                                        votesByCommentId[result["comment-id"]][
-                                            result["voter-id"]
-                                        ] = result.vote;
+                    if (voteFile !== undefined) {
+                        parse(
+                            voteFile,
+                            {
+                                delimiter: ",",
+                                columns: headersVotes,
+                            },
+                            (error, results: VoteCsv[]) => {
+                                (async () => {
+                                    if (error) {
+                                        log.error(error);
+                                        return;
                                     }
-                                    userIds.add(result["voter-id"]);
-                                }
-                                for (const userId of userIds) {
-                                    users[userId] = {
-                                        id: generateUUID(),
-                                        username: `seed_${newUsersConvSpecificSlug}_${userId}`,
+                                    for (const result of results) {
+                                        if (
+                                            result["comment-id"] in
+                                            votesByCommentId
+                                        ) {
+                                            votesByCommentId[
+                                                result["comment-id"]
+                                            ][result["voter-id"]] = result.vote;
+                                        } else {
+                                            votesByCommentId[
+                                                result["comment-id"]
+                                            ] = {};
+                                            votesByCommentId[
+                                                result["comment-id"]
+                                            ][result["voter-id"]] = result.vote;
+                                        }
+                                        userIds.add(result["voter-id"]);
+                                    }
+                                    for (const userId of userIds) {
+                                        users[userId] = {
+                                            id: generateUUID(),
+                                            username: `seed_${newUsersConvSpecificSlug}_${userId}`,
+                                            isSeed: true,
+                                        };
+                                    }
+                                    // add one more user for the conversation author
+                                    const conversationAuthor: UserCred = {
+                                        id: generateUUID() as string,
+                                        username: `seed_${newUsersConvSpecificSlug}`,
                                         isSeed: true,
                                     };
-                                }
-                                // add one more user for the conversation author
-                                const conversationAuthor: UserCred = {
-                                    id: generateUUID() as string,
-                                    username: `seed_${newUsersConvSpecificSlug}`,
+                                    await importToAgora({
+                                        db,
+                                        axiosPolis,
+                                        polisUserEmailDomain,
+                                        polisUserEmailLocalPart,
+                                        polisUserPassword,
+                                        conversationTitle,
+                                        conversationBody,
+                                        users,
+                                        conversationAuthor,
+                                        comments,
+                                        votesByCommentId,
+                                    });
+                                })()
+                                    .then(() => 1)
+                                    .catch((e: unknown) => {
+                                        log.error(e);
+                                    });
+                            },
+                        );
+                    } else {
+                        (async () => {
+                            for (const userId of userIds) {
+                                users[userId] = {
+                                    id: generateUUID(),
+                                    username: `seed_${newUsersConvSpecificSlug}_${userId}`,
                                     isSeed: true,
                                 };
-                                await importToAgora({
-                                    db,
-                                    axiosPolis,
-                                    polisUserEmailDomain,
-                                    polisUserEmailLocalPart,
-                                    polisUserPassword,
-                                    conversationTitle,
-                                    conversationBody,
-                                    users,
-                                    conversationAuthor,
-                                    comments,
-                                    votesByCommentId,
-                                });
-                            })()
-                                .then(() => 1)
-                                .catch((e: unknown) => {
-                                    log.error(e);
-                                });
-                        },
-                    );
+                            }
+                            // add one more user for the conversation author
+                            const conversationAuthor: UserCred = {
+                                id: generateUUID() as string,
+                                username: `seed_${newUsersConvSpecificSlug}`,
+                                isSeed: true,
+                            };
+                            await importToAgora({
+                                db,
+                                axiosPolis,
+                                polisUserEmailDomain,
+                                polisUserEmailLocalPart,
+                                polisUserPassword,
+                                conversationTitle,
+                                conversationBody,
+                                users,
+                                conversationAuthor,
+                                comments,
+                                votesByCommentId,
+                            });
+                        })()
+                            .then(() => 1)
+                            .catch((e: unknown) => {
+                                log.error(e);
+                            });
+                    }
                 },
             );
         },
@@ -270,31 +317,25 @@ async function importToAgora({
 }: ImportToAgoraProps) {
     await db.transaction(async (tx) => {
         // create users
-        const userPromises = [];
         await tx
             .insert(userTable)
             .values([...Object.values(users), conversationAuthor]);
-        const createConvAuthorInExternalPolisPromise = polisService.createUser({
+        await polisService.createUser({
             axiosPolis,
             polisUserEmailDomain,
             polisUserEmailLocalPart,
             polisUserPassword,
             userId: conversationAuthor.id,
         });
-        userPromises.push(createConvAuthorInExternalPolisPromise);
         for (const user of Object.values(users)) {
-            const createParticipantInExternalPolisPromise =
-                polisService.createUser({
-                    axiosPolis,
-                    polisUserEmailDomain,
-                    polisUserEmailLocalPart,
-                    polisUserPassword,
-                    userId: user.id,
-                });
-            userPromises.push(createParticipantInExternalPolisPromise);
+            await polisService.createUser({
+                axiosPolis,
+                polisUserEmailDomain,
+                polisUserEmailLocalPart,
+                polisUserPassword,
+                userId: user.id,
+            });
         }
-        await Promise.allSettled(userPromises);
-
         // create conversation
         const { conversationId, conversationSlugId, conversationContentId } =
             await conversationService.importNewPost({
@@ -365,8 +406,9 @@ async function importToAgora({
             conversationId,
             conversationSlugId,
             axiosPolis,
-            polisDelayToFetch: 3000,
+            polisDelayToFetch: 0,
         });
     });
     log.info("Import done");
+    process.exit(0);
 }

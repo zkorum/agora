@@ -494,7 +494,7 @@
                                                                             },
                                                                             "explanation": {
                                                                                 "type": "string",
-                                                                                "maxLength": 260
+                                                                                "maxLength": 1000
                                                                             },
                                                                             "createdAt": {
                                                                                 "type": "string",
@@ -551,7 +551,7 @@
                                                         "properties": {
                                                             "title": {
                                                                 "type": "string",
-                                                                "maxLength": 130,
+                                                                "maxLength": 140,
                                                                 "minLength": 1
                                                             },
                                                             "body": {
@@ -715,7 +715,7 @@
                                     },
                                     "moderationExplanation": {
                                         "type": "string",
-                                        "maxLength": 260
+                                        "maxLength": 1000
                                     }
                                 },
                                 "required": [
@@ -769,7 +769,7 @@
                                     },
                                     "moderationExplanation": {
                                         "type": "string",
-                                        "maxLength": 260
+                                        "maxLength": 1000
                                     }
                                 },
                                 "required": [
@@ -906,7 +906,7 @@
                                                 },
                                                 "explanation": {
                                                     "type": "string",
-                                                    "maxLength": 260
+                                                    "maxLength": 1000
                                                 },
                                                 "createdAt": {
                                                     "type": "string",
@@ -1008,7 +1008,7 @@
                                                 },
                                                 "explanation": {
                                                     "type": "string",
-                                                    "maxLength": 260
+                                                    "maxLength": 1000
                                                 },
                                                 "createdAt": {
                                                     "type": "string",
@@ -1183,7 +1183,7 @@
                                                                     },
                                                                     "explanation": {
                                                                         "type": "string",
-                                                                        "maxLength": 260
+                                                                        "maxLength": 1000
                                                                     },
                                                                     "createdAt": {
                                                                         "type": "string",
@@ -1240,7 +1240,7 @@
                                                 "properties": {
                                                     "title": {
                                                         "type": "string",
-                                                        "maxLength": 130,
+                                                        "maxLength": 140,
                                                         "minLength": 1
                                                     },
                                                     "body": {
@@ -1458,7 +1458,7 @@
                                                                             },
                                                                             "explanation": {
                                                                                 "type": "string",
-                                                                                "maxLength": 260
+                                                                                "maxLength": 1000
                                                                             },
                                                                             "createdAt": {
                                                                                 "type": "string",
@@ -1515,7 +1515,7 @@
                                                         "properties": {
                                                             "title": {
                                                                 "type": "string",
-                                                                "maxLength": 130,
+                                                                "maxLength": 140,
                                                                 "minLength": 1
                                                             },
                                                             "body": {
@@ -1741,7 +1741,7 @@
                                                                     },
                                                                     "explanation": {
                                                                         "type": "string",
-                                                                        "maxLength": 260
+                                                                        "maxLength": 1000
                                                                     },
                                                                     "createdAt": {
                                                                         "type": "string",
@@ -2258,7 +2258,7 @@
                                                             },
                                                             "explanation": {
                                                                 "type": "string",
-                                                                "maxLength": 260
+                                                                "maxLength": 1000
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -2460,7 +2460,7 @@
                                                             },
                                                             "explanation": {
                                                                 "type": "string",
-                                                                "maxLength": 260
+                                                                "maxLength": 1000
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -2663,7 +2663,7 @@
                                                             },
                                                             "explanation": {
                                                                 "type": "string",
-                                                                "maxLength": 260
+                                                                "maxLength": 1000
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -2762,7 +2762,7 @@
                                 "properties": {
                                     "conversationTitle": {
                                         "type": "string",
-                                        "maxLength": 130,
+                                        "maxLength": 140,
                                         "minLength": 1
                                     },
                                     "conversationBody": {
@@ -2906,7 +2906,7 @@
                                                                         },
                                                                         "explanation": {
                                                                             "type": "string",
-                                                                            "maxLength": 260
+                                                                            "maxLength": 1000
                                                                         },
                                                                         "createdAt": {
                                                                             "type": "string",
@@ -2963,7 +2963,7 @@
                                                     "properties": {
                                                         "title": {
                                                             "type": "string",
-                                                            "maxLength": 130,
+                                                            "maxLength": 140,
                                                             "minLength": 1
                                                         },
                                                         "body": {

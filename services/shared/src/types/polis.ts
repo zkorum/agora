@@ -6,6 +6,7 @@ export const stringToJSONSchema = z
         try {
             return JSON.parse(str);
         } catch (e) {
+            console.error("Invalid JSON", e);
             ctx.addIssue({ code: "custom", message: "Invalid JSON" });
             return z.NEVER;
         }
@@ -87,30 +88,30 @@ export const zodCommentPriorities = z.record(z.number());
 export const zodGroupAwareConsensus = z.record(z.number());
 
 export const zodMathResults = z.object({
-    n: z.number(),
+    n: z.number().nullish(),
     pca: zodPCA.nullish(),
-    tids: z.array(z.number()),
+    tids: z.array(z.number()).nullish(),
     "mod-in": z.array(z.unknown()).nullish(),
-    "n-cmts": z.number(),
-    "in-conv": z.array(z.number()),
+    "n-cmts": z.number().nullish(),
+    "in-conv": z.array(z.number()).nullish(),
     "mod-out": z.array(z.unknown()).nullish(),
     repness: zodRepness,
-    consensus: zodConsensus,
+    consensus: zodConsensus.nullish(),
     "meta-tids": z.array(z.number()).nullish(),
-    "votes-base": zodVotesBaseMap,
+    "votes-base": zodVotesBaseMap.nullish(),
     "group-votes": zodGroupVotesMap,
     "base-clusters": zodBaseClusters,
     "group-clusters": z.array(zodGroupCluster),
     lastModTimestamp: z.union([z.number(), z.null()]),
-    "user-vote-counts": zodUserVoteCounts,
+    "user-vote-counts": zodUserVoteCounts.nullish(),
     lastVoteTimestamp: z.number(),
-    "comment-priorities": zodCommentPriorities,
-    "group-aware-consensus": zodGroupAwareConsensus,
+    "comment-priorities": zodCommentPriorities.nullish(),
+    "group-aware-consensus": zodGroupAwareConsensus.nullish(),
     math_tick: z.number(),
 });
 
 export const zodPolisMathAndMetadata = z.object({
-    pca: stringToJSONSchema.pipe(zodMathResults), // see https://github.com/colinhacks/zod/discussions/2215#discussioncomment-5356286 and https://github.com/colinhacks/zod/discussions/2215#discussioncomment-7812655
+    pca: stringToJSONSchema.nullish().pipe(zodMathResults.nullish()), // see https://github.com/colinhacks/zod/discussions/2215#discussioncomment-5356286 and https://github.com/colinhacks/zod/discussions/2215#discussioncomment-7812655
     pidToHnames: z.record(z.string()),
     tidToTxts: z.record(z.string()),
 });

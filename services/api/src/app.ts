@@ -76,7 +76,7 @@ const configSchema = z.object({
                     return item.trim();
                 }),
             )
-            .pipe(z.array(z.string()).min(3).max(3)), // summary, comments, votes csv
+            .pipe(z.array(z.string()).min(2).max(3)), // summary, comments, votes csv
     ),
     // for production
     AWS_SECRET_ID: z.string().optional(),
