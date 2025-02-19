@@ -8,7 +8,6 @@
     }"
     :menu-bar-props="{
       hasBackButton: true,
-      hasSettingsButton: false,
       hasCloseButton: false,
       hasLoginButton: false,
     }"

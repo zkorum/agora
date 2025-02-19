@@ -5,7 +5,7 @@
       :class="{ bottomPagePadding: props.generalProps.addBottomPadding }"
     >
       <q-drawer
-        v-model="drawerLeft"
+        v-model="showDrawer"
         show-if-above
         behavior="mobile"
         :width="250"
@@ -14,7 +14,9 @@
         overlay
         :no-swipe-open="noSwipeOpen"
       >
-        <q-scroll-area class="fit"> </q-scroll-area>
+        <q-scroll-area class="fit">
+          <SideDrawer />
+        </q-scroll-area>
       </q-drawer>
 
       <q-page-container>
@@ -27,11 +29,9 @@
 
       <DefaultMenuBar
         v-if="props.generalProps.enableHeader"
-        v-model:show-drawer="drawerLeft"
         :has-back-button="props.menuBarProps.hasBackButton"
         :has-close-button="props.menuBarProps.hasCloseButton"
         :has-login-button="props.menuBarProps.hasLoginButton"
-        :has-settings-button="props.menuBarProps.hasSettingsButton"
       />
 
       <q-footer
@@ -46,15 +46,17 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import FooterBar from "src/components/footer/FooterBar.vue";
 import DefaultMenuBar from "src/components/navigation/DefaultMenuBar.vue";
+import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { useNavigationStore } from "src/stores/navigation";
 import { type MainLayoutProps } from "src/utils/model/props";
-import { ref } from "vue";
 
 const props = defineProps<MainLayoutProps>();
 
-const drawerLeft = ref(false);
+const { showDrawer } = storeToRefs(useNavigationStore());
 
 const noSwipeOpen = process.env.MODE != "capacitor";
 </script>

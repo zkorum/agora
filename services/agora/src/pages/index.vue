@@ -10,7 +10,6 @@
       hasBackButton: false,
       hasCloseButton: false,
       hasLoginButton: true,
-      hasSettingsButton: true,
     }"
   >
     <NewPostButtonWrapper @on-click="createNewPost()">
