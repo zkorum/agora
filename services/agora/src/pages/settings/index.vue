@@ -33,16 +33,15 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
-import DrawerLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { type SettingsInterface } from "src/utils/component/settings/settings";
+import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-
 const { showDeleteAccountDialog } = useDialog();
 
 const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
