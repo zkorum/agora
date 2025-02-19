@@ -30,7 +30,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     scrollBehavior: (to, from) => {
       // to, from, savedPosition
       if (from.name && to.name) {
-        storeFromName(from.name, from.params, to.name);
+        storeFromName(from.name, from.params, from.query, to.name);
       }
 
       return { left: 0, top: 0 };

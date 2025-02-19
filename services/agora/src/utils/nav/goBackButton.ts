@@ -12,6 +12,7 @@ export function useGoBackButtonHandler() {
       const routeObj = router.resolve({
         name: goBackObject.routeItem.name,
         params: goBackObject.routeItem.params,
+        query: goBackObject.routeItem.query,
       });
       await router.push(routeObj);
     } else {
