@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { RouteMap, RouteMapGeneric } from "vue-router";
+import { LocationQuery, RouteMap, RouteMapGeneric } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
 export const useRouteStateStore = defineStore("routeState", () => {
@@ -16,6 +16,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
   interface RouteItem {
     name: keyof RouteNamedMap;
     params: RouteMapGeneric[keyof RouteMap]["params"];
+    query: LocationQuery;
   }
 
   const routingHistoryList: RouteItem[] = [];
@@ -30,6 +31,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
         routeItem: {
           name: "/",
           params: {},
+          query: {},
         },
         useSpecialRoute: true,
       };
@@ -47,6 +49,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
           routeItem: {
             name: lastRouteItem.name,
             params: lastRouteItem.params,
+            query: lastRouteItem.query,
           },
         };
       }
@@ -61,6 +64,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
   function storeFromName(
     fromName: keyof RouteMap,
     fromParams: RouteMapGeneric[keyof RouteMap]["params"],
+    fromQuery: LocationQuery,
     toName: keyof RouteMap
   ) {
     if (ignoreNextRouterInsert) {
@@ -80,7 +84,11 @@ export const useRouteStateStore = defineStore("routeState", () => {
     }
     */
 
-    routingHistoryList.push({ name: fromName, params: fromParams });
+    routingHistoryList.push({
+      name: fromName,
+      params: fromParams,
+      query: fromQuery,
+    });
     // console.log(routingHistoryList);
   }
 
