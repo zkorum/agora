@@ -7,11 +7,9 @@
       <q-page-container>
         <q-page>
           <DefaultMenuBar
-            v-model:show-drawer="drawerLeft"
             :has-back-button="props.menuBarProps.hasBackButton"
             :has-close-button="props.menuBarProps.hasCloseButton"
             :has-login-button="props.menuBarProps.hasLoginButton"
-            :has-settings-button="props.menuBarProps.hasSettingsButton"
           />
 
           <WidthWrapper :enable="props.generalProps.reducedWidth">
@@ -36,11 +34,8 @@ import FooterBar from "src/components/footer/FooterBar.vue";
 import DefaultMenuBar from "src/components/navigation/DefaultMenuBar.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { type MainLayoutProps } from "src/utils/model/props";
-import { ref } from "vue";
 
 const props = defineProps<MainLayoutProps>();
-
-const drawerLeft = ref(false);
 </script>
 
 <style scoped lang="scss">
