@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableHeader: true,
@@ -7,8 +7,8 @@
       reducedWidth: true,
     }"
     :menu-bar-props="{
-      hasBackButton: false,
-      hasCloseButton: true,
+      hasBackButton: true,
+      hasCloseButton: false,
       hasLoginButton: false,
     }"
   >
@@ -21,12 +21,12 @@
         >this external page (WIP)</a
       >
     </ZKTitleBodyWrapper>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import ZKTitleBodyWrapper from "src/components/ui-library/ZKTitleBodyWrapper.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 </script>
 
 <style scoped lang="scss"></style>

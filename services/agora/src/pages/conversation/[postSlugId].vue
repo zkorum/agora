@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableHeader: true,
@@ -18,13 +18,13 @@
       :compact-mode="false"
       :skeleton-mode="false"
     />
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import PostDetails from "src/components/post/PostDetails.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { usePostStore } from "src/stores/post";

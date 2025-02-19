@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableHeader: true,
@@ -8,8 +8,8 @@
       reducedWidth: true,
     }"
     :menu-bar-props="{
-      hasBackButton: false,
-      hasCloseButton: true,
+      hasBackButton: true,
+      hasCloseButton: false,
       hasLoginButton: true,
     }"
   >
@@ -61,7 +61,7 @@
         @click="clickedWithdraw()"
       />
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -79,7 +79,7 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderations";
 import { usePostStore } from "src/stores/post";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
 
 const {
