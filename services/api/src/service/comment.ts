@@ -40,7 +40,7 @@ import type {
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
 import { MAX_LENGTH_OPINION, toUnionUndefined } from "@/shared/shared.js";
-import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
+import { processHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
@@ -1170,7 +1170,7 @@ export async function postNewOpinion({
     }
 
     try {
-        commentBody = sanitizeHtmlBody(commentBody, MAX_LENGTH_OPINION);
+        commentBody = processHtmlBody(commentBody, MAX_LENGTH_OPINION);
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);

@@ -15,7 +15,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
+import { processHtmlBody } from "@/utils/htmlSanitization.js";
 import type { ExtendedConversation } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
@@ -128,7 +128,7 @@ export async function createNewPost({
 
         if (conversationBody != null) {
             try {
-                conversationBody = sanitizeHtmlBody(
+                conversationBody = processHtmlBody(
                     conversationBody,
                     MAX_LENGTH_BODY,
                 );
