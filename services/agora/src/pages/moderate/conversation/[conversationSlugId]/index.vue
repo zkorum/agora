@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <DrawerLayout
     :general-props="{
@@ -23,10 +22,11 @@
           {{ conversationItem.payload.title }}
         </b>
 
-        <div
+        <UserHtmlBody
           v-if="conversationItem.payload.body"
-          v-html="conversationItem.payload.body"
-        ></div>
+          :html-body="conversationItem.payload.body"
+          :compact-mode="false"
+        />
       </div>
 
       <q-select

@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
     <div class="container">
@@ -32,7 +31,10 @@
 
       <div>
         <div>
-          <span v-html="commentItem.opinion"></span>
+          <UserHtmlBody
+            :html-body="commentItem.opinion"
+            :compact-mode="false"
+          />
         </div>
 
         <CommentModeration
@@ -63,6 +65,7 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/utils/common";
 import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import UserHtmlBody from "./UserHtmlBody.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 

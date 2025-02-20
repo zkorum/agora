@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
     <div ref="postContainerRef" :class="{ fixedHeightContainer: !compactMode }">
@@ -46,10 +45,10 @@
                   "
                   class="bodyDiv"
                 >
-                  <span
-                    :class="{ truncate: compactMode }"
-                    v-html="extendedPostData.payload.body"
-                  ></span>
+                  <UserHtmlBody
+                    :html-body="extendedPostData.payload.body"
+                    :compact-mode="compactMode"
+                  />
                 </div>
 
                 <ZKCard
@@ -181,6 +180,7 @@ import { useInfiniteScroll } from "@vueuse/core";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
+import UserHtmlBody from "./views/UserHtmlBody.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -358,15 +358,6 @@ async function shareClicked() {
   padding-right: 0.5rem;
   padding-top: 1rem;
   padding-bottom: 1rem;
-}
-
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
 }
 
 .extraTitleBottomPadding {

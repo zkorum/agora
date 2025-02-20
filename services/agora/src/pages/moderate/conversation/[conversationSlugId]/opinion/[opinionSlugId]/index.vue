@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <DrawerLayout
     :general-props="{
@@ -16,7 +15,9 @@
     <div class="container">
       <div class="title">Moderate the opinion</div>
 
-      <div class="userOpinion" v-html="opinionItem.opinion"></div>
+      <div class="userOpinion">
+        <UserHtmlBody :html-body="opinionItem.opinion" :compact-mode="false" />
+      </div>
 
       <q-select
         v-model="moderationAction"
