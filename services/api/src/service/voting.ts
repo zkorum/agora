@@ -328,7 +328,7 @@ export async function castVoteForOpinionSlugId({
     polisDelayToFetch,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
-        await useCommonComment().getConversationMetadataFromOpinionSlugId({
+        await useCommonComment().getOpinionMetadataFromOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });

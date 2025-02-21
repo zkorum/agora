@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: true,
       enableFooter: true,
@@ -8,7 +8,6 @@
     }"
     :menu-bar-props="{
       hasBackButton: false,
-      hasSettingsButton: true,
       hasCloseButton: false,
       hasLoginButton: true,
     }"
@@ -50,7 +49,7 @@
       </TabList>
       <router-view />
     </Tabs>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -64,7 +63,7 @@ import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { storeToRefs } from "pinia";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import Username from "src/components/post/views/Username.vue";
 
 const { profileData } = storeToRefs(useUserStore());

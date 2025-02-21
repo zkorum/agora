@@ -55,6 +55,8 @@ import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
 import UserIdentity from "./UserIdentity.vue";
 
+const emit = defineEmits(["openModerationHistory"]);
+
 const props = defineProps<{
   authorVerified: boolean;
   posterUserName: string;
@@ -100,6 +102,10 @@ async function moderatePostCallback() {
   });
 }
 
+async function moderationHistoryCallback() {
+  emit("openModerationHistory");
+}
+
 function clickedMoreIcon() {
   showPostOptionSelector(
     props.postSlugId,
@@ -107,7 +113,8 @@ function clickedMoreIcon() {
     reportContentCallback,
     openUserReportsCallback,
     muteUserCallback,
-    moderatePostCallback
+    moderatePostCallback,
+    moderationHistoryCallback
   );
 }
 </script>

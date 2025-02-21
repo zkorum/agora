@@ -1,6 +1,6 @@
 <template>
   <div>
-    <WidthWrapper width="35rem">
+    <WidthWrapper :enable="true">
       <div class="container">
         <ZKEditor
           :key="resetKey"

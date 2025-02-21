@@ -125,7 +125,8 @@ export const useBottomSheet = () => {
     reportPostCallback: () => void,
     openUserReportsCallback: () => void,
     muteUserCallback: () => void,
-    moderatePostCallback: () => void
+    moderatePostCallback: () => void,
+    moderationHistoryCallback: () => void
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -201,11 +202,7 @@ export const useBottomSheet = () => {
         } else if (action.id == "muteUser") {
           muteUserCallback();
         } else if (action.id == "moderationHistory") {
-          await router.push({
-            name: "/conversation/[postSlugId]",
-            params: { postSlugId: postSlugId },
-            query: { filter: "moderated" },
-          });
+          moderationHistoryCallback();
         }
       })
       .onCancel(() => {

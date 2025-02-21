@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableHeader: true,
@@ -8,7 +8,6 @@
     }"
     :menu-bar-props="{
       hasBackButton: true,
-      hasSettingsButton: true,
       hasCloseButton: false,
       hasLoginButton: true,
     }"
@@ -50,13 +49,13 @@
         </div>
       </q-list>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { UserMuteItem } from "src/shared/types/zod";
 import { usePostStore } from "src/stores/post";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";

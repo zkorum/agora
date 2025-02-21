@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableHeader: true,
@@ -8,7 +8,6 @@
     }"
     :menu-bar-props="{
       hasBackButton: false,
-      hasSettingsButton: true,
       hasCloseButton: false,
       hasLoginButton: false,
     }"
@@ -66,7 +65,7 @@
     <q-inner-loading :showing="loadingVisible">
       <q-spinner-gears size="50px" color="primary" />
     </q-inner-loading>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -74,7 +73,7 @@ import { useInfiniteScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { RouteTarget } from "src/shared/types/zod";
 import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";

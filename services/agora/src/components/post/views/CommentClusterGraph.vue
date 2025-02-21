@@ -255,22 +255,28 @@ if (props.clusters.length >= 2 && props.clusters.length <= 6) {
 }
 const activeCluster = ref<ClusterConfig>(clusterConfig[targetClusterIndex]);
 
+updateClusterTab();
+
 watch(
   () => props.currentClusterTab,
   () => {
-    if (props.currentClusterTab == "all") {
-      clearAllSelection();
-    } else {
-      clearAllSelection();
-      const currentTabKey = Number(props.currentClusterTab);
-      activeCluster.value.imgList[currentTabKey].isSelected = true;
-    }
+    updateClusterTab();
   }
 );
 
-function clearAllSelection() {
+function updateClusterTab() {
+  if (props.currentClusterTab == "all") {
+    clearAllSelection(true);
+  } else {
+    clearAllSelection(false);
+    const currentTabKey = Number(props.currentClusterTab);
+    activeCluster.value.imgList[currentTabKey].isSelected = true;
+  }
+}
+
+function clearAllSelection(useBlueColor: boolean) {
   activeCluster.value.imgList.forEach((imgItem) => {
-    imgItem.isSelected = false;
+    imgItem.isSelected = useBlueColor;
   });
 }
 
