@@ -123,7 +123,6 @@ import { useUserStore } from "src/stores/user";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
-import { useCommentSectionStore } from "src/stores/commentSection";
 
 const emit = defineEmits(["deleted"]);
 
@@ -134,13 +133,13 @@ const props = defineProps<{
   isPostLocked: boolean;
 }>();
 
+const sortAlgorithm = ref<CommentFilterOptions>("discover");
+const requestedCommentSlugId = ref("");
+
 const currentClusterTab = ref<PolisKey | "all">("all");
 
 const { profileData } = storeToRefs(useUserStore());
 
-const { sortAlgorithm, requestedCommentSlugId } = storeToRefs(
-  useCommentSectionStore()
-);
 const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
   transform: String,
 });
@@ -222,7 +221,7 @@ function updateInfiniteScrollingList(optionValue: CommentFilterOptions) {
       setupOpinionlist(commentItemsModerated, requestedCommentSlugId.value);
       break;
     default:
-      console.error("Unknown sort algorithm: " + sortAlgorithm);
+      console.error("Unknown sort algorithm: " + sortAlgorithm.value);
   }
 }
 
