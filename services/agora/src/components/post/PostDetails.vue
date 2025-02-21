@@ -181,6 +181,7 @@ import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 import UserHtmlBody from "./views/UserHtmlBody.vue";
+import { useCommentSectionStore } from "src/stores/commentSection";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -189,6 +190,7 @@ const props = defineProps<{
 }>();
 
 const { isAuthenticated } = useAuthenticationStore();
+const { requestedCommentSlugId } = storeToRefs(useCommentSectionStore());
 
 const commentCountOffset = ref(0);
 const commentSectionKey = ref(Date.now());
@@ -252,9 +254,7 @@ function scrollToCommentSection() {
 }
 
 async function submittedComment(opinionSlugId: string) {
-  await router.replace({
-    query: { opinionSlugId: opinionSlugId, filter: "new" },
-  });
+  requestedCommentSlugId.value = opinionSlugId;
 
   commentCountOffset.value += 1;
   focusCommentElement.value = false;
