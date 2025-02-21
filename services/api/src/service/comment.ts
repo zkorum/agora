@@ -1365,13 +1365,16 @@ export async function deleteOpinionBySlugId({
 }: DeleteCommentBySlugIdProps): Promise<void> {
     try {
         await db.transaction(async (tx) => {
-            const { conversationId } =
-                await useCommonComment().getConversationMetadataFromOpinionSlugId(
-                    {
-                        db: tx,
-                        opinionSlugId,
-                    },
-                );
+            const { conversationId, isOpinionDeleted } =
+                await useCommonComment().getOpinionMetadataFromOpinionSlugId({
+                    db: tx,
+                    opinionSlugId,
+                });
+            if (isOpinionDeleted) {
+                log.error("Opinion had already been deleted");
+                tx.rollback();
+            }
+
             // both values are 0 if the user is a new participant!
             const {
                 voteCount: participantCurrentVoteCount,
