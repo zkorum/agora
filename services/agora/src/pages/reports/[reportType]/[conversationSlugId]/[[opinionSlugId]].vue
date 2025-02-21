@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: true,
       enableFooter: true,
@@ -46,7 +46,7 @@
         </div>
       </div>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -56,7 +56,7 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const route = useRoute();

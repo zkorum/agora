@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableHeader: true,
@@ -42,7 +42,7 @@
         />
       </div>
     </form>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -51,7 +51,7 @@ import Select from "primevue/select";
 import Button from "primevue/button";
 import { ref } from "vue";
 import { useDialog } from "src/utils/ui/dialog";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 const description = ref("");
 
