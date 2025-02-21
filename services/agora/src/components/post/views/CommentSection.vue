@@ -182,10 +182,12 @@ onMounted(async () => {
 });
 
 watch(sortAlgorithm, () => {
+  requestedCommentSlugId.value = "";
   updateInfiniteScrollingList(sortAlgorithm.value);
 });
 
 watch(currentClusterTab, async () => {
+  requestedCommentSlugId.value = "";
   if (currentClusterTab.value !== "all") {
     const clusterKey = currentClusterTab.value;
     const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
