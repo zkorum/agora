@@ -59,6 +59,12 @@ importers:
       libphonenumber-js:
         specifier: ^1.11.14
         version: 1.11.14
+      linkify-html:
+        specifier: ^4.2.0
+        version: 4.2.0(linkifyjs@4.2.0)
+      linkifyjs:
+        specifier: ^4.2.0
+        version: 4.2.0
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
@@ -2911,6 +2917,14 @@ packages:
 
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
+
+  linkify-html@4.2.0:
+    resolution: {integrity: sha512-bVXuLiWmGwvlH95hq6q9DFGqTsQeFSGw/nHmvvjGMZv9T3GqkxuW2d2SOgk/a4DV2ajeS4c37EqlF16cjOj7GA==}
+    peerDependencies:
+      linkifyjs: ^4.0.0
+
+  linkifyjs@4.2.0:
+    resolution: {integrity: sha512-pCj3PrQyATaoTYKHrgWRF3SJwsm61udVh+vuls/Rl6SptiDhgE7ziUIudAedRY9QEfynmM7/RmLEfPUyw1HPCw==}
 
   localforage@1.10.0:
     resolution: {integrity: sha512-14/H1aX7hzBBmmh7sGPd+AOMkkIrHM3Z1PAyGgZigA1H1p5O5ANnMyWzvpAETtG68/dC4pC0ncy3+PPGzXZHPg==}
@@ -7667,6 +7681,12 @@ snapshots:
       set-cookie-parser: 2.6.0
 
   lines-and-columns@1.2.4: {}
+
+  linkify-html@4.2.0(linkifyjs@4.2.0):
+    dependencies:
+      linkifyjs: 4.2.0
+
+  linkifyjs@4.2.0: {}
 
   localforage@1.10.0:
     dependencies:

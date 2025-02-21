@@ -5,7 +5,7 @@
     </template>
 
     <template #footer>
-      <WidthWrapper width="25rem">
+      <WidthWrapper :enable="true">
         <StepperLayout
           :submit-call-back="() => {}"
           :current-step="3"

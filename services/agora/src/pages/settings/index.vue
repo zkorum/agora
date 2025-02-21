@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: true,
       enableFooter: true,
@@ -7,10 +7,9 @@
       reducedWidth: true,
     }"
     :menu-bar-props="{
-      hasBackButton: false,
-      hasCloseButton: true,
+      hasBackButton: true,
+      hasCloseButton: false,
       hasLoginButton: true,
-      hasSettingsButton: true,
     }"
   >
     <div class="container">
@@ -28,22 +27,21 @@
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { type SettingsInterface } from "src/utils/component/settings/settings";
+import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-
 const { showDeleteAccountDialog } = useDialog();
 
 const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =

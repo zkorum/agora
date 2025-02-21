@@ -1,12 +1,12 @@
 <template>
-  <div class="innerStyle" :style="{ width: 'min(' + width + ', 100%)' }">
+  <div class="innerStyle" :style="{ width: enable ? 'min(35rem, 100%)' : '' }">
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-  width: string;
+  enable: boolean;
 }>();
 </script>
 

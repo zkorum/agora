@@ -40,7 +40,7 @@ import type {
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
 import { MAX_LENGTH_OPINION, toUnionUndefined } from "@/shared/shared.js";
-import { sanitizeHtmlBody } from "@/utils/htmlSanitization.js";
+import { processHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
@@ -1170,7 +1170,7 @@ export async function postNewOpinion({
     }
 
     try {
-        commentBody = sanitizeHtmlBody(commentBody, MAX_LENGTH_OPINION);
+        commentBody = processHtmlBody(commentBody, MAX_LENGTH_OPINION);
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
@@ -1365,13 +1365,16 @@ export async function deleteOpinionBySlugId({
 }: DeleteCommentBySlugIdProps): Promise<void> {
     try {
         await db.transaction(async (tx) => {
-            const { conversationId } =
-                await useCommonComment().getConversationMetadataFromOpinionSlugId(
-                    {
-                        db: tx,
-                        opinionSlugId,
-                    },
-                );
+            const { conversationId, isOpinionDeleted } =
+                await useCommonComment().getOpinionMetadataFromOpinionSlugId({
+                    db: tx,
+                    opinionSlugId,
+                });
+            if (isOpinionDeleted) {
+                log.error("Opinion had already been deleted");
+                tx.rollback();
+            }
+
             // both values are 0 if the user is a new participant!
             const {
                 voteCount: participantCurrentVoteCount,

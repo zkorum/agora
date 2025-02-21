@@ -29,7 +29,6 @@ import { getUserMutePreferences } from "./muteUser.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as polisService from "@/service/polis.js";
 import type { ClusterMetadata } from "@/shared/types/zod.js";
-import { log } from "@/app.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -712,19 +711,20 @@ export function useCommonComment() {
         return commentTableResponse[0].commentId;
     }
 
-    interface GetConversationIdFromOpinionSlugIdProps {
+    interface GetOpinionMetadataFromOpinionSlugIdProps {
         db: PostgresJsDatabase;
         opinionSlugId: string;
     }
 
-    async function getConversationMetadataFromOpinionSlugId({
+    async function getOpinionMetadataFromOpinionSlugId({
         db,
         opinionSlugId,
-    }: GetConversationIdFromOpinionSlugIdProps) {
+    }: GetOpinionMetadataFromOpinionSlugIdProps) {
         const opinionTableResponse = await db
             .select({
                 conversationSlugId: conversationTable.slugId,
                 conversationId: conversationTable.id,
+                opinionCurrentContentId: opinionTable.currentContentId,
             })
             .from(opinionTable)
             .innerJoin(
@@ -743,11 +743,13 @@ export function useCommonComment() {
         return {
             conversationSlugId: opinionTableResponse[0].conversationSlugId,
             conversationId: opinionTableResponse[0].conversationId,
+            isOpinionDeleted:
+                opinionTableResponse[0].opinionCurrentContentId == null,
         };
     }
 
     return {
-        getConversationMetadataFromOpinionSlugId,
+        getOpinionMetadataFromOpinionSlugId,
         getCommentIdFromCommentSlugId,
         getCountsForParticipant,
     };
