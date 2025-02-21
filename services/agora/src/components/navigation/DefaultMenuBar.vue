@@ -19,7 +19,7 @@
         v-if="hasLoginButton && !isAuthenticated && showAuthButton"
         :to="{ name: '/welcome/' }"
       >
-        <ZKButton label="Log in" text-color="white" color="warning" />
+        <ZKButton label="Log in" text-color="white" color="primary" />
       </RouterLink>
     </div>
   </TopMenuWrapper>
@@ -59,5 +59,6 @@ function menuButtonClicked() {
 .menuButtons {
   display: flex;
   gap: 0.8rem;
+  padding: 0.2rem;
 }
 </style>
