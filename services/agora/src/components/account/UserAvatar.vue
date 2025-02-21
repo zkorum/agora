@@ -5,16 +5,28 @@
 <script setup lang="ts">
 import { createAvatar } from "@dicebear/core";
 import { thumbs } from "@dicebear/collection";
+import { ref, watch } from "vue";
 
 const props = defineProps<{
   userName: string;
   size: number;
 }>();
 
-const avatar = createAvatar(thumbs, {
-  size: props.size,
-  seed: props.userName,
-}).toDataUri();
+const svg = ref(createAvatarString());
 
-const svg = avatar.toString();
+watch(
+  () => props.userName,
+  () => {
+    svg.value = createAvatarString();
+  }
+);
+
+function createAvatarString() {
+  const avatar = createAvatar(thumbs, {
+    size: props.size,
+    seed: props.userName,
+  }).toDataUri();
+
+  return avatar.toString();
+}
 </script>

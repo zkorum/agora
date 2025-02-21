@@ -1,7 +1,11 @@
 <template>
   <div class="container">
     <div v-if="isAuthenticated" class="usernameBar">
-      <UserAvatar :user-name="profileData.userName" :size="35" />
+      <UserAvatar
+        :key="profileData.userName"
+        :user-name="profileData.userName"
+        :size="35"
+      />
       <div>
         {{ profileData.userName }}
       </div>
@@ -37,7 +41,7 @@ import { useUserStore } from "src/stores/user";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { showDrawer } = storeToRefs(useNavigationStore());
-const { profileData } = useUserStore();
+const { profileData } = storeToRefs(useUserStore());
 
 const { showLoginConfirmationDialog } = useDialog();
 
@@ -82,7 +86,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
 
 .settingItemStyle {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: center;
   padding-left: 1rem;
   padding-right: 1rem;
