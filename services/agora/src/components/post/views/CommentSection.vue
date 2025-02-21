@@ -124,6 +124,10 @@ import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
 
+defineExpose({
+  openModerationHistory,
+});
+
 const emit = defineEmits(["deleted"]);
 
 const props = defineProps<{
@@ -207,6 +211,10 @@ watch(currentClusterTab, async () => {
 const showClusterMap = computed(() => {
   return props.polis.clusters.length >= 2;
 });
+
+function openModerationHistory() {
+  sortAlgorithm.value = "moderated";
+}
 
 function updateInfiniteScrollingList(optionValue: CommentFilterOptions) {
   switch (optionValue) {

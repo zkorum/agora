@@ -18,6 +18,7 @@
                 :skeleton-mode="skeletonMode"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
                 :author-verified="false"
+                @open-moderation-history="openModerationHistory()"
               />
 
               <div class="postDiv">
@@ -128,6 +129,7 @@
             <div v-if="!compactMode">
               <CommentSection
                 :key="commentSectionKey"
+                ref="commentSectionRef"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
                 :participant-count="extendedPostData.metadata.participantCount"
                 :polis="extendedPostData.polis"
@@ -188,6 +190,8 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuthenticationStore();
 
+const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
+
 const commentCountOffset = ref(0);
 const commentSectionKey = ref(Date.now());
 
@@ -224,6 +228,10 @@ const isLocked = computed(() => {
   }
   return false;
 });
+
+function openModerationHistory() {
+  commentSectionRef.value?.openModerationHistory();
+}
 
 function decrementCommentCount() {
   commentCountOffset.value -= 1;
