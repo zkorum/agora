@@ -371,6 +371,7 @@ async function scrollToComment() {
       commentItemsModerated,
       commentItemsHidden
     );
+
     if (detectedFilter == "not_found") {
       showNotifyMessage("Opinion not found: " + requestedCommentSlugId.value);
     } else {
@@ -398,7 +399,6 @@ async function scrollToComment() {
 
 async function changeFilter(filterValue: CommentFilterOptions) {
   sortAlgorithm.value = filterValue;
-  updateInfiniteScrollingList(filterValue);
 }
 
 function toggleClusterSelection(clusterKey: PolisKey) {
