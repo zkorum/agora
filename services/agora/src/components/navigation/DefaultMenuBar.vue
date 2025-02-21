@@ -1,10 +1,6 @@
 <template>
   <TopMenuWrapper :reveal="true">
     <div class="menuButtons">
-      <BackButton v-if="hasBackButton" />
-
-      <CloseButton v-if="hasCloseButton" />
-
       <ZKButton
         v-if="!hasCloseButton"
         icon="mdi-menu"
@@ -12,6 +8,10 @@
         flat
         @click="menuButtonClicked()"
       />
+
+      <BackButton v-if="hasBackButton" />
+
+      <CloseButton v-if="hasCloseButton" />
     </div>
 
     <div class="menuButtons">
