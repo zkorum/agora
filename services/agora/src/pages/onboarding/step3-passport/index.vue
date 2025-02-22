@@ -34,6 +34,7 @@
                     Download
                     <span v-if="quasar.platform.is.mobile">
                       <a
+                        class="hrefColor"
                         :href="rarimeStoreLink"
                         target="_blank"
                         rel="noopener noreferrer"
