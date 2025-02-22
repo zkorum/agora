@@ -1,6 +1,14 @@
 <template>
   <TopMenuWrapper :reveal="true">
     <div class="menuButtons">
+      <ZKButton
+        v-if="!hasCloseButton"
+        icon="mdi-menu"
+        color="black"
+        flat
+        @click="menuButtonClicked()"
+      />
+
       <BackButton v-if="hasBackButton" />
 
       <CloseButton v-if="hasCloseButton" />
@@ -11,17 +19,7 @@
         v-if="hasLoginButton && !isAuthenticated && showAuthButton"
         :to="{ name: '/welcome/' }"
       >
-        <ZKButton label="Log in" text-color="white" color="warning" />
-      </RouterLink>
-
-      <HelpButton v-if="isAuthenticated" />
-      <RouterLink :to="{ name: '/settings/' }">
-        <ZKButton
-          v-if="hasSettingsButton"
-          icon="mdi-cog"
-          text-color="color-text-strong"
-          flat
-        />
+        <ZKButton label="Log in" text-color="white" color="primary" />
       </RouterLink>
     </div>
   </TopMenuWrapper>
@@ -29,7 +27,6 @@
 
 <script setup lang="ts">
 import ZKButton from "../ui-library/ZKButton.vue";
-import HelpButton from "./buttons/HelpButton.vue";
 import BackButton from "./buttons/BackButton.vue";
 import { type DefaultMenuBarProps } from "src/utils/model/props";
 import TopMenuWrapper from "./TopMenuWrapper.vue";
@@ -37,6 +34,9 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { onMounted, ref } from "vue";
 import CloseButton from "./buttons/CloseButton.vue";
 import { storeToRefs } from "pinia";
+import { useNavigationStore } from "src/stores/navigation";
+
+const { showDrawer } = storeToRefs(useNavigationStore());
 
 defineProps<DefaultMenuBarProps>();
 
@@ -49,11 +49,16 @@ onMounted(() => {
     showAuthButton.value = true;
   }, 50);
 });
+
+function menuButtonClicked() {
+  showDrawer.value = !showDrawer.value;
+}
 </script>
 
 <style scoped style="scss">
 .menuButtons {
   display: flex;
   gap: 0.8rem;
+  padding: 0.2rem;
 }
 </style>

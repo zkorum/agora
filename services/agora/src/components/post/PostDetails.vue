@@ -1,8 +1,7 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
     <div ref="postContainerRef" :class="{ fixedHeightContainer: !compactMode }">
-      <WidthWrapper :width="'35rem'">
+      <WidthWrapper :enable="true">
         <ZKHoverEffect :enable-hover="compactMode">
           <div
             class="container postPadding"
@@ -19,6 +18,7 @@
                 :skeleton-mode="skeletonMode"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
                 :author-verified="false"
+                @open-moderation-history="openModerationHistory()"
               />
 
               <div class="postDiv">
@@ -46,10 +46,10 @@
                   "
                   class="bodyDiv"
                 >
-                  <span
-                    :class="{ truncate: compactMode }"
-                    v-html="extendedPostData.payload.body"
-                  ></span>
+                  <UserHtmlBody
+                    :html-body="extendedPostData.payload.body"
+                    :compact-mode="compactMode"
+                  />
                 </div>
 
                 <ZKCard
@@ -126,9 +126,10 @@
               </div>
             </div>
 
-            <div v-if="!compactMode" ref="commentSectionRef">
+            <div v-if="!compactMode">
               <CommentSection
                 :key="commentSectionKey"
+                ref="commentSectionRef"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
                 :participant-count="extendedPostData.metadata.participantCount"
                 :polis="extendedPostData.polis"
@@ -166,11 +167,9 @@ import PostMetadata from "./views/PostMetadata.vue";
 import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
-import { usePostStore } from "src/stores/post";
-import { computed, onMounted, ref, useTemplateRef } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRoute, useRouter } from "vue-router";
-import { useRouteQuery } from "@vueuse/router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -181,6 +180,7 @@ import { useInfiniteScroll } from "@vueuse/core";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
+import UserHtmlBody from "./views/UserHtmlBody.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -190,22 +190,19 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuthenticationStore();
 
+const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
+
 const commentCountOffset = ref(0);
 const commentSectionKey = ref(Date.now());
 
-const commentSectionRef = ref<HTMLElement | null>(null);
 const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
 
 const router = useRouter();
 const route = useRoute();
 
-const { loadPostData } = usePostStore();
-
 const webShare = useWebShare();
 
 const focusCommentElement = ref(false);
-
-const action = useRouteQuery("action");
 
 const { loadMore } = useOpinionScrollableStore();
 const { hasMore } = storeToRefs(useOpinionScrollableStore());
@@ -223,14 +220,6 @@ useInfiniteScroll(
   }
 );
 
-onMounted(() => {
-  if (action.value == "comment") {
-    setTimeout(() => {
-      scrollToCommentSection();
-    }, 100);
-  }
-});
-
 const isLocked = computed(() => {
   if (props.extendedPostData.metadata.moderation.status == "moderated") {
     if (props.extendedPostData.metadata.moderation.action == "lock") {
@@ -240,29 +229,25 @@ const isLocked = computed(() => {
   return false;
 });
 
+function openModerationHistory() {
+  commentSectionRef.value?.openModerationHistory();
+}
+
 function decrementCommentCount() {
   commentCountOffset.value -= 1;
 }
 
-function scrollToCommentSection() {
-  commentSectionRef.value?.scrollIntoView({
-    behavior: "smooth",
-    block: "center",
-  });
-}
-
 async function submittedComment(opinionSlugId: string) {
-  await router.replace({
-    query: { opinionSlugId: opinionSlugId, filter: "new" },
-  });
-
   commentCountOffset.value += 1;
   focusCommentElement.value = false;
 
   commentSectionKey.value += Date.now();
 
-  scrollToCommentSection();
-  await loadPostData(false);
+  await router.push({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
+    query: { opinionSlugId: opinionSlugId },
+  });
 }
 
 function cancelledCommentComposor() {
@@ -276,7 +261,6 @@ async function clickedCommentButton() {
       params: {
         postSlugId: props.extendedPostData.metadata.conversationSlugId,
       },
-      query: { action: "comment" },
     });
   } else {
     focusCommentElement.value = !focusCommentElement.value;
@@ -358,15 +342,6 @@ async function shareClicked() {
   padding-right: 0.5rem;
   padding-top: 1rem;
   padding-bottom: 1rem;
-}
-
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
 }
 
 .extraTitleBottomPadding {
