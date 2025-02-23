@@ -958,6 +958,7 @@ server.after(() => {
                     votingAction: request.body.chosenOption,
                     axiosPolis: axiosPolis,
                     polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                    voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 });
                 reply.send(castVoteResponse);
                 const proofChannel40EventId =

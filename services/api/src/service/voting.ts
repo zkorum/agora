@@ -9,15 +9,15 @@ import {
     participantTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, desc, isNotNull } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import type { VotingAction } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
-import { generateRandomSlugId } from "@/crypto.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import { log } from "@/app.js";
+import { insertNewVoteNotification } from "./notification.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -315,6 +315,7 @@ interface CastVoteForOpinionSlugIdProps {
     votingAction: VotingAction;
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
+    voteNotifMilestones: number[];
 }
 
 export async function castVoteForOpinionSlugId({
@@ -326,6 +327,7 @@ export async function castVoteForOpinionSlugId({
     votingAction,
     axiosPolis,
     polisDelayToFetch,
+    voteNotifMilestones,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getConversationMetadataFromOpinionSlugId({
@@ -497,7 +499,8 @@ export async function castVoteForOpinionSlugId({
                             ? sql`${participantTable.voteCount} - 1`
                             : sql`${participantTable.voteCount} + 1`,
                 },
-            });
+            })
+            .returning({ newVoteCount: participantTable.voteCount });
 
         if (votingAction === "cancel") {
             // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
@@ -549,6 +552,18 @@ export async function castVoteForOpinionSlugId({
 
         const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
 
+        const updateOpinionResponse = await tx
+            .update(opinionTable)
+            .set({
+                numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
+                numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
+            })
+            .where(eq(opinionTable.id, commentData.commentId))
+            .returning({
+                numAgrees: opinionTable.numAgrees,
+                numDisagrees: opinionTable.numDisagrees,
+            });
+
         if (votingAction != "cancel") {
             const voteContentTableResponse = await tx
                 .insert(voteContentTable)
@@ -570,76 +585,91 @@ export async function castVoteForOpinionSlugId({
                 })
                 .where(eq(voteTable.id, voteTableId));
 
-            {
-                // Create notification for the opinion owner
-                if (userId !== commentData.userId) {
-                    // Check if an agree/disagree notification already exist previously to the owner
-                    const existanceCheckResponse = await db
-                        .select({})
-                        .from(notificationTable)
-                        .leftJoin(
-                            notificationOpinionVoteTable,
+            // Create notification for the opinion owner
+            if (userId !== commentData.userId) {
+                // Check if a vote notification already exist
+                const existingVoteNotifications = await db
+                    .select({
+                        numVotes: notificationOpinionVoteTable.numVotes,
+                    })
+                    .from(notificationTable)
+                    .innerJoin(
+                        notificationOpinionVoteTable,
+                        eq(
+                            notificationOpinionVoteTable.notificationId,
+                            notificationTable.id,
+                        ),
+                    )
+                    .where(
+                        and(
+                            eq(notificationTable.userId, commentData.userId),
                             eq(
-                                notificationOpinionVoteTable.notificationId,
-                                notificationTable.id,
+                                notificationOpinionVoteTable.opinionId,
+                                commentData.commentId,
                             ),
-                        )
+                        ),
+                    )
+                    .orderBy(desc(notificationOpinionVoteTable.numVotes));
+                if (existingVoteNotifications.length === 0) {
+                    await insertNewVoteNotification({
+                        db: tx,
+                        userId: commentData.userId,
+                        opinionId: commentData.commentId,
+                        conversationId: postMetadata.id,
+                        numVotes: 1,
+                    });
+                } else {
+                    // identify whether the author of the opinion has voted on his own opinion or not
+                    const selectAuthorVoteResponse = await tx
+                        .select()
+                        .from(voteTable)
                         .where(
                             and(
-                                eq(notificationTable.userId, userId),
-                                eq(
-                                    notificationOpinionVoteTable.authorId,
-                                    commentData.userId,
-                                ),
-                                eq(
-                                    notificationOpinionVoteTable.opinionId,
-                                    commentData.commentId,
-                                ),
+                                eq(voteTable.opinionId, commentData.commentId),
+                                eq(voteTable.authorId, commentData.userId),
+                                isNotNull(voteTable.currentContentId), // vote was not canceled
                             ),
                         );
-                    if (existanceCheckResponse.length > 1) {
-                        throw httpErrors.internalServerError(
-                            `An unexpected number of voting notification entries had been detected: ${existanceCheckResponse.length.toString()}`,
+                    const authorHasVotedOnHisOwnOpinion =
+                        selectAuthorVoteResponse.length !== 0;
+                    const authorVoteCountOnHisOwnOpinion =
+                        authorHasVotedOnHisOwnOpinion ? 1 : 0;
+                    const newNumVotes = Math.max(
+                        updateOpinionResponse[0].numAgrees +
+                            updateOpinionResponse[0].numDisagrees -
+                            authorVoteCountOnHisOwnOpinion,
+                        1,
+                    ); // we don't want to count the own author's vote in the notification!
+                    const existingNotificationNumVotes =
+                        existingVoteNotifications[0].numVotes;
+                    if (existingNotificationNumVotes >= newNumVotes) {
+                        // could happen when people have canceled votes
+                        // do nothing
+                        log.debug(
+                            `Not adding a new notification to opinionId ${String(
+                                commentData.commentId,
+                            )} because existingNotificationNumVotes=${String(
+                                existingNotificationNumVotes,
+                            )} >= newVoteCount=${String(newNumVotes)}`,
                         );
-                    } else if (existanceCheckResponse.length == 1) {
-                        // do nothing because a notification was sent previously
-                    } else {
-                        const notificationTableResponse = await tx
-                            .insert(notificationTable)
-                            .values({
-                                slugId: generateRandomSlugId(),
-                                userId: commentData.userId,
-                                notificationType: "opinion_vote",
-                            })
-                            .returning({
-                                notificationId: notificationTable.id,
-                            });
-
-                        const notificationId =
-                            notificationTableResponse[0].notificationId;
-
-                        await tx.insert(notificationOpinionVoteTable).values({
-                            notificationId: notificationId,
-                            authorId: userId,
+                    } else if (voteNotifMilestones.includes(newNumVotes)) {
+                        await insertNewVoteNotification({
+                            db: tx,
+                            userId: commentData.userId,
                             opinionId: commentData.commentId,
                             conversationId: postMetadata.id,
-                            vote: votingAction,
+                            numVotes: newNumVotes,
                         });
+                    } else {
+                        log.debug(
+                            `New vote not in milestone, skipping notification`,
+                        );
                     }
                 }
             }
         }
 
         // TODO: delete vote from external Polis system on cancel!
-
-        await tx
-            .update(opinionTable)
-            .set({
-                numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
-                numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
-            })
-            .where(eq(opinionTable.currentContentId, commentData.contentId));
-
         if (axiosPolis !== undefined) {
             await polisService.createOrUpdateVote({
                 userId,

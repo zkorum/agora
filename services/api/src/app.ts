@@ -84,6 +84,17 @@ const configSchema = z.object({
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),
+    VOTE_NOTIF_MILESTONES: z
+        .string()
+        .transform((value) =>
+            value.split(",").map((item) => {
+                return item.trim();
+            }),
+        )
+        .pipe(z.coerce.number().int().min(1).array().nonempty())
+        .default(
+            "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
+        ),
 });
 
 export const config = configSchema.parse(process.env);

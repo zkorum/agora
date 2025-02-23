@@ -35,20 +35,11 @@ export function useBackendNotificationApi() {
         },
       });
 
-      const notificationItemList: NotificationItem[] = [];
-      response.data.notificationList.forEach((notificationItem) => {
-        const parsedItem: NotificationItem = {
-          slugId: notificationItem.slugId,
-          createdAt: new Date(notificationItem.createdAt),
-          iconName: notificationItem.iconName,
-          isRead: notificationItem.isRead,
-          message: notificationItem.message,
-          routeTarget: notificationItem.routeTarget,
-          title: notificationItem.title,
-          username: notificationItem.username,
-        };
-        notificationItemList.push(parsedItem);
-      });
+      const notificationItemList: NotificationItem[] =
+        response.data.notificationList.map((item) => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+        }));
 
       return {
         notificationList: notificationItemList,

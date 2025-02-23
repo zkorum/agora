@@ -165,26 +165,39 @@ export const zodUserReportItem = z.object({
     id: z.number(),
 });
 
-export const zodRouteTarget = z.discriminatedUnion("target", [
+export const zodRouteTarget = z
+    .object({
+        conversationSlugId: zodSlugId,
+        opinionSlugId: zodSlugId,
+    })
+    .strict();
+
+// WARNING: change this together with the below values!
+export const zodNotificationType = z.enum(["opinion_vote", "new_opinion"]);
+export const zodNotificationItem = z.discriminatedUnion("type", [
     z
         .object({
-            target: z.literal("opinion"),
-            conversationSlugId: zodSlugId,
-            opinionSlugId: zodSlugId,
+            type: z.literal("opinion_vote"),
+            slugId: zodSlugId,
+            isRead: z.boolean(),
+            message: z.string(),
+            createdAt: z.date(),
+            routeTarget: zodRouteTarget,
+            numVotes: z.number().int().min(1),
+        })
+        .strict(),
+    z
+        .object({
+            type: z.literal("new_opinion"),
+            slugId: zodSlugId,
+            isRead: z.boolean(),
+            message: z.string(),
+            createdAt: z.date(),
+            routeTarget: zodRouteTarget,
+            username: z.string(),
         })
         .strict(),
 ]);
-
-export const zodNotificationItem = z.object({
-    slugId: zodSlugId,
-    isRead: z.boolean(),
-    title: z.string(),
-    message: z.string(),
-    iconName: z.string().max(50),
-    createdAt: z.date(),
-    username: z.string().optional(),
-    routeTarget: zodRouteTarget,
-});
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
 export const zodConversationModerationProperties = z.discriminatedUnion(
@@ -702,6 +715,7 @@ export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
 export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;
 export type NotificationItem = z.infer<typeof zodNotificationItem>;
+export type NotificationType = z.infer<typeof zodNotificationType>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;

@@ -1372,6 +1372,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
     'slugId': string;
     /**
      * 
@@ -1384,19 +1390,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'title': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
-     */
     'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
-     */
-    'iconName': string;
     /**
      * 
      * @type {string}
@@ -1405,49 +1399,162 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'createdAt': string;
     /**
      * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'numVotes': number;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'username'?: string;
-    /**
-     * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
-     */
-    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget;
+    'username': string;
 }
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = {
+    OpinionVote: 'opinion_vote',
+    NewOpinion: 'new_opinion'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum];
+
 /**
  * 
  * @export
- * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
  */
-export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget {
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
-    'target': ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum;
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'numVotes': number;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum = {
+    OpinionVote: 'opinion_vote'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'username': string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum = {
+    NewOpinion: 'new_opinion'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget
      */
     'conversationSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTarget
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget
      */
     'opinionSlugId': string;
 }
-
-export const ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum = {
-    Opinion: 'opinion'
-} as const;
-
-export type ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerRouteTargetTargetEnum];
-
 /**
  * 
  * @export

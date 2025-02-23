@@ -1467,6 +1467,7 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
         .notNull(),
 });
 
+// WARNING: if you change this, also change this in shared/zod.ts!
 export const notificationTypeEnum = pgEnum("notification_type_enum", [
     "opinion_vote",
     "new_opinion",
@@ -1479,16 +1480,13 @@ export const notificationOpinionVoteTable = pgTable(
         notificationId: integer("notification_id")
             .references(() => notificationTable.id)
             .notNull(),
-        authorId: uuid("author_id")
-            .references(() => userTable.id)
-            .notNull(),
         opinionId: integer("opinion_id")
             .references(() => opinionTable.id)
             .notNull(),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
-        vote: voteEnum("vote").notNull(),
+        numVotes: integer("num_votes").notNull().default(1),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1575,7 +1573,7 @@ export const polisClusterTable = pgTable("polis_cluster", {
         .references(() => polisContentTable.id), // the conversationTable never gets deleted
     key: polisKeyEnum("key").notNull(), // arbitrary id created by external polis system
     externalId: integer("external_id").notNull(),
-    numUsers: integer("numUsers").notNull(),
+    numUsers: integer("num_users").notNull(),
     aiLabel: varchar("ai_label", { length: 30 }), // TODO: set max-length appropriately
     aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
     mathCenter: real("math_center").array().notNull(), // extracted from external polis system

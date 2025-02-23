@@ -31,17 +31,20 @@
           >
             <ZKHoverEffect :enable-hover="true">
               <div class="notificationItemBase">
-                <q-icon :name="notificationItem.iconName" size="1.8rem" />
+                <q-icon
+                  :name="getIconFromNotificationType(notificationItem.type)"
+                  size="1.8rem"
+                />
                 <div class="notificationRightPortion">
                   <div>
                     <UserAvatar
-                      v-if="notificationItem.username"
+                      v-if="notificationItem.type === 'new_opinion'"
                       :user-name="notificationItem.username"
                       :size="30"
                     />
                   </div>
                   <div>
-                    {{ notificationItem.title }}
+                    {{ getTitleFromNotification(notificationItem) }}
                   </div>
 
                   <div class="messageStyle">
@@ -75,7 +78,11 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import MainLayout from "src/layouts/MainLayout.vue";
-import { RouteTarget } from "src/shared/types/zod";
+import {
+  NotificationItem,
+  NotificationType,
+  RouteTarget,
+} from "src/shared/types/zod";
 import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";
 import { useBackendNotificationApi } from "src/utils/api/notification";
@@ -116,18 +123,47 @@ onMounted(async () => {
   await loadNotificationData(false);
 });
 
+function getIconFromNotificationType(
+  notificationType: NotificationType
+): string {
+  let icon;
+  switch (notificationType) {
+    case "new_opinion":
+      icon = "mdi-chat-outline";
+      break;
+    case "opinion_vote":
+      icon = "mdi-checkbox-marked-circle-outline";
+      break;
+  }
+  return icon;
+}
+
+function getTitleFromNotification(notificationItem: NotificationItem): string {
+  let title;
+  switch (notificationItem.type) {
+    case "new_opinion":
+      title = `${notificationItem.username} contributed an opinion to your conversation:`;
+      break;
+    case "opinion_vote":
+      title =
+        notificationItem.numVotes === 1
+          ? "1 person voted on your opinion:"
+          : `${notificationItem.numVotes} people voted on your opinion:`;
+      break;
+  }
+  return title;
+}
+
 async function refreshData() {
   await loadNotificationData(false);
 }
 
 async function redirectPage(routeTarget: RouteTarget) {
-  if (routeTarget.target == "opinion") {
-    await router.push({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: routeTarget.conversationSlugId },
-      query: { opinionSlugId: routeTarget.opinionSlugId },
-    });
-  }
+  await router.push({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: routeTarget.conversationSlugId },
+    query: { opinionSlugId: routeTarget.opinionSlugId },
+  });
 }
 </script>
 

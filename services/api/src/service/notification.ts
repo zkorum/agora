@@ -14,6 +14,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
+import { generateRandomSlugId } from "@/crypto.js";
 
 interface MarkAllNotificationsAsReadProps {
     db: PostgresJsDatabase;
@@ -144,10 +145,9 @@ export async function getNotifications({
                 notificationItem.opinionContent
             ) {
                 const parsedItem: NotificationItem = {
+                    type: "new_opinion",
                     slugId: notificationItem.slugId,
-                    title: `${notificationItem.username} contributed an opinion to your conversation:`,
                     createdAt: notificationItem.createdAt,
-                    iconName: "mdi-chat-outline",
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
@@ -156,7 +156,6 @@ export async function getNotifications({
                     routeTarget: {
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
-                        target: "opinion",
                     },
                 };
 
@@ -176,9 +175,8 @@ export async function getNotifications({
                 isRead: notificationTable.isRead,
                 conversationSlugId: conversationTable.slugId,
                 opinionSlugId: opinionTable.slugId,
-                username: userTable.username,
                 opinionContent: opinionContentTable.content,
-                vote: notificationOpinionVoteTable.vote,
+                numVotes: notificationOpinionVoteTable.numVotes,
                 slugId: notificationTable.slugId,
             })
             .from(notificationTable)
@@ -204,10 +202,6 @@ export async function getNotifications({
                     notificationOpinionVoteTable.conversationId,
                 ),
             )
-            .leftJoin(
-                userTable,
-                eq(userTable.id, notificationOpinionVoteTable.authorId),
-            )
             .where(whereClause)
             .orderBy(orderByClause)
             .limit(fetchLimit);
@@ -216,25 +210,23 @@ export async function getNotifications({
             if (
                 notificationItem.conversationSlugId &&
                 notificationItem.opinionSlugId &&
-                notificationItem.username &&
                 notificationItem.opinionContent &&
-                notificationItem.vote
+                notificationItem.numVotes
             ) {
+                const numVotes = notificationItem.numVotes;
                 const parsedItem: NotificationItem = {
+                    type: "opinion_vote",
                     slugId: notificationItem.slugId,
-                    title: `${notificationItem.username} voted on your opinion:`,
                     createdAt: notificationItem.createdAt,
-                    iconName: "mdi-checkbox-marked-circle-outline",
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
                     ),
-                    username: notificationItem.username,
                     routeTarget: {
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
-                        target: "opinion",
                     },
+                    numVotes: numVotes,
                 };
 
                 notificationItemList.push(parsedItem);
@@ -254,4 +246,40 @@ export async function getNotifications({
         numNewNotifications: numNewNotifications,
         notificationList: notificationItemList,
     };
+}
+
+interface InsertNewVoteNotificationProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    opinionId: number;
+    conversationId: number;
+    numVotes: number;
+}
+
+export async function insertNewVoteNotification({
+    db,
+    userId,
+    opinionId,
+    conversationId,
+    numVotes,
+}: InsertNewVoteNotificationProps) {
+    const notificationTableResponse = await db
+        .insert(notificationTable)
+        .values({
+            slugId: generateRandomSlugId(),
+            userId: userId,
+            notificationType: "opinion_vote",
+        })
+        .returning({
+            notificationId: notificationTable.id,
+        });
+
+    const notificationId = notificationTableResponse[0].notificationId;
+
+    await db.insert(notificationOpinionVoteTable).values({
+        notificationId: notificationId,
+        opinionId: opinionId,
+        conversationId: conversationId,
+        numVotes: numVotes,
+    });
 }

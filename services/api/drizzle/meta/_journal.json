@@ -15,6 +15,13 @@
       "when": 1739888777335,
       "tag": "0001_rainy_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1740351514812,
+      "tag": "0002_vengeful_lily_hollister",
+      "breakpoints": true
     }
   ]
 }
