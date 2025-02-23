@@ -42,7 +42,7 @@ swagger-spec.json
 
 *.bak
 
-examples/polis_csv/*.csv*
+examples/**/*.csv*
 Bruno/*
 
 *.prod
