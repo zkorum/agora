@@ -1,5 +1,5 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
       addBottomPadding: false,
       enableFooter: true,
@@ -10,7 +10,6 @@
       hasBackButton: false,
       hasCloseButton: false,
       hasLoginButton: true,
-      hasSettingsButton: true,
     }"
   >
     <NewPostButtonWrapper @on-click="createNewPost()">
@@ -18,14 +17,14 @@
         <CompactPostList />
       </div>
     </NewPostButtonWrapper>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import { useRouter } from "vue-router";

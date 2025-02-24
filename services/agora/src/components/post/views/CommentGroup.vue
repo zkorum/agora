@@ -27,13 +27,17 @@
         :id="commentItem.opinionSlugId"
         :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
         padding="1rem"
-        class="commentItemBackground"
+        :class="{
+          commentItemBackground:
+            initialCommentSlugId != commentItem.opinionSlugId,
+          highlightCommentItem:
+            initialCommentSlugId == commentItem.opinionSlugId,
+        }"
       >
         <CommentSingle
           :selected-cluster-key="selectedClusterKey"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
-          :highlight="initialCommentSlugId == commentItem.opinionSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
           @deleted="deletedComment()"
@@ -89,5 +93,9 @@ function mutedComment() {
 
 .commentItemBackground {
   background-color: white;
+}
+
+.highlightCommentItem {
+  background-color: #d1d5db;
 }
 </style>

@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
     <div class="container">
@@ -31,8 +30,11 @@
       </div>
 
       <div>
-        <div :class="{ highlightComment: highlight }">
-          <span v-html="commentItem.opinion"></span>
+        <div>
+          <UserHtmlBody
+            :html-body="commentItem.opinion"
+            :compact-mode="false"
+          />
         </div>
 
         <CommentModeration
@@ -63,6 +65,7 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/utils/common";
 import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import UserHtmlBody from "./UserHtmlBody.vue";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -70,7 +73,6 @@ const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
-  highlight: boolean;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
 }>();
@@ -214,12 +216,6 @@ function mutedComment() {
   flex-direction: column;
   justify-content: left;
   gap: 1rem;
-}
-
-.highlightComment {
-  background-color: #ccfbf1;
-  border-radius: 15px;
-  padding: 0.5rem;
 }
 
 .avatarIcon {

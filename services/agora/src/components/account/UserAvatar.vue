@@ -1,25 +1,32 @@
 <template>
-  <Avatar
-    variant="beam"
-    :name="userName"
-    :colors="boringAvatarColors"
-    :size="size"
-  />
+  <img :src="svg" :alt="userName" />
 </template>
 
 <script setup lang="ts">
-import Avatar from "vue-boring-avatars";
+import { createAvatar } from "@dicebear/core";
+import { thumbs } from "@dicebear/collection";
+import { ref, watch } from "vue";
 
-defineProps<{
+const props = defineProps<{
   userName: string;
   size: number;
 }>();
 
-const boringAvatarColors = [
-  "#0a0310",
-  "#49007e",
-  "#ff005b",
-  "#ff7d10",
-  "#ffb238",
-];
+const svg = ref(createAvatarString());
+
+watch(
+  () => props.userName,
+  () => {
+    svg.value = createAvatarString();
+  }
+);
+
+function createAvatarString() {
+  const avatar = createAvatar(thumbs, {
+    size: props.size,
+    seed: props.userName,
+  }).toDataUri();
+
+  return avatar.toString();
+}
 </script>
