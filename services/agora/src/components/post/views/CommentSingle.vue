@@ -93,7 +93,7 @@ function calculateTotalReasonLabel() {
     totalPercentageDisagrees + totalPercentageAgrees > 50 &&
     Math.abs(totalPercentageAgrees - totalPercentageDisagrees) < 50
   ) {
-    return "Controversial (Total)";
+    return "Debated (Total)";
   }
 }
 
@@ -126,7 +126,7 @@ function calculateClusterReasonLabel() {
           selectedClusterPercentageAgrees - selectedClusterPercentageDisagrees
         ) < 50
       ) {
-        return `Controversial (Group ${labelCluster})`;
+        return `Debated (Group ${labelCluster})`;
       }
     }
     for (const clusterStat of props.commentItem.clustersStats) {
@@ -152,7 +152,7 @@ function calculateClusterReasonLabel() {
         clusterPercentageDisagrees + clusterPercentageAgrees > 50 &&
         Math.abs(clusterPercentageAgrees - clusterPercentageDisagrees) < 50
       ) {
-        return `Controversial (Group ${labelCluster})`;
+        return `Debated (Group ${labelCluster})`;
       }
     }
   }
