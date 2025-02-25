@@ -13,6 +13,16 @@
       hasLoginButton: true,
     }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <PostDetails
       v-if="dataLoaded"
       :extended-post-data="postData"
@@ -24,6 +34,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";

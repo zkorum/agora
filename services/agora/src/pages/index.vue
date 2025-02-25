@@ -21,7 +21,7 @@
         :has-login-button="true"
       >
         <template #left>
-          <div class="menuButtonHover">
+          <div v-if="isAuthenticated" class="menuButtonHover">
             <UserAvatar
               :size="40"
               :user-name="profileData.userName"
