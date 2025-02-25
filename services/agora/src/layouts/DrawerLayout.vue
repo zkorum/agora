@@ -22,17 +22,11 @@
       <q-page-container>
         <q-page>
           <WidthWrapper :enable="props.generalProps.reducedWidth">
+            <slot name="header"></slot>
             <slot />
           </WidthWrapper>
         </q-page>
       </q-page-container>
-
-      <DefaultMenuBar
-        v-if="props.generalProps.enableHeader"
-        :has-back-button="props.menuBarProps.hasBackButton"
-        :has-close-button="props.menuBarProps.hasCloseButton"
-        :has-login-button="props.menuBarProps.hasLoginButton"
-      />
 
       <q-footer
         v-if="props.generalProps.enableFooter"
@@ -48,7 +42,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import FooterBar from "src/components/footer/FooterBar.vue";
-import DefaultMenuBar from "src/components/navigation/DefaultMenuBar.vue";
 import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useNavigationStore } from "src/stores/navigation";

@@ -1,42 +1,35 @@
 <template>
   <TopMenuWrapper :reveal="true">
-    <div class="menuButtons">
-      <ZKButton
-        v-if="!hasCloseButton"
-        icon="mdi-menu"
-        color="black"
-        flat
-        @click="menuButtonClicked()"
-      />
-
+    <div class="minContainerSize">
       <BackButton v-if="hasBackButton" />
-
       <CloseButton v-if="hasCloseButton" />
+      <slot name="left"></slot>
     </div>
-
-    <div class="menuButtons">
+    <div class="minContainerSize">
+      <slot name="middle"></slot>
+    </div>
+    <div class="minContainerSize">
       <RouterLink
         v-if="hasLoginButton && !isAuthenticated && showAuthButton"
         :to="{ name: '/welcome/' }"
       >
         <ZKButton label="Log in" text-color="white" color="primary" />
       </RouterLink>
+
+      <slot name="right"></slot>
     </div>
   </TopMenuWrapper>
 </template>
 
 <script setup lang="ts">
-import ZKButton from "../ui-library/ZKButton.vue";
-import BackButton from "./buttons/BackButton.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import BackButton from "../buttons/BackButton.vue";
 import { type DefaultMenuBarProps } from "src/utils/model/props";
-import TopMenuWrapper from "./TopMenuWrapper.vue";
+import TopMenuWrapper from "../TopMenuWrapper.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onMounted, ref } from "vue";
-import CloseButton from "./buttons/CloseButton.vue";
+import CloseButton from "../buttons/CloseButton.vue";
 import { storeToRefs } from "pinia";
-import { useNavigationStore } from "src/stores/navigation";
-
-const { showDrawer } = storeToRefs(useNavigationStore());
 
 defineProps<DefaultMenuBarProps>();
 
@@ -49,16 +42,10 @@ onMounted(() => {
     showAuthButton.value = true;
   }, 50);
 });
-
-function menuButtonClicked() {
-  showDrawer.value = !showDrawer.value;
-}
 </script>
 
 <style scoped style="scss">
-.menuButtons {
-  display: flex;
-  gap: 0.8rem;
-  padding: 0.2rem;
+.minContainerSize {
+  min-width: 5rem;
 }
 </style>

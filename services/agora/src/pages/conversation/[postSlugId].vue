@@ -7,6 +7,7 @@
       reducedWidth: false,
     }"
     :menu-bar-props="{
+      hasMenuButton: true,
       hasBackButton: true,
       hasCloseButton: false,
       hasLoginButton: true,
