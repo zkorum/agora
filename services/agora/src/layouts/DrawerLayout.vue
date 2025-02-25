@@ -29,7 +29,6 @@
         behavior="mobile"
         :width="300"
         :breakpoint="700"
-        elevated
         overlay
         :no-swipe-open="noSwipeOpen"
       >
@@ -68,6 +67,7 @@ const noSwipeOpen = process.env.MODE != "capacitor";
     "sideBar mainBody"
     "sideBar footer";
 }
+
 .header {
   grid-area: header;
   padding: 0.5rem;

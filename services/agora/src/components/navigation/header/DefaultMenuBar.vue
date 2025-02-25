@@ -1,25 +1,29 @@
 <template>
   <TopMenuWrapper :reveal="true">
-    <div class="minContainerSize">
-      <div
-        v-if="isAuthenticated && hasMenuButton && !showDesktopDrawer"
-        class="menuButtonHover"
-      >
+    <div class="standardContainer">
+      <div v-if="hasMenuButton" class="menuButtonHover">
         <UserAvatar
+          v-if="isAuthenticated && hasMenuButton"
           :size="40"
           :user-name="profileData.userName"
           @click="menuButtonClicked()"
         />
       </div>
 
+      <ZKButton
+        v-if="!isAuthenticated && hasMenuButton"
+        icon="mdi-menu"
+        size="40"
+      />
+
       <BackButton v-if="hasBackButton" />
       <CloseButton v-if="hasCloseButton" />
       <slot name="left"></slot>
     </div>
-    <div class="minContainerSize">
+    <div class="standardContainer">
       <slot name="middle"></slot>
     </div>
-    <div class="minContainerSize">
+    <div class="standardContainer">
       <RouterLink
         v-if="hasLoginButton && !isAuthenticated && showAuthButton"
         :to="{ name: '/welcome/' }"
@@ -49,8 +53,7 @@ defineProps<DefaultMenuBarProps>();
 
 const { profileData } = storeToRefs(useUserStore());
 
-const { showMobileDrawer, showDesktopDrawer } =
-  storeToRefs(useNavigationStore());
+const { showMobileDrawer } = storeToRefs(useNavigationStore());
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -68,8 +71,8 @@ function menuButtonClicked() {
 </script>
 
 <style scoped style="scss">
-.minContainerSize {
-  min-width: 3rem;
+.standardContainer {
+  font: black;
 }
 
 .menuButtonHover:hover {

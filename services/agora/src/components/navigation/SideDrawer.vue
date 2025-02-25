@@ -84,6 +84,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
 <style lang="scss" scoped>
 .container {
   padding: 1rem;
+  width: 20dvw;
 }
 
 .settingItemStyle {
