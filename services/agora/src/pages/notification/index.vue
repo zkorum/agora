@@ -13,16 +13,21 @@
       hasLoginButton: false,
     }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="false"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="true"
+      >
+        <template #middle>
+          <div class="title">Notifications</div>
+        </template>
+      </DefaultMenuBar>
+    </template>
+
     <div ref="el" class="containerBase">
       <div class="widthConstraint">
-        <div class="topBar">
-          <div>
-            <UserAvatar :user-name="profileData.userName" :size="40" />
-          </div>
-          <div class="title">Notifications</div>
-          <div :style="{ width: '4rem' }"></div>
-        </div>
-
         <div class="notificaitonListFlexStyle">
           <div
             v-for="notificationItem in notificationList"
@@ -84,16 +89,15 @@ import {
 } from "src/shared/types/zod";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
-import { useUserStore } from "src/stores/user";
 import { useBackendNotificationApi } from "src/utils/api/notification";
 import { usePullDownToRefresh } from "src/utils/ui/pullDownToRefresh";
 import { onMounted, useTemplateRef } from "vue";
 import { useRouter } from "vue-router";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { loadNotificationData } = useNotificationStore();
 
-const { profileData } = useUserStore();
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
 const el = useTemplateRef<HTMLElement>("el");
@@ -168,16 +172,10 @@ async function redirectPage(routeTarget: RouteTarget) {
 </script>
 
 <style lang="scss" scoped>
-.topBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-}
-
 .title {
   font-weight: 500;
   font-size: 1rem;
+  color: black;
 }
 
 .notificationItemBase {

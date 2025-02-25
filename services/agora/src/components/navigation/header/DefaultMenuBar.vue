@@ -1,6 +1,14 @@
 <template>
   <TopMenuWrapper :reveal="true">
     <div class="minContainerSize">
+      <div v-if="isAuthenticated" class="menuButtonHover">
+        <UserAvatar
+          :size="40"
+          :user-name="profileData.userName"
+          @click="menuButtonClicked()"
+        />
+      </div>
+
       <BackButton v-if="hasBackButton" />
       <CloseButton v-if="hasCloseButton" />
       <slot name="left"></slot>
@@ -30,8 +38,15 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { onMounted, ref } from "vue";
 import CloseButton from "../buttons/CloseButton.vue";
 import { storeToRefs } from "pinia";
+import { useNavigationStore } from "src/stores/navigation";
+import { useUserStore } from "src/stores/user";
+import UserAvatar from "src/components/account/UserAvatar.vue";
 
 defineProps<DefaultMenuBarProps>();
+
+const { profileData } = storeToRefs(useUserStore());
+
+const { showDrawer } = storeToRefs(useNavigationStore());
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -42,10 +57,18 @@ onMounted(() => {
     showAuthButton.value = true;
   }, 50);
 });
+
+function menuButtonClicked() {
+  showDrawer.value = !showDrawer.value;
+}
 </script>
 
 <style scoped style="scss">
 .minContainerSize {
   min-width: 5rem;
+}
+
+.menuButtonHover:hover {
+  cursor: pointer;
 }
 </style>
