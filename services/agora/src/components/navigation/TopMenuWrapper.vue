@@ -1,11 +1,9 @@
 <template>
-  <q-header :reveal="reveal" bordered class="menuStyle">
-    <WidthWrapper :enable="true">
-      <div class="topMenu">
-        <slot />
-      </div>
-    </WidthWrapper>
-  </q-header>
+  <WidthWrapper :enable="true">
+    <div class="topMenu">
+      <slot />
+    </div>
+  </WidthWrapper>
 </template>
 
 <script setup lang="ts">
@@ -17,10 +15,6 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-.menuStyle {
-  background-color: $navigation-bar-color;
-}
-
 .topMenu {
   display: flex;
   align-items: center;

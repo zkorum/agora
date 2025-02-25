@@ -1,7 +1,7 @@
 <template>
   <TopMenuWrapper :reveal="true">
     <div class="minContainerSize">
-      <div v-if="isAuthenticated" class="menuButtonHover">
+      <div v-if="isAuthenticated && hasMenuButton" class="menuButtonHover">
         <UserAvatar
           :size="40"
           :user-name="profileData.userName"
