@@ -14,6 +14,7 @@
         v-if="!isAuthenticated && hasMenuButton"
         icon="mdi-menu"
         size="40"
+        @click="menuButtonClicked()"
       />
 
       <BackButton v-if="hasBackButton" />

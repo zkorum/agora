@@ -72,6 +72,8 @@ const noSwipeOpen = process.env.MODE != "capacitor";
     "sideBar header"
     "sideBar mainBody"
     "sideBar footer";
+  height: 100dvh;
+  width: 100dvw;
 }
 
 .header {
