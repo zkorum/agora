@@ -1,27 +1,33 @@
 <template>
   <div>
-    <q-layout
-      view="lHh lpR lFf"
-      :class="{ bottomPagePadding: props.generalProps.addBottomPadding }"
-    >
-      <div class="container">
-        <div class="header">
-          <slot name="header"></slot>
-        </div>
-        <div class="footer">
-          <div v-if="props.generalProps.enableFooter">
-            <FooterBar />
+    <q-layout view="lHh lpR lFf">
+      <q-page-container>
+        <q-page>
+          <div class="container">
+            <div class="header">
+              <slot name="header"></slot>
+            </div>
+            <div class="footer">
+              <div v-if="props.generalProps.enableFooter">
+                <FooterBar />
+              </div>
+            </div>
+            <div v-if="showDesktopDrawer" class="sideBar">
+              <SideDrawer />
+            </div>
+            <div
+              class="mainBody"
+              :class="{
+                bottomPagePadding: props.generalProps.addBottomPadding,
+              }"
+            >
+              <WidthWrapper :enable="props.generalProps.reducedWidth">
+                <slot />
+              </WidthWrapper>
+            </div>
           </div>
-        </div>
-        <div v-if="showDesktopDrawer" class="sideBar">
-          <SideDrawer />
-        </div>
-        <div class="mainBody">
-          <WidthWrapper :enable="props.generalProps.reducedWidth">
-            <slot />
-          </WidthWrapper>
-        </div>
-      </div>
+        </q-page>
+      </q-page-container>
 
       <q-drawer
         v-model="showMobileDrawer"
@@ -70,7 +76,6 @@ const noSwipeOpen = process.env.MODE != "capacitor";
 
 .header {
   grid-area: header;
-  padding: 0.5rem;
 }
 .footer {
   grid-area: footer;
