@@ -1,29 +1,31 @@
 <template>
-  <div class="container">
-    <div v-if="isAuthenticated" class="usernameBar">
-      <UserAvatar
-        :key="profileData.userName"
-        :user-name="profileData.userName"
-        :size="35"
-      />
-      <div>
-        {{ profileData.userName }}
+  <div>
+    <div class="container">
+      <div v-if="isAuthenticated" class="usernameBar">
+        <UserAvatar
+          :key="profileData.userName"
+          :user-name="profileData.userName"
+          :size="35"
+        />
+        <div>
+          {{ profileData.userName }}
+        </div>
       </div>
-    </div>
 
-    <div class="menuListFlex">
-      <div
-        v-for="settingItem in settingItemList"
-        :key="settingItem.name"
-        @click="enterRoute(settingItem.route, settingItem.requireAuth)"
-      >
-        <ZKHoverEffect :enable-hover="true">
-          <div class="settingItemStyle">
-            <q-icon :name="settingItem.icon" size="1.5rem" />
+      <div class="menuListFlex">
+        <div
+          v-for="settingItem in settingItemList"
+          :key="settingItem.name"
+          @click="enterRoute(settingItem.route, settingItem.requireAuth)"
+        >
+          <ZKHoverEffect :enable-hover="true">
+            <div class="settingItemStyle">
+              <q-icon :name="settingItem.icon" size="1.5rem" />
 
-            {{ settingItem.name }}
-          </div>
-        </ZKHoverEffect>
+              {{ settingItem.name }}
+            </div>
+          </ZKHoverEffect>
+        </div>
       </div>
     </div>
   </div>
@@ -40,7 +42,7 @@ import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-const { showDrawer } = storeToRefs(useNavigationStore());
+const { showMobileDrawer } = storeToRefs(useNavigationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 const { showLoginConfirmationDialog } = useDialog();
@@ -73,7 +75,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   if (requireAuth && isAuthenticated.value == false) {
     showLoginConfirmationDialog();
   } else {
-    showDrawer.value = false;
+    showMobileDrawer.value = false;
     await router.push({ name: routeName });
   }
 }

@@ -1,7 +1,10 @@
 <template>
   <TopMenuWrapper :reveal="true">
     <div class="minContainerSize">
-      <div v-if="isAuthenticated && hasMenuButton" class="menuButtonHover">
+      <div
+        v-if="isAuthenticated && hasMenuButton && !showDesktopDrawer"
+        class="menuButtonHover"
+      >
         <UserAvatar
           :size="40"
           :user-name="profileData.userName"
@@ -46,7 +49,8 @@ defineProps<DefaultMenuBarProps>();
 
 const { profileData } = storeToRefs(useUserStore());
 
-const { showDrawer } = storeToRefs(useNavigationStore());
+const { showMobileDrawer, showDesktopDrawer } =
+  storeToRefs(useNavigationStore());
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -59,13 +63,13 @@ onMounted(() => {
 });
 
 function menuButtonClicked() {
-  showDrawer.value = !showDrawer.value;
+  showMobileDrawer.value = !showMobileDrawer.value;
 }
 </script>
 
 <style scoped style="scss">
 .minContainerSize {
-  min-width: 5rem;
+  min-width: 3rem;
 }
 
 .menuButtonHover:hover {
