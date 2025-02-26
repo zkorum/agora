@@ -25,6 +25,7 @@ function createAvatarString() {
   const avatar = createAvatar(thumbs, {
     size: props.size,
     seed: props.userName,
+    radius: 35,
   }).toDataUri();
 
   return avatar.toString();

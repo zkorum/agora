@@ -3,7 +3,7 @@
     <div class="container">
       <TopMenuWrapper :reveal="true">
         <div class="standardContainer">
-          <div v-if="hasMenuButton" class="menuButtonHover">
+          <div class="menuButtonHover">
             <UserAvatar
               v-if="isAuthenticated && hasMenuButton"
               :size="40"
@@ -11,13 +11,6 @@
               @click="menuButtonClicked()"
             />
           </div>
-
-          <ZKButton
-            v-if="!isAuthenticated && hasMenuButton"
-            icon="mdi-menu"
-            size="40"
-            @click="menuButtonClicked()"
-          />
 
           <BackButton v-if="hasBackButton" />
           <CloseButton v-if="hasCloseButton" />
@@ -79,6 +72,7 @@ function menuButtonClicked() {
 <style scoped lang="scss">
 .container {
   background-color: $app-background-color;
+  padding: 0.5rem;
 }
 
 .standardContainer {

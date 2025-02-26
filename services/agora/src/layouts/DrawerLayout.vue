@@ -1,11 +1,11 @@
 <template>
   <div>
     <q-layout view="lHh lpR lFf">
-      <q-header height-hint="98">
+      <q-header v-if="drawerBehavior == 'mobile'" height-hint="98">
         <slot name="header"></slot>
       </q-header>
 
-      <q-footer class="bg-white">
+      <q-footer v-if="drawerBehavior == 'mobile'" class="footerBackground">
         <FooterBar />
       </q-footer>
 
@@ -91,5 +91,9 @@ const noSwipeOpen = process.env.MODE != "capacitor";
 
 .bottomPagePadding {
   padding-bottom: 10rem;
+}
+
+.footerBackground {
+  background-color: white;
 }
 </style>
