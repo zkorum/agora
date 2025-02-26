@@ -40,6 +40,7 @@
         :breakpoint="700"
         :overlay="drawerBehavior == 'mobile'"
         :no-swipe-open="noSwipeOpen"
+        bordered
       >
         <q-scroll-area class="fit">
           <SideDrawer />
