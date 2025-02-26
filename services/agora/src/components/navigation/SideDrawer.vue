@@ -1,7 +1,11 @@
 <template>
   <div>
     <div class="container">
-      <div v-if="isAuthenticated" class="usernameBar">
+      <div
+        v-if="isAuthenticated"
+        class="usernameBar"
+        @click="enterRoute('/user-profile/conversations/', true)"
+      >
         <UserAvatar
           :key="profileData.userName"
           :user-name="profileData.userName"
@@ -56,9 +60,15 @@ interface SettingItem {
 
 const settingItemList: SettingItem[] = [
   {
-    icon: "mdi-account-circle",
-    name: "Profile",
-    route: "/user-profile/conversations/",
+    icon: "mdi-home",
+    name: "Home",
+    route: "/",
+    requireAuth: false,
+  },
+  {
+    icon: "mdi-bell",
+    name: "Dings",
+    route: "/notification/",
     requireAuth: true,
   },
   {
@@ -107,6 +117,10 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   padding-top: 2rem;
   padding-bottom: 2rem;
   padding-left: 1rem;
+}
+
+.usernameBar:hover {
+  cursor: pointer;
 }
 
 .menuListFlex {
