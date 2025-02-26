@@ -16,7 +16,7 @@
           <CloseButton v-if="hasCloseButton" />
           <slot name="left"></slot>
         </div>
-        <div class="standardContainer">
+        <div class="standardContainer centerContainer">
           <slot name="middle"></slot>
         </div>
         <div class="standardContainer">
@@ -77,6 +77,11 @@ function menuButtonClicked() {
 
 .standardContainer {
   font: black;
+  min-width: 3rem;
+}
+
+.centerContainer {
+  margin: auto;
 }
 
 .menuButtonHover:hover {

@@ -3,7 +3,7 @@
     :general-props="{
       addBottomPadding: false,
       enableFooter: true,
-      enableHeader: true,
+      enableHeader: false,
       reducedWidth: false,
     }"
     :menu-bar-props="{
