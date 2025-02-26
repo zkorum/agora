@@ -37,12 +37,10 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
-import { useNavigationStore } from "src/stores/navigation";
 import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-const { showMobileDrawer } = storeToRefs(useNavigationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 const { showLoginConfirmationDialog } = useDialog();
@@ -75,7 +73,6 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   if (requireAuth && isAuthenticated.value == false) {
     showLoginConfirmationDialog();
   } else {
-    showMobileDrawer.value = false;
     await router.push({ name: routeName });
   }
 }
