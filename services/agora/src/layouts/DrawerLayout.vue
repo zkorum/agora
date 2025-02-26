@@ -1,30 +1,24 @@
 <template>
   <div>
     <q-layout view="lHh lpR lFf">
+      <q-header height-hint="98">
+        <slot name="header"></slot>
+      </q-header>
+
+      <q-footer class="bg-white">
+        <FooterBar />
+      </q-footer>
+
       <q-page-container>
         <q-page>
-          <div class="container">
-            <div class="header">
-              <slot name="header"></slot>
-            </div>
-            <div class="footer">
-              <div v-if="props.generalProps.enableFooter">
-                <FooterBar />
-              </div>
-            </div>
-            <div v-if="showDesktopDrawer" class="sideBar">
-              <SideDrawer />
-            </div>
-            <div
-              class="mainBody"
-              :class="{
-                bottomPagePadding: props.generalProps.addBottomPadding,
-              }"
-            >
-              <WidthWrapper :enable="props.generalProps.reducedWidth">
-                <slot />
-              </WidthWrapper>
-            </div>
+          <div
+            :class="{
+              bottomPagePadding: props.generalProps.addBottomPadding,
+            }"
+          >
+            <WidthWrapper :enable="props.generalProps.reducedWidth">
+              <slot />
+            </WidthWrapper>
           </div>
         </q-page>
       </q-page-container>
@@ -32,10 +26,10 @@
       <q-drawer
         v-model="showMobileDrawer"
         show-if-above
-        behavior="mobile"
+        :behavior="drawerBehavior"
         :width="300"
         :breakpoint="700"
-        overlay
+        :overlay="drawerBehavior == 'mobile'"
         :no-swipe-open="noSwipeOpen"
       >
         <q-scroll-area class="fit">
@@ -56,8 +50,7 @@ import { type MainLayoutProps } from "src/utils/model/props";
 
 const props = defineProps<MainLayoutProps>();
 
-const { showMobileDrawer, showDesktopDrawer } =
-  storeToRefs(useNavigationStore());
+const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
 
 const noSwipeOpen = process.env.MODE != "capacitor";
 </script>

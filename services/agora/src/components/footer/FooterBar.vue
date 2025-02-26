@@ -1,5 +1,6 @@
 <template>
   <div>
+    <q-separator />
     <div class="flexIcons container">
       <RouterLink to="/">
         <div class="iconStyle">

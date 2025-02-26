@@ -6,7 +6,7 @@ export const useNavigationStore = defineStore("navigation", () => {
   const { width } = useWindowSize();
 
   const showMobileDrawer = ref(false);
-  const showDesktopDrawer = ref(false);
+  const drawerBehavior = ref<"desktop" | "mobile">("mobile");
 
   onMounted(() => {
     updateDrawers();
@@ -18,12 +18,13 @@ export const useNavigationStore = defineStore("navigation", () => {
 
   function updateDrawers() {
     if (width.value > 1000) {
-      showMobileDrawer.value = false;
-      showDesktopDrawer.value = true;
+      drawerBehavior.value = "desktop";
+      showMobileDrawer.value = true;
     } else {
-      showDesktopDrawer.value = false;
+      drawerBehavior.value = "mobile";
+      showMobileDrawer.value = false;
     }
   }
 
-  return { showMobileDrawer, showDesktopDrawer };
+  return { showMobileDrawer, drawerBehavior };
 });

@@ -1,40 +1,45 @@
 <template>
-  <TopMenuWrapper :reveal="true">
-    <div class="standardContainer">
-      <div v-if="hasMenuButton" class="menuButtonHover">
-        <UserAvatar
-          v-if="isAuthenticated && hasMenuButton"
-          :size="40"
-          :user-name="profileData.userName"
-          @click="menuButtonClicked()"
-        />
-      </div>
+  <div>
+    <div class="container">
+      <TopMenuWrapper :reveal="true">
+        <div class="standardContainer">
+          <div v-if="hasMenuButton" class="menuButtonHover">
+            <UserAvatar
+              v-if="isAuthenticated && hasMenuButton"
+              :size="40"
+              :user-name="profileData.userName"
+              @click="menuButtonClicked()"
+            />
+          </div>
 
-      <ZKButton
-        v-if="!isAuthenticated && hasMenuButton"
-        icon="mdi-menu"
-        size="40"
-        @click="menuButtonClicked()"
-      />
+          <ZKButton
+            v-if="!isAuthenticated && hasMenuButton"
+            icon="mdi-menu"
+            size="40"
+            @click="menuButtonClicked()"
+          />
 
-      <BackButton v-if="hasBackButton" />
-      <CloseButton v-if="hasCloseButton" />
-      <slot name="left"></slot>
-    </div>
-    <div class="standardContainer">
-      <slot name="middle"></slot>
-    </div>
-    <div class="standardContainer">
-      <RouterLink
-        v-if="hasLoginButton && !isAuthenticated && showAuthButton"
-        :to="{ name: '/welcome/' }"
-      >
-        <ZKButton label="Log in" text-color="white" color="primary" />
-      </RouterLink>
+          <BackButton v-if="hasBackButton" />
+          <CloseButton v-if="hasCloseButton" />
+          <slot name="left"></slot>
+        </div>
+        <div class="standardContainer">
+          <slot name="middle"></slot>
+        </div>
+        <div class="standardContainer">
+          <RouterLink
+            v-if="hasLoginButton && !isAuthenticated && showAuthButton"
+            :to="{ name: '/welcome/' }"
+          >
+            <ZKButton label="Log in" text-color="white" color="primary" />
+          </RouterLink>
 
-      <slot name="right"></slot>
+          <slot name="right"></slot>
+        </div>
+      </TopMenuWrapper>
+      <q-separator />
     </div>
-  </TopMenuWrapper>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -71,7 +76,11 @@ function menuButtonClicked() {
 }
 </script>
 
-<style scoped style="scss">
+<style scoped lang="scss">
+.container {
+  background-color: $app-background-color;
+}
+
 .standardContainer {
   font: black;
 }
