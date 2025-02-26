@@ -43,9 +43,12 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useDialog } from "src/utils/ui/dialog";
 import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
+import { useNavigationStore } from "src/stores/navigation";
+import { ref, watch } from "vue";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
+const { drawerBehavior } = storeToRefs(useNavigationStore());
 
 const { showLoginConfirmationDialog } = useDialog();
 
@@ -58,26 +61,44 @@ interface SettingItem {
   requireAuth: boolean;
 }
 
-const settingItemList: SettingItem[] = [
-  {
-    icon: "mdi-home",
-    name: "Home",
-    route: "/",
-    requireAuth: false,
-  },
-  {
-    icon: "mdi-bell",
-    name: "Dings",
-    route: "/notification/",
-    requireAuth: true,
-  },
-  {
+const settingItemList = ref<SettingItem[]>([]);
+initializeMenu();
+
+watch(drawerBehavior, () => {
+  initializeMenu();
+});
+
+function initializeMenu() {
+  if (drawerBehavior.value == "desktop") {
+    settingItemList.value.push({
+      icon: "mdi-home",
+      name: "Home",
+      route: "/",
+      requireAuth: false,
+    });
+
+    settingItemList.value.push({
+      icon: "mdi-bell",
+      name: "Dings",
+      route: "/notification/",
+      requireAuth: true,
+    });
+  } else {
+    settingItemList.value.push({
+      icon: "mdi-account-circle",
+      name: "Profile",
+      route: "/user-profile/conversations/",
+      requireAuth: true,
+    });
+  }
+
+  settingItemList.value.push({
     icon: "mdi-cog",
     name: "Settings",
     route: "/settings/",
     requireAuth: false,
-  },
-];
+  });
+}
 
 async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   if (requireAuth && isAuthenticated.value == false) {
