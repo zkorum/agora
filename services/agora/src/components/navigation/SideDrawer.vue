@@ -1,6 +1,10 @@
 <template>
   <div>
     <div class="container">
+      <div v-if="drawerBehavior == 'desktop'" class="logoDiv">
+        <img :src="drawerIconLogo" class="logoStyle" />
+      </div>
+
       <div
         v-if="isAuthenticated"
         class="usernameBar"
@@ -49,6 +53,9 @@ import { ref, watch } from "vue";
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior } = storeToRefs(useNavigationStore());
+
+const drawerIconLogo =
+  process.env.VITE_PUBLIC_DIR + "/images/icons/drawerIcon.png";
 
 const { showLoginConfirmationDialog } = useDialog();
 
@@ -136,7 +143,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   align-items: center;
   font-weight: 500;
   padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding-bottom: 1rem;
   padding-left: 1rem;
 }
 
@@ -148,5 +155,16 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+.logoDiv {
+  display: flex;
+  justify-content: center;
+}
+
+.logoStyle {
+  max-width: 8rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 </style>
