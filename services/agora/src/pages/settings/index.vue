@@ -2,7 +2,7 @@
   <DrawerLayout
     :general-props="{
       addBottomPadding: true,
-      enableFooter: true,
+      enableFooter: false,
       enableHeader: true,
       reducedWidth: true,
     }"
@@ -13,6 +13,15 @@
       hasLoginButton: true,
     }"
   >
+    <DefaultMenuBar
+      :has-back-button="true"
+      :has-close-button="false"
+      :has-login-button="false"
+      :has-menu-button="false"
+    >
+      <template #middle> Settings </template>
+    </DefaultMenuBar>
+
     <div class="container">
       <div v-if="isAuthenticated">
         <SettingsSection :settings-item-list="accountSettings" />
@@ -33,6 +42,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";

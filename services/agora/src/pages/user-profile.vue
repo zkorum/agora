@@ -2,8 +2,8 @@
   <DrawerLayout
     :general-props="{
       addBottomPadding: true,
-      enableFooter: true,
-      enableHeader: false,
+      enableFooter: false,
+      enableHeader: true,
       reducedWidth: true,
     }"
     :menu-bar-props="{
@@ -13,6 +13,17 @@
       hasLoginButton: true,
     }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+        <template #middle> User Profile </template>
+      </DefaultMenuBar>
+    </template>
+
     <div class="topBar">
       <div class="usernameBar">
         <UserAvatar :user-name="profileData.userName" :size="35" />
@@ -62,6 +73,7 @@ import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import Username from "src/components/post/views/Username.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const { profileData } = storeToRefs(useUserStore());
 

@@ -5,7 +5,10 @@
         <slot name="header"></slot>
       </q-header>
 
-      <q-footer v-if="drawerBehavior == 'mobile'" class="footerBackground">
+      <q-footer
+        v-if="drawerBehavior == 'mobile' && props.generalProps.enableFooter"
+        class="footerBackground"
+      >
         <FooterBar />
       </q-footer>
 

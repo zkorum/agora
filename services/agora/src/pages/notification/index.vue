@@ -21,7 +21,7 @@
         :has-menu-button="true"
       >
         <template #middle>
-          <div class="title">Notifications</div>
+          <div>Notifications</div>
         </template>
       </DefaultMenuBar>
     </template>
@@ -172,12 +172,6 @@ async function redirectPage(routeTarget: RouteTarget) {
 </script>
 
 <style lang="scss" scoped>
-.title {
-  font-weight: 500;
-  font-size: 1rem;
-  color: black;
-}
-
 .notificationItemBase {
   display: flex;
   gap: 0.5rem;

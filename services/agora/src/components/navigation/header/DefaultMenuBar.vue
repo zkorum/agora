@@ -3,7 +3,7 @@
     <div class="container">
       <TopMenuWrapper :reveal="true">
         <div class="standardContainer">
-          <div>
+          <div v-if="hasMenuButton">
             <div class="menuButtonHover">
               <UserAvatar
                 v-if="
@@ -100,6 +100,9 @@ function menuButtonClicked() {
 
 .centerContainer {
   margin: auto;
+  font-weight: 500;
+  font-size: 1rem;
+  color: black;
 }
 
 .menuButtonHover:hover {
