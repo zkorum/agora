@@ -6,12 +6,6 @@
       enableFooter: false,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasMenuButton: true,
-      hasBackButton: true,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
   >
     <StepperLayout
       :submit-call-back="goToNextRoute"

@@ -6,12 +6,6 @@
       enableHeader: false,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasMenuButton: true,
-      hasBackButton: false,
-      hasCloseButton: false,
-      hasLoginButton: true,
-    }"
   >
     <div class="container">
       <q-form @submit="onSubmit()">

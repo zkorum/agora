@@ -6,12 +6,6 @@
       enableFooter: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasMenuButton: true,
-      hasBackButton: true,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
   >
     <form @submit.prevent="submitForm()">
       <div class="container">

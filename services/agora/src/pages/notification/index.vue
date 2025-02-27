@@ -6,12 +6,6 @@
       enableFooter: true,
       reducedWidth: false,
     }"
-    :menu-bar-props="{
-      hasMenuButton: true,
-      hasBackButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
   >
     <template #header>
       <DefaultMenuBar

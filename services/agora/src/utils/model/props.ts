@@ -1,6 +1,5 @@
 export interface MainLayoutProps {
   generalProps: GeneralProps;
-  menuBarProps: DefaultMenuBarProps;
 }
 
 export interface GeneralProps {

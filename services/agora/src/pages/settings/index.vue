@@ -6,12 +6,6 @@
       enableHeader: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasMenuButton: true,
-      hasBackButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-    }"
   >
     <DefaultMenuBar
       :has-back-button="true"

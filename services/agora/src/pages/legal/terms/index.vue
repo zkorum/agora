@@ -6,12 +6,6 @@
       enableFooter: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasMenuButton: true,
-      hasBackButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-    }"
   >
     <ZKTitleBodyWrapper title="Terms of Service">
       Refer to
