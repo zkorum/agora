@@ -3,7 +3,6 @@
     icon="mdi-arrow-left"
     text-color="color-text-strong"
     flat
-    dense
     @click="buttonClicked()"
   />
 </template>

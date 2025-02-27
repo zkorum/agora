@@ -3,16 +3,29 @@
     <div class="container">
       <TopMenuWrapper :reveal="true">
         <div class="standardContainer">
-          <div class="menuButtonHover">
-            <UserAvatar
-              v-if="isAuthenticated && hasMenuButton"
-              :size="40"
-              :user-name="profileData.userName"
-              @click="menuButtonClicked()"
+          <div>
+            <div class="menuButtonHover">
+              <UserAvatar
+                v-if="
+                  isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
+                "
+                :size="40"
+                :user-name="profileData.userName"
+                @click="menuButtonClicked()"
+              />
+            </div>
+
+            <ZKButton
+              v-if="
+                !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
+              "
+              icon="mdi-menu"
+              text-color="black"
             />
           </div>
 
           <BackButton v-if="hasBackButton" />
+
           <CloseButton v-if="hasCloseButton" />
           <slot name="left"></slot>
         </div>
@@ -50,9 +63,11 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 
 defineProps<DefaultMenuBarProps>();
 
+const isCapacitor = process.env.MODE == "capacitor";
+
 const { profileData } = storeToRefs(useUserStore());
 
-const { showMobileDrawer } = storeToRefs(useNavigationStore());
+const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -78,6 +93,9 @@ function menuButtonClicked() {
 .standardContainer {
   font: black;
   min-width: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .centerContainer {

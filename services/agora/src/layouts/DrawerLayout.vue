@@ -2,16 +2,7 @@
   <div>
     <q-layout view="lHh lpR lFf">
       <q-header reveal height-hint="98">
-        <slot v-if="drawerBehavior == 'mobile'" name="header"></slot>
-
-        <div
-          v-if="drawerBehavior == 'desktop' && props.generalProps.enableHeader"
-          class="headerBackground"
-        >
-          <WidthWrapper :enable="true">
-            <BackButton />
-          </WidthWrapper>
-        </div>
+        <slot name="header"></slot>
       </q-header>
 
       <q-footer v-if="drawerBehavior == 'mobile'" class="footerBackground">
@@ -53,7 +44,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import FooterBar from "src/components/footer/FooterBar.vue";
-import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useNavigationStore } from "src/stores/navigation";
@@ -106,10 +96,5 @@ const noSwipeOpen = process.env.MODE != "capacitor";
 
 .footerBackground {
   background-color: white;
-}
-
-.headerBackground {
-  background-color: $app-background-color;
-  padding: 0.2rem;
 }
 </style>
