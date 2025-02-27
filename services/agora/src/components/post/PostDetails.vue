@@ -1,6 +1,10 @@
 <template>
   <div>
-    <div ref="postContainerRef" :class="{ fixedHeightContainer: !compactMode }">
+    <q-infinite-scroll
+      :offset="2000"
+      :disable="compactMode || !hasMore"
+      @load="onLoad"
+    >
       <WidthWrapper :enable="true">
         <ZKHoverEffect :enable-hover="compactMode">
           <div
@@ -142,7 +146,7 @@
           </div>
         </ZKHoverEffect>
       </WidthWrapper>
-    </div>
+    </q-infinite-scroll>
 
     <FloatingBottomContainer
       v-if="!compactMode && isAuthenticated && !isLocked"
@@ -167,7 +171,7 @@ import PostMetadata from "./views/PostMetadata.vue";
 import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
-import { computed, ref, useTemplateRef } from "vue";
+import { computed, ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRoute, useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -176,11 +180,10 @@ import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKCard from "../ui-library/ZKCard.vue";
 import PostLockedMessage from "./views/PostLockedMessage.vue";
-import { useInfiniteScroll } from "@vueuse/core";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import { storeToRefs } from "pinia";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 import UserHtmlBody from "./views/UserHtmlBody.vue";
+import { storeToRefs } from "pinia";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -195,8 +198,6 @@ const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 const commentCountOffset = ref(0);
 const commentSectionKey = ref(Date.now());
 
-const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
-
 const router = useRouter();
 const route = useRoute();
 
@@ -207,19 +208,6 @@ const focusCommentElement = ref(false);
 const { loadMore } = useOpinionScrollableStore();
 const { hasMore } = storeToRefs(useOpinionScrollableStore());
 
-useInfiniteScroll(
-  postContainerRef,
-  () => {
-    loadMore();
-  },
-  {
-    distance: 500,
-    canLoadMore: () => {
-      return hasMore.value;
-    },
-  }
-);
-
 const isLocked = computed(() => {
   if (props.extendedPostData.metadata.moderation.status == "moderated") {
     if (props.extendedPostData.metadata.moderation.action == "lock") {
@@ -228,6 +216,11 @@ const isLocked = computed(() => {
   }
   return false;
 });
+
+function onLoad(index: number, done: () => void) {
+  loadMore();
+  done();
+}
 
 function openModerationHistory() {
   commentSectionRef.value?.openModerationHistory();
@@ -350,11 +343,5 @@ async function shareClicked() {
 
 .lockCardStyle {
   background-color: white;
-}
-
-.fixedHeightContainer {
-  height: calc(100dvh - 3.5rem);
-  overflow-y: scroll;
-  overscroll-behavior: none;
 }
 </style>

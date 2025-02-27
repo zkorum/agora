@@ -1,7 +1,7 @@
 <template>
   <div ref="postContainerRef">
     <q-pull-to-refresh :no-mouse="true" @refresh="pullDownTriggered">
-      <q-infinite-scroll :offset="2000" @load="onLoad">
+      <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
         <div
           v-if="masterPostDataList.length == 0 && dataReady"
           class="emptyDivPadding"
@@ -103,7 +103,7 @@ const hasPendingNewPosts = ref(false);
 
 const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
 
-let canLoadMore = true;
+const canLoadMore = ref(true);
 
 onMounted(async () => {
   await newPostCheck();
@@ -116,8 +116,8 @@ watch(pageIsVisible, async () => {
 });
 
 async function onLoad(index: number, done: () => void) {
-  if (canLoadMore) {
-    canLoadMore = await loadPostData(true);
+  if (canLoadMore.value) {
+    canLoadMore.value = await loadPostData(true);
   }
   done();
 }
@@ -126,7 +126,7 @@ async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {
     await loadPostData(false);
     hasPendingNewPosts.value = false;
-    canLoadMore = true;
+    canLoadMore.value = true;
     done();
   }, 500);
 }
@@ -155,7 +155,7 @@ async function refreshPage(done: () => void) {
     postContainerRef.value.scrollTop = 0;
   }
 
-  canLoadMore = await loadPostData(false);
+  canLoadMore.value = await loadPostData(false);
 
   setTimeout(() => {
     done();
