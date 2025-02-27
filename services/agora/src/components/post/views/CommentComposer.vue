@@ -1,51 +1,48 @@
 <template>
   <div>
-    <WidthWrapper :enable="true">
-      <div class="container">
-        <ZKEditor
-          :key="resetKey"
-          v-model="commentText"
-          placeholder="Add your own opinion"
-          :min-height="innerFocus ? '6rem' : '2rem'"
-          :focus-editor="showControls"
-          :show-toolbar="innerFocus || showControls"
-          :add-background-color="true"
-          @update:model-value="checkWordCount()"
-          @manually-focused="editorFocused()"
-        />
-        <div v-if="innerFocus || showControls" class="actionButtonCluster">
-          <div v-if="characterProgress > 100">
-            {{ MAX_COMMENT_CHARACTERS - characterCount }}
-          </div>
-
-          <q-circular-progress
-            :value="characterProgress"
-            size="1.5rem"
-            :thickness="0.3"
-          />
-
-          <q-separator vertical inset />
-
-          <ZKButton
-            label="Cancel"
-            color="white"
-            text-color="primary"
-            @click="cancelClicked()"
-          />
-          <ZKButton
-            label="Post"
-            color="primary"
-            :disable="characterProgress > 100 || characterProgress == 0"
-            @click="submitPostClicked()"
-          />
+    <div class="container borderStyle">
+      <ZKEditor
+        :key="resetKey"
+        v-model="commentText"
+        placeholder="Add your own opinion"
+        :min-height="innerFocus ? '6rem' : '2rem'"
+        :focus-editor="showControls"
+        :show-toolbar="innerFocus || showControls"
+        :add-background-color="true"
+        @update:model-value="checkWordCount()"
+        @manually-focused="editorFocused()"
+      />
+      <div v-if="innerFocus || showControls" class="actionButtonCluster">
+        <div v-if="characterProgress > 100">
+          {{ MAX_COMMENT_CHARACTERS - characterCount }}
         </div>
+
+        <q-circular-progress
+          :value="characterProgress"
+          size="1.5rem"
+          :thickness="0.3"
+        />
+
+        <q-separator vertical inset />
+
+        <ZKButton
+          label="Cancel"
+          color="white"
+          text-color="primary"
+          @click="cancelClicked()"
+        />
+        <ZKButton
+          label="Post"
+          color="primary"
+          :disable="characterProgress > 100 || characterProgress == 0"
+          @click="submitPostClicked()"
+        />
       </div>
-    </WidthWrapper>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
@@ -125,9 +122,8 @@ async function submitPostClicked() {
 
 <style scoped lang="scss">
 .container {
+  width: 100%;
   background-color: #e5e5e5;
-  padding: 0.5rem;
-  border-radius: 5px;
 }
 
 .actionBar {
@@ -145,5 +141,13 @@ async function submitPostClicked() {
   justify-content: right;
   gap: 1rem;
   padding: 1rem;
+}
+
+.borderStyle {
+  border-radius: 15px;
+  padding: 0.5rem;
+  border-color: rgb(222, 222, 222);
+  border-style: solid;
+  border-width: 1px;
 }
 </style>

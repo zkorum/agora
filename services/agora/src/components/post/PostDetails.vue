@@ -145,22 +145,22 @@
             </div>
           </div>
         </ZKHoverEffect>
+
+        <FloatingBottomContainer
+          v-if="!compactMode && isAuthenticated && !isLocked"
+        >
+          <CommentComposer
+            :show-controls="focusCommentElement"
+            :post-slug-id="extendedPostData.metadata.conversationSlugId"
+            @cancel-clicked="cancelledCommentComposor()"
+            @submitted-comment="
+              (opinionSlugId: string) => submittedComment(opinionSlugId)
+            "
+            @editor-focused="focusCommentElement = true"
+          />
+        </FloatingBottomContainer>
       </WidthWrapper>
     </q-infinite-scroll>
-
-    <FloatingBottomContainer
-      v-if="!compactMode && isAuthenticated && !isLocked"
-    >
-      <CommentComposer
-        :show-controls="focusCommentElement"
-        :post-slug-id="extendedPostData.metadata.conversationSlugId"
-        @cancel-clicked="cancelledCommentComposor()"
-        @submitted-comment="
-          (opinionSlugId: string) => submittedComment(opinionSlugId)
-        "
-        @editor-focused="focusCommentElement = true"
-      />
-    </FloatingBottomContainer>
   </div>
 </template>
 
