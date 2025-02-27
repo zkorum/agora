@@ -15,10 +15,7 @@
   >
     <div class="topBar">
       <div class="usernameBar">
-        <UserAvatar
-          :user-name="profileData.userName"
-          :size="MAX_LENGTH_USERNAME"
-        />
+        <UserAvatar :user-name="profileData.userName" :size="35" />
 
         <div class="userNameStyle">
           <!-- TODO: Map author verified status here -->
@@ -62,7 +59,6 @@ import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
-import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { storeToRefs } from "pinia";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import Username from "src/components/post/views/Username.vue";
