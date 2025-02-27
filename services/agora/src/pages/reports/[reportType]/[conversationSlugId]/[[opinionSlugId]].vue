@@ -1,6 +1,7 @@
 <template>
   <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: true,
       enableFooter: true,
       enableHeader: true,

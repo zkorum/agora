@@ -1,17 +1,27 @@
 <template>
   <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: true,
       reducedWidth: true,
     }"
   >
-    <div class="container">
-      <div class="titleStyle">Muted Users</div>
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+        <template #middle> Muted Users</template>
+      </DefaultMenuBar>
+    </template>
 
-      <div v-if="userMuteItemList.length == 0 && dataLoaded">
-        You have no muted users.
+    <div class="container">
+      <div v-if="userMuteItemList.length == 0 && dataLoaded" class="titleStyle">
+        You have no muted users
       </div>
       <q-list v-if="userMuteItemList.length > 0 && dataLoaded" bordered padding>
         <div
@@ -50,6 +60,7 @@
 <script setup lang="ts">
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { UserMuteItem } from "src/shared/types/zod";
 import { usePostStore } from "src/stores/post";
@@ -80,8 +91,10 @@ async function removeMutedUser(targetUsername: string) {
 
 <style scoped lang="scss">
 .titleStyle {
-  font-size: 1.4rem;
-  font-weight: bold;
+  font-size: 1.1rem;
+  font-weight: 400;
+  text-align: center;
+  padding-top: 2rem;
 }
 
 .container {

@@ -3,6 +3,7 @@ export interface MainLayoutProps {
 }
 
 export interface GeneralProps {
+  addGeneralPadding: boolean;
   addBottomPadding: boolean;
   enableHeader: boolean;
   enableFooter: boolean;

@@ -21,6 +21,7 @@
               "
               icon="mdi-menu"
               text-color="black"
+              @click="menuButtonClicked()"
             />
           </div>
 

@@ -17,6 +17,7 @@
           <div
             :class="{
               bottomPagePadding: props.generalProps.addBottomPadding,
+              generalPagePadding: props.generalProps.addGeneralPadding,
             }"
           >
             <WidthWrapper :enable="props.generalProps.reducedWidth">
@@ -99,5 +100,9 @@ const noSwipeOpen = process.env.MODE != "capacitor";
 
 .footerBackground {
   background-color: white;
+}
+
+.generalPagePadding {
+  padding: 1rem;
 }
 </style>
