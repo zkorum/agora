@@ -52,7 +52,7 @@ import { ref, watch } from "vue";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { drawerBehavior } = storeToRefs(useNavigationStore());
+const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
 
 const drawerIconLogo =
   process.env.VITE_PUBLIC_DIR + "/images/icons/drawerIcon.png";
@@ -111,6 +111,10 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   if (requireAuth && isAuthenticated.value == false) {
     showLoginConfirmationDialog();
   } else {
+    if (drawerBehavior.value == "mobile") {
+      showMobileDrawer.value = false;
+    }
+
     await router.push({ name: routeName });
   }
 }
