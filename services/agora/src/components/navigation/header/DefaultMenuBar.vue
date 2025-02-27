@@ -43,7 +43,6 @@
           <slot name="right"></slot>
         </div>
       </TopMenuWrapper>
-      <q-separator />
     </div>
   </div>
 </template>
