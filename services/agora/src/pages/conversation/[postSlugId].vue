@@ -1,31 +1,37 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: false,
       reducedWidth: false,
     }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-    }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <PostDetails
       v-if="dataLoaded"
       :extended-post-data="postData"
       :compact-mode="false"
       :skeleton-mode="false"
     />
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { usePostStore } from "src/stores/post";

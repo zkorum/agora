@@ -1,16 +1,11 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: false,
       reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasSettingsButton: false,
-      hasCloseButton: false,
-      hasLoginButton: false,
     }"
   >
     <StepperLayout
@@ -60,7 +55,7 @@
         </div>
       </template>
     </StepperLayout>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -69,7 +64,7 @@ import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 const description = ref("");
 

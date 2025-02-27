@@ -1,24 +1,27 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: true,
-      enableFooter: true,
+      enableFooter: false,
       enableHeader: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasSettingsButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-    }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+        <template #middle> User Profile </template>
+      </DefaultMenuBar>
+    </template>
+
     <div class="topBar">
       <div class="usernameBar">
-        <UserAvatar
-          :user-name="profileData.userName"
-          :size="MAX_LENGTH_USERNAME"
-        />
+        <UserAvatar :user-name="profileData.userName" :size="35" />
 
         <div class="userNameStyle">
           <!-- TODO: Map author verified status here -->
@@ -50,7 +53,7 @@
       </TabList>
       <router-view />
     </Tabs>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -62,10 +65,10 @@ import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getDateString } from "src/utils/common";
-import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { storeToRefs } from "pinia";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import Username from "src/components/post/views/Username.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const { profileData } = storeToRefs(useUserStore());
 

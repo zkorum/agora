@@ -14,14 +14,14 @@
       </div>
 
       <div>
-        {{ formatTimeAgo(new Date(createdAt)) }}
+        {{ useTimeAgo(new Date(createdAt)) }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { formatTimeAgo } from "@vueuse/core";
+import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import Username from "./Username.vue";
 

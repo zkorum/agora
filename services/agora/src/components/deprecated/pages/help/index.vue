@@ -1,16 +1,11 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: true,
       reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasSettingsButton: true,
-      hasCloseButton: true,
-      hasLoginButton: false,
     }"
   >
     <form @submit.prevent="submitForm()">
@@ -43,7 +38,7 @@
         />
       </div>
     </form>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -52,7 +47,7 @@ import Select from "primevue/select";
 import Button from "primevue/button";
 import { ref } from "vue";
 import { useDialog } from "src/utils/ui/dialog";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 const description = ref("");
 

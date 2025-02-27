@@ -1,28 +1,28 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: true,
       reducedWidth: false,
     }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasSettingsButton: true,
-      hasCloseButton: false,
-      hasLoginButton: false,
-    }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="false"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="true"
+      >
+        <template #middle>
+          <div>Notifications</div>
+        </template>
+      </DefaultMenuBar>
+    </template>
+
     <div ref="el" class="containerBase">
       <div class="widthConstraint">
-        <div class="topBar">
-          <div>
-            <UserAvatar :user-name="profileData.userName" :size="40" />
-          </div>
-          <div class="title">Notifications</div>
-          <div :style="{ width: '4rem' }"></div>
-        </div>
-
         <div class="notificaitonListFlexStyle">
           <div
             v-for="notificationItem in notificationList"
@@ -69,7 +69,7 @@
     <q-inner-loading :showing="loadingVisible">
       <q-spinner-gears size="50px" color="primary" />
     </q-inner-loading>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -77,23 +77,22 @@ import { useInfiniteScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
 import {
   NotificationItem,
   NotificationType,
   RouteTarget,
 } from "src/shared/types/zod";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
-import { useUserStore } from "src/stores/user";
 import { useBackendNotificationApi } from "src/utils/api/notification";
 import { usePullDownToRefresh } from "src/utils/ui/pullDownToRefresh";
 import { onMounted, useTemplateRef } from "vue";
 import { useRouter } from "vue-router";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { loadNotificationData } = useNotificationStore();
 
-const { profileData } = useUserStore();
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
 const el = useTemplateRef<HTMLElement>("el");
@@ -168,18 +167,6 @@ async function redirectPage(routeTarget: RouteTarget) {
 </script>
 
 <style lang="scss" scoped>
-.topBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-}
-
-.title {
-  font-weight: 500;
-  font-size: 1rem;
-}
-
 .notificationItemBase {
   display: flex;
   gap: 0.5rem;

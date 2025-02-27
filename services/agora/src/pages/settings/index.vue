@@ -1,18 +1,22 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: true,
-      enableFooter: true,
+      enableFooter: false,
       enableHeader: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasCloseButton: true,
-      hasLoginButton: true,
-      hasSettingsButton: true,
-    }"
   >
+    <DefaultMenuBar
+      :has-back-button="true"
+      :has-close-button="false"
+      :has-login-button="false"
+      :has-menu-button="false"
+    >
+      <template #middle> Settings </template>
+    </DefaultMenuBar>
+
     <div class="container">
       <div v-if="isAuthenticated">
         <SettingsSection :settings-item-list="accountSettings" />
@@ -28,22 +32,22 @@
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { type SettingsInterface } from "src/utils/component/settings/settings";
+import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-
 const { showDeleteAccountDialog } = useDialog();
 
 const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =

@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
     <div class="container">
@@ -40,7 +39,10 @@
             />
 
             <div>
-              <span v-html="commentItem.opinionItem.opinion"></span>
+              <UserHtmlBody
+                :html-body="commentItem.opinionItem.opinion"
+                :compact-mode="false"
+              />
             </div>
 
             <CommentModeration
@@ -68,6 +70,7 @@ import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import UserIdentity from "src/components/post/views/UserIdentity.vue";
+import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());

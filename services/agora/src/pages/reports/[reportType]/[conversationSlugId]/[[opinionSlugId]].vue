@@ -1,16 +1,11 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: true,
       enableFooter: true,
       enableHeader: true,
       reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-      hasSettingsButton: true,
     }"
   >
     <div class="container">
@@ -47,7 +42,7 @@
         </div>
       </div>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -57,7 +52,7 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const route = useRoute();

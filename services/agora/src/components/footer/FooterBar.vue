@@ -1,5 +1,6 @@
 <template>
   <div>
+    <q-separator />
     <div class="flexIcons container">
       <RouterLink to="/">
         <div class="iconStyle">
@@ -18,30 +19,6 @@
           </div>
         </div>
       </RouterLink>
-
-      <div class="iconStyle" @click="accessProfile()">
-        <q-icon
-          name="mdi-account-circle"
-          size="1.6rem"
-          :color="
-            route.name === '/user-profile/opinions/' ||
-            route.name === '/user-profile/conversations/'
-              ? 'color-highlight'
-              : 'color-text-weak'
-          "
-        />
-        <div
-          :class="
-            'text-' +
-            (route.name === '/user-profile/opinions/' ||
-            route.name === '/user-profile/conversations/'
-              ? 'color-highlight'
-              : 'color-text-weak')
-          "
-        >
-          Profile
-        </div>
-      </div>
 
       <div class="iconStyle" @click="accessNotifications()">
         <q-icon
@@ -96,14 +73,6 @@ const dialog = useDialog();
 
 const route = useRoute();
 const router = useRouter();
-
-async function accessProfile() {
-  if (!isAuthenticated.value) {
-    dialog.showLoginConfirmationDialog();
-  } else {
-    await router.push({ name: "/user-profile/conversations/" });
-  }
-}
 
 async function accessNotifications() {
   if (!isAuthenticated.value) {
