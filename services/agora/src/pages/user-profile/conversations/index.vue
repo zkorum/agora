@@ -1,31 +1,30 @@
 <template>
   <div>
-    <div class="container">
-      <div
-        v-for="postData in profileData.userPostList"
-        :key="postData.metadata.conversationSlugId"
-      >
-        <ZKHoverEffect :enable-hover="true">
-          <PostDetails
-            :extended-post-data="postData"
-            :compact-mode="true"
-            :show-comment-section="false"
-            :skeleton-mode="false"
-            class="showCursor"
-            @click="openPost(postData.metadata.conversationSlugId)"
-          />
-        </ZKHoverEffect>
+    <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
+      <div class="container">
+        <div
+          v-for="postData in profileData.userPostList"
+          :key="postData.metadata.conversationSlugId"
+        >
+          <ZKHoverEffect :enable-hover="true">
+            <PostDetails
+              :extended-post-data="postData"
+              :compact-mode="true"
+              :show-comment-section="false"
+              :skeleton-mode="false"
+              class="showCursor"
+              @click="openPost(postData.metadata.conversationSlugId)"
+            />
+          </ZKHoverEffect>
+        </div>
       </div>
-
-      <div ref="bottomOfPostDiv"></div>
-    </div>
+    </q-infinite-scroll>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useElementVisibility } from "@vueuse/core";
 import { useUserStore } from "src/stores/user";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
@@ -34,36 +33,21 @@ import PostDetails from "src/components/post/PostDetails.vue";
 const { loadMoreUserPosts, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
-const endOfFeed = ref(false);
-let isExpandingPosts = false;
-
-const bottomOfPostDiv = ref(null);
-const targetIsVisible = useElementVisibility(bottomOfPostDiv);
-
-let isLoaded = false;
+const canLoadMore = ref(true);
 
 const router = useRouter();
 
 onMounted(async () => {
   await loadUserProfile();
-  isLoaded = true;
 });
 
-watch(targetIsVisible, async () => {
-  if (
-    targetIsVisible.value &&
-    !isExpandingPosts &&
-    !endOfFeed.value &&
-    isLoaded
-  ) {
-    isExpandingPosts = true;
-
+async function onLoad(index: number, done: () => void) {
+  if (canLoadMore.value) {
     const response = await loadMoreUserPosts();
-    endOfFeed.value = response.reachedEndOfFeed;
-
-    isExpandingPosts = false;
+    canLoadMore.value = !response.reachedEndOfFeed;
   }
-});
+  done();
+}
 
 async function openPost(postSlugId: string) {
   await router.push({
