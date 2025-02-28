@@ -76,6 +76,8 @@ export const usePostStore = defineStore("post", () => {
 
   const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
+  const hasPendingNewPosts = ref(false);
+
   const dataReady = ref(false);
   const endOfFeed = ref(false);
 
@@ -208,5 +210,6 @@ export const usePostStore = defineStore("post", () => {
     emptyPost,
     dataReady,
     endOfFeed,
+    hasPendingNewPosts,
   };
 });

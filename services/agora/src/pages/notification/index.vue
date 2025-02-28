@@ -21,59 +21,56 @@
       </DefaultMenuBar>
     </template>
 
-    <div ref="el" class="containerBase">
-      <div class="widthConstraint">
-        <div class="notificaitonListFlexStyle">
-          <div
-            v-for="notificationItem in notificationList"
-            :key="notificationItem.slugId"
-            @click="redirectPage(notificationItem.routeTarget)"
-          >
-            <ZKHoverEffect :enable-hover="true">
-              <div class="notificationItemBase">
-                <q-icon
-                  :name="getIconFromNotificationType(notificationItem.type)"
-                  size="1.8rem"
-                />
-                <div class="notificationRightPortion">
-                  <div>
-                    <UserAvatar
-                      v-if="notificationItem.type === 'new_opinion'"
-                      :user-name="notificationItem.username"
-                      :size="30"
-                    />
-                  </div>
-                  <div>
-                    {{ getTitleFromNotification(notificationItem) }}
-                  </div>
+    <q-pull-to-refresh :no-mouse="true" @refresh="pullDownTriggered">
+      <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
+        <div class="widthConstraint">
+          <div class="notificaitonListFlexStyle">
+            <div
+              v-for="notificationItem in notificationList"
+              :key="notificationItem.slugId"
+              @click="redirectPage(notificationItem.routeTarget)"
+            >
+              <ZKHoverEffect :enable-hover="true">
+                <div class="notificationItemBase">
+                  <q-icon
+                    :name="getIconFromNotificationType(notificationItem.type)"
+                    size="1.8rem"
+                  />
+                  <div class="notificationRightPortion">
+                    <div>
+                      <UserAvatar
+                        v-if="notificationItem.type === 'new_opinion'"
+                        :user-name="notificationItem.username"
+                        :size="30"
+                      />
+                    </div>
+                    <div>
+                      {{ getTitleFromNotification(notificationItem) }}
+                    </div>
 
-                  <div class="messageStyle">
-                    {{ notificationItem.message }}
+                    <div class="messageStyle">
+                      {{ notificationItem.message }}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </ZKHoverEffect>
+              </ZKHoverEffect>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div v-if="notificationList.length > 0" class="endOfFeed">
-        End of notification feed
-      </div>
+        <div v-if="notificationList.length > 0" class="endOfFeed">
+          End of notification feed
+        </div>
 
-      <div v-if="notificationList.length == 0" class="endOfFeed">
-        You have no notifications
-      </div>
-    </div>
-
-    <q-inner-loading :showing="loadingVisible">
-      <q-spinner-gears size="50px" color="primary" />
-    </q-inner-loading>
+        <div v-if="notificationList.length == 0" class="endOfFeed">
+          You have no notifications
+        </div>
+      </q-infinite-scroll>
+    </q-pull-to-refresh>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import { useInfiniteScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
@@ -85,8 +82,7 @@ import {
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
 import { useBackendNotificationApi } from "src/utils/api/notification";
-import { usePullDownToRefresh } from "src/utils/ui/pullDownToRefresh";
-import { onMounted, useTemplateRef } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
@@ -95,32 +91,21 @@ const { loadNotificationData } = useNotificationStore();
 
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
-const el = useTemplateRef<HTMLElement>("el");
+// const { loadingVisible } = usePullDownToRefresh(refreshData, el);
 
-const { loadingVisible } = usePullDownToRefresh(refreshData, el);
-
-let canLoadMore = true;
+const hasMore = ref(true);
 
 const router = useRouter();
-
-useInfiniteScroll(
-  el,
-  async () => {
-    // load more
-    canLoadMore = await loadNotificationData(true);
-  },
-  {
-    distance: 1000,
-    canLoadMore: () => {
-      return canLoadMore;
-    },
-  }
-);
 
 onMounted(async () => {
   await markAllNotificationsAsRead();
   await loadNotificationData(false);
 });
+
+async function onLoad(index: number, done: () => void) {
+  hasMore.value = await loadNotificationData(true);
+  done();
+}
 
 function getIconFromNotificationType(
   notificationType: NotificationType
@@ -153,8 +138,9 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
   return title;
 }
 
-async function refreshData() {
+async function pullDownTriggered() {
   await loadNotificationData(false);
+  hasMore.value = true;
 }
 
 async function redirectPage(routeTarget: RouteTarget) {
@@ -188,13 +174,6 @@ async function redirectPage(routeTarget: RouteTarget) {
   font-weight: 400;
   font-size: 12px;
   color: $lightweight-text-color;
-}
-
-.containerBase {
-  margin: auto;
-  height: calc(100dvh - 7rem);
-  overflow-y: scroll;
-  overscroll-behavior: none;
 }
 
 .widthConstraint {

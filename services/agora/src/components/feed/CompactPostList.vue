@@ -21,15 +21,6 @@
         </div>
 
         <div class="widthConstraint">
-          <div v-if="hasPendingNewPosts" class="floatingButton">
-            <ZKButton
-              icon="mdi-arrow-up"
-              label="New"
-              color="primary"
-              @click="refreshPage(() => {})"
-            />
-          </div>
-
           <div v-if="!dataReady" class="postListFlex">
             <div
               v-for="postData in emptyPostDataList"
@@ -79,27 +70,44 @@
         </div>
       </q-infinite-scroll>
     </q-pull-to-refresh>
+
+    <q-page-sticky
+      v-if="hasPendingNewPosts"
+      position="bottom"
+      :offset="[0, 30]"
+      @click="refreshPage(() => {})"
+    >
+      <q-btn
+        fab
+        label="Refresh"
+        icon="mdi-arrow-up"
+        color="accent"
+        unelevated
+      />
+    </q-page-sticky>
   </div>
 </template>
 
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
 import { usePostStore } from "src/stores/post";
-import ZKButton from "../ui-library/ZKButton.vue";
 import { onMounted, ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useDocumentVisibility } from "@vueuse/core";
 import { useRouter } from "vue-router";
 
-const { masterPostDataList, emptyPostDataList, dataReady, endOfFeed } =
-  storeToRefs(usePostStore());
+const {
+  masterPostDataList,
+  emptyPostDataList,
+  dataReady,
+  endOfFeed,
+  hasPendingNewPosts,
+} = storeToRefs(usePostStore());
 const { loadPostData, hasNewPosts } = usePostStore();
 
 const router = useRouter();
 
 const pageIsVisible = useDocumentVisibility();
-
-const hasPendingNewPosts = ref(false);
 
 const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
 
@@ -187,18 +195,9 @@ async function refreshPage(done: () => void) {
   flex-direction: column;
 }
 
-.floatingButton {
-  position: fixed;
-  bottom: 5rem;
-  z-index: 100;
-  display: flex;
-  justify-content: center;
-  margin: auto;
-  left: calc(50% - 3rem);
-}
-
 .widthConstraint {
-  max-width: 35rem;
+  position: relative;
+  width: min(100%, 35rem);
   margin: auto;
 }
 </style>
