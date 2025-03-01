@@ -1,38 +1,50 @@
 <template>
   <div>
     <div class="container">
-      <div v-if="drawerBehavior == 'desktop'" class="logoDiv">
-        <img :src="drawerIconLogo" class="logoStyle" />
-      </div>
+      <div>
+        <div v-if="drawerBehavior == 'desktop'" class="logoDiv">
+          <img :src="drawerIconLogo" class="logoStyle" />
+        </div>
 
-      <div
-        v-if="isAuthenticated"
-        class="usernameBar"
-        @click="enterRoute('/user-profile/conversations/', true)"
-      >
-        <UserAvatar
-          :key="profileData.userName"
-          :user-name="profileData.userName"
-          :size="35"
-        />
-        <div>
-          {{ profileData.userName }}
+        <div
+          v-if="isAuthenticated"
+          class="usernameBar"
+          @click="enterRoute('/user-profile/conversations/', true)"
+        >
+          <UserAvatar
+            :key="profileData.userName"
+            :user-name="profileData.userName"
+            :size="35"
+          />
+          <div>
+            {{ profileData.userName }}
+          </div>
+        </div>
+
+        <div class="menuListFlex">
+          <div
+            v-for="settingItem in settingItemList"
+            :key="settingItem.name"
+            @click="enterRoute(settingItem.route, settingItem.requireAuth)"
+          >
+            <ZKHoverEffect :enable-hover="true">
+              <div class="settingItemStyle">
+                <q-icon :name="settingItem.icon" size="1.5rem" />
+
+                {{ settingItem.name }}
+              </div>
+            </ZKHoverEffect>
+          </div>
         </div>
       </div>
 
-      <div class="menuListFlex">
+      <div>
         <div
-          v-for="settingItem in settingItemList"
-          :key="settingItem.name"
-          @click="enterRoute(settingItem.route, settingItem.requireAuth)"
+          v-if="drawerBehavior == 'desktop'"
+          class="bottomSection startConversationButton"
+          @click="requestNewPost()"
         >
-          <ZKHoverEffect :enable-hover="true">
-            <div class="settingItemStyle">
-              <q-icon :name="settingItem.icon" size="1.5rem" />
-
-              {{ settingItem.name }}
-            </div>
-          </ZKHoverEffect>
+          <img :src="newConversationButton" />
         </div>
       </div>
     </div>
@@ -49,6 +61,12 @@ import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
+import { useCreateNewPost } from "src/utils/component/conversation/newPost";
+
+const { requestNewPost } = useCreateNewPost();
+
+const newConversationButton =
+  process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -122,7 +140,11 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
 
 <style lang="scss" scoped>
 .container {
+  height: 100dvh;
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .settingItemStyle {
@@ -170,5 +192,16 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   max-width: 8rem;
   padding-top: 1rem;
   padding-bottom: 1rem;
+}
+
+.bottomSection {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.startConversationButton:hover {
+  cursor: pointer;
 }
 </style>
