@@ -178,7 +178,6 @@ async function refreshPage(done: () => void) {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1rem;
 }
 
 .emptyDivPadding {

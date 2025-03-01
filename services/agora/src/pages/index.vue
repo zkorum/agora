@@ -16,7 +16,11 @@
         :has-login-button="true"
       >
         <template #middle>
-          <img :src="agoraLogo" class="agoraLogoStyle" />
+          <img
+            v-if="drawerBehavior == 'mobile'"
+            :src="agoraLogo"
+            class="agoraLogoStyle"
+          />
         </template>
       </DefaultMenuBar>
     </template>
@@ -30,12 +34,16 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useNavigationStore } from "src/stores/navigation";
 
 const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-logo.png";
+
+const { drawerBehavior } = storeToRefs(useNavigationStore());
 </script>
 
 <style scoped>
