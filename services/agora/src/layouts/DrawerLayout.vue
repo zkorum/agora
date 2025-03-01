@@ -1,6 +1,9 @@
 <template>
   <div>
-    <q-layout view="lHh lpR lFf">
+    <q-layout
+      :key="drawerBehavior"
+      :view="drawerBehavior == 'mobile' ? 'lHh lpR lFf' : 'lHh LpR lFf'"
+    >
       <q-header reveal height-hint="98">
         <slot name="header"></slot>
       </q-header>
@@ -61,19 +64,6 @@ const noSwipeOpen = process.env.MODE != "capacitor";
 </script>
 
 <style scoped lang="scss">
-.container {
-  display: grid;
-  grid-template-columns: min-content 1fr;
-  grid-template-rows: min-content 1fr min-content;
-  gap: 0px 0px;
-  grid-template-areas:
-    "sideBar header"
-    "sideBar mainBody"
-    "sideBar footer";
-  height: 100dvh;
-  width: 100dvw;
-}
-
 .header {
   grid-area: header;
 }
