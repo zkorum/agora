@@ -1,9 +1,6 @@
 <template>
   <div>
-    <q-layout
-      :key="drawerBehavior"
-      :view="drawerBehavior == 'mobile' ? 'lHh lpR lFf' : 'lHh LpR lFf'"
-    >
+    <q-layout :key="drawerBehavior" :view="'lHh LpR lFf'">
       <q-header reveal height-hint="98">
         <slot name="header"></slot>
       </q-header>
