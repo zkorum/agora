@@ -57,6 +57,13 @@
         </div>
       </div>
     </q-infinite-scroll>
+
+    <div
+      v-if="dataLoaded && profileData.userCommentList.length == 0"
+      class="emptyMessage"
+    >
+      You have no opinions
+    </div>
   </div>
 </template>
 
@@ -75,11 +82,13 @@ const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
+const dataLoaded = ref(false);
 
 const router = useRouter();
 
 onMounted(async () => {
   await loadUserProfile();
+  dataLoaded.value = true;
 });
 
 async function onLoad(index: number, done: () => void) {
@@ -136,5 +145,10 @@ async function commentDeleted() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.emptyMessage {
+  padding: 2rem;
+  text-align: center;
 }
 </style>

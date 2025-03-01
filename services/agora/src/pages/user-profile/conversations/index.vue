@@ -19,6 +19,13 @@
         </div>
       </div>
     </q-infinite-scroll>
+
+    <div
+      v-if="dataLoaded && profileData.userPostList.length == 0"
+      class="emptyMessage"
+    >
+      You have no conversations
+    </div>
   </div>
 </template>
 
@@ -34,11 +41,13 @@ const { loadMoreUserPosts, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
+const dataLoaded = ref(false);
 
 const router = useRouter();
 
 onMounted(async () => {
   await loadUserProfile();
+  dataLoaded.value = true;
 });
 
 async function onLoad(index: number, done: () => void) {
@@ -61,6 +70,11 @@ async function openPost(postSlugId: string) {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
+}
+
+.emptyMessage {
+  padding: 2rem;
+  text-align: center;
 }
 </style>

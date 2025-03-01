@@ -1,28 +1,25 @@
 <template>
   <div>
     <div v-if="clusterMetadataList.length > 1" class="container">
-      <div
-        class="tabStyle"
-        :class="{ highlightTab: model === 'all' }"
+      <ZKTab
+        text="All"
+        :is-highlighted="model === 'all'"
         @click="clickedTab('all')"
-      >
-        All
-      </div>
+      />
 
-      <div
-        v-for="clusterItem in clusterMetadataList"
-        :key="clusterItem.key"
-        class="tabStyle"
-        :class="{ highlightTab: model === clusterItem.key }"
-        @click="clickedTab(clusterItem.key)"
-      >
-        {{ formatClusterLabel(clusterItem.key) }}
+      <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
+        <ZKTab
+          :text="formatClusterLabel(clusterItem.key)"
+          :is-highlighted="model === clusterItem.key"
+          @click="clickedTab(clusterItem.key)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
@@ -42,24 +39,5 @@ function clickedTab(tabKey: PolisKey | "all") {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.tabStyle {
-  cursor: pointer;
-  padding-left: 8px;
-  padding-right: 8px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-  font-weight: 500;
-  color: #7d7a85;
-  user-select: none;
-}
-
-.highlightTab {
-  border-bottom: 3px solid;
-  border-color: $primary;
-  background-image: $gradient-hero;
-  color: transparent;
-  background-clip: text;
 }
 </style>

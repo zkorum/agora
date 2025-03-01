@@ -42,33 +42,53 @@
       </div>
     </div>
 
-    <Tabs :value="currentTab">
-      <TabList>
-        <RouterLink :to="{ name: '/user-profile/conversations/' }">
-          <Tab :value="0">Conversations</Tab>
-        </RouterLink>
-        <RouterLink :to="{ name: '/user-profile/opinions/' }">
-          <Tab :value="1">Opinions</Tab>
-        </RouterLink>
-      </TabList>
-      <router-view />
-    </Tabs>
+    <div class="tabCluster">
+      <div v-for="tabItem in tabList" :key="tabItem.value">
+        <ZKTab
+          :text="tabItem.label"
+          :is-highlighted="currentTab === tabItem.value"
+          @click="selectedTab(tabItem.route)"
+        />
+      </div>
+    </div>
+
+    <router-view />
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import Tabs from "primevue/tabs";
-import Tab from "primevue/tab";
-import TabList from "primevue/tablist";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import Username from "src/components/post/views/Username.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { RouteNamedMap } from "vue-router/auto-routes";
+import ZKTab from "src/components/ui-library/ZKTab.vue";
+
+const router = useRouter();
+
+interface CustomTab {
+  route: keyof RouteNamedMap;
+  label: string;
+  value: number;
+}
+
+const tabList: CustomTab[] = [
+  {
+    route: "/user-profile/conversations/",
+    label: "Conversation",
+    value: 0,
+  },
+  {
+    route: "/user-profile/opinions/",
+    label: "Opinion",
+    value: 1,
+  },
+];
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -88,6 +108,10 @@ function applyCurrentTab() {
   } else {
     currentTab.value = 1;
   }
+}
+
+async function selectedTab(routeName: keyof RouteNamedMap) {
+  await router.push({ name: routeName });
 }
 </script>
 
@@ -138,5 +162,11 @@ function applyCurrentTab() {
   flex-wrap: nowrap;
   gap: 1rem;
   align-items: center;
+}
+
+.tabCluster {
+  display: flex;
+  gap: 1rem;
+  padding-bottom: 1rem;
 }
 </style>
