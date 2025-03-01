@@ -418,7 +418,8 @@ onBeforeRouteLeave((to) => {
 }
 
 .container {
-  padding: 0.5rem;
-  margin-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>
