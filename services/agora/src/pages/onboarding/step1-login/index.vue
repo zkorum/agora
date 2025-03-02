@@ -33,16 +33,7 @@
             @click="goToPhoneLogin()"
           />
 
-          <p>
-            By logging in, you agree to our
-            <RouterLink :to="{ name: '/legal/terms/' }">
-              Terms of Service
-            </RouterLink>
-            and
-            <RouterLink :to="{ name: '/legal/privacy/' }">
-              Privacy Policy</RouterLink
-            >.
-          </p>
+          <p><SignupAgreement /></p>
         </template>
       </StepperLayout>
     </template>
@@ -56,6 +47,7 @@ import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
+import SignupAgreement from "src/components/onboarding/SignupAgreement.vue";
 
 const description = "Please select a log in method.";
 

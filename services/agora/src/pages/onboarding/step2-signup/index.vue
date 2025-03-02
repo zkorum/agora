@@ -33,14 +33,7 @@
           />
 
           <p>
-            By signing up, you agree to our
-            <RouterLink :to="{ name: '/legal/terms/' }">
-              Terms of Service
-            </RouterLink>
-            and
-            <RouterLink :to="{ name: '/legal/privacy/' }">
-              Privacy Policy</RouterLink
-            >.
+            <SignupAgreement />
           </p>
         </template>
       </StepperLayout>
@@ -55,6 +48,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
+import SignupAgreement from "src/components/onboarding/SignupAgreement.vue";
 
 const router = useRouter();
 
