@@ -4,47 +4,34 @@
     <div class="flexIcons container">
       <RouterLink to="/">
         <div class="iconStyle">
-          <q-icon
-            name="mdi-home"
+          <ZKIcon
+            name="iconamoon:home-fill"
             size="1.6rem"
-            :color="route.name === '/' ? 'color-highlight' : 'color-text-weak'"
+            :color="route.name === '/' ? '#6B4EFF' : '#CDCBD3'"
           />
-          <div
-            :class="
-              'text-' +
-              (route.name === '/' ? 'color-highlight' : 'color-text-weak')
-            "
-          >
+          <div :style="{ color: route.name === '/' ? '#6B4EFF' : '#7D7A85' }">
             Home
           </div>
         </div>
       </RouterLink>
 
       <div class="iconStyle" @click="accessNotifications()">
-        <q-icon
-          name="mdi-bell"
+        <ZKIcon
+          name="ion:notifications"
           size="1.6rem"
-          :color="
-            route.name === '/notification/'
-              ? 'color-highlight'
-              : 'color-text-weak'
-          "
-        >
-          <q-badge
-            v-if="numNewNotifications > 0"
-            color="red"
-            rounded
-            floating
-            transparant
-          ></q-badge>
-        </q-icon>
+          :color="route.name === '/notification/' ? '#6B4EFF' : '#CDCBD3'"
+        />
+        <q-badge
+          v-if="numNewNotifications > 0"
+          color="red"
+          rounded
+          floating
+          transparant
+        ></q-badge>
         <div
-          :class="
-            'text-' +
-            (route.name === '/notification/'
-              ? 'color-highlight'
-              : 'color-text-weak')
-          "
+          :style="{
+            color: route.name === '/notification/' ? '#6B4EFF' : '#7D7A85',
+          }"
         >
           Dings
         </div>
@@ -61,6 +48,7 @@ import { useNotificationStore } from "src/stores/notification";
 import { useDialog } from "src/utils/ui/dialog";
 import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import ZKIcon from "../ui-library/ZKIcon.vue";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { numNewNotifications } = storeToRefs(useNotificationStore());
@@ -101,6 +89,7 @@ watch(documentVisibility, async () => {
   padding: 0.3rem;
   cursor: pointer;
   display: flex;
+  gap: 0.1rem;
   flex-direction: column;
   align-items: center;
   font-size: 0.7rem;

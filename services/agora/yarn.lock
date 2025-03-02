@@ -457,6 +457,18 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-2.0.3.tgz#4a2868d75d6d6963e423bcf90b7fd1be343409d3"
   integrity sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==
 
+"@iconify/types@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@iconify/types/-/types-2.0.0.tgz#ab0e9ea681d6c8a1214f30cd741fe3a20cc57f57"
+  integrity sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==
+
+"@iconify/vue@^4.3.0":
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/@iconify/vue/-/vue-4.3.0.tgz#582098aa42056f1b97225ba10d1416c5c0c6e984"
+  integrity sha512-Xq0h6zMrHBbrW8jXJ9fISi+x8oDQllg5hTDkDuxnWiskJ63rpJu9CvJshj8VniHVTbsxCg9fVoPAaNp3RQI5OQ==
+  dependencies:
+    "@iconify/types" "^2.0.0"
+
 "@inquirer/figures@^1.0.3":
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/@inquirer/figures/-/figures-1.0.10.tgz#e3676a51c9c51aaabcd6ba18a28e82b98417db37"
