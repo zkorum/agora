@@ -10,7 +10,7 @@
   >
     <div class="container">
       <q-form @submit="onSubmit()">
-        <TopMenuWrapper :reveal="false">
+        <TopMenuWrapper>
           <div class="menuFlexGroup">
             <ZKButton
               icon="mdi-close"

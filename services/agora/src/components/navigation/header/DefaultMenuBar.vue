@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container">
-      <TopMenuWrapper :reveal="true">
+      <TopMenuWrapper>
         <div class="standardContainer">
           <div v-if="hasMenuButton">
             <div class="menuButtonHover">
