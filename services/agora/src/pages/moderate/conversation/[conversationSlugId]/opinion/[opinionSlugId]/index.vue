@@ -8,6 +8,16 @@
       reducedWidth: true,
     }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <div class="container">
       <div class="title">Moderate the opinion</div>
 
@@ -66,6 +76,8 @@ import {
 } from "src/utils/component/moderations";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
 
 const {
   moderateComment,

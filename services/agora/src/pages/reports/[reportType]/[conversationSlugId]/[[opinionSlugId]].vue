@@ -8,6 +8,16 @@
       reducedWidth: true,
     }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <div class="container">
       <div class="titleBar">
         <div class="title">
@@ -54,6 +64,7 @@ import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const route = useRoute();
 const router = useRouter();

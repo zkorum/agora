@@ -8,6 +8,16 @@
       reducedWidth: true,
     }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <div class="container">
       <div class="title">
         <div>Moderate the conversation</div>
@@ -77,6 +87,7 @@ import {
 import { usePostStore } from "src/stores/post";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const {
   moderatePost,
