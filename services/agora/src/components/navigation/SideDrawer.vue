@@ -30,7 +30,7 @@
           >
             <ZKHoverEffect :enable-hover="true">
               <div class="settingItemStyle">
-                <q-icon :name="settingItem.icon" size="1.5rem" />
+                <ZKIcon :name="settingItem.icon" size="1.5rem" color="black" />
 
                 {{ settingItem.name }}
               </div>
@@ -63,6 +63,7 @@ import { useUserStore } from "src/stores/user";
 import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
 import { useCreateNewPost } from "src/utils/component/conversation/newPost";
+import ZKIcon from "../ui-library/ZKIcon.vue";
 
 const { requestNewPost } = useCreateNewPost();
 
@@ -99,21 +100,21 @@ watch(drawerBehavior, () => {
 function initializeMenu() {
   if (drawerBehavior.value == "desktop") {
     settingItemList.value.push({
-      icon: "mdi-home",
+      icon: "iconamoon:home-fill",
       name: "Home",
       route: "/",
       requireAuth: false,
     });
 
     settingItemList.value.push({
-      icon: "mdi-bell",
+      icon: "ion:notifications",
       name: "Dings",
       route: "/notification/",
       requireAuth: true,
     });
   } else {
     settingItemList.value.push({
-      icon: "mdi-account-circle",
+      icon: "carbon:user-avatar-filled",
       name: "Profile",
       route: "/user-profile/conversations/",
       requireAuth: true,
@@ -121,7 +122,7 @@ function initializeMenu() {
   }
 
   settingItemList.value.push({
-    icon: "mdi-cog",
+    icon: "ic:round-settings",
     name: "Settings",
     route: "/settings/",
     requireAuth: false,

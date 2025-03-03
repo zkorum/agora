@@ -32,10 +32,12 @@
             >
               <ZKHoverEffect :enable-hover="true">
                 <div class="notificationItemBase">
-                  <q-icon
+                  <ZKIcon
                     :name="getIconFromNotificationType(notificationItem.type)"
                     size="1.8rem"
+                    color="black"
                   />
+
                   <div class="notificationRightPortion">
                     <div>
                       <UserAvatar
@@ -85,6 +87,7 @@ import { useBackendNotificationApi } from "src/utils/api/notification";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { loadNotificationData } = useNotificationStore();
@@ -113,10 +116,10 @@ function getIconFromNotificationType(
   let icon;
   switch (notificationType) {
     case "new_opinion":
-      icon = "mdi-chat-outline";
+      icon = "meteor-icons:comment";
       break;
     case "opinion_vote":
-      icon = "mdi-checkbox-marked-circle-outline";
+      icon = "icon-park-outline:message-sent";
       break;
   }
   return icon;
