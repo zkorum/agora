@@ -56,7 +56,7 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import BackButton from "../buttons/BackButton.vue";
 import { type DefaultMenuBarProps } from "src/utils/model/props";
-import TopMenuWrapper from "../TopMenuWrapper.vue";
+import TopMenuWrapper from "./TopMenuWrapper.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onMounted, ref } from "vue";
 import CloseButton from "../buttons/CloseButton.vue";

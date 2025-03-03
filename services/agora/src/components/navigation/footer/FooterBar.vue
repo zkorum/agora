@@ -43,12 +43,12 @@
 <script setup lang="ts">
 import { useDocumentVisibility } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useDialog } from "src/utils/ui/dialog";
 import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import ZKIcon from "../ui-library/ZKIcon.vue";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { numNewNotifications } = storeToRefs(useNotificationStore());

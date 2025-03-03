@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import WidthWrapper from "./WidthWrapper.vue";
+import WidthWrapper from "../WidthWrapper.vue";
 </script>
 
 <style scoped lang="scss">

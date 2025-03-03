@@ -191,7 +191,7 @@ import {
 } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import TopMenuWrapper from "src/components/navigation/TopMenuWrapper.vue";
+import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";

@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import FooterBar from "src/components/footer/FooterBar.vue";
+import FooterBar from "src/components/navigation/footer/FooterBar.vue";
 import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useNavigationStore } from "src/stores/navigation";
