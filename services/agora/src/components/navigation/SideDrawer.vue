@@ -3,7 +3,8 @@
     <div class="container">
       <div>
         <div v-if="drawerBehavior == 'desktop'" class="logoDiv">
-          <img :src="drawerIconLogo" class="logoStyle" />
+          <img :src="drawerIconLogo1" class="logoStyle1" />
+          <img :src="drawerIconLogo2" class="logoStyle2" />
         </div>
 
         <div
@@ -72,8 +73,10 @@ const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
 
-const drawerIconLogo =
-  process.env.VITE_PUBLIC_DIR + "/images/icons/drawerIcon.png";
+const drawerIconLogo1 =
+  process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
+const drawerIconLogo2 =
+  process.env.VITE_PUBLIC_DIR + "/images/icons/agora-text.svg";
 
 const { showLoginConfirmationDialog } = useDialog();
 
@@ -94,6 +97,13 @@ watch(drawerBehavior, () => {
 });
 
 function initializeMenu() {
+  settingItemList.value.push({
+    icon: "mdi-account-circle",
+    name: "Profile",
+    route: "/user-profile/conversations/",
+    requireAuth: true,
+  });
+
   if (drawerBehavior.value == "desktop") {
     settingItemList.value.push({
       icon: "mdi-home",
@@ -106,13 +116,6 @@ function initializeMenu() {
       icon: "mdi-bell",
       name: "Dings",
       route: "/notification/",
-      requireAuth: true,
-    });
-  } else {
-    settingItemList.value.push({
-      icon: "mdi-account-circle",
-      name: "Profile",
-      route: "/user-profile/conversations/",
       requireAuth: true,
     });
   }
@@ -185,13 +188,20 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
 
 .logoDiv {
   display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
   justify-content: center;
-}
-
-.logoStyle {
-  max-width: 8rem;
   padding-top: 1rem;
   padding-bottom: 1rem;
+}
+
+.logoStyle1 {
+  max-width: 2rem;
+}
+
+.logoStyle2 {
+  max-width: 7rem;
 }
 
 .bottomSection {

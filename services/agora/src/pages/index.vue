@@ -41,7 +41,7 @@ import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNavigationStore } from "src/stores/navigation";
 
-const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-logo.png";
+const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
 </script>
