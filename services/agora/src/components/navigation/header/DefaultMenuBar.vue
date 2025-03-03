@@ -2,46 +2,50 @@
   <div>
     <div class="container">
       <TopMenuWrapper>
-        <div class="standardContainer">
-          <div v-if="hasMenuButton">
-            <div class="menuButtonHover">
-              <UserAvatar
+        <div class="gridContainer">
+          <div>
+            <div v-if="hasMenuButton">
+              <div class="menuButtonHover">
+                <UserAvatar
+                  v-if="
+                    isAuthenticated &&
+                    !isCapacitor &&
+                    drawerBehavior == 'mobile'
+                  "
+                  :size="40"
+                  :user-name="profileData.userName"
+                  @click="menuButtonClicked()"
+                />
+              </div>
+
+              <ZKButton
                 v-if="
-                  isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
+                  !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
                 "
-                :size="40"
-                :user-name="profileData.userName"
+                icon="mdi-menu"
+                text-color="black"
                 @click="menuButtonClicked()"
               />
             </div>
 
-            <ZKButton
-              v-if="
-                !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
-              "
-              icon="mdi-menu"
-              text-color="black"
-              @click="menuButtonClicked()"
-            />
+            <BackButton v-if="hasBackButton" />
+
+            <CloseButton v-if="hasCloseButton" />
+            <slot name="left"></slot>
           </div>
+          <div class="centerContainer">
+            <slot name="middle"></slot>
+          </div>
+          <div class="rightContainer">
+            <RouterLink
+              v-if="hasLoginButton && !isAuthenticated && showAuthButton"
+              :to="{ name: '/welcome/' }"
+            >
+              <ZKButton label="Log in" text-color="white" color="primary" />
+            </RouterLink>
 
-          <BackButton v-if="hasBackButton" />
-
-          <CloseButton v-if="hasCloseButton" />
-          <slot name="left"></slot>
-        </div>
-        <div class="standardContainer centerContainer">
-          <slot name="middle"></slot>
-        </div>
-        <div class="standardContainer">
-          <RouterLink
-            v-if="hasLoginButton && !isAuthenticated && showAuthButton"
-            :to="{ name: '/welcome/' }"
-          >
-            <ZKButton label="Log in" text-color="white" color="primary" />
-          </RouterLink>
-
-          <slot name="right"></slot>
+            <slot name="right"></slot>
+          </div>
         </div>
       </TopMenuWrapper>
     </div>
@@ -85,17 +89,19 @@ function menuButtonClicked() {
 </script>
 
 <style scoped lang="scss">
+.gridContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  gap: 1rem 1rem;
+  grid-template-areas: ". . .";
+  width: 100%;
+}
+
 .container {
   background-color: $app-background-color;
   padding: 0.5rem;
-}
-
-.standardContainer {
   font: black;
-  min-width: 3rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 
 .centerContainer {
@@ -103,6 +109,11 @@ function menuButtonClicked() {
   font-weight: 500;
   font-size: 1rem;
   color: black;
+}
+
+.rightContainer {
+  display: flex;
+  justify-content: end;
 }
 
 .menuButtonHover:hover {
