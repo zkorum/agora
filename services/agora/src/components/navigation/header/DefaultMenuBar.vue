@@ -1,17 +1,18 @@
 <template>
   <div>
-    <div class="container">
+    <div class="container" @click="scrollToTop()">
       <TopMenuWrapper>
         <div class="gridContainer">
           <div>
             <div v-if="hasMenuButton">
-              <div class="menuButtonHover">
+              <div>
                 <UserAvatar
                   v-if="
                     isAuthenticated &&
                     !isCapacitor &&
                     drawerBehavior == 'mobile'
                   "
+                  class="menuButtonHover"
                   :size="40"
                   :user-name="profileData.userName"
                   @click="menuButtonClicked()"
@@ -86,6 +87,10 @@ onMounted(() => {
 function menuButtonClicked() {
   showMobileDrawer.value = !showMobileDrawer.value;
 }
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 </script>
 
 <style scoped lang="scss">
@@ -96,6 +101,10 @@ function menuButtonClicked() {
   gap: 1rem 1rem;
   grid-template-areas: ". . .";
   width: 100%;
+}
+
+.container:hover {
+  cursor: pointer;
 }
 
 .container {
