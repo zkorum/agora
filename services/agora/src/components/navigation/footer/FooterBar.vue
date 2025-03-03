@@ -2,18 +2,16 @@
   <div>
     <q-separator />
     <div class="flexIcons container">
-      <RouterLink to="/">
-        <div class="iconStyle">
-          <ZKIcon
-            name="iconamoon:home-fill"
-            size="1.6rem"
-            :color="route.name === '/' ? '#6B4EFF' : '#CDCBD3'"
-          />
-          <div :style="{ color: route.name === '/' ? '#6B4EFF' : '#7D7A85' }">
-            Home
-          </div>
+      <div class="iconStyle" @click="accessHomeFeed()">
+        <ZKIcon
+          name="iconamoon:home-fill"
+          size="1.6rem"
+          :color="route.name === '/' ? '#6B4EFF' : '#CDCBD3'"
+        />
+        <div :style="{ color: route.name === '/' ? '#6B4EFF' : '#7D7A85' }">
+          Home
         </div>
-      </RouterLink>
+      </div>
 
       <div class="iconStyle" @click="accessNotifications()">
         <ZKIcon
@@ -61,6 +59,14 @@ const dialog = useDialog();
 
 const route = useRoute();
 const router = useRouter();
+
+async function accessHomeFeed() {
+  if (route.name == "/") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    await router.push({ name: "/" });
+  }
+}
 
 async function accessNotifications() {
   if (!isAuthenticated.value) {
