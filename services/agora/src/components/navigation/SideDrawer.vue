@@ -97,13 +97,6 @@ watch(drawerBehavior, () => {
 });
 
 function initializeMenu() {
-  settingItemList.value.push({
-    icon: "mdi-account-circle",
-    name: "Profile",
-    route: "/user-profile/conversations/",
-    requireAuth: true,
-  });
-
   if (drawerBehavior.value == "desktop") {
     settingItemList.value.push({
       icon: "mdi-home",
@@ -116,6 +109,13 @@ function initializeMenu() {
       icon: "mdi-bell",
       name: "Dings",
       route: "/notification/",
+      requireAuth: true,
+    });
+  } else {
+    settingItemList.value.push({
+      icon: "mdi-account-circle",
+      name: "Profile",
+      route: "/user-profile/conversations/",
       requireAuth: true,
     });
   }
