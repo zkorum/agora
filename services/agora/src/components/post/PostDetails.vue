@@ -89,17 +89,24 @@
                         extendedPostData.metadata.moderation.status ==
                         'moderated'
                       "
-                      text-color="color-text-weak"
-                      size="0.8rem"
-                      :label="
-                        (
-                          extendedPostData.metadata.opinionCount +
-                          commentCountOffset
-                        ).toString()
-                      "
-                      icon="mdi-comment-outline"
                       @click.stop.prevent="clickedCommentButton()"
-                    />
+                    >
+                      <div class="commentCountStyle">
+                        <ZKIcon
+                          color="#7D7A85"
+                          name="meteor-icons:comment"
+                          size="1.1rem"
+                        />
+                        <div :style="{ color: '#7D7A85' }">
+                          {{
+                            (
+                              extendedPostData.metadata.opinionCount +
+                              commentCountOffset
+                            ).toString()
+                          }}
+                        </div>
+                      </div>
+                    </ZKButton>
                   </div>
                   <div v-if="skeletonMode">
                     <Skeleton
@@ -112,12 +119,9 @@
 
                 <div>
                   <div v-if="!skeletonMode">
-                    <ZKButton
-                      text-color="color-text-weak"
-                      size="0.8rem"
-                      icon="mdi-export-variant"
-                      @click.stop.prevent="shareClicked()"
-                    />
+                    <ZKButton @click.stop.prevent="shareClicked()">
+                      <ZKIcon color="#7D7A85" name="mdi:share" size="1.3rem" />
+                    </ZKButton>
                   </div>
                   <div v-if="skeletonMode">
                     <Skeleton
@@ -184,6 +188,7 @@ import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 import UserHtmlBody from "./views/UserHtmlBody.vue";
 import { storeToRefs } from "pinia";
+import ZKIcon from "../ui-library/ZKIcon.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -343,5 +348,11 @@ async function shareClicked() {
 
 .lockCardStyle {
   background-color: white;
+}
+
+.commentCountStyle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>
