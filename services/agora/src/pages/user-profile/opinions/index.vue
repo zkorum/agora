@@ -59,7 +59,7 @@
     </q-infinite-scroll>
 
     <div
-      v-if="dataLoaded && profileData.userCommentList.length == 0"
+      v-if="profileData.dataLoaded && profileData.userCommentList.length == 0"
       class="emptyMessage"
     >
       You have no opinions
@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from "src/stores/user";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import CommentActionOptions from "src/components/post/views/CommentActionOptions.vue";
 import CommentModeration from "src/components/post/views/CommentModeration.vue";
@@ -82,14 +82,8 @@ const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
-const dataLoaded = ref(false);
 
 const router = useRouter();
-
-onMounted(async () => {
-  await loadUserProfile();
-  dataLoaded.value = true;
-});
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {

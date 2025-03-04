@@ -21,7 +21,7 @@
     </q-infinite-scroll>
 
     <div
-      v-if="dataLoaded && profileData.userPostList.length == 0"
+      v-if="profileData.dataLoaded && profileData.userPostList.length == 0"
       class="emptyMessage"
     >
       You have no conversations
@@ -31,24 +31,18 @@
 
 <script setup lang="ts">
 import { useUserStore } from "src/stores/user";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 
-const { loadMoreUserPosts, loadUserProfile } = useUserStore();
+const { loadMoreUserPosts } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
-const dataLoaded = ref(false);
 
 const router = useRouter();
-
-onMounted(async () => {
-  await loadUserProfile();
-  dataLoaded.value = true;
-});
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {

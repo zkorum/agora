@@ -20,47 +20,49 @@
       </DefaultMenuBar>
     </template>
 
-    <div class="topBar">
-      <div class="usernameBar">
-        <UserAvatar :user-name="profileData.userName" :size="35" />
+    <q-pull-to-refresh @refresh="pullDownTriggered">
+      <div class="topBar">
+        <div class="usernameBar">
+          <UserAvatar :user-name="profileData.userName" :size="35" />
 
-        <div class="userNameStyle">
-          <!-- TODO: Map author verified status here -->
-          <Username
-            :author-verified="false"
-            :user-name="profileData.userName"
-            :show-verified-text="true"
+          <div class="userNameStyle">
+            <!-- TODO: Map author verified status here -->
+            <Username
+              :author-verified="false"
+              :user-name="profileData.userName"
+              :show-verified-text="true"
+            />
+          </div>
+        </div>
+
+        <div class="profileMetadataBar">
+          <div>
+            {{ profileData.activePostCount }} conversations
+            <span class="dotPadding">•</span>
+          </div>
+          <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
+        </div>
+      </div>
+
+      <div class="tabCluster">
+        <div v-for="tabItem in tabList" :key="tabItem.value">
+          <ZKTab
+            :text="tabItem.label"
+            :is-highlighted="currentTab === tabItem.value"
+            @click="selectedTab(tabItem.route)"
           />
         </div>
       </div>
 
-      <div class="profileMetadataBar">
-        <div>
-          {{ profileData.activePostCount }} conversations
-          <span class="dotPadding">•</span>
-        </div>
-        <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
-      </div>
-    </div>
-
-    <div class="tabCluster">
-      <div v-for="tabItem in tabList" :key="tabItem.value">
-        <ZKTab
-          :text="tabItem.label"
-          :is-highlighted="currentTab === tabItem.value"
-          @click="selectedTab(tabItem.route)"
-        />
-      </div>
-    </div>
-
-    <router-view />
+      <router-view />
+    </q-pull-to-refresh>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
@@ -71,6 +73,8 @@ import { RouteNamedMap } from "vue-router/auto-routes";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 
 const router = useRouter();
+
+const { loadUserProfile } = useUserStore();
 
 interface CustomTab {
   route: keyof RouteNamedMap;
@@ -99,9 +103,20 @@ const route = useRoute();
 
 applyCurrentTab();
 
+onMounted(async () => {
+  await loadUserProfile();
+});
+
 watch(route, () => {
   applyCurrentTab();
 });
+
+async function pullDownTriggered(done: () => void) {
+  setTimeout(async () => {
+    await loadUserProfile();
+    done();
+  }, 500);
+}
 
 function applyCurrentTab() {
   if (route.name == "/user-profile/conversations/") {
