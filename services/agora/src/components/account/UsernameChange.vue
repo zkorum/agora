@@ -2,7 +2,6 @@
   <q-input
     v-model="userName"
     label="Username"
-    outlined
     readonly
     :maxlength="MAX_LENGTH_USERNAME"
     :error="!isValidUsername"

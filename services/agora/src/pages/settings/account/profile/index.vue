@@ -21,9 +21,11 @@
     </template>
 
     <div class="container">
-      <div class="titleStyle">Change username</div>
+      <ZKCard padding="1rem" class="cardBackground">
+        <div class="titleStyle">Change username</div>
 
-      <UsernameChange :show-submit-button="true" />
+        <UsernameChange :show-submit-button="true" />
+      </ZKCard>
     </div>
   </DrawerLayout>
 </template>
@@ -31,6 +33,7 @@
 <script setup lang="ts">
 import UsernameChange from "src/components/account/UsernameChange.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 </script>
 
@@ -38,13 +41,17 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 .titleStyle {
   font-size: 1.1rem;
   font-weight: 500;
+  padding-bottom: 1rem;
 }
 
 .container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.cardBackground {
+  background-color: white;
 }
 </style>
