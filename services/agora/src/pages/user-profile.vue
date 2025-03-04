@@ -137,7 +137,6 @@ async function selectedTab(routeName: keyof RouteNamedMap) {
   justify-content: space-between;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  padding-top: 2rem;
   padding-bottom: 2rem;
 }
 
