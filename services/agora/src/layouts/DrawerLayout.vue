@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-layout :key="drawerBehavior" :view="'lHh LpR lFf'">
-      <q-header reveal height-hint="98">
+      <q-header reveal :model-value="props.generalProps.enableHeader">
         <slot name="header"></slot>
       </q-header>
 

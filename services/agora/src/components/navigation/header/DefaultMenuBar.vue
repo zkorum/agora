@@ -4,6 +4,13 @@
       <TopMenuWrapper>
         <div class="gridContainer">
           <div>
+            <RouterLink
+              v-if="hasLoginButton && !isAuthenticated && showAuthButton"
+              :to="{ name: '/welcome/' }"
+            >
+              <ZKButton label="Log in" text-color="white" color="primary" />
+            </RouterLink>
+
             <div v-if="hasMenuButton">
               <div>
                 <UserAvatar
@@ -38,13 +45,6 @@
             <slot name="middle"></slot>
           </div>
           <div class="rightContainer">
-            <RouterLink
-              v-if="hasLoginButton && !isAuthenticated && showAuthButton"
-              :to="{ name: '/welcome/' }"
-            >
-              <ZKButton label="Log in" text-color="white" color="primary" />
-            </RouterLink>
-
             <slot name="right"></slot>
           </div>
         </div>

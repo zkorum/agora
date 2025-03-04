@@ -4,7 +4,7 @@
       addGeneralPadding: false,
       addBottomPadding: false,
       enableFooter: true,
-      enableHeader: false,
+      enableHeader: true,
       reducedWidth: false,
     }"
   >
@@ -51,6 +51,7 @@ const { drawerBehavior } = storeToRefs(useNavigationStore());
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding-top: 0.5rem;
 }
 
 .agoraLogoStyle {
