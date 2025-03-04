@@ -208,7 +208,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   align-items: center;
   font-weight: 500;
   padding-top: 2rem;
-  padding-bottom: 1rem;
+  padding-bottom: 1.5rem;
   padding-left: 1rem;
 }
 
