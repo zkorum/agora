@@ -8,7 +8,7 @@
           :fill="route.name === '/'"
         />
         <div :style="{ color: route.name === '/' ? '#6B4EFF' : '#7D7A85' }">
-          Home
+          <ZKStyledText text="Home" :add-gradient="route.name === '/'" />
         </div>
       </div>
 
@@ -29,7 +29,10 @@
             color: route.name === '/notification/' ? '#6B4EFF' : '#7D7A85',
           }"
         >
-          Dings
+          <ZKStyledText
+            text="Dings"
+            :add-gradient="route.name === '/notification/'"
+          />
         </div>
       </div>
     </div>
@@ -40,6 +43,7 @@
 import { useDocumentVisibility } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
+import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useDialog } from "src/utils/ui/dialog";
