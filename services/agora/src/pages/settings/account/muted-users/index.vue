@@ -14,6 +14,7 @@
         :has-close-button="false"
         :has-login-button="false"
         :has-menu-button="false"
+        :fixed-height="true"
       >
         <template #middle> Muted Users</template>
       </DefaultMenuBar>

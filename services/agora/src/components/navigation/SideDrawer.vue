@@ -33,7 +33,7 @@
               >
                 <div>
                   <ZKStyledIcon
-                    :fill="route.name == settingItem.route"
+                    :fill="settingItem.matchRouteList.includes(route.name)"
                     :path="settingItem.svgPath"
                     :width="settingItem.width"
                     :height="settingItem.height"

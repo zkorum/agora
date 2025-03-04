@@ -14,6 +14,7 @@
         :has-back-button="false"
         :has-close-button="false"
         :has-login-button="true"
+        :fixed-height="false"
       >
         <template #middle>
           <img
@@ -51,7 +52,6 @@ const { drawerBehavior } = storeToRefs(useNavigationStore());
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 0.5rem;
 }
 
 .agoraLogoStyle {

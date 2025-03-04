@@ -3,7 +3,10 @@
     <div class="container" @click="scrollToTop()">
       <TopMenuWrapper>
         <div class="gridContainer">
-          <div>
+          <div
+            class="leftContainer"
+            :class="{ individualContainer: fixedHeight }"
+          >
             <RouterLink
               v-if="hasLoginButton && !isAuthenticated && showAuthButton"
               :to="{ name: '/welcome/' }"
@@ -41,10 +44,16 @@
             <CloseButton v-if="hasCloseButton" />
             <slot name="left"></slot>
           </div>
-          <div class="centerContainer">
+          <div
+            class="centerContainer"
+            :class="{ individualContainer: fixedHeight }"
+          >
             <slot name="middle"></slot>
           </div>
-          <div class="rightContainer">
+          <div
+            class="rightContainer"
+            :class="{ individualContainer: fixedHeight }"
+          >
             <slot name="right"></slot>
           </div>
         </div>
@@ -101,6 +110,11 @@ function scrollToTop() {
   gap: 1rem 1rem;
   grid-template-areas: ". . .";
   width: 100%;
+  padding-bottom: 1rem;
+}
+
+.individualContainer {
+  height: 2.5rem;
 }
 
 .container:hover {
@@ -113,8 +127,16 @@ function scrollToTop() {
   font: black;
 }
 
+.leftContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .centerContainer {
-  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 500;
   font-size: 1rem;
   color: black;

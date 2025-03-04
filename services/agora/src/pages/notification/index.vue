@@ -14,6 +14,7 @@
         :has-close-button="false"
         :has-login-button="false"
         :has-menu-button="true"
+        :fixed-height="true"
       >
         <template #middle>
           <div>Notifications</div>

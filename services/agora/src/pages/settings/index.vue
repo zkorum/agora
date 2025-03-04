@@ -13,6 +13,7 @@
       :has-close-button="false"
       :has-login-button="false"
       :has-menu-button="false"
+      :fixed-height="true"
     >
       <template #middle> Settings </template>
     </DefaultMenuBar>
@@ -125,6 +126,5 @@ function processDeleteAccount() {
 .container {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  padding-top: 2rem;
 }
 </style>
