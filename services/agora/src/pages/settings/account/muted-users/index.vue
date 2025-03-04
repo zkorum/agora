@@ -92,8 +92,7 @@ async function removeMutedUser(targetUsername: string) {
 
 <style scoped lang="scss">
 .titleStyle {
-  font-size: 1.1rem;
-  font-weight: 400;
+  font-size: 1rem;
   text-align: center;
   padding-top: 2rem;
 }
