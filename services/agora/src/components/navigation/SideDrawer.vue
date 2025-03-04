@@ -29,9 +29,15 @@
             @click="enterRoute(settingItem.route, settingItem.requireAuth)"
           >
             <ZKHoverEffect :enable-hover="true">
-              <div class="settingItemStyle">
-                <ZKIcon :name="settingItem.icon" size="1.5rem" color="black" />
-
+              <div
+                class="settingItemStyle"
+                :class="{ activeRoute: route.name == settingItem.route }"
+              >
+                <ZKIcon
+                  :name="settingItem.icon"
+                  size="1.5rem"
+                  :color="route.name == settingItem.route ? '#6b4eff' : 'black'"
+                />
                 {{ settingItem.name }}
               </div>
             </ZKHoverEffect>
@@ -53,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { RouteMap, useRouter } from "vue-router";
+import { RouteMap, useRoute, useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -82,6 +88,7 @@ const drawerIconLogo2 =
 const { showLoginConfirmationDialog } = useDialog();
 
 const router = useRouter();
+const route = useRoute();
 
 interface SettingItem {
   icon: string;
@@ -104,6 +111,13 @@ function initializeMenu() {
       name: "Home",
       route: "/",
       requireAuth: false,
+    });
+
+    settingItemList.value.push({
+      icon: "carbon:user-avatar-filled",
+      name: "Profile",
+      route: "/user-profile/conversations/",
+      requireAuth: true,
     });
 
     settingItemList.value.push({
@@ -177,10 +191,6 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   padding-left: 1rem;
 }
 
-.usernameBar:hover {
-  cursor: pointer;
-}
-
 .menuListFlex {
   display: flex;
   flex-direction: column;
@@ -214,5 +224,10 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
 
 .startConversationButton:hover {
   cursor: pointer;
+}
+
+.activeRoute {
+  font-weight: 600;
+  color: $primary;
 }
 </style>
