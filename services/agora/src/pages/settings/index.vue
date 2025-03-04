@@ -8,15 +8,17 @@
       reducedWidth: true,
     }"
   >
-    <DefaultMenuBar
-      :has-back-button="true"
-      :has-close-button="false"
-      :has-login-button="false"
-      :has-menu-button="false"
-      :fixed-height="true"
-    >
-      <template #middle> Settings </template>
-    </DefaultMenuBar>
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+        :fixed-height="true"
+      >
+        <template #middle> Settings </template>
+      </DefaultMenuBar>
+    </template>
 
     <div class="container">
       <div v-if="isAuthenticated">
