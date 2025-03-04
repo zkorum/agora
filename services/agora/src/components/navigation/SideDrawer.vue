@@ -31,12 +31,15 @@
                   activeRoute: settingItem.matchRouteList.includes(route.name),
                 }"
               >
-                <div>
+                <div :style="{ position: 'relative' }">
                   <ZKStyledIcon
                     :fill="settingItem.matchRouteList.includes(route.name)"
                     :path="settingItem.svgPath"
                     :width="settingItem.width"
                     :height="settingItem.height"
+                  />
+                  <NewNotificationIndicator
+                    v-if="settingItem.name == 'Dings'"
                   />
                 </div>
 
@@ -74,6 +77,7 @@ import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
 import { useCreateNewPost } from "src/utils/component/conversation/newPost";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
+import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
 
 const { requestNewPost } = useCreateNewPost();
 

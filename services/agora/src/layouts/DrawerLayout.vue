@@ -51,11 +51,13 @@ import FooterBar from "src/components/navigation/footer/FooterBar.vue";
 import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useNavigationStore } from "src/stores/navigation";
+import { useNotificationRefresher } from "src/utils/component/notification/menuRefresher";
 import { type MainLayoutProps } from "src/utils/model/props";
 
 const props = defineProps<MainLayoutProps>();
 
 const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
+useNotificationRefresher();
 
 const noSwipeOpen = process.env.MODE != "capacitor";
 </script>

@@ -15,19 +15,15 @@
       </div>
 
       <div class="iconStyle" @click="accessNotifications()">
-        <ZKStyledIcon
-          path="M17.6288 14.9989C17.551 14.9052 17.4745 14.8114 17.3995 14.7209C16.3683 13.4736 15.7444 12.7208 15.7444 9.18969C15.7444 7.36156 15.307 5.86156 14.445 4.73656C13.8094 3.90547 12.9502 3.275 11.8177 2.80906C11.8031 2.80096 11.7901 2.79032 11.7792 2.77766C11.3719 1.41359 10.2572 0.5 9.00002 0.5C7.74283 0.5 6.62861 1.41359 6.22127 2.77625C6.21041 2.78847 6.19758 2.79877 6.1833 2.80672C3.54049 3.89469 2.25611 5.98203 2.25611 9.18828C2.25611 12.7208 1.63314 13.4736 0.600955 14.7195C0.525955 14.81 0.449549 14.9019 0.371736 14.9975C0.170737 15.2399 0.0433868 15.5348 0.00475821 15.8473C-0.0338704 16.1598 0.0178392 16.4769 0.153767 16.7609C0.442986 17.3703 1.05939 17.7486 1.76299 17.7486H16.2422C16.9425 17.7486 17.5547 17.3708 17.8449 16.7642C17.9814 16.4801 18.0336 16.1628 17.9953 15.8499C17.957 15.537 17.8298 15.2417 17.6288 14.9989ZM9.00002 21.5C9.67738 21.4995 10.342 21.3156 10.9233 20.9679C11.5046 20.6202 11.981 20.1217 12.3019 19.5252C12.317 19.4966 12.3245 19.4646 12.3236 19.4322C12.3227 19.3999 12.3134 19.3684 12.2967 19.3407C12.28 19.313 12.2564 19.2901 12.2283 19.2742C12.2001 19.2583 12.1683 19.25 12.136 19.25H5.86502C5.83264 19.2499 5.80078 19.2582 5.77255 19.274C5.74432 19.2899 5.72067 19.3128 5.70392 19.3405C5.68716 19.3682 5.67787 19.3997 5.67694 19.4321C5.67601 19.4645 5.68347 19.4965 5.69861 19.5252C6.01949 20.1216 6.49579 20.6201 7.07702 20.9678C7.65825 21.3155 8.32274 21.4994 9.00002 21.5Z"
-          :fill="route.name === '/notification/'"
-          :width="18"
-          :height="22"
-        />
-        <q-badge
-          v-if="numNewNotifications > 0"
-          color="red"
-          rounded
-          floating
-          transparant
-        ></q-badge>
+        <div :style="{ position: 'relative' }">
+          <NewNotificationIndicator />
+          <ZKStyledIcon
+            path="M17.6288 14.9989C17.551 14.9052 17.4745 14.8114 17.3995 14.7209C16.3683 13.4736 15.7444 12.7208 15.7444 9.18969C15.7444 7.36156 15.307 5.86156 14.445 4.73656C13.8094 3.90547 12.9502 3.275 11.8177 2.80906C11.8031 2.80096 11.7901 2.79032 11.7792 2.77766C11.3719 1.41359 10.2572 0.5 9.00002 0.5C7.74283 0.5 6.62861 1.41359 6.22127 2.77625C6.21041 2.78847 6.19758 2.79877 6.1833 2.80672C3.54049 3.89469 2.25611 5.98203 2.25611 9.18828C2.25611 12.7208 1.63314 13.4736 0.600955 14.7195C0.525955 14.81 0.449549 14.9019 0.371736 14.9975C0.170737 15.2399 0.0433868 15.5348 0.00475821 15.8473C-0.0338704 16.1598 0.0178392 16.4769 0.153767 16.7609C0.442986 17.3703 1.05939 17.7486 1.76299 17.7486H16.2422C16.9425 17.7486 17.5547 17.3708 17.8449 16.7642C17.9814 16.4801 18.0336 16.1628 17.9953 15.8499C17.957 15.537 17.8298 15.2417 17.6288 14.9989ZM9.00002 21.5C9.67738 21.4995 10.342 21.3156 10.9233 20.9679C11.5046 20.6202 11.981 20.1217 12.3019 19.5252C12.317 19.4966 12.3245 19.4646 12.3236 19.4322C12.3227 19.3999 12.3134 19.3684 12.2967 19.3407C12.28 19.313 12.2564 19.2901 12.2283 19.2742C12.2001 19.2583 12.1683 19.25 12.136 19.25H5.86502C5.83264 19.2499 5.80078 19.2582 5.77255 19.274C5.74432 19.2899 5.72067 19.3128 5.70392 19.3405C5.68716 19.3682 5.67787 19.3997 5.67694 19.4321C5.67601 19.4645 5.68347 19.4965 5.69861 19.5252C6.01949 20.1216 6.49579 20.6201 7.07702 20.9678C7.65825 21.3155 8.32274 21.4994 9.00002 21.5Z"
+            :fill="route.name === '/notification/'"
+            :width="18"
+            :height="22"
+          />
+        </div>
         <div
           :style="{
             color: route.name === '/notification/' ? '#6B4EFF' : '#7D7A85',
@@ -44,22 +40,15 @@
 </template>
 
 <script setup lang="ts">
-import { useDocumentVisibility } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import NewNotificationIndicator from "src/components/notification/NewNotificationIndicator.vue";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useNotificationStore } from "src/stores/notification";
 import { useDialog } from "src/utils/ui/dialog";
-import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
-const { numNewNotifications } = storeToRefs(useNotificationStore());
-
-const documentVisibility = useDocumentVisibility();
-
-const { loadNotificationData } = useNotificationStore();
 
 const dialog = useDialog();
 
@@ -81,12 +70,6 @@ async function accessNotifications() {
     await router.push({ name: "/notification/" });
   }
 }
-
-watch(documentVisibility, async () => {
-  if (isAuthenticated.value && documentVisibility.value == "visible") {
-    await loadNotificationData(false);
-  }
-});
 </script>
 
 <style scoped lang="scss">
