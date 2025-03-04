@@ -111,6 +111,7 @@ function scrollToTop() {
   background-color: $app-background-color;
   padding: 0.5rem;
   font: black;
+  height: 4rem;
 }
 
 .centerContainer {

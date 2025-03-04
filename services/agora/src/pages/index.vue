@@ -4,7 +4,7 @@
       addGeneralPadding: false,
       addBottomPadding: false,
       enableFooter: true,
-      enableHeader: true,
+      enableHeader: !isAuthenticated,
       reducedWidth: false,
     }"
   >
@@ -39,11 +39,13 @@ import CompactPostList from "src/components/feed/CompactPostList.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
 
 const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 </script>
 
 <style scoped>
