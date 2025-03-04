@@ -19,12 +19,15 @@
       </DefaultMenuBar>
     </template>
 
-    <PostDetails
-      v-if="dataLoaded"
-      :extended-post-data="postData"
-      :compact-mode="false"
-      :skeleton-mode="false"
-    />
+    <q-pull-to-refresh @refresh="pullDownTriggered">
+      <PostDetails
+        v-if="dataLoaded"
+        :key="postData.metadata.opinionCount"
+        :extended-post-data="postData"
+        :compact-mode="false"
+        :skeleton-mode="false"
+      />
+    </q-pull-to-refresh>
   </DrawerLayout>
 </template>
 
@@ -50,6 +53,13 @@ const dataLoaded = ref(false);
 const route = useRoute();
 
 onMounted(async () => {
+  const isSuccessful = await loadData();
+  if (isSuccessful) {
+    dataLoaded.value = true;
+  }
+});
+
+async function loadData() {
   if (route.name == "/conversation/[postSlugId]") {
     const response = await fetchPostBySlugId(
       route.params.postSlugId,
@@ -57,10 +67,23 @@ onMounted(async () => {
     );
     if (response != null) {
       postData.value = response;
+      return true;
+    } else {
+      postData.value = emptyPost;
+      return false;
     }
-    dataLoaded.value = true;
+  } else {
+    postData.value = emptyPost;
+    return false;
   }
-});
+}
+
+async function pullDownTriggered(done: () => void) {
+  setTimeout(async () => {
+    await loadData();
+    done();
+  }, 500);
+}
 </script>
 
 <style scoped lang="scss"></style>
