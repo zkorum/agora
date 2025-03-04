@@ -1,6 +1,6 @@
 <template>
   <div ref="postContainerRef">
-    <q-pull-to-refresh :no-mouse="true" @refresh="pullDownTriggered">
+    <q-pull-to-refresh @refresh="pullDownTriggered">
       <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
         <div
           v-if="masterPostDataList.length == 0 && dataReady"

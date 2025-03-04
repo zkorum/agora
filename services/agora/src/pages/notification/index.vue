@@ -22,7 +22,7 @@
       </DefaultMenuBar>
     </template>
 
-    <q-pull-to-refresh :no-mouse="true" @refresh="pullDownTriggered">
+    <q-pull-to-refresh @refresh="pullDownTriggered">
       <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
         <div class="widthConstraint">
           <div class="notificaitonListFlexStyle">
@@ -95,8 +95,6 @@ const { loadNotificationData } = useNotificationStore();
 
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
-// const { loadingVisible } = usePullDownToRefresh(refreshData, el);
-
 const hasMore = ref(true);
 
 const router = useRouter();
@@ -142,9 +140,12 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
   return title;
 }
 
-async function pullDownTriggered() {
-  await loadNotificationData(false);
-  hasMore.value = true;
+async function pullDownTriggered(done: () => void) {
+  setTimeout(async () => {
+    await loadNotificationData(false);
+    hasMore.value = true;
+    done();
+  }, 500);
 }
 
 async function redirectPage(routeTarget: RouteTarget) {
