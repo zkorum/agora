@@ -50,6 +50,7 @@ const welcomeBackgroundImagePath =
   justify-content: center;
   background-color: white;
   border-top: 1px solid $secondary;
+  overflow: auto;
 }
 
 .containerPaddings {
