@@ -16,44 +16,55 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle> Muted Users</template>
+        <template #middle> Content Preference</template>
       </DefaultMenuBar>
     </template>
 
     <div class="container">
-      <div v-if="userMuteItemList.length == 0 && dataLoaded" class="titleStyle">
+      <div
+        v-if="userMuteItemList.length == 0 && dataLoaded"
+        class="infoMessage"
+      >
         You have no muted users
       </div>
-      <q-list v-if="userMuteItemList.length > 0 && dataLoaded" bordered padding>
-        <div
-          v-for="(muteItem, index) in userMuteItemList"
-          :key="muteItem.username"
-        >
-          <q-item>
-            <q-item-section top avatar>
-              <UserAvatar :user-name="muteItem.username" :size="40" />
-            </q-item-section>
+      <ZKCard
+        v-if="userMuteItemList.length > 0 && dataLoaded"
+        padding="1rem"
+        class="cardBackground"
+      >
+        <p class="title">Muted users</p>
 
-            <q-item-section>
-              <q-item-label caption>
-                {{ useTimeAgo(muteItem.createdAt) }}</q-item-label
-              >
-              <q-item-label>{{ muteItem.username }}</q-item-label>
-            </q-item-section>
+        <q-list bordered padding>
+          <div
+            v-for="(muteItem, index) in userMuteItemList"
+            :key="muteItem.username"
+          >
+            <q-item>
+              <q-item-section top avatar>
+                <UserAvatar :user-name="muteItem.username" :size="40" />
+              </q-item-section>
 
-            <q-item-section side top>
-              <q-btn
-                flat
-                round
-                icon="mdi-delete"
-                @click="removeMutedUser(muteItem.username)"
-              />
-            </q-item-section>
-          </q-item>
+              <q-item-section>
+                <q-item-label caption>
+                  {{ useTimeAgo(muteItem.createdAt) }}</q-item-label
+                >
+                <q-item-label>{{ muteItem.username }}</q-item-label>
+              </q-item-section>
 
-          <q-separator v-if="index != userMuteItemList.length - 1" spaced />
-        </div>
-      </q-list>
+              <q-item-section side top>
+                <q-btn
+                  flat
+                  round
+                  icon="mdi-delete"
+                  @click="removeMutedUser(muteItem.username)"
+                />
+              </q-item-section>
+            </q-item>
+
+            <q-separator v-if="index != userMuteItemList.length - 1" spaced />
+          </div>
+        </q-list>
+      </ZKCard>
     </div>
   </DrawerLayout>
 </template>
@@ -62,6 +73,7 @@
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { UserMuteItem } from "src/shared/types/zod";
 import { usePostStore } from "src/stores/post";
@@ -91,7 +103,7 @@ async function removeMutedUser(targetUsername: string) {
 </script>
 
 <style scoped lang="scss">
-.titleStyle {
+.infoMessage {
   font-size: 1rem;
   text-align: center;
   padding-top: 2rem;
@@ -103,5 +115,13 @@ async function removeMutedUser(targetUsername: string) {
   gap: 1rem;
   padding-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.cardBackground {
+  background-color: white;
+}
+
+.title {
+  font-size: 1.1rem;
 }
 </style>

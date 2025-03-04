@@ -78,9 +78,9 @@ const accountSettings: SettingsInterface[] = [
     style: "none",
   },
   {
-    label: "Muted Users",
+    label: "Content Preference",
     action: async () => {
-      await router.push({ name: "/settings/account/muted-users/" });
+      await router.push({ name: "/settings/account/content-preference/" });
     },
     style: "none",
   },
