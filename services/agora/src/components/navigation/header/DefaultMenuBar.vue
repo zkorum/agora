@@ -7,13 +7,6 @@
             class="leftContainer"
             :class="{ individualContainer: fixedHeight }"
           >
-            <RouterLink
-              v-if="hasLoginButton && !isAuthenticated && showAuthButton"
-              :to="{ name: '/welcome/' }"
-            >
-              <ZKButton label="Log in" text-color="white" color="primary" />
-            </RouterLink>
-
             <div v-if="hasMenuButton">
               <div>
                 <UserAvatar
@@ -54,6 +47,15 @@
             class="rightContainer"
             :class="{ individualContainer: fixedHeight }"
           >
+            <div :style="{ width: '5rem' }">
+              <RouterLink
+                v-if="hasLoginButton && !isAuthenticated && showAuthButton"
+                :to="{ name: '/welcome/' }"
+              >
+                <ZKButton label="Log in" text-color="white" color="primary" />
+              </RouterLink>
+            </div>
+
             <slot name="right"></slot>
           </div>
         </div>
