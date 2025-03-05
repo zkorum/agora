@@ -47,7 +47,7 @@
             class="rightContainer"
             :class="{ individualContainer: fixedHeight }"
           >
-            <div :style="{ width: '5rem' }">
+            <div>
               <RouterLink
                 v-if="hasLoginButton && !isAuthenticated && showAuthButton"
                 :to="{ name: '/welcome/' }"
