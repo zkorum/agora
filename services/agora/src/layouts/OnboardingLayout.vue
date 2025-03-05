@@ -51,6 +51,7 @@ const welcomeBackgroundImagePath =
   background-color: white;
   border-top: 1px solid $secondary;
   overflow: auto;
+  scrollbar-width: none;
 }
 
 .containerPaddings {
