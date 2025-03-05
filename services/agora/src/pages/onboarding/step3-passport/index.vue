@@ -5,7 +5,7 @@
     </template>
 
     <template #footer>
-      <WidthWrapper width="25rem">
+      <WidthWrapper :enable="true">
         <StepperLayout
           :submit-call-back="() => {}"
           :current-step="3"
@@ -34,6 +34,7 @@
                     Download
                     <span v-if="quasar.platform.is.mobile">
                       <a
+                        class="hrefColor"
                         :href="rarimeStoreLink"
                         target="_blank"
                         rel="noopener noreferrer"

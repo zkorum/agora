@@ -79,7 +79,7 @@ export async function getNotifications({
 }: GetNotificationsProps): Promise<FetchNotificationsResponse> {
     const notificationItemList: NotificationItem[] = [];
 
-    const fetchLimit = 10;
+    const fetchLimit = 20;
 
     let numNewNotifications = 0;
 

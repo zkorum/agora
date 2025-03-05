@@ -1,19 +1,24 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasSettingsButton: false,
-      hasCloseButton: true,
-      hasLoginButton: true,
-    }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+        :fixed-height="true"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <div class="container">
       <div class="title">
         <div>Moderate the conversation</div>
@@ -24,10 +29,11 @@
           {{ conversationItem.payload.title }}
         </b>
 
-        <div
+        <UserHtmlBody
           v-if="conversationItem.payload.body"
-          v-html="conversationItem.payload.body"
-        ></div>
+          :html-body="conversationItem.payload.body"
+          :compact-mode="false"
+        />
       </div>
 
       <q-select
@@ -62,7 +68,7 @@
         @click="clickedWithdraw()"
       />
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -80,8 +86,9 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderations";
 import { usePostStore } from "src/stores/post";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const {
   moderatePost,

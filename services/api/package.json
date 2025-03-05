@@ -60,6 +60,8 @@
     "fastify-type-provider-zod": "^4.0.2",
     "keystore-idb": "^0.15.5",
     "libphonenumber-js": "^1.11.14",
+    "linkify-html": "^4.2.0",
+    "linkifyjs": "^4.2.0",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "multiformats": "^12.1.3",

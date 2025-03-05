@@ -1,13 +1,15 @@
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
 import { useBackendAccountApi } from "../api/account";
+import { useNavigationStore } from "src/stores/navigation";
+import { storeToRefs } from "pinia";
 
 export const useDialog = () => {
   const quasar = useQuasar();
   const router = useRouter();
 
   const { deleteUserAccount } = useBackendAccountApi();
-
+  const { showMobileDrawer } = storeToRefs(useNavigationStore());
   function showReportDialog(itemName: "post" | "comment") {
     quasar.dialog({
       title: "Thank you for the report",
@@ -39,6 +41,7 @@ export const useDialog = () => {
         persistent: false,
       })
       .onOk(async () => {
+        showMobileDrawer.value = false;
         await router.push({ name: "/welcome/" });
       })
       .onCancel(() => {

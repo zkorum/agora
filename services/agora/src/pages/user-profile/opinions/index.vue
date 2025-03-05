@@ -1,107 +1,97 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <div>
-    <div class="container">
-      <div
-        v-for="commentItem in profileData.userCommentList"
-        :key="commentItem.opinionItem.opinionSlugId"
-      >
-        <ZKHoverEffect :enable-hover="true">
-          <div
-            class="commentItemStyle"
-            @click="
-              openComment(
-                commentItem.conversationData.metadata.conversationSlugId,
-                commentItem.opinionItem.opinionSlugId
-              )
-            "
-          >
-            <div class="topRowFlex">
-              <div class="postTitle">
-                {{ commentItem.conversationData.payload.title }}
+    <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
+      <div class="container">
+        <div
+          v-for="commentItem in profileData.userCommentList"
+          :key="commentItem.opinionItem.opinionSlugId"
+        >
+          <ZKHoverEffect :enable-hover="true">
+            <div
+              class="commentItemStyle"
+              @click="
+                openComment(
+                  commentItem.conversationData.metadata.conversationSlugId,
+                  commentItem.opinionItem.opinionSlugId
+                )
+              "
+            >
+              <div class="topRowFlex">
+                <div class="postTitle">
+                  {{ commentItem.conversationData.payload.title }}
+                </div>
+                <div>
+                  <CommentActionOptions
+                    :comment-item="commentItem.opinionItem"
+                    :post-slug-id="
+                      commentItem.conversationData.metadata.conversationSlugId
+                    "
+                    @deleted="commentDeleted()"
+                  />
+                </div>
               </div>
+
+              <!-- TODO: Map author verification status -->
+              <UserIdentity
+                :author-verified="false"
+                :created-at="commentItem.opinionItem.createdAt"
+                :username="commentItem.opinionItem.username"
+                :show-verified-text="false"
+              />
+
               <div>
-                <CommentActionOptions
-                  :comment-item="commentItem.opinionItem"
-                  :post-slug-id="
-                    commentItem.conversationData.metadata.conversationSlugId
-                  "
-                  @deleted="commentDeleted()"
+                <UserHtmlBody
+                  :html-body="commentItem.opinionItem.opinion"
+                  :compact-mode="false"
                 />
               </div>
+
+              <CommentModeration
+                :comment-item="commentItem.opinionItem"
+                :post-slug-id="
+                  commentItem.conversationData.metadata.conversationSlugId
+                "
+              />
             </div>
-
-            <!-- TODO: Map author verification status -->
-            <UserIdentity
-              :author-verified="false"
-              :created-at="commentItem.opinionItem.createdAt"
-              :username="commentItem.opinionItem.username"
-              :show-verified-text="false"
-            />
-
-            <div>
-              <span v-html="commentItem.opinionItem.opinion"></span>
-            </div>
-
-            <CommentModeration
-              :comment-item="commentItem.opinionItem"
-              :post-slug-id="
-                commentItem.conversationData.metadata.conversationSlugId
-              "
-            />
-          </div>
-        </ZKHoverEffect>
+          </ZKHoverEffect>
+        </div>
       </div>
+    </q-infinite-scroll>
 
-      <div ref="bottomOfPostDiv"></div>
+    <div
+      v-if="profileData.dataLoaded && profileData.userCommentList.length == 0"
+      class="emptyMessage"
+    >
+      You have no opinions
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useElementVisibility } from "@vueuse/core";
 import { useUserStore } from "src/stores/user";
-import { onMounted, ref, watch } from "vue";
+import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import CommentActionOptions from "src/components/post/views/CommentActionOptions.vue";
 import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import UserIdentity from "src/components/post/views/UserIdentity.vue";
+import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
-const endOfFeed = ref(false);
-let isExpandingPosts = false;
-
-const bottomOfPostDiv = ref(null);
-const targetIsVisible = useElementVisibility(bottomOfPostDiv);
-
-let isLoaded = false;
+const canLoadMore = ref(true);
 
 const router = useRouter();
 
-onMounted(async () => {
-  await loadUserProfile();
-  isLoaded = true;
-});
-
-watch(targetIsVisible, async () => {
-  if (
-    targetIsVisible.value &&
-    !isExpandingPosts &&
-    !endOfFeed.value &&
-    isLoaded
-  ) {
-    isExpandingPosts = true;
-
+async function onLoad(index: number, done: () => void) {
+  if (canLoadMore.value) {
     const response = await loadMoreUserComments();
-    endOfFeed.value = response.reachedEndOfFeed;
-
-    isExpandingPosts = false;
+    canLoadMore.value = !response.reachedEndOfFeed;
   }
-});
+  done();
+}
 
 async function openComment(postSlugId: string, commentSlugId: string) {
   await router.push({
@@ -149,5 +139,10 @@ async function commentDeleted() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.emptyMessage {
+  padding: 2rem;
+  text-align: center;
 }
 </style>

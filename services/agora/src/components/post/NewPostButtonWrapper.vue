@@ -1,27 +1,31 @@
 <template>
   <div>
-    <div>
-      <slot />
-
-      <q-page-sticky position="bottom-right" :offset="[30, 30]">
-        <q-btn
-          unelevated
-          fab
-          icon="mdi-plus"
-          color="primary"
-          @click="buttonClick()"
-        />
-      </q-page-sticky>
-    </div>
+    <q-page-sticky
+      v-if="drawerBehavior == 'mobile'"
+      position="bottom-right"
+      :offset="[15, 15]"
+    >
+      <div class="stickyButton" @click="requestNewPost()">
+        <img :src="newConversationButton" />
+      </div>
+    </q-page-sticky>
   </div>
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits(["onClick"]);
+import { storeToRefs } from "pinia";
+import { useNavigationStore } from "src/stores/navigation";
+import { useCreateNewPost } from "src/utils/component/conversation/newPost";
 
-function buttonClick() {
-  emit("onClick");
-}
+const newConversationButton =
+  process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationShort.svg";
+
+const { drawerBehavior } = storeToRefs(useNavigationStore());
+const { requestNewPost } = useCreateNewPost();
 </script>
 
-<style scoped></style>
+<style scoped>
+.stickyButton:hover {
+  cursor: pointer;
+}
+</style>

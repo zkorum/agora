@@ -1,23 +1,30 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableHeader: true,
       enableFooter: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasSettingsButton: false,
-      hasCloseButton: true,
-      hasLoginButton: true,
-    }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+        :fixed-height="true"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <div class="container">
       <div class="title">Moderate the opinion</div>
 
-      <div class="userOpinion" v-html="opinionItem.opinion"></div>
+      <div class="userOpinion">
+        <UserHtmlBody :html-body="opinionItem.opinion" :compact-mode="false" />
+      </div>
 
       <q-select
         v-model="moderationAction"
@@ -51,7 +58,7 @@
         @click="clickedWithdraw()"
       />
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -68,8 +75,10 @@ import {
   opinionModerationActionMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
 
 const {
   moderateComment,

@@ -34,6 +34,7 @@ body {
   font-size: 0.9rem;
   background-color: $app-background-color;
   color: rgb(24, 28, 31);
+  line-height: normal;
 }
 
 a {
@@ -43,4 +44,5 @@ a {
 
 html {
   overscroll-behavior: none;
+  overflow-y: scroll;
 }

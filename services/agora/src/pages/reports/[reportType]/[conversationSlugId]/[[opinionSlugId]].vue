@@ -1,18 +1,24 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: true,
       enableFooter: true,
       enableHeader: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasBackButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-      hasSettingsButton: true,
-    }"
   >
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+        :fixed-height="true"
+      >
+      </DefaultMenuBar>
+    </template>
+
     <div class="container">
       <div class="titleBar">
         <div class="title">
@@ -47,7 +53,7 @@
         </div>
       </div>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -57,8 +63,9 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 
 const route = useRoute();
 const router = useRouter();

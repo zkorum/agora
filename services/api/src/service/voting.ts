@@ -330,7 +330,7 @@ export async function castVoteForOpinionSlugId({
     voteNotifMilestones,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
-        await useCommonComment().getConversationMetadataFromOpinionSlugId({
+        await useCommonComment().getOpinionMetadataFromOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });

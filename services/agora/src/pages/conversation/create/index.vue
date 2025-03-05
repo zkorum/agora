@@ -1,21 +1,16 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: false,
       enableFooter: false,
-      enableHeader: true,
+      enableHeader: false,
       reducedWidth: true,
-    }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasCloseButton: false,
-      hasLoginButton: true,
-      hasSettingsButton: true,
     }"
   >
     <div class="container">
       <q-form @submit="onSubmit()">
-        <TopMenuWrapper :reveal="false">
+        <TopMenuWrapper>
           <div class="menuFlexGroup">
             <ZKButton
               icon="mdi-close"
@@ -184,7 +179,7 @@
         </ZKCard>
       </q-dialog>
     </div>
-  </MainLayout>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -196,7 +191,7 @@ import {
 } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import TopMenuWrapper from "src/components/navigation/TopMenuWrapper.vue";
+import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
@@ -209,7 +204,7 @@ import {
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -423,7 +418,8 @@ onBeforeRouteLeave((to) => {
 }
 
 .container {
-  padding: 0.5rem;
-  margin-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>

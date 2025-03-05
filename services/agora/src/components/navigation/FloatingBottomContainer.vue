@@ -12,8 +12,7 @@
 .bottomBar {
   position: fixed;
   bottom: 0rem;
-  width: 100%;
-  right: 0rem;
+  width: min(35rem, 100%);
   z-index: 100;
 }
 </style>

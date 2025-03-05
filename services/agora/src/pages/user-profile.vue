@@ -1,71 +1,99 @@
 <template>
-  <MainLayout
+  <DrawerLayout
     :general-props="{
+      addGeneralPadding: false,
       addBottomPadding: true,
-      enableFooter: true,
+      enableFooter: false,
       enableHeader: true,
       reducedWidth: true,
     }"
-    :menu-bar-props="{
-      hasBackButton: false,
-      hasSettingsButton: true,
-      hasCloseButton: false,
-      hasLoginButton: true,
-    }"
   >
-    <div class="topBar">
-      <div class="usernameBar">
-        <UserAvatar
-          :user-name="profileData.userName"
-          :size="MAX_LENGTH_USERNAME"
-        />
+    <template #header>
+      <DefaultMenuBar
+        :has-back-button="true"
+        :has-close-button="false"
+        :has-login-button="false"
+        :has-menu-button="false"
+        :fixed-height="true"
+      >
+        <template #middle> User Profile </template>
+      </DefaultMenuBar>
+    </template>
 
-        <div class="userNameStyle">
-          <!-- TODO: Map author verified status here -->
-          <Username
-            :author-verified="false"
-            :user-name="profileData.userName"
-            :show-verified-text="true"
+    <q-pull-to-refresh @refresh="pullDownTriggered">
+      <div class="topBar">
+        <div class="usernameBar">
+          <UserAvatar :user-name="profileData.userName" :size="35" />
+
+          <div class="userNameStyle">
+            <!-- TODO: Map author verified status here -->
+            <Username
+              :author-verified="false"
+              :user-name="profileData.userName"
+              :show-verified-text="true"
+            />
+          </div>
+        </div>
+
+        <div class="profileMetadataBar">
+          <div>
+            {{ profileData.activePostCount }} conversations
+            <span class="dotPadding">•</span>
+          </div>
+          <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
+        </div>
+      </div>
+
+      <div class="tabCluster">
+        <div v-for="tabItem in tabList" :key="tabItem.value">
+          <ZKTab
+            :text="tabItem.label"
+            :is-highlighted="currentTab === tabItem.value"
+            @click="selectedTab(tabItem.route)"
           />
         </div>
       </div>
 
-      <div class="profileMetadataBar">
-        <div>
-          {{ profileData.activePostCount }} conversations
-          <span class="dotPadding">•</span>
-        </div>
-        <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
-      </div>
-    </div>
-
-    <Tabs :value="currentTab">
-      <TabList>
-        <RouterLink :to="{ name: '/user-profile/conversations/' }">
-          <Tab :value="0">Conversations</Tab>
-        </RouterLink>
-        <RouterLink :to="{ name: '/user-profile/opinions/' }">
-          <Tab :value="1">Opinions</Tab>
-        </RouterLink>
-      </TabList>
       <router-view />
-    </Tabs>
-  </MainLayout>
+    </q-pull-to-refresh>
+  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import Tabs from "primevue/tabs";
-import Tab from "primevue/tab";
-import TabList from "primevue/tablist";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
-import { ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { getDateString } from "src/utils/common";
-import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { storeToRefs } from "pinia";
-import MainLayout from "src/layouts/MainLayout.vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import Username from "src/components/post/views/Username.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { RouteNamedMap } from "vue-router/auto-routes";
+import ZKTab from "src/components/ui-library/ZKTab.vue";
+
+const router = useRouter();
+
+const { loadUserProfile } = useUserStore();
+
+interface CustomTab {
+  route: keyof RouteNamedMap;
+  label: string;
+  value: number;
+}
+
+const tabList: CustomTab[] = [
+  {
+    route: "/user-profile/conversations/",
+    label: "Conversation",
+    value: 0,
+  },
+  {
+    route: "/user-profile/opinions/",
+    label: "Opinion",
+    value: 1,
+  },
+];
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -75,9 +103,20 @@ const route = useRoute();
 
 applyCurrentTab();
 
+onMounted(async () => {
+  await loadUserProfile();
+});
+
 watch(route, () => {
   applyCurrentTab();
 });
+
+async function pullDownTriggered(done: () => void) {
+  setTimeout(async () => {
+    await loadUserProfile();
+    done();
+  }, 500);
+}
 
 function applyCurrentTab() {
   if (route.name == "/user-profile/conversations/") {
@@ -85,6 +124,10 @@ function applyCurrentTab() {
   } else {
     currentTab.value = 1;
   }
+}
+
+async function selectedTab(routeName: keyof RouteNamedMap) {
+  await router.push({ name: routeName });
 }
 </script>
 
@@ -109,7 +152,6 @@ function applyCurrentTab() {
   justify-content: space-between;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  padding-top: 2rem;
   padding-bottom: 2rem;
 }
 
@@ -135,5 +177,11 @@ function applyCurrentTab() {
   flex-wrap: nowrap;
   gap: 1rem;
   align-items: center;
+}
+
+.tabCluster {
+  display: flex;
+  gap: 1rem;
+  padding-bottom: 1rem;
 }
 </style>

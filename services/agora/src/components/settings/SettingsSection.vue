@@ -1,40 +1,38 @@
 <template>
   <div>
-    <div class="container">
-      <ZKCard padding="0rem" class="backgroundColor">
-        <div class="flexStyle">
-          <div v-for="(item, index) in settingsItemList" :key="item.label">
-            <ZKHoverEffect :enable-hover="true">
-              <div
-                class="menuItem"
-                :class="{
-                  isWarningStyle: item.style == 'warning',
-                  isNegativeStyle: item.style == 'negative',
-                }"
-                @click="item.action"
-              >
-                <div>
-                  {{ item.label }}
-                </div>
-
-                <div>
-                  <q-icon name="mdi-chevron-right" size="2rem" />
-                </div>
+    <div class="container backgroundColor">
+      <div class="flexStyle innerBackground">
+        <div v-for="(item, index) in settingsItemList" :key="item.label">
+          <ZKHoverEffect :enable-hover="true">
+            <div
+              class="menuItem"
+              :class="{
+                isWarningStyle: item.style == 'warning',
+                isNegativeStyle: item.style == 'negative',
+              }"
+              @click="item.action"
+            >
+              <div>
+                {{ item.label }}
               </div>
 
-              <q-separator v-if="index != settingsItemList.length - 1" />
-            </ZKHoverEffect>
-          </div>
+              <div>
+                <ZKIcon color="#7D7A85" name="mdi-chevron-right" size="24px" />
+              </div>
+            </div>
+
+            <q-separator v-if="index != settingsItemList.length - 1" />
+          </ZKHoverEffect>
         </div>
-      </ZKCard>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import ZKCard from "../ui-library/ZKCard.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
+import ZKIcon from "../ui-library/ZKIcon.vue";
 
 defineProps<{
   settingsItemList: SettingsInterface[];
@@ -47,7 +45,8 @@ defineProps<{
   gap: 2rem;
   align-items: center;
   justify-content: space-between;
-  font-size: 1rem;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   padding: 1rem;
 }
@@ -58,7 +57,7 @@ defineProps<{
 }
 
 .container {
-  padding-bottom: 2rem;
+  margin-bottom: 2rem;
 }
 
 .isWarningStyle {
@@ -71,5 +70,9 @@ defineProps<{
 
 .backgroundColor {
   background-color: white;
+  border-radius: 20px;
+}
+
+.innerBackground {
 }
 </style>
