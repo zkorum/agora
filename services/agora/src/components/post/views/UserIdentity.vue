@@ -1,7 +1,7 @@
 <template>
   <div class="metadata">
     <div>
-      <UserAvatar :user-name="username" :size="30" class="avatarIcon" />
+      <UserAvatar :user-name="username" :size="36" />
     </div>
 
     <div class="userNameTimeContainer">

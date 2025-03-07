@@ -26,7 +26,6 @@
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
         :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
-        padding="1rem"
         :class="{
           commentItemBackground:
             initialCommentSlugId != commentItem.opinionSlugId,
@@ -88,7 +87,6 @@ function mutedComment() {
   flex-direction: column;
   gap: 1.5rem;
   padding-bottom: 10rem;
-  padding-top: 1rem;
 }
 
 .commentItemBackground {

@@ -1,12 +1,12 @@
 <template>
-  <div class="card-decoration" :style="{ padding: padding }">
+  <div class="card-decoration" :style="{ padding: padding ? padding : '24px' }">
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-  padding: string;
+  padding?: string;
 }>();
 </script>
 

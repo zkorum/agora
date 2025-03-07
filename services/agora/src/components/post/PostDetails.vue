@@ -8,13 +8,13 @@
       <WidthWrapper :enable="true">
         <ZKHoverEffect :enable-hover="compactMode">
           <div
-            class="container postPadding"
+            class="container"
             :class="{
               compactBackground: compactMode,
               standardBackground: !compactMode,
             }"
           >
-            <div class="innerContainer">
+            <div class="innerContainer postPadding">
               <!-- TODO: Pass author verified flag here -->
               <PostMetadata
                 :poster-user-name="extendedPostData.metadata.authorUsername"
@@ -27,10 +27,7 @@
 
               <div class="postDiv">
                 <div>
-                  <div
-                    v-if="!skeletonMode"
-                    class="titleDiv extraTitleBottomPadding"
-                  >
+                  <div v-if="!skeletonMode" class="titleDiv titlePadding">
                     {{ extendedPostData.payload.title }}
                   </div>
 
@@ -134,7 +131,7 @@
               </div>
             </div>
 
-            <div v-if="!compactMode">
+            <div v-if="!compactMode" class="commentSectionPadding">
               <CommentSection
                 :key="commentSectionKey"
                 ref="commentSectionRef"
@@ -336,13 +333,11 @@ async function shareClicked() {
 }
 
 .postPadding {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding: $container-padding;
 }
 
-.extraTitleBottomPadding {
+.titlePadding {
+  padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
 
@@ -354,5 +349,10 @@ async function shareClicked() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.commentSectionPadding {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>
