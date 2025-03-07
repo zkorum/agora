@@ -112,7 +112,7 @@ function scrollToTop() {
   gap: 1rem 1rem;
   grid-template-areas: ". . .";
   width: 100%;
-  padding-bottom: 1rem;
+  padding-bottom: 0.2rem;
 }
 
 .individualContainer {

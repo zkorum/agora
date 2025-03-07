@@ -424,7 +424,7 @@ function toggleClusterSelection(clusterKey: PolisKey) {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .commentSectionToolbar {

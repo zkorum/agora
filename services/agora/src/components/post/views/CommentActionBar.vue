@@ -269,8 +269,6 @@ async function castPersonalVote(
   grid-template-areas: ". .";
   padding-left: 0.2rem;
   padding-right: 0.2rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
 }
 
 .maxWidth {

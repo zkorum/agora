@@ -11,10 +11,12 @@
             class="container"
             :class="{
               compactBackground: compactMode,
-              standardBackground: !compactMode,
             }"
           >
-            <div class="innerContainer postPadding">
+            <div
+              class="innerContainer postPadding"
+              :class="{ postPaddingCompact: compactMode }"
+            >
               <!-- TODO: Pass author verified flag here -->
               <PostMetadata
                 :poster-user-name="extendedPostData.metadata.authorUsername"
@@ -314,10 +316,6 @@ async function shareClicked() {
   gap: 2rem;
 }
 
-.standardBackground {
-  background-color: none;
-}
-
 .compactBackground {
   background-color: white;
 }
@@ -333,7 +331,13 @@ async function shareClicked() {
 }
 
 .postPadding {
-  padding: $container-padding;
+  padding-top: $container-padding;
+  padding-left: $container-padding;
+  padding-right: $container-padding;
+}
+
+.postPaddingCompact {
+  padding-bottom: $container-padding;
 }
 
 .titlePadding {

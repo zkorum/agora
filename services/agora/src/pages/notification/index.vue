@@ -44,10 +44,10 @@
                       <UserAvatar
                         v-if="notificationItem.type === 'new_opinion'"
                         :user-name="notificationItem.username"
-                        :size="30"
+                        :size="32"
                       />
                     </div>
-                    <div>
+                    <div class="titleStyle">
                       {{ getTitleFromNotification(notificationItem) }}
                     </div>
 
@@ -161,7 +161,7 @@ async function redirectPage(routeTarget: RouteTarget) {
 .notificationItemBase {
   display: flex;
   gap: 0.5rem;
-  padding: 0.5rem;
+  padding: $container-padding;
   background-color: white;
 }
 
@@ -172,13 +172,12 @@ async function redirectPage(routeTarget: RouteTarget) {
 .notificationRightPortion {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .messageStyle {
   font-weight: 400;
-  font-size: 12px;
-  color: $lightweight-text-color;
+  color: #6d6a74;
 }
 
 .widthConstraint {
@@ -189,7 +188,7 @@ async function redirectPage(routeTarget: RouteTarget) {
 .notificaitonListFlexStyle {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.5rem;
 }
 
 .endOfFeed {
@@ -197,5 +196,9 @@ async function redirectPage(routeTarget: RouteTarget) {
   margin: auto;
   padding: 2rem;
   text-align: center;
+}
+
+.titleStyle {
+  color: #0a0714;
 }
 </style>
