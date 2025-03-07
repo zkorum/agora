@@ -72,7 +72,4 @@ defineProps<{
   background-color: white;
   border-radius: 20px;
 }
-
-.innerBackground {
-}
 </style>
