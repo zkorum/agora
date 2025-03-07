@@ -26,6 +26,7 @@
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
         :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
+        padding="0rem"
         :class="{
           commentItemBackground:
             initialCommentSlugId != commentItem.opinionSlugId,
