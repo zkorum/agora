@@ -183,7 +183,7 @@ function mutedComment() {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: $container-padding;
+  margin: $container-padding;
 }
 
 .pushReasonFlex {
