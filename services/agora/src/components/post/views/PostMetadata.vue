@@ -50,7 +50,7 @@ import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import Skeleton from "primevue/skeleton";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
 import UserIdentity from "./UserIdentity.vue";
@@ -66,6 +66,7 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 
 const { showPostOptionSelector } = useBottomSheet();
 
@@ -103,7 +104,15 @@ async function moderatePostCallback() {
 }
 
 async function moderationHistoryCallback() {
-  emit("openModerationHistory");
+  if (route.name == "/conversation/[postSlugId]") {
+    emit("openModerationHistory");
+  } else {
+    await router.push({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: props.postSlugId },
+      query: { filter: "moderated" },
+    });
+  }
 }
 
 function clickedMoreIcon() {
