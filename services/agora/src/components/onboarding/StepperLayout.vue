@@ -9,6 +9,7 @@
 
       <div v-if="showNextButton" class="nextButton">
         <ZKButton
+          :use-extra-padding="true"
           icon="mdi-arrow-right"
           :color="enableNextButton ? 'primary' : 'button-background-color'"
           :text-color="enableNextButton ? 'white' : 'color-text-strong'"

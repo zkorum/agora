@@ -80,6 +80,7 @@
               />
 
               <ZKButton
+                :use-extra-padding="true"
                 label="I'd prefer to login with complete privacy"
                 text-color="primary"
                 @click="goToPassportVerification()"
@@ -94,6 +95,7 @@
                     :key="authorizedNumber.fullNumber"
                   >
                     <ZKButton
+                      :use-extra-padding="true"
                       color="blue"
                       :label="authorizedNumber.fullNumber"
                       @click="injectDevelopmentNumber(authorizedNumber)"

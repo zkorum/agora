@@ -1,5 +1,6 @@
 <template>
   <ZKButton
+    :use-extra-padding="true"
     icon="mdi-close"
     text-color="color-text-strong"
     flat

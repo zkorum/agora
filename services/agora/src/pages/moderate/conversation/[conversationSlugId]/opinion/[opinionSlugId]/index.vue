@@ -45,6 +45,7 @@
       <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
       <ZKButton
+        :use-extra-padding="true"
         :label="hasExistingDecision ? 'Modify' : 'Moderate'"
         color="primary"
         @click="clickedSubmit()"
@@ -52,6 +53,7 @@
 
       <ZKButton
         v-if="hasExistingDecision"
+        :use-extra-padding="true"
         label="Withdraw"
         color="secondary"
         text-color="primary"

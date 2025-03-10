@@ -17,7 +17,11 @@
               </div>
 
               <div>
-                <ZKIcon color="#7D7A85" name="mdi-chevron-right" size="24px" />
+                <ZKIcon
+                  color="#7D7A85"
+                  name="mdi-chevron-right"
+                  size="1.5rem"
+                />
               </div>
             </div>
 
@@ -71,8 +75,5 @@ defineProps<{
 .backgroundColor {
   background-color: white;
   border-radius: 20px;
-}
-
-.innerBackground {
 }
 </style>

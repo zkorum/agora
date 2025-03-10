@@ -7,6 +7,7 @@
           <ZKButton
             v-for="optionItem in localPollOptionList"
             :key="optionItem.index"
+            :use-extra-padding="true"
             outline
             :label="optionItem.option"
             text-color="primary"
@@ -45,7 +46,8 @@
           <ZKButton
             v-if="currentDisplayMode == DisplayModes.Vote"
             outline
-            text-color="primary"
+            :use-extra-padding="true"
+            color="primary"
             icon="mdi-chart-bar"
             label="Results"
             @click.stop.prevent="showResultsInterface()"
@@ -54,7 +56,8 @@
           <ZKButton
             v-if="currentDisplayMode == DisplayModes.Results && isAuthenticated"
             outline
-            text-color="primary"
+            :use-extra-padding="true"
+            color="primary"
             label="Vote"
             icon="mdi-vote"
             @click.stop.prevent="showVoteInterface()"

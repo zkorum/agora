@@ -36,7 +36,11 @@
                   },
                 }"
               >
-                <ZKButton label="Edit" color="primary" />
+                <ZKButton
+                  :use-extra-padding="true"
+                  label="Edit"
+                  color="primary"
+                />
               </RouterLink>
             </div>
           </div>

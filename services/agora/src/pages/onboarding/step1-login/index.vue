@@ -21,12 +21,14 @@
 
         <template #body>
           <ZKButton
+            :use-extra-padding="true"
             label="Log In with RariMe"
             color="primary"
             @click="goToPassportLogin()"
           />
 
           <ZKButton
+            :use-extra-padding="true"
             label="Login with my phone number"
             color="secondary"
             text-color="primary"

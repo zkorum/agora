@@ -8,7 +8,7 @@
         >
           <ZKHoverEffect :enable-hover="true">
             <div
-              class="commentItemStyle"
+              class="commentItemStyle hoverColor"
               @click="
                 openComment(
                   commentItem.conversationData.metadata.conversationSlugId,
@@ -47,6 +47,7 @@
               </div>
 
               <CommentModeration
+                v-if="commentItem.opinionItem.moderation?.status == 'moderated'"
                 :comment-item="commentItem.opinionItem"
                 :post-slug-id="
                   commentItem.conversationData.metadata.conversationSlugId
@@ -121,17 +122,14 @@ async function commentDeleted() {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .commentItemStyle {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1rem;
-  padding-bottom: 0.5rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding: $container-padding;
   background-color: white;
 }
 
@@ -144,5 +142,9 @@ async function commentDeleted() {
 .emptyMessage {
   padding: 2rem;
   text-align: center;
+}
+
+.hoverColor:hover {
+  background-color: $mouse-hover-color;
 }
 </style>

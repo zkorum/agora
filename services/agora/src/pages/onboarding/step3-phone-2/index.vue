@@ -50,12 +50,14 @@
 
             <div class="optionButtons">
               <ZKButton
+                :use-extra-padding="true"
                 label="Change Number"
                 text-color="primary"
                 @click="changePhoneNumber()"
               />
 
               <ZKButton
+                :use-extra-padding="true"
                 :label="
                   verificationNextCodeSeconds > 0
                     ? 'Resend Code in ' + verificationNextCodeSeconds + 's'
@@ -323,6 +325,7 @@ function changePhoneNumber() {
 
 .optionButtons {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
 }
 </style>

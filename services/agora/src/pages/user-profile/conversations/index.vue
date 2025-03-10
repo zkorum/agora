@@ -6,16 +6,14 @@
           v-for="postData in profileData.userPostList"
           :key="postData.metadata.conversationSlugId"
         >
-          <ZKHoverEffect :enable-hover="true">
-            <PostDetails
-              :extended-post-data="postData"
-              :compact-mode="true"
-              :show-comment-section="false"
-              :skeleton-mode="false"
-              class="showCursor"
-              @click="openPost(postData.metadata.conversationSlugId)"
-            />
-          </ZKHoverEffect>
+          <PostDetails
+            :extended-post-data="postData"
+            :compact-mode="true"
+            :show-comment-section="false"
+            :skeleton-mode="false"
+            class="showCursor"
+            @click="openPost(postData.metadata.conversationSlugId)"
+          />
         </div>
       </div>
     </q-infinite-scroll>
@@ -34,7 +32,6 @@ import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 
 const { loadMoreUserPosts } = useUserStore();

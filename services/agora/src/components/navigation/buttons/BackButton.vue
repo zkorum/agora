@@ -1,5 +1,10 @@
 <template>
-  <ZKButton text-color="color-text-strong" flat @click="buttonClicked()">
+  <ZKButton
+    text-color="color-text-strong"
+    flat
+    :use-extra-padding="true"
+    @click="buttonClicked()"
+  >
     <ZKIcon name="ci:chevron-left" size="1.2rem" color="7D7A85" />
   </ZKButton>
 </template>

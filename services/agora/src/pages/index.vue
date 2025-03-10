@@ -55,7 +55,7 @@ const { drawerBehavior } = storeToRefs(useNavigationStore());
 }
 
 .agoraLogoStyle {
-  width: 35px;
-  height: 35px;
+  width: 2rem;
+  height: 2rem;
 }
 </style>

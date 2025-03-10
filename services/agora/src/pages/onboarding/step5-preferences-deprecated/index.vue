@@ -69,7 +69,12 @@
           />
         </div>
 
-        <ZKButton label="Save and Close" color="primary" @click="goToHome" />
+        <ZKButton
+          :use-extra-padding="true"
+          label="Save and Close"
+          color="primary"
+          @click="goToHome"
+        />
       </template>
     </StepperLayout>
   </DrawerLayout>

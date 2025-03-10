@@ -183,5 +183,7 @@ async function selectedTab(routeName: keyof RouteNamedMap) {
   display: flex;
   gap: 1rem;
   padding-bottom: 1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>
