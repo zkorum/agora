@@ -37,6 +37,7 @@ defineProps<{
 .userNameTimeContainer {
   display: flex;
   flex-direction: column;
+  gap: 0.2rem;
 }
 
 .metadata {

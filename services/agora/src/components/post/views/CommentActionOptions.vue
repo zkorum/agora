@@ -3,7 +3,7 @@
     flat
     text-color="color-text-weak"
     icon="mdi-dots-horizontal"
-    size="0.8rem"
+    size="0.6rem"
     @click.stop.prevent="optionButtonClicked()"
   />
 
