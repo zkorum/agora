@@ -285,7 +285,7 @@ async function shareClicked() {
 .innerContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 .pollContainer {
@@ -293,7 +293,7 @@ async function shareClicked() {
 }
 
 .titleDiv {
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   font-weight: 500;
 }
 

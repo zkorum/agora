@@ -13,7 +13,7 @@
         />
       </div>
 
-      <div>
+      <div :style="{ fontSize: '0.75rem' }">
         {{ useTimeAgo(new Date(createdAt)) }}
       </div>
     </div>
