@@ -8,13 +8,15 @@
       <WidthWrapper :enable="true">
         <ZKHoverEffect :enable-hover="compactMode">
           <div
-            class="container postPadding"
+            class="container"
             :class="{
               compactBackground: compactMode,
-              standardBackground: !compactMode,
             }"
           >
-            <div class="innerContainer">
+            <div
+              class="innerContainer postPadding"
+              :class="{ postPaddingCompact: compactMode }"
+            >
               <!-- TODO: Pass author verified flag here -->
               <PostMetadata
                 :poster-user-name="extendedPostData.metadata.authorUsername"
@@ -27,10 +29,7 @@
 
               <div class="postDiv">
                 <div>
-                  <div
-                    v-if="!skeletonMode"
-                    class="titleDiv extraTitleBottomPadding"
-                  >
+                  <div v-if="!skeletonMode" class="titleDiv titlePadding">
                     {{ extendedPostData.payload.title }}
                   </div>
 
@@ -89,13 +88,14 @@
                         extendedPostData.metadata.moderation.status ==
                         'moderated'
                       "
+                      :use-extra-padding="false"
                       @click.stop.prevent="clickedCommentButton()"
                     >
                       <div class="commentCountStyle">
                         <ZKIcon
                           color="#7D7A85"
                           name="meteor-icons:comment"
-                          size="1.1rem"
+                          size="1rem"
                         />
                         <div :style="{ color: '#7D7A85' }">
                           {{
@@ -119,8 +119,11 @@
 
                 <div>
                   <div v-if="!skeletonMode">
-                    <ZKButton @click.stop.prevent="shareClicked()">
-                      <ZKIcon color="#7D7A85" name="mdi:share" size="1.3rem" />
+                    <ZKButton
+                      :use-extra-padding="false"
+                      @click.stop.prevent="shareClicked()"
+                    >
+                      <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
                     </ZKButton>
                   </div>
                   <div v-if="skeletonMode">
@@ -134,7 +137,7 @@
               </div>
             </div>
 
-            <div v-if="!compactMode">
+            <div v-if="!compactMode" class="commentSectionPadding">
               <CommentSection
                 :key="commentSectionKey"
                 ref="commentSectionRef"
@@ -282,7 +285,7 @@ async function shareClicked() {
 .innerContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 .pollContainer {
@@ -290,7 +293,7 @@ async function shareClicked() {
 }
 
 .titleDiv {
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   font-weight: 500;
 }
 
@@ -317,10 +320,6 @@ async function shareClicked() {
   gap: 2rem;
 }
 
-.standardBackground {
-  background-color: none;
-}
-
 .compactBackground {
   background-color: white;
 }
@@ -336,13 +335,17 @@ async function shareClicked() {
 }
 
 .postPadding {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: $container-padding;
+  padding-left: $container-padding;
+  padding-right: $container-padding;
 }
 
-.extraTitleBottomPadding {
+.postPaddingCompact {
+  padding-bottom: $container-padding;
+}
+
+.titlePadding {
+  padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
 
@@ -354,5 +357,12 @@ async function shareClicked() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding-right: 0.1rem;
+  padding-left: 0.1rem;
+}
+
+.commentSectionPadding {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>

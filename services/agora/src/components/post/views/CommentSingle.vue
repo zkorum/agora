@@ -30,14 +30,12 @@
       </div>
 
       <div>
-        <div>
-          <UserHtmlBody
-            :html-body="commentItem.opinion"
-            :compact-mode="false"
-          />
-        </div>
+        <UserHtmlBody :html-body="commentItem.opinion" :compact-mode="false" />
+      </div>
 
+      <div class="commentAdditionalDetailsFlex">
         <CommentModeration
+          v-if="commentItem.moderation?.status == 'moderated'"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
         />
@@ -184,7 +182,8 @@ function mutedComment() {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  margin: $container-padding;
 }
 
 .pushReasonFlex {
@@ -198,16 +197,16 @@ function mutedComment() {
 }
 
 .pushReasonStyle {
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
   padding-left: 1rem;
   padding-right: 1rem;
-  color: #5c6c74;
+  color: #48545a;
 }
 
 .pushReasonPosition {
   position: absolute;
-  top: -2rem;
+  top: -2.5rem;
   right: -0.2rem;
 }
 
@@ -231,6 +230,12 @@ function mutedComment() {
 .topRightBar {
   display: flex;
   align-items: center;
+  gap: 1rem;
+}
+
+.commentAdditionalDetailsFlex {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 </style>

@@ -26,6 +26,7 @@
                 v-if="
                   !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
                 "
+                :use-extra-padding="true"
                 icon="mdi-menu"
                 text-color="black"
                 @click="menuButtonClicked()"
@@ -52,7 +53,12 @@
                 v-if="hasLoginButton && !isAuthenticated && showAuthButton"
                 :to="{ name: '/welcome/' }"
               >
-                <ZKButton label="Log in" text-color="white" color="primary" />
+                <ZKButton
+                  :use-extra-padding="true"
+                  label="Log in"
+                  text-color="white"
+                  color="primary"
+                />
               </RouterLink>
             </div>
 
@@ -107,12 +113,12 @@ function scrollToTop() {
 <style scoped lang="scss">
 .gridContainer {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr auto 1fr;
   grid-template-rows: 1fr;
   gap: 1rem 1rem;
   grid-template-areas: ". . .";
   width: 100%;
-  padding-bottom: 1rem;
+  padding-bottom: 0.2rem;
 }
 
 .individualContainer {

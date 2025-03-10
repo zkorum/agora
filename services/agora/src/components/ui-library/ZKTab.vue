@@ -14,10 +14,10 @@ defineProps<{
 <style lang="scss" scoped>
 .textStyle {
   cursor: pointer;
-  padding-left: 8px;
-  padding-right: 8px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
   font-weight: 500;
   color: #7d7a85;
   user-select: none;

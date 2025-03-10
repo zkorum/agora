@@ -5,9 +5,15 @@
   >
     <img :src="brandImagePath" class="welcomeImage" />
     <div class="buttonFlex">
-      <ZKButton label="Sign Up" color="primary" @click="gotoNextRoute(false)" />
+      <ZKButton
+        :use-extra-padding="true"
+        label="Sign Up"
+        color="primary"
+        @click="gotoNextRoute(false)"
+      />
 
       <ZKButton
+        :use-extra-padding="true"
         label="Log In"
         color="white"
         text-color="primary"
@@ -15,6 +21,7 @@
       />
 
       <ZKButton
+        :use-extra-padding="true"
         text-color="black"
         color="secondary"
         label="Skip Authentication"

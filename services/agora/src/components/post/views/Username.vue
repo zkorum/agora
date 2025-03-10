@@ -20,6 +20,9 @@ defineProps<{
 
 <style lang="scss" scoped>
 .usernameStyle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0a0714;
   word-break: break-all;
 }
 
@@ -31,7 +34,7 @@ defineProps<{
 }
 
 .verifiedIconStyle {
-  color: $verified-icon-color;
+  color: #434149;
 }
 
 .authorContainer {

@@ -12,7 +12,13 @@
     <template #append>
       <div class="inputButtons">
         <q-icon v-if="isValidUsername" name="mdi-check" text-color="red" />
-        <ZKButton icon="mdi-dice-6" color="black" flat @click="refreshName()" />
+        <ZKButton
+          icon="mdi-dice-6"
+          color="black"
+          flat
+          :use-extra-padding="false"
+          @click="refreshName()"
+        />
       </div>
     </template>
 
@@ -26,6 +32,7 @@
     :disable="!isValidUsername"
     label="Update"
     color="primary"
+    :use-extra-padding="true"
     @click="submitButtonClicked()"
   />
 </template>

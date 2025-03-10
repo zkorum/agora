@@ -1,7 +1,7 @@
 <template>
   <div class="metadata">
     <div>
-      <UserAvatar :user-name="username" :size="30" class="avatarIcon" />
+      <UserAvatar :user-name="username" :size="36" />
     </div>
 
     <div class="userNameTimeContainer">
@@ -13,7 +13,7 @@
         />
       </div>
 
-      <div>
+      <div :style="{ fontSize: '0.75rem' }">
         {{ useTimeAgo(new Date(createdAt)) }}
       </div>
     </div>
@@ -37,6 +37,7 @@ defineProps<{
 .userNameTimeContainer {
   display: flex;
   flex-direction: column;
+  gap: 0.2rem;
 }
 
 .metadata {
