@@ -4,8 +4,8 @@
     no-caps
     unelevated
     :class="{
-      longButton: !(props.icon && !props.label),
-      shortButton: props.icon && !props.label,
+      longButton: useExtraPadding,
+      shortButton: !useExtraPadding,
     }"
   >
     <slot />
@@ -15,7 +15,11 @@
 <script setup lang="ts">
 import { type QBtnProps } from "quasar";
 
-const props = defineProps<QBtnProps>();
+type ZKBtnProps = Partial<QBtnProps> & {
+  useExtraPadding: boolean;
+};
+
+const props = defineProps<ZKBtnProps>();
 </script>
 
 <style lang="scss" scoped>
@@ -29,8 +33,8 @@ const props = defineProps<QBtnProps>();
 
 .longButton {
   border-radius: 16px;
-  padding-left: 0.4rem;
-  padding-right: 0.4rem;
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
   padding-top: 0.6rem;
   padding-bottom: 0.6rem;
 }

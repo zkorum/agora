@@ -28,6 +28,7 @@
 
         <div>
           <ZKButton
+            :use-extra-padding="true"
             :label="
               reportType == 'conversation'
                 ? 'Open ' + 'Conversation'

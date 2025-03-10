@@ -88,13 +88,14 @@
                         extendedPostData.metadata.moderation.status ==
                         'moderated'
                       "
+                      :use-extra-padding="false"
                       @click.stop.prevent="clickedCommentButton()"
                     >
                       <div class="commentCountStyle">
                         <ZKIcon
                           color="#7D7A85"
                           name="meteor-icons:comment"
-                          size="1.1rem"
+                          size="1rem"
                         />
                         <div :style="{ color: '#7D7A85' }">
                           {{
@@ -118,8 +119,11 @@
 
                 <div>
                   <div v-if="!skeletonMode">
-                    <ZKButton @click.stop.prevent="shareClicked()">
-                      <ZKIcon color="#7D7A85" name="mdi:share" size="1.3rem" />
+                    <ZKButton
+                      :use-extra-padding="false"
+                      @click.stop.prevent="shareClicked()"
+                    >
+                      <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
                     </ZKButton>
                   </div>
                   <div v-if="skeletonMode">
@@ -353,6 +357,8 @@ async function shareClicked() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding-right: 0.1rem;
+  padding-left: 0.1rem;
 }
 
 .commentSectionPadding {

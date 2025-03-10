@@ -13,6 +13,7 @@
         <TopMenuWrapper>
           <div class="menuFlexGroup">
             <ZKButton
+              :use-extra-padding="true"
               icon="mdi-close"
               text-color="color-text-strong"
               flat
@@ -26,6 +27,7 @@
               :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
             >
               <ZKButton
+                :use-extra-padding="true"
                 unelevated
                 rounded
                 :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
@@ -37,6 +39,7 @@
             </div>
 
             <ZKButton
+              :use-extra-padding="true"
               color="primary"
               label="Post"
               type="submit"
@@ -104,6 +107,7 @@
                 <div class="pollTopBar">
                   <div>Add a Poll</div>
                   <ZKButton
+                    :use-extra-padding="true"
                     flat
                     text-color="black"
                     icon="mdi-close"
@@ -131,6 +135,7 @@
                       class="deletePollOptionDiv"
                     >
                       <ZKButton
+                        :use-extra-padding="false"
                         flat
                         round
                         icon="mdi-delete"
@@ -142,6 +147,7 @@
 
                   <div>
                     <ZKButton
+                      :use-extra-padding="true"
                       flat
                       text-color="primary"
                       icon="mdi-plus"
@@ -167,9 +173,15 @@
             <div>Your drafted post will not be saved.</div>
 
             <div class="dialogButtons">
-              <ZKButton v-close-popup flat label="Cancel" />
               <ZKButton
                 v-close-popup
+                :use-extra-padding="true"
+                flat
+                label="Cancel"
+              />
+              <ZKButton
+                v-close-popup
+                :use-extra-padding="true"
                 label="Discard"
                 text-color="primary"
                 @click="leaveRoute()"
@@ -401,8 +413,8 @@ onBeforeRouteLeave((to) => {
 
 .deletePollOptionDiv {
   width: 3rem;
-  padding-bottom: 20px;
-  padding-left: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 0.5rem;
 }
 
 .weakColor {

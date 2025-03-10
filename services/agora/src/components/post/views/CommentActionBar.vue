@@ -3,6 +3,7 @@
     <div class="agreementButtons">
       <div class="buttonContainer">
         <ZKButton
+          :use-extra-padding="true"
           class="maxWidth"
           :disable="isPostLocked"
           label="Disagree"
@@ -44,6 +45,7 @@
 
       <div class="buttonContainer">
         <ZKButton
+          :use-extra-padding="true"
           class="maxWidth"
           :disable="isPostLocked"
           label="Agree"

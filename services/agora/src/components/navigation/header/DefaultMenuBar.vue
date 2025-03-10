@@ -26,6 +26,7 @@
                 v-if="
                   !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
                 "
+                :use-extra-padding="true"
                 icon="mdi-menu"
                 text-color="black"
                 @click="menuButtonClicked()"
@@ -52,7 +53,12 @@
                 v-if="hasLoginButton && !isAuthenticated && showAuthButton"
                 :to="{ name: '/welcome/' }"
               >
-                <ZKButton label="Log in" text-color="white" color="primary" />
+                <ZKButton
+                  :use-extra-padding="true"
+                  label="Log in"
+                  text-color="white"
+                  color="primary"
+                />
               </RouterLink>
             </div>
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ZKButton @click="showDialog = true">
+    <ZKButton :use-extra-padding="true" @click="showDialog = true">
       <div class="buttonText gradientFont">
         {{ currentFilterAlgorithm }}
         <q-icon
@@ -19,6 +19,7 @@
           <ZKButton
             v-for="optionItem in currentOptionList"
             :key="optionItem.name"
+            :use-extra-padding="true"
             :label="optionItem.name"
             :color="
               currentFilterAlgorithm == optionItem.name
