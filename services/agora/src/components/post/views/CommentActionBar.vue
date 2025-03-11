@@ -18,7 +18,7 @@
 
         <div v-if="userCastedVote" class="voteCountLabelDisagree">
           <div>
-            Total: {{ numDisagreesLocal }} ({{
+            Total: {{ props.commentItem.numDisagrees }} ({{
               formatPercentage(totalPercentageDisagrees)
             }})
           </div>
@@ -91,7 +91,7 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendVoteApi } from "src/utils/api/vote";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import {
   PolisKey,
   type OpinionItem,
@@ -110,7 +110,10 @@ const props = defineProps<{
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
+  participantCount: number;
 }>();
+
+const emit = defineEmits(["changeVote"]);
 
 const { showLoginConfirmationDialog } = useDialog();
 const { showNotifyMessage } = useNotify();
@@ -118,8 +121,10 @@ const { showNotifyMessage } = useNotify();
 const { castVoteForComment } = useBackendVoteApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const numAgreesLocal = ref(props.commentItem.numAgrees);
-const numDisagreesLocal = ref(props.commentItem.numDisagrees);
+// we use computed to make the changes update immediately on-click, without waiting for this whole child component to re-render upon emit
+const numAgreesLocal = computed(() => props.commentItem.numAgrees);
+const numDisagreesLocal = computed(() => props.commentItem.numDisagrees);
+const participantCountLocal = computed(() => props.participantCount);
 
 const userCastedVote = computed(() => {
   const hasEntry = props.commentSlugIdLikedMap.has(
@@ -173,16 +178,13 @@ const upvoteIcon = computed<IconObject>(() => {
 });
 
 const totalPercentageAgrees = computed(() => {
-  return calculatePercentage(
-    numAgreesLocal.value,
-    numDisagreesLocal.value + numAgreesLocal.value
-  );
+  return calculatePercentage(numAgreesLocal.value, participantCountLocal.value);
 });
 
 const totalPercentageDisagrees = computed(() => {
   return calculatePercentage(
     numDisagreesLocal.value,
-    numDisagreesLocal.value + numAgreesLocal.value
+    participantCountLocal.value
   );
 });
 
@@ -193,9 +195,6 @@ async function castPersonalVote(
   if (!isAuthenticated.value) {
     showLoginConfirmationDialog();
   } else {
-    const numLikesBackup = numAgreesLocal.value;
-    const numDislikesBackup = numDisagreesLocal.value;
-
     let targetState: VotingAction = "cancel";
     const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
     if (originalSelection == undefined) {
@@ -220,39 +219,15 @@ async function castPersonalVote(
       // }
     }
 
-    // TODO: uncomment what's below whenever it's fixed:
-    // if (targetState == "cancel") {
-    //   props.commentSlugIdLikedMap.delete(commentSlugId);
-    //   if (originalSelection == "agree") {
-    //     numAgreesLocal.value = numAgreesLocal.value - 1;
-    //   } else {
-    //     numDisagreesLocal.value = numDisagreesLocal.value - 1;
-    //   }
-    /* else */ if (targetState == "agree") {
-      props.commentSlugIdLikedMap.set(commentSlugId, "agree");
-      numAgreesLocal.value = numAgreesLocal.value + 1;
-      if (originalSelection == "disagree") {
-        numDisagreesLocal.value = numDisagreesLocal.value - 1;
-      }
-    } else {
-      props.commentSlugIdLikedMap.set(commentSlugId, "disagree");
-      numDisagreesLocal.value = numDisagreesLocal.value + 1;
-      if (originalSelection == "agree") {
-        numAgreesLocal.value = numAgreesLocal.value - 1;
-      }
-    }
+    emit("changeVote", targetState);
 
     const response = await castVoteForComment(commentSlugId, targetState);
     if (!response) {
       // Revert
-      if (originalSelection == undefined) {
-        props.commentSlugIdLikedMap.delete(commentSlugId);
-      } else {
-        props.commentSlugIdLikedMap.set(commentSlugId, originalSelection);
-      }
-
-      numAgreesLocal.value = numLikesBackup;
-      numDisagreesLocal.value = numDislikesBackup;
+      emit(
+        "changeVote",
+        originalSelection !== undefined ? originalSelection : "cancel"
+      );
     }
   }
 }

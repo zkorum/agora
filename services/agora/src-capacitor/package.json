@@ -1,8 +1,8 @@
 {
-  "name": "@zkorum/agora",
+  "name": "@zkorum/agora-app",
   "version": "0.0.8",
-  "description": "Anonymous Space For Open Dialogues",
-  "author": "Nicolas Gimenez <46368291+nicobao@users.noreply.github.com>",
+  "description": "Where citizens converge to exchange and debate ideas.",
+  "author": "ZKorum SAS <hello@zkorum.com>",
   "private": true,
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^8.0.0",

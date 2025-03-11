@@ -36,8 +36,13 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
+        :participant-count="participantCountLocal"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
+        @change-vote="
+          (vote: VotingAction, opinionSlugId: string) =>
+            changeVote(vote, opinionSlugId)
+        "
       />
 
       <CommentGroup
@@ -50,8 +55,13 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
+        :participant-count="participantCountLocal"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
+        @change-vote="
+          (vote: VotingAction, opinionSlugId: string) =>
+            changeVote(vote, opinionSlugId)
+        "
       />
 
       <CommentGroup
@@ -63,8 +73,13 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
+        :participant-count="participantCountLocal"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
+        @change-vote="
+          (vote: VotingAction, opinionSlugId: string) =>
+            changeVote(vote, opinionSlugId)
+        "
       />
 
       <CommentGroup
@@ -76,8 +91,13 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
+        :participant-count="participantCountLocal"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
+        @change-vote="
+          (vote: VotingAction, opinionSlugId: string) =>
+            changeVote(vote, opinionSlugId)
+        "
       />
 
       <CommentGroup
@@ -94,8 +114,13 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
+        :participant-count="participantCountLocal"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
+        @change-vote="
+          (vote: VotingAction, opinionSlugId: string) =>
+            changeVote(vote, opinionSlugId)
+        "
       />
     </div>
   </div>
@@ -109,6 +134,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import {
   ExtendedConversationPolis,
   PolisKey,
+  VotingAction,
   type CommentFeedFilter,
   type OpinionItem,
 } from "src/shared/types/zod";
@@ -136,6 +162,8 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
 }>();
+
+const participantCountLocal = ref(props.participantCount);
 
 const sortAlgorithm = ref<CommentFilterOptions>("discover");
 const requestedCommentSlugId = ref("");
@@ -288,15 +316,14 @@ async function resetRouteParams() {
 
 async function fetchPersonalLikes() {
   if (isAuthenticated.value) {
-    commentSlugIdLikedMap.value.clear();
+    commentSlugIdLikedMap.value = new Map();
     const response = await fetchUserVotesForPostSlugIds([props.postSlugId]);
     if (response) {
+      const newMap = new Map();
       response.forEach((userVote) => {
-        commentSlugIdLikedMap.value.set(
-          userVote.opinionSlugId,
-          userVote.votingAction
-        );
+        newMap.set(userVote.opinionSlugId, userVote.votingAction);
       });
+      commentSlugIdLikedMap.value = newMap;
     }
   }
 }
@@ -416,6 +443,75 @@ function toggleClusterSelection(clusterKey: PolisKey) {
     currentClusterTab.value = "all";
   } else {
     currentClusterTab.value = clusterKey;
+  }
+}
+
+function changeVote(vote: VotingAction, opinionSlugId: string) {
+  switch (vote) {
+    case "agree": {
+      if (commentSlugIdLikedMap.value.size === 0) {
+        participantCountLocal.value = participantCountLocal.value + 1;
+      }
+      const newMap = new Map(commentSlugIdLikedMap.value);
+      newMap.set(opinionSlugId, "agree");
+      commentSlugIdLikedMap.value = newMap;
+      const newOpinionItemList = opinionItemListPartial.value.map(
+        (opinionItem) => {
+          if (opinionItem.opinionSlugId === opinionSlugId) {
+            opinionItem.numAgrees = opinionItem.numAgrees + 1;
+          }
+          return opinionItem;
+        }
+      );
+      opinionItemListPartial.value = newOpinionItemList;
+      break;
+    }
+    case "disagree": {
+      if (commentSlugIdLikedMap.value.size === 0) {
+        participantCountLocal.value = participantCountLocal.value + 1;
+      }
+      const newMap = new Map(commentSlugIdLikedMap.value);
+      newMap.set(opinionSlugId, "disagree");
+      commentSlugIdLikedMap.value = newMap;
+      const newOpinionItemList = opinionItemListPartial.value.map(
+        (opinionItem) => {
+          if (opinionItem.opinionSlugId === opinionSlugId) {
+            opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
+          }
+          return opinionItem;
+        }
+      );
+      opinionItemListPartial.value = newOpinionItemList;
+      break;
+    }
+    case "cancel": {
+      if (commentSlugIdLikedMap.value.size === 1) {
+        participantCountLocal.value = participantCountLocal.value - 1;
+      }
+      const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
+      if (originalVote !== undefined) {
+        const newOpinionItemList = opinionItemListPartial.value.map(
+          (opinionItem) => {
+            if (opinionItem.opinionSlugId === opinionSlugId) {
+              switch (originalVote) {
+                case "agree":
+                  opinionItem.numAgrees = opinionItem.numDisagrees - 1;
+                  break;
+                case "disagree":
+                  opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
+                  break;
+              }
+            }
+            return opinionItem;
+          }
+        );
+        opinionItemListPartial.value = newOpinionItemList;
+      }
+      const newMap = new Map(commentSlugIdLikedMap.value);
+      newMap.delete(opinionSlugId);
+      commentSlugIdLikedMap.value = newMap;
+      break;
+    }
   }
 }
 </script>

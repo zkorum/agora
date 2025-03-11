@@ -40,8 +40,13 @@
           :post-slug-id="postSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
+          :participant-count="participantCount"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
+          @change-vote="
+            (vote: VotingAction, opinionSlugId: string) =>
+              changeVote(vote, opinionSlugId)
+          "
         />
       </ZKCard>
     </div>
@@ -49,12 +54,16 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, PolisKey } from "src/shared/types/zod";
+import type { OpinionItem, PolisKey, VotingAction } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 
-const emit = defineEmits(["deleted", "mutedComment"]);
+const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
+
+function changeVote(vote: VotingAction, opinionSlugId: string) {
+  emit("changeVote", vote, opinionSlugId);
+}
 
 defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -65,6 +74,7 @@ defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
   isLoading: boolean;
+  participantCount: number;
 }>();
 
 function deletedComment() {
