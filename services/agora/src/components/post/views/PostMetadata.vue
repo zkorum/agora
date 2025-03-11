@@ -23,7 +23,7 @@
             flat
             text-color="color-text-weak"
             icon="mdi-dots-vertical"
-            size="0.6rem"
+            size="0.656rem"
             @click.stop.prevent="clickedMoreIcon()"
           />
         </div>
