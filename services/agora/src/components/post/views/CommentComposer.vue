@@ -14,7 +14,7 @@
       />
       <div v-if="innerFocus || showControls" class="actionButtonCluster">
         <div v-if="characterProgress > 100">
-          {{ MAX_COMMENT_CHARACTERS - characterCount }}
+          {{ MAX_LENGTH_OPINION - characterCount }}
         </div>
 
         <q-circular-progress
@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import { MAX_LENGTH_OPINION } from "src/shared/shared";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { getCharacterCount } from "src/utils/component/editor";
 import { computed, ref, watch } from "vue";
@@ -60,10 +61,8 @@ const { createNewComment } = useBackendCommentApi();
 
 const innerFocus = ref(false);
 
-const MAX_COMMENT_CHARACTERS = 280;
-
 const characterProgress = computed(() => {
-  return (characterCount.value / MAX_COMMENT_CHARACTERS) * 100;
+  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
 });
 
 const commentText = ref("");
