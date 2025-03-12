@@ -172,7 +172,7 @@ const currentClusterTab = ref<PolisKey | "all">("all");
 
 const { profileData } = storeToRefs(useUserStore());
 
-const commentSlugIdQuery = useRouteQuery("opinionSlugId", "", {
+const commentSlugIdQuery = useRouteQuery("opinion", "", {
   transform: String,
 });
 const commentFilterQuery = useRouteQuery("filter", "", {
@@ -181,8 +181,6 @@ const commentFilterQuery = useRouteQuery("filter", "", {
 
 const { showNotifyMessage } = useNotify();
 const router = useRouter();
-
-loadCommentFilterQuery();
 
 const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
@@ -207,19 +205,25 @@ const { setupOpinionlist, detectOpinionFilterBySlugId } =
   useOpinionScrollableStore();
 const { opinionItemListPartial } = storeToRefs(useOpinionScrollableStore());
 
+let isMounted = false;
+
+loadCommentFilterQuery();
+
 onMounted(async () => {
   await Promise.all([initializeData(), fetchPersonalLikes()]);
   updateInfiniteScrollingList(sortAlgorithm.value);
   await resetRouteParams();
+  isMounted = true;
 });
 
 watch(sortAlgorithm, () => {
-  requestedCommentSlugId.value = "";
-  updateInfiniteScrollingList(sortAlgorithm.value);
+  if (isMounted) {
+    updateInfiniteScrollingList(sortAlgorithm.value);
+    requestedCommentSlugId.value = "";
+  }
 });
 
 watch(currentClusterTab, async () => {
-  requestedCommentSlugId.value = "";
   if (currentClusterTab.value !== "all") {
     const clusterKey = currentClusterTab.value;
     const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
@@ -234,6 +238,7 @@ watch(currentClusterTab, async () => {
   } else {
     updateInfiniteScrollingList(sortAlgorithm.value);
   }
+  requestedCommentSlugId.value = "";
 });
 
 const showClusterMap = computed(() => {

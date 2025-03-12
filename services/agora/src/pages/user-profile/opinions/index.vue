@@ -99,7 +99,7 @@ async function openComment(postSlugId: string, commentSlugId: string) {
     name: "/conversation/[postSlugId]",
     params: { postSlugId: postSlugId },
     query: {
-      opinionSlugId: commentSlugId,
+      opinion: commentSlugId,
     },
   });
 }

@@ -192,7 +192,7 @@ async function redirectToComment() {
     await router.push({
       name: "/conversation/[postSlugId]",
       params: { postSlugId: postSlugId },
-      query: { opinionSlugId: commentSlugId },
+      query: { opinion: commentSlugId },
     });
   }
 }
