@@ -25,15 +25,18 @@
 
         <q-separator vertical inset />
 
+        <div>
+          <ZKButton
+            button-type="largeButton"
+            label="Cancel"
+            color="white"
+            text-color="primary"
+            @click="cancelClicked()"
+          />
+        </div>
+
         <ZKButton
-          :use-extra-padding="true"
-          label="Cancel"
-          color="white"
-          text-color="primary"
-          @click="cancelClicked()"
-        />
-        <ZKButton
-          :use-extra-padding="true"
+          button-type="largeButton"
           label="Post"
           color="primary"
           :disable="characterProgress > 100 || characterProgress == 0"

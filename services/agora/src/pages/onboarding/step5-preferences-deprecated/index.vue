@@ -70,7 +70,7 @@
         </div>
 
         <ZKButton
-          :use-extra-padding="true"
+          button-type="largeButton"
           label="Save and Close"
           color="primary"
           @click="goToHome"

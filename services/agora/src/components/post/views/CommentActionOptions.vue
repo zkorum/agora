@@ -1,12 +1,11 @@
 <template>
-  <ZKButton
-    :use-extra-padding="false"
-    flat
-    text-color="color-text-weak"
-    icon="mdi-dots-horizontal"
-    size="0.6rem"
-    @click.stop.prevent="optionButtonClicked()"
-  />
+  <ZKButton button-type="icon" flat @click.stop.prevent="optionButtonClicked()">
+    <ZKIcon
+      color="black"
+      name="iconamoon:menu-kebab-horizontal-bold"
+      size="1rem"
+    />
+  </ZKButton>
 
   <q-dialog v-model="showReportDialog">
     <ReportContentDialog
@@ -20,6 +19,7 @@
 <script setup lang="ts">
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";

@@ -7,7 +7,7 @@
           <ZKButton
             v-for="optionItem in localPollOptionList"
             :key="optionItem.index"
-            :use-extra-padding="true"
+            button-type="largeButton"
             outline
             :label="optionItem.option"
             text-color="primary"
@@ -45,23 +45,33 @@
         <div v-if="!userVoteStatus.hasVoted">
           <ZKButton
             v-if="currentDisplayMode == DisplayModes.Vote"
-            outline
-            :use-extra-padding="true"
-            color="primary"
-            icon="mdi-chart-bar"
-            label="Results"
+            button-type="standardButton"
             @click.stop.prevent="showResultsInterface()"
-          />
+          >
+            <div class="resultsButton">
+              <ZKIcon
+                color="#6b4eff"
+                name="material-symbols:grouped-bar-chart-rounded"
+                size="1rem"
+              />
+              <div>Results</div>
+            </div>
+          </ZKButton>
 
           <ZKButton
             v-if="currentDisplayMode == DisplayModes.Results && isAuthenticated"
-            outline
-            :use-extra-padding="true"
-            color="primary"
-            label="Vote"
-            icon="mdi-vote"
+            button-type="standardButton"
             @click.stop.prevent="showVoteInterface()"
-          />
+          >
+            <div class="resultsButton">
+              <ZKIcon
+                color="#6b4eff"
+                name="material-symbols:how-to-vote"
+                size="1rem"
+              />
+              <div>Vote</div>
+            </div>
+          </ZKButton>
         </div>
       </div>
     </div>
@@ -77,6 +87,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
+import ZKIcon from "../ui-library/ZKIcon.vue";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -220,5 +231,12 @@ watch(currentDisplayMode, () => {
 .voteCount {
   padding-right: 0.5rem;
   padding-left: 0.5rem;
+}
+
+.resultsButton {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: #6b4eff;
 }
 </style>

@@ -50,14 +50,14 @@
 
             <div class="optionButtons">
               <ZKButton
-                :use-extra-padding="true"
+                button-type="largeButton"
                 label="Change Number"
                 text-color="primary"
                 @click="changePhoneNumber()"
               />
 
               <ZKButton
-                :use-extra-padding="true"
+                button-type="largeButton"
                 :label="
                   verificationNextCodeSeconds > 0
                     ? 'Resend Code in ' + verificationNextCodeSeconds + 's'

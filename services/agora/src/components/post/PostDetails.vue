@@ -88,7 +88,7 @@
                         extendedPostData.metadata.moderation.status ==
                         'moderated'
                       "
-                      :use-extra-padding="false"
+                      button-type="standardButton"
                       @click.stop.prevent="clickedCommentButton()"
                     >
                       <div class="commentCountStyle">
@@ -120,7 +120,7 @@
                 <div>
                   <div v-if="!skeletonMode">
                     <ZKButton
-                      :use-extra-padding="false"
+                      button-type="standardButton"
                       @click.stop.prevent="shareClicked()"
                     >
                       <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
@@ -351,6 +351,7 @@ async function shareClicked() {
 
 .lockCardStyle {
   background-color: white;
+  margin-bottom: 1rem;
 }
 
 .commentCountStyle {
