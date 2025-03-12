@@ -54,7 +54,7 @@
                 :to="{ name: '/welcome/' }"
               >
                 <ZKButton
-                  button-type="standardButton"
+                  button-type="largeButton"
                   label="Log in"
                   text-color="white"
                   color="primary"
