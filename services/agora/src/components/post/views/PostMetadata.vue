@@ -19,7 +19,7 @@
       <div>
         <div v-if="!skeletonMode">
           <ZKButton
-            :use-extra-padding="false"
+            button-type="icon"
             flat
             text-color="color-text-weak"
             icon="mdi-dots-vertical"

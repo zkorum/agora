@@ -13,7 +13,7 @@
         <TopMenuWrapper>
           <div class="menuFlexGroup">
             <ZKButton
-              :use-extra-padding="true"
+              button-type="icon"
               icon="mdi-close"
               text-color="color-text-strong"
               flat
@@ -27,22 +27,24 @@
               :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
             >
               <ZKButton
-                :use-extra-padding="true"
+                button-type="standardButton"
                 unelevated
                 rounded
                 :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
                 icon="mdi-poll"
                 color="grey-8"
                 text-color="white"
+                size="0.8rem"
                 @click="togglePolling()"
               />
             </div>
 
             <ZKButton
-              :use-extra-padding="true"
+              button-type="standardButton"
               color="primary"
               label="Post"
               type="submit"
+              size="0.8rem"
               :disable="exceededBodyWordCount"
             />
           </div>
@@ -107,7 +109,7 @@
                 <div class="pollTopBar">
                   <div>Add a Poll</div>
                   <ZKButton
-                    :use-extra-padding="true"
+                    button-type="icon"
                     flat
                     text-color="black"
                     icon="mdi-close"
@@ -135,7 +137,7 @@
                       class="deletePollOptionDiv"
                     >
                       <ZKButton
-                        :use-extra-padding="false"
+                        button-type="icon"
                         flat
                         round
                         icon="mdi-delete"
@@ -147,7 +149,7 @@
 
                   <div>
                     <ZKButton
-                      :use-extra-padding="true"
+                      button-type="standardButton"
                       flat
                       text-color="primary"
                       icon="mdi-plus"
@@ -175,13 +177,13 @@
             <div class="dialogButtons">
               <ZKButton
                 v-close-popup
-                :use-extra-padding="true"
+                button-type="largeButton"
                 flat
                 label="Cancel"
               />
               <ZKButton
                 v-close-popup
-                :use-extra-padding="true"
+                button-type="largeButton"
                 label="Discard"
                 text-color="primary"
                 @click="leaveRoute()"

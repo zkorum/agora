@@ -30,7 +30,7 @@
 
         <ZKButton
           v-if="profileData.isModerator"
-          :use-extra-padding="true"
+          button-type="largeButton"
           label="Edit"
           color="primary"
           @click.stop.prevent="openModerationPage()"

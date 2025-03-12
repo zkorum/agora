@@ -109,7 +109,7 @@
                       <div class="longUrl">{{ verificationLink }}</div>
 
                       <ZKButton
-                        :use-extra-padding="true"
+                        button-type="standardButton"
                         label="Copy"
                         icon="mdi-content-copy"
                         @click="copyVerificationLink()"
@@ -125,7 +125,7 @@
                     class="verificationProcedureBlock"
                   >
                     <ZKButton
-                      :use-extra-padding="true"
+                      button-type="largeButton"
                       label="Verify"
                       color="primary"
                       @click="clickedVerifyButton()"
@@ -139,7 +139,7 @@
             </ZKCard>
 
             <ZKButton
-              :use-extra-padding="true"
+              button-type="largeButton"
               label="I'd rather verify with my phone number"
               text-color="primary"
               @click="goToPhoneVerification()"

@@ -14,7 +14,11 @@
           :key="reason.value"
           @click="selectedReason = reason.value"
         >
-          <ZKButton :use-extra-padding="true" color="primary" outline>
+          <ZKButton
+            button-type="standardButton"
+            color="button-background-color"
+            text-color="black"
+          >
             <div class="iconLayout">
               <div>
                 <q-icon :name="reason.icon" />
@@ -50,7 +54,7 @@
         <div class="submitButtons">
           <div v-if="enabledSkip == false">
             <ZKButton
-              :use-extra-padding="true"
+              button-type="largeButton"
               label="Skip"
               color="secondary"
               text-color="primary"
@@ -61,7 +65,7 @@
 
           <div>
             <ZKButton
-              :use-extra-padding="true"
+              button-type="largeButton"
               label="Submit"
               :disable="explanation.length == 0 && !enabledSkip"
               color="secondary"
@@ -175,10 +179,10 @@ async function clickedSubmitButton() {
 .iconLayout {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 1rem;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem;
+  padding: 0.5rem;
   min-width: 5rem;
 }
 </style>
