@@ -98,7 +98,7 @@ async function openPage() {
       await router.push({
         name: "/conversation/[postSlugId]",
         params: { postSlugId: route.params.conversationSlugId },
-        query: { opinionSlugId: route.params.opinionSlugId },
+        query: { opinion: route.params.opinionSlugId },
       });
     } else {
       console.log("Unknown report type");

@@ -70,7 +70,7 @@ async function shareOpinionCallback() {
     process.env.VITE_PUBLIC_DIR +
     "/conversation/" +
     props.postSlugId +
-    "?opinionSlugId=" +
+    "?opinion=" +
     props.commentItem.opinionSlugId;
   await webShare.share("Agora Opinion", sharePostUrl);
 }
