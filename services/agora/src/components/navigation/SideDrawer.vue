@@ -75,11 +75,11 @@ import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
-import { useCreateNewPost } from "src/utils/component/conversation/newPost";
+import { usenewPostButtonTrigger } from "src/utils/component/conversation/newPostButtonTrigger";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
 
-const { requestNewPost } = useCreateNewPost();
+const { requestNewPost } = usenewPostButtonTrigger();
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
