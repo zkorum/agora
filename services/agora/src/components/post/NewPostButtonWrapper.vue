@@ -15,13 +15,13 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useNavigationStore } from "src/stores/navigation";
-import { useCreateNewPost } from "src/utils/component/conversation/newPost";
+import { usenewPostButtonTrigger } from "src/utils/component/conversation/newPostButtonTrigger";
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationShort.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
-const { requestNewPost } = useCreateNewPost();
+const { requestNewPost } = usenewPostButtonTrigger();
 </script>
 
 <style scoped>
