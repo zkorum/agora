@@ -56,6 +56,8 @@ onMounted(async () => {
   const isSuccessful = await loadData();
   if (isSuccessful) {
     dataLoaded.value = true;
+  } else {
+    console.log("?");
   }
 });
 

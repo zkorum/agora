@@ -8,6 +8,8 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
+    MAX_LENGTH_BODY_HTML,
+    MAX_LENGTH_OPINION_HTML,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js/mobile";
 
@@ -76,7 +78,10 @@ export const zodDevice = z
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
-export const zodConversationBody = z.string().optional(); // Cannot specify length due to HTML tags
+export const zodConversationBody = z
+    .string()
+    .max(MAX_LENGTH_BODY_HTML)
+    .optional();
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
 export const zodPollOptionWithResult = z
     .object({
@@ -253,7 +258,7 @@ export const zodConversationMetadata = z
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
-export const zodOpinionContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
+export const zodOpinionContent = z.string().min(1).max(MAX_LENGTH_OPINION_HTML);
 export const zodClusterMetadata = z.object({
     key: zodPolisKey,
     numUsers: z.number().int().nonnegative(),
