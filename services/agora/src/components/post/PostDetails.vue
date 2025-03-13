@@ -247,7 +247,7 @@ async function submittedComment(opinionSlugId: string) {
   await router.push({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
-    query: { opinionSlugId: opinionSlugId },
+    query: { opinion: opinionSlugId },
   });
 }
 

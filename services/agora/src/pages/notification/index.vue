@@ -152,7 +152,7 @@ async function redirectPage(routeTarget: RouteTarget) {
   await router.push({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: routeTarget.conversationSlugId },
-    query: { opinionSlugId: routeTarget.opinionSlugId },
+    query: { opinion: routeTarget.opinionSlugId },
   });
 }
 </script>
