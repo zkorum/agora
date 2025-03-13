@@ -7,8 +7,7 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
-    MAX_LENGTH_BODY_HTML,
-    MAX_LENGTH_OPINION_HTML,
+    getHtmlStringCharacterCount,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js/mobile";
 
@@ -79,7 +78,14 @@ export const zodDevices = z.array(zodDevice); // list of didWrite of all the dev
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
 export const zodConversationBody = z
     .string()
-    .max(MAX_LENGTH_BODY_HTML)
+    .refine(
+        (val: string) => {
+            return getHtmlStringCharacterCount(val, "conversation");
+        },
+        {
+            message: "The HTML body's character count had exceeded the limit",
+        },
+    )
     .optional();
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
 export const zodPollOptionWithResult = z
@@ -257,7 +263,17 @@ export const zodConversationMetadata = z
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
-export const zodOpinionContent = z.string().min(1).max(MAX_LENGTH_OPINION_HTML);
+export const zodOpinionContent = z
+    .string()
+    .min(1)
+    .refine(
+        (val: string) => {
+            return getHtmlStringCharacterCount(val, "opinion");
+        },
+        {
+            message: "The HTML body's character count had exceeded the limit",
+        },
+    );
 export const zodClusterMetadata = z.object({
     key: zodPolisKey,
     numUsers: z.number().int().nonnegative(),

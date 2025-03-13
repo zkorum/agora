@@ -4,6 +4,7 @@
 import localforage from "localforage";
 import { toEncodedCID } from "./common/cid.js";
 import type { NumberType } from "libphonenumber-js/mobile";
+import sanitizeHtml from "sanitize-html";
 
 /**
  * Is this browser supported?
@@ -59,6 +60,25 @@ export function domainFromEmail(email: string): string | undefined {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_username, domain] = [nameAndDomain[0], nameAndDomain[1]];
         return domain;
+    }
+}
+
+export function getHtmlStringCharacterCount(
+    htmlString: string,
+    mode: "conversation" | "opinion",
+): boolean {
+    const options: sanitizeHtml.IOptions = {
+        allowedTags: [],
+        allowedAttributes: {},
+    };
+    const rawTextWithoutTags = sanitizeHtml(htmlString, options);
+
+    const characterLimit =
+        mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
+    if (rawTextWithoutTags.length <= characterLimit) {
+        return true;
+    } else {
+        return false;
     }
 }
 
