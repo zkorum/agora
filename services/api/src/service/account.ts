@@ -537,7 +537,7 @@ export async function generateUnusedRandomUsername({
                         "Random username generation failed with numeric padding: " +
                             i.toString(),
                     );
-                    log.warn(error);
+                    log.warn(e);
                     const newUsername = generateRandomUsername(i);
                     const isInUse = await checkUserNameInUse({
                         db: db,
@@ -553,7 +553,7 @@ export async function generateUnusedRandomUsername({
                         "Random username generation failed with numeric padding: " +
                             i.toString(),
                     );
-                    log.warn(error);
+                    log.warn(err);
                 }
             }
         }
