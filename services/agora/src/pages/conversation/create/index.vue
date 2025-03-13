@@ -209,12 +209,12 @@ import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue"
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
-import { getCharacterCount } from "src/utils/component/editor";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
   MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
   MAX_LENGTH_BODY,
+  validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
@@ -264,7 +264,10 @@ onUnmounted(() => {
 });
 
 function checkWordCount() {
-  bodyWordCount.value = getCharacterCount(postDraft.value.postBody);
+  bodyWordCount.value = validateHtmlStringCharacterCount(
+    postDraft.value.postBody,
+    "conversation"
+  ).characterCount;
 
   if (bodyWordCount.value > MAX_LENGTH_BODY) {
     exceededBodyWordCount.value = true;

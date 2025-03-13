@@ -64,10 +64,15 @@ export function domainFromEmail(email: string): string | undefined {
     }
 }
 
-export function getHtmlStringCharacterCount(
+interface ValidateHtmlStringCharacterCountReturn {
+    isValid: boolean;
+    characterCount: number;
+}
+
+export function validateHtmlStringCharacterCount(
     htmlString: string,
     mode: "conversation" | "opinion",
-): boolean {
+): ValidateHtmlStringCharacterCountReturn {
     const options: sanitizeHtml.IOptions = {
         allowedTags: [],
         allowedAttributes: {},
@@ -77,9 +82,9 @@ export function getHtmlStringCharacterCount(
     const characterLimit =
         mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
     if (rawTextWithoutTags.length <= characterLimit) {
-        return true;
+        return { isValid: true, characterCount: rawTextWithoutTags.length };
     } else {
-        return false;
+        return { isValid: false, characterCount: rawTextWithoutTags.length };
     }
 }
 

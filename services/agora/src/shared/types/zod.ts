@@ -8,7 +8,7 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
-    getHtmlStringCharacterCount,
+    validateHtmlStringCharacterCount,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js/mobile";
 
@@ -81,7 +81,8 @@ export const zodConversationBody = z
     .string()
     .refine(
         (val: string) => {
-            return getHtmlStringCharacterCount(val, "conversation");
+            return validateHtmlStringCharacterCount(val, "conversation")
+                .isValid;
         },
         {
             message: "The HTML body's character count had exceeded the limit",
@@ -269,7 +270,7 @@ export const zodOpinionContent = z
     .min(1)
     .refine(
         (val: string) => {
-            return getHtmlStringCharacterCount(val, "opinion");
+            return validateHtmlStringCharacterCount(val, "opinion").isValid;
         },
         {
             message: "The HTML body's character count had exceeded the limit",
