@@ -76,15 +76,19 @@ export function useBackendPostApi() {
         return createInternalPostData(response.data.conversationData);
       }
     } catch (error) {
+      const DEFAULT_ERROR = "Failed to fetch conversation by slug ID.";
       console.error(error);
       if (axios.isAxiosError(error)) {
         if (error.status == 400) {
-          showNotifyMessage("Post resource not found.");
-          await router.push({ name: "/" });
+          showNotifyMessage("Conversation resource not found.");
+        } else {
+          showNotifyMessage(DEFAULT_ERROR);
         }
       } else {
-        showNotifyMessage("Failed to fetch post by slug ID.");
+        showNotifyMessage(DEFAULT_ERROR);
       }
+
+      await router.push({ name: "/" });
 
       return null;
     }

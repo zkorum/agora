@@ -50,9 +50,11 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import { MAX_LENGTH_OPINION } from "src/shared/shared";
+import {
+  MAX_LENGTH_OPINION,
+  validateHtmlStringCharacterCount,
+} from "src/shared/shared";
 import { useBackendCommentApi } from "src/utils/api/comment";
-import { getCharacterCount } from "src/utils/component/editor";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -103,7 +105,10 @@ function editorFocused() {
 }
 
 function checkWordCount() {
-  characterCount.value = getCharacterCount(commentText.value);
+  characterCount.value = validateHtmlStringCharacterCount(
+    commentText.value,
+    "opinion"
+  ).characterCount;
 }
 
 function cancelClicked() {

@@ -22,7 +22,9 @@ import { sql } from "drizzle-orm/sql";
 const MAX_LENGTH_OPTION = 30;
 const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
-const MAX_LENGTH_OPINION = 1000;
+const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
+// const MAX_LENGTH_OPINION = 1000;
+const MAX_LENGTH_OPINION_HTML = 3000; // Reserve extra space for HTML tags
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -981,7 +983,7 @@ export const conversationContentTable = pgTable("conversation_content", {
         .unique()
         .references(() => conversationProofTable.id), // cannot point to deletion proof
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
-    body: varchar("body", { length: MAX_LENGTH_BODY }),
+    body: varchar("body", { length: MAX_LENGTH_BODY_HTML }),
     pollId: integer("poll_id").references((): AnyPgColumn => pollTable.id), // for now there is only one poll per conversation at most
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -1254,7 +1256,7 @@ export const opinionContentTable = pgTable("opinion_content", {
     opinionProofId: integer("opinion_proof_id")
         // .notNull() // => null if the opinion is created from a seed user
         .references(() => opinionProofTable.id), // cannot point to deletion proof
-    content: varchar("content", { length: MAX_LENGTH_OPINION }).notNull(),
+    content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,

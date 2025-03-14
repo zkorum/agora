@@ -10,7 +10,6 @@ import {
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
 import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
-import { MAX_LENGTH_BODY } from "@/shared/shared.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
@@ -128,10 +127,7 @@ export async function createNewPost({
 
         if (conversationBody != null) {
             try {
-                conversationBody = processHtmlBody(
-                    conversationBody,
-                    MAX_LENGTH_BODY,
-                );
+                conversationBody = processHtmlBody(conversationBody);
             } catch (error) {
                 if (error instanceof Error) {
                     throw httpErrors.badRequest(error.message);

@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <span
+    class="textBreak"
     :class="{ truncate: compactMode, coloredHrefs: !compactMode }"
     v-html="htmlBody"
   ></span>
@@ -25,5 +26,9 @@ defineProps<{
   -webkit-line-clamp: 5;
   line-clamp: 5;
   -webkit-box-orient: vertical;
+}
+
+.textBreak {
+  word-break: break-all;
 }
 </style>
