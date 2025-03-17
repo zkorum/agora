@@ -1,14 +1,33 @@
 import { onUnmounted, ref } from "vue";
-import { onBeforeRouteLeave, RouteLocationNormalized } from "vue-router";
+import {
+  onBeforeRouteLeave,
+  RouteLocationNormalized,
+  useRouter,
+} from "vue-router";
 
 export function useRouteGuard(
-  onBeforeUnloadCallback: () => void,
+  onBeforeUnloadCallback: () => string | undefined,
   onBeforeRouteLeaveCallback: (to: RouteLocationNormalized) => boolean
 ) {
   const grantedRouteLeave = ref(false);
+  const showExitDialog = ref(false);
+
+  const router = useRouter();
+
+  const savedToRoute = ref<RouteLocationNormalized>({
+    matched: [],
+    fullPath: "",
+    query: {},
+    hash: "",
+    name: "/",
+    path: "",
+    meta: {},
+    params: {},
+    redirectedFrom: undefined,
+  });
 
   window.onbeforeunload = () => {
-    onBeforeUnloadCallback();
+    return onBeforeUnloadCallback();
   };
 
   onUnmounted(() => {
@@ -19,5 +38,10 @@ export function useRouteGuard(
     return onBeforeRouteLeaveCallback(to);
   });
 
-  return { grantedRouteLeave };
+  async function leaveRoute() {
+    grantedRouteLeave.value = true;
+    await router.push(savedToRoute.value);
+  }
+
+  return { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute };
 }
