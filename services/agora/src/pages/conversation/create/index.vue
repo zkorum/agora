@@ -167,42 +167,19 @@
         <div ref="endOfForm"></div>
       </q-form>
 
-      <q-dialog v-model="showExitDialog">
-        <ZKCard padding="1rem" :style="{ backgroundColor: 'white' }">
-          <div class="exitDialogStyle">
-            <div class="dialogTitle">Discard this post?</div>
-
-            <div>Your drafted post will not be saved.</div>
-
-            <div class="dialogButtons">
-              <ZKButton
-                v-close-popup
-                button-type="largeButton"
-                flat
-                label="Cancel"
-              />
-              <ZKButton
-                v-close-popup
-                button-type="largeButton"
-                label="Discard"
-                text-color="primary"
-                @click="leaveRoute()"
-              />
-            </div>
-          </div>
-        </ZKCard>
-      </q-dialog>
+      <ExitRoutePrompt
+        v-model="showExitDialog"
+        title="Discard this post?"
+        description="Your drafted post will not be saved"
+        @leave-foute="leaveRoute()"
+      />
     </div>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref } from "vue";
-import {
-  onBeforeRouteLeave,
-  type RouteLocationNormalized,
-  useRouter,
-} from "vue-router";
+import { ref } from "vue";
+import { type RouteLocationNormalized, useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -219,6 +196,8 @@ import {
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
+import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -235,6 +214,7 @@ const endOfFormRef = ref<HTMLElement | null>();
 const showExitDialog = ref(false);
 
 const { postDraft, isPostEdited } = useNewPostDraftsStore();
+useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 let grantedRouteLeave = false;
 
@@ -253,15 +233,15 @@ let savedToRoute: RouteLocationNormalized = {
   redirectedFrom: undefined,
 };
 
-window.onbeforeunload = function () {
-  if (isPostEdited()) {
-    return "Changes that you made may not be saved.";
+function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+  if (isPostEdited() && !grantedRouteLeave) {
+    savedToRoute = to;
+    showExitDialog.value = true;
+    return false;
+  } else {
+    return true;
   }
-};
-
-onUnmounted(() => {
-  window.onbeforeunload = () => {};
-});
+}
 
 function checkWordCount() {
   bodyWordCount.value = validateHtmlStringCharacterCount(
@@ -273,6 +253,12 @@ function checkWordCount() {
     exceededBodyWordCount.value = true;
   } else {
     exceededBodyWordCount.value = false;
+  }
+}
+
+function routeLeaveCallback() {
+  if (isPostEdited()) {
+    return "Changes that you made may not be saved.";
   }
 }
 
@@ -335,16 +321,6 @@ async function leaveRoute() {
   grantedRouteLeave = true;
   await router.push(savedToRoute);
 }
-
-onBeforeRouteLeave((to) => {
-  if (isPostEdited() && !grantedRouteLeave) {
-    savedToRoute = to;
-    showExitDialog.value = true;
-    return false;
-  } else {
-    return true;
-  }
-});
 </script>
 
 <style scoped lang="scss">
@@ -370,22 +346,6 @@ onBeforeRouteLeave((to) => {
   align-items: center;
   justify-content: center;
   width: 100%;
-}
-
-.exitDialogStyle {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.dialogTitle {
-  font-size: 1.4rem;
-  font-weight: bold;
-}
-
-.dialogButtons {
-  display: flex;
-  justify-content: space-around;
 }
 
 .menuFlexGroup {
