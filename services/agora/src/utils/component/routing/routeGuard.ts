@@ -1,10 +1,12 @@
-import { onUnmounted } from "vue";
+import { onUnmounted, ref } from "vue";
 import { onBeforeRouteLeave, RouteLocationNormalized } from "vue-router";
 
 export function useRouteGuard(
   onBeforeUnloadCallback: () => void,
   onBeforeRouteLeaveCallback: (to: RouteLocationNormalized) => boolean
 ) {
+  const grantedRouteLeave = ref(false);
+
   window.onbeforeunload = () => {
     onBeforeUnloadCallback();
   };
@@ -16,4 +18,6 @@ export function useRouteGuard(
   onBeforeRouteLeave((to) => {
     return onBeforeRouteLeaveCallback(to);
   });
+
+  return { grantedRouteLeave };
 }
