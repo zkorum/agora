@@ -214,9 +214,10 @@ const endOfFormRef = ref<HTMLElement | null>();
 const showExitDialog = ref(false);
 
 const { postDraft, isPostEdited } = useNewPostDraftsStore();
-useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
-
-let grantedRouteLeave = false;
+const { grantedRouteLeave } = useRouteGuard(
+  routeLeaveCallback,
+  onBeforeRouteLeaveCallback
+);
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
@@ -234,7 +235,7 @@ let savedToRoute: RouteLocationNormalized = {
 };
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
-  if (isPostEdited() && !grantedRouteLeave) {
+  if (isPostEdited() && !grantedRouteLeave.value) {
     savedToRoute = to;
     showExitDialog.value = true;
     return false;
@@ -293,7 +294,7 @@ function removePollOption(index: number) {
 async function onSubmit() {
   quasar.loading.show();
 
-  grantedRouteLeave = true;
+  grantedRouteLeave.value = true;
 
   const response = await createNewPost(
     postDraft.value.postTitle,
@@ -318,7 +319,7 @@ async function onSubmit() {
 }
 
 async function leaveRoute() {
-  grantedRouteLeave = true;
+  grantedRouteLeave.value = true;
   await router.push(savedToRoute);
 }
 </script>
