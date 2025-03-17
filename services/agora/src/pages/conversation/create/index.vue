@@ -169,8 +169,8 @@
 
       <ExitRoutePrompt
         v-model="showExitDialog"
-        title="Discard this post?"
-        description="Your drafted post will not be saved"
+        title="Discard this conversation?"
+        description="Your drafted conversation will not be saved"
         @leave-foute="leaveRoute()"
       />
     </div>
@@ -211,32 +211,16 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const showExitDialog = ref(false);
-
 const { postDraft, isPostEdited } = useNewPostDraftsStore();
-const { grantedRouteLeave } = useRouteGuard(
-  routeLeaveCallback,
-  onBeforeRouteLeaveCallback
-);
+const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
+  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
 
-let savedToRoute: RouteLocationNormalized = {
-  matched: [],
-  fullPath: "",
-  query: {},
-  hash: "",
-  name: "/",
-  path: "",
-  meta: {},
-  params: {},
-  redirectedFrom: undefined,
-};
-
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (isPostEdited() && !grantedRouteLeave.value) {
-    savedToRoute = to;
+    savedToRoute.value = to;
     showExitDialog.value = true;
     return false;
   } else {
@@ -259,7 +243,10 @@ function checkWordCount() {
 
 function routeLeaveCallback() {
   if (isPostEdited()) {
+    console.log("post edited...");
     return "Changes that you made may not be saved.";
+  } else {
+    console.log("???");
   }
 }
 
@@ -316,11 +303,6 @@ async function onSubmit() {
   } else {
     quasar.loading.hide();
   }
-}
-
-async function leaveRoute() {
-  grantedRouteLeave.value = true;
-  await router.push(savedToRoute);
 }
 </script>
 

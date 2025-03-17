@@ -44,10 +44,18 @@
         />
       </div>
     </div>
+
+    <ExitRoutePrompt
+      v-model="showExitDialog"
+      title="Discard this opinion?"
+      description="Your drafted opinion will not be saved"
+      @leave-foute="leaveRoute()"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import {
@@ -55,7 +63,9 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { useBackendCommentApi } from "src/utils/api/comment";
+import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { computed, ref, watch } from "vue";
+import { RouteLocationNormalized } from "vue-router";
 
 const props = defineProps<{
   showControls: boolean;
@@ -74,13 +84,8 @@ const commentText = ref("");
 const characterCount = ref(0);
 const resetKey = ref(0);
 
-/*
-const emit = defineEmits({
-  cancelClicked: null,
-  submittedComment: null,
-  editorFocused: null,
-});
-*/
+const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
+  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const emit = defineEmits<{
   (e: "cancelClicked"): void;
@@ -98,6 +103,22 @@ watch(
     }
   }
 );
+
+function routeLeaveCallback() {
+  if (characterCount.value > 0) {
+    return "Changes that you made may not be saved.";
+  }
+}
+
+function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+  if (characterCount.value > 0 && !grantedRouteLeave.value) {
+    savedToRoute.value = to;
+    showExitDialog.value = true;
+    return false;
+  } else {
+    return true;
+  }
+}
 
 function editorFocused() {
   innerFocus.value = true;
