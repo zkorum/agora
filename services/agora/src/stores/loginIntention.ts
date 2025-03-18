@@ -3,6 +3,7 @@ import {
   emptyConversationDraft,
   NewConversationDraft,
 } from "src/utils/component/conversation/newPostDrafts";
+import { useRouter } from "vue-router";
 
 interface VotingIntention {
   conversationSlugId: string;
@@ -31,6 +32,8 @@ export type PossibleIntentions =
   | "newOpinion";
 
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
+  const router = useRouter();
+
   let activeIntention: PossibleIntentions = "none";
 
   let votingIntention: VotingIntention = {
@@ -86,15 +89,26 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     };
   }
 
-  function resumeUserIntensionAfterLogin() {
+  function clearAllOtherIntentions(excludeIntention: PossibleIntentions) {
+    if (excludeIntention != "newOpinion") {
+      clearNewOpinionIntention();
+    }
+  }
+
+  async function routeUserAfterLogin() {
+    clearAllOtherIntentions(activeIntention);
+
     if (activeIntention == "none") {
-      //
+      await router.push({ name: "/" });
     } else if (activeIntention == "agreement") {
       //
     } else if (activeIntention == "newConversation") {
       //
     } else if (activeIntention == "newOpinion") {
-      //
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: newOpinionIntention.conversationSlugId },
+      });
     } else if (activeIntention == "voting") {
       //
     } else {
@@ -105,9 +119,13 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     agreementIntention;
     newConversationIntention;
     newOpinionIntention;
+
+    activeIntention = "none";
   }
 
-  function setupUserIntention(intention: PossibleIntentions): string {
+  function composeLoginIntentionDialogMessage(
+    intention: PossibleIntentions
+  ): string {
     activeIntention = intention;
     if (intention == "newOpinion") {
       return "Your written opinion will be restored after you are logged in";
@@ -116,12 +134,22 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     }
   }
 
+  function clearNewOpinionIntention() {
+    const savedIntention: NewOpinionIntention = newOpinionIntention;
+    newOpinionIntention = {
+      conversationSlugId: "",
+      opinionBody: "",
+    };
+    return savedIntention;
+  }
+
   return {
     createVotingIntention,
     createAgreementIntention,
     createNewConversationIntention,
     createNewOpinionIntention,
-    resumeUserIntensionAfterLogin,
-    setupUserIntention,
+    routeUserAfterLogin,
+    composeLoginIntentionDialogMessage,
+    clearNewOpinionIntention,
   };
 });

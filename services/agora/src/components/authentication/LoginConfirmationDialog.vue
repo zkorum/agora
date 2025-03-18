@@ -40,6 +40,7 @@ import {
   PossibleIntentions,
   useLoginIntentionStore,
 } from "src/stores/loginIntention";
+import { useRouter } from "vue-router";
 
 const showDialog = defineModel<boolean>();
 
@@ -50,12 +51,15 @@ const props = defineProps<{
 
 const subMessage = ref("");
 
-const { setupUserIntention } = useLoginIntentionStore();
+const { composeLoginIntentionDialogMessage } = useLoginIntentionStore();
 
-subMessage.value = setupUserIntention(props.activeIntention);
+subMessage.value = composeLoginIntentionDialogMessage(props.activeIntention);
 
-function okButtonClicked() {
+const router = useRouter();
+
+async function okButtonClicked() {
   props.onOkCallback();
+  await router.push({ name: "/welcome/" });
 }
 </script>
 
