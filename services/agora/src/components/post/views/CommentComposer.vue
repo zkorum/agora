@@ -51,10 +51,18 @@
       description="Your drafted opinion will not be saved"
       @leave-foute="leaveRoute()"
     />
+
+    <LoginConfirmationDialog
+      v-model="showLoginDialog"
+      :on-ok-callback="onLoginCallback"
+      :active-intention="'newOpinion'"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
@@ -62,6 +70,8 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { computed, ref, watch } from "vue";
@@ -71,6 +81,8 @@ const props = defineProps<{
   showControls: boolean;
   postSlugId: string;
 }>();
+
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { createNewComment } = useBackendCommentApi();
 
@@ -83,6 +95,10 @@ const characterProgress = computed(() => {
 const commentText = ref("");
 const characterCount = ref(0);
 const resetKey = ref(0);
+
+const showLoginDialog = ref(false);
+
+const { createNewOpinionIntention } = useLoginIntentionStore();
 
 const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
   useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
@@ -103,6 +119,10 @@ watch(
     }
   }
 );
+
+function onLoginCallback() {
+  createNewOpinionIntention(props.postSlugId, commentText.value);
+}
 
 function routeLeaveCallback() {
   if (characterCount.value > 0) {
@@ -140,12 +160,19 @@ function cancelClicked() {
 }
 
 async function submitPostClicked() {
-  const response = await createNewComment(commentText.value, props.postSlugId);
-  if (response?.success) {
-    emit("submittedComment", response.opinionSlugId);
-    innerFocus.value = false;
-    resetKey.value = resetKey.value + 1;
-    characterCount.value = 0;
+  if (isAuthenticated.value) {
+    const response = await createNewComment(
+      commentText.value,
+      props.postSlugId
+    );
+    if (response?.success) {
+      emit("submittedComment", response.opinionSlugId);
+      innerFocus.value = false;
+      resetKey.value = resetKey.value + 1;
+      characterCount.value = 0;
+    }
+  } else {
+    showLoginDialog.value = true;
   }
 }
 </script>
