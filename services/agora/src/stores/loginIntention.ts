@@ -20,39 +20,39 @@ interface NewConversationIntention {
 
 interface NewOpinionIntention {
   conversationSlugId: string;
-  opinionSlugId: string;
   opinionBody: string;
 }
 
-export const useLoginIntentionStore = defineStore("loginIntention", () => {
-  type PossibleIntentions =
-    | "none"
-    | "voting"
-    | "agreement"
-    | "newConversation"
-    | "newOpinion";
+export type PossibleIntentions =
+  | "none"
+  | "voting"
+  | "agreement"
+  | "newConversation"
+  | "newOpinion";
 
+export const useLoginIntentionStore = defineStore("loginIntention", () => {
   let activeIntention: PossibleIntentions = "none";
 
   let votingIntention: VotingIntention = {
     conversationSlugId: "",
   };
+
   let agreementIntention: AgreementIntention = {
     conversationSlugId: "",
     opinionSlugId: "",
   };
+
   let newConversationIntention: NewConversationIntention = {
     conversationSlugId: "",
     conversationDraft: emptyConversationDraft,
   };
+
   let newOpinionIntention: NewOpinionIntention = {
     conversationSlugId: "",
     opinionBody: "",
-    opinionSlugId: "",
   };
 
   function createVotingIntention(conversationSlugId: string) {
-    activeIntention = "voting";
     votingIntention = { conversationSlugId: conversationSlugId };
   }
 
@@ -60,7 +60,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     conversationSlugId: string,
     opinionSlugId: string
   ) {
-    activeIntention = "agreement";
     agreementIntention = {
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
@@ -71,7 +70,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     conversationSlugId: string,
     conversationDraft: NewConversationDraft
   ) {
-    activeIntention = "agreement";
     newConversationIntention = {
       conversationSlugId: conversationSlugId,
       conversationDraft: conversationDraft,
@@ -80,18 +78,15 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function createNewOpinionIntention(
     conversationSlugId: string,
-    opinionSlugId: string,
     opinionBody: string
   ) {
-    activeIntention = "agreement";
     newOpinionIntention = {
       conversationSlugId: conversationSlugId,
       opinionBody: opinionBody,
-      opinionSlugId: opinionSlugId,
     };
   }
 
-  function redirectUser() {
+  function resumeUserIntensionAfterLogin() {
     if (activeIntention == "none") {
       //
     } else if (activeIntention == "agreement") {
@@ -112,11 +107,21 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     newOpinionIntention;
   }
 
+  function setupUserIntention(intention: PossibleIntentions): string {
+    activeIntention = intention;
+    if (intention == "newOpinion") {
+      return "Your written opinion will be restored after you are logged in";
+    } else {
+      return "";
+    }
+  }
+
   return {
     createVotingIntention,
     createAgreementIntention,
     createNewConversationIntention,
     createNewOpinionIntention,
-    redirectUser,
+    resumeUserIntensionAfterLogin,
+    setupUserIntention,
   };
 });
