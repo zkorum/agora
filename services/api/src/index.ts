@@ -326,6 +326,19 @@ if (
     process.exit(1);
 }
 
+let actualAwsAiLabelSummaryPromptArn: string | undefined = undefined; // if undefined, then aws calls are not processed
+if (config.NODE_ENV === "production" || config.NODE_ENV === "staging") {
+    if (config.AWS_AI_LABEL_SUMMARY_PROMPT_ARN === undefined) {
+        log.error(
+            "AWS_AI_LABEL_SUMMARY_PROMPT_ARN cannot be undefined in production or staging mode",
+        );
+        process.exit(1);
+    } else {
+        actualAwsAiLabelSummaryPromptArn =
+            config.AWS_AI_LABEL_SUMMARY_PROMPT_ARN; // never used outside staging/production
+    }
+}
+
 export const db = drizzle(client, {
     logger: new DrizzleFastifyLogger(log),
 });
@@ -959,6 +972,10 @@ server.after(() => {
                     axiosPolis: axiosPolis,
                     polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
                     voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
+                    awsAiLabelSummaryPromptArn:
+                        actualAwsAiLabelSummaryPromptArn,
+                    awsAiLabelSummaryPromptRegion:
+                        config.AWS_AI_LABEL_SUMMARY_PROMPT_REGION,
                 });
                 reply.send(castVoteResponse);
                 const proofChannel40EventId =
@@ -1133,6 +1150,10 @@ server.after(() => {
                     proof: encodedUcan,
                     axiosPolis: axiosPolis,
                     polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                    awsAiLabelSummaryPromptArn:
+                        actualAwsAiLabelSummaryPromptArn,
+                    awsAiLabelSummaryPromptRegion:
+                        config.AWS_AI_LABEL_SUMMARY_PROMPT_REGION,
                 });
                 reply.send(newOpinionResponse);
                 const proofChannel40EventId =

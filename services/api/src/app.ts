@@ -78,12 +78,6 @@ const configSchema = z.object({
             )
             .pipe(z.array(z.string()).min(2).max(3)), // summary, comments, votes csv
     ),
-    // for production
-    AWS_SECRET_ID: z.string().optional(),
-    AWS_SECRET_REGION: z.string().optional(),
-    DB_HOST: z.string().optional(),
-    DB_PORT: z.coerce.number().int().nonnegative().default(5432),
-    DB_NAME: z.string().default("agora"),
     VOTE_NOTIF_MILESTONES: z
         .string()
         .transform((value) =>
@@ -95,6 +89,14 @@ const configSchema = z.object({
         .default(
             "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
         ),
+    // for production
+    AWS_SECRET_ID: z.string().optional(),
+    AWS_SECRET_REGION: z.string().optional(),
+    AWS_AI_LABEL_SUMMARY_PROMPT_ARN: z.string().optional(),
+    AWS_AI_LABEL_SUMMARY_PROMPT_REGION: z.string().default("us-east-1"),
+    DB_HOST: z.string().optional(),
+    DB_PORT: z.coerce.number().int().nonnegative().default(5432),
+    DB_NAME: z.string().default("agora"),
 });
 
 export const config = configSchema.parse(process.env);

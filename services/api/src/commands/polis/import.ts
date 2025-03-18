@@ -133,7 +133,7 @@ export async function loadAndImportToAgora({
             // console.log("Result", result);
             conversationTitle = result[0][1];
             conversationBody = result[7][1];
-            if (result[1][1] !== "") {
+            if (result[1][1] !== undefined && result[1][1] !== "") {
                 conversationBody = `${conversationBody} <br />Imported from ${result[1][1]}`;
             }
 
@@ -407,6 +407,8 @@ async function importToAgora({
             conversationSlugId,
             axiosPolis,
             polisDelayToFetch: 0,
+            awsAiLabelSummaryPromptArn: undefined, // too expensive to run it at every import..
+            awsAiLabelSummaryPromptRegion: "",
         });
     });
     log.info("Import done");

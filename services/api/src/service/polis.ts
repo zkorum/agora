@@ -22,6 +22,7 @@ import {
     zodPolisMathAndMetadata,
     type CommentPriorities,
 } from "@/shared/types/polis.js";
+import * as llmService from "@/service/llmLabelSummary.js";
 
 interface PolisCreateUserProps {
     userId: string;
@@ -187,6 +188,8 @@ interface DelayedPolisGetAndUpdateMathProps {
     conversationId: number;
     axiosPolis: AxiosInstance;
     polisDelayToFetch: number;
+    awsAiLabelSummaryPromptArn: string | undefined;
+    awsAiLabelSummaryPromptRegion: string;
 }
 
 export async function delayedPolisGetAndUpdateMath({
@@ -195,6 +198,8 @@ export async function delayedPolisGetAndUpdateMath({
     conversationId,
     axiosPolis,
     polisDelayToFetch,
+    awsAiLabelSummaryPromptArn,
+    awsAiLabelSummaryPromptRegion,
 }: DelayedPolisGetAndUpdateMathProps) {
     if (polisDelayToFetch === -1) {
         log.info("Get polis math results is turned off");
@@ -779,6 +784,13 @@ export async function delayedPolisGetAndUpdateMath({
                     )}`,
                 );
         }
+
+        await llmService.updateAiLabelsAndSummaries({
+            db: tx,
+            conversationId: conversationId,
+            awsAiLabelSummaryPromptArn: awsAiLabelSummaryPromptArn,
+            awsAiLabelSummaryPromptRegion,
+        });
     });
 }
 

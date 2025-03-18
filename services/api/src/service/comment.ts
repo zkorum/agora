@@ -1017,8 +1017,10 @@ interface PostNewOpinionProps {
     userId: string;
     didWrite: string;
     proof: string;
-    axiosPolis?: AxiosInstance;
+    axiosPolis: AxiosInstance | undefined;
     polisDelayToFetch: number;
+    awsAiLabelSummaryPromptArn: string | undefined;
+    awsAiLabelSummaryPromptRegion: string;
 }
 
 interface ImportNewOpinionProps {
@@ -1115,6 +1117,8 @@ export async function postNewOpinion({
     proof,
     axiosPolis,
     polisDelayToFetch,
+    awsAiLabelSummaryPromptArn,
+    awsAiLabelSummaryPromptRegion,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     const isLocked = await useCommonPost().isPostSlugIdLocked({
         postSlugId: conversationSlugId,
@@ -1255,6 +1259,8 @@ export async function postNewOpinion({
             conversationSlugId,
             axiosPolis,
             polisDelayToFetch,
+            awsAiLabelSummaryPromptArn,
+            awsAiLabelSummaryPromptRegion,
         });
     }
 

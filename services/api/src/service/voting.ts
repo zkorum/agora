@@ -316,6 +316,8 @@ interface CastVoteForOpinionSlugIdProps {
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
     voteNotifMilestones: number[];
+    awsAiLabelSummaryPromptArn: string | undefined;
+    awsAiLabelSummaryPromptRegion: string;
 }
 
 export async function castVoteForOpinionSlugId({
@@ -328,6 +330,8 @@ export async function castVoteForOpinionSlugId({
     axiosPolis,
     polisDelayToFetch,
     voteNotifMilestones,
+    awsAiLabelSummaryPromptArn,
+    awsAiLabelSummaryPromptRegion,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -688,6 +692,8 @@ export async function castVoteForOpinionSlugId({
             conversationId: postMetadata.id,
             axiosPolis,
             polisDelayToFetch,
+            awsAiLabelSummaryPromptArn,
+            awsAiLabelSummaryPromptRegion,
         });
     }
 
