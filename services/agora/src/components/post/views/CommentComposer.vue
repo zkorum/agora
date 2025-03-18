@@ -2,7 +2,6 @@
   <div>
     <div class="container borderStyle">
       <ZKEditor
-        :key="resetKey"
         v-model="opinionBody"
         placeholder="Add your own opinion"
         :min-height="innerFocus ? '6rem' : '2rem'"
@@ -25,15 +24,13 @@
 
         <q-separator vertical inset />
 
-        <div>
-          <ZKButton
-            button-type="largeButton"
-            label="Cancel"
-            color="white"
-            text-color="primary"
-            @click="cancelClicked()"
-          />
-        </div>
+        <ZKButton
+          button-type="largeButton"
+          label="Cancel"
+          color="white"
+          text-color="primary"
+          @click="cancelClicked()"
+        />
 
         <ZKButton
           button-type="largeButton"
@@ -74,7 +71,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouteLocationNormalized } from "vue-router";
 
 const emit = defineEmits<{
@@ -95,25 +92,30 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
 
 const { createNewComment } = useBackendCommentApi();
 
-const innerFocus = ref(false);
+const characterCount = ref(0);
 
-const characterProgress = computed(() => {
-  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
-});
+const innerFocus = ref(false);
 
 const newOpinionIntention = clearNewOpinionIntention();
 if (newOpinionIntention.opinionBody.length > 0) {
   editorFocused();
+  console.log(newOpinionIntention);
 }
 
 const opinionBody = ref(newOpinionIntention.opinionBody);
-const characterCount = ref(0);
-const resetKey = ref(0);
 
 const showLoginDialog = ref(false);
 
 const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
   useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+
+const characterProgress = computed(() => {
+  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
+});
+
+onMounted(() => {
+  checkWordCount();
+});
 
 watch(
   () => props.showControls,
@@ -162,7 +164,7 @@ function checkWordCount() {
 function cancelClicked() {
   emit("cancelClicked");
   innerFocus.value = false;
-  resetKey.value = resetKey.value + 1;
+  opinionBody.value = "";
   characterCount.value = 0;
 }
 
@@ -175,7 +177,7 @@ async function submitPostClicked() {
     if (response?.success) {
       emit("submittedComment", response.opinionSlugId);
       innerFocus.value = false;
-      resetKey.value = resetKey.value + 1;
+      opinionBody.value = "";
       characterCount.value = 0;
     }
   } else {
