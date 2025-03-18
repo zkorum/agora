@@ -3,7 +3,7 @@
     <div class="container borderStyle">
       <ZKEditor
         :key="resetKey"
-        v-model="commentText"
+        v-model="opinionBody"
         placeholder="Add your own opinion"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :focus-editor="showControls"
@@ -77,12 +77,21 @@ import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { computed, ref, watch } from "vue";
 import { RouteLocationNormalized } from "vue-router";
 
+const emit = defineEmits<{
+  (e: "cancelClicked"): void;
+  (e: "editorFocused"): void;
+  (e: "submittedComment", conversationSlugId: string): void;
+}>();
+
 const props = defineProps<{
   showControls: boolean;
   postSlugId: string;
 }>();
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
+const { createNewOpinionIntention, clearNewOpinionIntention } =
+  useLoginIntentionStore();
 
 const { createNewComment } = useBackendCommentApi();
 
@@ -92,22 +101,19 @@ const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
 });
 
-const commentText = ref("");
+const newOpinionIntention = clearNewOpinionIntention();
+if (newOpinionIntention.opinionBody.length > 0) {
+  editorFocused();
+}
+
+const opinionBody = ref(newOpinionIntention.opinionBody);
 const characterCount = ref(0);
 const resetKey = ref(0);
 
 const showLoginDialog = ref(false);
 
-const { createNewOpinionIntention } = useLoginIntentionStore();
-
 const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
   useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
-
-const emit = defineEmits<{
-  (e: "cancelClicked"): void;
-  (e: "editorFocused"): void;
-  (e: "submittedComment", conversationSlugId: string): void;
-}>();
 
 watch(
   () => props.showControls,
@@ -121,7 +127,8 @@ watch(
 );
 
 function onLoginCallback() {
-  createNewOpinionIntention(props.postSlugId, commentText.value);
+  grantedRouteLeave.value = true;
+  createNewOpinionIntention(props.postSlugId, opinionBody.value);
 }
 
 function routeLeaveCallback() {
@@ -147,7 +154,7 @@ function editorFocused() {
 
 function checkWordCount() {
   characterCount.value = validateHtmlStringCharacterCount(
-    commentText.value,
+    opinionBody.value,
     "opinion"
   ).characterCount;
 }
@@ -162,7 +169,7 @@ function cancelClicked() {
 async function submitPostClicked() {
   if (isAuthenticated.value) {
     const response = await createNewComment(
-      commentText.value,
+      opinionBody.value,
       props.postSlugId
     );
     if (response?.success) {

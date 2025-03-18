@@ -27,6 +27,8 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 
+const modelText = defineModel<string>();
+
 defineProps<{
   showToolbar: boolean;
   placeholder: string;
@@ -40,8 +42,6 @@ const emit = defineEmits(["manuallyFocused"]);
 const editorRef = ref<HTMLElement | null>(null);
 
 const commentText = ref("");
-
-const modelText = defineModel<string>();
 
 const toolbarButtons = [
   ["bold", "italic", "strike", "underline"],
