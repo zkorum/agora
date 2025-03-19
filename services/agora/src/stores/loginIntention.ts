@@ -55,7 +55,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   let newConversationIntention: NewConversationIntention = {
     enabled: false,
-    conversationDraft: emptyConversationDraft,
+    conversationDraft: structuredClone(emptyConversationDraft),
   };
 
   let newOpinionIntention: NewOpinionIntention = {
@@ -176,7 +176,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     const savedIntention: NewConversationIntention = newConversationIntention;
     newConversationIntention = {
       enabled: false,
-      conversationDraft: emptyConversationDraft,
+      conversationDraft: structuredClone(emptyConversationDraft),
     };
     return savedIntention;
   }

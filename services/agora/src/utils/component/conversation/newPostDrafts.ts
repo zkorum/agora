@@ -18,15 +18,17 @@ export const useNewPostDraftsStore = () => {
   const postDraft = ref<NewConversationDraft>(
     structuredClone(emptyConversationDraft)
   );
-
   function isPostEdited() {
-    const trimmedDraft = postDraft.value;
-    trimmedDraft.enablePolling = false;
     if (
-      JSON.stringify(emptyConversationDraft) == JSON.stringify(trimmedDraft)
+      emptyConversationDraft.postTitle === postDraft.value.postTitle &&
+      emptyConversationDraft.postBody === postDraft.value.postBody &&
+      emptyConversationDraft.enablePolling === postDraft.value.enablePolling &&
+      emptyConversationDraft.pollingOptionList.toString() ===
+        postDraft.value.pollingOptionList.toString()
     ) {
       return false;
     } else {
+      console.log("edited");
       return true;
     }
   }
