@@ -3,12 +3,11 @@
     <DialogContainer
       v-model="showDialog"
       :title="'Log in to Agora'"
+      :message="'Sign in to participate the discussions'"
       :show-cancel-dialog="true"
       :ok-callback="okButtonClicked"
     >
       <template #body>
-        <div>Sign in to participate the discussions</div>
-
         <div v-if="subMessage" class="shadowBoxStyle">
           <div class="iconAlignment">
             <q-icon name="mdi-information" size="1.2rem" />
@@ -37,20 +36,20 @@ import DialogContainer from "./DialogContainer.vue";
 const showDialog = defineModel<boolean>({ required: true });
 
 const props = defineProps<{
-  onOkCallback: () => void;
+  okCallback: () => void;
   activeIntention: PossibleIntentions;
 }>();
 
-const subMessage = ref("");
-
 const { composeLoginIntentionDialogMessage } = useLoginIntentionStore();
 
-subMessage.value = composeLoginIntentionDialogMessage(props.activeIntention);
+const subMessage = ref(
+  composeLoginIntentionDialogMessage(props.activeIntention)
+);
 
 const router = useRouter();
 
 async function okButtonClicked() {
-  props.onOkCallback();
+  props.okCallback();
   await router.push({ name: "/welcome/" });
 }
 </script>
