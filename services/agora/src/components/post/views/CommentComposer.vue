@@ -99,7 +99,6 @@ const innerFocus = ref(false);
 const newOpinionIntention = clearNewOpinionIntention();
 if (newOpinionIntention.opinionBody.length > 0) {
   editorFocused();
-  console.log(newOpinionIntention);
 }
 
 const opinionBody = ref(newOpinionIntention.opinionBody);
