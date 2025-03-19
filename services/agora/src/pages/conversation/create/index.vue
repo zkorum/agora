@@ -174,6 +174,12 @@
         @leave-foute="leaveRoute()"
       />
     </div>
+
+    <LoginConfirmationDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'newConversation'"
+    />
   </DrawerLayout>
 </template>
 
@@ -198,6 +204,12 @@ import { useQuasar } from "quasar";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
+import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -218,11 +230,33 @@ const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
 
+const showLoginDialog = ref(false);
+
+const { createNewConversationIntention, clearNewConversationIntention } =
+  useLoginIntentionStore();
+const newConversationIntention = clearNewConversationIntention();
+postDraft.value = {
+  enablePolling: newConversationIntention.conversationDraft.enablePolling,
+  pollingOptionList:
+    newConversationIntention.conversationDraft.pollingOptionList,
+  postBody: newConversationIntention.conversationDraft.postBody,
+  postTitle: newConversationIntention.conversationDraft.postTitle,
+};
+
+function onLoginCallback() {
+  grantedRouteLeave.value = true;
+  createNewConversationIntention(postDraft.value);
+}
+
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (isPostEdited() && !grantedRouteLeave.value) {
-    savedToRoute.value = to;
-    showExitDialog.value = true;
-    return false;
+    if (isAuthenticated.value) {
+      savedToRoute.value = to;
+      showExitDialog.value = true;
+      return false;
+    } else {
+      return true;
+    }
   } else {
     return true;
   }
@@ -279,29 +313,33 @@ function removePollOption(index: number) {
 }
 
 async function onSubmit() {
-  quasar.loading.show();
-
-  grantedRouteLeave.value = true;
-
-  const response = await createNewPost(
-    postDraft.value.postTitle,
-    postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
-    postDraft.value.enablePolling
-      ? postDraft.value.pollingOptionList
-      : undefined
-  );
-
-  if (response != null) {
-    quasar.loading.hide();
-
-    await loadPostData(false);
-
-    await router.push({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.conversationSlugId },
-    });
+  if (!isAuthenticated.value) {
+    showLoginDialog.value = true;
   } else {
-    quasar.loading.hide();
+    quasar.loading.show();
+
+    grantedRouteLeave.value = true;
+
+    const response = await createNewPost(
+      postDraft.value.postTitle,
+      postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
+      postDraft.value.enablePolling
+        ? postDraft.value.pollingOptionList
+        : undefined
+    );
+
+    if (response != null) {
+      quasar.loading.hide();
+
+      await loadPostData(false);
+
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.conversationSlugId },
+      });
+    } else {
+      quasar.loading.hide();
+    }
   }
 }
 </script>

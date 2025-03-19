@@ -51,7 +51,7 @@
 
     <LoginConfirmationDialog
       v-model="showLoginDialog"
-      :on-ok-callback="onLoginCallback"
+      :ok-callback="onLoginCallback"
       :active-intention="'newOpinion'"
     />
   </div>
@@ -97,7 +97,7 @@ const characterCount = ref(0);
 const innerFocus = ref(false);
 
 const newOpinionIntention = clearNewOpinionIntention();
-if (newOpinionIntention.opinionBody.length > 0) {
+if (newOpinionIntention.enabled) {
   editorFocused();
 }
 
@@ -140,9 +140,13 @@ function routeLeaveCallback() {
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (characterCount.value > 0 && !grantedRouteLeave.value) {
-    savedToRoute.value = to;
-    showExitDialog.value = true;
-    return false;
+    if (isAuthenticated.value) {
+      savedToRoute.value = to;
+      showExitDialog.value = true;
+      return false;
+    } else {
+      return true;
+    }
   } else {
     return true;
   }
