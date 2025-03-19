@@ -3,6 +3,7 @@ import {
   emptyConversationDraft,
   NewConversationDraft,
 } from "src/utils/component/conversation/newPostDrafts";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 interface VotingIntention {
@@ -35,6 +36,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const router = useRouter();
 
   let activeIntention: PossibleIntentions = "none";
+
+  const showPostLoginIntention = ref(false);
 
   let votingIntention: VotingIntention = {
     conversationSlugId: "",
@@ -121,6 +124,17 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     newOpinionIntention;
 
     activeIntention = "none";
+    showPostLoginIntention.value = true;
+  }
+
+  function composePostLoginDialogMessage(
+    intention: PossibleIntentions
+  ): string {
+    if (intention == "newOpinion") {
+      return "Your written opinion had been restored";
+    } else {
+      return "UNKNOWN INTENTION";
+    }
   }
 
   function composeLoginIntentionDialogMessage(
@@ -150,6 +164,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     createNewOpinionIntention,
     routeUserAfterLogin,
     composeLoginIntentionDialogMessage,
+    composePostLoginDialogMessage,
     clearNewOpinionIntention,
+    showPostLoginIntention,
   };
 });
