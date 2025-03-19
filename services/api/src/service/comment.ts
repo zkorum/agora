@@ -1253,15 +1253,19 @@ export async function postNewOpinion({
     });
 
     if (axiosPolis !== undefined) {
-        void polisService.delayedPolisGetAndUpdateMath({
-            db,
-            conversationId,
-            conversationSlugId,
-            axiosPolis,
-            polisDelayToFetch,
-            awsAiLabelSummaryPromptArn,
-            awsAiLabelSummaryPromptRegion,
-        });
+        polisService
+            .delayedPolisGetAndUpdateMath({
+                db,
+                conversationId,
+                conversationSlugId,
+                axiosPolis,
+                polisDelayToFetch,
+                awsAiLabelSummaryPromptArn,
+                awsAiLabelSummaryPromptRegion,
+            })
+            .catch((e: unknown) => {
+                log.error(e);
+            });
     }
 
     return {

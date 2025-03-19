@@ -307,6 +307,10 @@ async function getCoreOpinions({
             eq(opinionTable.conversationId, conversationTable.id),
         )
         .innerJoin(
+            conversationContentTable,
+            eq(conversationTable.currentContentId, conversationContentTable.id),
+        )
+        .innerJoin(
             opinionContentTable,
             eq(opinionContentTable.opinionId, opinionTable.id),
         )

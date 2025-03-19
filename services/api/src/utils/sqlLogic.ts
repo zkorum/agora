@@ -45,7 +45,7 @@ export function isSqlUnpopular({
         actualThreshold = DEFAULT_THRESHOLD;
     }
     return gt(
-        sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numDisagreesColumn}, 0) / ${memberCountColumn} END`,
+        sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numDisagreesColumn}, 0) / ${memberCountColumn}::float END`,
         actualThreshold,
     );
 }
@@ -66,7 +66,7 @@ export function isSqlPopular({
         actualThreshold = DEFAULT_THRESHOLD;
     }
     return gt(
-        sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numAgreesColumn}, 0) / ${memberCountColumn} END`,
+        sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numAgreesColumn}, 0) / ${memberCountColumn}::float END`,
         actualThreshold,
     );
 }
@@ -83,11 +83,11 @@ export function isSqlControversial({
     }
     return and(
         lt(
-            sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 'Infinity'::float ELSE ABS(COALESCE(${numAgreesColumn}, 0) - COALESCE(${numDisagreesColumn}, 0)) / ${memberCountColumn} END`,
+            sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 'Infinity'::float ELSE ABS(COALESCE(${numAgreesColumn}, 0) - COALESCE(${numDisagreesColumn}, 0)) / ${memberCountColumn}::float END`,
             actualThreshold,
         ),
         gt(
-            sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE (COALESCE(${numAgreesColumn}, 0) + COALESCE(${numDisagreesColumn}, 0)) / ${memberCountColumn} END`,
+            sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE (COALESCE(${numAgreesColumn}, 0) + COALESCE(${numDisagreesColumn}, 0)) / ${memberCountColumn}::float END`,
             actualThreshold,
         ),
     );

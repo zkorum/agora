@@ -686,15 +686,19 @@ export async function castVoteForOpinionSlugId({
     });
 
     if (axiosPolis !== undefined) {
-        void polisService.delayedPolisGetAndUpdateMath({
-            db: db,
-            conversationSlugId,
-            conversationId: postMetadata.id,
-            axiosPolis,
-            polisDelayToFetch,
-            awsAiLabelSummaryPromptArn,
-            awsAiLabelSummaryPromptRegion,
-        });
+        polisService
+            .delayedPolisGetAndUpdateMath({
+                db: db,
+                conversationSlugId,
+                conversationId: postMetadata.id,
+                axiosPolis,
+                polisDelayToFetch,
+                awsAiLabelSummaryPromptArn,
+                awsAiLabelSummaryPromptRegion,
+            })
+            .catch((e: unknown) => {
+                log.error(e);
+            });
     }
 
     return true;
