@@ -976,6 +976,8 @@ server.after(() => {
                         actualAwsAiLabelSummaryPromptArn,
                     awsAiLabelSummaryPromptRegion:
                         config.AWS_AI_LABEL_SUMMARY_PROMPT_REGION,
+                    awsAiLabelSummaryPromptVariable:
+                        config.AWS_AI_LABEL_SUMMARY_PROMPT_VARIABLE,
                 });
                 reply.send(castVoteResponse);
                 const proofChannel40EventId =
@@ -1149,11 +1151,6 @@ server.after(() => {
                     didWrite: didWrite,
                     proof: encodedUcan,
                     axiosPolis: axiosPolis,
-                    polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
-                    awsAiLabelSummaryPromptArn:
-                        actualAwsAiLabelSummaryPromptArn,
-                    awsAiLabelSummaryPromptRegion:
-                        config.AWS_AI_LABEL_SUMMARY_PROMPT_REGION,
                 });
                 reply.send(newOpinionResponse);
                 const proofChannel40EventId =

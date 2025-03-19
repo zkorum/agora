@@ -1018,9 +1018,6 @@ interface PostNewOpinionProps {
     didWrite: string;
     proof: string;
     axiosPolis: AxiosInstance | undefined;
-    polisDelayToFetch: number;
-    awsAiLabelSummaryPromptArn: string | undefined;
-    awsAiLabelSummaryPromptRegion: string;
 }
 
 interface ImportNewOpinionProps {
@@ -1116,9 +1113,6 @@ export async function postNewOpinion({
     didWrite,
     proof,
     axiosPolis,
-    polisDelayToFetch,
-    awsAiLabelSummaryPromptArn,
-    awsAiLabelSummaryPromptRegion,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     const isLocked = await useCommonPost().isPostSlugIdLocked({
         postSlugId: conversationSlugId,
@@ -1251,22 +1245,6 @@ export async function postNewOpinion({
             });
         }
     });
-
-    if (axiosPolis !== undefined) {
-        polisService
-            .delayedPolisGetAndUpdateMath({
-                db,
-                conversationId,
-                conversationSlugId,
-                axiosPolis,
-                polisDelayToFetch,
-                awsAiLabelSummaryPromptArn,
-                awsAiLabelSummaryPromptRegion,
-            })
-            .catch((e: unknown) => {
-                log.error(e);
-            });
-    }
 
     return {
         success: true,

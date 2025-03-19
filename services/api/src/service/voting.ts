@@ -318,6 +318,7 @@ interface CastVoteForOpinionSlugIdProps {
     voteNotifMilestones: number[];
     awsAiLabelSummaryPromptArn: string | undefined;
     awsAiLabelSummaryPromptRegion: string;
+    awsAiLabelSummaryPromptVariable: string;
 }
 
 export async function castVoteForOpinionSlugId({
@@ -332,6 +333,7 @@ export async function castVoteForOpinionSlugId({
     voteNotifMilestones,
     awsAiLabelSummaryPromptArn,
     awsAiLabelSummaryPromptRegion,
+    awsAiLabelSummaryPromptVariable,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -695,6 +697,7 @@ export async function castVoteForOpinionSlugId({
                 polisDelayToFetch,
                 awsAiLabelSummaryPromptArn,
                 awsAiLabelSummaryPromptRegion,
+                awsAiLabelSummaryPromptVariable, // unused because of the above
             })
             .catch((e: unknown) => {
                 log.error(e);

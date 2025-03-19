@@ -94,6 +94,9 @@ const configSchema = z.object({
     AWS_SECRET_REGION: z.string().optional(),
     AWS_AI_LABEL_SUMMARY_PROMPT_ARN: z.string().optional(),
     AWS_AI_LABEL_SUMMARY_PROMPT_REGION: z.string().default("us-east-1"),
+    AWS_AI_LABEL_SUMMARY_PROMPT_VARIABLE: z
+        .string()
+        .default("conversationInsights"),
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),

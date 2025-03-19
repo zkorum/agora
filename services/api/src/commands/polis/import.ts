@@ -408,7 +408,8 @@ async function importToAgora({
             axiosPolis,
             polisDelayToFetch: 0,
             awsAiLabelSummaryPromptArn: undefined, // too expensive to run it at every import..
-            awsAiLabelSummaryPromptRegion: "",
+            awsAiLabelSummaryPromptRegion: "", // unused because of the above
+            awsAiLabelSummaryPromptVariable: "", // unused because of the above
         });
     });
     log.info("Import done");

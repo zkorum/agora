@@ -190,6 +190,7 @@ interface DelayedPolisGetAndUpdateMathProps {
     polisDelayToFetch: number;
     awsAiLabelSummaryPromptArn: string | undefined;
     awsAiLabelSummaryPromptRegion: string;
+    awsAiLabelSummaryPromptVariable: string;
 }
 
 export async function delayedPolisGetAndUpdateMath({
@@ -200,6 +201,7 @@ export async function delayedPolisGetAndUpdateMath({
     polisDelayToFetch,
     awsAiLabelSummaryPromptArn,
     awsAiLabelSummaryPromptRegion,
+    awsAiLabelSummaryPromptVariable,
 }: DelayedPolisGetAndUpdateMathProps) {
     if (polisDelayToFetch === -1) {
         log.info("Get polis math results is turned off");
@@ -790,6 +792,7 @@ export async function delayedPolisGetAndUpdateMath({
             conversationId: conversationId,
             awsAiLabelSummaryPromptArn: awsAiLabelSummaryPromptArn,
             awsAiLabelSummaryPromptRegion,
+            awsAiLabelSummaryPromptVariable,
         });
     });
 }

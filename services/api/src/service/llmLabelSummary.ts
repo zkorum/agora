@@ -31,6 +31,7 @@ interface UpdateAiLabelsAndSummariesProps {
     conversationId: number;
     awsAiLabelSummaryPromptArn: string | undefined;
     awsAiLabelSummaryPromptRegion: string;
+    awsAiLabelSummaryPromptVariable: string;
 }
 
 interface OpinionInsight {
@@ -59,6 +60,7 @@ export async function updateAiLabelsAndSummaries({
     conversationId,
     awsAiLabelSummaryPromptArn,
     awsAiLabelSummaryPromptRegion,
+    awsAiLabelSummaryPromptVariable,
 }: UpdateAiLabelsAndSummariesProps): Promise<void> {
     if (awsAiLabelSummaryPromptArn === undefined) {
         log.warn(
@@ -74,6 +76,7 @@ export async function updateAiLabelsAndSummaries({
         conversationInsights,
         awsAiLabelSummaryPromptArn,
         awsAiLabelSummaryPromptRegion,
+        awsAiLabelSummaryPromptVariable,
     });
     await doUpdateAiLabelsAndSummaries({
         db,
@@ -177,12 +180,14 @@ interface InvokeRemoteModelProps {
     conversationInsights: ConversationInsights;
     awsAiLabelSummaryPromptArn: string;
     awsAiLabelSummaryPromptRegion: string;
+    awsAiLabelSummaryPromptVariable: string;
 }
 
 async function invokeRemoteModel({
     conversationInsights,
     awsAiLabelSummaryPromptArn,
     awsAiLabelSummaryPromptRegion,
+    awsAiLabelSummaryPromptVariable,
 }: InvokeRemoteModelProps): Promise<
     GenLabelSummaryOutputStrict | GenLabelSummaryOutputLoose
 > {
@@ -193,7 +198,11 @@ async function invokeRemoteModel({
         modelId: awsAiLabelSummaryPromptArn,
         contentType: "application/json",
         accept: "application/json",
-        body: JSON.stringify(conversationInsights),
+        body: JSON.stringify({
+            promptVariables: {
+                [awsAiLabelSummaryPromptVariable]: conversationInsights,
+            },
+        }),
     });
     // we let this throw if any error occurs, it will be caught by the generic error handler
     const response = await client.send(command);
