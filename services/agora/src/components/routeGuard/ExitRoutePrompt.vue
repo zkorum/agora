@@ -1,38 +1,20 @@
 <template>
   <div>
-    <q-dialog v-model="model">
-      <ZKCard padding="1rem" :style="{ backgroundColor: 'white' }">
-        <div class="exitDialogStyle">
-          <div class="dialogTitle">{{ title }}</div>
-
-          <div>{{ description }}</div>
-
-          <div class="dialogButtons">
-            <ZKButton
-              v-close-popup
-              button-type="largeButton"
-              flat
-              label="Cancel"
-            />
-            <ZKButton
-              v-close-popup
-              button-type="largeButton"
-              label="Discard"
-              text-color="primary"
-              @click="leaveRoute()"
-            />
-          </div>
-        </div>
-      </ZKCard>
-    </q-dialog>
+    <DialogContainer
+      v-model="model"
+      :title="title"
+      :message="description"
+      :show-cancel-dialog="true"
+      :ok-callback="leaveRoute"
+    >
+    </DialogContainer>
   </div>
 </template>
 
 <script setup lang="ts">
-import ZKButton from "../ui-library/ZKButton.vue";
-import ZKCard from "../ui-library/ZKCard.vue";
+import DialogContainer from "../authentication/DialogContainer.vue";
 
-const model = defineModel<boolean>();
+const model = defineModel<boolean>({ required: true });
 
 const emit = defineEmits(["leaveFoute"]);
 
@@ -47,19 +29,8 @@ function leaveRoute() {
 </script>
 
 <style lang="scss" scoped>
-.exitDialogStyle {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
 .dialogTitle {
   font-size: 1.4rem;
   font-weight: bold;
-}
-
-.dialogButtons {
-  display: flex;
-  justify-content: space-around;
 }
 </style>

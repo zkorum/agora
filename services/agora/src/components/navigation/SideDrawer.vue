@@ -53,13 +53,14 @@
       </div>
 
       <div>
-        <div
-          v-if="drawerBehavior == 'desktop'"
-          class="bottomSection startConversationButton"
-          @click="requestNewPost()"
-        >
-          <img :src="newConversationButton" />
-        </div>
+        <RouterLink :to="{ name: '/conversation/create/' }">
+          <div
+            v-if="drawerBehavior == 'desktop'"
+            class="bottomSection startConversationButton"
+          >
+            <img :src="newConversationButton" />
+          </div>
+        </RouterLink>
       </div>
     </div>
   </div>
@@ -75,11 +76,8 @@ import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
-import { usenewPostButtonTrigger } from "src/utils/component/conversation/newPostButtonTrigger";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
-
-const { requestNewPost } = usenewPostButtonTrigger();
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
