@@ -316,9 +316,14 @@ interface CastVoteForOpinionSlugIdProps {
     axiosPolis?: AxiosInstance;
     polisDelayToFetch: number;
     voteNotifMilestones: number[];
-    awsAiLabelSummaryPromptArn: string | undefined;
-    awsAiLabelSummaryPromptRegion: string;
-    awsAiLabelSummaryPromptVariable: string;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function castVoteForOpinionSlugId({
@@ -331,9 +336,14 @@ export async function castVoteForOpinionSlugId({
     axiosPolis,
     polisDelayToFetch,
     voteNotifMilestones,
-    awsAiLabelSummaryPromptArn,
-    awsAiLabelSummaryPromptRegion,
-    awsAiLabelSummaryPromptVariable,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -695,9 +705,14 @@ export async function castVoteForOpinionSlugId({
                 conversationId: postMetadata.id,
                 axiosPolis,
                 polisDelayToFetch,
-                awsAiLabelSummaryPromptArn,
-                awsAiLabelSummaryPromptRegion,
-                awsAiLabelSummaryPromptVariable, // unused because of the above
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryTopK,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
             })
             .catch((e: unknown) => {
                 log.error(e);

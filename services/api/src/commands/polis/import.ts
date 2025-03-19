@@ -407,9 +407,14 @@ async function importToAgora({
             conversationSlugId,
             axiosPolis,
             polisDelayToFetch: 0,
-            awsAiLabelSummaryPromptArn: undefined, // too expensive to run it at every import..
-            awsAiLabelSummaryPromptRegion: "", // unused because of the above
-            awsAiLabelSummaryPromptVariable: "", // unused because of the above
+            awsAiLabelSummaryEnable: false,
+            awsAiLabelSummaryRegion: "",
+            awsAiLabelSummaryModelId: "",
+            awsAiLabelSummaryTemperature: "",
+            awsAiLabelSummaryTopP: "",
+            awsAiLabelSummaryTopK: "",
+            awsAiLabelSummaryMaxTokens: "",
+            awsAiLabelSummaryPrompt: "",
         });
     });
     log.info("Import done");

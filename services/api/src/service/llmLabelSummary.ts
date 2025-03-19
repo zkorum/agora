@@ -29,9 +29,13 @@ import { log } from "@/app.js";
 interface UpdateAiLabelsAndSummariesProps {
     db: PostgresJsDatabase;
     conversationId: number;
-    awsAiLabelSummaryPromptArn: string | undefined;
-    awsAiLabelSummaryPromptRegion: string;
-    awsAiLabelSummaryPromptVariable: string;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 interface OpinionInsight {
@@ -58,25 +62,27 @@ interface ConversationInsights {
 export async function updateAiLabelsAndSummaries({
     db,
     conversationId,
-    awsAiLabelSummaryPromptArn,
-    awsAiLabelSummaryPromptRegion,
-    awsAiLabelSummaryPromptVariable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: UpdateAiLabelsAndSummariesProps): Promise<void> {
-    if (awsAiLabelSummaryPromptArn === undefined) {
-        log.warn(
-            "Skipping updating AI Summaries and Labels because AWS Prompt ARN was not submitted",
-        );
-        return;
-    }
     const conversationInsights = await getConversationInsights({
         db,
         conversationId,
     });
     const genLabelSummaryOutput = await invokeRemoteModel({
         conversationInsights,
-        awsAiLabelSummaryPromptArn,
-        awsAiLabelSummaryPromptRegion,
-        awsAiLabelSummaryPromptVariable,
+        awsAiLabelSummaryRegion,
+        awsAiLabelSummaryModelId,
+        awsAiLabelSummaryTemperature,
+        awsAiLabelSummaryTopP,
+        awsAiLabelSummaryTopK,
+        awsAiLabelSummaryMaxTokens,
+        awsAiLabelSummaryPrompt,
     });
     await doUpdateAiLabelsAndSummaries({
         db,
@@ -178,30 +184,43 @@ async function updateConversationSummary({
 
 interface InvokeRemoteModelProps {
     conversationInsights: ConversationInsights;
-    awsAiLabelSummaryPromptArn: string;
-    awsAiLabelSummaryPromptRegion: string;
-    awsAiLabelSummaryPromptVariable: string;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 async function invokeRemoteModel({
     conversationInsights,
-    awsAiLabelSummaryPromptArn,
-    awsAiLabelSummaryPromptRegion,
-    awsAiLabelSummaryPromptVariable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: InvokeRemoteModelProps): Promise<
     GenLabelSummaryOutputStrict | GenLabelSummaryOutputLoose
 > {
     const client = new BedrockRuntimeClient({
-        region: awsAiLabelSummaryPromptRegion,
+        region: awsAiLabelSummaryRegion,
     });
+    const prompt = `${awsAiLabelSummaryPrompt}\n\n${JSON.stringify(
+        conversationInsights,
+    )}`;
     const command = new InvokeModelCommand({
-        modelId: awsAiLabelSummaryPromptArn,
+        modelId: awsAiLabelSummaryModelId,
         contentType: "application/json",
         accept: "application/json",
         body: JSON.stringify({
-            promptVariables: {
-                [awsAiLabelSummaryPromptVariable]: conversationInsights,
-            },
+            prompt: prompt,
+            temperature: awsAiLabelSummaryTemperature,
+            top_p: awsAiLabelSummaryTopP,
+            top_k: awsAiLabelSummaryTopK,
+            max_tokens: awsAiLabelSummaryMaxTokens,
         }),
     });
     // we let this throw if any error occurs, it will be caught by the generic error handler

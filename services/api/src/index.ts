@@ -326,17 +326,13 @@ if (
     process.exit(1);
 }
 
-let actualAwsAiLabelSummaryPromptArn: string | undefined = undefined; // if undefined, then aws calls are not processed
-if (config.NODE_ENV === "production" || config.NODE_ENV === "staging") {
-    if (config.AWS_AI_LABEL_SUMMARY_PROMPT_ARN === undefined) {
-        log.error(
-            "AWS_AI_LABEL_SUMMARY_PROMPT_ARN cannot be undefined in production or staging mode",
-        );
-        process.exit(1);
-    } else {
-        actualAwsAiLabelSummaryPromptArn =
-            config.AWS_AI_LABEL_SUMMARY_PROMPT_ARN; // never used outside staging/production
-    }
+if (
+    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+    config.NODE_ENV !== "production" &&
+    config.NODE_ENV !== "staging"
+) {
+    log.error("LLM features may not be enabled outside production or staging");
+    process.exit(1);
 }
 
 export const db = drizzle(client, {
@@ -972,12 +968,20 @@ server.after(() => {
                     axiosPolis: axiosPolis,
                     polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
                     voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
-                    awsAiLabelSummaryPromptArn:
-                        actualAwsAiLabelSummaryPromptArn,
-                    awsAiLabelSummaryPromptRegion:
-                        config.AWS_AI_LABEL_SUMMARY_PROMPT_REGION,
-                    awsAiLabelSummaryPromptVariable:
-                        config.AWS_AI_LABEL_SUMMARY_PROMPT_VARIABLE,
+                    awsAiLabelSummaryEnable:
+                        config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                        (config.NODE_ENV === "production" ||
+                            config.NODE_ENV === "staging"),
+                    awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                    awsAiLabelSummaryModelId:
+                        config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                    awsAiLabelSummaryTemperature:
+                        config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                    awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                    awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
+                    awsAiLabelSummaryMaxTokens:
+                        config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                    awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 });
                 reply.send(castVoteResponse);
                 const proofChannel40EventId =

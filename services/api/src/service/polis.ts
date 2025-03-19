@@ -188,9 +188,14 @@ interface DelayedPolisGetAndUpdateMathProps {
     conversationId: number;
     axiosPolis: AxiosInstance;
     polisDelayToFetch: number;
-    awsAiLabelSummaryPromptArn: string | undefined;
-    awsAiLabelSummaryPromptRegion: string;
-    awsAiLabelSummaryPromptVariable: string;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function delayedPolisGetAndUpdateMath({
@@ -199,9 +204,14 @@ export async function delayedPolisGetAndUpdateMath({
     conversationId,
     axiosPolis,
     polisDelayToFetch,
-    awsAiLabelSummaryPromptArn,
-    awsAiLabelSummaryPromptRegion,
-    awsAiLabelSummaryPromptVariable,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: DelayedPolisGetAndUpdateMathProps) {
     if (polisDelayToFetch === -1) {
         log.info("Get polis math results is turned off");
@@ -787,13 +797,20 @@ export async function delayedPolisGetAndUpdateMath({
                 );
         }
 
-        await llmService.updateAiLabelsAndSummaries({
-            db: tx,
-            conversationId: conversationId,
-            awsAiLabelSummaryPromptArn: awsAiLabelSummaryPromptArn,
-            awsAiLabelSummaryPromptRegion,
-            awsAiLabelSummaryPromptVariable,
-        });
+        if (awsAiLabelSummaryEnable && minNumberOfClusters >= 2) {
+            // only run the AI if there are at least 2 clusters
+            await llmService.updateAiLabelsAndSummaries({
+                db: tx,
+                conversationId: conversationId,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryTopK,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            });
+        }
     });
 }
 
