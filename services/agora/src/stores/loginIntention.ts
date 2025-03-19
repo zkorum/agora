@@ -7,20 +7,23 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 interface VotingIntention {
+  enabled: boolean;
   conversationSlugId: string;
 }
 
 interface AgreementIntention {
+  enabled: boolean;
   conversationSlugId: string;
   opinionSlugId: string;
 }
 
 interface NewConversationIntention {
-  conversationSlugId: string;
+  enabled: boolean;
   conversationDraft: NewConversationDraft;
 }
 
 interface NewOpinionIntention {
+  enabled: boolean;
   conversationSlugId: string;
   opinionBody: string;
 }
@@ -40,26 +43,29 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const showPostLoginIntention = ref(false);
 
   let votingIntention: VotingIntention = {
+    enabled: false,
     conversationSlugId: "",
   };
 
   let agreementIntention: AgreementIntention = {
+    enabled: false,
     conversationSlugId: "",
     opinionSlugId: "",
   };
 
   let newConversationIntention: NewConversationIntention = {
-    conversationSlugId: "",
+    enabled: false,
     conversationDraft: emptyConversationDraft,
   };
 
   let newOpinionIntention: NewOpinionIntention = {
+    enabled: false,
     conversationSlugId: "",
     opinionBody: "",
   };
 
   function createVotingIntention(conversationSlugId: string) {
-    votingIntention = { conversationSlugId: conversationSlugId };
+    votingIntention = { enabled: true, conversationSlugId: conversationSlugId };
   }
 
   function createAgreementIntention(
@@ -67,17 +73,17 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     opinionSlugId: string
   ) {
     agreementIntention = {
+      enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
     };
   }
 
   function createNewConversationIntention(
-    conversationSlugId: string,
     conversationDraft: NewConversationDraft
   ) {
     newConversationIntention = {
-      conversationSlugId: conversationSlugId,
+      enabled: true,
       conversationDraft: conversationDraft,
     };
   }
@@ -87,6 +93,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     opinionBody: string
   ) {
     newOpinionIntention = {
+      enabled: true,
       conversationSlugId: conversationSlugId,
       opinionBody: opinionBody,
     };
@@ -110,7 +117,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     } else if (activeIntention == "agreement") {
       //
     } else if (activeIntention == "newConversation") {
-      //
+      await router.push({ name: "/conversation/create/" });
     } else if (activeIntention == "newOpinion") {
       await router.push({
         name: "/conversation/[postSlugId]",
@@ -135,6 +142,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   ): string {
     if (intention == "newOpinion") {
       return "Your written opinion had been restored";
+    } else if (intention == "newConversation") {
+      return "Your written conversation had been restored";
     } else {
       return "UNKNOWN INTENTION";
     }
@@ -146,16 +155,28 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     activeIntention = intention;
     if (intention == "newOpinion") {
       return "Your written opinion will be restored after you are logged in";
+    } else if (intention == "newConversation") {
+      return "Your written conversation will be restored after you are logged in";
     } else {
       return "";
     }
   }
 
-  function clearNewOpinionIntention() {
+  function clearNewOpinionIntention(): NewOpinionIntention {
     const savedIntention: NewOpinionIntention = newOpinionIntention;
     newOpinionIntention = {
+      enabled: false,
       conversationSlugId: "",
       opinionBody: "",
+    };
+    return savedIntention;
+  }
+
+  function clearNewConversationIntention(): NewConversationIntention {
+    const savedIntention: NewConversationIntention = newConversationIntention;
+    newConversationIntention = {
+      enabled: false,
+      conversationDraft: emptyConversationDraft,
     };
     return savedIntention;
   }
@@ -169,6 +190,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     composeLoginIntentionDialogMessage,
     composePostLoginDialogMessage,
     clearNewOpinionIntention,
+    clearNewConversationIntention,
     showPostLoginIntention,
   };
 });

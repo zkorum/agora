@@ -3,6 +3,7 @@
     <DialogContainer
       v-model="showPostLoginIntention"
       :title="'Session resumed'"
+      :message="''"
       :show-cancel-dialog="false"
       :ok-callback="okCallback"
     >

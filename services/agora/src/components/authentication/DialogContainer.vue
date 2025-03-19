@@ -6,6 +6,10 @@
           {{ title }}
         </div>
 
+        <div v-if="message">
+          {{ message }}
+        </div>
+
         <slot name="body" />
 
         <div class="actionButtons">
@@ -32,6 +36,7 @@ import ZKButton from "../ui-library/ZKButton.vue";
 
 const props = defineProps<{
   title: string;
+  message: string;
   showCancelDialog: boolean;
   okCallback: () => void;
 }>();
