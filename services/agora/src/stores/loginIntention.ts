@@ -101,6 +101,10 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   async function routeUserAfterLogin() {
     clearAllOtherIntentions(activeIntention);
 
+    if (activeIntention != "none") {
+      showPostLoginIntention.value = true;
+    }
+
     if (activeIntention == "none") {
       await router.push({ name: "/" });
     } else if (activeIntention == "agreement") {
@@ -124,7 +128,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     newOpinionIntention;
 
     activeIntention = "none";
-    showPostLoginIntention.value = true;
   }
 
   function composePostLoginDialogMessage(
