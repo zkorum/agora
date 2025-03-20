@@ -211,6 +211,7 @@ async function invokeRemoteModel({
     const prompt = `${awsAiLabelSummaryPrompt}\n\n${JSON.stringify(
         conversationInsights,
     )}`;
+    log.info(`Sending Generate Label and Summary Prompt to LLM:\n${prompt}`);
     const command = new InvokeModelCommand({
         modelId: awsAiLabelSummaryModelId,
         contentType: "application/json",
@@ -238,7 +239,14 @@ async function invokeRemoteModel({
         log.warn(resultStrict.error);
     }
     // will throw and be caught by the generic fastify handler eventually
-    return zodGenLabelSummaryOutputLoose.parse(responseBody);
+    const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(responseBody);
+    if (!resultLoose.success) {
+        log.error(
+            "Unable to parse AI Label and Summary output object using loose mode:",
+        );
+        throw resultLoose.error;
+    }
+    return resultLoose.data;
 }
 
 interface GetConversationInsightsProps {

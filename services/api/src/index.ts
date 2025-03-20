@@ -326,15 +326,6 @@ if (
     process.exit(1);
 }
 
-if (
-    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-    config.NODE_ENV !== "production" &&
-    config.NODE_ENV !== "staging"
-) {
-    log.error("LLM features may not be enabled outside production or staging");
-    process.exit(1);
-}
-
 export const db = drizzle(client, {
     logger: new DrizzleFastifyLogger(log),
 });

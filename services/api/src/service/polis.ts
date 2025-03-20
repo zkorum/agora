@@ -398,7 +398,9 @@ export async function delayedPolisGetAndUpdateMath({
                             baseClusters.id.length,
                         )}, baseClusters.members.length=${String(
                             baseClusters.members.length,
-                        )}"}`,
+                        )}"}, members='${JSON.stringify(
+                            baseClusters.members,
+                        )}', id={${JSON.stringify(baseClusters.id)}}`,
                     );
                     pidsById[id] = [];
                 }
