@@ -37,7 +37,11 @@ const message = ref(composePostLoginDialogMessage(props.activeIntention));
 const showDialog = ref(false);
 
 onMounted(() => {
-  updateModel();
+  // Artifical delay to accomadate the CommentSection.vue's route query changes
+  // which forcefully closes the Quasar dialog
+  setTimeout(function () {
+    updateModel();
+  }, 500);
 });
 
 function updateModel() {
