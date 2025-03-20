@@ -85,24 +85,31 @@
         </div>
       </div>
     </div>
+
+    <LoginConfirmationDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'agreement'"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendVoteApi } from "src/utils/api/vote";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import {
   PolisKey,
   type OpinionItem,
   type VotingAction,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useDialog } from "src/utils/ui/dialog";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
+import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -115,7 +122,9 @@ const props = defineProps<{
 
 const emit = defineEmits(["changeVote"]);
 
-const { showLoginConfirmationDialog } = useDialog();
+const showLoginDialog = ref(false);
+const { createOpinionAgreementIntention } = useLoginIntentionStore();
+
 const { showNotifyMessage } = useNotify();
 
 const { castVoteForComment } = useBackendVoteApi();
@@ -188,12 +197,19 @@ const totalPercentageDisagrees = computed(() => {
   );
 });
 
+function onLoginCallback() {
+  createOpinionAgreementIntention(
+    props.postSlugId,
+    props.commentItem.opinionSlugId
+  );
+}
+
 async function castPersonalVote(
   commentSlugId: string,
   isUpvoteButton: boolean
 ) {
   if (!isAuthenticated.value) {
-    showLoginConfirmationDialog();
+    showLoginDialog.value = true;
   } else {
     let targetState: VotingAction = "cancel";
     const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);

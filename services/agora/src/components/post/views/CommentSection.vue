@@ -123,6 +123,8 @@
         "
       />
     </div>
+
+    <LoginResumeIntentionDialog :active-intention="'agreement'" />
   </div>
 </template>
 
@@ -149,6 +151,8 @@ import { useUserStore } from "src/stores/user";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import LoginResumeIntentionDialog from "src/components/authentication/LoginResumeIntentionDialog.vue";
 
 defineExpose({
   openModerationHistory,
@@ -162,6 +166,9 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
 }>();
+
+const { clearOpinionAgreementIntention } = useLoginIntentionStore();
+clearOpinionAgreementIntention();
 
 const participantCountLocal = ref(props.participantCount);
 
