@@ -56,7 +56,7 @@ function clickedOkButton() {
   background-color: white;
   border-radius: 25px;
   max-width: 25rem;
-  min-width: 20rem;
+  min-width: 5rem;
   padding: 1.5rem;
 }
 
@@ -71,5 +71,6 @@ function clickedOkButton() {
   align-items: center;
   justify-content: flex-end;
   gap: 1rem;
+  padding-top: 1rem;
 }
 </style>
