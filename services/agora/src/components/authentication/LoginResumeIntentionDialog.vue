@@ -1,7 +1,7 @@
 <template>
   <div>
     <DialogContainer
-      v-model="showPostLoginIntention"
+      v-model="showPostLoginIntentionDialog"
       :title="'Session resumed'"
       :message="''"
       :show-cancel-dialog="false"
@@ -21,7 +21,7 @@ import {
 } from "src/stores/loginIntention";
 import { storeToRefs } from "pinia";
 
-const { showPostLoginIntention } = storeToRefs(useLoginIntentionStore());
+const { showPostLoginIntentionDialog } = storeToRefs(useLoginIntentionStore());
 
 const props = defineProps<{
   activeIntention: PossibleIntentions;
@@ -32,7 +32,7 @@ const { composePostLoginDialogMessage } = useLoginIntentionStore();
 const message = ref(composePostLoginDialogMessage(props.activeIntention));
 
 function okCallback() {
-  showPostLoginIntention.value = false;
+  showPostLoginIntentionDialog.value = false;
 }
 </script>
 
