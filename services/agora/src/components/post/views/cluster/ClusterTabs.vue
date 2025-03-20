@@ -9,7 +9,9 @@
 
       <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
         <ZKTab
-          :text="formatClusterLabel(clusterItem.key)"
+          :text="
+            formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
+          "
           :is-highlighted="model === clusterItem.key"
           @click="clickedTab(clusterItem.key)"
         />
