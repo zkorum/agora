@@ -33,7 +33,8 @@ export type PossibleIntentions =
   | "voting"
   | "agreement"
   | "newConversation"
-  | "newOpinion";
+  | "newOpinion"
+  | "reportUserContent";
 
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const router = useRouter();
@@ -147,7 +148,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       case "agreement":
         return "You had been returned to the opinion prior to the login";
       default:
-        return "UNKNOWN INTENTION";
+        return "";
     }
   }
 
@@ -161,8 +162,10 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         return "Your written conversation will be restored after you are logged in";
       case "agreement":
         return "You will be returned to this opinion after you are logged in";
+      case "reportUserContent":
+        return "A user account is required to report user content";
       default:
-        return "Intention is not supported";
+        return "";
     }
   }
 

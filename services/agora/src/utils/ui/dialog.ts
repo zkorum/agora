@@ -1,15 +1,10 @@
 import { useQuasar } from "quasar";
-import { useRouter } from "vue-router";
 import { useBackendAccountApi } from "../api/account";
-import { useNavigationStore } from "src/stores/navigation";
-import { storeToRefs } from "pinia";
 
 export const useDialog = () => {
   const quasar = useQuasar();
-  const router = useRouter();
 
   const { deleteUserAccount } = useBackendAccountApi();
-  const { showMobileDrawer } = storeToRefs(useNavigationStore());
   function showReportDialog(itemName: "post" | "comment") {
     quasar.dialog({
       title: "Thank you for the report",
@@ -30,26 +25,6 @@ export const useDialog = () => {
       title: title,
       message: body,
     });
-  }
-
-  function showLoginConfirmationDialog() {
-    quasar
-      .dialog({
-        title: "Log in to Agora",
-        message: "Sign in to participate the discussions",
-        cancel: true,
-        persistent: false,
-      })
-      .onOk(async () => {
-        showMobileDrawer.value = false;
-        await router.push({ name: "/welcome/" });
-      })
-      .onCancel(() => {
-        // console.log('>>>> Cancel')
-      })
-      .onDismiss(() => {
-        // console.log('I am triggered on both OK and Cancel')
-      });
   }
 
   function showDeleteAccountDialog(callbackSuccess: () => void) {
@@ -89,7 +64,6 @@ export const useDialog = () => {
     showReportDialog,
     showContactUsSuccessfulDialog,
     showMessage,
-    showLoginConfirmationDialog,
     showDeleteAccountDialog,
   };
 };

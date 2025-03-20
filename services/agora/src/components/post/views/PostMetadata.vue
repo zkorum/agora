@@ -44,6 +44,12 @@
       @close="showReportDialog = false"
     />
   </q-dialog>
+
+  <LoginConfirmationDialog
+    v-model="showLoginDialog"
+    :ok-callback="() => {}"
+    :active-intention="'reportUserContent'"
+  />
 </template>
 
 <script setup lang="ts">
@@ -56,6 +62,9 @@ import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
 import UserIdentity from "./UserIdentity.vue";
+import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
 
 const emit = defineEmits(["openModerationHistory"]);
 
@@ -72,13 +81,21 @@ const route = useRoute();
 
 const { showPostOptionSelector } = useBottomSheet();
 
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = usePostStore();
 
 const showReportDialog = ref(false);
 
+const showLoginDialog = ref(false);
+
 function reportContentCallback() {
-  showReportDialog.value = true;
+  if (isAuthenticated.value) {
+    showReportDialog.value = true;
+  } else {
+    showLoginDialog.value = true;
+  }
 }
 
 async function openUserReportsCallback() {

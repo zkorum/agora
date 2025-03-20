@@ -1,11 +1,23 @@
 <template>
-  <ZKButton button-type="icon" flat @click.stop.prevent="optionButtonClicked()">
-    <ZKIcon
-      color="black"
-      name="iconamoon:menu-kebab-horizontal-bold"
-      size="1rem"
+  <div>
+    <ZKButton
+      button-type="icon"
+      flat
+      @click.stop.prevent="optionButtonClicked()"
+    >
+      <ZKIcon
+        color="black"
+        name="iconamoon:menu-kebab-horizontal-bold"
+        size="1rem"
+      />
+    </ZKButton>
+
+    <LoginConfirmationDialog
+      v-model="showLoginDialog"
+      :ok-callback="() => {}"
+      :active-intention="'reportUserContent'"
     />
-  </ZKButton>
+  </div>
 
   <q-dialog v-model="showReportDialog">
     <ReportContentDialog
@@ -17,10 +29,13 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useWebShare } from "src/utils/share/WebShare";
@@ -36,6 +51,8 @@ const props = defineProps<{
   commentItem: OpinionItem;
 }>();
 
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
 const webShare = useWebShare();
 
 const { showNotifyMessage } = useNotify();
@@ -49,8 +66,14 @@ const router = useRouter();
 const { muteUser } = useBackendUserMuteApi();
 const { deleteCommentBySlugId } = useBackendCommentApi();
 
+const showLoginDialog = ref(false);
+
 function reportContentCallback() {
-  showReportDialog.value = true;
+  if (isAuthenticated.value) {
+    showReportDialog.value = true;
+  } else {
+    showLoginDialog.value = true;
+  }
 }
 
 async function openUserReportsCallback() {
