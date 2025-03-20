@@ -40,7 +40,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   let activeIntention: PossibleIntentions = "none";
 
-  const showPostLoginIntention = ref(false);
+  const showPostLoginIntentionDialog = ref(false);
 
   let votingIntention: VotingIntention = {
     enabled: false,
@@ -103,13 +103,17 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     if (excludeIntention != "newOpinion") {
       clearNewOpinionIntention();
     }
+
+    if (excludeIntention != "newConversation") {
+      clearNewConversationIntention();
+    }
   }
 
   async function routeUserAfterLogin() {
     clearAllOtherIntentions(activeIntention);
 
     if (activeIntention != "none") {
-      showPostLoginIntention.value = true;
+      showPostLoginIntentionDialog.value = true;
     }
 
     if (activeIntention == "none") {
@@ -191,6 +195,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     composePostLoginDialogMessage,
     clearNewOpinionIntention,
     clearNewConversationIntention,
-    showPostLoginIntention,
+    showPostLoginIntentionDialog,
   };
 });
