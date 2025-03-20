@@ -1,7 +1,7 @@
 <template>
   <div>
     <DialogContainer
-      v-model="showPostLoginIntentionDialog"
+      v-model="showDialog"
       :title="'Session resumed'"
       :message="''"
       :show-cancel-dialog="false"
@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import DialogContainer from "./DialogContainer.vue";
 import {
   PossibleIntentions,
@@ -21,7 +21,10 @@ import {
 } from "src/stores/loginIntention";
 import { storeToRefs } from "pinia";
 
-const { showPostLoginIntentionDialog } = storeToRefs(useLoginIntentionStore());
+const { showPostLoginIntentionDialog, activeUserIntention } = storeToRefs(
+  useLoginIntentionStore()
+);
+const { setActiveUserIntention } = useLoginIntentionStore();
 
 const props = defineProps<{
   activeIntention: PossibleIntentions;
@@ -31,8 +34,23 @@ const { composePostLoginDialogMessage } = useLoginIntentionStore();
 
 const message = ref(composePostLoginDialogMessage(props.activeIntention));
 
+const showDialog = ref(false);
+
+onMounted(() => {
+  updateModel();
+});
+
+function updateModel() {
+  if (activeUserIntention.value == props.activeIntention) {
+    if (showPostLoginIntentionDialog.value) {
+      showDialog.value = true;
+    }
+  }
+}
+
 function okCallback() {
-  showPostLoginIntentionDialog.value = false;
+  showDialog.value = false;
+  setActiveUserIntention("none");
 }
 </script>
 

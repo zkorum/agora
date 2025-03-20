@@ -18,8 +18,6 @@
         </div>
       </template>
     </DialogContainer>
-
-    <LoginResumeIntentionDialog :active-intention="activeIntention" />
   </div>
 </template>
 
@@ -30,7 +28,6 @@ import {
   useLoginIntentionStore,
 } from "src/stores/loginIntention";
 import { useRouter } from "vue-router";
-import LoginResumeIntentionDialog from "./LoginResumeIntentionDialog.vue";
 import DialogContainer from "./DialogContainer.vue";
 
 const showDialog = defineModel<boolean>({ required: true });
@@ -40,7 +37,8 @@ const props = defineProps<{
   activeIntention: PossibleIntentions;
 }>();
 
-const { composeLoginIntentionDialogMessage } = useLoginIntentionStore();
+const { composeLoginIntentionDialogMessage, setActiveUserIntention } =
+  useLoginIntentionStore();
 
 const subMessage = ref(
   composeLoginIntentionDialogMessage(props.activeIntention)
@@ -50,6 +48,7 @@ const router = useRouter();
 
 async function okButtonClicked() {
   props.okCallback();
+  setActiveUserIntention(props.activeIntention);
   await router.push({ name: "/welcome/" });
 }
 </script>

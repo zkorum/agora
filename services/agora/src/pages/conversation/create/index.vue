@@ -180,6 +180,8 @@
       :ok-callback="onLoginCallback"
       :active-intention="'newConversation'"
     />
+
+    <LoginResumeIntentionDialog :active-intention="'newConversation'" />
   </DrawerLayout>
 </template>
 
@@ -211,6 +213,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import LoginResumeIntentionDialog from "src/components/authentication/LoginResumeIntentionDialog.vue";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 

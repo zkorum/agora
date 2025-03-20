@@ -11,7 +11,7 @@ interface VotingIntention {
   conversationSlugId: string;
 }
 
-interface AgreementIntention {
+interface OpinionAgreementIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionSlugId: string;
@@ -38,7 +38,7 @@ export type PossibleIntentions =
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const router = useRouter();
 
-  let activeIntention: PossibleIntentions = "none";
+  const activeUserIntention = ref<PossibleIntentions>("none");
 
   const showPostLoginIntentionDialog = ref(false);
 
@@ -47,7 +47,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     conversationSlugId: "",
   };
 
-  let agreementIntention: AgreementIntention = {
+  let opinionAgreementIntention: OpinionAgreementIntention = {
     enabled: false,
     conversationSlugId: "",
     opinionSlugId: "",
@@ -68,11 +68,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     votingIntention = { enabled: true, conversationSlugId: conversationSlugId };
   }
 
-  function createAgreementIntention(
+  function createOpinionAgreementIntention(
     conversationSlugId: string,
     opinionSlugId: string
   ) {
-    agreementIntention = {
+    opinionAgreementIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
@@ -99,80 +99,88 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     };
   }
 
-  function clearAllOtherIntentions(excludeIntention: PossibleIntentions) {
-    if (excludeIntention != "newOpinion") {
-      clearNewOpinionIntention();
-    }
-
-    if (excludeIntention != "newConversation") {
-      clearNewConversationIntention();
-    }
+  function setActiveUserIntention(intention: PossibleIntentions) {
+    activeUserIntention.value = intention;
   }
 
   async function routeUserAfterLogin() {
-    clearAllOtherIntentions(activeIntention);
-
-    if (activeIntention != "none") {
-      showPostLoginIntentionDialog.value = true;
-    }
-
-    if (activeIntention == "none") {
-      await router.push({ name: "/" });
-    } else if (activeIntention == "agreement") {
-      //
-    } else if (activeIntention == "newConversation") {
-      await router.push({ name: "/conversation/create/" });
-    } else if (activeIntention == "newOpinion") {
-      await router.push({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: newOpinionIntention.conversationSlugId },
-      });
-    } else if (activeIntention == "voting") {
-      //
-    } else {
-      console.error("Unknown intension");
+    switch (activeUserIntention.value) {
+      case "none":
+        await router.push({ name: "/" });
+        break;
+      case "agreement":
+        await router.push({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: opinionAgreementIntention.conversationSlugId },
+          query: { opinion: opinionAgreementIntention.opinionSlugId },
+        });
+        break;
+      case "newConversation":
+        await router.push({ name: "/conversation/create/" });
+        break;
+      case "newOpinion":
+        await router.push({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: newOpinionIntention.conversationSlugId },
+        });
+        break;
+      case "voting":
+        break;
+      default:
+        console.error("Unknown intention");
     }
 
     votingIntention;
-    agreementIntention;
+    opinionAgreementIntention;
     newConversationIntention;
     newOpinionIntention;
-
-    activeIntention = "none";
   }
 
   function composePostLoginDialogMessage(
     intention: PossibleIntentions
   ): string {
-    if (intention == "newOpinion") {
-      return "Your written opinion had been restored";
-    } else if (intention == "newConversation") {
-      return "Your written conversation had been restored";
-    } else {
-      return "UNKNOWN INTENTION";
+    switch (intention) {
+      case "newOpinion":
+        return "Your written opinion had been restored";
+      case "newConversation":
+        return "Your written conversation had been restored";
+      case "agreement":
+        return "You had been returned to the opinion prior to the login";
+      default:
+        return "UNKNOWN INTENTION";
     }
   }
 
   function composeLoginIntentionDialogMessage(
     intention: PossibleIntentions
   ): string {
-    activeIntention = intention;
-    if (intention == "newOpinion") {
-      return "Your written opinion will be restored after you are logged in";
-    } else if (intention == "newConversation") {
-      return "Your written conversation will be restored after you are logged in";
-    } else {
-      return "";
+    switch (intention) {
+      case "newOpinion":
+        return "Your written opinion will be restored after you are logged in";
+      case "newConversation":
+        return "Your written conversation will be restored after you are logged in";
+      case "agreement":
+        return "You will be returned to this opinion after you are logged in";
+      default:
+        return "Intention is not supported";
+    }
+  }
+
+  function showIntentionDialog(show: boolean, intention: PossibleIntentions) {
+    if (show && activeUserIntention.value == intention) {
+      showPostLoginIntentionDialog.value = true;
     }
   }
 
   function clearNewOpinionIntention(): NewOpinionIntention {
-    const savedIntention: NewOpinionIntention = newOpinionIntention;
+    const savedIntention: NewOpinionIntention =
+      structuredClone(newOpinionIntention);
     newOpinionIntention = {
       enabled: false,
       conversationSlugId: "",
       opinionBody: "",
     };
+    showIntentionDialog(savedIntention.enabled, "newOpinion");
     return savedIntention;
   }
 
@@ -182,12 +190,26 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       enabled: false,
       conversationDraft: structuredClone(emptyConversationDraft),
     };
+    showIntentionDialog(savedIntention.enabled, "newConversation");
+    return savedIntention;
+  }
+
+  function clearOpinionAgreementIntention(): OpinionAgreementIntention {
+    const savedIntention: OpinionAgreementIntention = structuredClone(
+      opinionAgreementIntention
+    );
+    opinionAgreementIntention = {
+      enabled: false,
+      conversationSlugId: "",
+      opinionSlugId: "",
+    };
+    showIntentionDialog(savedIntention.enabled, "agreement");
     return savedIntention;
   }
 
   return {
     createVotingIntention,
-    createAgreementIntention,
+    createOpinionAgreementIntention,
     createNewConversationIntention,
     createNewOpinionIntention,
     routeUserAfterLogin,
@@ -195,6 +217,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     composePostLoginDialogMessage,
     clearNewOpinionIntention,
     clearNewConversationIntention,
+    clearOpinionAgreementIntention,
+    setActiveUserIntention,
     showPostLoginIntentionDialog,
+    activeUserIntention,
   };
 });
