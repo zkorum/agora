@@ -19,7 +19,10 @@
         padding="1rem"
         class="commentItemBackground"
       >
-        <CommentConsensusSummary :summary="aiSummary" />
+        <CommentConsensusSummary
+          :summary="aiSummary"
+          :selected-cluster-key="selectedClusterKey"
+        />
       </ZKCard>
 
       <ZKCard

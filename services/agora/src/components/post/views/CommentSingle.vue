@@ -120,12 +120,12 @@ function calculateClusterReasonLabel() {
       );
       const labelCluster =
         clusterStat.aiLabel ??
-        formatClusterLabel(clusterStat.key, clusterStat.aiLabel);
+        formatClusterLabel(clusterStat.key, true, clusterStat.aiLabel);
       if (
         selectedClusterPercentageAgrees > 50 ||
         selectedClusterPercentageDisagrees > 50
       ) {
-        return `Majority (Group ${labelCluster})`;
+        return `Majority (${labelCluster})`;
       }
       if (
         selectedClusterPercentageDisagrees + selectedClusterPercentageAgrees >
@@ -134,7 +134,7 @@ function calculateClusterReasonLabel() {
           selectedClusterPercentageAgrees - selectedClusterPercentageDisagrees
         ) < 50
       ) {
-        return `Debated (Group ${labelCluster})`;
+        return `Debated (${labelCluster})`;
       }
     }
     for (const clusterStat of props.commentItem.clustersStats) {
@@ -152,15 +152,15 @@ function calculateClusterReasonLabel() {
       );
       const labelCluster =
         clusterStat.aiLabel ??
-        formatClusterLabel(clusterStat.key, clusterStat.aiLabel);
+        formatClusterLabel(clusterStat.key, true, clusterStat.aiLabel);
       if (clusterPercentageAgrees > 50 || clusterPercentageDisagrees > 50) {
-        return `Majority (Group ${labelCluster})`;
+        return `Majority (${labelCluster})`;
       }
       if (
         clusterPercentageDisagrees + clusterPercentageAgrees > 50 &&
         Math.abs(clusterPercentageAgrees - clusterPercentageDisagrees) < 50
       ) {
-        return `Debated (Group ${labelCluster})`;
+        return `Debated (${labelCluster})`;
       }
     }
   }

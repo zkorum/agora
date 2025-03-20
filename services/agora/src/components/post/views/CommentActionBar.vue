@@ -28,9 +28,9 @@
               :key="clusterItem.key"
               :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
             >
-              Group
-              {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
-              {{ clusterItem.numDisagrees }} ({{
+              {{
+                formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
+              }}: {{ clusterItem.numDisagrees }} ({{
                 formatPercentage(
                   calculatePercentage(
                     clusterItem.numDisagrees,
@@ -70,9 +70,9 @@
               :key="clusterItem.key"
               :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
             >
-              Group
-              {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
-              {{ clusterItem.numAgrees }} ({{
+              {{
+                formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
+              }}: {{ clusterItem.numAgrees }} ({{
                 formatPercentage(
                   calculatePercentage(
                     clusterItem.numAgrees,

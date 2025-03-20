@@ -25,6 +25,7 @@ import {
     type GenLabelSummaryOutputClusterStrict,
 } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
+import { z } from "zod";
 
 interface UpdateAiLabelsAndSummariesProps {
     db: PostgresJsDatabase;
@@ -138,17 +139,18 @@ async function updateClustersLabelsAndSummaries({
             continue;
         }
         // we use raw sql because update ... from with multiple join doesn't work properly in drizzle
+        // WARN: this is not typesafe
         await db.execute(sql`
-          UPDATE ${polisClusterTable}
-          SET ${polisClusterTable.aiLabel} = ${aiClusterLabelAndSummary.label},
-              ${polisClusterTable.aiSummary} = ${aiClusterLabelAndSummary.summary}
-          FROM ${polisContentTable}
-          INNER JOIN ${conversationTable}
-            ON ${conversationTable.id} = ${polisContentTable.conversationId}
-          WHERE ${polisClusterTable.key} = ${key}
-            AND ${polisContentTable.conversationId} = ${conversationId}
-            AND ${polisContentTable.id} = ${conversationTable.currentPolisContentId}
-            AND ${polisClusterTable.polisContentId} = ${polisContentTable.id};
+          UPDATE ${polisClusterTable} AS "pc"
+          SET "ai_label" = ${aiClusterLabelAndSummary.label},
+              "ai_summary" = ${aiClusterLabelAndSummary.summary}
+          FROM ${polisContentTable} AS "p"
+          INNER JOIN ${conversationTable} AS "c"
+            ON "c"."id" = "p"."conversation_id"
+          WHERE "pc"."key" = ${key}
+            AND "p"."conversation_id" = ${conversationId}
+            AND "p"."id" = "c"."current_polis_content_id"
+            AND "pc"."polis_content_id" = "p"."id";
         `);
     }
 }
@@ -205,6 +207,16 @@ async function invokeRemoteModel({
 }: InvokeRemoteModelProps): Promise<
     GenLabelSummaryOutputStrict | GenLabelSummaryOutputLoose
 > {
+    const zodInvokeModelResponse = z.object({
+        outputs: z
+            .array(
+                z.object({
+                    text: z.string(),
+                }),
+            )
+            .min(1),
+    });
+
     const client = new BedrockRuntimeClient({
         region: awsAiLabelSummaryRegion,
     });
@@ -228,23 +240,33 @@ async function invokeRemoteModel({
     const response = await client.send(command);
     const decodedResponseBody = new TextDecoder().decode(response.body);
     const responseBody: unknown = JSON.parse(decodedResponseBody);
+    const typedResponseBody = zodInvokeModelResponse.safeParse(responseBody);
+    if (!typedResponseBody.success) {
+        throw new Error(
+            `Unable to parse AWS Bedrock response: '${decodedResponseBody}'`,
+            { cause: typedResponseBody.error },
+        );
+    }
+    const modelResponseStr = typedResponseBody.data.outputs[0].text;
+    const modelResponse: unknown = JSON.parse(modelResponseStr);
     // try strict first
-    const resultStrict = zodGenLabelSummaryOutputStrict.safeParse(responseBody);
+    const resultStrict =
+        zodGenLabelSummaryOutputStrict.safeParse(modelResponse);
     if (resultStrict.success) {
         return resultStrict.data;
     } else {
         log.warn(
-            "Unable to parse AI Label and Summary output object using strict mode:",
+            `Unable to parse AI Label and Summary output object using strict mode: '${modelResponseStr}'`,
         );
         log.warn(resultStrict.error);
     }
     // will throw and be caught by the generic fastify handler eventually
-    const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(responseBody);
+    const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
     if (!resultLoose.success) {
-        log.error(
-            "Unable to parse AI Label and Summary output object using loose mode:",
+        throw new Error(
+            `Unable to parse AI Label and Summary output object using loose mode: '${modelResponseStr}'`,
+            { cause: resultLoose.error },
         );
-        throw resultLoose.error;
     }
     return resultLoose.data;
 }

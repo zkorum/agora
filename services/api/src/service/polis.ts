@@ -801,17 +801,24 @@ export async function delayedPolisGetAndUpdateMath({
 
         if (awsAiLabelSummaryEnable && minNumberOfClusters >= 2) {
             // only run the AI if there are at least 2 clusters
-            await llmService.updateAiLabelsAndSummaries({
-                db: tx,
-                conversationId: conversationId,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryTopK,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
-            });
+            try {
+                await llmService.updateAiLabelsAndSummaries({
+                    db: tx,
+                    conversationId: conversationId,
+                    awsAiLabelSummaryRegion,
+                    awsAiLabelSummaryModelId,
+                    awsAiLabelSummaryTemperature,
+                    awsAiLabelSummaryTopP,
+                    awsAiLabelSummaryTopK,
+                    awsAiLabelSummaryMaxTokens,
+                    awsAiLabelSummaryPrompt,
+                });
+            } catch (e: unknown) {
+                log.error(
+                    `Error while trying to update the AI Label and Summary for conversationSlugId=${conversationSlugId}`,
+                );
+                log.error(e);
+            }
         }
     });
 }

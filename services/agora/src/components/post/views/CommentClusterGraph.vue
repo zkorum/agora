@@ -53,6 +53,7 @@
                 {{
                   formatClusterLabel(
                     clusters[imageIndex].key,
+                    false,
                     clusters[imageIndex].aiLabel
                   )
                 }}

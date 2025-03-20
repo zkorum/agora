@@ -4,7 +4,7 @@
       <div><img :src="starIcon" class="iconStyle" /></div>
       <div class="messageBody">
         <div class="titleBar">
-          <div class="titleString">Consensus group summary</div>
+          <div class="titleString">{{ summaryTitle }}</div>
           <q-icon
             name="mdi-information-outline"
             size="1.5rem"
@@ -21,13 +21,18 @@
 </template>
 
 <script setup lang="ts">
+import { PolisKey } from "src/shared/types/zod";
 import { useDialog } from "src/utils/ui/dialog";
 
-defineProps<{
+const props = defineProps<{
   summary: string;
+  selectedClusterKey: PolisKey | undefined;
 }>();
 
 const { showMessage } = useDialog();
+
+const summaryTitle =
+  props.selectedClusterKey === undefined ? "Summary" : "Group summary";
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
