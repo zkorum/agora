@@ -66,6 +66,7 @@ import { calculatePercentage } from "src/utils/common";
 import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import UserHtmlBody from "./UserHtmlBody.vue";
+import { computed } from "vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 
@@ -78,7 +79,7 @@ const props = defineProps<{
   participantCount: number;
 }>();
 
-const reasonLabel = calculateReasonLabel();
+const reasonLabel = computed(() => calculateReasonLabel()); // enable changing immediately the props without waiting for re-render
 
 function changeVote(vote: VotingAction) {
   emit("changeVote", vote, props.commentItem.opinionSlugId);
