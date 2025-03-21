@@ -1,13 +1,16 @@
 <template>
   <div>
     <ZKButton button-type="standardButton" @click="showDialog = true">
-      <div class="buttonText gradientFont">
-        {{ currentFilterAlgorithm }}
-        <q-icon
-          name="mdi-chevron-down"
-          size="1.3rem"
-          class="iconStyle gradientFont"
-        />
+      <div class="buttonGrid gradientFont">
+        <div class="buttonItem">{{ currentFilterAlgorithm }}</div>
+
+        <div class="buttonItem">
+          <q-icon
+            name="mdi-chevron-down"
+            size="1.3rem"
+            class="iconStyle gradientFont"
+          />
+        </div>
       </div>
     </ZKButton>
 
@@ -135,9 +138,18 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   font-weight: 500;
 }
 
-.buttonText {
+.buttonGrid {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: 1fr;
+  gap: 0px 0px;
+  grid-template-areas: ". .";
+}
+
+.buttonItem {
   font-weight: 500;
   display: flex;
   align-items: center;
+  line-height: normal;
 }
 </style>
