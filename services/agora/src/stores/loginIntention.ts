@@ -28,6 +28,12 @@ interface NewOpinionIntention {
   opinionBody: string;
 }
 
+interface ReportUserContentIntention {
+  enabled: boolean;
+  conversationSlugId: string;
+  opinionSlugId: string;
+}
+
 export type PossibleIntentions =
   | "none"
   | "voting"
@@ -66,6 +72,12 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     opinionBody: "",
   };
 
+  let reportUserContentIntention: ReportUserContentIntention = {
+    enabled: false,
+    conversationSlugId: "",
+    opinionSlugId: "",
+  };
+
   function createVotingIntention(conversationSlugId: string) {
     votingIntention = { enabled: true, conversationSlugId: conversationSlugId };
   }
@@ -101,6 +113,17 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     };
   }
 
+  function createReportUserContentIntention(
+    conversationSlugId: string,
+    opinionSlugId: string
+  ) {
+    reportUserContentIntention = {
+      enabled: true,
+      conversationSlugId: conversationSlugId,
+      opinionSlugId: opinionSlugId,
+    };
+  }
+
   function setActiveUserIntention(intention: PossibleIntentions) {
     activeUserIntention.value = intention;
   }
@@ -132,6 +155,13 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
           params: { postSlugId: votingIntention.conversationSlugId },
         });
         break;
+      case "reportUserContent":
+        await router.push({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: reportUserContentIntention.conversationSlugId },
+          query: { opinion: reportUserContentIntention.opinionSlugId },
+        });
+        break;
       default:
         console.error("Unknown intention");
     }
@@ -142,15 +172,15 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   ): string {
     switch (intention) {
       case "newOpinion":
-        return "Your written opinion had been restored";
+        return "Your written opinion had been restored.";
       case "newConversation":
-        return "Your written conversation had been restored";
+        return "Your written conversation had been restored.";
       case "agreement":
-        return "You had been returned to the opinion that you wanted to cast the agreement";
+        return "You had been returned to the opinion that you wanted to cast agreement.";
       case "voting":
-        return "You had been returned to the conversation that you wanted to cast vote";
+        return "You had been returned to the conversation that you wanted to cast vote.";
       case "reportUserContent":
-        return "You had been returned to the conversation that you wanted to report";
+        return "You had been returned to the content that you wanted to report.";
       default:
         return "";
     }
@@ -226,11 +256,25 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     return savedIntention;
   }
 
+  function clearReportUserContentIntention(): ReportUserContentIntention {
+    const savedIntention: ReportUserContentIntention = structuredClone(
+      reportUserContentIntention
+    );
+    reportUserContentIntention = {
+      enabled: false,
+      conversationSlugId: "",
+      opinionSlugId: "",
+    };
+    showIntentionDialog(savedIntention.enabled, "reportUserContent");
+    return savedIntention;
+  }
+
   return {
     createVotingIntention,
     createOpinionAgreementIntention,
     createNewConversationIntention,
     createNewOpinionIntention,
+    createReportUserContentIntention,
     routeUserAfterLogin,
     composeLoginIntentionDialogMessage,
     composePostLoginDialogMessage,
@@ -238,6 +282,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     clearNewConversationIntention,
     clearOpinionAgreementIntention,
     clearVotingIntention,
+    clearReportUserContentIntention,
     setActiveUserIntention,
     showPostLoginIntentionDialog,
     activeUserIntention,

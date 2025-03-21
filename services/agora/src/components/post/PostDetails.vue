@@ -197,10 +197,14 @@ const props = defineProps<{
   skeletonMode: boolean;
 }>();
 
-const { clearVotingIntention, clearOpinionAgreementIntention } =
-  useLoginIntentionStore();
+const {
+  clearVotingIntention,
+  clearOpinionAgreementIntention,
+  clearReportUserContentIntention,
+} = useLoginIntentionStore();
 clearVotingIntention();
 clearOpinionAgreementIntention();
+clearReportUserContentIntention();
 
 const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 

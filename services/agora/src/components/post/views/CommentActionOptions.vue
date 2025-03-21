@@ -14,7 +14,7 @@
 
     <LoginConfirmationDialog
       v-model="showLoginDialog"
-      :ok-callback="() => {}"
+      :ok-callback="onLoginConfirmationOk"
       :active-intention="'reportUserContent'"
     />
   </div>
@@ -36,6 +36,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useWebShare } from "src/utils/share/WebShare";
@@ -67,6 +68,15 @@ const { muteUser } = useBackendUserMuteApi();
 const { deleteCommentBySlugId } = useBackendCommentApi();
 
 const showLoginDialog = ref(false);
+
+const { createReportUserContentIntention } = useLoginIntentionStore();
+
+function onLoginConfirmationOk() {
+  createReportUserContentIntention(
+    props.postSlugId,
+    props.commentItem.opinionSlugId
+  );
+}
 
 function reportContentCallback() {
   if (isAuthenticated.value) {

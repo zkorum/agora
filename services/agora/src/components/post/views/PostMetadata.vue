@@ -47,7 +47,7 @@
 
   <LoginConfirmationDialog
     v-model="showLoginDialog"
-    :ok-callback="() => {}"
+    :ok-callback="() => onLoginConfirmationOk()"
     :active-intention="'reportUserContent'"
   />
 </template>
@@ -65,6 +65,7 @@ import UserIdentity from "./UserIdentity.vue";
 import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const emit = defineEmits(["openModerationHistory"]);
 
@@ -89,6 +90,12 @@ const { loadPostData } = usePostStore();
 const showReportDialog = ref(false);
 
 const showLoginDialog = ref(false);
+
+const { createReportUserContentIntention } = useLoginIntentionStore();
+
+function onLoginConfirmationOk() {
+  createReportUserContentIntention(props.postSlugId, "");
+}
 
 function reportContentCallback() {
   if (isAuthenticated.value) {
