@@ -64,7 +64,7 @@
       </div>
     </div>
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
       :active-intention="'none'"
@@ -83,7 +83,7 @@ import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
-import LoginConfirmationDialog from "../authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";

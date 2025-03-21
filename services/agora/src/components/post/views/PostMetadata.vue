@@ -45,7 +45,7 @@
     />
   </q-dialog>
 
-  <LoginConfirmationDialog
+  <PreLoginIntentionDialog
     v-model="showLoginDialog"
     :ok-callback="() => onLoginConfirmationOk()"
     :active-intention="'reportUserContent'"
@@ -62,7 +62,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
 import UserIdentity from "./UserIdentity.vue";
-import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import { useLoginIntentionStore } from "src/stores/loginIntention";

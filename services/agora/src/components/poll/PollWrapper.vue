@@ -76,7 +76,7 @@
       </div>
     </div>
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'voting'"
@@ -95,7 +95,7 @@ import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import LoginConfirmationDialog from "../authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 
 const props = defineProps<{
   userResponse: UserInteraction;

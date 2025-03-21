@@ -175,7 +175,7 @@
       />
     </div>
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'newConversation'"
@@ -209,7 +209,7 @@ import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());

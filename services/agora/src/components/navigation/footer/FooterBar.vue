@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
       :active-intention="'none'"
@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "src/components/notification/NewNotificationIndicator.vue";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";

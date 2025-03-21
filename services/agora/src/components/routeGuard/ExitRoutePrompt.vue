@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import DialogContainer from "../authentication/DialogContainer.vue";
+import DialogContainer from "../authentication/intention/DialogContainer.vue";
 
 const model = defineModel<boolean>({ required: true });
 

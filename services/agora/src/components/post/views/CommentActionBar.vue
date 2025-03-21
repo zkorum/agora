@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'agreement'"
@@ -108,8 +108,8 @@ import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 
 const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;

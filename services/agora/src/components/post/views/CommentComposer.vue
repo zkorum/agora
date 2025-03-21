@@ -49,7 +49,7 @@
       @leave-foute="leaveRoute()"
     />
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'newOpinion'"
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";

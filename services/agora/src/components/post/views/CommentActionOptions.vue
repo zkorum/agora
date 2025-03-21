@@ -12,7 +12,7 @@
       />
     </ZKButton>
 
-    <LoginConfirmationDialog
+    <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginConfirmationOk"
       :active-intention="'reportUserContent'"
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";

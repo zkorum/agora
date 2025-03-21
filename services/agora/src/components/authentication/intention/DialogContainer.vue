@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import ZKButton from "../ui-library/ZKButton.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const props = defineProps<{
   title: string;

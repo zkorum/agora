@@ -16,9 +16,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
-import DialogContainer from "./DialogContainer.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { storeToRefs } from "pinia";
+import DialogContainer from "./DialogContainer.vue";
 
 const { showPostLoginIntentionDialog, activeUserIntention } = storeToRefs(
   useLoginIntentionStore()
