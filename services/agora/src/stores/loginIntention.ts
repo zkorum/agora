@@ -127,15 +127,14 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         });
         break;
       case "voting":
+        await router.push({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: votingIntention.conversationSlugId },
+        });
         break;
       default:
         console.error("Unknown intention");
     }
-
-    votingIntention;
-    opinionAgreementIntention;
-    newConversationIntention;
-    newOpinionIntention;
   }
 
   function composePostLoginDialogMessage(
@@ -147,7 +146,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       case "newConversation":
         return "Your written conversation had been restored";
       case "agreement":
-        return "You had been returned to the opinion prior to the login";
+        return "You had been returned to the opinion that you wanted to cast the agreement";
+      case "voting":
+        return "You had been returned to the conversation that you wanted to cast vote";
+      case "reportUserContent":
+        return "You had been returned to the conversation that you wanted to report";
       default:
         return "";
     }
@@ -165,6 +168,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         return "You will be returned to this opinion after you are logged in";
       case "reportUserContent":
         return "A user account is required to report user content";
+      case "voting":
+        return "You will be returned to this conversation after you are logged in";
       default:
         return "";
     }
@@ -211,6 +216,16 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     return savedIntention;
   }
 
+  function clearVotingIntention(): VotingIntention {
+    const savedIntention: VotingIntention = structuredClone(votingIntention);
+    votingIntention = {
+      enabled: false,
+      conversationSlugId: "",
+    };
+    showIntentionDialog(savedIntention.enabled, "voting");
+    return savedIntention;
+  }
+
   return {
     createVotingIntention,
     createOpinionAgreementIntention,
@@ -222,6 +237,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     clearNewOpinionIntention,
     clearNewConversationIntention,
     clearOpinionAgreementIntention,
+    clearVotingIntention,
     setActiveUserIntention,
     showPostLoginIntentionDialog,
     activeUserIntention,

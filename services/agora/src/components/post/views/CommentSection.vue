@@ -149,7 +149,6 @@ import { useUserStore } from "src/stores/user";
 import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 defineExpose({
   openModerationHistory,
@@ -163,9 +162,6 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
 }>();
-
-const { clearOpinionAgreementIntention } = useLoginIntentionStore();
-clearOpinionAgreementIntention();
 
 const participantCountLocal = ref(props.participantCount);
 

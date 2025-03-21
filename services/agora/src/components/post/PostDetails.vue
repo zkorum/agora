@@ -189,12 +189,18 @@ import WidthWrapper from "../navigation/WidthWrapper.vue";
 import UserHtmlBody from "./views/UserHtmlBody.vue";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
   compactMode: boolean;
   skeletonMode: boolean;
 }>();
+
+const { clearVotingIntention, clearOpinionAgreementIntention } =
+  useLoginIntentionStore();
+clearVotingIntention();
+clearOpinionAgreementIntention();
 
 const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 
