@@ -49,6 +49,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const activeUserIntention = ref<PossibleIntentions>("none");
 
   const showPostLoginIntentionDialog = ref(false);
+  let completedUserLogin = false;
 
   let votingIntention: VotingIntention = {
     enabled: false,
@@ -129,6 +130,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   }
 
   async function routeUserAfterLogin() {
+    completedUserLogin = true;
+
     switch (activeUserIntention.value) {
       case "none":
         await router.push({ name: "/" });
@@ -208,65 +211,104 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   function showIntentionDialog(show: boolean, intention: PossibleIntentions) {
     if (show && activeUserIntention.value == intention) {
       showPostLoginIntentionDialog.value = true;
+      completedUserLogin = false;
     }
   }
 
   function clearNewOpinionIntention(): NewOpinionIntention {
-    const savedIntention: NewOpinionIntention =
-      structuredClone(newOpinionIntention);
-    newOpinionIntention = {
-      enabled: false,
-      conversationSlugId: "",
-      opinionBody: "",
-    };
-    showIntentionDialog(savedIntention.enabled, "newOpinion");
-    return savedIntention;
+    if (completedUserLogin) {
+      const savedIntention: NewOpinionIntention =
+        structuredClone(newOpinionIntention);
+      newOpinionIntention = {
+        enabled: false,
+        conversationSlugId: "",
+        opinionBody: "",
+      };
+      showIntentionDialog(savedIntention.enabled, "newOpinion");
+      return savedIntention;
+    } else {
+      return {
+        enabled: false,
+        conversationSlugId: "",
+        opinionBody: "",
+      };
+    }
   }
 
   function clearNewConversationIntention(): NewConversationIntention {
-    const savedIntention: NewConversationIntention = newConversationIntention;
-    newConversationIntention = {
-      enabled: false,
-      conversationDraft: structuredClone(emptyConversationDraft),
-    };
-    showIntentionDialog(savedIntention.enabled, "newConversation");
-    return savedIntention;
+    if (completedUserLogin) {
+      const savedIntention: NewConversationIntention = newConversationIntention;
+      newConversationIntention = {
+        enabled: false,
+        conversationDraft: structuredClone(emptyConversationDraft),
+      };
+      showIntentionDialog(savedIntention.enabled, "newConversation");
+      return savedIntention;
+    } else {
+      return {
+        enabled: false,
+        conversationDraft: structuredClone(emptyConversationDraft),
+      };
+    }
   }
 
   function clearOpinionAgreementIntention(): OpinionAgreementIntention {
-    const savedIntention: OpinionAgreementIntention = structuredClone(
-      opinionAgreementIntention
-    );
-    opinionAgreementIntention = {
-      enabled: false,
-      conversationSlugId: "",
-      opinionSlugId: "",
-    };
-    showIntentionDialog(savedIntention.enabled, "agreement");
-    return savedIntention;
+    if (completedUserLogin) {
+      const savedIntention: OpinionAgreementIntention = structuredClone(
+        opinionAgreementIntention
+      );
+      opinionAgreementIntention = {
+        enabled: false,
+        conversationSlugId: "",
+        opinionSlugId: "",
+      };
+      showIntentionDialog(savedIntention.enabled, "agreement");
+      return savedIntention;
+    } else {
+      return {
+        enabled: false,
+        conversationSlugId: "",
+        opinionSlugId: "",
+      };
+    }
   }
 
   function clearVotingIntention(): VotingIntention {
-    const savedIntention: VotingIntention = structuredClone(votingIntention);
-    votingIntention = {
-      enabled: false,
-      conversationSlugId: "",
-    };
-    showIntentionDialog(savedIntention.enabled, "voting");
-    return savedIntention;
+    if (completedUserLogin) {
+      const savedIntention: VotingIntention = structuredClone(votingIntention);
+      votingIntention = {
+        enabled: false,
+        conversationSlugId: "",
+      };
+      showIntentionDialog(savedIntention.enabled, "voting");
+      return savedIntention;
+    } else {
+      return {
+        enabled: false,
+        conversationSlugId: "",
+      };
+    }
   }
 
   function clearReportUserContentIntention(): ReportUserContentIntention {
-    const savedIntention: ReportUserContentIntention = structuredClone(
-      reportUserContentIntention
-    );
-    reportUserContentIntention = {
-      enabled: false,
-      conversationSlugId: "",
-      opinionSlugId: "",
-    };
-    showIntentionDialog(savedIntention.enabled, "reportUserContent");
-    return savedIntention;
+    if (completedUserLogin) {
+      const savedIntention: ReportUserContentIntention = structuredClone(
+        reportUserContentIntention
+      );
+      reportUserContentIntention = {
+        enabled: false,
+        conversationSlugId: "",
+        opinionSlugId: "",
+      };
+      showIntentionDialog(savedIntention.enabled, "reportUserContent");
+      return savedIntention;
+    } else {
+      return {
+        enabled: false,
+        conversationSlugId: "",
+        opinionSlugId: "",
+      };
+    }
   }
 
   return {
