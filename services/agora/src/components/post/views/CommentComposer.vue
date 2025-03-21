@@ -54,15 +54,12 @@
       :ok-callback="onLoginCallback"
       :active-intention="'newOpinion'"
     />
-
-    <LoginResumeIntentionDialog :active-intention="'newOpinion'" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import LoginConfirmationDialog from "src/components/authentication/LoginConfirmationDialog.vue";
-import LoginResumeIntentionDialog from "src/components/authentication/LoginResumeIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";

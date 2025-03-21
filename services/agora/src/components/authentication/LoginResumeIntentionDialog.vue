@@ -7,52 +7,49 @@
       :show-cancel-dialog="false"
       :ok-callback="okCallback"
     >
-      <template #body> {{ message }} </template>
+      <template #body>
+        {{ message }}
+      </template>
     </DialogContainer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import DialogContainer from "./DialogContainer.vue";
-import {
-  PossibleIntentions,
-  useLoginIntentionStore,
-} from "src/stores/loginIntention";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { storeToRefs } from "pinia";
 
 const { showPostLoginIntentionDialog, activeUserIntention } = storeToRefs(
   useLoginIntentionStore()
 );
-const { setActiveUserIntention } = useLoginIntentionStore();
+const { setActiveUserIntention, composePostLoginDialogMessage } =
+  useLoginIntentionStore();
 
-const props = defineProps<{
-  activeIntention: PossibleIntentions;
-}>();
-
-const { composePostLoginDialogMessage } = useLoginIntentionStore();
-
-const message = ref(composePostLoginDialogMessage(props.activeIntention));
+const message = ref("");
 
 const showDialog = ref(false);
 
 onMounted(() => {
-  // Artifical delay to accomadate the CommentSection.vue's route query changes
-  // which forcefully closes the Quasar dialog
-  setTimeout(function () {
-    updateModel();
-  }, 500);
+  checkData();
 });
 
-function updateModel() {
-  if (activeUserIntention.value == props.activeIntention) {
-    if (showPostLoginIntentionDialog.value) {
+watch(showPostLoginIntentionDialog, () => {
+  checkData();
+});
+
+function checkData() {
+  if (showPostLoginIntentionDialog.value == true) {
+    message.value = composePostLoginDialogMessage(activeUserIntention.value);
+
+    setTimeout(function () {
       showDialog.value = true;
-    }
+    }, 500);
   }
 }
 
 function okCallback() {
+  showPostLoginIntentionDialog.value = false;
   showDialog.value = false;
   setActiveUserIntention("none");
 }

@@ -39,6 +39,7 @@ export type PossibleIntentions =
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const router = useRouter();
 
+  // Configured on the 1st dialog's ok callback, cleared on the 2nd dialog's ok callback
   const activeUserIntention = ref<PossibleIntentions>("none");
 
   const showPostLoginIntentionDialog = ref(false);

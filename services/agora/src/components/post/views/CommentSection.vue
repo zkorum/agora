@@ -123,8 +123,6 @@
         "
       />
     </div>
-
-    <LoginResumeIntentionDialog :active-intention="'agreement'" />
   </div>
 </template>
 
@@ -152,7 +150,6 @@ import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import LoginResumeIntentionDialog from "src/components/authentication/LoginResumeIntentionDialog.vue";
 
 defineExpose({
   openModerationHistory,
