@@ -7,7 +7,7 @@ export function useGoBackButtonHandler() {
   const routeStateStore = useRouteStateStore();
 
   async function goBack() {
-    const goBackObject = await routeStateStore.goBack();
+    const goBackObject = routeStateStore.goBack();
     if (goBackObject.useSpecialRoute) {
       const routeObj = router.resolve({
         name: goBackObject.routeItem.name,
