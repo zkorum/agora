@@ -153,20 +153,24 @@ II. Cluster Labels Rules
    3. Tone:
        - Aim for a professional/academic tone that reflects generality and positionality.
        - Use terms that could apply across contexts (e.g., "Pragmatists", "Skeptics").
-   4. Examples:
+   4. Language of communication:
+       - Use the language predominantly used in the conversation (e.g., English, French, etc.).
+   5. Examples:
        - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
        - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
-   5. Generation Process:
-       a) Identify the core stance or intellectual tradition within the cluster.
-       b) Abstract this stance into a general term using agentive suffixes.
-       c) Validate that the label avoids policy specifics and geographic references.
-       d) Validate that the label is either 1 or 2 words.
+   6. Generation Process:
+       a) Identify the language of communication.
+       b) Identify the core stance or intellectual tradition within the cluster.
+       c) Abstract this stance into a general term using agentive suffixes or an equivalent rule if the target language is not English.
+       d) Validate that the label avoids policy specifics and geographic references.
+       e) Validate that the label is either 1 or 2 words.
 
 III. Summaries:
    - Maximum 300 characters
    - Capture key insights objectively
    - Focus on group perspectives and disagreements
    - Maintain a neutral tone
+   - Write in the language predominantly used in the conversation (e.g., English, French, etc.).
 
 IV. Strictly adhere to the input data. Do not invent new clusters or information.
 
@@ -202,6 +206,20 @@ Example Valid Output 2:
   }
 }
 
+Example Valid Output 3:
+{
+  "summary": "Le débat porte sur la répartition de l'immigration entre les régions et les zones urbaines, ainsi que sur les critères de contribution économique pour les visas de regroupement familial.",
+  "clusters": {
+    "0": {
+      "label": "Décentralistes",
+      "summary": "Privilégient des stratégies de répartition de la population plutôt que la concentration urbaine."
+    },
+    "1": {
+      "label": "Méritocrates",
+      "summary": "Soutiennent l'utilisation de critères de contribution économique dans les systèmes migratoires."
+    }
+  }
+}
 
 Example Invalid Output 1:
 { // INVALID: Overall conversation summary not printed
