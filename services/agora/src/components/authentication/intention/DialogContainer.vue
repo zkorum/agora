@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-dialog v-model="showDialog">
+    <q-dialog v-model="showDialog" no-route-dismiss>
       <div class="cardStyle">
         <div class="title">
           {{ title }}

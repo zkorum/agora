@@ -41,10 +41,7 @@ watch(showPostLoginIntentionDialog, () => {
 function checkData() {
   if (showPostLoginIntentionDialog.value == true) {
     message.value = composePostLoginDialogMessage(activeUserIntention.value);
-
-    setTimeout(function () {
-      showDialog.value = true;
-    }, 500);
+    showDialog.value = true;
   }
 }
 
