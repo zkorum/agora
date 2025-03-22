@@ -12,13 +12,7 @@
       <q-form @submit="onSubmit()">
         <TopMenuWrapper>
           <div class="menuFlexGroup">
-            <ZKButton
-              button-type="icon"
-              icon="mdi-close"
-              text-color="color-text-strong"
-              flat
-              @click="router.back()"
-            />
+            <CloseButton />
           </div>
 
           <div class="menuFlexGroup">
@@ -211,6 +205,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
