@@ -177,9 +177,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   ): string {
     switch (intention) {
       case "newOpinion":
-        return "Your opinion draft had been restored.";
+        return "Your written opinion draft had been restored.";
       case "newConversation":
-        return "Your conversation draft had been restored.";
+        return "Your written conversation draft had been restored.";
       case "agreement":
         return "You had been returned to the opinion that you wanted to cast agreement on.";
       case "voting":
@@ -196,9 +196,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   ): string {
     switch (intention) {
       case "newOpinion":
-        return "Your opinion draft will be restored after you are logged in";
+        return "Your written opinion draft will be restored after you are logged in";
       case "newConversation":
-        return "Your conversation draft will be restored after you are logged in";
+        return "Your written conversation draft will be restored after you are logged in";
       case "agreement":
         return "You will be returned to this opinion after you are logged in";
       case "reportUserContent":

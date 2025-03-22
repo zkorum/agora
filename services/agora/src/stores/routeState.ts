@@ -23,7 +23,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
 
   let ignoreNextRouterInsert = false;
 
-  async function goBack(): Promise<GoBackObject> {
+  function goBack(): GoBackObject {
     ignoreNextRouterInsert = true;
 
     if (routingHistoryList.length == 0) {
@@ -41,7 +41,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
     if (lastRouteItem) {
       if (unreturnableRoutes.includes(lastRouteItem.name)) {
         routingHistoryList.pop();
-        return await goBack();
+        return goBack();
       } else {
         routingHistoryList.pop();
         return {
