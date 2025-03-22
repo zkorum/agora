@@ -53,15 +53,22 @@
       </div>
 
       <div>
-        <div
-          v-if="drawerBehavior == 'desktop'"
-          class="bottomSection startConversationButton"
-          @click="requestNewPost()"
-        >
-          <img :src="newConversationButton" />
-        </div>
+        <RouterLink :to="{ name: '/conversation/create/' }">
+          <div
+            v-if="drawerBehavior == 'desktop'"
+            class="bottomSection startConversationButton"
+          >
+            <img :src="newConversationButton" />
+          </div>
+        </RouterLink>
       </div>
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="() => {}"
+      :active-intention="'none'"
+    />
   </div>
 </template>
 
@@ -70,16 +77,13 @@ import { RouteMap, useRoute, useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useDialog } from "src/utils/ui/dialog";
 import UserAvatar from "../account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { useNavigationStore } from "src/stores/navigation";
 import { ref, watch } from "vue";
-import { useCreateNewPost } from "src/utils/component/conversation/newPost";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
-
-const { requestNewPost } = useCreateNewPost();
+import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
@@ -93,10 +97,10 @@ const drawerIconLogo1 =
 const drawerIconLogo2 =
   process.env.VITE_PUBLIC_DIR + "/images/icons/agora-text.svg";
 
-const { showLoginConfirmationDialog } = useDialog();
-
 const router = useRouter();
 const route = useRoute();
+
+const showLoginDialog = ref(false);
 
 interface SettingItem {
   icon: string;
@@ -170,7 +174,7 @@ function initializeMenu() {
 
 async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   if (requireAuth && isAuthenticated.value == false) {
-    showLoginConfirmationDialog();
+    showLoginDialog.value = true;
   } else {
     if (drawerBehavior.value == "mobile") {
       showMobileDrawer.value = false;

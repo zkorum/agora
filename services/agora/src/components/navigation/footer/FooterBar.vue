@@ -36,24 +36,31 @@
         </div>
       </div>
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="() => {}"
+      :active-intention="'none'"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "src/components/notification/NewNotificationIndicator.vue";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useDialog } from "src/utils/ui/dialog";
+import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const dialog = useDialog();
-
 const route = useRoute();
 const router = useRouter();
+
+const showLoginDialog = ref(false);
 
 async function accessHomeFeed() {
   if (route.name == "/") {
@@ -65,7 +72,7 @@ async function accessHomeFeed() {
 
 async function accessNotifications() {
   if (!isAuthenticated.value) {
-    dialog.showLoginConfirmationDialog();
+    showLoginDialog.value = true;
   } else {
     await router.push({ name: "/notification/" });
   }

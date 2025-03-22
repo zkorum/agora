@@ -37,7 +37,6 @@
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
-import { useRouter } from "vue-router";
 import { useBackendAccountApi } from "src/utils/api/account";
 import UsernameChange from "src/components/account/UsernameChange.vue";
 import { ref } from "vue";
@@ -45,13 +44,14 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const { submitUsernameChange } = useBackendAccountApi();
 
 const isValidUsername = ref(true);
 const userName = ref("");
 
-const router = useRouter();
+const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -61,7 +61,7 @@ async function goToNextRoute() {
     profileData.value.userName
   );
   if (isSuccessful) {
-    await router.push({ name: "/" });
+    await routeUserAfterLogin();
   }
 }
 </script>

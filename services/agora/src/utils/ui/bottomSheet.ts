@@ -6,13 +6,10 @@ import { usePostStore } from "src/stores/post";
 import { useNotify } from "./notify";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
-import { useDialog } from "./dialog";
 import { useAuthenticationStore } from "src/stores/authentication";
 
 export const useBottomSheet = () => {
   const quasar = useQuasar();
-
-  const { showLoginConfirmationDialog } = useDialog();
 
   const { showNotifyMessage } = useNotify();
 
@@ -94,11 +91,7 @@ export const useBottomSheet = () => {
       .onOk(async (action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
-          if (isAuthenticated.value) {
-            reportCommentCallback();
-          } else {
-            showLoginConfirmationDialog();
-          }
+          reportCommentCallback();
         } else if (action.id == "delete") {
           deleteCommentCallback();
         } else if (action.id == "moderate") {
@@ -180,11 +173,7 @@ export const useBottomSheet = () => {
       })
       .onOk(async (action: QuasarAction) => {
         if (action.id == "report") {
-          if (isAuthenticated.value) {
-            reportPostCallback();
-          } else {
-            showLoginConfirmationDialog();
-          }
+          reportPostCallback();
         } else if (action.id == "delete") {
           const response = await deletePostBySlugId(postSlugId);
           if (response) {

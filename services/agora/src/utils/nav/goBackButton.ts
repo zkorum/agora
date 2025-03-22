@@ -7,8 +7,9 @@ export function useGoBackButtonHandler() {
   const routeStateStore = useRouteStateStore();
 
   async function goBack() {
-    const goBackObject = await routeStateStore.goBack();
+    const goBackObject = routeStateStore.goBack();
     if (goBackObject.useSpecialRoute) {
+      console.log(goBackObject.routeItem.name);
       const routeObj = router.resolve({
         name: goBackObject.routeItem.name,
         params: goBackObject.routeItem.params,
@@ -16,6 +17,7 @@ export function useGoBackButtonHandler() {
       });
       await router.push(routeObj);
     } else {
+      console.log("???");
       router.go(-1);
     }
   }

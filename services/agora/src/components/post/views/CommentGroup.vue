@@ -30,9 +30,8 @@
         :id="commentItem.opinionSlugId"
         :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
         padding="0rem"
+        class="commentItemBackground"
         :class="{
-          commentItemBackground:
-            initialCommentSlugId != commentItem.opinionSlugId,
           highlightCommentItem:
             initialCommentSlugId == commentItem.opinionSlugId,
         }"
@@ -108,6 +107,8 @@ function mutedComment() {
 }
 
 .highlightCommentItem {
-  background-color: #d1d5db;
+  border-style: solid;
+  border-color: $primary;
+  border-width: 2px;
 }
 </style>

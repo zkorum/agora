@@ -41,12 +41,15 @@
           <SideDrawer />
         </q-scroll-area>
       </q-drawer>
+
+      <PostLoginIntentionDialog />
     </q-layout>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import PostLoginIntentionDialog from "src/components/authentication/intention/PostLoginIntentionDialog.vue";
 import FooterBar from "src/components/navigation/footer/FooterBar.vue";
 import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";

@@ -59,7 +59,7 @@
           </ZKButton>
 
           <ZKButton
-            v-if="currentDisplayMode == DisplayModes.Results && isAuthenticated"
+            v-if="currentDisplayMode == DisplayModes.Results"
             button-type="standardButton"
             @click.stop.prevent="showVoteInterface()"
           >
@@ -75,6 +75,12 @@
         </div>
       </div>
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'voting'"
+    />
   </div>
 </template>
 
@@ -88,6 +94,8 @@ import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -104,13 +112,13 @@ const backendPollApi = useBackendPollApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { loadPostData } = usePostStore();
 
+const { createVotingIntention } = useLoginIntentionStore();
+
 enum DisplayModes {
   Vote,
   Results,
 }
-const currentDisplayMode = ref<DisplayModes>(
-  isAuthenticated.value ? DisplayModes.Vote : DisplayModes.Results
-);
+const currentDisplayMode = ref<DisplayModes>(DisplayModes.Vote);
 
 const userVoteStatus = ref<UserInteraction>({
   hasVoted: false,
@@ -119,6 +127,16 @@ const userVoteStatus = ref<UserInteraction>({
 
 const totalVoteCount = ref(0);
 initializeTotalVoteCount();
+
+const showLoginDialog = ref(false);
+
+watch(currentDisplayMode, () => {
+  if (currentDisplayMode.value == DisplayModes.Results) {
+    showResultsInterface();
+  } else {
+    showVoteInterface();
+  }
+});
 
 onBeforeMount(async () => {
   await fetchUserPollResponseData(false);
@@ -186,24 +204,24 @@ function showVoteInterface() {
 }
 
 async function voteCasted(selectedIndex: number) {
-  const response = await backendPollApi.submitPollResponse(
-    selectedIndex,
-    props.postSlugId
-  );
-  if (response == true) {
-    await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
-    incrementLocalPollIndex(selectedIndex);
-    totalVoteCount.value += 1;
+  if (isAuthenticated.value) {
+    const response = await backendPollApi.submitPollResponse(
+      selectedIndex,
+      props.postSlugId
+    );
+    if (response == true) {
+      await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
+      incrementLocalPollIndex(selectedIndex);
+      totalVoteCount.value += 1;
+    }
+  } else {
+    showLoginDialog.value = true;
   }
 }
 
-watch(currentDisplayMode, () => {
-  if (currentDisplayMode.value == DisplayModes.Results) {
-    showResultsInterface();
-  } else {
-    showVoteInterface();
-  }
-});
+function onLoginCallback() {
+  createVotingIntention(props.postSlugId);
+}
 </script>
 
 <style scoped lang="scss">

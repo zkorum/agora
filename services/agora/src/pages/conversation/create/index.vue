@@ -12,13 +12,7 @@
       <q-form @submit="onSubmit()">
         <TopMenuWrapper>
           <div class="menuFlexGroup">
-            <ZKButton
-              button-type="icon"
-              icon="mdi-close"
-              text-color="color-text-strong"
-              flat
-              @click="router.back()"
-            />
+            <CloseButton />
           </div>
 
           <div class="menuFlexGroup">
@@ -167,47 +161,33 @@
         <div ref="endOfForm"></div>
       </q-form>
 
-      <q-dialog v-model="showExitDialog">
-        <ZKCard padding="1rem" :style="{ backgroundColor: 'white' }">
-          <div class="exitDialogStyle">
-            <div class="dialogTitle">Discard this post?</div>
-
-            <div>Your drafted post will not be saved.</div>
-
-            <div class="dialogButtons">
-              <ZKButton
-                v-close-popup
-                button-type="largeButton"
-                flat
-                label="Cancel"
-              />
-              <ZKButton
-                v-close-popup
-                button-type="largeButton"
-                label="Discard"
-                text-color="primary"
-                @click="leaveRoute()"
-              />
-            </div>
-          </div>
-        </ZKCard>
-      </q-dialog>
+      <ExitRoutePrompt
+        v-model="showExitDialog"
+        title="Discard this conversation?"
+        description="Your drafted conversation will not be saved"
+        @leave-foute="leaveRoute()"
+      />
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'newConversation'"
+    />
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref } from "vue";
-import {
-  onBeforeRouteLeave,
-  type RouteLocationNormalized,
-  useRouter,
-} from "vue-router";
+import { ref } from "vue";
+import { type RouteLocationNormalized, useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
+import {
+  emptyConversationDraft,
+  useNewPostDraftsStore,
+} from "src/utils/component/conversation/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
@@ -219,6 +199,15 @@ import {
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
+import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
+
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -232,36 +221,44 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const showExitDialog = ref(false);
-
 const { postDraft, isPostEdited } = useNewPostDraftsStore();
-
-let grantedRouteLeave = false;
+const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
+  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
 
-let savedToRoute: RouteLocationNormalized = {
-  matched: [],
-  fullPath: "",
-  query: {},
-  hash: "",
-  name: "/",
-  path: "",
-  meta: {},
-  params: {},
-  redirectedFrom: undefined,
+const showLoginDialog = ref(false);
+
+const { createNewConversationIntention, clearNewConversationIntention } =
+  useLoginIntentionStore();
+const newConversationIntention = clearNewConversationIntention();
+postDraft.value = {
+  enablePolling: newConversationIntention.conversationDraft.enablePolling,
+  pollingOptionList:
+    newConversationIntention.conversationDraft.pollingOptionList,
+  postBody: newConversationIntention.conversationDraft.postBody,
+  postTitle: newConversationIntention.conversationDraft.postTitle,
 };
 
-window.onbeforeunload = function () {
-  if (isPostEdited()) {
-    return "Changes that you made may not be saved.";
+function onLoginCallback() {
+  grantedRouteLeave.value = true;
+  createNewConversationIntention(postDraft.value);
+}
+
+function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+  if (isPostEdited() && !grantedRouteLeave.value) {
+    if (isAuthenticated.value) {
+      savedToRoute.value = to;
+      showExitDialog.value = true;
+      return false;
+    } else {
+      return true;
+    }
+  } else {
+    return true;
   }
-};
-
-onUnmounted(() => {
-  window.onbeforeunload = () => {};
-});
+}
 
 function checkWordCount() {
   bodyWordCount.value = validateHtmlStringCharacterCount(
@@ -276,6 +273,15 @@ function checkWordCount() {
   }
 }
 
+function routeLeaveCallback() {
+  if (isPostEdited()) {
+    console.log("post edited...");
+    return "Changes that you made may not be saved.";
+  } else {
+    console.log("???");
+  }
+}
+
 async function togglePolling() {
   postDraft.value.enablePolling = !postDraft.value.enablePolling;
 
@@ -287,6 +293,9 @@ async function togglePolling() {
       });
     }, 100);
   } else {
+    postDraft.value.pollingOptionList = structuredClone(
+      emptyConversationDraft
+    ).pollingOptionList;
     setTimeout(function () {
       endOfFormRef.value?.scrollIntoView({
         behavior: "smooth",
@@ -305,46 +314,35 @@ function removePollOption(index: number) {
 }
 
 async function onSubmit() {
-  quasar.loading.show();
-
-  grantedRouteLeave = true;
-
-  const response = await createNewPost(
-    postDraft.value.postTitle,
-    postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
-    postDraft.value.enablePolling
-      ? postDraft.value.pollingOptionList
-      : undefined
-  );
-
-  if (response != null) {
-    quasar.loading.hide();
-
-    await loadPostData(false);
-
-    await router.push({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.conversationSlugId },
-    });
+  if (!isAuthenticated.value) {
+    showLoginDialog.value = true;
   } else {
-    quasar.loading.hide();
+    quasar.loading.show();
+
+    grantedRouteLeave.value = true;
+
+    const response = await createNewPost(
+      postDraft.value.postTitle,
+      postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
+      postDraft.value.enablePolling
+        ? postDraft.value.pollingOptionList
+        : undefined
+    );
+
+    if (response != null) {
+      quasar.loading.hide();
+
+      await loadPostData(false);
+
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.conversationSlugId },
+      });
+    } else {
+      quasar.loading.hide();
+    }
   }
 }
-
-async function leaveRoute() {
-  grantedRouteLeave = true;
-  await router.push(savedToRoute);
-}
-
-onBeforeRouteLeave((to) => {
-  if (isPostEdited() && !grantedRouteLeave) {
-    savedToRoute = to;
-    showExitDialog.value = true;
-    return false;
-  } else {
-    return true;
-  }
-});
 </script>
 
 <style scoped lang="scss">
@@ -370,22 +368,6 @@ onBeforeRouteLeave((to) => {
   align-items: center;
   justify-content: center;
   width: 100%;
-}
-
-.exitDialogStyle {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.dialogTitle {
-  font-size: 1.4rem;
-  font-weight: bold;
-}
-
-.dialogButtons {
-  display: flex;
-  justify-content: space-around;
 }
 
 .menuFlexGroup {

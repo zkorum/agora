@@ -95,6 +95,7 @@ import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const $q = useQuasar();
 let platform: "mobile" | "web" = "web";
@@ -116,6 +117,8 @@ const { requestCode, submitCode } = useBackendPhoneVerification();
 const { onboardingMode } = onboardingFlowStore();
 
 const { showNotifyMessage } = useNotify();
+
+const { routeUserAfterLogin } = useLoginIntentionStore();
 
 onMounted(async () => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
@@ -141,7 +144,7 @@ async function nextButtonClicked() {
       showNotifyMessage("Verification successful 🎉");
       await userLogin();
       if (onboardingMode == "LOGIN") {
-        await router.push({ name: "/" });
+        await routeUserAfterLogin();
       } else {
         await router.push({ name: "/onboarding/step4-username/" });
       }
@@ -162,7 +165,7 @@ async function nextButtonClicked() {
           showNotifyMessage("Verification successful 🎉");
           await userLogin();
           if (onboardingMode == "LOGIN") {
-            await router.push({ name: "/" });
+            await routeUserAfterLogin();
           } else {
             await router.push({ name: "/onboarding/step4-username/" });
           }
@@ -199,7 +202,7 @@ async function requestCodeClicked(
           showNotifyMessage("Verification successful 🎉");
           await userLogin();
           if (onboardingMode == "LOGIN") {
-            await router.push({ name: "/" });
+            await routeUserAfterLogin();
           } else {
             await router.push({ name: "/onboarding/step4-username/" });
           }
