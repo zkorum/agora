@@ -191,35 +191,35 @@ Example Valid Output 1:
   }
 }
 
-Example Valid Output 2:
-{
-  "summary": "Debate focuses on regional versus urban immigration allocations and economic contribution metrics for family reunification visas.",
-  "clusters": {
-    "0": {
-      "label": "Decentralists",
-      "summary": "Favor distributed population strategies over urban concentration."
-    },
-    "1": {
-      "label": "Meritocrats",
-      "summary": "Support economic contribution metrics in migration systems."
+Use the language predominantly used in the conversation, as shown in the following examples:
+    - Example Valid Output 2 if and only if the language predominantly used in the conversation is English:
+    {
+      "summary": "Debate focuses on regional versus urban immigration allocations and economic contribution metrics for family reunification visas.",
+      "clusters": {
+        "0": {
+          "label": "Decentralists",
+          "summary": "Favor distributed population strategies over urban concentration."
+        },
+        "1": {
+          "label": "Meritocrats",
+          "summary": "Support economic contribution metrics in migration systems."
+        }
+      }
     }
-  }
-}
-
-Example Valid Output 3:
-{
-  "summary": "Le débat porte sur la répartition de l'immigration entre les régions et les zones urbaines, ainsi que sur les critères de contribution économique pour les visas de regroupement familial.",
-  "clusters": {
-    "0": {
-      "label": "Décentralistes",
-      "summary": "Privilégient des stratégies de répartition de la population plutôt que la concentration urbaine."
-    },
-    "1": {
-      "label": "Méritocrates",
-      "summary": "Soutiennent l'utilisation de critères de contribution économique dans les systèmes migratoires."
+    - Example Valid Output 3 if and only if the language predominantly used in the conversation is French:
+    {
+      "summary": "Le débat porte sur la répartition de l'immigration entre les régions et les zones urbaines, ainsi que sur les critères de contribution économique pour les visas de regroupement familial.",
+      "clusters": {
+        "0": {
+          "label": "Décentralistes",
+          "summary": "Privilégient des stratégies de répartition de la population plutôt que la concentration urbaine."
+        },
+        "1": {
+          "label": "Méritocrates",
+          "summary": "Soutiennent l'utilisation de critères de contribution économique dans les systèmes migratoires."
+        }
+      }
     }
-  }
-}
 
 Example Invalid Output 1:
 { // INVALID: Overall conversation summary not printed
