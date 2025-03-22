@@ -1,66 +1,8 @@
-# Back
+# Sql-script
 
-## Installation
+This is used for _data_ migration scripts in production.
 
-We need `jq` for the custom renaming `scripts/`.
-
-```bash
-sudo apt install jq
-pnpm install
-```
-
-## Running the app
-
-```bash
-# development
-pnpm run start:dev
-
-# production mode
-pnpm run build && pnpm run start
-```
-
-## Test
-
-```bash
-# unit tests
-pnpm run test
-```
-
-## Database
-
-We use drizzle as ORM, drizzle-kit to generate migration files from drizzle schema, and flyway for actually migrating the PostgreSQL database.
-
-Start by using `env.example` and `flyway.conf.example` as example to configure conf files `.env` and `flyway.conf`.
-
-Run a local PostgreSQL instance:
-
-```bash
-docker compose up -d
-```
-
-Locally generate new migration files (`.sql`) according to changes in source code:
-
-```bash
-pnpm run db:generate
-```
-
-Warning: do not use `pnpm drizzle-it generate:pg` directly! We use Flyway to migrate the DB, but Flyway requires special naming convention for the `.sql` migration files, so this generate step rename the files that drizzle generates. There is an [opened issue](https://github.com/drizzle-team/drizzle-orm/issues/852#issuecomment-1646238813) in Drizzle repo to enable customizing filenames directly in drizzle-kit config.
-
-Potentially modify generated `.sql` files before actually migrating.
-
-To delete `.sql` files you don't like use:
-
-```bash
-pnpm run db:drop
-```
-
-You can also use `pnpm drizzle-kit --help` for more commands.
-
-Migrate the PostgreSQL schema according to `flyway.conf` config:
-
-```bash
-pnpm run db:migrate
-```
+Largely NOT up to date.
 
 ## License
 

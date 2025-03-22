@@ -14,6 +14,8 @@ Remember to first load the environment files in `.env` file by running `. ./.env
 There is an example file `env.example` which can be used as the reference.
 
 ```bash
+cp env.example .env
+# modify .env
 . ./.env
 quasar dev
 ```

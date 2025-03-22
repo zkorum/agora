@@ -13,11 +13,27 @@ pnpm install
 
 ```bash
 # development
-pnpm run start:dev
+pnpm start:dev
 
 # production mode
-pnpm run build && pnpm run start
+pnpm build && pnpm start
 ```
+
+## Polis Integration
+
+You must have https://github.com/zkorum/polis-wl running locally. For that, run the Polis database, and deploy the schema here: https://github.com/zkorum/polis-wl/tree/main/database and then configure and run the containers there: https://github.com/zkorum/polis-wl/tree/main/deploy/docker
+
+You can also disable the Polis functionality altogether by not setting `POLIS_BASE_URL` at all in `.env` file.
+
+## LLM Integration
+
+LLM Integration cannot be tested locally by design, since it relies on an external cloud service and running a model locally is expensive.
+
+To visualize how it works, checkout the staging environment.
+
+## Nostr Integration
+
+If `NOSTR_PROOF_CHANNEL_EVENT_ID` is undefined, then the proofs won't be broadcast to Nostr.
 
 ## Test
 

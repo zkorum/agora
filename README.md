@@ -21,7 +21,7 @@ Install:
 
 All the components run in watch mode.
 
-With `gnome-terminal`, you can use the following script to automatically open a terminal with one tab per service and a working tab:
+With `gnome-terminal`, you can use the following script to automatically open a terminal with one tab per service and a working tab (make sure you edit `BASE_DIR` in the script before running it):
 
 ```
 ./run_all_in_gnome_terminal_tabs.sh
