@@ -19,6 +19,10 @@ pnpm start:dev
 pnpm build && pnpm start
 ```
 
+## Moderation
+
+To grant a user moderator status, set the `is_moderator` column to true in the `user` table for the selected user.
+
 ## Polis Integration
 
 You must have https://github.com/zkorum/polis-wl running locally. For that, run the Polis database, and deploy the schema here: https://github.com/zkorum/polis-wl/tree/main/database and then configure and run the containers there: https://github.com/zkorum/polis-wl/tree/main/deploy/docker
