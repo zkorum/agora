@@ -140,6 +140,14 @@ I. Output must follow this general skeleton format:
 
 Do not print this skeleton format in your output.
 
+II. Language Detection Rule (High Priority):
+1. Before generating the output, detect the primary language used in the input conversation. The entire output must be written in this language, including summary, labels, and all text in the JSON. Do not default to English unless the conversation is in English.
+2 Step-by-Step Language Handling:
+    - Identify the language of the conversation (e.g., French, Spanish, German).
+    - Generate all text in that language.
+    - If multiple languages are present, choose the one most frequently used.
+    - Strictly do not mix languages in the output.
+
 II. Cluster Labels Rules
     1. Length and Format:
         - Must be exactly 1 or 2 words.
