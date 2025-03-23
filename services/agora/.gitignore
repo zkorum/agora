@@ -48,3 +48,5 @@ pepk.jar
 serve.json
 
 typed-router.d.ts
+
+*.temporary.compiled*
