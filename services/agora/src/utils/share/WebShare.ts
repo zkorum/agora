@@ -22,19 +22,11 @@ export function useWebShare() {
 
   async function share(title: string, url: string) {
     if (isSupportedSharePlatform()) {
-      if (Platform.is.ios) {
-        await webShare.share({
-          title: title,
-          text: "",
-          url: url,
-        });
-      } else {
-        await webShare.share({
-          title: title,
-          text: url,
-          url: url,
-        });
-      }
+      await webShare.share({
+        title: title,
+        text: "",
+        url: url,
+      });
     } else {
       if (clipBoard.isSupported) {
         await clipBoard.copy(url);
