@@ -44,6 +44,12 @@
       @close="showReportDialog = false"
     />
   </q-dialog>
+
+  <PreLoginIntentionDialog
+    v-model="showLoginDialog"
+    :ok-callback="() => onLoginConfirmationOk()"
+    :active-intention="'reportUserContent'"
+  />
 </template>
 
 <script setup lang="ts">
@@ -56,6 +62,10 @@ import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
 import UserIdentity from "./UserIdentity.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const emit = defineEmits(["openModerationHistory"]);
 
@@ -72,13 +82,27 @@ const route = useRoute();
 
 const { showPostOptionSelector } = useBottomSheet();
 
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = usePostStore();
 
 const showReportDialog = ref(false);
 
+const showLoginDialog = ref(false);
+
+const { createReportUserContentIntention } = useLoginIntentionStore();
+
+function onLoginConfirmationOk() {
+  createReportUserContentIntention(props.postSlugId, "");
+}
+
 function reportContentCallback() {
-  showReportDialog.value = true;
+  if (isAuthenticated.value) {
+    showReportDialog.value = true;
+  } else {
+    showLoginDialog.value = true;
+  }
 }
 
 async function openUserReportsCallback() {

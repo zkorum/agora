@@ -153,9 +153,7 @@
           </div>
         </ZKHoverEffect>
 
-        <FloatingBottomContainer
-          v-if="!compactMode && isAuthenticated && !isLocked"
-        >
+        <FloatingBottomContainer v-if="!compactMode && !isLocked">
           <CommentComposer
             :show-controls="focusCommentElement"
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
@@ -184,7 +182,6 @@ import { useRoute, useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
 import type { ExtendedConversation } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
 import ZKCard from "../ui-library/ZKCard.vue";
 import PostLockedMessage from "./views/PostLockedMessage.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
@@ -198,8 +195,6 @@ const props = defineProps<{
   compactMode: boolean;
   skeletonMode: boolean;
 }>();
-
-const { isAuthenticated } = useAuthenticationStore();
 
 const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 

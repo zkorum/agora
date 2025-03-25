@@ -2,8 +2,7 @@
   <div>
     <div class="container borderStyle">
       <ZKEditor
-        :key="resetKey"
-        v-model="commentText"
+        v-model="opinionBody"
         placeholder="Add your own opinion"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :focus-editor="showControls"
@@ -25,15 +24,13 @@
 
         <q-separator vertical inset />
 
-        <div>
-          <ZKButton
-            button-type="largeButton"
-            label="Cancel"
-            color="white"
-            text-color="primary"
-            @click="cancelClicked()"
-          />
-        </div>
+        <ZKButton
+          button-type="largeButton"
+          label="Cancel"
+          color="white"
+          text-color="primary"
+          @click="cancelClicked()"
+        />
 
         <ZKButton
           button-type="largeButton"
@@ -44,49 +41,80 @@
         />
       </div>
     </div>
+
+    <ExitRoutePrompt
+      v-model="showExitDialog"
+      title="Discard this opinion?"
+      description="Your drafted opinion will not be saved"
+      @leave-foute="leaveRoute()"
+    />
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'newOpinion'"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendCommentApi } from "src/utils/api/comment";
-import { computed, ref, watch } from "vue";
-
-const props = defineProps<{
-  showControls: boolean;
-  postSlugId: string;
-}>();
-
-const { createNewComment } = useBackendCommentApi();
-
-const innerFocus = ref(false);
-
-const characterProgress = computed(() => {
-  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
-});
-
-const commentText = ref("");
-const characterCount = ref(0);
-const resetKey = ref(0);
-
-/*
-const emit = defineEmits({
-  cancelClicked: null,
-  submittedComment: null,
-  editorFocused: null,
-});
-*/
+import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { computed, onMounted, ref, watch } from "vue";
+import { RouteLocationNormalized } from "vue-router";
 
 const emit = defineEmits<{
   (e: "cancelClicked"): void;
   (e: "editorFocused"): void;
   (e: "submittedComment", conversationSlugId: string): void;
 }>();
+
+const props = defineProps<{
+  showControls: boolean;
+  postSlugId: string;
+}>();
+
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
+const { createNewOpinionIntention, clearNewOpinionIntention } =
+  useLoginIntentionStore();
+
+const { createNewComment } = useBackendCommentApi();
+
+const characterCount = ref(0);
+
+const innerFocus = ref(false);
+
+const newOpinionIntention = clearNewOpinionIntention();
+if (newOpinionIntention.enabled) {
+  editorFocused();
+}
+
+const opinionBody = ref(newOpinionIntention.opinionBody);
+
+const showLoginDialog = ref(false);
+
+const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
+  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+
+const characterProgress = computed(() => {
+  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
+});
+
+onMounted(() => {
+  checkWordCount();
+});
 
 watch(
   () => props.showControls,
@@ -99,6 +127,31 @@ watch(
   }
 );
 
+function onLoginCallback() {
+  grantedRouteLeave.value = true;
+  createNewOpinionIntention(props.postSlugId, opinionBody.value);
+}
+
+function routeLeaveCallback() {
+  if (characterCount.value > 0) {
+    return "Changes that you made may not be saved.";
+  }
+}
+
+function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+  if (characterCount.value > 0 && !grantedRouteLeave.value) {
+    if (isAuthenticated.value) {
+      savedToRoute.value = to;
+      showExitDialog.value = true;
+      return false;
+    } else {
+      return true;
+    }
+  } else {
+    return true;
+  }
+}
+
 function editorFocused() {
   innerFocus.value = true;
   emit("editorFocused");
@@ -106,7 +159,7 @@ function editorFocused() {
 
 function checkWordCount() {
   characterCount.value = validateHtmlStringCharacterCount(
-    commentText.value,
+    opinionBody.value,
     "opinion"
   ).characterCount;
 }
@@ -114,17 +167,24 @@ function checkWordCount() {
 function cancelClicked() {
   emit("cancelClicked");
   innerFocus.value = false;
-  resetKey.value = resetKey.value + 1;
+  opinionBody.value = "";
   characterCount.value = 0;
 }
 
 async function submitPostClicked() {
-  const response = await createNewComment(commentText.value, props.postSlugId);
-  if (response?.success) {
-    emit("submittedComment", response.opinionSlugId);
-    innerFocus.value = false;
-    resetKey.value = resetKey.value + 1;
-    characterCount.value = 0;
+  if (isAuthenticated.value) {
+    const response = await createNewComment(
+      opinionBody.value,
+      props.postSlugId
+    );
+    if (response?.success) {
+      emit("submittedComment", response.opinionSlugId);
+      innerFocus.value = false;
+      opinionBody.value = "";
+      characterCount.value = 0;
+    }
+  } else {
+    showLoginDialog.value = true;
   }
 }
 </script>

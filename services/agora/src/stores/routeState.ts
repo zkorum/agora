@@ -3,6 +3,11 @@ import { LocationQuery, RouteMap, RouteMapGeneric } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
 export const useRouteStateStore = defineStore("routeState", () => {
+  const returnToHomeRoutes: (keyof RouteNamedMap)[] = [
+    "/onboarding/step3-phone-2/",
+    "/onboarding/step3-passport/",
+    "/onboarding/step4-username/",
+  ];
   const unreturnableRoutes: (keyof RouteNamedMap)[] = ["/conversation/create/"];
   type GoBackObject =
     | {
@@ -23,7 +28,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
 
   let ignoreNextRouterInsert = false;
 
-  async function goBack(): Promise<GoBackObject> {
+  function goBack(): GoBackObject {
     ignoreNextRouterInsert = true;
 
     if (routingHistoryList.length == 0) {
@@ -41,7 +46,16 @@ export const useRouteStateStore = defineStore("routeState", () => {
     if (lastRouteItem) {
       if (unreturnableRoutes.includes(lastRouteItem.name)) {
         routingHistoryList.pop();
-        return await goBack();
+        return goBack();
+      } else if (returnToHomeRoutes.includes(lastRouteItem.name)) {
+        return {
+          useSpecialRoute: true,
+          routeItem: {
+            name: "/",
+            params: {},
+            query: {},
+          },
+        };
       } else {
         routingHistoryList.pop();
         return {
