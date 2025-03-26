@@ -188,7 +188,7 @@ import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import {
   emptyConversationDraft,
   useNewPostDraftsStore,
-} from "src/utils/component/conversation/newPostDrafts";
+} from "src/stores/newPostDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
@@ -222,7 +222,8 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const { postDraft, isPostEdited } = useNewPostDraftsStore();
+const { isPostEdited } = useNewPostDraftsStore();
+const { postDraft } = storeToRefs(useNewPostDraftsStore());
 const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
   useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 

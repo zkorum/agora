@@ -1,4 +1,5 @@
 import { useStorage } from "@vueuse/core";
+import { defineStore } from "pinia";
 
 export interface NewConversationDraft {
   postTitle: string;
@@ -14,7 +15,7 @@ export const emptyConversationDraft: NewConversationDraft = {
   pollingOptionList: ["", ""],
 };
 
-export const useNewPostDraftsStore = () => {
+export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   const postDraft = useStorage("postDraft", emptyConversationDraft);
 
   function isPostEdited() {
@@ -33,4 +34,4 @@ export const useNewPostDraftsStore = () => {
   }
 
   return { postDraft, isPostEdited };
-};
+});
