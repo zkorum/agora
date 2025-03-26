@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { useStorage } from "@vueuse/core";
 
 export interface NewConversationDraft {
   postTitle: string;
@@ -15,9 +15,8 @@ export const emptyConversationDraft: NewConversationDraft = {
 };
 
 export const useNewPostDraftsStore = () => {
-  const postDraft = ref<NewConversationDraft>(
-    structuredClone(emptyConversationDraft)
-  );
+  const postDraft = useStorage("postDraft", emptyConversationDraft);
+
   function isPostEdited() {
     if (
       emptyConversationDraft.postTitle === postDraft.value.postTitle &&

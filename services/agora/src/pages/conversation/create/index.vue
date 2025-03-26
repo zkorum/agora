@@ -163,9 +163,10 @@
 
       <ExitRoutePrompt
         v-model="showExitDialog"
-        title="Discard this conversation?"
-        description="Your drafted conversation will not be saved"
-        @leave-foute="leaveRoute()"
+        title="Save this conversation as a draft?"
+        description="Your drafted conversation will be here when you return."
+        @save-draft="saveDraft()"
+        @no-save-draft="noSaveDraft()"
       />
     </div>
 
@@ -232,18 +233,20 @@ const showLoginDialog = ref(false);
 
 const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
-const newConversationIntention = clearNewConversationIntention();
-postDraft.value = {
-  enablePolling: newConversationIntention.conversationDraft.enablePolling,
-  pollingOptionList:
-    newConversationIntention.conversationDraft.pollingOptionList,
-  postBody: newConversationIntention.conversationDraft.postBody,
-  postTitle: newConversationIntention.conversationDraft.postTitle,
-};
+clearNewConversationIntention();
+
+async function saveDraft() {
+  await leaveRoute(() => {});
+}
+
+async function noSaveDraft() {
+  postDraft.value = emptyConversationDraft;
+  await leaveRoute(() => {});
+}
 
 function onLoginCallback() {
   grantedRouteLeave.value = true;
-  createNewConversationIntention(postDraft.value);
+  createNewConversationIntention();
 }
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
@@ -253,7 +256,8 @@ function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
       showExitDialog.value = true;
       return false;
     } else {
-      return true;
+      showExitDialog.value = true;
+      return false;
     }
   } else {
     return true;

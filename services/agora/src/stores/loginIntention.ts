@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import { NewConversationDraft } from "src/utils/component/conversation/newPostDrafts";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -16,7 +15,6 @@ interface OpinionAgreementIntention {
 
 interface NewConversationIntention {
   enabled: boolean;
-  conversationDraft: NewConversationDraft;
 }
 
 interface NewOpinionIntention {
@@ -45,7 +43,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   // Configured on the 1st dialog's ok callback, cleared on the 2nd dialog's ok callback
   const activeUserIntention = ref<PossibleIntentions>("none");
 
-  const showPostLoginIntentionDialog = ref(false);
   let completedUserLogin = false;
 
   let votingIntention: VotingIntention = {
@@ -61,12 +58,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   let newConversationIntention: NewConversationIntention = {
     enabled: false,
-    conversationDraft: {
-      enablePolling: false,
-      pollingOptionList: ["", ""],
-      postBody: "",
-      postTitle: "",
-    },
   };
 
   let newOpinionIntention: NewOpinionIntention = {
@@ -96,12 +87,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     };
   }
 
-  function createNewConversationIntention(
-    conversationDraft: NewConversationDraft
-  ) {
+  function createNewConversationIntention() {
     newConversationIntention = {
       enabled: true,
-      conversationDraft: conversationDraft,
     };
   }
 
@@ -177,15 +165,15 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   ): string {
     switch (intention) {
       case "newOpinion":
-        return "Your written opinion draft will be restored after you are logged in";
+        return "Your written opinion draft will be restored when you return.";
       case "newConversation":
-        return "Your written conversation draft will be restored after you are logged in";
+        return "Your written conversation draft will be restored when you return.";
       case "agreement":
-        return "You will be returned to this opinion after you are logged in";
+        return "You will be returned to this opinion when you return.";
       case "reportUserContent":
-        return "A user account is required to report user content";
+        return "A user account is required to report user content.";
       case "voting":
-        return "You will be returned to this conversation after you are logged in";
+        return "You will be returned to this conversation when you return.";
       default:
         return "";
     }
@@ -193,7 +181,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function showIntentionDialog(show: boolean, intention: PossibleIntentions) {
     if (show && activeUserIntention.value == intention) {
-      showPostLoginIntentionDialog.value = true;
       completedUserLogin = false;
     }
   }
@@ -218,14 +205,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     if (completedUserLogin) {
       const savedIntention: NewConversationIntention = {
         enabled: newConversationIntention.enabled,
-        conversationDraft: {
-          enablePolling:
-            newConversationIntention.conversationDraft.enablePolling,
-          pollingOptionList:
-            newConversationIntention.conversationDraft.pollingOptionList,
-          postBody: newConversationIntention.conversationDraft.postBody,
-          postTitle: newConversationIntention.conversationDraft.postTitle,
-        },
       };
       newConversationIntention.enabled = false;
       showIntentionDialog(savedIntention.enabled, "newConversation");
@@ -233,12 +212,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     } else {
       return {
         enabled: false,
-        conversationDraft: {
-          enablePolling: false,
-          pollingOptionList: ["", ""],
-          postBody: "",
-          postTitle: "",
-        },
       };
     }
   }

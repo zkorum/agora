@@ -38,8 +38,9 @@ export function useRouteGuard(
     return onBeforeRouteLeaveCallback(to);
   });
 
-  async function leaveRoute() {
+  async function leaveRoute(beforeLeaveCallback: () => void) {
     grantedRouteLeave.value = true;
+    beforeLeaveCallback();
     await router.push(savedToRoute.value);
   }
 

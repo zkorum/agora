@@ -46,7 +46,7 @@
       v-model="showExitDialog"
       title="Discard this opinion?"
       description="Your drafted opinion will not be saved"
-      @leave-foute="leaveRoute()"
+      @save-draft="leaveRoute(() => {})"
     />
 
     <PreLoginIntentionDialog
