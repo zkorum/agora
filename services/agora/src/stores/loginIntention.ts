@@ -172,25 +172,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     }
   }
 
-  function composePostLoginDialogMessage(
-    intention: PossibleIntentions
-  ): string {
-    switch (intention) {
-      case "newOpinion":
-        return "Your written opinion draft had been restored.";
-      case "newConversation":
-        return "Your written conversation draft had been restored.";
-      case "agreement":
-        return "You had been returned to the opinion that you wanted to cast agreement on.";
-      case "voting":
-        return "You had been returned to the conversation that you wanted to cast vote on.";
-      case "reportUserContent":
-        return `You had been returned to the ${reportUserContentIntention.opinionSlugId == "" ? "conversation" : "opinion"} that you wanted to report.`;
-      default:
-        return "";
-    }
-  }
-
   function composeLoginIntentionDialogMessage(
     intention: PossibleIntentions
   ): string {
@@ -318,14 +299,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     createReportUserContentIntention,
     routeUserAfterLogin,
     composeLoginIntentionDialogMessage,
-    composePostLoginDialogMessage,
     clearNewOpinionIntention,
     clearNewConversationIntention,
     clearOpinionAgreementIntention,
     clearVotingIntention,
     clearReportUserContentIntention,
     setActiveUserIntention,
-    showPostLoginIntentionDialog,
-    activeUserIntention,
   };
 });
