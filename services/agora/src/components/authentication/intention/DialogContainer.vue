@@ -11,7 +11,7 @@
             button-type="icon"
             icon="mdi-close"
             size="1rem"
-            @click="clickedCancelButton()"
+            @click="showDialog = false"
           />
         </div>
 
