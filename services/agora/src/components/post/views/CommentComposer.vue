@@ -39,7 +39,7 @@
     <ExitRoutePrompt
       v-model="showExitDialog"
       title="Save opinion as draft?"
-      description="Your drafted conversation will be here when you return."
+      description="Your draft opinion will be here when you return."
       :save-draft="saveDraft"
       :no-save-draft="noSaveDraft"
     />
