@@ -87,7 +87,8 @@ const props = defineProps<{
   postSlugId: string;
 }>();
 
-const { saveOpinionDraft, getOpinionDraft } = useNewOpinionDraftsStore();
+const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
+  useNewOpinionDraftsStore();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
@@ -149,6 +150,7 @@ async function saveDraft() {
 }
 
 async function noSaveDraft() {
+  deleteOpinionDraft(props.postSlugId);
   await leaveRoute(() => {});
 }
 

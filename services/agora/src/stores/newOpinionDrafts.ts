@@ -21,7 +21,20 @@ export const useNewOpinionDraftsStore = defineStore("newOpinionDrafts", () => {
     return draft;
   }
 
+  function deleteOpinionDraft(opinionSlugId: string) {
+    opinionDraftMap.value.delete(opinionSlugId);
+  }
+
   function saveOpinionDraft(opinionSlugId: string, opinionBody: string) {
+    /*
+    const numOpinions = opinionDraftMap.value.size;
+    if (numOpinions > 10) {
+      array.forEach(element => {
+
+      });
+    }
+    */
+
     const draft = getOpinionDraft(opinionSlugId);
     if (draft == undefined) {
       opinionDraftMap.value.set(opinionSlugId, {
@@ -30,8 +43,14 @@ export const useNewOpinionDraftsStore = defineStore("newOpinionDrafts", () => {
       });
     } else {
       draft.body = opinionBody;
+      draft.editedAt = new Date();
     }
   }
 
-  return { getOpinionDraft, saveOpinionDraft, clearOpinionDrafts };
+  return {
+    getOpinionDraft,
+    saveOpinionDraft,
+    deleteOpinionDraft,
+    clearOpinionDrafts,
+  };
 });
