@@ -21,8 +21,14 @@ export const useNewOpinionDraftsStore = defineStore("newOpinionDrafts", () => {
     return draft;
   }
 
-  function deleteOpinionDraft(opinionSlugId: string) {
-    opinionDraftMap.value.delete(opinionSlugId);
+  function deleteOpinionDraft(conversationSlugId: string) {
+    const deletedValue = opinionDraftMap.value.delete(conversationSlugId);
+    if (!deletedValue) {
+      console.error(
+        "Failed to delete conversation slug ID from the map structure: " +
+          conversationSlugId
+      );
+    }
   }
 
   function deleteExcessiveOpinionDrafts() {
