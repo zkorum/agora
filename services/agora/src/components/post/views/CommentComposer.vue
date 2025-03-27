@@ -46,7 +46,7 @@
       v-model="showExitDialog"
       title="Discard this opinion?"
       description="Your drafted opinion will not be saved"
-      @save-draft="leaveRoute(() => {})"
+      @save-draft="saveDraft"
     />
 
     <PreLoginIntentionDialog
@@ -69,6 +69,7 @@ import {
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useNewConversationDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { computed, onMounted, ref, watch } from "vue";
@@ -85,6 +86,8 @@ const props = defineProps<{
   postSlugId: string;
 }>();
 
+const { saveConversationDraft, getConversationDraft } =
+  useNewConversationDraftsStore();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
@@ -105,14 +108,27 @@ const opinionBody = ref(newOpinionIntention.opinionBody);
 
 const showLoginDialog = ref(false);
 
-const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
-  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+const {
+  isLockedRoute,
+  lockRoute,
+  unlockRoute,
+  savedToRoute,
+  showExitDialog,
+  leaveRoute,
+} = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
 });
 
 onMounted(() => {
+  lockRoute();
+
+  const savedDraft = getConversationDraft(props.postSlugId);
+  if (savedDraft) {
+    opinionBody.value = savedDraft.body;
+  }
+
   checkWordCount();
 });
 
@@ -127,8 +143,13 @@ watch(
   }
 );
 
+async function saveDraft() {
+  saveConversationDraft(props.postSlugId, opinionBody.value);
+  await leaveRoute(() => {});
+}
+
 function onLoginCallback() {
-  grantedRouteLeave.value = true;
+  unlockRoute();
   createNewOpinionIntention(props.postSlugId, opinionBody.value);
 }
 
@@ -139,7 +160,7 @@ function routeLeaveCallback() {
 }
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
-  if (characterCount.value > 0 && !grantedRouteLeave.value) {
+  if (characterCount.value > 0 && isLockedRoute()) {
     if (isAuthenticated.value) {
       savedToRoute.value = to;
       showExitDialog.value = true;

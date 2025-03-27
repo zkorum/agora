@@ -44,5 +44,24 @@ export function useRouteGuard(
     await router.push(savedToRoute.value);
   }
 
-  return { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute };
+  function lockRoute() {
+    grantedRouteLeave.value = false;
+  }
+
+  function unlockRoute() {
+    grantedRouteLeave.value = true;
+  }
+
+  function isLockedRoute() {
+    return grantedRouteLeave.value == false;
+  }
+
+  return {
+    lockRoute,
+    unlockRoute,
+    isLockedRoute,
+    savedToRoute,
+    showExitDialog,
+    leaveRoute,
+  };
 }

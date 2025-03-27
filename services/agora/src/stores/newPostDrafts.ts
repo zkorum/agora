@@ -8,22 +8,25 @@ export interface NewConversationDraft {
   pollingOptionList: string[];
 }
 
-export const emptyConversationDraft: NewConversationDraft = {
-  postTitle: "",
-  postBody: "",
-  enablePolling: false,
-  pollingOptionList: ["", ""],
-};
-
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
-  const postDraft = useStorage("postDraft", emptyConversationDraft);
+  const postDraft = useStorage("postDraft", getEmptyConversationDraft());
+
+  function getEmptyConversationDraft(): NewConversationDraft {
+    return {
+      enablePolling: false,
+      pollingOptionList: ["", ""],
+      postBody: "",
+      postTitle: "",
+    };
+  }
 
   function isPostEdited() {
+    const EMPTY_DRAFT = getEmptyConversationDraft();
     if (
-      emptyConversationDraft.postTitle === postDraft.value.postTitle &&
-      emptyConversationDraft.postBody === postDraft.value.postBody &&
-      emptyConversationDraft.enablePolling === postDraft.value.enablePolling &&
-      emptyConversationDraft.pollingOptionList.toString() ===
+      EMPTY_DRAFT.postTitle === postDraft.value.postTitle &&
+      EMPTY_DRAFT.postBody === postDraft.value.postBody &&
+      EMPTY_DRAFT.enablePolling === postDraft.value.enablePolling &&
+      EMPTY_DRAFT.pollingOptionList.toString() ===
         postDraft.value.pollingOptionList.toString()
     ) {
       return false;
@@ -33,5 +36,5 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
-  return { postDraft, isPostEdited };
+  return { postDraft, getEmptyConversationDraft, isPostEdited };
 });
