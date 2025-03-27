@@ -5,7 +5,6 @@
         v-model="opinionBody"
         placeholder="Add your own opinion"
         :min-height="innerFocus ? '6rem' : '2rem'"
-        :focus-editor="innerFocus"
         :show-toolbar="innerFocus"
         :add-background-color="true"
         @update:model-value="checkWordCount()"

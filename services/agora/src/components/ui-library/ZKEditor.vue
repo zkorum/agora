@@ -33,7 +33,6 @@ defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
-  focusEditor: boolean;
   addBackgroundColor: boolean;
 }>();
 
