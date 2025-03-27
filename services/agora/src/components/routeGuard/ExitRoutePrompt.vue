@@ -6,7 +6,7 @@
       :message="description"
       :show-cancel-dialog="true"
       :cancel-callback="noSaveDraft"
-      :ok-callback="leaveRoute"
+      :ok-callback="saveDraft"
       :label-ok="'Save as draft'"
       :label-cancel="'Discard'"
     >
@@ -19,20 +19,12 @@ import DialogContainer from "../authentication/intention/DialogContainer.vue";
 
 const model = defineModel<boolean>({ required: true });
 
-const emit = defineEmits(["saveDraft", "noSaveDraft"]);
-
 defineProps<{
   title: string;
   description: string;
+  saveDraft: () => void;
+  noSaveDraft: () => void;
 }>();
-
-function noSaveDraft() {
-  emit("noSaveDraft");
-}
-
-function leaveRoute() {
-  emit("saveDraft");
-}
 </script>
 
 <style lang="scss" scoped>

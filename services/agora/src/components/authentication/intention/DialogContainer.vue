@@ -72,8 +72,7 @@ function clickedCancelButton() {
   gap: 1rem;
   background-color: white;
   border-radius: 25px;
-  max-width: 25rem;
-  min-width: 5rem;
+  width: min(100vw, 25rem);
   padding: 1.5rem;
 }
 

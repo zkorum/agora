@@ -163,10 +163,10 @@
 
       <ExitRoutePrompt
         v-model="showExitDialog"
-        title="Save this conversation as a draft?"
+        title="Save conversation as draft?"
         description="Your drafted conversation will be here when you return."
-        @save-draft="saveDraft()"
-        @no-save-draft="noSaveDraft()"
+        :save-draft="saveDraft"
+        :no-save-draft="noSaveDraft"
       />
     </div>
 
@@ -185,7 +185,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
@@ -262,10 +262,8 @@ function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
     showExitDialog.value = true;
     if (isAuthenticated.value) {
       savedToRoute.value = to;
-      return false;
-    } else {
-      return false;
     }
+    return false;
   } else {
     return true;
   }

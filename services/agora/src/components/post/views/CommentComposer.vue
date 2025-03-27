@@ -44,9 +44,10 @@
 
     <ExitRoutePrompt
       v-model="showExitDialog"
-      title="Discard this opinion?"
-      description="Your drafted opinion will not be saved"
-      @save-draft="saveDraft"
+      title="Save opinion as draft?"
+      description="Your drafted conversation will be here when you return."
+      :save-draft="saveDraft"
+      :no-save-draft="noSaveDraft"
     />
 
     <PreLoginIntentionDialog
@@ -69,7 +70,7 @@ import {
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useNewConversationDraftsStore } from "src/stores/newConversationDrafts";
+import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { computed, onMounted, ref, watch } from "vue";
@@ -86,8 +87,7 @@ const props = defineProps<{
   postSlugId: string;
 }>();
 
-const { saveConversationDraft, getConversationDraft } =
-  useNewConversationDraftsStore();
+const { saveOpinionDraft, getOpinionDraft } = useNewOpinionDraftsStore();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
@@ -124,7 +124,7 @@ const characterProgress = computed(() => {
 onMounted(() => {
   lockRoute();
 
-  const savedDraft = getConversationDraft(props.postSlugId);
+  const savedDraft = getOpinionDraft(props.postSlugId);
   if (savedDraft) {
     opinionBody.value = savedDraft.body;
   }
@@ -144,7 +144,11 @@ watch(
 );
 
 async function saveDraft() {
-  saveConversationDraft(props.postSlugId, opinionBody.value);
+  saveOpinionDraft(props.postSlugId, opinionBody.value);
+  await leaveRoute(() => {});
+}
+
+async function noSaveDraft() {
   await leaveRoute(() => {});
 }
 
@@ -161,13 +165,11 @@ function routeLeaveCallback() {
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (characterCount.value > 0 && isLockedRoute()) {
+    showExitDialog.value = true;
     if (isAuthenticated.value) {
       savedToRoute.value = to;
-      showExitDialog.value = true;
-      return false;
-    } else {
-      return true;
     }
+    return false;
   } else {
     return true;
   }

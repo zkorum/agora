@@ -1,39 +1,49 @@
 import { useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 
-export const useNewConversationDraftsStore = defineStore(
-  "newConversationDrafts",
-  () => {
-    interface ConversationDraftItem {
-      body: string;
-      editedAt: Date;
-    }
+export interface NewConversationDraft {
+  postTitle: string;
+  postBody: string;
+  enablePolling: boolean;
+  pollingOptionList: string[];
+}
 
-    // Key: Conversation slug ID
-    const draftMap = new Map<string, ConversationDraftItem>();
+export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
+  const postDraft = useStorage("postDraft", getEmptyConversationDraft());
 
-    const conversationDraftMap = useStorage("conversationDraft", draftMap);
-
-    function getConversationDraft(conversationSlugId: string) {
-      const draft = conversationDraftMap.value.get(conversationSlugId);
-      return draft;
-    }
-
-    function saveConversationDraft(
-      conversationSlugId: string,
-      conversationBody: string
-    ) {
-      const draft = getConversationDraft(conversationSlugId);
-      if (draft == undefined) {
-        conversationDraftMap.value.set(conversationSlugId, {
-          body: conversationBody,
-          editedAt: new Date(),
-        });
-      } else {
-        draft.body = conversationBody;
-      }
-    }
-
-    return { getConversationDraft, saveConversationDraft };
+  function getEmptyConversationDraft(): NewConversationDraft {
+    return {
+      enablePolling: false,
+      pollingOptionList: ["", ""],
+      postBody: "",
+      postTitle: "",
+    };
   }
-);
+
+  function isPostEdited() {
+    const EMPTY_DRAFT = getEmptyConversationDraft();
+    if (
+      EMPTY_DRAFT.postTitle === postDraft.value.postTitle &&
+      EMPTY_DRAFT.postBody === postDraft.value.postBody &&
+      EMPTY_DRAFT.enablePolling === postDraft.value.enablePolling &&
+      EMPTY_DRAFT.pollingOptionList.toString() ===
+        postDraft.value.pollingOptionList.toString()
+    ) {
+      return false;
+    } else {
+      console.log("edited");
+      return true;
+    }
+  }
+
+  function clearConversationDrafts() {
+    postDraft.value = getEmptyConversationDraft();
+  }
+
+  return {
+    postDraft,
+    getEmptyConversationDraft,
+    isPostEdited,
+    clearConversationDrafts,
+  };
+});
