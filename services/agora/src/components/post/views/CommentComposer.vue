@@ -101,7 +101,7 @@ onClickOutside(target, () => {
 
 const newOpinionIntention = clearNewOpinionIntention();
 if (newOpinionIntention.enabled) {
-  editorFocused();
+  innerFocus.value = true;
 }
 
 const opinionBody = ref(newOpinionIntention.opinionBody);
@@ -121,7 +121,9 @@ const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
 });
 
-const { y: scrollY } = useWindowScroll();
+const { y: yScroll } = useWindowScroll();
+
+let disableAutocollapse = false;
 
 onMounted(() => {
   lockRoute();
@@ -134,9 +136,11 @@ onMounted(() => {
   checkWordCount();
 });
 
-watch(scrollY, () => {
-  innerFocus.value = false;
-  dummyInput.value?.focus();
+watch(yScroll, () => {
+  if (disableAutocollapse == false) {
+    innerFocus.value = false;
+    dummyInput.value?.focus();
+  }
 });
 
 async function saveDraft() {
@@ -173,7 +177,14 @@ function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
 }
 
 function editorFocused() {
+  // Disable the auto collapge for a few seconds for mobile
+  // because mobile keyboard will trigger it
+  disableAutocollapse = true;
   innerFocus.value = true;
+
+  setTimeout(function () {
+    disableAutocollapse = false;
+  }, 1000);
 }
 
 function checkWordCount() {
