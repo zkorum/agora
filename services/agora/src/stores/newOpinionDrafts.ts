@@ -25,18 +25,31 @@ export const useNewOpinionDraftsStore = defineStore("newOpinionDrafts", () => {
     opinionDraftMap.value.delete(opinionSlugId);
   }
 
-  function saveOpinionDraft(opinionSlugId: string, opinionBody: string) {
-    /*
+  function deleteExcessiveOpinionDrafts() {
     const numOpinions = opinionDraftMap.value.size;
-    if (numOpinions > 10) {
-      array.forEach(element => {
+    if (numOpinions >= 10) {
+      let oldestDraftSlugId = "";
+      let oldestDraftDate = new Date();
 
-      });
+      for (const [
+        conversationSlugId,
+        draftItem,
+      ] of opinionDraftMap.value.entries()) {
+        if (draftItem.editedAt.getTime() < oldestDraftDate.getTime()) {
+          oldestDraftSlugId = conversationSlugId;
+          oldestDraftDate = draftItem.editedAt;
+        }
+      }
+
+      deleteOpinionDraft(oldestDraftSlugId);
     }
-    */
+  }
 
+  function saveOpinionDraft(opinionSlugId: string, opinionBody: string) {
     const draft = getOpinionDraft(opinionSlugId);
     if (draft == undefined) {
+      deleteExcessiveOpinionDrafts();
+
       opinionDraftMap.value.set(opinionSlugId, {
         body: opinionBody,
         editedAt: new Date(),
