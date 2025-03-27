@@ -83,30 +83,21 @@
               <div class="bottomButtons">
                 <div class="leftButtonCluster">
                   <div v-if="!skeletonMode">
-                    <ZKButton
-                      :disable="
-                        extendedPostData.metadata.moderation.status ==
-                        'moderated'
-                      "
-                      button-type="standardButton"
-                      @click.stop.prevent="clickedCommentButton()"
-                    >
-                      <div class="commentCountStyle">
-                        <ZKIcon
-                          color="#7D7A85"
-                          name="meteor-icons:comment"
-                          size="1rem"
-                        />
-                        <div :style="{ color: '#7D7A85' }">
-                          {{
-                            (
-                              extendedPostData.metadata.opinionCount +
-                              commentCountOffset
-                            ).toString()
-                          }}
-                        </div>
+                    <div class="commentCountStyle">
+                      <ZKIcon
+                        color="#7D7A85"
+                        name="meteor-icons:comment"
+                        size="1rem"
+                      />
+                      <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
+                        {{
+                          (
+                            extendedPostData.metadata.opinionCount +
+                            commentCountOffset
+                          ).toString()
+                        }}
                       </div>
-                    </ZKButton>
+                    </div>
                   </div>
                   <div v-if="skeletonMode">
                     <Skeleton
@@ -155,13 +146,10 @@
 
         <FloatingBottomContainer v-if="!compactMode && !isLocked">
           <CommentComposer
-            :show-controls="focusCommentElement"
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
-            @cancel-clicked="cancelledCommentComposor()"
             @submitted-comment="
               (opinionSlugId: string) => submittedComment(opinionSlugId)
             "
-            @editor-focused="focusCommentElement = true"
           />
         </FloatingBottomContainer>
       </WidthWrapper>
@@ -178,7 +166,7 @@ import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
 import { computed, ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -202,11 +190,8 @@ const commentCountOffset = ref(0);
 const commentSectionKey = ref(Date.now());
 
 const router = useRouter();
-const route = useRoute();
 
 const webShare = useWebShare();
-
-const focusCommentElement = ref(false);
 
 const { loadMore } = useOpinionScrollableStore();
 const { hasMore } = storeToRefs(useOpinionScrollableStore());
@@ -235,8 +220,6 @@ function decrementCommentCount() {
 
 async function submittedComment(opinionSlugId: string) {
   commentCountOffset.value += 1;
-  focusCommentElement.value = false;
-
   commentSectionKey.value += Date.now();
 
   await router.push({
@@ -244,23 +227,6 @@ async function submittedComment(opinionSlugId: string) {
     params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
     query: { opinion: opinionSlugId },
   });
-}
-
-function cancelledCommentComposor() {
-  focusCommentElement.value = false;
-}
-
-async function clickedCommentButton() {
-  if (route.name != "/conversation/[postSlugId]") {
-    await router.push({
-      name: "/conversation/[postSlugId]",
-      params: {
-        postSlugId: props.extendedPostData.metadata.conversationSlugId,
-      },
-    });
-  } else {
-    focusCommentElement.value = !focusCommentElement.value;
-  }
 }
 
 async function shareClicked() {
@@ -353,8 +319,7 @@ async function shareClicked() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding-right: 0.1rem;
-  padding-left: 0.1rem;
+  padding-top: 0.5rem;
 }
 
 .commentSectionPadding {

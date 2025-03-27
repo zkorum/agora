@@ -1,17 +1,20 @@
 <template>
-  <div>
+  <div ref="target">
     <div class="container borderStyle">
       <ZKEditor
         v-model="opinionBody"
         placeholder="Add your own opinion"
         :min-height="innerFocus ? '6rem' : '2rem'"
-        :focus-editor="showControls"
-        :show-toolbar="innerFocus || showControls"
+        :focus-editor="innerFocus"
+        :show-toolbar="innerFocus"
         :add-background-color="true"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
-      <div v-if="innerFocus || showControls" class="actionButtonCluster">
+
+      <div v-if="innerFocus" class="actionButtonCluster">
+        <input ref="dummyInput" type="button" class="dummyInputStyle" />
+
         <div v-if="characterProgress > 100">
           {{ MAX_LENGTH_OPINION - characterCount }}
         </div>
@@ -23,14 +26,6 @@
         />
 
         <q-separator vertical inset />
-
-        <ZKButton
-          button-type="largeButton"
-          label="Cancel"
-          color="white"
-          text-color="primary"
-          @click="cancelClicked()"
-        />
 
         <ZKButton
           button-type="largeButton"
@@ -59,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
@@ -73,19 +69,18 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import { RouteLocationNormalized } from "vue-router";
 
 const emit = defineEmits<{
-  (e: "cancelClicked"): void;
-  (e: "editorFocused"): void;
   (e: "submittedComment", conversationSlugId: string): void;
 }>();
 
 const props = defineProps<{
-  showControls: boolean;
   postSlugId: string;
 }>();
+
+const dummyInput = ref<HTMLInputElement>();
 
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
@@ -99,6 +94,11 @@ const { createNewComment } = useBackendCommentApi();
 const characterCount = ref(0);
 
 const innerFocus = ref(false);
+
+const target = useTemplateRef<HTMLElement>("target");
+onClickOutside(target, () => {
+  innerFocus.value = false;
+});
 
 const newOpinionIntention = clearNewOpinionIntention();
 if (newOpinionIntention.enabled) {
@@ -122,6 +122,8 @@ const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
 });
 
+const { y: scrollY } = useWindowScroll();
+
 onMounted(() => {
   lockRoute();
 
@@ -133,16 +135,10 @@ onMounted(() => {
   checkWordCount();
 });
 
-watch(
-  () => props.showControls,
-  () => {
-    if (props.showControls == false) {
-      innerFocus.value = false;
-    } else {
-      innerFocus.value = true;
-    }
-  }
-);
+watch(scrollY, () => {
+  innerFocus.value = false;
+  dummyInput.value?.focus();
+});
 
 async function saveDraft() {
   saveOpinionDraft(props.postSlugId, opinionBody.value);
@@ -179,7 +175,6 @@ function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
 
 function editorFocused() {
   innerFocus.value = true;
-  emit("editorFocused");
 }
 
 function checkWordCount() {
@@ -187,13 +182,6 @@ function checkWordCount() {
     opinionBody.value,
     "opinion"
   ).characterCount;
-}
-
-function cancelClicked() {
-  emit("cancelClicked");
-  innerFocus.value = false;
-  opinionBody.value = "";
-  characterCount.value = 0;
 }
 
 async function submitPostClicked() {
@@ -243,5 +231,12 @@ async function submitPostClicked() {
   border-color: rgb(222, 222, 222);
   border-style: solid;
   border-width: 1px;
+}
+
+.dummyInputStyle {
+  border: none;
+  background-color: transparent;
+  width: 1px;
+  height: 1px;
 }
 </style>
