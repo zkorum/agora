@@ -33,7 +33,7 @@ export const useNewOpinionDraftsStore = defineStore("newOpinionDrafts", () => {
 
   function deleteExcessiveOpinionDrafts() {
     const numOpinions = opinionDraftMap.value.size;
-    if (numOpinions >= 10) {
+    if (numOpinions >= 1000) {
       let oldestDraftSlugId = "";
       let oldestDraftDate = new Date();
 
