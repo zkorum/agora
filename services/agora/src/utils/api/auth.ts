@@ -19,6 +19,8 @@ import { useNotify } from "../ui/notify";
 import { RouteMap, useRoute, useRouter } from "vue-router";
 import { useNotificationStore } from "src/stores/notification";
 import { SupportedCountryCallingCode } from "src/shared/types/zod";
+import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
+import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 
 interface SendSmsCodeProps {
   phoneNumber: string;
@@ -39,6 +41,8 @@ export function useBackendAuthApi() {
   const { loadPostData } = usePostStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
   const { loadNotificationData } = useNotificationStore();
+  const { clearConversationDrafts } = useNewPostDraftsStore();
+  const { clearOpinionDrafts } = useNewOpinionDraftsStore();
 
   const $q = useQuasar();
 
@@ -196,6 +200,8 @@ export function useBackendAuthApi() {
     const platform: "mobile" | "web" = getPlatform($q.platform);
 
     await deleteDid(platform);
+    clearConversationDrafts();
+    clearOpinionDrafts();
 
     isAuthenticated.value = false;
 

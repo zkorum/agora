@@ -1,17 +1,19 @@
 <template>
-  <div>
+  <div ref="target">
     <div class="container borderStyle">
       <ZKEditor
         v-model="opinionBody"
         placeholder="Add your own opinion"
         :min-height="innerFocus ? '6rem' : '2rem'"
-        :focus-editor="showControls"
-        :show-toolbar="innerFocus || showControls"
+        :show-toolbar="innerFocus"
         :add-background-color="true"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
-      <div v-if="innerFocus || showControls" class="actionButtonCluster">
+
+      <div v-if="innerFocus" class="actionButtonCluster">
+        <input ref="dummyInput" type="button" class="dummyInputStyle" />
+
         <div v-if="characterProgress > 100">
           {{ MAX_LENGTH_OPINION - characterCount }}
         </div>
@@ -26,14 +28,6 @@
 
         <ZKButton
           button-type="largeButton"
-          label="Cancel"
-          color="white"
-          text-color="primary"
-          @click="cancelClicked()"
-        />
-
-        <ZKButton
-          button-type="largeButton"
           label="Post"
           color="primary"
           :disable="characterProgress > 100 || characterProgress == 0"
@@ -44,9 +38,10 @@
 
     <ExitRoutePrompt
       v-model="showExitDialog"
-      title="Discard this opinion?"
-      description="Your drafted opinion will not be saved"
-      @leave-foute="leaveRoute()"
+      title="Save opinion as draft?"
+      description="Your draft opinion will be here when you return."
+      :save-draft="saveDraft"
+      :no-save-draft="noSaveDraft"
     />
 
     <PreLoginIntentionDialog
@@ -58,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
@@ -69,22 +65,24 @@ import {
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import { RouteLocationNormalized } from "vue-router";
 
 const emit = defineEmits<{
-  (e: "cancelClicked"): void;
-  (e: "editorFocused"): void;
   (e: "submittedComment", conversationSlugId: string): void;
 }>();
 
 const props = defineProps<{
-  showControls: boolean;
   postSlugId: string;
 }>();
 
+const dummyInput = ref<HTMLInputElement>();
+
+const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
+  useNewOpinionDraftsStore();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
@@ -96,39 +94,67 @@ const characterCount = ref(0);
 
 const innerFocus = ref(false);
 
+const target = useTemplateRef<HTMLElement>("target");
+onClickOutside(target, () => {
+  innerFocus.value = false;
+});
+
 const newOpinionIntention = clearNewOpinionIntention();
 if (newOpinionIntention.enabled) {
-  editorFocused();
+  innerFocus.value = true;
 }
 
 const opinionBody = ref(newOpinionIntention.opinionBody);
 
 const showLoginDialog = ref(false);
 
-const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
-  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+const {
+  isLockedRoute,
+  lockRoute,
+  unlockRoute,
+  savedToRoute,
+  showExitDialog,
+  leaveRoute,
+} = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
 });
 
+const { y: yScroll } = useWindowScroll();
+
+let disableAutocollapse = false;
+
 onMounted(() => {
+  lockRoute();
+
+  const savedDraft = getOpinionDraft(props.postSlugId);
+  if (savedDraft) {
+    opinionBody.value = savedDraft.body;
+  }
+
   checkWordCount();
 });
 
-watch(
-  () => props.showControls,
-  () => {
-    if (props.showControls == false) {
-      innerFocus.value = false;
-    } else {
-      innerFocus.value = true;
-    }
+watch(yScroll, () => {
+  if (disableAutocollapse == false) {
+    innerFocus.value = false;
+    dummyInput.value?.focus();
   }
-);
+});
+
+async function saveDraft() {
+  saveOpinionDraft(props.postSlugId, opinionBody.value);
+  await leaveRoute(() => {});
+}
+
+async function noSaveDraft() {
+  deleteOpinionDraft(props.postSlugId);
+  await leaveRoute(() => {});
+}
 
 function onLoginCallback() {
-  grantedRouteLeave.value = true;
+  unlockRoute();
   createNewOpinionIntention(props.postSlugId, opinionBody.value);
 }
 
@@ -139,22 +165,26 @@ function routeLeaveCallback() {
 }
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
-  if (characterCount.value > 0 && !grantedRouteLeave.value) {
+  if (characterCount.value > 0 && isLockedRoute()) {
+    showExitDialog.value = true;
     if (isAuthenticated.value) {
       savedToRoute.value = to;
-      showExitDialog.value = true;
-      return false;
-    } else {
-      return true;
     }
+    return false;
   } else {
     return true;
   }
 }
 
 function editorFocused() {
+  // Disable the auto collapge for a few seconds for mobile
+  // because mobile keyboard will trigger it
+  disableAutocollapse = true;
   innerFocus.value = true;
-  emit("editorFocused");
+
+  setTimeout(function () {
+    disableAutocollapse = false;
+  }, 1000);
 }
 
 function checkWordCount() {
@@ -162,13 +192,6 @@ function checkWordCount() {
     opinionBody.value,
     "opinion"
   ).characterCount;
-}
-
-function cancelClicked() {
-  emit("cancelClicked");
-  innerFocus.value = false;
-  opinionBody.value = "";
-  characterCount.value = 0;
 }
 
 async function submitPostClicked() {
@@ -218,5 +241,12 @@ async function submitPostClicked() {
   border-color: rgb(222, 222, 222);
   border-style: solid;
   border-width: 1px;
+}
+
+.dummyInputStyle {
+  border: none;
+  background-color: transparent;
+  width: 1px;
+  height: 1px;
 }
 </style>

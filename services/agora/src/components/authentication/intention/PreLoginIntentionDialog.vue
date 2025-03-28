@@ -6,6 +6,9 @@
       :message="'Sign in to participate the discussions'"
       :show-cancel-dialog="true"
       :ok-callback="okButtonClicked"
+      :cancel-callback="() => {}"
+      :label-ok="'Sign In'"
+      :label-cancel="'Cancel'"
     >
       <template #body>
         <div v-if="subMessage" class="shadowBoxStyle">

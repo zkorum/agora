@@ -3,7 +3,16 @@
     <q-dialog v-model="showDialog" no-route-dismiss>
       <div class="cardStyle">
         <div class="title">
-          {{ title }}
+          <div>
+            {{ title }}
+          </div>
+
+          <ZKButton
+            button-type="icon"
+            icon="mdi-close"
+            size="1rem"
+            @click="showDialog = false"
+          />
         </div>
 
         <div v-if="message">
@@ -16,12 +25,12 @@
           <ZKButton
             v-if="showCancelDialog"
             button-type="largeButton"
-            label="Cancel"
-            @click="showDialog = false"
+            :label="labelCancel"
+            @click="clickedCancelButton()"
           />
           <ZKButton
             button-type="largeButton"
-            label="Ok"
+            :label="labelOk"
             color="primary"
             @click="clickedOkButton()"
           />
@@ -38,13 +47,21 @@ const props = defineProps<{
   title: string;
   message: string;
   showCancelDialog: boolean;
+  cancelCallback: () => void;
   okCallback: () => void;
+  labelOk: string;
+  labelCancel: string;
 }>();
 
 const showDialog = defineModel<boolean>({ required: true });
 
 function clickedOkButton() {
   props.okCallback();
+}
+
+function clickedCancelButton() {
+  props.cancelCallback();
+  showDialog.value = false;
 }
 </script>
 
@@ -55,12 +72,14 @@ function clickedOkButton() {
   gap: 1rem;
   background-color: white;
   border-radius: 25px;
-  max-width: 25rem;
-  min-width: 5rem;
+  width: min(100vw, 25rem);
   padding: 1.5rem;
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 1.3rem;
   font-weight: 500;
 }

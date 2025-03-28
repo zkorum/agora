@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const modelText = defineModel<string>({ required: true });
 
@@ -33,7 +33,6 @@ defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
-  focusEditor: boolean;
   addBackgroundColor: boolean;
 }>();
 
@@ -45,6 +44,12 @@ const toolbarButtons = [
   ["bold", "italic", "strike", "underline"],
   ["undo", "redo"],
 ];
+
+watch(modelText, () => {
+  if (modelText.value == "<br>") {
+    modelText.value = "";
+  }
+});
 
 function editorFocused() {
   emit("manuallyFocused");

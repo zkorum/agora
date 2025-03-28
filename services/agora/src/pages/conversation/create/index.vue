@@ -163,9 +163,10 @@
 
       <ExitRoutePrompt
         v-model="showExitDialog"
-        title="Discard this conversation?"
-        description="Your drafted conversation will not be saved"
-        @leave-foute="leaveRoute()"
+        title="Save conversation as draft?"
+        description="Your drafted conversation will be here when you return."
+        :save-draft="saveDraft"
+        :no-save-draft="noSaveDraft"
       />
     </div>
 
@@ -178,16 +179,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { type RouteLocationNormalized, useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import {
-  emptyConversationDraft,
-  useNewPostDraftsStore,
-} from "src/utils/component/conversation/newPostDrafts";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
@@ -221,9 +219,16 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const { postDraft, isPostEdited } = useNewPostDraftsStore();
-const { grantedRouteLeave, savedToRoute, showExitDialog, leaveRoute } =
-  useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+const { isPostEdited, getEmptyConversationDraft } = useNewPostDraftsStore();
+const { postDraft } = storeToRefs(useNewPostDraftsStore());
+const {
+  isLockedRoute,
+  lockRoute,
+  unlockRoute,
+  savedToRoute,
+  showExitDialog,
+  leaveRoute,
+} = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
@@ -232,29 +237,33 @@ const showLoginDialog = ref(false);
 
 const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
-const newConversationIntention = clearNewConversationIntention();
-postDraft.value = {
-  enablePolling: newConversationIntention.conversationDraft.enablePolling,
-  pollingOptionList:
-    newConversationIntention.conversationDraft.pollingOptionList,
-  postBody: newConversationIntention.conversationDraft.postBody,
-  postTitle: newConversationIntention.conversationDraft.postTitle,
-};
+clearNewConversationIntention();
+
+onMounted(() => {
+  lockRoute();
+});
+
+async function saveDraft() {
+  await leaveRoute(() => {});
+}
+
+async function noSaveDraft() {
+  postDraft.value = getEmptyConversationDraft();
+  await leaveRoute(() => {});
+}
 
 function onLoginCallback() {
-  grantedRouteLeave.value = true;
-  createNewConversationIntention(postDraft.value);
+  unlockRoute();
+  createNewConversationIntention();
 }
 
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
-  if (isPostEdited() && !grantedRouteLeave.value) {
+  if (isPostEdited() && isLockedRoute()) {
+    showExitDialog.value = true;
     if (isAuthenticated.value) {
       savedToRoute.value = to;
-      showExitDialog.value = true;
-      return false;
-    } else {
-      return true;
     }
+    return false;
   } else {
     return true;
   }
@@ -293,9 +302,8 @@ async function togglePolling() {
       });
     }, 100);
   } else {
-    postDraft.value.pollingOptionList = structuredClone(
-      emptyConversationDraft
-    ).pollingOptionList;
+    postDraft.value.pollingOptionList =
+      getEmptyConversationDraft().pollingOptionList;
     setTimeout(function () {
       endOfFormRef.value?.scrollIntoView({
         behavior: "smooth",
@@ -319,7 +327,7 @@ async function onSubmit() {
   } else {
     quasar.loading.show();
 
-    grantedRouteLeave.value = true;
+    unlockRoute();
 
     const response = await createNewPost(
       postDraft.value.postTitle,
@@ -330,6 +338,8 @@ async function onSubmit() {
     );
 
     if (response != null) {
+      postDraft.value = getEmptyConversationDraft();
+
       quasar.loading.hide();
 
       await loadPostData(false);
