@@ -43,6 +43,12 @@ a {
 }
 
 html {
-  overscroll-behavior: none;
   overflow-y: scroll;
+  overscroll-behavior: none;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  html {
+    overscroll-behavior: auto;
+  }
 }

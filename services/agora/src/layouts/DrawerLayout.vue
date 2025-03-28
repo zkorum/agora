@@ -32,7 +32,7 @@
         show-if-above
         :behavior="drawerBehavior"
         :width="300"
-        :breakpoint="700"
+        :breakpoint="800"
         :overlay="drawerBehavior == 'mobile'"
         :no-swipe-open="noSwipeOpen"
         bordered
