@@ -6,7 +6,7 @@ Monorepo for [Agora Citizen Network](https://agoracitizen.network).
 
 We are at a critical moment where social media platforms are increasingly evolving into tools of computational propaganda (the use of bots and algorithms to manipulate public opinion), polarizing society, and threatening democratic values worldwide. Recent advancements in AI have unfortunately accelerated this dangerous trend.
 
-Agora Citizen Network was born out of our belief that digital public spaces must be intentionally designed to strengthen the social fabric of our societies. We envision a future where technology transforms social diversity into a catalyst for progress, rather than a driver of division.
+__Agora Citizen Network__ was born out of our belief that digital public spaces must be intentionally designed to strengthen the social fabric of our societies. We envision a future where technology transforms social diversity into a catalyst for progress, rather than a driver of division.
 
 ### What we're doing differently
 - Using zero-knowledge proof (ZKP) cryptography, Agora allows users to anonymously prove they are human - not bots - without disclosing any personal information to anyone, including us.
@@ -14,7 +14,7 @@ Agora Citizen Network was born out of our belief that digital public spaces must
 - Additionally, we're developing [Racine](https://github.com/zkorum/racine), a metaprotocol built on [UCAN](https://github.com/ucan-wg) and [Rarimo](https://github.com/rarimo), designed to give users full control over their digital identities and data. We believe that while protocols may not be inherently interoperable, verifiable data is. By putting humans at the center, Racine enables users to decide what data to share, with which service providers, and where to store it, ensuring both self-sovereignty and verifiable data provenance.
 
 ### Roadmap
-- Q1 2025: [Agora MVP](https://agoracitizen.network/feed/) is live and actively seeking your feedback! [Get in touch!](https://linktr.ee/yutingzkorum) 
+- Q1 2025: [Agora MVP](https://agoracitizen.network/feed/) is live and actively seeking your feedback - [Get in touch!](https://linktr.ee/yutingzkorum) 
 - Q2 2025: Evolving from MVP to SLCP (Simple, Lovable, Complete Product) – Launch mobile apps in May.
 - Q2 & Q3 2025: Develop pilot projects with institutions, NGOs, market research firms, newspapers, and other partners looking to engage their audiences through Agora.
 
