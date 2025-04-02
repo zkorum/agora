@@ -1,14 +1,32 @@
 # Agora (@zkorum/agora-app)
 
-## Install the dependencies
+## Prepare the dependencies
+
+### (Optional) NVM
+
+Install [nvm](https://github.com/nvm-sh/nvm).
+
+### NPM
+
+Install npm LTS using `nvm install lts/*` and make this default.
+
+### Yarn
+
+Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable).
+
+### Install dependencies
+
+Then cd to this root directy and install the dependencies:
 
 ```bash
 yarn
-# or
-npm install
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+### Generate .quasar folder
+
+Before developing, run `yarn dev` at least once so that Quasar will create a .quasar folder. This is important otherwise vscode or other text editors won't recognize the `src/` imports and so on, since `tsconfig.json` extends `.quasar/tsconfig.json`. It's a little bit odd, but `.quasar` is supposed to be ignored by the VCS and this is the default config by Quasar...
+
+## Start the app in development mode (hot-code reloading, error reporting, etc.)
 
 Remember to first load the environment files in `.env` file by running `. ./.env`.
 There is an example file `env.example` which can be used as the reference.
@@ -17,17 +35,17 @@ There is an example file `env.example` which can be used as the reference.
 cp env.example .env
 # modify .env
 . ./.env
-quasar dev
+yarn dev
 ```
 
-### Logos
+## Logos
 
 Currently we are not bundling company logos in the source code due to copyright.
 Please add them manually to the following folder:
 
 `public/development/logos`
 
-### Capacitor Build
+## Capacitor Build
 
 New builds have the following requirements:
 
@@ -39,33 +57,29 @@ quasar dev -m capacitor -T android
 quasar dev -m capacitor -T ios
 ```
 
-### Lint the files
+## Lint the files
 
 ```bash
 yarn lint
-# or
-npm run lint
 ```
 
-### Format the files
+## Format the files
 
 ```bash
 yarn format
-# or
-npm run format
 ```
 
-### Build the app for production
+## Build the app for production
 
 ```bash
 quasar build
 ```
 
-### Customize the configuration
+## Customize the configuration
 
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
 
-### Icon Genie Bootstrap Commands
+## Icon Genie Bootstrap Commands
 
 Generate the json configuration file:
 
@@ -83,6 +97,6 @@ Generate the actual icons:
 
 See [COPYING](./COPYING)
 
-### Country Flags
+## Country Flags
 
 MIT - [https://gitlab.com/catamphetamine/country-flag-icons/](https://gitlab.com/catamphetamine/country-flag-icons/)
