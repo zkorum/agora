@@ -1,5 +1,11 @@
 version: "3.8"
 services:
+  images:
+    container_name: agora_images
+    image: nginx:mainline-alpine
+    volumes:
+      - ./services/images/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./images:/images
   postgres:
     container_name: agora_postgres
     image: postgres:16
@@ -28,6 +34,8 @@ services:
   api:
     container_name: agora_api
     image: zkorum/agora-api:0.1.26
+    volumes:
+      - ./images:/images
     environment:
       CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       CORS_ORIGIN_LIST: "http://localhost:9000,http://127.0.0.1:9000,http://172.19.0.1:9000,http://192.168.1.22:9000"
