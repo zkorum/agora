@@ -30,6 +30,7 @@ import {
     zodNotificationItem,
     zodPolisKey,
     zodSupportedCountryCallingCode,
+    zodOrganization,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -212,8 +213,9 @@ export class Dto {
         .object({
             activePostCount: z.number().gte(0),
             createdAt: z.date(),
-            username: z.string(),
+            username: zodUsername,
             isModerator: z.boolean(),
+            organization: zodOrganization,
         })
         .strict();
     static fetchUserConversationsRequest = z

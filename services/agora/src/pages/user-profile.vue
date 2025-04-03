@@ -33,6 +33,10 @@
               :show-verified-text="true"
             />
           </div>
+
+          <div>
+            {{ profileData.organization }}
+          </div>
         </div>
 
         <div class="profileMetadataBar">
