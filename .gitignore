@@ -26,3 +26,7 @@ doc/.*
 
 # misc
 *.bak
+
+# data
+/data/images/
+
