@@ -2087,6 +2087,99 @@ export interface ApiV1UserProfileGetPost200Response {
      * @memberof ApiV1UserProfileGetPost200Response
      */
     'isModerator': boolean;
+    /**
+     * 
+     * @type {ApiV1UserProfileGetPost200ResponseOrganization}
+     * @memberof ApiV1UserProfileGetPost200Response
+     */
+    'organization': ApiV1UserProfileGetPost200ResponseOrganization;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1UserProfileGetPost200ResponseOrganization
+ */
+export interface ApiV1UserProfileGetPost200ResponseOrganization {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
+     */
+    'isOrganization': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
+     */
+    'name': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
+     */
+    'imageUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
+     */
+    'websiteUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
+     */
+    'description': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
+ */
+export interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
+     */
+    'isOrganization': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
+     */
+    'name': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
+     */
+    'imageUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
+     */
+    'websiteUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
+     */
+    'description': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf1
+ */
+export interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf1
+     */
+    'isOrganization': boolean;
 }
 /**
  * 

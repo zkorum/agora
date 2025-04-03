@@ -7,8 +7,8 @@ import {
     userTable,
     polisContentTable,
     polisClusterTable,
-    polisClusterOpinionTable,
     polisClusterUserTable,
+    organisationTable,
 } from "@/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type {
@@ -16,6 +16,7 @@ import type {
     ExtendedOpinion,
     ExtendedConversationPerSlugId,
     ClusterStats,
+    OrganizationProperties,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { and, eq, lt, desc } from "drizzle-orm";
@@ -402,18 +403,40 @@ export async function getUserProfile({
                 createdAt: userTable.createdAt,
                 username: userTable.username,
                 isModerator: userTable.isModerator,
+                organisationId: userTable.organisationId,
+                organizationDescription: organisationTable.description,
+                organizationImageUrl: organisationTable.imageUrl,
+                organizationName: organisationTable.name,
+                organizationWebsiteUrl: organisationTable.websiteUrl
             })
             .from(userTable)
+            .leftJoin(
+                organisationTable,
+                eq(userTable.organisationId, organisationTable.id),
+            )
             .where(eq(userTable.id, userId));
 
         if (userTableResponse.length == 0) {
             throw httpErrors.notFound("Failed to locate user profile");
         } else {
+            let organizationItem: OrganizationProperties = {
+                isOrganization: false,
+            };
+            if (userTableResponse[0].organisationId) {
+                organizationItem = {
+                    isOrganization: true,
+                    description: userTableResponse[0].organizationDescription ?? "" ,
+                    imageUrl: userTableResponse[0].organizationImageUrl ?? "",
+                    name: userTableResponse[0].organizationName  ?? "",
+                    websiteUrl: userTableResponse[0].organizationWebsiteUrl  ?? ""
+                }
+            }
             return {
                 activePostCount: userTableResponse[0].activePostCount,
                 createdAt: userTableResponse[0].createdAt,
                 username: userTableResponse[0].username,
                 isModerator: userTableResponse[0].isModerator,
+                organization: organizationItem
             };
         }
     } catch (err: unknown) {

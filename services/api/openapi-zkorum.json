@@ -1071,17 +1071,70 @@
                                             "format": "date-time"
                                         },
                                         "username": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9_]*$"
                                         },
                                         "isModerator": {
                                             "type": "boolean"
+                                        },
+                                        "organization": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "isOrganization": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                true
+                                                            ]
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "imageUrl": {
+                                                            "type": "string"
+                                                        },
+                                                        "websiteUrl": {
+                                                            "type": "string",
+                                                            "format": "uri"
+                                                        },
+                                                        "description": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "isOrganization",
+                                                        "name",
+                                                        "imageUrl",
+                                                        "websiteUrl",
+                                                        "description"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "isOrganization": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "isOrganization"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            ]
                                         }
                                     },
                                     "required": [
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator"
+                                        "isModerator",
+                                        "organization"
                                     ],
                                     "additionalProperties": false
                                 }
