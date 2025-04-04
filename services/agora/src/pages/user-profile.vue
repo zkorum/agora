@@ -33,10 +33,6 @@
               :show-verified-text="true"
             />
           </div>
-
-          <div>
-            {{ profileData.organization }}
-          </div>
         </div>
 
         <div class="profileMetadataBar">
@@ -45,6 +41,11 @@
             <span class="dotPadding">•</span>
           </div>
           <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
+        </div>
+
+        <div v-if="profileData.organization.isOrganization">
+          <div>ORGANIZATION:</div>
+          <img :src="profileData.organization.imageUrl" />
         </div>
       </div>
 
@@ -131,7 +132,13 @@ function applyCurrentTab() {
 }
 
 async function selectedTab(routeName: keyof RouteNamedMap) {
-  await router.push({ name: routeName });
+  if (routeName == "/user-profile/conversations/") {
+    await router.push({ name: "/user-profile/conversations/" });
+  } else if (routeName == "/user-profile/opinions/") {
+    await router.push({ name: "/user-profile/opinions/" });
+  } else {
+    console.error("Unknown route: " + routeName);
+  }
 }
 </script>
 

@@ -390,11 +390,13 @@ export async function getUserPosts({
 interface GetUserProfileProps {
     db: PostgresJsDatabase;
     userId: string;
+    imageBaseUrl: string;
 }
 
 export async function getUserProfile({
     db,
     userId,
+    imageBaseUrl,
 }: GetUserProfileProps): Promise<GetUserProfileResponse> {
     try {
         const userTableResponse = await db
@@ -405,9 +407,9 @@ export async function getUserProfile({
                 isModerator: userTable.isModerator,
                 organisationId: userTable.organisationId,
                 organizationDescription: organisationTable.description,
-                organizationImageUrl: organisationTable.imageUrl,
+                organizationImageName: organisationTable.imageName,
                 organizationName: organisationTable.name,
-                organizationWebsiteUrl: organisationTable.websiteUrl
+                organizationWebsiteUrl: organisationTable.websiteUrl,
             })
             .from(userTable)
             .leftJoin(
@@ -425,18 +427,23 @@ export async function getUserProfile({
             if (userTableResponse[0].organisationId) {
                 organizationItem = {
                     isOrganization: true,
-                    description: userTableResponse[0].organizationDescription ?? "" ,
-                    imageUrl: userTableResponse[0].organizationImageUrl ?? "",
-                    name: userTableResponse[0].organizationName  ?? "",
-                    websiteUrl: userTableResponse[0].organizationWebsiteUrl  ?? ""
-                }
+                    description:
+                        userTableResponse[0].organizationDescription ?? "",
+                    imageUrl: userTableResponse[0].organizationImageName
+                        ? imageBaseUrl +
+                          userTableResponse[0].organizationImageName
+                        : "",
+                    name: userTableResponse[0].organizationName ?? "",
+                    websiteUrl:
+                        userTableResponse[0].organizationWebsiteUrl ?? "",
+                };
             }
             return {
                 activePostCount: userTableResponse[0].activePostCount,
                 createdAt: userTableResponse[0].createdAt,
                 username: userTableResponse[0].username,
                 isModerator: userTableResponse[0].isModerator,
-                organization: organizationItem
+                organization: organizationItem,
             };
         }
     } catch (err: unknown) {

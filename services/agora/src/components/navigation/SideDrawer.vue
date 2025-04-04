@@ -180,7 +180,17 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
       showMobileDrawer.value = false;
     }
 
-    await router.push({ name: routeName });
+    if (routeName == "/user-profile/conversations/") {
+      await router.push({ name: "/user-profile/conversations/" });
+    } else if (routeName == "/notification/") {
+      await router.push({ name: "/notification/" });
+    } else if (routeName == "/settings/") {
+      await router.push({ name: "/settings/" });
+    } else if (routeName == "/") {
+      await router.push({ name: "/" });
+    } else {
+      console.error("Unknown route name: " + routeName);
+    }
   }
 }
 </script>
