@@ -34,9 +34,12 @@ export async function deleteUserOrganization({
             await db.transaction(async (tx) => {
                 if (userTableResponse[0].organisationId != null) {
                     // Update the user table
-                    await tx.update(userTable).set({
-                        organisationId: null,
-                    });
+                    await tx
+                        .update(userTable)
+                        .set({
+                            organisationId: null,
+                        })
+                        .where(eq(userTable.id, targetUserId));
 
                     // Delete the organization entry
                     await tx
