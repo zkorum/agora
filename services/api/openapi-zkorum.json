@@ -3359,6 +3359,81 @@
                 }
             }
         },
+        "/api/v1/administrator-organization/set": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    },
+                                    "organizationName": {
+                                        "type": "string"
+                                    },
+                                    "imageName": {
+                                        "type": "string"
+                                    },
+                                    "websiteUrl": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "username",
+                                    "organizationName",
+                                    "imageName",
+                                    "websiteUrl",
+                                    "description"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator-organization/delete": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    }
+                                },
+                                "required": [
+                                    "username"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
         "/api/v1/report/conversation/create": {
             "post": {
                 "requestBody": {

@@ -89,6 +89,10 @@ import {
     GetSecretValueCommand,
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
+import {
+    deleteUserOrganization,
+    setUserOrganization,
+} from "./service/administratorOrganization.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -847,6 +851,7 @@ server.after(() => {
                 return await getUserProfile({
                     db: db,
                     userId: status.userId,
+                    imageBaseUrl: config.IMAGE_BASE_URL,
                 });
             }
         },
@@ -1573,6 +1578,76 @@ server.after(() => {
             return await generateUnusedRandomUsername({
                 db: db,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator-organization/set`,
+        schema: {
+            body: Dto.setUserOrganizationRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await setUserOrganization({
+                    db: db,
+                    username: request.body.username,
+                    organizationName: request.body.organizationName,
+                    imageName: request.body.imageName,
+                    websiteUrl: request.body.websiteUrl,
+                    description: request.body.description,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator-organization/delete`,
+        schema: {
+            body: Dto.deleteUserOrganizationRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await deleteUserOrganization({
+                    db: db,
+                    username: request.body.username,
+                });
+            }
         },
     });
 

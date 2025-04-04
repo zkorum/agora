@@ -708,7 +708,7 @@ export const userConversationTopicPreferenceTable = pgTable(
 export const organisationTable = pgTable("organisation", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
-    imageUrl: text("image_url"),
+    imageName: text("image_name"),
     websiteUrl: text("website_url"),
     description: varchar("description", {
         length: MAX_LENGTH_DESCRIPTION_CREATOR,

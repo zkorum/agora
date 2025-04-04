@@ -34,6 +34,10 @@
       <div v-if="isAuthenticated">
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
+
+      <div v-if="isAuthenticated && profileData.isModerator">
+        <SettingsSection :settings-item-list="moderatorSettings" />
+      </div>
     </div>
   </DrawerLayout>
 </template>
@@ -44,6 +48,7 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
@@ -51,6 +56,8 @@ import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { profileData } = storeToRefs(useUserStore());
+
 const { showDeleteAccountDialog } = useDialog();
 
 const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
@@ -108,6 +115,18 @@ const logoutSettings: SettingsInterface[] = [
     label: "Log Out",
     action: logoutRequested,
     style: "warning",
+  },
+];
+
+const moderatorSettings: SettingsInterface[] = [
+  {
+    label: "Moderator - Organization",
+    action: async () => {
+      await router.push({
+        name: "/settings/account/administrator/organization/",
+      });
+    },
+    style: "none",
   },
 ];
 

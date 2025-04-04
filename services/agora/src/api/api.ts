@@ -26,6 +26,43 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
+ * @interface ApiV1AdministratorOrganizationSetPostRequest
+ */
+export interface ApiV1AdministratorOrganizationSetPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     */
+    'username': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     */
+    'organizationName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     */
+    'imageName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     */
+    'websiteUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     */
+    'description': string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1AuthAuthenticatePost200Response
  */
 export interface ApiV1AuthAuthenticatePost200Response {
@@ -2343,6 +2380,84 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationDeletePost: async (apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserUsernameUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationDeletePost', 'apiV1UserUsernameUpdatePostRequest', apiV1UserUsernameUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator-organization/delete`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserUsernameUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationSetPost: async (apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationSetPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationSetPost', 'apiV1AdministratorOrganizationSetPostRequest', apiV1AdministratorOrganizationSetPostRequest)
+            const localVarPath = `/api/v1/administrator-organization/set`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationSetPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3800,6 +3915,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationDeletePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationSetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4275,6 +4414,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4636,6 +4793,28 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AccountIsUsernameInUsePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
