@@ -52,7 +52,8 @@ export function useBackendAdministratorOrganizationApi() {
   async function setUserOrganization(
     username: string,
     description: string,
-    imageName: string,
+    imagePath: string,
+    isFullImagePath: boolean,
     organizationName: string,
     websiteUrl: string
   ) {
@@ -60,7 +61,8 @@ export function useBackendAdministratorOrganizationApi() {
       const params: ApiV1AdministratorOrganizationSetPostRequest = {
         username: username,
         description: description,
-        imageName: imageName,
+        imagePath: imagePath,
+        isFullImagePath: isFullImagePath,
         organizationName: organizationName,
         websiteUrl: websiteUrl,
       };

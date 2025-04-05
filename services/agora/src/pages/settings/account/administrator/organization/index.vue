@@ -21,9 +21,13 @@
     </template>
 
     <div class="container">
-      <SetOrganizationForm />
+      <ZKCard :padding="'1rem'" class="cardBackground">
+        <SetOrganizationForm />
+      </ZKCard>
 
-      <DeleteOrganizationForm />
+      <ZKCard :padding="'1rem'" class="cardBackground">
+        <DeleteOrganizationForm />
+      </ZKCard>
     </div>
   </DrawerLayout>
 </template>
@@ -31,6 +35,7 @@
 <script setup lang="ts">
 import DeleteOrganizationForm from "src/components/administrator/organization/DeleteOrganizationForm.vue";
 import SetOrganizationForm from "src/components/administrator/organization/SetOrganizationForm.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 </script>
 
@@ -40,5 +45,9 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
   flex-direction: column;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.cardBackground {
+  background-color: white;
 }
 </style>

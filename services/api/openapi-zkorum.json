@@ -3374,8 +3374,11 @@
                                     "organizationName": {
                                         "type": "string"
                                     },
-                                    "imageName": {
+                                    "imagePath": {
                                         "type": "string"
+                                    },
+                                    "isFullImagePath": {
+                                        "type": "boolean"
                                     },
                                     "websiteUrl": {
                                         "type": "string",
@@ -3388,7 +3391,8 @@
                                 "required": [
                                     "username",
                                     "organizationName",
-                                    "imageName",
+                                    "imagePath",
+                                    "isFullImagePath",
                                     "websiteUrl",
                                     "description"
                                 ],

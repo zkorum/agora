@@ -407,7 +407,8 @@ export async function getUserProfile({
                 isModerator: userTable.isModerator,
                 organisationId: userTable.organisationId,
                 organizationDescription: organisationTable.description,
-                organizationImageName: organisationTable.imageName,
+                organizationImagePath: organisationTable.imagePath,
+                organizationIsFullImagePath: organisationTable.isFullImagePath,
                 organizationName: organisationTable.name,
                 organizationWebsiteUrl: organisationTable.websiteUrl,
             })
@@ -429,10 +430,14 @@ export async function getUserProfile({
                     isOrganization: true,
                     description:
                         userTableResponse[0].organizationDescription ?? "",
-                    imageUrl: userTableResponse[0].organizationImageName
-                        ? imageBaseUrl +
-                          userTableResponse[0].organizationImageName
-                        : "",
+                    imageUrl:
+                        userTableResponse[0].organizationIsFullImagePath &&
+                        userTableResponse[0].organizationImagePath
+                            ? userTableResponse[0].organizationImagePath
+                            : `${imageBaseUrl}${
+                                  userTableResponse[0].organizationImagePath ??
+                                  ""
+                              }`,
                     name: userTableResponse[0].organizationName ?? "",
                     websiteUrl:
                         userTableResponse[0].organizationWebsiteUrl ?? "",

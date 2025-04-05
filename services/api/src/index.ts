@@ -1610,7 +1610,8 @@ server.after(() => {
                     db: db,
                     username: request.body.username,
                     organizationName: request.body.organizationName,
-                    imageName: request.body.imageName,
+                    imagePath: request.body.imagePath,
+                    isFullImagePath: request.body.isFullImagePath,
                     websiteUrl: request.body.websiteUrl,
                     description: request.body.description,
                 });

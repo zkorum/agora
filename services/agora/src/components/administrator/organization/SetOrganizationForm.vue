@@ -7,7 +7,13 @@
       data-1p-ignore
     />
     <q-input v-model="description" label="Description" />
-    <q-input v-model="imageName" label="Image Name" />
+    <q-input
+      v-model="imagePath"
+      label="Image Path (file name only if using S3)"
+    />
+    <div>Non-full path: xxx.png</div>
+    <div>Full path: https://agoracitizen.network/images/big_logo_agora.png</div>
+    <q-checkbox v-model="isFullImagePath" label="Is Full Image Path" />
     <q-input
       v-model="organizationName"
       label="Name"
@@ -32,7 +38,8 @@ const { setUserOrganization } = useBackendAdministratorOrganizationApi();
 
 const username = ref("");
 const description = ref("");
-const imageName = ref("default_company_logo.svg");
+const imagePath = ref("");
+const isFullImagePath = ref(false);
 const organizationName = ref("");
 const websiteUrl = ref("");
 
@@ -40,7 +47,8 @@ async function setOrganization() {
   await setUserOrganization(
     username.value,
     description.value,
-    imageName.value,
+    imagePath.value,
+    isFullImagePath.value,
     organizationName.value,
     websiteUrl.value
   );

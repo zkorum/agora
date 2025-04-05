@@ -46,7 +46,13 @@ export interface ApiV1AdministratorOrganizationSetPostRequest {
      * @type {string}
      * @memberof ApiV1AdministratorOrganizationSetPostRequest
      */
-    'imageName': string;
+    'imagePath': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     */
+    'isFullImagePath': boolean;
     /**
      * 
      * @type {string}
