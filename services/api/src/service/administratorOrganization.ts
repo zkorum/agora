@@ -67,7 +67,8 @@ interface SetUserOrganizationProps {
     db: PostgresJsDatabase;
     username: string;
     organizationName: string;
-    imageName: string;
+    imagePath: string;
+    isFullImagePath: boolean;
     websiteUrl: string;
     description: string;
 }
@@ -76,7 +77,8 @@ export async function setUserOrganization({
     db,
     username,
     organizationName,
-    imageName,
+    imagePath,
+    isFullImagePath,
     websiteUrl,
     description,
 }: SetUserOrganizationProps) {
@@ -104,7 +106,8 @@ export async function setUserOrganization({
                         .insert(organisationTable)
                         .values({
                             name: organizationName,
-                            imageName: imageName,
+                            imagePath: imagePath,
+                            isFullImagePath: isFullImagePath,
                             websiteUrl: websiteUrl,
                             description: description,
                         })
@@ -125,7 +128,8 @@ export async function setUserOrganization({
                     // Update the existing organization entry
                     await tx.update(organisationTable).set({
                         name: organizationName,
-                        imageName: imageName,
+                        imagePath: imagePath,
+                        isFullImagePath: isFullImagePath,
                         websiteUrl: websiteUrl,
                         description: description,
                     });

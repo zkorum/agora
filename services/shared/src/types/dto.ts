@@ -362,7 +362,8 @@ export class Dto {
         .object({
             username: zodUsername,
             organizationName: z.string(),
-            imageName: z.string(),
+            imagePath: z.string(),
+            isFullImagePath: z.boolean(),
             websiteUrl: z.string().url(),
             description: z.string(),
         })
