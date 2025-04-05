@@ -42,6 +42,31 @@
           </div>
           <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
         </div>
+
+        <div v-if="profileData.organization.isOrganization" class="cardStyle">
+          <div class="organizationDiv">
+            <img
+              :src="profileData.organization.imageUrl"
+              :style="{ width: '2.5rem' }"
+            />
+
+            <div class="organizationMetadata">
+              <div :style="{ fontSize: '1.1rem', fontWeight: '500' }">
+                {{ profileData.organization.name }}
+              </div>
+
+              <a :href="profileData.organization.websiteUrl" target="_blank">
+                <div>
+                  {{ profileData.organization.websiteUrl }}
+                </div>
+              </a>
+
+              <div>
+                {{ profileData.organization.description }}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="tabCluster">
@@ -127,7 +152,13 @@ function applyCurrentTab() {
 }
 
 async function selectedTab(routeName: keyof RouteNamedMap) {
-  await router.push({ name: routeName });
+  if (routeName == "/user-profile/conversations/") {
+    await router.push({ name: "/user-profile/conversations/" });
+  } else if (routeName == "/user-profile/opinions/") {
+    await router.push({ name: "/user-profile/opinions/" });
+  } else {
+    console.error("Unknown route: " + routeName);
+  }
 }
 </script>
 
@@ -185,5 +216,23 @@ async function selectedTab(routeName: keyof RouteNamedMap) {
   padding-bottom: 1rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.organizationDiv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.organizationMetadata {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardStyle {
+  background-color: white;
+  padding: 1rem;
 }
 </style>
