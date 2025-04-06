@@ -26,45 +26,52 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
- * @interface ApiV1AdministratorOrganizationSetPostRequest
+ * @interface ApiV1AdministratorOrganizationCreateMetadataPostRequest
  */
-export interface ApiV1AdministratorOrganizationSetPostRequest {
+export interface ApiV1AdministratorOrganizationCreateMetadataPostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AdministratorOrganizationSetPostRequest
-     */
-    'username': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     * @memberof ApiV1AdministratorOrganizationCreateMetadataPostRequest
      */
     'organizationName': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     * @memberof ApiV1AdministratorOrganizationCreateMetadataPostRequest
      */
     'imagePath': string;
     /**
      * 
      * @type {boolean}
-     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     * @memberof ApiV1AdministratorOrganizationCreateMetadataPostRequest
      */
     'isFullImagePath': boolean;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     * @memberof ApiV1AdministratorOrganizationCreateMetadataPostRequest
      */
     'websiteUrl': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1AdministratorOrganizationSetPostRequest
+     * @memberof ApiV1AdministratorOrganizationCreateMetadataPostRequest
      */
     'description': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1AdministratorOrganizationDeldeteMetadataPostRequest
+ */
+export interface ApiV1AdministratorOrganizationDeldeteMetadataPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AdministratorOrganizationDeldeteMetadataPostRequest
+     */
+    'organizationName': string;
 }
 /**
  * 
@@ -2130,99 +2137,6 @@ export interface ApiV1UserProfileGetPost200Response {
      * @memberof ApiV1UserProfileGetPost200Response
      */
     'isModerator': boolean;
-    /**
-     * 
-     * @type {ApiV1UserProfileGetPost200ResponseOrganization}
-     * @memberof ApiV1UserProfileGetPost200Response
-     */
-    'organization': ApiV1UserProfileGetPost200ResponseOrganization;
-}
-/**
- * 
- * @export
- * @interface ApiV1UserProfileGetPost200ResponseOrganization
- */
-export interface ApiV1UserProfileGetPost200ResponseOrganization {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
-     */
-    'isOrganization': boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
-     */
-    'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
-     */
-    'imageUrl': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
-     */
-    'websiteUrl': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganization
-     */
-    'description': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
- */
-export interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
-     */
-    'isOrganization': boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
-     */
-    'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
-     */
-    'imageUrl': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
-     */
-    'websiteUrl': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf
-     */
-    'description': string;
-}
-/**
- * 
- * @export
- * @interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf1
- */
-export interface ApiV1UserProfileGetPost200ResponseOrganizationAnyOf1 {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ApiV1UserProfileGetPost200ResponseOrganizationAnyOf1
-     */
-    'isOrganization': boolean;
 }
 /**
  * 
@@ -2386,14 +2300,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {ApiV1AdministratorOrganizationCreateMetadataPostRequest} apiV1AdministratorOrganizationCreateMetadataPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationDeletePost: async (apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1UserUsernameUpdatePostRequest' is not null or undefined
-            assertParamExists('apiV1AdministratorOrganizationDeletePost', 'apiV1UserUsernameUpdatePostRequest', apiV1UserUsernameUpdatePostRequest)
-            const localVarPath = `/api/v1/administrator-organization/delete`;
+        apiV1AdministratorOrganizationCreateMetadataPost: async (apiV1AdministratorOrganizationCreateMetadataPostRequest: ApiV1AdministratorOrganizationCreateMetadataPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationCreateMetadataPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationCreateMetadataPost', 'apiV1AdministratorOrganizationCreateMetadataPostRequest', apiV1AdministratorOrganizationCreateMetadataPostRequest)
+            const localVarPath = `/api/v1/administrator-organization/create-metadata`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2416,7 +2330,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserUsernameUpdatePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationCreateMetadataPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2425,14 +2339,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+         * @param {ApiV1AdministratorOrganizationDeldeteMetadataPostRequest} apiV1AdministratorOrganizationDeldeteMetadataPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationSetPost: async (apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AdministratorOrganizationSetPostRequest' is not null or undefined
-            assertParamExists('apiV1AdministratorOrganizationSetPost', 'apiV1AdministratorOrganizationSetPostRequest', apiV1AdministratorOrganizationSetPostRequest)
-            const localVarPath = `/api/v1/administrator-organization/set`;
+        apiV1AdministratorOrganizationDeldeteMetadataPost: async (apiV1AdministratorOrganizationDeldeteMetadataPostRequest: ApiV1AdministratorOrganizationDeldeteMetadataPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationDeldeteMetadataPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationDeldeteMetadataPost', 'apiV1AdministratorOrganizationDeldeteMetadataPostRequest', apiV1AdministratorOrganizationDeldeteMetadataPostRequest)
+            const localVarPath = `/api/v1/administrator-organization/deldete-metadata`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2455,7 +2369,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationSetPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationDeldeteMetadataPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3921,26 +3835,26 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {ApiV1AdministratorOrganizationCreateMetadataPostRequest} apiV1AdministratorOrganizationCreateMetadataPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest, options);
+        async apiV1AdministratorOrganizationCreateMetadataPost(apiV1AdministratorOrganizationCreateMetadataPostRequest: ApiV1AdministratorOrganizationCreateMetadataPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationCreateMetadataPost(apiV1AdministratorOrganizationCreateMetadataPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationDeletePost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationCreateMetadataPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+         * @param {ApiV1AdministratorOrganizationDeldeteMetadataPostRequest} apiV1AdministratorOrganizationDeldeteMetadataPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest, options);
+        async apiV1AdministratorOrganizationDeldeteMetadataPost(apiV1AdministratorOrganizationDeldeteMetadataPostRequest: ApiV1AdministratorOrganizationDeldeteMetadataPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeldeteMetadataPost(apiV1AdministratorOrganizationDeldeteMetadataPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationSetPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationDeldeteMetadataPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -4420,21 +4334,21 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+         * @param {ApiV1AdministratorOrganizationCreateMetadataPostRequest} apiV1AdministratorOrganizationCreateMetadataPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1AdministratorOrganizationCreateMetadataPost(apiV1AdministratorOrganizationCreateMetadataPostRequest: ApiV1AdministratorOrganizationCreateMetadataPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationCreateMetadataPost(apiV1AdministratorOrganizationCreateMetadataPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+         * @param {ApiV1AdministratorOrganizationDeldeteMetadataPostRequest} apiV1AdministratorOrganizationDeldeteMetadataPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest, options).then((request) => request(axios, basePath));
+        apiV1AdministratorOrganizationDeldeteMetadataPost(apiV1AdministratorOrganizationDeldeteMetadataPostRequest: ApiV1AdministratorOrganizationDeldeteMetadataPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationDeldeteMetadataPost(apiV1AdministratorOrganizationDeldeteMetadataPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -4803,24 +4717,24 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1UserUsernameUpdatePostRequest} apiV1UserUsernameUpdatePostRequest 
+     * @param {ApiV1AdministratorOrganizationCreateMetadataPostRequest} apiV1AdministratorOrganizationCreateMetadataPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest: ApiV1UserUsernameUpdatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeletePost(apiV1UserUsernameUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AdministratorOrganizationCreateMetadataPost(apiV1AdministratorOrganizationCreateMetadataPostRequest: ApiV1AdministratorOrganizationCreateMetadataPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationCreateMetadataPost(apiV1AdministratorOrganizationCreateMetadataPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1AdministratorOrganizationSetPostRequest} apiV1AdministratorOrganizationSetPostRequest 
+     * @param {ApiV1AdministratorOrganizationDeldeteMetadataPostRequest} apiV1AdministratorOrganizationDeldeteMetadataPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest: ApiV1AdministratorOrganizationSetPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationSetPost(apiV1AdministratorOrganizationSetPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AdministratorOrganizationDeldeteMetadataPost(apiV1AdministratorOrganizationDeldeteMetadataPostRequest: ApiV1AdministratorOrganizationDeldeteMetadataPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeldeteMetadataPost(apiV1AdministratorOrganizationDeldeteMetadataPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

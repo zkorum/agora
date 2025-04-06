@@ -1,19 +1,24 @@
-import { organisationTable, userTable } from "@/schema.js";
+import {
+    organizationMetadataTable,
+    userOrganizationMappingTable,
+} from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { useCommonUser } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 
-interface DeleteUserOrganizationProps {
+interface RemoveUserOrganizationMappingProps {
     db: PostgresJsDatabase;
     username: string;
+    organizationName: string;
 }
 
-export async function deleteUserOrganization({
+export async function removeUserOrganizationMapping({
     db,
     username,
-}: DeleteUserOrganizationProps) {
+    organizationName,
+}: RemoveUserOrganizationMappingProps) {
     const { getUserIdFromUsername } = useCommonUser();
     const targetUserId = await getUserIdFromUsername({
         db: db,
@@ -21,51 +26,80 @@ export async function deleteUserOrganization({
     });
 
     try {
-        const userTableResponse = await db
-            .select({
-                organisationId: userTable.organisationId,
-            })
-            .from(userTable)
-            .where(eq(userTable.id, targetUserId));
-
-        if (userTableResponse.length == 0) {
-            throw httpErrors.notFound("Failed to locate user profile");
+        const organizationId = await getOrganizationIdFromOrganizationName(
+            db,
+            organizationName,
+        );
+        if (organizationId == undefined) {
+            throw httpErrors.notFound("Failed to locate organization ID");
         } else {
-            await db.transaction(async (tx) => {
-                if (userTableResponse[0].organisationId != null) {
-                    // Update the user table
-                    await tx
-                        .update(userTable)
-                        .set({
-                            organisationId: null,
-                        })
-                        .where(eq(userTable.id, targetUserId));
+            const deletedMapping = await db
+                .delete(userOrganizationMappingTable)
+                .where(
+                    and(
+                        eq(userOrganizationMappingTable.userId, targetUserId),
+                        eq(
+                            userOrganizationMappingTable.organizationMetadataId,
+                            organizationId,
+                        ),
+                    ),
+                )
+                .returning();
+            if (deletedMapping.length == 0) {
+                throw httpErrors.internalServerError(
+                    "Organization mapping does not exist",
+                );
+            }
+        }
+    } catch (err: unknown) {
+        log.error(err);
+        throw httpErrors.internalServerError(
+            "Database error while removing user organization mapping",
+        );
+    }
+}
 
-                    // Delete the organization entry
-                    await tx
-                        .delete(organisationTable)
-                        .where(
-                            eq(
-                                organisationTable.id,
-                                userTableResponse[0].organisationId,
-                            ),
-                        );
-                } else {
-                    tx.rollback();
-                }
+interface AddUserOrganizationMappingProps {
+    db: PostgresJsDatabase;
+    username: string;
+    organizationName: string;
+}
+
+export async function addUserOrganizationMapping({
+    db,
+    username,
+    organizationName,
+}: AddUserOrganizationMappingProps) {
+    const { getUserIdFromUsername } = useCommonUser();
+    const targetUserId = await getUserIdFromUsername({
+        db: db,
+        username: username,
+    });
+
+    try {
+        const organizationId = await getOrganizationIdFromOrganizationName(
+            db,
+            organizationName,
+        );
+
+        if (organizationId == undefined) {
+            throw httpErrors.notFound("Failed to locate organization ID");
+        } else {
+            await db.insert(userOrganizationMappingTable).values({
+                userId: targetUserId,
+                organizationMetadataId: organizationId,
             });
         }
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
-            "Database error while removing user organization profile",
+            "Database error while adding user organization mapping",
         );
     }
 }
 
-interface SetUserOrganizationProps {
+interface CreateOrganizationMetadataProps {
     db: PostgresJsDatabase;
-    username: string;
     organizationName: string;
     imagePath: string;
     isFullImagePath: boolean;
@@ -73,73 +107,75 @@ interface SetUserOrganizationProps {
     description: string;
 }
 
-export async function setUserOrganization({
+export async function createOrganizationMetadata({
     db,
-    username,
     organizationName,
     imagePath,
     isFullImagePath,
     websiteUrl,
     description,
-}: SetUserOrganizationProps) {
-    const { getUserIdFromUsername } = useCommonUser();
-    const targetUserId = await getUserIdFromUsername({
-        db: db,
-        username: username,
-    });
-
+}: CreateOrganizationMetadataProps) {
     try {
-        const userTableResponse = await db
-            .select({
-                organisationId: userTable.organisationId,
-            })
-            .from(userTable)
-            .where(eq(userTable.id, targetUserId));
-
-        if (userTableResponse.length == 0) {
-            throw httpErrors.notFound("Failed to locate user profile");
-        } else {
-            await db.transaction(async (tx) => {
-                if (userTableResponse[0].organisationId == null) {
-                    // Create a new organization entryt
-                    const organisationTableResponse = await tx
-                        .insert(organisationTable)
-                        .values({
-                            name: organizationName,
-                            imagePath: imagePath,
-                            isFullImagePath: isFullImagePath,
-                            websiteUrl: websiteUrl,
-                            description: description,
-                        })
-                        .returning({ organizationId: organisationTable.id });
-                    if (organisationTableResponse.length == 1) {
-                        // Update the user table
-                        await tx
-                            .update(userTable)
-                            .set({
-                                organisationId:
-                                    organisationTableResponse[0].organizationId,
-                            })
-                            .where(eq(userTable.id, targetUserId));
-                    } else {
-                        tx.rollback();
-                    }
-                } else {
-                    // Update the existing organization entry
-                    await tx.update(organisationTable).set({
-                        name: organizationName,
-                        imagePath: imagePath,
-                        isFullImagePath: isFullImagePath,
-                        websiteUrl: websiteUrl,
-                        description: description,
-                    });
-                }
-            });
-        }
+        // Create a new organization entry
+        await db.insert(organizationMetadataTable).values({
+            name: organizationName,
+            imagePath: imagePath,
+            isFullImagePath: isFullImagePath,
+            websiteUrl: websiteUrl,
+            description: description,
+        });
     } catch (err: unknown) {
         log.error(err);
         throw httpErrors.internalServerError(
             "Database error while setting user organization profile",
+        );
+    }
+}
+
+interface DeleteOrganizationMetadataProps {
+    db: PostgresJsDatabase;
+    organizationName: string;
+}
+
+export async function deleteOrganizationMetadata({
+    db,
+    organizationName,
+}: DeleteOrganizationMetadataProps) {
+    try {
+        // Create a new organization entry
+        await db
+            .delete(organizationMetadataTable)
+            .where(eq(organizationMetadataTable.name, organizationName));
+    } catch (err: unknown) {
+        log.error(err);
+        throw httpErrors.internalServerError(
+            "Database error while deleting organization metadata",
+        );
+    }
+}
+
+async function getOrganizationIdFromOrganizationName(
+    db: PostgresJsDatabase,
+    organizationName: string,
+): Promise<number | undefined> {
+    try {
+        // Find out the organization ID
+        const organizationMetadataTableResponse = await db
+            .select({
+                organizationId: organizationMetadataTable.id,
+            })
+            .from(organizationMetadataTable)
+            .where(eq(organizationMetadataTable.name, organizationName));
+
+        if (organizationMetadataTableResponse.length != 1) {
+            return undefined;
+        } else {
+            return organizationMetadataTableResponse[0].organizationId;
+        }
+    } catch (err: unknown) {
+        log.error(err);
+        throw httpErrors.internalServerError(
+            "Database error while retrieving organization ID from organization name",
         );
     }
 }

@@ -1076,65 +1076,13 @@
                                         },
                                         "isModerator": {
                                             "type": "boolean"
-                                        },
-                                        "organization": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "isOrganization": {
-                                                            "type": "boolean",
-                                                            "enum": [
-                                                                true
-                                                            ]
-                                                        },
-                                                        "name": {
-                                                            "type": "string"
-                                                        },
-                                                        "imageUrl": {
-                                                            "type": "string"
-                                                        },
-                                                        "websiteUrl": {
-                                                            "type": "string",
-                                                            "format": "uri"
-                                                        },
-                                                        "description": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "isOrganization",
-                                                        "name",
-                                                        "imageUrl",
-                                                        "websiteUrl",
-                                                        "description"
-                                                    ],
-                                                    "additionalProperties": false
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "isOrganization": {
-                                                            "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "isOrganization"
-                                                    ],
-                                                    "additionalProperties": false
-                                                }
-                                            ]
                                         }
                                     },
                                     "required": [
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator",
-                                        "organization"
+                                        "isModerator"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -3359,7 +3307,7 @@
                 }
             }
         },
-        "/api/v1/administrator-organization/set": {
+        "/api/v1/administrator-organization/create-metadata": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -3367,10 +3315,6 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "username": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
-                                    },
                                     "organizationName": {
                                         "type": "string"
                                     },
@@ -3389,7 +3333,6 @@
                                     }
                                 },
                                 "required": [
-                                    "username",
                                     "organizationName",
                                     "imagePath",
                                     "isFullImagePath",
@@ -3409,7 +3352,7 @@
                 }
             }
         },
-        "/api/v1/administrator-organization/delete": {
+        "/api/v1/administrator-organization/deldete-metadata": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -3417,13 +3360,12 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "username": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
+                                    "organizationName": {
+                                        "type": "string"
                                     }
                                 },
                                 "required": [
-                                    "username"
+                                    "organizationName"
                                 ],
                                 "additionalProperties": false
                             }

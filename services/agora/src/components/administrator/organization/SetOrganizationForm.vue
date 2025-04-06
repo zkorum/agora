@@ -1,8 +1,8 @@
 <template>
   <form class="container" @submit.prevent="setOrganization()">
     <q-input
-      v-model="username"
-      label="Username"
+      v-model="organizationName"
+      label="Name"
       autocomplete="off"
       data-1p-ignore
     />
@@ -14,12 +14,6 @@
     <div>Non-full path: xxx.png</div>
     <div>Full path: https://agoracitizen.network/images/big_logo_agora.png</div>
     <q-checkbox v-model="isFullImagePath" label="Is Full Image Path" />
-    <q-input
-      v-model="organizationName"
-      label="Name"
-      autocomplete="off"
-      data-1p-ignore
-    />
     <q-input v-model="websiteUrl" label="Website URL" />
     <ZKButton
       button-type="largeButton"
@@ -34,9 +28,8 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
 
-const { setUserOrganization } = useBackendAdministratorOrganizationApi();
+const { createOrganizationMetadata } = useBackendAdministratorOrganizationApi();
 
-const username = ref("");
 const description = ref("");
 const imagePath = ref("");
 const isFullImagePath = ref(false);
@@ -44,8 +37,7 @@ const organizationName = ref("");
 const websiteUrl = ref("");
 
 async function setOrganization() {
-  await setUserOrganization(
-    username.value,
+  await createOrganizationMetadata(
     description.value,
     imagePath.value,
     isFullImagePath.value,
