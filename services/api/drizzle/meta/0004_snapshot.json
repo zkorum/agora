@@ -1,5 +1,5 @@
 {
-  "id": "1170a8d7-705c-4ddb-9d12-3b286c00303a",
+  "id": "9d335800-dcf3-4985-b8ea-74f75bb71123",
   "prevId": "5a21539c-3e2e-442b-b073-079a0eda3a67",
   "version": "7",
   "dialect": "postgresql",
@@ -2103,8 +2103,8 @@
       },
       "isRLSEnabled": false
     },
-    "public.organisation": {
-      "name": "organisation",
+    "public.organization_metadata": {
+      "name": "organization_metadata",
       "schema": "",
       "columns": {
         "id": {
@@ -2114,7 +2114,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "organisation_id_seq",
+            "name": "organization_metadata_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -2130,11 +2130,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "image_name": {
-          "name": "image_name",
+        "image_path": {
+          "name": "image_path",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "is_full_image_path": {
+          "name": "is_full_image_path",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
         },
         "website_url": {
           "name": "website_url",
@@ -2166,7 +2172,22 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "organization_metadata_name_unique": {
+          "name": "organization_metadata_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        },
+        "organization_metadata_website_url_unique": {
+          "name": "organization_metadata_website_url_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "website_url"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -3611,6 +3632,107 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.user_organization_mapping": {
+      "name": "user_organization_mapping",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "user_organization_mapping_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_metadata_id": {
+          "name": "organization_metadata_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_idx_organization": {
+          "name": "user_idx_organization",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_organization_mapping_user_id_user_id_fk": {
+          "name": "user_organization_mapping_user_id_user_id_fk",
+          "tableFrom": "user_organization_mapping",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_organization_mapping_organization_metadata_id_organization_metadata_id_fk": {
+          "name": "user_organization_mapping_organization_metadata_id_organization_metadata_id_fk",
+          "tableFrom": "user_organization_mapping",
+          "tableTo": "organization_metadata",
+          "columnsFrom": [
+            "organization_metadata_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_user_orgaization_mapping": {
+          "name": "unique_user_orgaization_mapping",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "organization_metadata_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -3620,12 +3742,6 @@
           "type": "uuid",
           "primaryKey": true,
           "notNull": true
-        },
-        "organisation_id": {
-          "name": "organisation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "username": {
           "name": "username",
@@ -3705,21 +3821,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "user_organisation_id_organisation_id_fk": {
-          "name": "user_organisation_id_organisation_id_fk",
-          "tableFrom": "user",
-          "tableTo": "organisation",
-          "columnsFrom": [
-            "organisation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "user_username_unique": {

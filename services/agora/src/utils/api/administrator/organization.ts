@@ -1,7 +1,7 @@
 import { api } from "boot/axios";
 import {
-  ApiV1AdministratorOrganizationSetPostRequest,
-  ApiV1UserUsernameUpdatePostRequest,
+  ApiV1AdministratorOrganizationCreateMetadataPostRequest,
+  ApiV1AdministratorOrganizationDeldeteMetadataPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -14,14 +14,14 @@ export function useBackendAdministratorOrganizationApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function deleteUserOrganization(username: string) {
+  async function deleteOrganizationMetadata(organizationName: string) {
     try {
-      const params: ApiV1UserUsernameUpdatePostRequest = {
-        username: username,
+      const params: ApiV1AdministratorOrganizationDeldeteMetadataPostRequest = {
+        organizationName: organizationName,
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationDeletePost(
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationDeldeteMetadataPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -29,28 +29,27 @@ export function useBackendAdministratorOrganizationApi() {
         undefined,
         undefined,
         api
-      ).apiV1AdministratorOrganizationDeletePost(params, {
+      ).apiV1AdministratorOrganizationDeldeteMetadataPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
 
       if (response.status == 200) {
-        showNotifyMessage("Deleted user organization");
+        showNotifyMessage("Deleted organization");
         return true;
       } else {
-        showNotifyMessage("Failed to delete user organization");
+        showNotifyMessage("Failed to delete organization");
         return false;
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to delete user organization");
+      showNotifyMessage("Failed to delete organization");
       return false;
     }
   }
 
-  async function setUserOrganization(
-    username: string,
+  async function createOrganizationMetadata(
     description: string,
     imagePath: string,
     isFullImagePath: boolean,
@@ -58,8 +57,7 @@ export function useBackendAdministratorOrganizationApi() {
     websiteUrl: string
   ) {
     try {
-      const params: ApiV1AdministratorOrganizationSetPostRequest = {
-        username: username,
+      const params: ApiV1AdministratorOrganizationCreateMetadataPostRequest = {
         description: description,
         imagePath: imagePath,
         isFullImagePath: isFullImagePath,
@@ -68,7 +66,7 @@ export function useBackendAdministratorOrganizationApi() {
       };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationSetPost(
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationCreateMetadataPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -76,7 +74,7 @@ export function useBackendAdministratorOrganizationApi() {
         undefined,
         undefined,
         api
-      ).apiV1AdministratorOrganizationSetPost(params, {
+      ).apiV1AdministratorOrganizationCreateMetadataPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -97,7 +95,7 @@ export function useBackendAdministratorOrganizationApi() {
   }
 
   return {
-    deleteUserOrganization,
-    setUserOrganization,
+    deleteOrganizationMetadata,
+    createOrganizationMetadata,
   };
 }

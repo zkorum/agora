@@ -24,17 +24,13 @@
       <ZKCard :padding="'1rem'" class="cardBackground">
         <SetOrganizationForm />
       </ZKCard>
-
-      <ZKCard :padding="'1rem'" class="cardBackground">
-        <DeleteOrganizationForm />
-      </ZKCard>
     </div>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import DeleteOrganizationForm from "src/components/administrator/organization/DeleteOrganizationForm.vue";
 import SetOrganizationForm from "src/components/administrator/organization/SetOrganizationForm.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 </script>

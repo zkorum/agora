@@ -2,7 +2,6 @@ import {
     conversationContentTable,
     pollTable,
     conversationTable,
-    organisationTable,
     userTable,
     opinionTable,
     conversationModerationTable,
@@ -198,10 +197,6 @@ export function useCommonPost() {
                     conversationModerationTable.conversationId,
                     conversationTable.id,
                 ),
-            )
-            .leftJoin(
-                organisationTable,
-                eq(organisationTable.id, userTable.organisationId),
             )
             .leftJoin(
                 pollTable,

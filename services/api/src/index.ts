@@ -90,8 +90,8 @@ import {
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import {
-    deleteUserOrganization,
-    setUserOrganization,
+    createOrganizationMetadata,
+    deleteOrganizationMetadata,
 } from "./service/administratorOrganization.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
@@ -851,7 +851,6 @@ server.after(() => {
                 return await getUserProfile({
                     db: db,
                     userId: status.userId,
-                    imageBaseUrl: config.IMAGE_BASE_URL,
                 });
             }
         },
@@ -1583,9 +1582,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/administrator-organization/set`,
+        url: `/api/${apiVersion}/administrator-organization/create-metadata`,
         schema: {
-            body: Dto.setUserOrganizationRequest,
+            body: Dto.createOrganizationMetadataRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1606,9 +1605,8 @@ server.after(() => {
                     );
                 }
 
-                await setUserOrganization({
+                await createOrganizationMetadata({
                     db: db,
-                    username: request.body.username,
                     organizationName: request.body.organizationName,
                     imagePath: request.body.imagePath,
                     isFullImagePath: request.body.isFullImagePath,
@@ -1621,9 +1619,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/administrator-organization/delete`,
+        url: `/api/${apiVersion}/administrator-organization/deldete-metadata`,
         schema: {
-            body: Dto.deleteUserOrganizationRequest,
+            body: Dto.deleteOrganizationMetadataRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1644,9 +1642,9 @@ server.after(() => {
                     );
                 }
 
-                await deleteUserOrganization({
+                await deleteOrganizationMetadata({
                     db: db,
-                    username: request.body.username,
+                    organizationName: request.body.organizationName,
                 });
             }
         },

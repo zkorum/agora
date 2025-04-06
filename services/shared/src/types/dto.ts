@@ -29,7 +29,6 @@ import {
     zodNotificationItem,
     zodPolisKey,
     zodSupportedCountryCallingCode,
-    zodOrganization,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -214,7 +213,6 @@ export class Dto {
             createdAt: z.date(),
             username: zodUsername,
             isModerator: z.boolean(),
-            organization: zodOrganization,
         })
         .strict();
     static fetchUserConversationsRequest = z
@@ -358,9 +356,8 @@ export class Dto {
             notificationList: z.array(zodNotificationItem),
         })
         .strict();
-    static setUserOrganizationRequest = z
+    static createOrganizationMetadataRequest = z
         .object({
-            username: zodUsername,
             organizationName: z.string(),
             imagePath: z.string(),
             isFullImagePath: z.boolean(),
@@ -368,9 +365,9 @@ export class Dto {
             description: z.string(),
         })
         .strict();
-    static deleteUserOrganizationRequest = z
+    static deleteOrganizationMetadataRequest = z
         .object({
-            username: zodUsername,
+            organizationName: z.string(),
         })
         .strict();
     // this generates enum with openapigenerator without the verified state...
