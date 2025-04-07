@@ -7,9 +7,9 @@
     "scripts": {
         "sync": "bash scripts/rsync_and_sed.sh",
         "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-        "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-        "format:check": "prettier . --check",
-        "format:write": "prettier . --write"
+        "lint": "eslint --ext .js,.jsx,.ts,.tsx,.vue,.md,.json ./",
+        "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
+        "format:check": "prettier . --check"
     },
     "keywords": [],
     "author": "ZKorum SAS <hello@zkorum.com>",
@@ -38,6 +38,7 @@
         "@types/sanitize-html": "^2.13.0",
         "@types/validator": "^13.12.2",
         "eslint": "^9.13.0",
+        "eslint-config-prettier": "^10.1.1",
         "jest": "^29.7.0",
         "prettier": "^3.0.3",
         "ts-jest": "^29.1.1",

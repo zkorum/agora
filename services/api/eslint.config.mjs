@@ -3,6 +3,8 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import json from "@eslint/json";
+import markdown from "@eslint/markdown";
 
 export default tseslint.config(
     eslint.configs.recommended,
@@ -40,6 +42,10 @@ export default tseslint.config(
             "tests/**/*",
             "drizzle.config.ts",
         ],
+    },
+    {
+        // Add plugins here
+        plugins: { markdown, json },
     },
     eslintConfigPrettier, // eslint-config-prettier last
 );
