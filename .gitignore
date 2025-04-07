@@ -26,3 +26,6 @@ doc/.*
 
 # misc
 *.bak
+
+# vscode
+**/.vscode/settings.json
