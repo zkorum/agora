@@ -70,6 +70,3 @@ lerna-debug.log*
 # Built Visual Studio Code Extensions
 *.vsix
 
-# data
-/data/images/
-
