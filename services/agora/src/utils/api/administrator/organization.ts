@@ -232,15 +232,15 @@ export function useBackendAdministratorOrganizationApi() {
       );
 
       if (response.status == 200) {
-        return true;
+        return response.data.organizationNameList;
       } else {
         showNotifyMessage("Failed to get user's organizations");
-        return false;
+        return [];
       }
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to get user's organizations");
-      return false;
+      return [];
     }
   }
 
