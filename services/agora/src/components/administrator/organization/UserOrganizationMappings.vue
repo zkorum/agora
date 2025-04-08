@@ -18,20 +18,6 @@
         User does not belong to any organizations
       </div>
 
-      <q-input
-        v-model="organizationName"
-        label="Organization name"
-        autocomplete="off"
-        data-1p-ignore
-      />
-
-      <ZKButton
-        button-type="largeButton"
-        label="Add user to organization"
-        :disable="username.length == 0 || organizationName.length == 0"
-        @click="addUserToOrganizationClicked()"
-      />
-
       <div v-for="organization in organizationList" :key="organization">
         <div>
           {{ organization }}
@@ -39,7 +25,7 @@
 
         <ZKButton
           button-type="largeButton"
-          label="Delete Organization"
+          label="Remove user organization mapping"
           @click="deleteOrganizationButtonClicked(organization)"
         />
       </div>
@@ -52,16 +38,12 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
 
-const {
-  getOrganizationNamesByUsername,
-  removeUserOrganizationMapping,
-  addUserOrganizationMapping,
-} = useBackendAdministratorOrganizationApi();
+const { getOrganizationNamesByUsername, removeUserOrganizationMapping } =
+  useBackendAdministratorOrganizationApi();
 
 const organizationList = ref<string[]>([]);
 
 const username = ref("");
-const organizationName = ref("");
 const dataLoaded = ref(false);
 
 async function fetchOrganizations() {
@@ -71,10 +53,6 @@ async function fetchOrganizations() {
 
 async function deleteOrganizationButtonClicked(organizationName: string) {
   await removeUserOrganizationMapping(username.value, organizationName);
-}
-
-async function addUserToOrganizationClicked() {
-  await addUserOrganizationMapping(username.value, organizationName.value);
 }
 </script>
 

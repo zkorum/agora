@@ -8,33 +8,24 @@
         {{ organization }}
       </div>
 
-      <ZKButton
-        button-type="largeButton"
-        label="Delete Organization"
-        @click="deleteOrganizationButtonClicked(organization.name)"
-      />
+      <OrganizationView :organization-name="organization.name" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { OrganizationProperties } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { onMounted, ref } from "vue";
+import OrganizationView from "./OrganizationView.vue";
 
-const { deleteOrganization, getAllOrganizations } =
-  useBackendAdministratorOrganizationApi();
+const { getAllOrganizations } = useBackendAdministratorOrganizationApi();
 
 const organizationList = ref<OrganizationProperties[]>([]);
 
 onMounted(async () => {
   organizationList.value = await getAllOrganizations();
 });
-
-async function deleteOrganizationButtonClicked(organizationName: string) {
-  await deleteOrganization(organizationName);
-}
 </script>
 
 <style lang="scss" scoped>
