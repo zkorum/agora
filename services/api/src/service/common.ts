@@ -593,6 +593,8 @@ export function useCommonPost() {
         contentId: number | null;
         authorId: string;
         participantCount: number;
+        isIndexed: boolean;
+        isLoginRequired: boolean;
     }
 
     interface GetPostMetadataFromSlugIdProps {
@@ -610,6 +612,8 @@ export function useCommonPost() {
                 currentContentId: conversationTable.currentContentId,
                 authorId: conversationTable.authorId,
                 participantCount: conversationTable.participantCount,
+                isIndexed: conversationTable.isIndexed,
+                isLoginRequired: conversationTable.isLoginRequired,
             })
             .from(conversationTable)
             .where(eq(conversationTable.slugId, conversationSlugId));
@@ -620,6 +624,8 @@ export function useCommonPost() {
                 id: postTableResponse[0].id,
                 authorId: postTableResponse[0].authorId,
                 participantCount: postTableResponse[0].participantCount,
+                isIndexed: postTableResponse[0].isIndexed,
+                isLoginRequired: postTableResponse[0].isLoginRequired,
             };
         } else if (postTableResponse.length > 1) {
             throw httpErrors.notFound(

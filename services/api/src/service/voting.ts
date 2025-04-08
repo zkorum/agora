@@ -18,6 +18,7 @@ import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import { log } from "@/app.js";
 import { insertNewVoteNotification } from "./notification.js";
+import * as authUtilService from "@/service/authUtil.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -309,11 +310,14 @@ export async function importNewVote({
 interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
     opinionSlugId: string;
-    userId: string;
     didWrite: string;
     proof: string;
     votingAction: VotingAction;
+    userAgent: string;
     axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
     polisDelayToFetch: number;
     voteNotifMilestones: number[];
     awsAiLabelSummaryEnable: boolean;
@@ -324,16 +328,20 @@ interface CastVoteForOpinionSlugIdProps {
     awsAiLabelSummaryTopK: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
+    now: Date;
 }
 
 export async function castVoteForOpinionSlugId({
     db,
-    userId,
     opinionSlugId,
     didWrite,
     proof,
     votingAction,
+    userAgent,
     axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
     polisDelayToFetch,
     voteNotifMilestones,
     awsAiLabelSummaryEnable,
@@ -344,12 +352,25 @@ export async function castVoteForOpinionSlugId({
     awsAiLabelSummaryTopK,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
+    now,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });
+
+    const {
+        isIndexed: conversationIsIndexed,
+        isLoginRequired: conversationIsLoginRequired,
+        contentId: conversationContentId,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        conversationSlugId: conversationSlugId,
+    });
+    if (conversationContentId == null) {
+        throw httpErrors.gone("Cannot comment on a deleted post");
+    }
 
     // Check if the post is locked
     {
@@ -363,9 +384,17 @@ export async function castVoteForOpinionSlugId({
         }
     }
 
-    const postMetadata = await useCommonPost().getPostMetadataFromSlugId({
-        db: db,
-        conversationSlugId: conversationSlugId,
+    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+        db,
+        didWrite,
+        conversationIsIndexed,
+        conversationIsLoginRequired,
+        userAgent,
+        axiosPolis,
+        polisUserEmailDomain,
+        polisUserEmailLocalPart,
+        polisUserPassword,
+        now,
     });
 
     const commentData = await getCommentMetadataFromCommentSlugId({

@@ -71,6 +71,17 @@ interface RegisterWithPhoneNumberProps {
     sessionExpiry: Date;
 }
 
+interface RegisterWithoutVerificationProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    now: Date;
+    userAgent: string;
+    axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
+}
+
 interface RegisterWithZKPProps {
     db: PostgresDatabase;
     didWrite: string;
@@ -583,6 +594,43 @@ export async function registerWithPhoneNumber({
             });
         }
     });
+}
+
+// Note: device is assumed to be unknown
+export async function registerWithoutVerification({
+    db,
+    didWrite,
+    now,
+    userAgent,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
+}: RegisterWithoutVerificationProps): Promise<string> {
+    const userId = generateUUID();
+    const loginSessionExpiry = new Date(now);
+    await db.transaction(async (tx) => {
+        await tx.insert(userTable).values({
+            username: await generateUnusedRandomUsername({ db: db }),
+            id: userId,
+        });
+        await tx.insert(deviceTable).values({
+            userId: userId,
+            didWrite: didWrite,
+            userAgent: userAgent,
+            sessionExpiry: loginSessionExpiry,
+        });
+        if (axiosPolis !== undefined) {
+            await polisService.createUser({
+                axiosPolis,
+                polisUserEmailDomain,
+                polisUserEmailLocalPart,
+                polisUserPassword,
+                userId,
+            });
+        }
+    });
+    return userId;
 }
 
 export async function registerWithZKP({

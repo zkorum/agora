@@ -46,6 +46,7 @@ import { getUserMutePreferences } from "./muteUser.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import { alias } from "drizzle-orm/pg-core";
+import * as authUtilService from "@/service/authUtil.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -1014,10 +1015,14 @@ interface PostNewOpinionProps {
     db: PostgresJsDatabase;
     commentBody: string;
     conversationSlugId: string;
-    userId: string;
     didWrite: string;
     proof: string;
+    userAgent: string;
     axiosPolis: AxiosInstance | undefined;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
+    now: Date;
 }
 
 interface ImportNewOpinionProps {
@@ -1109,16 +1114,33 @@ export async function postNewOpinion({
     db,
     commentBody,
     conversationSlugId,
-    userId,
     didWrite,
     proof,
+    userAgent,
+    now,
     axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
+    const {
+        id: conversationId,
+        contentId: conversationContentId,
+        authorId: conversationAuthorId,
+        isIndexed: conversationIsIndexed,
+        isLoginRequired: conversationIsLoginRequired,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        conversationSlugId: conversationSlugId,
+    });
+    if (conversationContentId == null) {
+        throw httpErrors.gone("Cannot comment on a deleted post");
+    }
+
     const isLocked = await useCommonPost().isPostSlugIdLocked({
         postSlugId: conversationSlugId,
         db: db,
     });
-
     if (isLocked) {
         return {
             success: false,
@@ -1136,17 +1158,18 @@ export async function postNewOpinion({
         }
     }
 
-    const {
-        id: conversationId,
-        contentId: conversationContentId,
-        authorId: conversationAuthorId,
-    } = await useCommonPost().getPostMetadataFromSlugId({
-        db: db,
-        conversationSlugId: conversationSlugId,
+    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+        db,
+        didWrite,
+        conversationIsIndexed,
+        conversationIsLoginRequired,
+        userAgent,
+        axiosPolis,
+        polisUserEmailDomain,
+        polisUserEmailLocalPart,
+        polisUserPassword,
+        now,
     });
-    if (conversationContentId == null) {
-        throw httpErrors.gone("Cannot comment on a deleted post");
-    }
 
     const opinionSlugId = generateRandomSlugId();
 

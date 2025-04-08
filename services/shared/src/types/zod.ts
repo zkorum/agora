@@ -741,6 +741,21 @@ export const zodGenLabelSummaryOutputLoose = z.object({
     clusters: zodGenLabelSummaryOutputClusterLoose,
 });
 
+export const zodGetDeviceStatusResponse = z.discriminatedUnion("isRegistered", [
+    z.object({
+        isRegistered: z.literal(false),
+    }),
+    z.object({
+        isRegistered: z.literal(true),
+        isLoggedIn: z.boolean(),
+        isVerified: z.boolean(),
+        userId: z.string(),
+    }),
+]);
+
+export type GetDeviceStatusResponse = z.infer<
+    typeof zodGetDeviceStatusResponse
+>;
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;

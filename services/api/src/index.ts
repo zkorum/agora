@@ -953,54 +953,52 @@ server.after(() => {
                 expectedDeviceStatus: undefined,
             });
 
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const castVoteResponse = await castVoteForOpinionSlugId({
-                    db: db,
-                    opinionSlugId: request.body.opinionSlugId,
-                    userId: status.userId,
-                    didWrite: didWrite,
-                    proof: encodedUcan,
-                    votingAction: request.body.chosenOption,
-                    axiosPolis: axiosPolis,
-                    polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
-                    voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
-                    awsAiLabelSummaryEnable:
-                        config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                        (config.NODE_ENV === "production" ||
-                            config.NODE_ENV === "staging"),
-                    awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                    awsAiLabelSummaryModelId:
-                        config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                    awsAiLabelSummaryTemperature:
-                        config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                    awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                    awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
-                    awsAiLabelSummaryMaxTokens:
-                        config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                    awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
-                });
-                reply.send(castVoteResponse);
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+            const now = nowZeroMs();
+            const castVoteResponse = await castVoteForOpinionSlugId({
+                db: db,
+                opinionSlugId: request.body.opinionSlugId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                votingAction: request.body.chosenOption,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
+                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
+                awsAiLabelSummaryEnable:
+                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                    (config.NODE_ENV === "production" ||
+                        config.NODE_ENV === "staging"),
+                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                awsAiLabelSummaryTemperature:
+                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
+                awsAiLabelSummaryMaxTokens:
+                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+                now: now,
+            });
+            reply.send(castVoteResponse);
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1141,39 +1139,37 @@ server.after(() => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const newOpinionResponse = await postNewOpinion({
-                    db: db,
-                    commentBody: request.body.opinionBody,
-                    conversationSlugId: request.body.conversationSlugId,
-                    userId: status.userId,
-                    didWrite: didWrite,
-                    proof: encodedUcan,
-                    axiosPolis: axiosPolis,
-                });
-                reply.send(newOpinionResponse);
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+            const now = nowZeroMs();
+            const newOpinionResponse = await postNewOpinion({
+                db: db,
+                commentBody: request.body.opinionBody,
+                conversationSlugId: request.body.conversationSlugId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
+                now: now,
+            });
+            reply.send(newOpinionResponse);
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },

@@ -1,10 +1,19 @@
 // util service to get data about devices, users, emails, etc
-import { deviceTable, emailTable, userTable } from "@/schema.js";
+import {
+    deviceTable,
+    emailTable,
+    phoneTable,
+    userTable,
+    zkPassportTable,
+} from "@/schema.js";
 import { and, eq, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { IsLoggedInResponse } from "@/shared/types/dto.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 import { httpErrors } from "@fastify/sensible";
+import type { GetDeviceStatusResponse } from "@/shared/types/zod.js";
+import type { AxiosInstance } from "axios";
+import * as authService from "@/service/auth.js";
 
 interface InfoDevice {
     userAgent: string;
@@ -54,6 +63,100 @@ export async function isLoggedIn(
         return { isLoggedIn: false };
     } else {
         return { isLoggedIn: true, userId: resultDevice[0].userId };
+    }
+}
+
+interface GetOrRegisterUserIdFromDeviceStatusProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    conversationIsIndexed: boolean;
+    conversationIsLoginRequired: boolean;
+    userAgent: string;
+    axiosPolis: AxiosInstance | undefined;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
+    now: Date;
+}
+
+export async function getOrRegisterUserIdFromDeviceStatus({
+    db,
+    didWrite,
+    conversationIsIndexed,
+    conversationIsLoginRequired,
+    userAgent,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
+    now,
+}: GetOrRegisterUserIdFromDeviceStatusProps): Promise<string> {
+    let userId: string;
+    const deviceStatus = await getDeviceStatus(db, didWrite);
+    if (conversationIsIndexed || conversationIsLoginRequired) {
+        if (!deviceStatus.isRegistered) {
+            throw httpErrors.unauthorized("Device is unknown");
+        } else if (!deviceStatus.isVerified) {
+            throw httpErrors.unauthorized(
+                "Device is not registered with a verified user",
+            );
+        } else if (!deviceStatus.isLoggedIn) {
+            throw httpErrors.unauthorized("Device is not logged in");
+        }
+        userId = deviceStatus.userId;
+    } else if (deviceStatus.isRegistered) {
+        // even registered device associated with a verified user, but logged-out, can comment on unindexed+loginNotRequired posts
+        userId = deviceStatus.userId;
+    } else {
+        // register device to a new un-verified user
+        userId = await authService.registerWithoutVerification({
+            db,
+            didWrite,
+            now,
+            userAgent,
+            axiosPolis,
+            polisUserEmailDomain,
+            polisUserEmailLocalPart,
+            polisUserPassword,
+        });
+    }
+    return userId;
+}
+
+export async function getDeviceStatus(
+    db: PostgresDatabase,
+    didWrite: string,
+): Promise<GetDeviceStatusResponse> {
+    const now = nowZeroMs();
+    const resultDevice = await db
+        .select({
+            sessionExpiry: deviceTable.sessionExpiry,
+            phoneTableId: phoneTable.id,
+            zkPassportTableId: zkPassportTable.id,
+            userId: deviceTable.userId,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            zkPassportTable,
+            eq(zkPassportTable.userId, deviceTable.userId),
+        )
+        .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
+        .where(eq(deviceTable.didWrite, didWrite));
+    if (resultDevice.length === 0) {
+        // device is unknown
+        return { isRegistered: false };
+    } else {
+        const sessionExpiry = resultDevice[0].sessionExpiry;
+        const isLoggedIn = sessionExpiry.getTime() > now.getTime();
+        const isVerified =
+            resultDevice[0].phoneTableId !== null ||
+            resultDevice[0].zkPassportTableId !== null;
+        return {
+            isRegistered: true,
+            isLoggedIn,
+            isVerified,
+            userId: resultDevice[0].userId,
+        };
     }
 }
 
