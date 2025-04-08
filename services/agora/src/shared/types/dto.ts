@@ -387,6 +387,18 @@ export class Dto {
             organizationList: z.array(zodOrganization),
         })
         .strict();
+    static addUserOrganizationMappingRequest = z
+        .object({
+            username: zodUsername,
+            organizationName: z.string(),
+        })
+        .strict();
+    static removeUserOrganizationMappingRequest = z
+        .object({
+            username: zodUsername,
+            organizationName: z.string(),
+        })
+        .strict();
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
     //     "rarimoStatus",

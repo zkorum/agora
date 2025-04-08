@@ -90,10 +90,12 @@ import {
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import {
+    addUserOrganizationMapping,
     createOrganization,
     deleteOrganization,
     getAllOrganizations,
     getOrganizationNamesByUsername,
+    removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
@@ -1579,6 +1581,76 @@ server.after(() => {
             return await generateUnusedRandomUsername({
                 db: db,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/add-user-organization-mapping`,
+        schema: {
+            body: Dto.addUserOrganizationMappingRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await addUserOrganizationMapping({
+                    db: db,
+                    username: request.body.username,
+                    organizationName: request.body.organizationName,
+                });
+                return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/remove-user-organization-mapping`,
+        schema: {
+            body: Dto.addUserOrganizationMappingRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await removeUserOrganizationMapping({
+                    db: db,
+                    username: request.body.username,
+                    organizationName: request.body.organizationName,
+                });
+                return;
+            }
         },
     });
 
