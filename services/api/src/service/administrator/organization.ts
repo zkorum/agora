@@ -186,7 +186,7 @@ export async function addUserOrganizationMapping({
     }
 }
 
-interface CreateOrganizationMetadataProps {
+interface CreateOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
     imagePath: string;
@@ -195,14 +195,14 @@ interface CreateOrganizationMetadataProps {
     description: string;
 }
 
-export async function createOrganizationMetadata({
+export async function createOrganization({
     db,
     organizationName,
     imagePath,
     isFullImagePath,
     websiteUrl,
     description,
-}: CreateOrganizationMetadataProps) {
+}: CreateOrganizationProps) {
     try {
         // Create a new organization entry
         await db.insert(organizationTable).values({
@@ -220,15 +220,15 @@ export async function createOrganizationMetadata({
     }
 }
 
-interface DeleteOrganizationMetadataProps {
+interface deleteOrganizationProps {
     db: PostgresJsDatabase;
     organizationName: string;
 }
 
-export async function deleteOrganizationMetadata({
+export async function deleteOrganization({
     db,
     organizationName,
-}: DeleteOrganizationMetadataProps) {
+}: deleteOrganizationProps) {
     try {
         // Create a new organization entry
         await db

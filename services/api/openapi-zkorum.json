@@ -3307,7 +3307,7 @@
                 }
             }
         },
-        "/api/v1/administrator-organization/create-metadata": {
+        "/api/v1/administrator/organization/create-organization": {
             "post": {
                 "requestBody": {
                     "content": {
@@ -3352,7 +3352,7 @@
                 }
             }
         },
-        "/api/v1/administrator-organization/deldete-metadata": {
+        "/api/v1/administrator/organization/delete-organization": {
             "post": {
                 "requestBody": {
                     "content": {

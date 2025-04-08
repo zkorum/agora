@@ -90,8 +90,8 @@ import {
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import {
-    createOrganizationMetadata,
-    deleteOrganizationMetadata,
+    createOrganization,
+    deleteOrganization,
 } from "./service/administrator/organization.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
@@ -1582,9 +1582,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/administrator-organization/create-metadata`,
+        url: `/api/${apiVersion}/administrator/organization/create-organization`,
         schema: {
-            body: Dto.createOrganizationMetadataRequest,
+            body: Dto.createOrganizationRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1605,7 +1605,7 @@ server.after(() => {
                     );
                 }
 
-                await createOrganizationMetadata({
+                await createOrganization({
                     db: db,
                     organizationName: request.body.organizationName,
                     imagePath: request.body.imagePath,
@@ -1619,9 +1619,9 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/administrator-organization/deldete-metadata`,
+        url: `/api/${apiVersion}/administrator/organization/delete-organization`,
         schema: {
-            body: Dto.deleteOrganizationMetadataRequest,
+            body: Dto.deleteOrganizationRequest,
         },
         handler: async (request) => {
             const { didWrite } = await verifyUCAN(db, request, {
@@ -1642,7 +1642,7 @@ server.after(() => {
                     );
                 }
 
-                await deleteOrganizationMetadata({
+                await deleteOrganization({
                     db: db,
                     organizationName: request.body.organizationName,
                 });

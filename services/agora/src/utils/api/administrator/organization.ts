@@ -1,7 +1,7 @@
 import { api } from "boot/axios";
 import {
-  ApiV1AdministratorOrganizationCreateMetadataPostRequest,
-  ApiV1AdministratorOrganizationDeldeteMetadataPostRequest,
+  ApiV1AdministratorOrganizationCreateOrganizationPostRequest,
+  ApiV1AdministratorOrganizationDeleteOrganizationPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -16,12 +16,13 @@ export function useBackendAdministratorOrganizationApi() {
 
   async function deleteOrganizationMetadata(organizationName: string) {
     try {
-      const params: ApiV1AdministratorOrganizationDeldeteMetadataPostRequest = {
-        organizationName: organizationName,
-      };
+      const params: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest =
+        {
+          organizationName: organizationName,
+        };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationDeldeteMetadataPost(
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationDeleteOrganizationPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -29,7 +30,7 @@ export function useBackendAdministratorOrganizationApi() {
         undefined,
         undefined,
         api
-      ).apiV1AdministratorOrganizationDeldeteMetadataPost(params, {
+      ).apiV1AdministratorOrganizationDeleteOrganizationPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -57,16 +58,17 @@ export function useBackendAdministratorOrganizationApi() {
     websiteUrl: string
   ) {
     try {
-      const params: ApiV1AdministratorOrganizationCreateMetadataPostRequest = {
-        description: description,
-        imagePath: imagePath,
-        isFullImagePath: isFullImagePath,
-        organizationName: organizationName,
-        websiteUrl: websiteUrl,
-      };
+      const params: ApiV1AdministratorOrganizationCreateOrganizationPostRequest =
+        {
+          description: description,
+          imagePath: imagePath,
+          isFullImagePath: isFullImagePath,
+          organizationName: organizationName,
+          websiteUrl: websiteUrl,
+        };
 
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationCreateMetadataPost(
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationCreateOrganizationPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -74,7 +76,7 @@ export function useBackendAdministratorOrganizationApi() {
         undefined,
         undefined,
         api
-      ).apiV1AdministratorOrganizationCreateMetadataPost(params, {
+      ).apiV1AdministratorOrganizationCreateOrganizationPost(params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },

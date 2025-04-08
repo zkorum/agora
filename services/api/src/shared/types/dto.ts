@@ -358,7 +358,7 @@ export class Dto {
             notificationList: z.array(zodNotificationItem),
         })
         .strict();
-    static createOrganizationMetadataRequest = z
+    static createOrganizationRequest = z
         .object({
             organizationName: z.string(),
             imagePath: z.string(),
@@ -367,7 +367,7 @@ export class Dto {
             description: z.string(),
         })
         .strict();
-    static deleteOrganizationMetadataRequest = z
+    static deleteOrganizationRequest = z
         .object({
             organizationName: z.string(),
         })
