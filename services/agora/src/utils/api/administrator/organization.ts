@@ -1,7 +1,9 @@
 import { api } from "boot/axios";
 import {
+  ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest,
   ApiV1AdministratorOrganizationCreateOrganizationPostRequest,
   ApiV1AdministratorOrganizationDeleteOrganizationPostRequest,
+  ApiV1UserUsernameUpdatePostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -14,7 +16,115 @@ export function useBackendAdministratorOrganizationApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function deleteOrganizationMetadata(organizationName: string) {
+  async function getAllOrganizations() {
+    try {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationGetAllOrganizationsPost();
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AdministratorOrganizationGetAllOrganizationsPost({
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+
+      if (response.status == 200) {
+        return true;
+      } else {
+        showNotifyMessage("Failed to fetch organizations");
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to fetch organizations");
+      return false;
+    }
+  }
+
+  async function addUserOrganizationMapping(
+    username: string,
+    organizationName: string
+  ) {
+    try {
+      const params: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest =
+        {
+          username: username,
+          organizationName: organizationName,
+        };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationAddUserOrganizationMappingPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AdministratorOrganizationAddUserOrganizationMappingPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+
+      if (response.status == 200) {
+        showNotifyMessage("Added user organization mapping");
+        return true;
+      } else {
+        showNotifyMessage("Failed to add user organization mapping");
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to add user organization mapping");
+      return false;
+    }
+  }
+
+  async function removeUserOrganizationMapping(
+    username: string,
+    organizationName: string
+  ) {
+    try {
+      const params: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest =
+        {
+          username: username,
+          organizationName: organizationName,
+        };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AdministratorOrganizationAddUserOrganizationMappingPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+
+      if (response.status == 200) {
+        showNotifyMessage("Removed user organization mapping");
+        return true;
+      } else {
+        showNotifyMessage("Failed to remove user organization mapping");
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to remove user organization mapping");
+      return false;
+    }
+  }
+
+  async function deleteOrganization(organizationName: string) {
     try {
       const params: ApiV1AdministratorOrganizationDeleteOrganizationPostRequest =
         {
@@ -50,7 +160,7 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function createOrganizationMetadata(
+  async function createOrganization(
     description: string,
     imagePath: string,
     isFullImagePath: boolean,
@@ -96,8 +206,49 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
+  async function getOrganizationNamesByUsername(username: string) {
+    try {
+      const params: ApiV1UserUsernameUpdatePostRequest = {
+        username: username,
+      };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost(
+        params,
+        {
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        }
+      );
+
+      if (response.status == 200) {
+        return true;
+      } else {
+        showNotifyMessage("Failed to get user's organizations");
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to get user's organizations");
+      return false;
+    }
+  }
+
   return {
-    deleteOrganizationMetadata,
-    createOrganizationMetadata,
+    deleteOrganization,
+    createOrganization,
+    addUserOrganizationMapping,
+    removeUserOrganizationMapping,
+    getAllOrganizations,
+    getOrganizationNamesByUsername,
   };
 }

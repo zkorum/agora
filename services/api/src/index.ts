@@ -1656,7 +1656,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/administrator/organization/get-organization-names-by-usernane`,
+        url: `/api/${apiVersion}/administrator/organization/get-organization-names-by-username`,
         schema: {
             body: Dto.getOrganizationNamesByUsernameRequest,
             response: {

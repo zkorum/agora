@@ -28,7 +28,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
 
-const { createOrganizationMetadata } = useBackendAdministratorOrganizationApi();
+const { createOrganization } = useBackendAdministratorOrganizationApi();
 
 const description = ref("");
 const imagePath = ref("");
@@ -37,7 +37,7 @@ const organizationName = ref("");
 const websiteUrl = ref("");
 
 async function setOrganization() {
-  await createOrganizationMetadata(
+  await createOrganization(
     description.value,
     imagePath.value,
     isFullImagePath.value,
