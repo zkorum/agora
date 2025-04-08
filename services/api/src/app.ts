@@ -22,7 +22,7 @@ const configSchema = z.object({
         .enum(["development", "staging", "production"])
         .default("development"),
     MODE: z.enum(["web", "capacitor"]).default("web"),
-    IMAGE_BASE_URL: z
+    IMAGES_SERVICE_BASE_URL: z
         .string()
         .url()
         .default("https://staging.agoracitizen.network/images/"),
