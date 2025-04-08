@@ -40,22 +40,16 @@ export const zodPhoneNumber = z
             message: "Please use valid mobile phone number",
         },
     );
-export const zodOrganization = z.discriminatedUnion("isOrganization", [
-    z
-        .object({
-            isOrganization: z.literal(true),
-            name: z.string(),
-            imageUrl: z.string(),
-            websiteUrl: z.string().url({ message: "Invalid organization website url" }),
-            description: z.string()
-        })
-        .strict(),
-    z
-        .object({
-            isOrganization: z.literal(false),
-        })
-        .strict(),
-]);
+export const zodOrganization = z
+    .object({
+        name: z.string(),
+        imageUrl: z.string(),
+        websiteUrl: z
+            .string()
+            .url({ message: "Invalid organization website url" }),
+        description: z.string(),
+    })
+    .strict();
 export const zodDidKey = z
     .string()
     .describe("Decentralized Identifier with did:key method")

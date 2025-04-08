@@ -616,8 +616,8 @@ export const userOrganizationMappingTable = pgTable(
         userId: uuid("user_id")
             .references(() => userTable.id)
             .notNull(),
-        organizationMetadataId: integer("organization_metadata_id")
-            .references(() => organizationMetadataTable.id)
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
             .notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -630,7 +630,7 @@ export const userOrganizationMappingTable = pgTable(
         index("user_idx_organization").on(t.userId),
         unique("unique_user_orgaization_mapping").on(
             t.userId,
-            t.organizationMetadataId,
+            t.organizationId,
         ),
     ],
 );
@@ -728,7 +728,7 @@ export const userConversationTopicPreferenceTable = pgTable(
     ],
 );
 
-export const organizationMetadataTable = pgTable("organization_metadata", {
+export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR })
         .notNull()

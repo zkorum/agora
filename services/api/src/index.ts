@@ -92,7 +92,7 @@ import {
 import {
     createOrganizationMetadata,
     deleteOrganizationMetadata,
-} from "./service/administratorOrganization.js";
+} from "./service/administrator/organization.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 

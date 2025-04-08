@@ -1,5 +1,5 @@
 {
-  "id": "9d335800-dcf3-4985-b8ea-74f75bb71123",
+  "id": "110b7d65-438f-46d8-a91b-dd3e3b0ad2e1",
   "prevId": "5a21539c-3e2e-442b-b073-079a0eda3a67",
   "version": "7",
   "dialect": "postgresql",
@@ -2103,8 +2103,8 @@
       },
       "isRLSEnabled": false
     },
-    "public.organization_metadata": {
-      "name": "organization_metadata",
+    "public.organization": {
+      "name": "organization",
       "schema": "",
       "columns": {
         "id": {
@@ -2114,7 +2114,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "organization_metadata_id_seq",
+            "name": "organization_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -2173,15 +2173,15 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "organization_metadata_name_unique": {
-          "name": "organization_metadata_name_unique",
+        "organization_name_unique": {
+          "name": "organization_name_unique",
           "nullsNotDistinct": false,
           "columns": [
             "name"
           ]
         },
-        "organization_metadata_website_url_unique": {
-          "name": "organization_metadata_website_url_unique",
+        "organization_website_url_unique": {
+          "name": "organization_website_url_unique",
           "nullsNotDistinct": false,
           "columns": [
             "website_url"
@@ -3659,8 +3659,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "organization_metadata_id": {
-          "name": "organization_metadata_id",
+        "organization_id": {
+          "name": "organization_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -3704,12 +3704,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "user_organization_mapping_organization_metadata_id_organization_metadata_id_fk": {
-          "name": "user_organization_mapping_organization_metadata_id_organization_metadata_id_fk",
+        "user_organization_mapping_organization_id_organization_id_fk": {
+          "name": "user_organization_mapping_organization_id_organization_id_fk",
           "tableFrom": "user_organization_mapping",
-          "tableTo": "organization_metadata",
+          "tableTo": "organization",
           "columnsFrom": [
-            "organization_metadata_id"
+            "organization_id"
           ],
           "columnsTo": [
             "id"
@@ -3725,7 +3725,7 @@
           "nullsNotDistinct": false,
           "columns": [
             "user_id",
-            "organization_metadata_id"
+            "organization_id"
           ]
         }
       },
