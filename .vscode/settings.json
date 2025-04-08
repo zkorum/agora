@@ -11,5 +11,10 @@
     "**/.git": true,
     "**/node_modules": true,
     "**/.DS_Store": true
-  }
+  },
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto" // for opening the project as a monorepo
+    }
+  ],
 }
