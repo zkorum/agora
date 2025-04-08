@@ -578,9 +578,6 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
 export const userTable = pgTable("user", {
     id: uuid("id").primaryKey(), // enforce the same key for the user in the frontend across email changes
-    organisationId: integer("organisation_id").references(
-        () => organisationTable.id,
-    ), // for now a user can belong to at most 1 organisation
     username: varchar("username", { length: MAX_LENGTH_USERNAME })
         .notNull()
         .unique(),
@@ -611,6 +608,32 @@ export const userTable = pgTable("user", {
         .defaultNow()
         .notNull(),
 });
+
+export const userOrganizationMappingTable = pgTable(
+    "user_organization_mapping",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("user_idx_organization").on(t.userId),
+        unique("unique_user_orgaization_mapping").on(
+            t.userId,
+            t.organizationId,
+        ),
+    ],
+);
 
 export const userMutePreferenceTable = pgTable(
     "user_mute_preference",
@@ -705,11 +728,14 @@ export const userConversationTopicPreferenceTable = pgTable(
     ],
 );
 
-export const organisationTable = pgTable("organisation", {
+export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
-    imageUrl: text("image_url"),
-    websiteUrl: text("website_url"),
+    name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR })
+        .notNull()
+        .unique(),
+    imagePath: text("image_path").notNull(),
+    isFullImagePath: boolean("is_full_image_path").notNull(),
+    websiteUrl: text("website_url").unique(),
     description: varchar("description", {
         length: MAX_LENGTH_DESCRIPTION_CREATOR,
     }),

@@ -30,6 +30,7 @@ import {
     zodNotificationItem,
     zodPolisKey,
     zodSupportedCountryCallingCode,
+    zodOrganization,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -212,7 +213,7 @@ export class Dto {
         .object({
             activePostCount: z.number().gte(0),
             createdAt: z.date(),
-            username: z.string(),
+            username: zodUsername,
             isModerator: z.boolean(),
         })
         .strict();
@@ -357,6 +358,47 @@ export class Dto {
             notificationList: z.array(zodNotificationItem),
         })
         .strict();
+    static createOrganizationRequest = z
+        .object({
+            organizationName: z.string(),
+            imagePath: z.string(),
+            isFullImagePath: z.boolean(),
+            websiteUrl: z.string().url(),
+            description: z.string(),
+        })
+        .strict();
+    static deleteOrganizationRequest = z
+        .object({
+            organizationName: z.string(),
+        })
+        .strict();
+    static getOrganizationNamesByUsernameRequest = z
+        .object({
+            username: zodUsername,
+        })
+        .strict();
+    static getOrganizationNamesByUsernameResponse = z
+        .object({
+            organizationNameList: z.array(z.string()),
+        })
+        .strict();
+    static getAllOrganizationsResponse = z
+        .object({
+            organizationList: z.array(zodOrganization),
+        })
+        .strict();
+    static addUserOrganizationMappingRequest = z
+        .object({
+            username: zodUsername,
+            organizationName: z.string(),
+        })
+        .strict();
+    static removeUserOrganizationMappingRequest = z
+        .object({
+            username: zodUsername,
+            organizationName: z.string(),
+        })
+        .strict();
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
     //     "rarimoStatus",
@@ -450,4 +492,10 @@ export type GetOpinionBySlugIdListResponse = z.infer<
 >;
 export type FetchNotificationsResponse = z.infer<
     typeof Dto.fetchNotificationsResponse
+>;
+export type GetOrganizationNamesByUsernameResponse = z.infer<
+    typeof Dto.getOrganizationNamesByUsernameResponse
+>;
+export type GetAllOrganizationsResponse = z.infer<
+    typeof Dto.getAllOrganizationsResponse
 >;

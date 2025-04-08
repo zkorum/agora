@@ -40,6 +40,16 @@ export const zodPhoneNumber = z
             message: "Please use valid mobile phone number",
         },
     );
+export const zodOrganization = z
+    .object({
+        name: z.string(),
+        imageUrl: z.string(),
+        websiteUrl: z
+            .string()
+            .url({ message: "Invalid organization website url" }),
+        description: z.string(),
+    })
+    .strict();
 export const zodDidKey = z
     .string()
     .describe("Decentralized Identifier with did:key method")
@@ -795,3 +805,4 @@ export type GenLabelSummaryOutputClusterStrict = z.infer<
 export type GenLabelSummaryOutputClusterLoose = z.infer<
     typeof zodGenLabelSummaryOutputClusterLoose
 >;
+export type OrganizationProperties = z.infer<typeof zodOrganization>;

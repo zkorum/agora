@@ -14,6 +14,7 @@ import type {
 } from "src/shared/types/zod";
 import { useBackendPostApi } from "./post";
 import { useNotify } from "../ui/notify";
+import { GetUserProfileResponse } from "src/shared/types/dto";
 
 export function useBackendUserApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -21,7 +22,9 @@ export function useBackendUserApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  async function fetchUserProfile() {
+  async function fetchUserProfile(): Promise<
+    GetUserProfileResponse | undefined
+  > {
     try {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1UserProfileGetPost();
@@ -36,7 +39,12 @@ export function useBackendUserApi() {
         },
       });
 
-      return response.data;
+      return {
+        activePostCount: response.data.activePostCount,
+        createdAt: new Date(response.data.createdAt),
+        isModerator: response.data.isModerator,
+        username: response.data.username,
+      };
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user's personal profile.");

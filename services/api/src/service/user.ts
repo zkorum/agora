@@ -7,7 +7,6 @@ import {
     userTable,
     polisContentTable,
     polisClusterTable,
-    polisClusterOpinionTable,
     polisClusterUserTable,
 } from "@/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
