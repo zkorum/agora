@@ -7,13 +7,9 @@
       data-1p-ignore
     />
     <q-input v-model="description" label="Description" />
-    <q-input
-      v-model="imagePath"
-      label="Image Path (file name only if using S3)"
-    />
-    <div>Non-full path: avatar_default_0.png</div>
+    <q-input v-model="imagePath" label="Image Path (file name or https path)" />
+    <div>File name: avatar_default_0.png</div>
     <div>Full path: https://agoracitizen.network/images/big_logo_agora.png</div>
-    <q-checkbox v-model="isFullImagePath" label="Is Full Image Path" />
     <q-input v-model="websiteUrl" label="Website URL" />
     <ZKButton
       button-type="largeButton"
@@ -32,15 +28,23 @@ const { createOrganization } = useBackendAdministratorOrganizationApi();
 
 const description = ref("");
 const imagePath = ref("");
-const isFullImagePath = ref(false);
 const organizationName = ref("");
 const websiteUrl = ref("");
+
+function isHttpsUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === "https:";
+  } catch (error) {
+    return false;
+  }
+}
 
 async function setOrganization() {
   await createOrganization(
     description.value,
     imagePath.value,
-    isFullImagePath.value,
+    isHttpsUrl(imagePath.value),
     organizationName.value,
     websiteUrl.value
   );

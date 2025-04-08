@@ -35,10 +35,9 @@ export async function getAllOrganizations({
             organizationList.push({
                 name: response.name,
                 description: response.description ?? "",
-                imageUrl:
-                    response.isFullImagePath && response.imagePath
-                        ? response.imagePath
-                        : `${baseImageServiceUrl}${response.imagePath}`,
+                imageUrl: response.isFullImagePath
+                    ? response.imagePath
+                    : `${baseImageServiceUrl}${response.imagePath}`,
                 websiteUrl: response.websiteUrl ?? "",
             });
         }
