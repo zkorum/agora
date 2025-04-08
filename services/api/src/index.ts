@@ -92,6 +92,8 @@ import {
 import {
     createOrganization,
     deleteOrganization,
+    getAllOrganizations,
+    getOrganizationNamesByUsername,
 } from "./service/administrator/organization.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
@@ -1577,6 +1579,77 @@ server.after(() => {
             return await generateUnusedRandomUsername({
                 db: db,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-organization-names-by-usernane`,
+        schema: {
+            body: Dto.getOrganizationNamesByUsernameRequest,
+            response: {
+                200: Dto.getOrganizationNamesByUsernameResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                return await getOrganizationNamesByUsername({
+                    db: db,
+                    username: request.body.username,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-all-organizations`,
+        schema: {
+            response: {
+                200: Dto.getAllOrganizationsResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                return await getAllOrganizations({
+                    db: db,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                });
+            }
         },
     });
 

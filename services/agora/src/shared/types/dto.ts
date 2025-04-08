@@ -372,7 +372,12 @@ export class Dto {
             organizationName: z.string(),
         })
         .strict();
-    static getOrganizationNamesByUserIdResponse = z
+    static getOrganizationNamesByUsernameRequest = z
+        .object({
+            username: zodUsername,
+        })
+        .strict();
+    static getOrganizationNamesByUsernameResponse = z
         .object({
             organizationNameList: z.array(z.string()),
         })
@@ -476,8 +481,8 @@ export type GetOpinionBySlugIdListResponse = z.infer<
 export type FetchNotificationsResponse = z.infer<
     typeof Dto.fetchNotificationsResponse
 >;
-export type GetOrganizationNamesByUserIdResponse = z.infer<
-    typeof Dto.getOrganizationNamesByUserIdResponse
+export type GetOrganizationNamesByUsernameResponse = z.infer<
+    typeof Dto.getOrganizationNamesByUsernameResponse
 >;
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse

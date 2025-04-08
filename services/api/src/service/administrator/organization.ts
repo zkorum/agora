@@ -6,7 +6,7 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type {
     GetAllOrganizationsResponse,
-    GetOrganizationNamesByUserIdResponse,
+    GetOrganizationNamesByUsernameResponse,
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 
@@ -56,15 +56,15 @@ export async function getAllOrganizations({
     };
 }
 
-interface GetOrganizationNamesByUserIdProps {
+interface GetOrganizationNamesByUsernameProps {
     db: PostgresJsDatabase;
     username: string;
 }
 
-export async function getOrganizationNamesByUserId({
+export async function getOrganizationNamesByUsername({
     db,
     username,
-}: GetOrganizationNamesByUserIdProps): Promise<GetOrganizationNamesByUserIdResponse> {
+}: GetOrganizationNamesByUsernameProps): Promise<GetOrganizationNamesByUsernameResponse> {
     const { getUserIdFromUsername } = useCommonUser();
     const targetUserId = await getUserIdFromUsername({
         db: db,
