@@ -529,7 +529,7 @@ export async function castVoteForOpinionSlugId({
         await db
             .insert(participantTable)
             .values({
-                conversationId: postMetadata.id,
+                conversationId: conversationId,
                 userId: userId,
                 voteCount: 1,
             })
@@ -660,7 +660,7 @@ export async function castVoteForOpinionSlugId({
                         db: tx,
                         userId: commentData.userId,
                         opinionId: commentData.commentId,
-                        conversationId: postMetadata.id,
+                        conversationId: conversationId,
                         numVotes: 1,
                     });
                 } else {
@@ -702,7 +702,7 @@ export async function castVoteForOpinionSlugId({
                             db: tx,
                             userId: commentData.userId,
                             opinionId: commentData.commentId,
-                            conversationId: postMetadata.id,
+                            conversationId: conversationId,
                             numVotes: newNumVotes,
                         });
                     } else {
@@ -731,7 +731,7 @@ export async function castVoteForOpinionSlugId({
             .delayedPolisGetAndUpdateMath({
                 db: db,
                 conversationSlugId,
-                conversationId: postMetadata.id,
+                conversationId: conversationId,
                 axiosPolis,
                 polisDelayToFetch,
                 awsAiLabelSummaryEnable,
