@@ -11,13 +11,13 @@
       v-model="imagePath"
       label="Image Path (file name only if using S3)"
     />
-    <div>Non-full path: xxx.png</div>
+    <div>Non-full path: avatar_default_0.png</div>
     <div>Full path: https://agoracitizen.network/images/big_logo_agora.png</div>
     <q-checkbox v-model="isFullImagePath" label="Is Full Image Path" />
     <q-input v-model="websiteUrl" label="Website URL" />
     <ZKButton
       button-type="largeButton"
-      label="Set Organization"
+      label="Add Organization"
       type="submit"
     />
   </form>

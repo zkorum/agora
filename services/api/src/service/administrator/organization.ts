@@ -29,14 +29,7 @@ export async function getAllOrganizations({
             isFullImagePath: organizationTable.isFullImagePath,
             websiteUrl: organizationTable.websiteUrl,
         })
-        .from(userOrganizationMappingTable)
-        .leftJoin(
-            organizationTable,
-            eq(
-                organizationTable.id,
-                userOrganizationMappingTable.organizationId,
-            ),
-        );
+        .from(organizationTable);
     organizationTableResponse.forEach((response) => {
         if (response.name) {
             organizationList.push({
@@ -45,7 +38,7 @@ export async function getAllOrganizations({
                 imageUrl:
                     response.isFullImagePath && response.imagePath
                         ? response.imagePath
-                        : `${baseImageServiceUrl}${response.imagePath ?? ""}`,
+                        : `${baseImageServiceUrl}${response.imagePath}`,
                 websiteUrl: response.websiteUrl ?? "",
             });
         }

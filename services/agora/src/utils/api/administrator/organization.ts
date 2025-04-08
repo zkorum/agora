@@ -10,13 +10,14 @@ import {
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { useCommonApi } from "../common";
+import { OrganizationProperties } from "src/shared/types/zod";
 
 export function useBackendAdministratorOrganizationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
 
-  async function getAllOrganizations() {
+  async function getAllOrganizations(): Promise<OrganizationProperties[]> {
     try {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1AdministratorOrganizationGetAllOrganizationsPost();
@@ -32,15 +33,15 @@ export function useBackendAdministratorOrganizationApi() {
       });
 
       if (response.status == 200) {
-        return true;
+        return response.data.organizationList;
       } else {
         showNotifyMessage("Failed to fetch organizations");
-        return false;
+        return [];
       }
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch organizations");
-      return false;
+      return [];
     }
   }
 
