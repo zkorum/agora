@@ -45,7 +45,11 @@
         </TopMenuWrapper>
 
         <div class="contentFlexStyle">
-          <ZKCard padding="1rem" class="cardBackground">
+          <ZKCard
+            v-if="profileData.organizationList.length > 0"
+            padding="1rem"
+            class="cardBackground"
+          >
             <div class="organizationSection">
               <q-toggle
                 v-model="postAsOrganization"
@@ -54,7 +58,7 @@
 
               <div v-if="postAsOrganization" class="organizationFlexList">
                 <div
-                  v-for="organization in userOrganizationList"
+                  v-for="organization in profileData.organizationList"
                   :key="organization"
                 >
                   <q-radio
@@ -258,6 +262,7 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 import DatePicker from "primevue/datepicker";
+import { useUserStore } from "src/stores/user";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -274,11 +279,6 @@ const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
 const postAsOrganization = ref(false);
-const userOrganizationList = ref<string[]>([
-  "Google Inc.",
-  "Facebook Inc.",
-  "Apple Inc.",
-]);
 const selectedOrganization = ref("");
 const isLoginRequiredToParticipate = ref(false);
 const isPrivatePost = ref(false);
@@ -298,7 +298,7 @@ const {
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
-
+const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
 
 const { createNewConversationIntention, clearNewConversationIntention } =
@@ -408,10 +408,10 @@ async function onSubmit() {
       postDraft.value.enablePolling
         ? postDraft.value.pollingOptionList
         : undefined,
-      selectedOrganization.value,
-      targetConvertDate.value,
+      postAsOrganization.value ? selectedOrganization.value : "",
+      autoConvertDate.value ? targetConvertDate.value.toISOString() : undefined,
       !isPrivatePost.value,
-      isLoginRequiredToParticipate.value
+      !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
     );
 
     if (response != null) {

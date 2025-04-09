@@ -1076,13 +1076,20 @@
                                         },
                                         "isModerator": {
                                             "type": "boolean"
+                                        },
+                                        "organizationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "required": [
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator"
+                                        "isModerator",
+                                        "organizationList"
                                     ],
                                     "additionalProperties": false
                                 }

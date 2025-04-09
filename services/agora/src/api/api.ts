@@ -2237,6 +2237,12 @@ export interface ApiV1UserProfileGetPost200Response {
      * @memberof ApiV1UserProfileGetPost200Response
      */
     'isModerator': boolean;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1UserProfileGetPost200Response
+     */
+    'organizationList': Array<string>;
 }
 /**
  * 

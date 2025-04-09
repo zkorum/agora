@@ -105,11 +105,14 @@ export function useBackendAdministratorOrganizationApi() {
         undefined,
         undefined,
         api
-      ).apiV1AdministratorOrganizationAddUserOrganizationMappingPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(
+        params,
+        {
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        }
+      );
 
       if (response.status == 200) {
         showNotifyMessage("Removed user organization mapping");

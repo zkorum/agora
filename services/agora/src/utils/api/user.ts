@@ -44,6 +44,7 @@ export function useBackendUserApi() {
         createdAt: new Date(response.data.createdAt),
         isModerator: response.data.isModerator,
         username: response.data.username,
+        organizationList: response.data.organizationList,
       };
     } catch (e) {
       console.error(e);

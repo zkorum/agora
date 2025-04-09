@@ -147,7 +147,7 @@ export function useBackendPostApi() {
     postBody: string | undefined,
     pollingOptionList: string[] | undefined,
     postAsOrganizationName: string,
-    targetConvertDate: Date,
+    targetIsoConvertDateString: string | undefined,
     isIndexed: boolean,
     isLoginRequired: boolean
   ) {
@@ -159,7 +159,7 @@ export function useBackendPostApi() {
         isIndexed: isIndexed,
         isLoginRequired: isLoginRequired,
         postAsOrganization: postAsOrganizationName,
-        indexConversationAt: targetConvertDate.toISOString(),
+        indexConversationAt: targetIsoConvertDateString,
       };
 
       const { url, options } =

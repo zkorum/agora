@@ -26,6 +26,7 @@ import { fetchPostBySlugId } from "./post.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { alias } from "drizzle-orm/pg-core";
 import { toUnionUndefined } from "@/shared/shared.js";
+import { getOrganizationNamesByUsername } from "./administrator/organization.js";
 
 interface GetUserCommentsProps {
     db: PostgresJsDatabase;
@@ -408,11 +409,19 @@ export async function getUserProfile({
         if (userTableResponse.length == 0) {
             throw httpErrors.notFound("Failed to locate user profile");
         } else {
+            const organizationNamesResponse =
+                await getOrganizationNamesByUsername({
+                    db: db,
+                    username: userTableResponse[0].username,
+                });
+
             return {
                 activePostCount: userTableResponse[0].activePostCount,
                 createdAt: userTableResponse[0].createdAt,
                 username: userTableResponse[0].username,
                 isModerator: userTableResponse[0].isModerator,
+                organizationList:
+                    organizationNamesResponse.organizationNameList,
             };
         }
     } catch (err: unknown) {

@@ -222,7 +222,6 @@ export async function deleteOrganization({
     organizationName,
 }: deleteOrganizationProps) {
     try {
-        // Create a new organization entry
         await db
             .delete(organizationTable)
             .where(eq(organizationTable.name, organizationName));
