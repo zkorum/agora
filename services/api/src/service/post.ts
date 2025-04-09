@@ -134,7 +134,7 @@ export async function createNewPost({
     isIndexed,
 }: CreateNewPostProps): Promise<CreateNewConversationResponse> {
     let organizationId: number | undefined = undefined;
-    if (postAsOrganization !== undefined) {
+    if (postAsOrganization !== undefined && postAsOrganization !== "") {
         organizationId = await authUtilService.isUserPartOfOrganization({
             db,
             organizationName: postAsOrganization,
