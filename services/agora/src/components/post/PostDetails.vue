@@ -19,7 +19,11 @@
             >
               <!-- TODO: Pass author verified flag here -->
               <PostMetadata
-                :poster-user-name="extendedPostData.metadata.authorUsername"
+                :poster-user-name="
+                  extendedPostData.metadata.organization == undefined
+                    ? extendedPostData.metadata.authorUsername
+                    : extendedPostData.metadata.organization.name
+                "
                 :created-at="new Date(extendedPostData.metadata.createdAt)"
                 :skeleton-mode="skeletonMode"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"

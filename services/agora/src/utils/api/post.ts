@@ -208,6 +208,12 @@ export function useBackendPostApi() {
             createdAt: new Date(item.metadata.moderation.createdAt),
             updatedAt: new Date(item.metadata.moderation.updatedAt),
           },
+          organization: {
+            description: item.metadata.organization?.description || "",
+            imageUrl: item.metadata.organization?.imageUrl || "",
+            name: item.metadata.organization?.name || "",
+            websiteUrl: item.metadata.organization?.websiteUrl || "",
+          },
         },
         payload: {
           title: item.payload.title,
