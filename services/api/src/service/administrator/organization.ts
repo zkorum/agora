@@ -9,6 +9,7 @@ import type {
     GetOrganizationNamesByUsernameResponse,
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
+import { imagePathToUrl } from "@/utils/organizationLogic.js";
 
 interface GetAllOrganizationsProps {
     db: PostgresJsDatabase;
@@ -35,9 +36,11 @@ export async function getAllOrganizations({
             organizationList.push({
                 name: response.name,
                 description: response.description ?? "",
-                imageUrl: response.isFullImagePath
-                    ? response.imagePath
-                    : `${baseImageServiceUrl}${response.imagePath}`,
+                imageUrl: imagePathToUrl({
+                    imagePath: response.imagePath,
+                    isFullImagePath: response.isFullImagePath,
+                    baseImageServiceUrl,
+                }),
                 websiteUrl: response.websiteUrl ?? "",
             });
         }

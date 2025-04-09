@@ -2,7 +2,9 @@
 import {
     deviceTable,
     emailTable,
+    organizationTable,
     phoneTable,
+    userOrganizationMappingTable,
     userTable,
     zkPassportTable,
 } from "@/schema.js";
@@ -121,6 +123,43 @@ export async function getOrRegisterUserIdFromDeviceStatus({
         });
     }
     return userId;
+}
+
+interface IsUserPartOfOrganizationProps {
+    db: PostgresDatabase;
+    userId: string;
+    organizationName: string;
+}
+
+export async function isUserPartOfOrganization({
+    db,
+    userId,
+    organizationName,
+}: IsUserPartOfOrganizationProps): Promise<number | undefined> {
+    const result = await db
+        .select({ organizationId: organizationTable.id })
+        .from(userTable)
+        .innerJoin(
+            userOrganizationMappingTable,
+            eq(userTable.id, userOrganizationMappingTable.userId),
+        )
+        .innerJoin(
+            organizationTable,
+            eq(
+                organizationTable.id,
+                userOrganizationMappingTable.organizationId,
+            ),
+        )
+        .where(
+            and(
+                eq(userTable.id, userId),
+                eq(organizationTable.name, organizationName),
+            ),
+        );
+    if (result.length === 0) {
+        return undefined;
+    }
+    return result[0].organizationId;
 }
 
 export async function getDeviceStatus(

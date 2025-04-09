@@ -1027,14 +1027,21 @@ export const conversationTable = pgTable(
         authorId: uuid("author_id") // "postAs"
             .notNull()
             .references(() => userTable.id), // the author of the poll
+        organizationId: integer("organization_id").references(
+            () => organizationTable.id,
+        ),
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
         currentPolisContentId: integer("current_polis_content_id")
             .references((): AnyPgColumn => polisContentTable.id)
             .unique(), // null if conversation was deleted or if conversation was just started (no opinion/vote was cast)
-        isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
-        isLoginRequired: boolean("is_login_required").notNull().default(false), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        indexConversationAt: timestamp("index_conversation_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        isIndexed: boolean("is_indexed").notNull(), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
+        isLoginRequired: boolean("is_login_required").notNull(), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

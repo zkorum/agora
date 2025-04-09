@@ -613,12 +613,14 @@ server.after(() => {
                         db: db,
                         lastSlugId: request.body.lastSlugId,
                         personalizationUserId: status.userId,
+                        baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                     });
                 }
             } else {
                 return await feedService.fetchFeed({
                     db: db,
                     lastSlugId: request.body.lastSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
             }
         },
@@ -881,6 +883,7 @@ server.after(() => {
                     db: db,
                     userId: status.userId,
                     lastPostSlugId: request.body.lastConversationSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
                 return Array.from(conversationsMap.values());
             }
@@ -1354,6 +1357,10 @@ server.after(() => {
                     didWrite: didWrite,
                     proof: encodedUcan,
                     axiosPolis: axiosPolis,
+                    indexConversationAt: request.body.indexConversationAt,
+                    postAsOrganization: request.body.postAsOrganization,
+                    isIndexed: request.body.isIndexed,
+                    isLoginRequired: request.body.isLoginRequired,
                 });
                 reply.send(postResponse);
                 const proofChannel40EventId =
@@ -1413,6 +1420,7 @@ server.after(() => {
                         db: db,
                         conversationSlugId: request.body.conversationSlugId,
                         personalizedUserId: status.userId,
+                        baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                     });
 
                     const response: GetConversationResponse = {
@@ -1424,6 +1432,7 @@ server.after(() => {
                 const postItem = await postService.fetchPostBySlugId({
                     db: db,
                     conversationSlugId: request.body.conversationSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
 
                 const response: GetConversationResponse = {

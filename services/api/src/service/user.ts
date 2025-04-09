@@ -32,12 +32,14 @@ interface GetUserCommentsProps {
     db: PostgresJsDatabase;
     userId: string;
     lastCommentSlugId?: string;
+    baseImageServiceUrl: string;
 }
 
 export async function getUserComments({
     db,
     userId,
     lastCommentSlugId,
+    baseImageServiceUrl,
 }: GetUserCommentsProps): Promise<ExtendedOpinion[]> {
     try {
         const lastCreatedAt = await getCommentSlugIdLastCreatedAt({
@@ -323,6 +325,7 @@ export async function getUserComments({
                 db: db,
                 conversationSlugId: opinionResponse.postSlugId,
                 personalizedUserId: undefined,
+                baseImageServiceUrl,
             });
 
             const extendedCommentItem: ExtendedOpinion = {
@@ -346,12 +349,14 @@ interface GetUserPostProps {
     db: PostgresJsDatabase;
     userId: string;
     lastPostSlugId?: string;
+    baseImageServiceUrl: string;
 }
 
 export async function getUserPosts({
     db,
     userId,
     lastPostSlugId,
+    baseImageServiceUrl,
 }: GetUserPostProps): Promise<ExtendedConversationPerSlugId> {
     try {
         const { fetchPostItems } = useCommonPost();
@@ -375,6 +380,7 @@ export async function getUserPosts({
                 personalizedUserId: userId,
                 excludeLockedPosts: false,
                 removeMutedAuthors: false,
+                baseImageServiceUrl,
             });
 
         return conversations;
