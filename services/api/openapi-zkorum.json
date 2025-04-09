@@ -2769,6 +2769,13 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
+                                    "postAsOrganization": {
+                                        "type": "string"
+                                    },
+                                    "indexConversationAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
                                     "isIndexed": {
                                         "type": "boolean"
                                     },

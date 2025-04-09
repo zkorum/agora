@@ -407,7 +407,11 @@ async function onSubmit() {
       postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
       postDraft.value.enablePolling
         ? postDraft.value.pollingOptionList
-        : undefined
+        : undefined,
+      selectedOrganization.value,
+      targetConvertDate.value,
+      !isPrivatePost.value,
+      isLoginRequiredToParticipate.value
     );
 
     if (response != null) {

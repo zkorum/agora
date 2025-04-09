@@ -145,15 +145,21 @@ export function useBackendPostApi() {
   async function createNewPost(
     postTitle: string,
     postBody: string | undefined,
-    pollingOptionList: string[] | undefined
+    pollingOptionList: string[] | undefined,
+    postAsOrganizationName: string,
+    targetConvertDate: Date,
+    isIndexed: boolean,
+    isLoginRequired: boolean
   ) {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
         conversationTitle: postTitle,
         conversationBody: postBody,
         pollingOptionList: pollingOptionList,
-        isIndexed: false,
-        isLoginRequired: false,
+        isIndexed: isIndexed,
+        isLoginRequired: isLoginRequired,
+        postAsOrganization: postAsOrganizationName,
+        indexConversationAt: targetConvertDate.toISOString(),
       };
 
       const { url, options } =
