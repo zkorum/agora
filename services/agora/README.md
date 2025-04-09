@@ -22,10 +22,6 @@ Then cd to this root directy and install the dependencies:
 yarn
 ```
 
-### Generate .quasar folder
-
-Before developing, run `yarn dev` at least once so that Quasar will create a .quasar folder. This is important otherwise vscode or other text editors won't recognize the `src/` imports and so on, since `tsconfig.json` extends `.quasar/tsconfig.json`. It's a little bit odd, but `.quasar` is supposed to be ignored by the VCS and this is the default config by Quasar...
-
 ## Start the app in development mode (hot-code reloading, error reporting, etc.)
 
 Remember to first load the environment files in `.env` file by running `. ./.env`.
@@ -92,6 +88,12 @@ Generate the actual icons:
 `icongenie generate -p ./icongenie-profile-png.json`
 
 `icongenie generate -p ./icongenie-profile-splashscreen.json`
+
+## Important notes
+
+### Push new .quasar/tsconfig.json
+
+At every `yarn dev`, a new tsconfig.json will be generated. Make sure to push the latest version to the VCS
 
 ## License
 

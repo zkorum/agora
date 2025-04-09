@@ -3,7 +3,9 @@
 node_modules
 
 # Quasar core related directories
-.quasar
+.quasar/*
+# that is not default in quasar, but it's important otherwise new users have to `yarn dev` at least once to have autocomplete to work in IDE
+!.quasar/tsconfig.json
 /dist
 /quasar.config.*.temporary.compiled*
 
