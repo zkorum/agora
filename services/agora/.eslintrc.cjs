@@ -123,5 +123,17 @@ module.exports = {
         project: false, // Disable type information for HTML files
       },
     },
+    // {
+    //   files: ["**/*.json"],
+    //   extends: ["plugin:@eslintjson/recommended"],
+    // },
+    // {
+    //   files: ["**/*.jsonc"],
+    //   extends: ["plugin:@eslint/json/recommended"],
+    // },
+    // {
+    //   files: ["**/*.json5"],
+    //   extends: ["plugin:@eslint/json/recommended"],
+    // },
   ],
 };

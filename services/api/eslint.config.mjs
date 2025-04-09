@@ -21,6 +21,19 @@ export default tseslint.config(
         },
     },
     {
+        files: ["**/*.json"],
+        ignores: ["package-lock.json"],
+        ...json.configs["recommended"],
+    },
+    {
+        files: ["**/*.jsonc"],
+        ...json.configs.recommended,
+    },
+    {
+        files: ["**/*.json5"],
+        ...json.configs.recommended,
+    },
+    {
         files: ["src/**"],
         rules: {
             "linebreak-style": ["error", "unix"],

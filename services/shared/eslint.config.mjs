@@ -21,9 +21,30 @@ export default tseslint.config(
     },
     ...tseslint.configs.stylisticTypeChecked,
     {
+        files: ["**/*.json"],
+        ignores: ["package-lock.json"],
+        ...json.configs["recommended"],
+    },
+    {
+        files: ["**/*.jsonc"],
+        ...json.configs.recommended,
+    },
+    {
+        files: ["**/*.json5"],
+        ...json.configs.recommended,
+    },
+    {
         files: ["src/**"],
         rules: {
             "linebreak-style": ["error", "unix"],
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {
+                    argsIgnorePattern: "^_",
+                    varsIgnorePattern: "^_",
+                    caughtErrorsIgnorePattern: "^_",
+                },
+            ],
         },
     },
     {
