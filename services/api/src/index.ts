@@ -911,6 +911,7 @@ server.after(() => {
                     db: db,
                     userId: status.userId,
                     lastCommentSlugId: request.body.lastOpinionSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
             }
         },
