@@ -15,7 +15,7 @@
         "db:undo": "docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway undo",
         "db:sudo:migrate": "sudo docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway  migrate",
         "db:clean": " docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway clean",
-        "lint": "eslint --ext .js,.jsx,.ts,.tsx,.vue,.md,.json ./",
+        "lint": "eslint  .",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
         "format:check": "prettier . --check",
         "generate-dev-keys": "NODE_OPTIONS=--experimental-vm-modules GENERATE_DEV_KEYS=true jest -t 'generate-dev-keys'",

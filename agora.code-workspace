@@ -1,0 +1,31 @@
+{
+  "folders": [
+    {
+      "path": "services/agora",
+      "name": "app",
+    },
+    {
+      "path": "services/api",
+      "name": "api",
+    },
+    {
+      "path": "services/shared",
+      "name": "shared",
+    },
+    {
+      "path": "services/llm",
+      "name": "llm",
+    },
+    {
+      "path": ".",
+      "name": "agora",
+    },
+  ],
+  "settings": {
+    "eslint.workingDirectories": [
+      { "directory": "services/agora", "changeProcessCWD": true },
+      { "directory": "services/api", "changeProcessCWD": true },
+      { "directory": "services/shared", "changeProcessCWD": true },
+    ],
+  },
+}
