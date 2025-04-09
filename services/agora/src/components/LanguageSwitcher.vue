@@ -2,7 +2,6 @@
   <q-btn-toggle
     v-model="actualLocale"
     size="sm"
-    v-if="localeOptions.length > 0"
     no-caps
     rounded
     unelevated
