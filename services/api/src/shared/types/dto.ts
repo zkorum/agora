@@ -145,7 +145,7 @@ export class Dto {
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBody,
             indexConversationAt: z.string().datetime().optional(),
-            postAs: z.string(),
+            postAs: z.string().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             pollingOptionList: zodPollOptionTitle.array().optional(),
