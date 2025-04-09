@@ -1,7 +1,13 @@
 <template>
   <div class="metadata">
     <div>
-      <UserAvatar :user-name="username" :size="36" />
+      <UserAvatar
+        v-if="organizationUrl == ''"
+        :user-name="username"
+        :size="36"
+      />
+
+      <img :src="organizationUrl" width="50" />
     </div>
 
     <div class="userNameTimeContainer">
@@ -30,6 +36,7 @@ defineProps<{
   authorVerified: boolean;
   createdAt: Date;
   showVerifiedText: boolean;
+  organizationUrl: string;
 }>();
 </script>
 

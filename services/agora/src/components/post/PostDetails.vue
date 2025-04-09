@@ -28,6 +28,9 @@
                 :skeleton-mode="skeletonMode"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
                 :author-verified="false"
+                :organization-url="
+                  extendedPostData.metadata.organization?.imageUrl || ''
+                "
                 @open-moderation-history="openModerationHistory()"
               />
 

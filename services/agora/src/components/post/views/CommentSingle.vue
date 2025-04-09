@@ -19,6 +19,7 @@
           :created-at="commentItem.createdAt"
           :username="commentItem.username"
           :show-verified-text="false"
+          :organization-url="''"
         />
 
         <CommentActionOptions
