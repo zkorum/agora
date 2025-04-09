@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": "services/agora",
+    },
+    {
+      "path": "services/api",
+    },
+    {
+      "path": "services/shared",
+    },
+    {
+      "path": "services/llm",
+    },
+    {
+      "path": ".",
+    },
+  ],
+}
