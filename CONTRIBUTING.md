@@ -10,7 +10,7 @@ Every contributor must add their full name and email address in the [AUTHORS fil
 
 Every contributor must [sign their commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
 
-After configuring the signing key, commit using `git commit -s` or simply [configure your `.gitconfig` to do add the `-s` parameter automatically](https://github.com/zkorum/zkorum/blob/main/CONTRIBUTING.md#local-git-config-configuration).
+After configuring the signing key, commit using `git commit -s` or simply [configure your `.gitconfig` to do add the `-s` parameter automatically](https://github.com/zkorum/agora/blob/main/CONTRIBUTING.md#local-git-config-configuration).
 
 ## FLA
 
@@ -67,7 +67,7 @@ git checkout -b 11_my_feature_branch
 ```bash
 cd <your local fork>
 # ssh or https links? configure your .gitconfig to always use ssh from https: see https://github.com/nicobao/setup/blob/master/.gitconfig#L22-L23
-git remote add upstream git@github.com:zkorum/zkorum.git
+git remote add upstream git@github.com:zkorum/agora.git
 ```
 
 ### Open a DRAFT PR

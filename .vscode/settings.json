@@ -16,5 +16,5 @@
     {
       "mode": "auto" // for opening the project as a monorepo
     }
-  ],
+  ]
 }
