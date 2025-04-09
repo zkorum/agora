@@ -11,6 +11,8 @@
     "lint": "eslint --ext .js,.jsx,.ts,.tsx,.vue,.md,.json,.html ./",
     "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
     "format:check": "prettier . --check",
+    "prepare": "quasar prepare",
+    "postinstall": "yarn prepare",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "dev:android": "quasar dev -m capacitor -T android",

@@ -22,6 +22,8 @@ Then cd to this root directy and install the dependencies:
 yarn
 ```
 
+This will also run `prepare`, so you can start using your IDE.
+
 ## Start the app in development mode (hot-code reloading, error reporting, etc.)
 
 Remember to first load the environment files in `.env` file by running `. ./.env`.
@@ -88,12 +90,6 @@ Generate the actual icons:
 `icongenie generate -p ./icongenie-profile-png.json`
 
 `icongenie generate -p ./icongenie-profile-splashscreen.json`
-
-## Important notes
-
-### Push new .quasar/tsconfig.json
-
-At every `yarn dev`, a new tsconfig.json will be generated. Make sure to push the latest version to the VCS
 
 ## License
 
