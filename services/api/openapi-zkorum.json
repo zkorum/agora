@@ -2769,6 +2769,12 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
+                                    "isIndexed": {
+                                        "type": "boolean"
+                                    },
+                                    "isLoginRequired": {
+                                        "type": "boolean"
+                                    },
                                     "pollingOptionList": {
                                         "type": "array",
                                         "items": {
@@ -2779,7 +2785,9 @@
                                     }
                                 },
                                 "required": [
-                                    "conversationTitle"
+                                    "conversationTitle",
+                                    "isIndexed",
+                                    "isLoginRequired"
                                 ],
                                 "additionalProperties": false
                             }

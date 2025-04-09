@@ -738,6 +738,18 @@ export interface ApiV1ConversationCreatePostRequest {
     'conversationBody'?: string;
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'isIndexed': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'isLoginRequired': boolean;
+    /**
+     * 
      * @type {Array<string>}
      * @memberof ApiV1ConversationCreatePostRequest
      */
