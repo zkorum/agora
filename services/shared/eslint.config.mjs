@@ -3,8 +3,8 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
-import json from "@eslint/json";
-import markdown from "@eslint/markdown";
+// import json from "@eslint/json";
+// import markdown from "@eslint/markdown";
 
 export default tseslint.config(
     eslint.configs.recommended,
@@ -20,19 +20,19 @@ export default tseslint.config(
         },
     },
     ...tseslint.configs.stylisticTypeChecked,
-    {
-        files: ["**/*.json"],
-        ignores: ["package-lock.json"],
-        ...json.configs["recommended"],
-    },
-    {
-        files: ["**/*.jsonc"],
-        ...json.configs.recommended,
-    },
-    {
-        files: ["**/*.json5"],
-        ...json.configs.recommended,
-    },
+    // {
+    //     files: ["**/*.json"],
+    //     ignores: ["package-lock.json"],
+    //     ...json.configs["recommended"],
+    // },
+    // {
+    //     files: ["**/*.jsonc"],
+    //     ...json.configs.recommended,
+    // },
+    // {
+    //     files: ["**/*.json5"],
+    //     ...json.configs.recommended,
+    // },
     {
         files: ["src/**"],
         rules: {
@@ -50,9 +50,9 @@ export default tseslint.config(
     {
         ignores: ["**/dist/", "eslint.config.mjs", "jest.config.js", "val.js"],
     },
-    {
-        // Add plugins here
-        plugins: { markdown, json },
-    },
+    // {
+    //     // Add plugins here
+    //     plugins: { markdown, json },
+    // },
     eslintConfigPrettier, // eslint-config-prettier last
 );
