@@ -147,6 +147,7 @@
         <FloatingBottomContainer v-if="!compactMode && !isLocked">
           <CommentComposer
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
+            :login-required-to-participate="false"
             @submitted-comment="
               (opinionSlugId: string) => submittedComment(opinionSlugId)
             "
