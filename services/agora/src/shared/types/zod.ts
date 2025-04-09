@@ -271,6 +271,7 @@ export const zodConversationMetadata = z
         voteCount: zodCount,
         participantCount: zodCount,
         authorUsername: z.string(),
+        organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
     })
     .strict();

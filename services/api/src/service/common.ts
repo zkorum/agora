@@ -8,6 +8,7 @@ import {
     polisContentTable,
     polisClusterTable,
     participantTable,
+    organizationTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -28,6 +29,7 @@ import { getUserMutePreferences } from "./muteUser.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as polisService from "@/service/polis.js";
 import type { ClusterMetadata } from "@/shared/types/zod.js";
+import { imagePathToUrl } from "@/utils/organizationLogic.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -102,6 +104,7 @@ export function useCommonPost() {
         personalizedUserId?: string;
         excludeLockedPosts: boolean;
         removeMutedAuthors: boolean;
+        baseImageServiceUrl: string;
     }
 
     async function fetchPostItems({
@@ -112,6 +115,7 @@ export function useCommonPost() {
         personalizedUserId,
         excludeLockedPosts,
         removeMutedAuthors,
+        baseImageServiceUrl,
     }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
         let postItems;
 
@@ -147,6 +151,11 @@ export function useCommonPost() {
                 voteCount: conversationTable.voteCount,
                 participantCount: conversationTable.participantCount,
                 authorName: userTable.username,
+                organizationName: organizationTable.name,
+                organizationImagePath: organizationTable.imagePath,
+                organizationWebsiteUrl: organizationTable.websiteUrl,
+                organizationIsFullImagePath: organizationTable.isFullImagePath,
+                organizationDescription: organizationTable.description,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
@@ -272,6 +281,10 @@ export function useCommonPost() {
                     eq(polisClusterTableAlias5.key, "5"),
                 ),
             )
+            .leftJoin(
+                organizationTable,
+                eq(organizationTable.id, conversationTable.organizationId),
+            )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(where)
             .orderBy(desc(conversationTable.createdAt));
@@ -309,6 +322,24 @@ export function useCommonPost() {
                 voteCount: postItem.voteCount,
                 participantCount: postItem.participantCount,
                 authorUsername: postItem.authorName,
+                organization:
+                    postItem.organizationName !== null &&
+                    postItem.organizationDescription !== null &&
+                    postItem.organizationImagePath !== null &&
+                    postItem.organizationIsFullImagePath !== null &&
+                    postItem.organizationWebsiteUrl !== null
+                        ? {
+                              name: postItem.organizationName,
+                              description: postItem.organizationDescription,
+                              websiteUrl: postItem.organizationWebsiteUrl,
+                              imageUrl: imagePathToUrl({
+                                  imagePath: postItem.organizationImagePath,
+                                  isFullImagePath:
+                                      postItem.organizationIsFullImagePath,
+                                  baseImageServiceUrl,
+                              }),
+                          }
+                        : undefined,
             };
 
             let polis: ExtendedConversationPolis;

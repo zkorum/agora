@@ -36,6 +36,7 @@ interface FetchFeedProps {
     lastSlugId: string | undefined;
     limit?: number;
     personalizationUserId?: string;
+    baseImageServiceUrl: string;
 }
 
 export async function fetchFeed({
@@ -43,6 +44,7 @@ export async function fetchFeed({
     lastSlugId,
     limit,
     personalizationUserId,
+    baseImageServiceUrl,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const defaultLimit = 10;
     const targetLimit = limit ?? defaultLimit;
@@ -57,6 +59,7 @@ export async function fetchFeed({
         whereClause = and(
             whereClause,
             lt(conversationTable.createdAt, lastCreatedAt),
+            eq(conversationTable.isIndexed, true),
         );
     }
 
@@ -70,6 +73,7 @@ export async function fetchFeed({
         personalizedUserId: personalizationUserId,
         excludeLockedPosts: true,
         removeMutedAuthors: true,
+        baseImageServiceUrl,
     });
 
     let reachedEndOfFeed = true;
