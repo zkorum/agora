@@ -143,7 +143,7 @@ export class Dto {
         .object({
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBody,
-            postAsOrganizationName: z.string().optional(),
+            postAsOrganization: z.string().optional(),
             indexConversationAt: z.string().datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
