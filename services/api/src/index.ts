@@ -1509,6 +1509,7 @@ server.after(() => {
                     db: db,
                     didWrite: didWrite,
                     userId: status.userId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
                 reply.send();
                 const proofChannel40EventId =
