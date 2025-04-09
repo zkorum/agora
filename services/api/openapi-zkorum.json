@@ -464,6 +464,31 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
+                                                            "organization": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "imageUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "name",
+                                                                    "imageUrl",
+                                                                    "websiteUrl",
+                                                                    "description"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
                                                             "moderation": {
                                                                 "anyOf": [
                                                                     {
@@ -1161,6 +1186,31 @@
                                                     "authorUsername": {
                                                         "type": "string"
                                                     },
+                                                    "organization": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "imageUrl": {
+                                                                "type": "string"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "description": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "imageUrl",
+                                                            "websiteUrl",
+                                                            "description"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
                                                     "moderation": {
                                                         "anyOf": [
                                                             {
@@ -1435,6 +1485,31 @@
                                                             },
                                                             "authorUsername": {
                                                                 "type": "string"
+                                                            },
+                                                            "organization": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "imageUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "name",
+                                                                    "imageUrl",
+                                                                    "websiteUrl",
+                                                                    "description"
+                                                                ],
+                                                                "additionalProperties": false
                                                             },
                                                             "moderation": {
                                                                 "anyOf": [
@@ -2898,6 +2973,31 @@
                                                         },
                                                         "authorUsername": {
                                                             "type": "string"
+                                                        },
+                                                        "organization": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "name",
+                                                                "imageUrl",
+                                                                "websiteUrl",
+                                                                "description"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
                                                         "moderation": {
                                                             "anyOf": [
