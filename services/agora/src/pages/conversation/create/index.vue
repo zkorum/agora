@@ -44,7 +44,69 @@
           </div>
         </TopMenuWrapper>
 
-        <div>
+        <div class="contentFlexStyle">
+          <ZKCard
+            v-if="profileData.isModerator"
+            padding="1rem"
+            class="cardBackground"
+          >
+            <div class="organizationSection">
+              <q-toggle
+                v-model="postAsOrganization"
+                label="Post as an organization"
+              />
+
+              <div v-if="postAsOrganization" class="organizationFlexList">
+                <div
+                  v-for="organization in userOrganizationList"
+                  :key="organization"
+                >
+                  <q-radio
+                    v-model="selectedOrganization"
+                    :val="organization"
+                    :label="organization"
+                  />
+                </div>
+              </div>
+            </div>
+          </ZKCard>
+
+          <ZKCard
+            v-if="profileData.isModerator"
+            padding="1rem"
+            class="cardBackground"
+          >
+            <div class="organizationSection">
+              <q-toggle
+                v-model="isPrivatePost"
+                label="This is a private conversation"
+              />
+
+              <div v-if="isPrivatePost" class="organizationSection">
+                <q-checkbox
+                  v-if="profileData.isModerator"
+                  v-model="isLoginRequiredToParticipate"
+                  label="Require user login to participate"
+                />
+
+                <q-checkbox
+                  v-if="profileData.isModerator && isPrivatePost"
+                  v-model="autoConvertDate"
+                  label="Convert to public conversation on a scheduled date"
+                />
+
+                <DatePicker
+                  v-if="autoConvertDate"
+                  v-model="targetConvertDate"
+                  show-time
+                  hour-format="12"
+                  :min-date="new Date()"
+                  fluid
+                />
+              </div>
+            </div>
+          </ZKCard>
+
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -204,6 +266,8 @@ import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
+import { useUserStore } from "src/stores/user";
+import DatePicker from "primevue/datepicker";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -218,6 +282,19 @@ const { visualViewPortHeight } = useViewPorts();
 
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
+
+const { profileData } = storeToRefs(useUserStore());
+const postAsOrganization = ref(false);
+const userOrganizationList = ref<string[]>([
+  "Google Inc.",
+  "Facebook Inc.",
+  "Apple Inc.",
+]);
+const selectedOrganization = ref("");
+const isLoginRequiredToParticipate = ref(false);
+const isPrivatePost = ref(false);
+const autoConvertDate = ref(false);
+const targetConvertDate = ref(getTomorrowsDate());
 
 const { isPostEdited, getEmptyConversationDraft } = useNewPostDraftsStore();
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
@@ -242,6 +319,13 @@ clearNewConversationIntention();
 onMounted(() => {
   lockRoute();
 });
+
+function getTomorrowsDate(): Date {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow;
+}
 
 async function saveDraft() {
   await leaveRoute(() => {});
@@ -430,5 +514,28 @@ async function onSubmit() {
   padding-bottom: 0.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.cardBackground {
+  background-color: white;
+}
+
+.organizationSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.organizationFlexList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contentFlexStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 </style>

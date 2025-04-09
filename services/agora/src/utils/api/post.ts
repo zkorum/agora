@@ -152,6 +152,8 @@ export function useBackendPostApi() {
         conversationTitle: postTitle,
         conversationBody: postBody,
         pollingOptionList: pollingOptionList,
+        isIndexed: false,
+        isLoginRequired: false,
       };
 
       const { url, options } =
