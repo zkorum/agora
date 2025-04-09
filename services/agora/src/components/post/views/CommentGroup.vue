@@ -43,6 +43,7 @@
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
           :participant-count="participantCount"
+          :login-required-to-participate="loginRequiredToParticipate"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
           @change-vote="
@@ -77,6 +78,7 @@ defineProps<{
   isPostLocked: boolean;
   isLoading: boolean;
   participantCount: number;
+  loginRequiredToParticipate: boolean;
 }>();
 
 function deletedComment() {

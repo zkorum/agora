@@ -8,6 +8,7 @@
           :created-at="createdAt"
           :username="posterUserName"
           :show-verified-text="false"
+          :organization-url="props.organizationUrl"
         />
 
         <div v-if="skeletonMode" class="identityFlex">
@@ -75,6 +76,7 @@ const props = defineProps<{
   createdAt: Date;
   skeletonMode: boolean;
   postSlugId: string;
+  organizationUrl: string;
 }>();
 
 const router = useRouter();

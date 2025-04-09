@@ -77,6 +77,7 @@ const emit = defineEmits<{
 
 const props = defineProps<{
   postSlugId: string;
+  loginRequiredToParticipate: boolean;
 }>();
 
 const dummyInput = ref<HTMLInputElement>();
@@ -195,7 +196,9 @@ function checkWordCount() {
 }
 
 async function submitPostClicked() {
-  if (isAuthenticated.value) {
+  if (!isAuthenticated.value && props.loginRequiredToParticipate) {
+    showLoginDialog.value = true;
+  } else {
     const response = await createNewComment(
       opinionBody.value,
       props.postSlugId
@@ -206,8 +209,6 @@ async function submitPostClicked() {
       opinionBody.value = "";
       characterCount.value = 0;
     }
-  } else {
-    showLoginDialog.value = true;
   }
 }
 </script>

@@ -37,6 +37,7 @@
                 :created-at="commentItem.opinionItem.createdAt"
                 :username="commentItem.opinionItem.username"
                 :show-verified-text="false"
+                :organization-url="''"
               />
 
               <div>
