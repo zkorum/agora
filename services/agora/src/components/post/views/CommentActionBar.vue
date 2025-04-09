@@ -118,6 +118,7 @@ const props = defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
   participantCount: number;
+  loginRequiredToParticipate: boolean;
 }>();
 
 const emit = defineEmits(["changeVote"]);
@@ -208,7 +209,7 @@ async function castPersonalVote(
   commentSlugId: string,
   isUpvoteButton: boolean
 ) {
-  if (!isAuthenticated.value) {
+  if (props.loginRequiredToParticipate && !isAuthenticated.value) {
     showLoginDialog.value = true;
   } else {
     let targetState: VotingAction = "cancel";

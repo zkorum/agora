@@ -48,6 +48,7 @@
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
             :participant-count="participantCount"
             :is-post-locked="isPostLocked"
+            :login-required-to-participate="loginRequiredToParticipate"
             @change-vote="(vote: VotingAction) => changeVote(vote)"
           />
         </div>
@@ -77,6 +78,7 @@ const props = defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
   participantCount: number;
+  loginRequiredToParticipate: boolean;
 }>();
 
 const reasonLabel = computed(() => calculateReasonLabel()); // enable changing immediately the props without waiting for re-render
