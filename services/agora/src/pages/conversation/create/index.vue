@@ -45,11 +45,7 @@
         </TopMenuWrapper>
 
         <div class="contentFlexStyle">
-          <ZKCard
-            v-if="profileData.isModerator"
-            padding="1rem"
-            class="cardBackground"
-          >
+          <ZKCard padding="1rem" class="cardBackground">
             <div class="organizationSection">
               <q-toggle
                 v-model="postAsOrganization"
@@ -71,11 +67,7 @@
             </div>
           </ZKCard>
 
-          <ZKCard
-            v-if="profileData.isModerator"
-            padding="1rem"
-            class="cardBackground"
-          >
+          <ZKCard padding="1rem" class="cardBackground">
             <div class="organizationSection">
               <q-toggle
                 v-model="isPrivatePost"
@@ -84,13 +76,12 @@
 
               <div v-if="isPrivatePost" class="organizationSection">
                 <q-checkbox
-                  v-if="profileData.isModerator"
                   v-model="isLoginRequiredToParticipate"
                   label="Require user login to participate"
                 />
 
                 <q-checkbox
-                  v-if="profileData.isModerator && isPrivatePost"
+                  v-if="isPrivatePost"
                   v-model="autoConvertDate"
                   label="Convert to public conversation on a scheduled date"
                 />
@@ -266,7 +257,6 @@ import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
-import { useUserStore } from "src/stores/user";
 import DatePicker from "primevue/datepicker";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
@@ -283,7 +273,6 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const { profileData } = storeToRefs(useUserStore());
 const postAsOrganization = ref(false);
 const userOrganizationList = ref<string[]>([
   "Google Inc.",
