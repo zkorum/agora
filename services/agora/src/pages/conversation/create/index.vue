@@ -44,7 +44,64 @@
           </div>
         </TopMenuWrapper>
 
-        <div>
+        <div class="contentFlexStyle">
+          <ZKCard
+            v-if="profileData.organizationList.length > 0"
+            padding="1rem"
+            class="cardBackground"
+          >
+            <div class="organizationSection">
+              <q-toggle
+                v-model="postAsOrganization"
+                label="Post as an organization"
+              />
+
+              <div v-if="postAsOrganization" class="organizationFlexList">
+                <div
+                  v-for="organization in profileData.organizationList"
+                  :key="organization"
+                >
+                  <q-radio
+                    v-model="selectedOrganization"
+                    :val="organization"
+                    :label="organization"
+                  />
+                </div>
+              </div>
+            </div>
+          </ZKCard>
+
+          <ZKCard padding="1rem" class="cardBackground">
+            <div class="organizationSection">
+              <q-toggle
+                v-model="isPrivatePost"
+                label="This is a private conversation"
+              />
+
+              <div v-if="isPrivatePost" class="organizationSection">
+                <q-checkbox
+                  v-model="isLoginRequiredToParticipate"
+                  label="Require user login to participate"
+                />
+
+                <q-checkbox
+                  v-if="isPrivatePost"
+                  v-model="autoConvertDate"
+                  label="Convert to public conversation on a scheduled date"
+                />
+
+                <DatePicker
+                  v-if="autoConvertDate"
+                  v-model="targetConvertDate"
+                  show-time
+                  hour-format="12"
+                  :min-date="new Date()"
+                  fluid
+                />
+              </div>
+            </div>
+          </ZKCard>
+
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -204,6 +261,8 @@ import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
+import DatePicker from "primevue/datepicker";
+import { useUserStore } from "src/stores/user";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
@@ -219,6 +278,13 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
+const postAsOrganization = ref(false);
+const selectedOrganization = ref("");
+const isLoginRequiredToParticipate = ref(false);
+const isPrivatePost = ref(false);
+const autoConvertDate = ref(false);
+const targetConvertDate = ref(getTomorrowsDate());
+
 const { isPostEdited, getEmptyConversationDraft } = useNewPostDraftsStore();
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
 const {
@@ -232,7 +298,7 @@ const {
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
-
+const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
 
 const { createNewConversationIntention, clearNewConversationIntention } =
@@ -242,6 +308,13 @@ clearNewConversationIntention();
 onMounted(() => {
   lockRoute();
 });
+
+function getTomorrowsDate(): Date {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow;
+}
 
 async function saveDraft() {
   await leaveRoute(() => {});
@@ -334,7 +407,11 @@ async function onSubmit() {
       postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
       postDraft.value.enablePolling
         ? postDraft.value.pollingOptionList
-        : undefined
+        : undefined,
+      postAsOrganization.value ? selectedOrganization.value : "",
+      autoConvertDate.value ? targetConvertDate.value.toISOString() : undefined,
+      !isPrivatePost.value,
+      !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
     );
 
     if (response != null) {
@@ -430,5 +507,28 @@ async function onSubmit() {
   padding-bottom: 0.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.cardBackground {
+  background-color: white;
+}
+
+.organizationSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.organizationFlexList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contentFlexStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 </style>

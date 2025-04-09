@@ -218,6 +218,7 @@ export class Dto {
             createdAt: z.date(),
             username: zodUsername,
             isModerator: z.boolean(),
+            organizationList: z.array(z.string()),
         })
         .strict();
     static fetchUserConversationsRequest = z

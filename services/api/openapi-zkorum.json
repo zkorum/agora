@@ -1076,13 +1076,20 @@
                                         },
                                         "isModerator": {
                                             "type": "boolean"
+                                        },
+                                        "organizationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "required": [
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator"
+                                        "isModerator",
+                                        "organizationList"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -2769,6 +2776,19 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
+                                    "postAsOrganization": {
+                                        "type": "string"
+                                    },
+                                    "indexConversationAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "isIndexed": {
+                                        "type": "boolean"
+                                    },
+                                    "isLoginRequired": {
+                                        "type": "boolean"
+                                    },
                                     "pollingOptionList": {
                                         "type": "array",
                                         "items": {
@@ -2779,7 +2799,9 @@
                                     }
                                 },
                                 "required": [
-                                    "conversationTitle"
+                                    "conversationTitle",
+                                    "isIndexed",
+                                    "isLoginRequired"
                                 ],
                                 "additionalProperties": false
                             }

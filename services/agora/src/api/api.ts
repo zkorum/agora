@@ -738,6 +738,30 @@ export interface ApiV1ConversationCreatePostRequest {
     'conversationBody'?: string;
     /**
      * 
+     * @type {string}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'postAsOrganization'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'indexConversationAt'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'isIndexed': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'isLoginRequired': boolean;
+    /**
+     * 
      * @type {Array<string>}
      * @memberof ApiV1ConversationCreatePostRequest
      */
@@ -2213,6 +2237,12 @@ export interface ApiV1UserProfileGetPost200Response {
      * @memberof ApiV1UserProfileGetPost200Response
      */
     'isModerator': boolean;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1UserProfileGetPost200Response
+     */
+    'organizationList': Array<string>;
 }
 /**
  * 
