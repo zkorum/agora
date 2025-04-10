@@ -20,6 +20,7 @@
         "format:check": "prettier . --check",
         "generate-dev-keys": "NODE_OPTIONS=--experimental-vm-modules GENERATE_DEV_KEYS=true jest -t 'generate-dev-keys'",
         "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+        "image:buildx": "docker buildx build --platform linux/amd64,linux/arm64 -t agora-api --load .",
         "image:build": "docker build -t agora-api ."
     },
     "type": "module",
