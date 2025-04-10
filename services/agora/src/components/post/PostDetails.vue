@@ -19,17 +19,16 @@
             >
               <!-- TODO: Pass author verified flag here -->
               <PostMetadata
-                :poster-user-name="
-                  extendedPostData.metadata.organization == undefined
-                    ? extendedPostData.metadata.authorUsername
-                    : extendedPostData.metadata.organization.name
-                "
+                :poster-user-name="extendedPostData.metadata.authorUsername"
                 :created-at="new Date(extendedPostData.metadata.createdAt)"
                 :skeleton-mode="skeletonMode"
                 :post-slug-id="extendedPostData.metadata.conversationSlugId"
                 :author-verified="false"
                 :organization-url="
                   extendedPostData.metadata.organization?.imageUrl || ''
+                "
+                :organization-name="
+                  extendedPostData.metadata.organization?.name || ''
                 "
                 @open-moderation-history="openModerationHistory()"
               />

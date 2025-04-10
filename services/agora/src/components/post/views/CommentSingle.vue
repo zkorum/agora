@@ -20,6 +20,7 @@
           :username="commentItem.username"
           :show-verified-text="false"
           :organization-url="''"
+          :organization-name="''"
         />
 
         <CommentActionOptions

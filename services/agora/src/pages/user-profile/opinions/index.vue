@@ -38,6 +38,7 @@
                 :username="commentItem.opinionItem.username"
                 :show-verified-text="false"
                 :organization-url="''"
+                :organization-name="''"
               />
 
               <div>
