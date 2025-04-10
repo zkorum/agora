@@ -54,12 +54,11 @@ export async function fetchFeed({
         db: db,
     });
 
-    let whereClause: SQL | undefined = undefined;
+    let whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
     if (lastSlugId) {
         whereClause = and(
             whereClause,
             lt(conversationTable.createdAt, lastCreatedAt),
-            eq(conversationTable.isIndexed, true),
         );
     }
 

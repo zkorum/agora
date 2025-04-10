@@ -3,11 +3,11 @@
     <DialogContainer
       v-model="showDialog"
       :title="'Log in to Agora'"
-      :message="'Sign in to participate the discussions'"
+      :message="'Log in to participate in the discussions'"
       :show-cancel-dialog="true"
       :ok-callback="okButtonClicked"
       :cancel-callback="() => {}"
-      :label-ok="'Sign In'"
+      :label-ok="'Log In'"
       :label-cancel="'Cancel'"
     >
       <template #body>

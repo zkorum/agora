@@ -464,6 +464,12 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
+                                                            "isLoginRequired": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isIndexed": {
+                                                                "type": "boolean"
+                                                            },
                                                             "organization": {
                                                                 "type": "object",
                                                                 "properties": {
@@ -567,6 +573,8 @@
                                                             "voteCount",
                                                             "participantCount",
                                                             "authorUsername",
+                                                            "isLoginRequired",
+                                                            "isIndexed",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -1186,6 +1194,12 @@
                                                     "authorUsername": {
                                                         "type": "string"
                                                     },
+                                                    "isLoginRequired": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isIndexed": {
+                                                        "type": "boolean"
+                                                    },
                                                     "organization": {
                                                         "type": "object",
                                                         "properties": {
@@ -1289,6 +1303,8 @@
                                                     "voteCount",
                                                     "participantCount",
                                                     "authorUsername",
+                                                    "isLoginRequired",
+                                                    "isIndexed",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1486,6 +1502,12 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
+                                                            "isLoginRequired": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isIndexed": {
+                                                                "type": "boolean"
+                                                            },
                                                             "organization": {
                                                                 "type": "object",
                                                                 "properties": {
@@ -1589,6 +1611,8 @@
                                                             "voteCount",
                                                             "participantCount",
                                                             "authorUsername",
+                                                            "isLoginRequired",
+                                                            "isIndexed",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -2974,6 +2998,12 @@
                                                         "authorUsername": {
                                                             "type": "string"
                                                         },
+                                                        "isLoginRequired": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isIndexed": {
+                                                            "type": "boolean"
+                                                        },
                                                         "organization": {
                                                             "type": "object",
                                                             "properties": {
@@ -3077,6 +3107,8 @@
                                                         "voteCount",
                                                         "participantCount",
                                                         "authorUsername",
+                                                        "isLoginRequired",
+                                                        "isIndexed",
                                                         "moderation"
                                                     ],
                                                     "additionalProperties": false
