@@ -9,6 +9,7 @@
           :username="posterUserName"
           :show-verified-text="false"
           :organization-url="props.organizationUrl"
+          :organization-name="props.organizationName"
         />
 
         <div v-if="skeletonMode" class="identityFlex">
@@ -77,6 +78,7 @@ const props = defineProps<{
   skeletonMode: boolean;
   postSlugId: string;
   organizationUrl: string;
+  organizationName: string;
 }>();
 
 const router = useRouter();

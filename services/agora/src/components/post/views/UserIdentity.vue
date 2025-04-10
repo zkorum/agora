@@ -7,7 +7,12 @@
         :size="36"
       />
 
-      <img :src="organizationUrl" width="50" />
+      <OrganizationImage
+        v-if="organizationUrl != ''"
+        :height="'36px'"
+        :organization-image-url="organizationUrl"
+        :organization-name="organizationName"
+      />
     </div>
 
     <div class="userNameTimeContainer">
@@ -30,9 +35,11 @@
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import Username from "./Username.vue";
+import OrganizationImage from "src/components/account/OrganizationImage.vue";
 
 defineProps<{
   username: string;
+  organizationName: string;
   authorVerified: boolean;
   createdAt: Date;
   showVerifiedText: boolean;
