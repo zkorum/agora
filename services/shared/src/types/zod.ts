@@ -756,6 +756,13 @@ export const zodGetDeviceStatusResponse = z.discriminatedUnion("isRegistered", [
     }),
 ]);
 
+export const zodDeviceLoginStatus = z.enum([
+    "logged_in",
+    "unknown",
+    "unverified",
+    "logged_out",
+]);
+
 export type GetDeviceStatusResponse = z.infer<
     typeof zodGetDeviceStatusResponse
 >;
@@ -824,3 +831,4 @@ export type GenLabelSummaryOutputClusterLoose = z.infer<
     typeof zodGenLabelSummaryOutputClusterLoose
 >;
 export type OrganizationProperties = z.infer<typeof zodOrganization>;
+export type DeviceLoginStatus = z.infer<typeof zodDeviceLoginStatus>;

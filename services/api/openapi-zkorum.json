@@ -25,12 +25,18 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "isLoggedIn": {
-                                            "type": "boolean"
+                                        "loggedInStatus": {
+                                            "type": "string",
+                                            "enum": [
+                                                "logged_in",
+                                                "unknown",
+                                                "unverified",
+                                                "logged_out"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "isLoggedIn"
+                                        "loggedInStatus"
                                     ],
                                     "additionalProperties": false
                                 }

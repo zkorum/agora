@@ -68,7 +68,7 @@ const { showNotifyMessage } = useNotify();
 async function logoutRequested() {
   try {
     await logoutFromServer();
-    await logoutDataCleanup();
+    await logoutDataCleanup({ doDeleteKeypair: true });
     await showLogoutMessageAndRedirect();
   } catch (e) {
     console.error("Unexpected error when logging out", e);
@@ -139,7 +139,7 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(logoutDataCleanup);
+  showDeleteAccountDialog(() => logoutDataCleanup({ doDeleteKeypair: true }));
 }
 </script>
 
