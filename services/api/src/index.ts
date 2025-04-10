@@ -97,6 +97,7 @@ import {
     getOrganizationNamesByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
+import type { DeviceLoginStatus } from "./shared/types/zod.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -490,8 +491,17 @@ server.after(() => {
                 expectedDeviceStatus: undefined,
             });
 
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            return { isLoggedIn: status.isLoggedIn };
+            const status = await authUtilService.getDeviceStatus(db, didWrite);
+            const loggedInStatus: DeviceStatus = !status.isRegistered
+                ? "unknown"
+                : !status.isVerified
+                ? "unverified"
+                : !status.isLoggedIn
+                ? "logged_out"
+                : "logged_in";
+            return {
+                loggedInStatus: loggedInStatus,
+            };
         },
     });
 

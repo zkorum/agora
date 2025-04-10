@@ -30,13 +30,16 @@ import {
     zodPolisKey,
     zodSupportedCountryCallingCode,
     zodOrganization,
+    zodDeviceLoginStatus,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static checkLoginStatusResponse = z
-        .object({ isLoggedIn: z.boolean() })
+        .object({
+            loggedInStatus: zodDeviceLoginStatus,
+        })
         .strict();
     static authenticateRequestBody = z
         .object({

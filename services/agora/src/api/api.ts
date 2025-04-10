@@ -335,11 +335,21 @@ export type ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = typeof ApiV
 export interface ApiV1AuthCheckLoginStatusPost200Response {
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof ApiV1AuthCheckLoginStatusPost200Response
      */
-    'isLoggedIn': boolean;
+    'loggedInStatus': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum;
 }
+
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum = {
+    LoggedIn: 'logged_in',
+    Unknown: 'unknown',
+    Unverified: 'unverified',
+    LoggedOut: 'logged_out'
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum];
+
 /**
  * 
  * @export
