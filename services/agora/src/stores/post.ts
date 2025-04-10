@@ -89,6 +89,8 @@ export const usePostStore = defineStore("post", () => {
       participantCount: 0,
       authorUsername: "",
       lastReactedAt: new Date(),
+      isLoginRequired: true,
+      isIndexed: true,
       conversationSlugId: "",
       updatedAt: new Date(),
       moderation: {

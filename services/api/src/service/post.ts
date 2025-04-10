@@ -170,7 +170,7 @@ export async function createNewPost({
                 slugId: conversationSlugId,
                 organizationId: organizationId,
                 isIndexed: isIndexed,
-                isLoginRequired: isLoginRequired,
+                isLoginRequired: isIndexed ? true : isLoginRequired,
                 indexConversationAt:
                     indexConversationAt !== undefined
                         ? new Date(indexConversationAt)

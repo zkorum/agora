@@ -37,7 +37,7 @@
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         :participant-count="participantCountLocal"
-        :login-required-to-participate="false"
+        :login-required-to-participate="props.loginRequiredToParticipate"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
         @change-vote="
@@ -119,7 +119,7 @@
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         :participant-count="participantCountLocal"
-        :login-required-to-participate="false"
+        :login-required-to-participate="props.loginRequiredToParticipate"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
         @change-vote="
@@ -166,6 +166,7 @@ const props = defineProps<{
   participantCount: number;
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
+  loginRequiredToParticipate: boolean;
 }>();
 
 const participantCountLocal = ref(props.participantCount);

@@ -270,6 +270,8 @@ export const zodConversationMetadata = z
         voteCount: zodCount,
         participantCount: zodCount,
         authorUsername: z.string(),
+        isLoginRequired: z.boolean(),
+        isIndexed: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
     })

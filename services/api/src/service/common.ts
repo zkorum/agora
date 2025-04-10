@@ -156,6 +156,8 @@ export function useCommonPost() {
                 organizationWebsiteUrl: organizationTable.websiteUrl,
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDescription: organizationTable.description,
+                isIndexed: conversationTable.isIndexed,
+                isLoginRequired: conversationTable.isLoginRequired,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
@@ -322,6 +324,8 @@ export function useCommonPost() {
                 voteCount: postItem.voteCount,
                 participantCount: postItem.participantCount,
                 authorUsername: postItem.authorName,
+                isIndexed: postItem.isIndexed,
+                isLoginRequired: postItem.isLoginRequired,
                 organization:
                     postItem.organizationName !== null &&
                     postItem.organizationDescription !== null &&

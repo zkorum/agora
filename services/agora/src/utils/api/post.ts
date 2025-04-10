@@ -208,6 +208,8 @@ export function useBackendPostApi() {
             createdAt: new Date(item.metadata.moderation.createdAt),
             updatedAt: new Date(item.metadata.moderation.updatedAt),
           },
+          isIndexed: item.metadata.isIndexed,
+          isLoginRequired: item.metadata.isLoginRequired,
           organization: {
             description: item.metadata.organization?.description || "",
             imageUrl: item.metadata.organization?.imageUrl || "",

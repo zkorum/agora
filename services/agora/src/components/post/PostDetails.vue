@@ -145,6 +145,10 @@
                 :is-post-locked="
                   extendedPostData.metadata.moderation.status == 'moderated'
                 "
+                :login-required-to-participate="
+                  extendedPostData.metadata.isIndexed ||
+                  extendedPostData.metadata.isLoginRequired
+                "
                 @deleted="decrementCommentCount()"
               />
             </div>
@@ -154,7 +158,10 @@
         <FloatingBottomContainer v-if="!compactMode && !isLocked">
           <CommentComposer
             :post-slug-id="extendedPostData.metadata.conversationSlugId"
-            :login-required-to-participate="false"
+            :login-required-to-participate="
+              extendedPostData.metadata.isIndexed ||
+              extendedPostData.metadata.isLoginRequired
+            "
             @submitted-comment="
               (opinionSlugId: string) => submittedComment(opinionSlugId)
             "

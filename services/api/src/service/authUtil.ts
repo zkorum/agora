@@ -16,6 +16,7 @@ import { httpErrors } from "@fastify/sensible";
 import type { GetDeviceStatusResponse } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as authService from "@/service/auth.js";
+import { log } from "@/app.js";
 
 interface InfoDevice {
     userAgent: string;
@@ -110,6 +111,7 @@ export async function getOrRegisterUserIdFromDeviceStatus({
         // even registered device associated with a verified user, but logged-out, can comment on unindexed+loginNotRequired posts
         userId = deviceStatus.userId;
     } else {
+        log.info(`Registering new device with didWrite '${didWrite}'`);
         // register device to a new un-verified user
         userId = await authService.registerWithoutVerification({
             db,
