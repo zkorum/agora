@@ -1,7 +1,7 @@
 <template>
   <div class="authorContainer">
     <div class="usernameStyle">
-      {{ userName }}
+      {{ userIdentity }}
     </div>
     <div v-if="authorVerified" class="verifiedMessage">
       <q-icon name="mdi-check-decagram" class="verifiedIconStyle" />
@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  userName: string;
+  userIdentity: string;
   authorVerified: boolean;
   showVerifiedText: boolean;
 }>();

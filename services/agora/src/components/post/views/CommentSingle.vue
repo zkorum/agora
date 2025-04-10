@@ -17,10 +17,9 @@
         <UserIdentity
           :author-verified="false"
           :created-at="commentItem.createdAt"
-          :username="commentItem.username"
+          :user-identity="commentItem.username"
           :show-verified-text="false"
-          :organization-url="''"
-          :organization-name="''"
+          :organization-image-url="''"
         />
 
         <CommentActionOptions

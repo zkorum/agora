@@ -43,7 +43,7 @@
                     <div>
                       <UserAvatar
                         v-if="notificationItem.type === 'new_opinion'"
-                        :user-name="notificationItem.username"
+                        :user-identity="notificationItem.username"
                         :size="32"
                       />
                     </div>

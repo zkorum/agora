@@ -35,10 +35,9 @@
               <UserIdentity
                 :author-verified="false"
                 :created-at="commentItem.opinionItem.createdAt"
-                :username="commentItem.opinionItem.username"
+                :user-identity="commentItem.opinionItem.username"
                 :show-verified-text="false"
-                :organization-url="''"
-                :organization-name="''"
+                :organization-image-url="''"
               />
 
               <div>

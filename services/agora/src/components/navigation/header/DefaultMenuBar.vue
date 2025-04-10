@@ -17,7 +17,7 @@
                   "
                   class="menuButtonHover"
                   :size="40"
-                  :user-name="profileData.userName"
+                  :user-identity="profileData.userName"
                   @click="menuButtonClicked()"
                 />
               </div>
