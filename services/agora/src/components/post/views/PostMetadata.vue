@@ -6,10 +6,13 @@
           v-if="!skeletonMode"
           :author-verified="authorVerified"
           :created-at="createdAt"
-          :username="posterUserName"
+          :user-identity="
+            props.organizationName == ''
+              ? posterUserName
+              : props.organizationName
+          "
           :show-verified-text="false"
-          :organization-url="props.organizationUrl"
-          :organization-name="props.organizationName"
+          :organization-image-url="props.organizationUrl"
         />
 
         <div v-if="skeletonMode" class="identityFlex">

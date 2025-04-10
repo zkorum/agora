@@ -10,7 +10,7 @@
         <div v-if="isAuthenticated" class="usernameBar">
           <UserAvatar
             :key="profileData.userName"
-            :user-name="profileData.userName"
+            :user-identity="profileData.userName"
             :size="35"
           />
           <div>
