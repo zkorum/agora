@@ -22,7 +22,14 @@ Then cd to this root directy and install the dependencies:
 yarn
 ```
 
-This will also run `prepare`, so you can start using your IDE.
+### Prepare for IDE work
+
+Run:
+
+```bash
+yarn prepare
+```
+
 
 ## Start the app in development mode (hot-code reloading, error reporting, etc.)
 
