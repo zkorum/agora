@@ -16,7 +16,6 @@ import { httpErrors } from "@fastify/sensible";
 import type { GetDeviceStatusResponse } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as authService from "@/service/auth.js";
-import { log } from "@/app.js";
 
 interface InfoDevice {
     userAgent: string;

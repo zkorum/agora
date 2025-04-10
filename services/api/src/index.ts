@@ -492,7 +492,7 @@ server.after(() => {
             });
 
             const status = await authUtilService.getDeviceStatus(db, didWrite);
-            const loggedInStatus: DeviceStatus = !status.isRegistered
+            const loggedInStatus: DeviceLoginStatus = !status.isRegistered
                 ? "unknown"
                 : !status.isVerified
                 ? "unverified"
