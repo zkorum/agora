@@ -1,6 +1,18 @@
 <template>
   <div>
     <div class="container">
+      <div class="infoIcon">
+        <ZKButton button-type="icon" @click="showClusterInformation = true">
+          <ZKIcon
+            color="#6d6a74"
+            name="mdi-information-outline"
+            size="1.2rem"
+          />
+        </ZKButton>
+      </div>
+
+      <ClusterInformationDialog v-model="showClusterInformation" />
+
       <div
         v-for="(imgItem, imageIndex) in activeCluster.imgList"
         :key="imageIndex"
@@ -83,6 +95,9 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { ref, watch } from "vue";
 import { z } from "zod";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ClusterInformationDialog from "./cluster/ClusterInformationDialog.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 
 const emit = defineEmits<{
   (e: "selectedCluster", clusterKey: PolisKey): void;
@@ -93,6 +108,8 @@ const props = defineProps<{
   currentClusterTab: string;
   totalParticipantCount: number;
 }>();
+
+const showClusterInformation = ref(false);
 
 const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
 
@@ -370,5 +387,11 @@ function composeImagePath(
   gap: min(0.5rem, 1vw);
   align-items: center;
   white-space: nowrap;
+}
+
+.infoIcon {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
 }
 </style>
