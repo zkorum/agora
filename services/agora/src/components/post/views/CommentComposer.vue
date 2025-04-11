@@ -31,6 +31,7 @@
           label="Post"
           color="primary"
           :disable="characterProgress > 100 || characterProgress == 0"
+          :loading="isSubmissionLoading"
           @click="submitPostClicked()"
         />
       </div>
@@ -126,6 +127,8 @@ const { y: yScroll } = useWindowScroll();
 
 let disableAutocollapse = false;
 
+const isSubmissionLoading = ref(false);
+
 onMounted(() => {
   lockRoute();
 
@@ -199,10 +202,12 @@ async function submitPostClicked() {
   if (!isAuthenticated.value && props.loginRequiredToParticipate) {
     showLoginDialog.value = true;
   } else {
+    isSubmissionLoading.value = true;
     const response = await createNewComment(
       opinionBody.value,
       props.postSlugId
     );
+    isSubmissionLoading.value = false;
     if (response?.success) {
       emit("submittedComment", response.opinionSlugId);
       innerFocus.value = false;
