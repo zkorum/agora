@@ -15,7 +15,7 @@
     </ZKButton>
 
     <q-dialog v-model="showDialog" position="bottom">
-      <div class="dialogContainer">
+      <ZKBottomDialogContainer>
         <div class="titleStyle">Filter Responses by:</div>
 
         <div class="optionFlexStyle">
@@ -35,13 +35,14 @@
             @click="selectedAlgorithm(optionItem.value)"
           />
         </div>
-      </div>
+      </ZKBottomDialogContainer>
     </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
 import { CommentFilterOptions } from "src/utils/component/opinion";
@@ -117,15 +118,6 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 .iconStyle {
   padding-bottom: 0rem;
   padding-left: 0.2rem;
-}
-
-.dialogContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 25px 25px 0 0;
 }
 
 .optionFlexStyle {
