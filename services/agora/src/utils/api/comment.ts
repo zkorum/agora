@@ -165,38 +165,32 @@ export function useBackendCommentApi() {
     commentBody: string,
     postSlugId: string
   ): Promise<CreateCommentResponse | undefined> {
-    try {
-      const params: ApiV1OpinionCreatePostRequest = {
-        opinionBody: commentBody,
-        conversationSlugId: postSlugId,
-      };
+    const params: ApiV1OpinionCreatePostRequest = {
+      opinionBody: commentBody,
+      conversationSlugId: postSlugId,
+    };
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionCreatePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionCreatePost(params, {
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
 
-      if (!response.data.success) {
-        if (response.data.reason == "conversation_locked") {
-          showNotifyMessage(
-            "Cannot create opinion because the conversation is locked"
-          );
-        }
+    if (!response.data.success) {
+      if (response.data.reason == "conversation_locked") {
+        showNotifyMessage(
+          "Cannot create opinion because the conversation is locked"
+        );
       }
-      return response.data;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to add opinion to the conversation");
-      return undefined;
     }
+    return response.data;
   }
 
   async function deleteCommentBySlugId(commentSlugId: string) {

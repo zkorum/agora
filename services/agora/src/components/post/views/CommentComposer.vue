@@ -69,6 +69,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import { RouteLocationNormalized } from "vue-router";
 
@@ -91,6 +92,8 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
 
 const { createNewComment } = useBackendCommentApi();
+
+const { showNotifyMessage } = useNotify();
 
 const characterCount = ref(0);
 
@@ -218,6 +221,7 @@ async function submitPostClicked() {
       }
     } catch (error) {
       console.error("Failed to create new opinion");
+      showNotifyMessage("Failed to add opinion to the conversation");
     } finally {
       isSubmissionLoading.value = false;
     }
