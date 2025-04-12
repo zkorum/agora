@@ -211,17 +211,21 @@ async function submitPostClicked() {
         opinionBody.value,
         props.postSlugId
       );
-      if (response?.success) {
+
+      if (!response.success) {
+        if (response.reason == "conversation_locked") {
+          showNotifyMessage(
+            "Cannot create opinion because the conversation is locked"
+          );
+        }
+      } else {
         emit("submittedComment", response.opinionSlugId);
         innerFocus.value = false;
         opinionBody.value = "";
         characterCount.value = 0;
-      } else {
-        console.error(response?.reason);
       }
     } catch (error) {
-      console.error("Failed to create new opinion");
-      showNotifyMessage("Failed to add opinion to the conversation");
+      showNotifyMessage("Failed to create a new opinion");
     } finally {
       isSubmissionLoading.value = false;
     }
