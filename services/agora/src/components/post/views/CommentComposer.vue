@@ -203,16 +203,23 @@ async function submitPostClicked() {
     showLoginDialog.value = true;
   } else {
     isSubmissionLoading.value = true;
-    const response = await createNewComment(
-      opinionBody.value,
-      props.postSlugId
-    );
-    isSubmissionLoading.value = false;
-    if (response?.success) {
-      emit("submittedComment", response.opinionSlugId);
-      innerFocus.value = false;
-      opinionBody.value = "";
-      characterCount.value = 0;
+    try {
+      const response = await createNewComment(
+        opinionBody.value,
+        props.postSlugId
+      );
+      if (response?.success) {
+        emit("submittedComment", response.opinionSlugId);
+        innerFocus.value = false;
+        opinionBody.value = "";
+        characterCount.value = 0;
+      } else {
+        console.error(response?.reason);
+      }
+    } catch (error) {
+      console.error("Failed to create new opinion");
+    } finally {
+      isSubmissionLoading.value = false;
     }
   }
 }
