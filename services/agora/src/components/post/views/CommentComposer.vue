@@ -31,6 +31,7 @@
           label="Post"
           color="primary"
           :disable="characterProgress > 100 || characterProgress == 0"
+          :loading="isSubmissionLoading"
           @click="submitPostClicked()"
         />
       </div>
@@ -68,6 +69,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import { RouteLocationNormalized } from "vue-router";
 
@@ -90,6 +92,8 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
 
 const { createNewComment } = useBackendCommentApi();
+
+const { showNotifyMessage } = useNotify();
 
 const characterCount = ref(0);
 
@@ -125,6 +129,8 @@ const characterProgress = computed(() => {
 const { y: yScroll } = useWindowScroll();
 
 let disableAutocollapse = false;
+
+const isSubmissionLoading = ref(false);
 
 onMounted(() => {
   lockRoute();
@@ -199,15 +205,29 @@ async function submitPostClicked() {
   if (!isAuthenticated.value && props.loginRequiredToParticipate) {
     showLoginDialog.value = true;
   } else {
-    const response = await createNewComment(
-      opinionBody.value,
-      props.postSlugId
-    );
-    if (response?.success) {
-      emit("submittedComment", response.opinionSlugId);
-      innerFocus.value = false;
-      opinionBody.value = "";
-      characterCount.value = 0;
+    isSubmissionLoading.value = true;
+    try {
+      const response = await createNewComment(
+        opinionBody.value,
+        props.postSlugId
+      );
+
+      if (!response.success) {
+        if (response.reason == "conversation_locked") {
+          showNotifyMessage(
+            "Cannot create opinion because the conversation is locked"
+          );
+        }
+      } else {
+        emit("submittedComment", response.opinionSlugId);
+        innerFocus.value = false;
+        opinionBody.value = "";
+        characterCount.value = 0;
+      }
+    } catch (error) {
+      showNotifyMessage("Failed to create a new opinion");
+    } finally {
+      isSubmissionLoading.value = false;
     }
   }
 }
