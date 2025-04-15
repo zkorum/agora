@@ -22,6 +22,7 @@ import {
     zodPolisMathAndMetadata,
     type CommentPriorities,
 } from "@/shared/types/polis.js";
+import * as llmService from "@/service/llmLabelSummary.js";
 
 interface PolisCreateUserProps {
     userId: string;
@@ -187,6 +188,14 @@ interface DelayedPolisGetAndUpdateMathProps {
     conversationId: number;
     axiosPolis: AxiosInstance;
     polisDelayToFetch: number;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function delayedPolisGetAndUpdateMath({
@@ -195,6 +204,14 @@ export async function delayedPolisGetAndUpdateMath({
     conversationId,
     axiosPolis,
     polisDelayToFetch,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: DelayedPolisGetAndUpdateMathProps) {
     if (polisDelayToFetch === -1) {
         log.info("Get polis math results is turned off");
@@ -381,7 +398,9 @@ export async function delayedPolisGetAndUpdateMath({
                             baseClusters.id.length,
                         )}, baseClusters.members.length=${String(
                             baseClusters.members.length,
-                        )}"}`,
+                        )}"}, members='${JSON.stringify(
+                            baseClusters.members,
+                        )}', id={${JSON.stringify(baseClusters.id)}}`,
                     );
                     pidsById[id] = [];
                 }
@@ -778,6 +797,28 @@ export async function delayedPolisGetAndUpdateMath({
                         minNumberOfClusters,
                     )}`,
                 );
+        }
+
+        if (awsAiLabelSummaryEnable && minNumberOfClusters >= 2) {
+            // only run the AI if there are at least 2 clusters
+            try {
+                await llmService.updateAiLabelsAndSummaries({
+                    db: tx,
+                    conversationId: conversationId,
+                    awsAiLabelSummaryRegion,
+                    awsAiLabelSummaryModelId,
+                    awsAiLabelSummaryTemperature,
+                    awsAiLabelSummaryTopP,
+                    awsAiLabelSummaryTopK,
+                    awsAiLabelSummaryMaxTokens,
+                    awsAiLabelSummaryPrompt,
+                });
+            } catch (e: unknown) {
+                log.error(
+                    `Error while trying to update the AI Label and Summary for conversationSlugId=${conversationSlugId}`,
+                );
+                log.error(e);
+            }
         }
     });
 }

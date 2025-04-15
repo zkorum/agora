@@ -6,8 +6,13 @@
           v-if="!skeletonMode"
           :author-verified="authorVerified"
           :created-at="createdAt"
-          :username="posterUserName"
+          :user-identity="
+            props.organizationName == ''
+              ? posterUserName
+              : props.organizationName
+          "
           :show-verified-text="false"
+          :organization-image-url="props.organizationUrl"
         />
 
         <div v-if="skeletonMode" class="identityFlex">
@@ -19,11 +24,11 @@
       <div>
         <div v-if="!skeletonMode">
           <ZKButton
-            :use-extra-padding="false"
+            button-type="icon"
             flat
             text-color="color-text-weak"
             icon="mdi-dots-vertical"
-            size="0.6rem"
+            size="0.656rem"
             @click.stop.prevent="clickedMoreIcon()"
           />
         </div>
@@ -44,6 +49,12 @@
       @close="showReportDialog = false"
     />
   </q-dialog>
+
+  <PreLoginIntentionDialog
+    v-model="showLoginDialog"
+    :ok-callback="() => onLoginConfirmationOk()"
+    :active-intention="'reportUserContent'"
+  />
 </template>
 
 <script setup lang="ts">
@@ -56,6 +67,10 @@ import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { usePostStore } from "src/stores/post";
 import UserIdentity from "./UserIdentity.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const emit = defineEmits(["openModerationHistory"]);
 
@@ -65,6 +80,8 @@ const props = defineProps<{
   createdAt: Date;
   skeletonMode: boolean;
   postSlugId: string;
+  organizationUrl: string;
+  organizationName: string;
 }>();
 
 const router = useRouter();
@@ -72,13 +89,27 @@ const route = useRoute();
 
 const { showPostOptionSelector } = useBottomSheet();
 
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = usePostStore();
 
 const showReportDialog = ref(false);
 
+const showLoginDialog = ref(false);
+
+const { createReportUserContentIntention } = useLoginIntentionStore();
+
+function onLoginConfirmationOk() {
+  createReportUserContentIntention(props.postSlugId, "");
+}
+
 function reportContentCallback() {
-  showReportDialog.value = true;
+  if (isAuthenticated.value) {
+    showReportDialog.value = true;
+  } else {
+    showLoginDialog.value = true;
+  }
 }
 
 async function openUserReportsCallback() {

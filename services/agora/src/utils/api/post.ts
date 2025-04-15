@@ -76,15 +76,19 @@ export function useBackendPostApi() {
         return createInternalPostData(response.data.conversationData);
       }
     } catch (error) {
+      const DEFAULT_ERROR = "Failed to fetch conversation by slug ID.";
       console.error(error);
       if (axios.isAxiosError(error)) {
         if (error.status == 400) {
-          showNotifyMessage("Post resource not found.");
-          await router.push({ name: "/" });
+          showNotifyMessage("Conversation resource not found.");
+        } else {
+          showNotifyMessage(DEFAULT_ERROR);
         }
       } else {
-        showNotifyMessage("Failed to fetch post by slug ID.");
+        showNotifyMessage(DEFAULT_ERROR);
       }
+
+      await router.push({ name: "/" });
 
       return null;
     }
@@ -141,13 +145,21 @@ export function useBackendPostApi() {
   async function createNewPost(
     postTitle: string,
     postBody: string | undefined,
-    pollingOptionList: string[] | undefined
+    pollingOptionList: string[] | undefined,
+    postAsOrganizationName: string,
+    targetIsoConvertDateString: string | undefined,
+    isIndexed: boolean,
+    isLoginRequired: boolean
   ) {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
         conversationTitle: postTitle,
         conversationBody: postBody,
         pollingOptionList: pollingOptionList,
+        isIndexed: isIndexed,
+        isLoginRequired: isLoginRequired,
+        postAsOrganization: postAsOrganizationName,
+        indexConversationAt: targetIsoConvertDateString,
       };
 
       const { url, options } =
@@ -195,6 +207,14 @@ export function useBackendPostApi() {
             explanation: item.metadata.moderation.explanation,
             createdAt: new Date(item.metadata.moderation.createdAt),
             updatedAt: new Date(item.metadata.moderation.updatedAt),
+          },
+          isIndexed: item.metadata.isIndexed,
+          isLoginRequired: item.metadata.isLoginRequired,
+          organization: {
+            description: item.metadata.organization?.description || "",
+            imageUrl: item.metadata.organization?.imageUrl || "",
+            name: item.metadata.organization?.name || "",
+            websiteUrl: item.metadata.organization?.websiteUrl || "",
           },
         },
         payload: {

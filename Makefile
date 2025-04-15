@@ -17,8 +17,10 @@ dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
 
 dev-front:
-	cd services/agora && pnpm dev 
+	cd services/agora && yarn dev 
 
 dev-api:
 	cd services/api && pnpm start:dev 
 	
+dev:
+	./run_all_in_gnome_terminal_tabs.sh

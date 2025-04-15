@@ -37,7 +37,7 @@
                 }"
               >
                 <ZKButton
-                  :use-extra-padding="true"
+                  button-type="largeButton"
                   label="Edit"
                   color="primary"
                 />

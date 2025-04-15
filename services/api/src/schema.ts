@@ -22,7 +22,9 @@ import { sql } from "drizzle-orm/sql";
 const MAX_LENGTH_OPTION = 30;
 const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
-const MAX_LENGTH_OPINION = 1000;
+const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
+// const MAX_LENGTH_OPINION = 1000;
+const MAX_LENGTH_OPINION_HTML = 3000; // Reserve extra space for HTML tags
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -576,9 +578,6 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
 export const userTable = pgTable("user", {
     id: uuid("id").primaryKey(), // enforce the same key for the user in the frontend across email changes
-    organisationId: integer("organisation_id").references(
-        () => organisationTable.id,
-    ), // for now a user can belong to at most 1 organisation
     username: varchar("username", { length: MAX_LENGTH_USERNAME })
         .notNull()
         .unique(),
@@ -609,6 +608,32 @@ export const userTable = pgTable("user", {
         .defaultNow()
         .notNull(),
 });
+
+export const userOrganizationMappingTable = pgTable(
+    "user_organization_mapping",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        organizationId: integer("organization_id")
+            .references(() => organizationTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("user_idx_organization").on(t.userId),
+        unique("unique_user_orgaization_mapping").on(
+            t.userId,
+            t.organizationId,
+        ),
+    ],
+);
 
 export const userMutePreferenceTable = pgTable(
     "user_mute_preference",
@@ -703,11 +728,14 @@ export const userConversationTopicPreferenceTable = pgTable(
     ],
 );
 
-export const organisationTable = pgTable("organisation", {
+export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR }).notNull(),
-    imageUrl: text("image_url"),
-    websiteUrl: text("website_url"),
+    name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR })
+        .notNull()
+        .unique(),
+    imagePath: text("image_path").notNull(),
+    isFullImagePath: boolean("is_full_image_path").notNull(),
+    websiteUrl: text("website_url").unique(),
     description: varchar("description", {
         length: MAX_LENGTH_DESCRIPTION_CREATOR,
     }),
@@ -981,7 +1009,7 @@ export const conversationContentTable = pgTable("conversation_content", {
         .unique()
         .references(() => conversationProofTable.id), // cannot point to deletion proof
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
-    body: varchar("body", { length: MAX_LENGTH_BODY }),
+    body: varchar("body", { length: MAX_LENGTH_BODY_HTML }),
     pollId: integer("poll_id").references((): AnyPgColumn => pollTable.id), // for now there is only one poll per conversation at most
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -999,12 +1027,21 @@ export const conversationTable = pgTable(
         authorId: uuid("author_id") // "postAs"
             .notNull()
             .references(() => userTable.id), // the author of the poll
+        organizationId: integer("organization_id").references(
+            () => organizationTable.id,
+        ),
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
         currentPolisContentId: integer("current_polis_content_id")
             .references((): AnyPgColumn => polisContentTable.id)
             .unique(), // null if conversation was deleted or if conversation was just started (no opinion/vote was cast)
+        indexConversationAt: timestamp("index_conversation_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        isIndexed: boolean("is_indexed").notNull(), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
+        isLoginRequired: boolean("is_login_required").notNull(), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1254,7 +1291,7 @@ export const opinionContentTable = pgTable("opinion_content", {
     opinionProofId: integer("opinion_proof_id")
         // .notNull() // => null if the opinion is created from a seed user
         .references(() => opinionProofTable.id), // cannot point to deletion proof
-    content: varchar("content", { length: MAX_LENGTH_OPINION }).notNull(),
+    content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,

@@ -17,7 +17,7 @@
                   "
                   class="menuButtonHover"
                   :size="40"
-                  :user-name="profileData.userName"
+                  :user-identity="profileData.userName"
                   @click="menuButtonClicked()"
                 />
               </div>
@@ -26,7 +26,7 @@
                 v-if="
                   !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
                 "
-                :use-extra-padding="true"
+                button-type="standardButton"
                 icon="mdi-menu"
                 text-color="black"
                 @click="menuButtonClicked()"
@@ -54,7 +54,7 @@
                 :to="{ name: '/welcome/' }"
               >
                 <ZKButton
-                  :use-extra-padding="true"
+                  button-type="largeButton"
                   label="Log in"
                   text-color="white"
                   color="primary"

@@ -19,7 +19,6 @@ import {
 import { useNotify } from "../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import { CreateCommentResponse } from "src/shared/types/dto";
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -161,42 +160,26 @@ export function useBackendCommentApi() {
     }
   }
 
-  async function createNewComment(
-    commentBody: string,
-    postSlugId: string
-  ): Promise<CreateCommentResponse | undefined> {
-    try {
-      const params: ApiV1OpinionCreatePostRequest = {
-        opinionBody: commentBody,
-        conversationSlugId: postSlugId,
-      };
+  async function createNewComment(commentBody: string, postSlugId: string) {
+    const params: ApiV1OpinionCreatePostRequest = {
+      opinionBody: commentBody,
+      conversationSlugId: postSlugId,
+    };
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionCreatePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionCreatePost(params, {
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
 
-      if (!response.data.success) {
-        if (response.data.reason == "conversation_locked") {
-          showNotifyMessage(
-            "Cannot create opinion because the conversation is locked"
-          );
-        }
-      }
-      return response.data;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to add opinion to the conversation");
-      return undefined;
-    }
+    return response.data;
   }
 
   async function deleteCommentBySlugId(commentSlugId: string) {

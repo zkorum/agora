@@ -4,39 +4,53 @@
       <div><img :src="starIcon" class="iconStyle" /></div>
       <div class="messageBody">
         <div class="titleBar">
-          <div class="titleString">Consensus group summary</div>
-          <q-icon
-            name="mdi-information-outline"
-            size="1.5rem"
-            class="infoIcon"
-            @click="infoIconClicked()"
-          />
+          <div class="titleString">{{ summaryTitle }}</div>
+
+          <ZKButton button-type="icon" @click="showInformationDialog = true">
+            <ZKIcon
+              color="#6d6a74"
+              name="mdi-information-outline"
+              size="1.2rem"
+            />
+          </ZKButton>
         </div>
         <div>
           {{ summary }}
         </div>
       </div>
     </div>
+
+    <q-dialog v-model="showInformationDialog" position="bottom">
+      <ZKBottomDialogContainer>
+        <div class="titleStyle">AI Summary</div>
+
+        <div>
+          We use Mistral Small 3 (LLM model) to generate the summary & labels
+          for each consensus group.
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useDialog } from "src/utils/ui/dialog";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { PolisKey } from "src/shared/types/zod";
+import { ref } from "vue";
 
-defineProps<{
+const props = defineProps<{
   summary: string;
+  selectedClusterKey: PolisKey | undefined;
 }>();
 
-const { showMessage } = useDialog();
+const summaryTitle =
+  props.selectedClusterKey === undefined ? "Summary" : "Group summary";
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
-function infoIconClicked() {
-  const title = "Consensus Groups";
-  const infoText =
-    "Consensus groups are created based on how people agree and disagree with responses.\n\n We use machine learning to identify the responses that define each group, and input those responses to an AI to create the labels and AI-generated summary for each consensus group.";
-  showMessage(title, infoText);
-}
+const showInformationDialog = ref(false);
 </script>
 
 <style lang="scss" scoped>
@@ -69,11 +83,8 @@ function infoIconClicked() {
   gap: 1rem;
 }
 
-.infoIcon {
-  color: #6d6a74;
-}
-
-.infoIcon:hover {
-  cursor: pointer;
+.titleStyle {
+  font-weight: 500;
+  font-size: 1.1rem;
 }
 </style>

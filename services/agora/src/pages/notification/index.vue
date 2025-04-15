@@ -43,7 +43,7 @@
                     <div>
                       <UserAvatar
                         v-if="notificationItem.type === 'new_opinion'"
-                        :user-name="notificationItem.username"
+                        :user-identity="notificationItem.username"
                         :size="32"
                       />
                     </div>
@@ -152,7 +152,7 @@ async function redirectPage(routeTarget: RouteTarget) {
   await router.push({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: routeTarget.conversationSlugId },
-    query: { opinionSlugId: routeTarget.opinionSlugId },
+    query: { opinion: routeTarget.opinionSlugId },
   });
 }
 </script>

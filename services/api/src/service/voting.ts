@@ -18,6 +18,7 @@ import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import { log } from "@/app.js";
 import { insertNewVoteNotification } from "./notification.js";
+import * as authUtilService from "@/service/authUtil.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -309,31 +310,67 @@ export async function importNewVote({
 interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
     opinionSlugId: string;
-    userId: string;
     didWrite: string;
     proof: string;
     votingAction: VotingAction;
+    userAgent: string;
     axiosPolis?: AxiosInstance;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
     polisDelayToFetch: number;
     voteNotifMilestones: number[];
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
+    now: Date;
 }
 
 export async function castVoteForOpinionSlugId({
     db,
-    userId,
     opinionSlugId,
     didWrite,
     proof,
     votingAction,
+    userAgent,
     axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
     polisDelayToFetch,
     voteNotifMilestones,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
+    now,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });
+
+    const {
+        isIndexed: conversationIsIndexed,
+        isLoginRequired: conversationIsLoginRequired,
+        contentId: conversationContentId,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        conversationSlugId: conversationSlugId,
+    });
+    if (conversationContentId == null) {
+        throw httpErrors.gone("Cannot comment on a deleted post");
+    }
 
     // Check if the post is locked
     {
@@ -347,9 +384,17 @@ export async function castVoteForOpinionSlugId({
         }
     }
 
-    const postMetadata = await useCommonPost().getPostMetadataFromSlugId({
-        db: db,
-        conversationSlugId: conversationSlugId,
+    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+        db,
+        didWrite,
+        conversationIsIndexed,
+        conversationIsLoginRequired,
+        userAgent,
+        axiosPolis,
+        polisUserEmailDomain,
+        polisUserEmailLocalPart,
+        polisUserPassword,
+        now,
     });
 
     const commentData = await getCommentMetadataFromCommentSlugId({
@@ -484,7 +529,7 @@ export async function castVoteForOpinionSlugId({
         await db
             .insert(participantTable)
             .values({
-                conversationId: postMetadata.id,
+                conversationId: conversationId,
                 userId: userId,
                 voteCount: 1,
             })
@@ -615,7 +660,7 @@ export async function castVoteForOpinionSlugId({
                         db: tx,
                         userId: commentData.userId,
                         opinionId: commentData.commentId,
-                        conversationId: postMetadata.id,
+                        conversationId: conversationId,
                         numVotes: 1,
                     });
                 } else {
@@ -657,7 +702,7 @@ export async function castVoteForOpinionSlugId({
                             db: tx,
                             userId: commentData.userId,
                             opinionId: commentData.commentId,
-                            conversationId: postMetadata.id,
+                            conversationId: conversationId,
                             numVotes: newNumVotes,
                         });
                     } else {
@@ -682,13 +727,25 @@ export async function castVoteForOpinionSlugId({
     });
 
     if (axiosPolis !== undefined) {
-        void polisService.delayedPolisGetAndUpdateMath({
-            db: db,
-            conversationSlugId,
-            conversationId: postMetadata.id,
-            axiosPolis,
-            polisDelayToFetch,
-        });
+        polisService
+            .delayedPolisGetAndUpdateMath({
+                db: db,
+                conversationSlugId,
+                conversationId: conversationId,
+                axiosPolis,
+                polisDelayToFetch,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryTopK,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            })
+            .catch((e: unknown) => {
+                log.error(e);
+            });
     }
 
     return true;

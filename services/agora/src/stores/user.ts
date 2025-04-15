@@ -18,6 +18,7 @@ export const useUserStore = defineStore("user", () => {
     userCommentList: ExtendedOpinion[];
     isModerator: boolean;
     dataLoaded: boolean;
+    organizationList: string[];
   }
 
   const emptyProfile: UserProfile = {
@@ -28,6 +29,7 @@ export const useUserStore = defineStore("user", () => {
     userCommentList: [],
     isModerator: false,
     dataLoaded: false,
+    organizationList: [],
   };
 
   const profileData = ref(emptyProfile);
@@ -52,6 +54,7 @@ export const useUserStore = defineStore("user", () => {
         userCommentList: userComments,
         isModerator: userProfile.isModerator,
         dataLoaded: true,
+        organizationList: userProfile.organizationList,
       };
     }
   }

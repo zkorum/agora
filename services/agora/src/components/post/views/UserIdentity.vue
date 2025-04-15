@@ -1,14 +1,25 @@
 <template>
   <div class="metadata">
     <div>
-      <UserAvatar :user-name="username" :size="36" />
+      <UserAvatar
+        v-if="organizationImageUrl == ''"
+        :user-identity="userIdentity"
+        :size="36"
+      />
+
+      <OrganizationImage
+        v-if="organizationImageUrl != ''"
+        :height="'36px'"
+        :organization-image-url="organizationImageUrl"
+        :organization-name="userIdentity"
+      />
     </div>
 
     <div class="userNameTimeContainer">
       <div>
-        <Username
+        <UserMetadata
           :author-verified="authorVerified"
-          :user-name="username"
+          :user-identity="userIdentity"
           :show-verified-text="showVerifiedText"
         />
       </div>
@@ -23,13 +34,15 @@
 <script setup lang="ts">
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import Username from "./Username.vue";
+import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import UserMetadata from "./UserMetadata.vue";
 
 defineProps<{
-  username: string;
+  userIdentity: string;
   authorVerified: boolean;
   createdAt: Date;
   showVerifiedText: boolean;
+  organizationImageUrl: string;
 }>();
 </script>
 

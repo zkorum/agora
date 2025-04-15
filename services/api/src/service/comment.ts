@@ -11,7 +11,6 @@ import {
     polisContentTable,
     polisClusterTable,
     polisClusterUserTable,
-    participantTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
@@ -39,7 +38,7 @@ import type {
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
-import { MAX_LENGTH_OPINION, toUnionUndefined } from "@/shared/shared.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 import { processHtmlBody } from "@/utils/htmlSanitization.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
@@ -47,6 +46,7 @@ import { getUserMutePreferences } from "./muteUser.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import { alias } from "drizzle-orm/pg-core";
+import * as authUtilService from "@/service/authUtil.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -1015,11 +1015,14 @@ interface PostNewOpinionProps {
     db: PostgresJsDatabase;
     commentBody: string;
     conversationSlugId: string;
-    userId: string;
     didWrite: string;
     proof: string;
-    axiosPolis?: AxiosInstance;
-    polisDelayToFetch: number;
+    userAgent: string;
+    axiosPolis: AxiosInstance | undefined;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
+    now: Date;
 }
 
 interface ImportNewOpinionProps {
@@ -1081,54 +1084,14 @@ export async function importNewOpinion({
             })
             .where(eq(opinionTable.id, opinionId));
 
-        // both values are 0 if the user is a new participant!
-        const {
-            voteCount: participantCurrentVoteCount,
-            opinionCount: participantCurrentOpinionCount,
-        } = await useCommonComment().getCountsForParticipant({
-            db: tx,
-            conversationId,
-            userId,
-        });
-        // Update the conversation's counts
-        if (
-            participantCurrentVoteCount === 0 &&
-            participantCurrentOpinionCount === 0
-        ) {
-            // new participant!
-            await tx
-                .update(conversationTable)
-                .set({
-                    opinionCount: sql`${conversationTable.opinionCount} + 1`,
-                    participantCount: sql`${conversationTable.participantCount} + 1`,
-                })
-                .where(eq(conversationTable.slugId, conversationSlugId));
-        } else {
-            // existing participant!
-            await tx
-                .update(conversationTable)
-                .set({
-                    opinionCount: sql`${conversationTable.opinionCount} + 1`,
-                })
-                .where(eq(conversationTable.slugId, conversationSlugId));
-        }
-
+        // Update the conversation's opinion count
         await tx
-            .insert(participantTable)
-            .values({
-                conversationId: conversationId,
-                userId: userId,
-                opinionCount: 1,
+            .update(conversationTable)
+            .set({
+                opinionCount: sql`${conversationTable.opinionCount} + 1`,
             })
-            .onConflictDoUpdate({
-                target: [
-                    participantTable.conversationId,
-                    participantTable.userId,
-                ],
-                set: {
-                    opinionCount: sql`${participantTable.opinionCount} + 1`,
-                },
-            });
+            .where(eq(conversationTable.slugId, conversationSlugId));
+
         return {
             commentId,
             opinionId,
@@ -1151,38 +1114,21 @@ export async function postNewOpinion({
     db,
     commentBody,
     conversationSlugId,
-    userId,
     didWrite,
     proof,
+    userAgent,
+    now,
     axiosPolis,
-    polisDelayToFetch,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
-    const isLocked = await useCommonPost().isPostSlugIdLocked({
-        postSlugId: conversationSlugId,
-        db: db,
-    });
-
-    if (isLocked) {
-        return {
-            success: false,
-            reason: "conversation_locked",
-        };
-    }
-
-    try {
-        commentBody = processHtmlBody(commentBody, MAX_LENGTH_OPINION);
-    } catch (error) {
-        if (error instanceof Error) {
-            throw httpErrors.badRequest(error.message);
-        } else {
-            throw httpErrors.badRequest("Error while sanitizing request body");
-        }
-    }
-
     const {
         id: conversationId,
         contentId: conversationContentId,
         authorId: conversationAuthorId,
+        isIndexed: conversationIsIndexed,
+        isLoginRequired: conversationIsLoginRequired,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
@@ -1191,20 +1137,43 @@ export async function postNewOpinion({
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
 
+    const isLocked = await useCommonPost().isPostSlugIdLocked({
+        postSlugId: conversationSlugId,
+        db: db,
+    });
+    if (isLocked) {
+        return {
+            success: false,
+            reason: "conversation_locked",
+        };
+    }
+
+    try {
+        commentBody = processHtmlBody(commentBody);
+    } catch (error) {
+        if (error instanceof Error) {
+            throw httpErrors.badRequest(error.message);
+        } else {
+            throw httpErrors.badRequest("Error while sanitizing request body");
+        }
+    }
+
+    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+        db,
+        didWrite,
+        conversationIsIndexed,
+        conversationIsLoginRequired,
+        userAgent,
+        axiosPolis,
+        polisUserEmailDomain,
+        polisUserEmailLocalPart,
+        polisUserPassword,
+        now,
+    });
+
     const opinionSlugId = generateRandomSlugId();
 
     await db.transaction(async (tx) => {
-        // both values are 0 if the user is a new participant!
-        // important to do this in the transaction to make sure the number of participant is consistent
-        const {
-            voteCount: participantCurrentVoteCount,
-            opinionCount: participantCurrentOpinionCount,
-        } = await useCommonComment().getCountsForParticipant({
-            db: tx,
-            conversationId,
-            userId,
-        });
-
         const insertCommentResponse = await tx
             .insert(opinionTable)
             .values({
@@ -1248,28 +1217,13 @@ export async function postNewOpinion({
             })
             .where(eq(opinionTable.id, opinionId));
 
-        // Update the conversation's counts
-        if (
-            participantCurrentVoteCount === 0 &&
-            participantCurrentOpinionCount === 0
-        ) {
-            // new participant!
-            await tx
-                .update(conversationTable)
-                .set({
-                    opinionCount: sql`${conversationTable.opinionCount} + 1`,
-                    participantCount: sql`${conversationTable.participantCount} + 1`,
-                })
-                .where(eq(conversationTable.slugId, conversationSlugId));
-        } else {
-            // existing participant!
-            await tx
-                .update(conversationTable)
-                .set({
-                    opinionCount: sql`${conversationTable.opinionCount} + 1`,
-                })
-                .where(eq(conversationTable.slugId, conversationSlugId));
-        }
+        // Update the conversation's opinion count
+        await tx
+            .update(conversationTable)
+            .set({
+                opinionCount: sql`${conversationTable.opinionCount} + 1`,
+            })
+            .where(eq(conversationTable.slugId, conversationSlugId));
 
         // Update the user profile's comment count
         await tx
@@ -1278,23 +1232,6 @@ export async function postNewOpinion({
                 totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
             })
             .where(eq(userTable.id, userId));
-
-        await tx
-            .insert(participantTable)
-            .values({
-                conversationId: conversationId,
-                userId: userId,
-                opinionCount: 1,
-            })
-            .onConflictDoUpdate({
-                target: [
-                    participantTable.conversationId,
-                    participantTable.userId,
-                ],
-                set: {
-                    opinionCount: sql`${participantTable.opinionCount} + 1`,
-                },
-            });
 
         {
             // Create notification for the conversation owner
@@ -1332,16 +1269,6 @@ export async function postNewOpinion({
         }
     });
 
-    if (axiosPolis !== undefined) {
-        void polisService.delayedPolisGetAndUpdateMath({
-            db,
-            conversationId,
-            conversationSlugId,
-            axiosPolis,
-            polisDelayToFetch,
-        });
-    }
-
     return {
         success: true,
         opinionSlugId: opinionSlugId,
@@ -1365,25 +1292,14 @@ export async function deleteOpinionBySlugId({
 }: DeleteCommentBySlugIdProps): Promise<void> {
     try {
         await db.transaction(async (tx) => {
-            const { conversationId, isOpinionDeleted } =
+            const { isOpinionDeleted } =
                 await useCommonComment().getOpinionMetadataFromOpinionSlugId({
                     db: tx,
                     opinionSlugId,
                 });
             if (isOpinionDeleted) {
-                log.error("Opinion had already been deleted");
-                tx.rollback();
+                throw httpErrors.conflict("Opinion had already been deleted");
             }
-
-            // both values are 0 if the user is a new participant!
-            const {
-                voteCount: participantCurrentVoteCount,
-                opinionCount: participantCurrentOpinionCount,
-            } = await useCommonComment().getCountsForParticipant({
-                db: tx,
-                conversationId,
-                userId,
-            });
             const updatedCommentIdResponse = await tx
                 .update(opinionTable)
                 .set({
@@ -1420,37 +1336,12 @@ export async function deleteOpinionBySlugId({
 
             const postId = updatedCommentIdResponse[0].postId;
 
-            // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
-            const participantOpinionCountAfterDeletion =
-                participantCurrentOpinionCount - 1;
-            /* <= to account for potential sync errors though it should not happen with db transactions... */
-            const isParticipantDeleted =
-                participantOpinionCountAfterDeletion <= 0 &&
-                participantCurrentVoteCount <= 0;
-            if (isParticipantDeleted) {
-                await tx
-                    .update(conversationTable)
-                    .set({
-                        opinionCount: sql`${conversationTable.opinionCount} - 1`,
-                        participantCount: sql`${conversationTable.participantCount} - 1`,
-                    })
-                    .where(eq(conversationTable.id, postId));
-            } else {
-                await tx
-                    .update(conversationTable)
-                    .set({
-                        opinionCount: sql`${conversationTable.opinionCount} - 1`,
-                    })
-                    .where(eq(conversationTable.id, postId));
-            }
-
             await tx
-                .update(participantTable)
+                .update(conversationTable)
                 .set({
-                    opinionCount: sql`${participantTable.opinionCount} - 1`,
+                    opinionCount: sql`${conversationTable.opinionCount} - 1`,
                 })
-                .where(eq(participantTable.userId, userId)); // will do nothing if the record is already absent
-
+                .where(eq(conversationTable.id, postId));
             // TODO: delete from Polis as well!
         });
     } catch (err: unknown) {

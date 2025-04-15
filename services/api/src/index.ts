@@ -89,6 +89,15 @@ import {
     GetSecretValueCommand,
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
+import {
+    addUserOrganizationMapping,
+    createOrganization,
+    deleteOrganization,
+    getAllOrganizations,
+    getOrganizationNamesByUsername,
+    removeUserOrganizationMapping,
+} from "./service/administrator/organization.js";
+import type { DeviceLoginStatus } from "./shared/types/zod.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -482,8 +491,17 @@ server.after(() => {
                 expectedDeviceStatus: undefined,
             });
 
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            return { isLoggedIn: status.isLoggedIn };
+            const status = await authUtilService.getDeviceStatus(db, didWrite);
+            const loggedInStatus: DeviceLoginStatus = !status.isRegistered
+                ? "unknown"
+                : !status.isVerified
+                ? "unverified"
+                : !status.isLoggedIn
+                ? "logged_out"
+                : "logged_in";
+            return {
+                loggedInStatus: loggedInStatus,
+            };
         },
     });
 
@@ -605,12 +623,14 @@ server.after(() => {
                         db: db,
                         lastSlugId: request.body.lastSlugId,
                         personalizationUserId: status.userId,
+                        baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                     });
                 }
             } else {
                 return await feedService.fetchFeed({
                     db: db,
                     lastSlugId: request.body.lastSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
             }
         },
@@ -873,6 +893,7 @@ server.after(() => {
                     db: db,
                     userId: status.userId,
                     lastPostSlugId: request.body.lastConversationSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
                 return Array.from(conversationsMap.values());
             }
@@ -900,6 +921,7 @@ server.after(() => {
                     db: db,
                     userId: status.userId,
                     lastCommentSlugId: request.body.lastOpinionSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
             }
         },
@@ -945,40 +967,52 @@ server.after(() => {
                 expectedDeviceStatus: undefined,
             });
 
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const castVoteResponse = await castVoteForOpinionSlugId({
-                    db: db,
-                    opinionSlugId: request.body.opinionSlugId,
-                    userId: status.userId,
-                    didWrite: didWrite,
-                    proof: encodedUcan,
-                    votingAction: request.body.chosenOption,
-                    axiosPolis: axiosPolis,
-                    polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
-                    voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
-                });
-                reply.send(castVoteResponse);
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+            const now = nowZeroMs();
+            const castVoteResponse = await castVoteForOpinionSlugId({
+                db: db,
+                opinionSlugId: request.body.opinionSlugId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                votingAction: request.body.chosenOption,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
+                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
+                awsAiLabelSummaryEnable:
+                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                    (config.NODE_ENV === "production" ||
+                        config.NODE_ENV === "staging"),
+                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                awsAiLabelSummaryTemperature:
+                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
+                awsAiLabelSummaryMaxTokens:
+                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+                now: now,
+            });
+            reply.send(castVoteResponse);
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1119,40 +1153,37 @@ server.after(() => {
             const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
                 expectedDeviceStatus: undefined,
             });
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const newOpinionResponse = await postNewOpinion({
-                    db: db,
-                    commentBody: request.body.opinionBody,
-                    conversationSlugId: request.body.conversationSlugId,
-                    userId: status.userId,
-                    didWrite: didWrite,
-                    proof: encodedUcan,
-                    axiosPolis: axiosPolis,
-                    polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
-                });
-                reply.send(newOpinionResponse);
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+            const now = nowZeroMs();
+            const newOpinionResponse = await postNewOpinion({
+                db: db,
+                commentBody: request.body.opinionBody,
+                conversationSlugId: request.body.conversationSlugId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
+                now: now,
+            });
+            reply.send(newOpinionResponse);
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1337,6 +1368,10 @@ server.after(() => {
                     didWrite: didWrite,
                     proof: encodedUcan,
                     axiosPolis: axiosPolis,
+                    indexConversationAt: request.body.indexConversationAt,
+                    postAsOrganization: request.body.postAsOrganization,
+                    isIndexed: request.body.isIndexed,
+                    isLoginRequired: request.body.isLoginRequired,
                 });
                 reply.send(postResponse);
                 const proofChannel40EventId =
@@ -1396,6 +1431,7 @@ server.after(() => {
                         db: db,
                         conversationSlugId: request.body.conversationSlugId,
                         personalizedUserId: status.userId,
+                        baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                     });
 
                     const response: GetConversationResponse = {
@@ -1407,6 +1443,7 @@ server.after(() => {
                 const postItem = await postService.fetchPostBySlugId({
                     db: db,
                     conversationSlugId: request.body.conversationSlugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
 
                 const response: GetConversationResponse = {
@@ -1482,6 +1519,7 @@ server.after(() => {
                     db: db,
                     didWrite: didWrite,
                     userId: status.userId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
                 reply.send();
                 const proofChannel40EventId =
@@ -1560,6 +1598,217 @@ server.after(() => {
             return await generateUnusedRandomUsername({
                 db: db,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/add-user-organization-mapping`,
+        schema: {
+            body: Dto.addUserOrganizationMappingRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await addUserOrganizationMapping({
+                    db: db,
+                    username: request.body.username,
+                    organizationName: request.body.organizationName,
+                });
+                return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/remove-user-organization-mapping`,
+        schema: {
+            body: Dto.addUserOrganizationMappingRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await removeUserOrganizationMapping({
+                    db: db,
+                    username: request.body.username,
+                    organizationName: request.body.organizationName,
+                });
+                return;
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-organization-names-by-username`,
+        schema: {
+            body: Dto.getOrganizationNamesByUsernameRequest,
+            response: {
+                200: Dto.getOrganizationNamesByUsernameResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                return await getOrganizationNamesByUsername({
+                    db: db,
+                    username: request.body.username,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-all-organizations`,
+        schema: {
+            response: {
+                200: Dto.getAllOrganizationsResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                return await getAllOrganizations({
+                    db: db,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/create-organization`,
+        schema: {
+            body: Dto.createOrganizationRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await createOrganization({
+                    db: db,
+                    organizationName: request.body.organizationName,
+                    imagePath: request.body.imagePath,
+                    isFullImagePath: request.body.isFullImagePath,
+                    websiteUrl: request.body.websiteUrl,
+                    description: request.body.description,
+                });
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/delete-organization`,
+        schema: {
+            body: Dto.deleteOrganizationRequest,
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUCAN(db, request, {
+                expectedDeviceStatus: undefined,
+            });
+            const status = await authUtilService.isLoggedIn(db, didWrite);
+            if (!status.isLoggedIn) {
+                throw server.httpErrors.unauthorized("Device is not logged in");
+            } else {
+                const isModerator = await isModeratorAccount({
+                    db: db,
+                    userId: status.userId,
+                });
+
+                if (!isModerator) {
+                    throw server.httpErrors.unauthorized(
+                        "User is not a moderator",
+                    );
+                }
+
+                await deleteOrganization({
+                    db: db,
+                    organizationName: request.body.organizationName,
+                });
+            }
         },
     });
 

@@ -23,13 +23,13 @@
     <q-pull-to-refresh @refresh="pullDownTriggered">
       <div class="topBar">
         <div class="usernameBar">
-          <UserAvatar :user-name="profileData.userName" :size="35" />
+          <UserAvatar :user-identity="profileData.userName" :size="35" />
 
           <div class="userNameStyle">
             <!-- TODO: Map author verified status here -->
-            <Username
+            <UserMetadata
               :author-verified="false"
-              :user-name="profileData.userName"
+              :user-identity="profileData.userName"
               :show-verified-text="true"
             />
           </div>
@@ -67,10 +67,10 @@ import { useRoute, useRouter } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import Username from "src/components/post/views/Username.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import { RouteNamedMap } from "vue-router/auto-routes";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
+import UserMetadata from "src/components/post/views/UserMetadata.vue";
 
 const router = useRouter();
 
@@ -127,7 +127,13 @@ function applyCurrentTab() {
 }
 
 async function selectedTab(routeName: keyof RouteNamedMap) {
-  await router.push({ name: routeName });
+  if (routeName == "/user-profile/conversations/") {
+    await router.push({ name: "/user-profile/conversations/" });
+  } else if (routeName == "/user-profile/opinions/") {
+    await router.push({ name: "/user-profile/opinions/" });
+  } else {
+    console.error("Unknown route: " + routeName);
+  }
 }
 </script>
 

@@ -20,14 +20,14 @@
 
         <template #body>
           <ZKButton
-            :use-extra-padding="true"
+            button-type="largeButton"
             label="Verify anonymously"
             color="primary"
             @click="goToNextRoute()"
           />
 
           <ZKButton
-            :use-extra-padding="true"
+            button-type="largeButton"
             label="Verify with my phone number"
             color="button-background-color"
             text-color="primary"

@@ -12,13 +12,7 @@
       <q-form @submit="onSubmit()">
         <TopMenuWrapper>
           <div class="menuFlexGroup">
-            <ZKButton
-              :use-extra-padding="true"
-              icon="mdi-close"
-              text-color="color-text-strong"
-              flat
-              @click="router.back()"
-            />
+            <CloseButton />
           </div>
 
           <div class="menuFlexGroup">
@@ -27,28 +21,87 @@
               :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
             >
               <ZKButton
-                :use-extra-padding="true"
+                button-type="standardButton"
                 unelevated
                 rounded
                 :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
                 icon="mdi-poll"
                 color="grey-8"
                 text-color="white"
+                size="0.8rem"
                 @click="togglePolling()"
               />
             </div>
 
             <ZKButton
-              :use-extra-padding="true"
+              button-type="standardButton"
               color="primary"
               label="Post"
               type="submit"
+              size="0.8rem"
               :disable="exceededBodyWordCount"
             />
           </div>
         </TopMenuWrapper>
 
-        <div>
+        <div class="contentFlexStyle">
+          <ZKCard
+            v-if="profileData.organizationList.length > 0"
+            padding="1rem"
+            class="cardBackground"
+          >
+            <div class="organizationSection">
+              <q-toggle
+                v-model="postAsOrganization"
+                label="Post as an organization"
+              />
+
+              <div v-if="postAsOrganization" class="organizationFlexList">
+                <div
+                  v-for="organization in profileData.organizationList"
+                  :key="organization"
+                >
+                  <q-radio
+                    v-model="selectedOrganization"
+                    :val="organization"
+                    :label="organization"
+                  />
+                </div>
+              </div>
+            </div>
+          </ZKCard>
+
+          <ZKCard padding="1rem" class="cardBackground">
+            <div class="organizationSection">
+              <q-toggle
+                v-model="isPrivatePost"
+                label="This is a private conversation"
+              />
+
+              <div v-if="isPrivatePost" class="organizationSection">
+                <q-checkbox
+                  v-model="isLoginRequiredToParticipate"
+                  label="Require user login to participate"
+                />
+
+                <q-checkbox
+                  v-if="isPrivatePost"
+                  v-model="autoConvertDate"
+                  label="Convert to public conversation on a scheduled date"
+                />
+
+                <DatePicker
+                  v-if="autoConvertDate"
+                  v-model="targetConvertDate"
+                  show-time
+                  hour-format="12"
+                  :min-date="new Date()"
+                  fluid
+                />
+              </div>
+            </div>
+          </ZKCard>
+
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -107,7 +160,7 @@
                 <div class="pollTopBar">
                   <div>Add a Poll</div>
                   <ZKButton
-                    :use-extra-padding="true"
+                    button-type="icon"
                     flat
                     text-color="black"
                     icon="mdi-close"
@@ -135,7 +188,7 @@
                       class="deletePollOptionDiv"
                     >
                       <ZKButton
-                        :use-extra-padding="false"
+                        button-type="icon"
                         flat
                         round
                         icon="mdi-delete"
@@ -147,7 +200,7 @@
 
                   <div>
                     <ZKButton
-                      :use-extra-padding="true"
+                      button-type="standardButton"
                       flat
                       text-color="primary"
                       icon="mdi-plus"
@@ -165,58 +218,53 @@
         <div ref="endOfForm"></div>
       </q-form>
 
-      <q-dialog v-model="showExitDialog">
-        <ZKCard padding="1rem" :style="{ backgroundColor: 'white' }">
-          <div class="exitDialogStyle">
-            <div class="dialogTitle">Discard this post?</div>
-
-            <div>Your drafted post will not be saved.</div>
-
-            <div class="dialogButtons">
-              <ZKButton
-                v-close-popup
-                :use-extra-padding="true"
-                flat
-                label="Cancel"
-              />
-              <ZKButton
-                v-close-popup
-                :use-extra-padding="true"
-                label="Discard"
-                text-color="primary"
-                @click="leaveRoute()"
-              />
-            </div>
-          </div>
-        </ZKCard>
-      </q-dialog>
+      <ExitRoutePrompt
+        v-model="showExitDialog"
+        title="Save conversation as draft?"
+        description="Your drafted conversation will be here when you return."
+        :save-draft="saveDraft"
+        :no-save-draft="noSaveDraft"
+      />
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'newConversation'"
+    />
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref } from "vue";
-import {
-  onBeforeRouteLeave,
-  type RouteLocationNormalized,
-  useRouter,
-} from "vue-router";
+import { onMounted, ref } from "vue";
+import { type RouteLocationNormalized, useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import { useNewPostDraftsStore } from "src/stores/newPostDrafts";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useViewPorts } from "src/utils/html/viewPort";
-import { getCharacterCount } from "src/utils/component/editor";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
   MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
   MAX_LENGTH_BODY,
+  validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
 import { useQuasar } from "quasar";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
+import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
+import DatePicker from "primevue/datepicker";
+import { useUserStore } from "src/stores/user";
+
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -230,44 +278,89 @@ const { visualViewPortHeight } = useViewPorts();
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const showExitDialog = ref(false);
+const postAsOrganization = ref(false);
+const selectedOrganization = ref("");
+const isLoginRequiredToParticipate = ref(false);
+const isPrivatePost = ref(false);
+const autoConvertDate = ref(false);
+const targetConvertDate = ref(getTomorrowsDate());
 
-const { postDraft, isPostEdited } = useNewPostDraftsStore();
-
-let grantedRouteLeave = false;
+const { isPostEdited, getEmptyConversationDraft } = useNewPostDraftsStore();
+const { postDraft } = storeToRefs(useNewPostDraftsStore());
+const {
+  isLockedRoute,
+  lockRoute,
+  unlockRoute,
+  savedToRoute,
+  showExitDialog,
+  leaveRoute,
+} = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
+const { profileData } = storeToRefs(useUserStore());
+const showLoginDialog = ref(false);
 
-let savedToRoute: RouteLocationNormalized = {
-  matched: [],
-  fullPath: "",
-  query: {},
-  hash: "",
-  name: "/",
-  path: "",
-  meta: {},
-  params: {},
-  redirectedFrom: undefined,
-};
+const { createNewConversationIntention, clearNewConversationIntention } =
+  useLoginIntentionStore();
+clearNewConversationIntention();
 
-window.onbeforeunload = function () {
-  if (isPostEdited()) {
-    return "Changes that you made may not be saved.";
-  }
-};
-
-onUnmounted(() => {
-  window.onbeforeunload = () => {};
+onMounted(() => {
+  lockRoute();
 });
 
+function getTomorrowsDate(): Date {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow;
+}
+
+async function saveDraft() {
+  await leaveRoute(() => {});
+}
+
+async function noSaveDraft() {
+  postDraft.value = getEmptyConversationDraft();
+  await leaveRoute(() => {});
+}
+
+function onLoginCallback() {
+  unlockRoute();
+  createNewConversationIntention();
+}
+
+function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+  if (isPostEdited() && isLockedRoute()) {
+    showExitDialog.value = true;
+    if (isAuthenticated.value) {
+      savedToRoute.value = to;
+    }
+    return false;
+  } else {
+    return true;
+  }
+}
+
 function checkWordCount() {
-  bodyWordCount.value = getCharacterCount(postDraft.value.postBody);
+  bodyWordCount.value = validateHtmlStringCharacterCount(
+    postDraft.value.postBody,
+    "conversation"
+  ).characterCount;
 
   if (bodyWordCount.value > MAX_LENGTH_BODY) {
     exceededBodyWordCount.value = true;
   } else {
     exceededBodyWordCount.value = false;
+  }
+}
+
+function routeLeaveCallback() {
+  if (isPostEdited()) {
+    console.log("post edited...");
+    return "Changes that you made may not be saved.";
+  } else {
+    console.log("???");
   }
 }
 
@@ -282,6 +375,8 @@ async function togglePolling() {
       });
     }, 100);
   } else {
+    postDraft.value.pollingOptionList =
+      getEmptyConversationDraft().pollingOptionList;
     setTimeout(function () {
       endOfFormRef.value?.scrollIntoView({
         behavior: "smooth",
@@ -300,46 +395,41 @@ function removePollOption(index: number) {
 }
 
 async function onSubmit() {
-  quasar.loading.show();
-
-  grantedRouteLeave = true;
-
-  const response = await createNewPost(
-    postDraft.value.postTitle,
-    postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
-    postDraft.value.enablePolling
-      ? postDraft.value.pollingOptionList
-      : undefined
-  );
-
-  if (response != null) {
-    quasar.loading.hide();
-
-    await loadPostData(false);
-
-    await router.push({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.conversationSlugId },
-    });
+  if (!isAuthenticated.value) {
+    showLoginDialog.value = true;
   } else {
-    quasar.loading.hide();
+    quasar.loading.show();
+
+    unlockRoute();
+
+    const response = await createNewPost(
+      postDraft.value.postTitle,
+      postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
+      postDraft.value.enablePolling
+        ? postDraft.value.pollingOptionList
+        : undefined,
+      postAsOrganization.value ? selectedOrganization.value : "",
+      autoConvertDate.value ? targetConvertDate.value.toISOString() : undefined,
+      !isPrivatePost.value,
+      !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
+    );
+
+    if (response != null) {
+      postDraft.value = getEmptyConversationDraft();
+
+      quasar.loading.hide();
+
+      await loadPostData(false);
+
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.conversationSlugId },
+      });
+    } else {
+      quasar.loading.hide();
+    }
   }
 }
-
-async function leaveRoute() {
-  grantedRouteLeave = true;
-  await router.push(savedToRoute);
-}
-
-onBeforeRouteLeave((to) => {
-  if (isPostEdited() && !grantedRouteLeave) {
-    savedToRoute = to;
-    showExitDialog.value = true;
-    return false;
-  } else {
-    return true;
-  }
-});
 </script>
 
 <style scoped lang="scss">
@@ -365,22 +455,6 @@ onBeforeRouteLeave((to) => {
   align-items: center;
   justify-content: center;
   width: 100%;
-}
-
-.exitDialogStyle {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.dialogTitle {
-  font-size: 1.4rem;
-  font-weight: bold;
-}
-
-.dialogButtons {
-  display: flex;
-  justify-content: space-around;
 }
 
 .menuFlexGroup {
@@ -433,5 +507,28 @@ onBeforeRouteLeave((to) => {
   padding-bottom: 0.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.cardBackground {
+  background-color: white;
+}
+
+.organizationSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.organizationFlexList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contentFlexStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 </style>

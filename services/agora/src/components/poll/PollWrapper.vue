@@ -7,7 +7,7 @@
           <ZKButton
             v-for="optionItem in localPollOptionList"
             :key="optionItem.index"
-            :use-extra-padding="true"
+            button-type="largeButton"
             outline
             :label="optionItem.option"
             text-color="primary"
@@ -45,26 +45,42 @@
         <div v-if="!userVoteStatus.hasVoted">
           <ZKButton
             v-if="currentDisplayMode == DisplayModes.Vote"
-            outline
-            :use-extra-padding="true"
-            color="primary"
-            icon="mdi-chart-bar"
-            label="Results"
+            button-type="standardButton"
             @click.stop.prevent="showResultsInterface()"
-          />
+          >
+            <div class="resultsButton">
+              <ZKIcon
+                color="#6b4eff"
+                name="material-symbols:grouped-bar-chart-rounded"
+                size="1rem"
+              />
+              <div>Results</div>
+            </div>
+          </ZKButton>
 
           <ZKButton
-            v-if="currentDisplayMode == DisplayModes.Results && isAuthenticated"
-            outline
-            :use-extra-padding="true"
-            color="primary"
-            label="Vote"
-            icon="mdi-vote"
+            v-if="currentDisplayMode == DisplayModes.Results"
+            button-type="standardButton"
             @click.stop.prevent="showVoteInterface()"
-          />
+          >
+            <div class="resultsButton">
+              <ZKIcon
+                color="#6b4eff"
+                name="material-symbols:how-to-vote"
+                size="1rem"
+              />
+              <div>Vote</div>
+            </div>
+          </ZKButton>
         </div>
       </div>
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'voting'"
+    />
   </div>
 </template>
 
@@ -77,6 +93,9 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
+import ZKIcon from "../ui-library/ZKIcon.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -93,13 +112,13 @@ const backendPollApi = useBackendPollApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 const { loadPostData } = usePostStore();
 
+const { createVotingIntention } = useLoginIntentionStore();
+
 enum DisplayModes {
   Vote,
   Results,
 }
-const currentDisplayMode = ref<DisplayModes>(
-  isAuthenticated.value ? DisplayModes.Vote : DisplayModes.Results
-);
+const currentDisplayMode = ref<DisplayModes>(DisplayModes.Vote);
 
 const userVoteStatus = ref<UserInteraction>({
   hasVoted: false,
@@ -108,6 +127,16 @@ const userVoteStatus = ref<UserInteraction>({
 
 const totalVoteCount = ref(0);
 initializeTotalVoteCount();
+
+const showLoginDialog = ref(false);
+
+watch(currentDisplayMode, () => {
+  if (currentDisplayMode.value == DisplayModes.Results) {
+    showResultsInterface();
+  } else {
+    showVoteInterface();
+  }
+});
 
 onBeforeMount(async () => {
   await fetchUserPollResponseData(false);
@@ -175,24 +204,24 @@ function showVoteInterface() {
 }
 
 async function voteCasted(selectedIndex: number) {
-  const response = await backendPollApi.submitPollResponse(
-    selectedIndex,
-    props.postSlugId
-  );
-  if (response == true) {
-    await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
-    incrementLocalPollIndex(selectedIndex);
-    totalVoteCount.value += 1;
+  if (isAuthenticated.value) {
+    const response = await backendPollApi.submitPollResponse(
+      selectedIndex,
+      props.postSlugId
+    );
+    if (response == true) {
+      await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
+      incrementLocalPollIndex(selectedIndex);
+      totalVoteCount.value += 1;
+    }
+  } else {
+    showLoginDialog.value = true;
   }
 }
 
-watch(currentDisplayMode, () => {
-  if (currentDisplayMode.value == DisplayModes.Results) {
-    showResultsInterface();
-  } else {
-    showVoteInterface();
-  }
-});
+function onLoginCallback() {
+  createVotingIntention(props.postSlugId);
+}
 </script>
 
 <style scoped lang="scss">
@@ -220,5 +249,12 @@ watch(currentDisplayMode, () => {
 .voteCount {
   padding-right: 0.5rem;
   padding-left: 0.5rem;
+}
+
+.resultsButton {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: #6b4eff;
 }
 </style>

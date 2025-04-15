@@ -2,7 +2,9 @@
 
 Simple Python web server running Natural Language Processing endpoints, used directly by the nodejs server.
 
-Used for classifying comments (toxicity, etc), and eventually inform users how they could rewrite their posts.
+Used for classifying comments (toxicity, etc), and eventually send reports to moderators.
+
+We can also use Jigsaw and https://perspectiveapi.com/ in the future.
 
 ## Development
 

@@ -18,7 +18,12 @@ import { getPlatform } from "../common";
 import { useNotify } from "../ui/notify";
 import { RouteMap, useRoute, useRouter } from "vue-router";
 import { useNotificationStore } from "src/stores/notification";
-import { SupportedCountryCallingCode } from "src/shared/types/zod";
+import {
+  DeviceLoginStatus,
+  SupportedCountryCallingCode,
+} from "src/shared/types/zod";
+import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
+import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 
 interface SendSmsCodeProps {
   phoneNumber: string;
@@ -39,6 +44,8 @@ export function useBackendAuthApi() {
   const { loadPostData } = usePostStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
   const { loadNotificationData } = useNotificationStore();
+  const { clearConversationDrafts } = useNewPostDraftsStore();
+  const { clearOpinionDrafts } = useNewOpinionDraftsStore();
 
   const $q = useQuasar();
 
@@ -97,7 +104,7 @@ export function useBackendAuthApi() {
     return response.data;
   }
 
-  async function deviceIsLoggedIn(): Promise<boolean> {
+  async function deviceIsLoggedIn(): Promise<DeviceLoginStatus> {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
     const encodedUcan = await buildEncodedUcan(url, options);
@@ -110,7 +117,7 @@ export function useBackendAuthApi() {
         ...buildAuthorizationHeader(encodedUcan),
       },
     });
-    return resp.data.isLoggedIn;
+    return resp.data.loggedInStatus;
     //NOTE: DO NOT return false on error! You would wipe out the user session at the first backend interruption.
   }
 
@@ -139,12 +146,14 @@ export function useBackendAuthApi() {
   }
 
   async function initializeAuthState() {
-    const isLoggedIn = await deviceIsLoggedIn();
-    if (isLoggedIn) {
+    const deviceLoginStatus = await deviceIsLoggedIn();
+    if (deviceLoginStatus === "logged_in") {
       isAuthenticated.value = true;
       await loadAuthenticatedModules();
     } else {
-      await logoutDataCleanup();
+      await logoutDataCleanup({
+        doDeleteKeypair: deviceLoginStatus === "logged_out",
+      });
 
       setTimeout(async function () {
         const needRedirect = needRedirectUnauthenticatedUser();
@@ -168,6 +177,7 @@ export function useBackendAuthApi() {
       const whiteListedRoutes: (keyof RouteMap)[] = [
         "/",
         "/conversation/[postSlugId]",
+        "/conversation/create/",
         "/legal/privacy/",
         "/legal/terms/",
         "/onboarding/step1-login/",
@@ -191,10 +201,18 @@ export function useBackendAuthApi() {
     }
   }
 
-  async function logoutDataCleanup() {
+  async function logoutDataCleanup({
+    doDeleteKeypair,
+  }: {
+    doDeleteKeypair: boolean;
+  }) {
     const platform: "mobile" | "web" = getPlatform($q.platform);
 
-    await deleteDid(platform);
+    if (doDeleteKeypair) {
+      await deleteDid(platform);
+    }
+    clearConversationDrafts();
+    clearOpinionDrafts();
 
     isAuthenticated.value = false;
 

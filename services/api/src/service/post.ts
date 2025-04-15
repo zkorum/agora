@@ -10,7 +10,6 @@ import {
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
 import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
-import { MAX_LENGTH_BODY } from "@/shared/shared.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
@@ -19,6 +18,7 @@ import { processHtmlBody } from "@/utils/htmlSanitization.js";
 import type { ExtendedConversation } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
+import * as authUtilService from "@/service/authUtil.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -29,6 +29,10 @@ interface CreateNewPostProps {
     didWrite: string;
     proof: string;
     axiosPolis?: AxiosInstance;
+    postAsOrganization?: string;
+    indexConversationAt?: string;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
 }
 
 interface ImportNewPostProps {
@@ -60,6 +64,8 @@ export async function importNewPost({
                 authorId: authorId,
                 slugId: conversationSlugId,
                 opinionCount: 0,
+                isIndexed: true,
+                isLoginRequired: true,
                 currentContentId: null,
                 currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
                 lastReactedAt: new Date(),
@@ -122,135 +128,151 @@ export async function createNewPost({
     proof,
     pollingOptionList,
     axiosPolis,
+    postAsOrganization,
+    indexConversationAt,
+    isLoginRequired,
+    isIndexed,
 }: CreateNewPostProps): Promise<CreateNewConversationResponse> {
-    try {
-        const conversationSlugId = generateRandomSlugId();
+    let organizationId: number | undefined = undefined;
+    if (postAsOrganization !== undefined && postAsOrganization !== "") {
+        organizationId = await authUtilService.isUserPartOfOrganization({
+            db,
+            organizationName: postAsOrganization,
+            userId: authorId,
+        });
+        if (organizationId === undefined) {
+            throw httpErrors.forbidden(
+                `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
+            );
+        }
+    }
+    const conversationSlugId = generateRandomSlugId();
 
-        if (conversationBody != null) {
-            try {
-                conversationBody = processHtmlBody(
-                    conversationBody,
-                    MAX_LENGTH_BODY,
+    if (conversationBody != null) {
+        try {
+            conversationBody = processHtmlBody(conversationBody);
+        } catch (error) {
+            if (error instanceof Error) {
+                throw httpErrors.badRequest(error.message);
+            } else {
+                throw httpErrors.badRequest(
+                    "Error while sanitizing request body",
                 );
-            } catch (error) {
-                if (error instanceof Error) {
-                    throw httpErrors.badRequest(error.message);
-                } else {
-                    throw httpErrors.badRequest(
-                        "Error while sanitizing request body",
-                    );
-                }
             }
         }
-
-        await db.transaction(async (tx) => {
-            const insertPostResponse = await tx
-                .insert(conversationTable)
-                .values({
-                    authorId: authorId,
-                    slugId: conversationSlugId,
-                    opinionCount: 0,
-                    currentContentId: null,
-                    currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
-                    lastReactedAt: new Date(),
-                })
-                .returning({ conversationId: conversationTable.id });
-
-            const conversationId = insertPostResponse[0].conversationId;
-
-            const masterProofTableResponse = await tx
-                .insert(conversationProofTable)
-                .values({
-                    type: "creation",
-                    conversationId: conversationId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
-                })
-                .returning({ proofId: conversationProofTable.id });
-
-            const proofId = masterProofTableResponse[0].proofId;
-
-            const conversationContentTableResponse = await tx
-                .insert(conversationContentTable)
-                .values({
-                    conversationProofId: proofId,
-                    conversationId: conversationId,
-                    title: conversationTitle,
-                    body: conversationBody,
-                    pollId: null,
-                })
-                .returning({
-                    conversationContentId: conversationContentTable.id,
-                });
-
-            const conversationContentId =
-                conversationContentTableResponse[0].conversationContentId;
-
-            await tx
-                .update(conversationTable)
-                .set({
-                    currentContentId: conversationContentId,
-                })
-                .where(eq(conversationTable.id, conversationId));
-
-            if (pollingOptionList != null) {
-                await tx.insert(pollTable).values({
-                    conversationContentId: conversationContentId,
-                    option1: pollingOptionList[0],
-                    option2: pollingOptionList[1],
-                    option3: pollingOptionList[2] ?? null,
-                    option4: pollingOptionList[3] ?? null,
-                    option5: pollingOptionList[4] ?? null,
-                    option6: pollingOptionList[5] ?? null,
-                    option1Response: 0,
-                    option2Response: 0,
-                    option3Response: pollingOptionList[2] ? 0 : null,
-                    option4Response: pollingOptionList[3] ? 0 : null,
-                    option5Response: pollingOptionList[4] ? 0 : null,
-                    option6Response: pollingOptionList[5] ? 0 : null,
-                });
-            }
-
-            // Update the user profile's conversation count
-            await tx
-                .update(userTable)
-                .set({
-                    activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
-                    totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
-                })
-                .where(eq(userTable.id, authorId));
-
-            if (axiosPolis !== undefined) {
-                await polisService.createConversation({
-                    userId: authorId,
-                    conversationSlugId: conversationSlugId,
-                    axiosPolis,
-                });
-            }
-        });
-
-        return {
-            conversationSlugId: conversationSlugId,
-        };
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Database error while creating the new conversation",
-        );
     }
+
+    await db.transaction(async (tx) => {
+        const insertPostResponse = await tx
+            .insert(conversationTable)
+            .values({
+                authorId: authorId,
+                slugId: conversationSlugId,
+                organizationId: organizationId,
+                isIndexed: isIndexed,
+                isLoginRequired: isIndexed ? true : isLoginRequired,
+                indexConversationAt:
+                    indexConversationAt !== undefined
+                        ? new Date(indexConversationAt)
+                        : undefined,
+                opinionCount: 0,
+                currentContentId: null,
+                currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
+                lastReactedAt: new Date(),
+            })
+            .returning({ conversationId: conversationTable.id });
+
+        const conversationId = insertPostResponse[0].conversationId;
+
+        const masterProofTableResponse = await tx
+            .insert(conversationProofTable)
+            .values({
+                type: "creation",
+                conversationId: conversationId,
+                authorDid: didWrite,
+                proof: proof,
+                proofVersion: 1,
+            })
+            .returning({ proofId: conversationProofTable.id });
+
+        const proofId = masterProofTableResponse[0].proofId;
+
+        const conversationContentTableResponse = await tx
+            .insert(conversationContentTable)
+            .values({
+                conversationProofId: proofId,
+                conversationId: conversationId,
+                title: conversationTitle,
+                body: conversationBody,
+                pollId: null,
+            })
+            .returning({
+                conversationContentId: conversationContentTable.id,
+            });
+
+        const conversationContentId =
+            conversationContentTableResponse[0].conversationContentId;
+
+        await tx
+            .update(conversationTable)
+            .set({
+                currentContentId: conversationContentId,
+            })
+            .where(eq(conversationTable.id, conversationId));
+
+        if (pollingOptionList != null) {
+            await tx.insert(pollTable).values({
+                conversationContentId: conversationContentId,
+                option1: pollingOptionList[0],
+                option2: pollingOptionList[1],
+                option3: pollingOptionList[2] ?? null,
+                option4: pollingOptionList[3] ?? null,
+                option5: pollingOptionList[4] ?? null,
+                option6: pollingOptionList[5] ?? null,
+                option1Response: 0,
+                option2Response: 0,
+                option3Response: pollingOptionList[2] ? 0 : null,
+                option4Response: pollingOptionList[3] ? 0 : null,
+                option5Response: pollingOptionList[4] ? 0 : null,
+                option6Response: pollingOptionList[5] ? 0 : null,
+            });
+        }
+
+        // Update the user profile's conversation count
+        await tx
+            .update(userTable)
+            .set({
+                activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
+                totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
+            })
+            .where(eq(userTable.id, authorId));
+
+        if (axiosPolis !== undefined) {
+            await polisService.createConversation({
+                userId: authorId,
+                conversationSlugId: conversationSlugId,
+                axiosPolis,
+            });
+        }
+    });
+
+    return {
+        conversationSlugId: conversationSlugId,
+    };
 }
 
 interface FetchPostBySlugIdProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     personalizedUserId?: string;
+    baseImageServiceUrl: string;
 }
 
 export async function fetchPostBySlugId({
     db,
     conversationSlugId,
     personalizedUserId,
+    baseImageServiceUrl,
 }: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
     try {
         const { fetchPostItems } = useCommonPost();
@@ -261,6 +283,7 @@ export async function fetchPostBySlugId({
             personalizedUserId: personalizedUserId,
             excludeLockedPosts: false,
             removeMutedAuthors: false,
+            baseImageServiceUrl,
         });
 
         if (postData.size == 1) {

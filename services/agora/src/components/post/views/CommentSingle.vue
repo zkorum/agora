@@ -17,8 +17,9 @@
         <UserIdentity
           :author-verified="false"
           :created-at="commentItem.createdAt"
-          :username="commentItem.username"
+          :user-identity="commentItem.username"
           :show-verified-text="false"
+          :organization-image-url="''"
         />
 
         <CommentActionOptions
@@ -46,7 +47,10 @@
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
+            :participant-count="participantCount"
             :is-post-locked="isPostLocked"
+            :login-required-to-participate="loginRequiredToParticipate"
+            @change-vote="(vote: VotingAction) => changeVote(vote)"
           />
         </div>
       </div>
@@ -56,7 +60,7 @@
 
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
-import type { OpinionItem, PolisKey } from "src/shared/types/zod";
+import type { OpinionItem, PolisKey, VotingAction } from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import { formatClusterLabel } from "src/utils/component/opinion";
@@ -64,8 +68,9 @@ import { calculatePercentage } from "src/utils/common";
 import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import UserHtmlBody from "./UserHtmlBody.vue";
+import { computed } from "vue";
 
-const emit = defineEmits(["deleted", "mutedComment"]);
+const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 
 const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -73,18 +78,24 @@ const props = defineProps<{
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
+  participantCount: number;
+  loginRequiredToParticipate: boolean;
 }>();
 
-const reasonLabel = calculateReasonLabel();
+const reasonLabel = computed(() => calculateReasonLabel()); // enable changing immediately the props without waiting for re-render
+
+function changeVote(vote: VotingAction) {
+  emit("changeVote", vote, props.commentItem.opinionSlugId);
+}
 
 function calculateTotalReasonLabel() {
   const totalPercentageAgrees = calculatePercentage(
     props.commentItem.numAgrees,
-    props.commentItem.numParticipants
+    props.participantCount
   );
   const totalPercentageDisagrees = calculatePercentage(
     props.commentItem.numDisagrees,
-    props.commentItem.numParticipants
+    props.participantCount
   );
   if (totalPercentageAgrees > 50 || totalPercentageDisagrees > 50) {
     return "Majority (Total)";
@@ -112,12 +123,12 @@ function calculateClusterReasonLabel() {
       );
       const labelCluster =
         clusterStat.aiLabel ??
-        formatClusterLabel(clusterStat.key, clusterStat.aiLabel);
+        formatClusterLabel(clusterStat.key, true, clusterStat.aiLabel);
       if (
         selectedClusterPercentageAgrees > 50 ||
         selectedClusterPercentageDisagrees > 50
       ) {
-        return `Majority (Group ${labelCluster})`;
+        return `Majority (${labelCluster})`;
       }
       if (
         selectedClusterPercentageDisagrees + selectedClusterPercentageAgrees >
@@ -126,7 +137,7 @@ function calculateClusterReasonLabel() {
           selectedClusterPercentageAgrees - selectedClusterPercentageDisagrees
         ) < 50
       ) {
-        return `Debated (Group ${labelCluster})`;
+        return `Debated (${labelCluster})`;
       }
     }
     for (const clusterStat of props.commentItem.clustersStats) {
@@ -144,15 +155,15 @@ function calculateClusterReasonLabel() {
       );
       const labelCluster =
         clusterStat.aiLabel ??
-        formatClusterLabel(clusterStat.key, clusterStat.aiLabel);
+        formatClusterLabel(clusterStat.key, true, clusterStat.aiLabel);
       if (clusterPercentageAgrees > 50 || clusterPercentageDisagrees > 50) {
-        return `Majority (Group ${labelCluster})`;
+        return `Majority (${labelCluster})`;
       }
       if (
         clusterPercentageDisagrees + clusterPercentageAgrees > 50 &&
         Math.abs(clusterPercentageAgrees - clusterPercentageDisagrees) < 50
       ) {
-        return `Debated (Group ${labelCluster})`;
+        return `Debated (${labelCluster})`;
       }
     }
   }

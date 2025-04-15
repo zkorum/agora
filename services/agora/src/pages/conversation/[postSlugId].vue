@@ -38,6 +38,7 @@ import PostDetails from "src/components/post/PostDetails.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { usePostStore } from "src/stores/post";
 import { useBackendPostApi } from "src/utils/api/post";
 import { onMounted, ref } from "vue";
@@ -51,6 +52,15 @@ const postData = ref<ExtendedConversation>(emptyPost);
 const dataLoaded = ref(false);
 
 const route = useRoute();
+
+const {
+  clearVotingIntention,
+  clearOpinionAgreementIntention,
+  clearReportUserContentIntention,
+} = useLoginIntentionStore();
+clearVotingIntention();
+clearOpinionAgreementIntention();
+clearReportUserContentIntention();
 
 onMounted(async () => {
   const isSuccessful = await loadData();

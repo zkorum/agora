@@ -1,5 +1,5 @@
 <template>
-  <img :src="svg" :alt="userName" />
+  <img :src="svg" :alt="userIdentity" />
 </template>
 
 <script setup lang="ts">
@@ -8,14 +8,14 @@ import { thumbs } from "@dicebear/collection";
 import { ref, watch } from "vue";
 
 const props = defineProps<{
-  userName: string;
+  userIdentity: string;
   size: number;
 }>();
 
 const svg = ref(createAvatarString());
 
 watch(
-  () => props.userName,
+  () => props.userIdentity,
   () => {
     svg.value = createAvatarString();
   }
@@ -24,7 +24,7 @@ watch(
 function createAvatarString() {
   const avatar = createAvatar(thumbs, {
     size: props.size,
-    seed: props.userName,
+    seed: props.userIdentity,
     radius: 35,
   }).toDataUri();
 

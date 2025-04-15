@@ -24,7 +24,7 @@ export function useWebShare() {
     if (isSupportedSharePlatform()) {
       await webShare.share({
         title: title,
-        text: url,
+        text: "",
         url: url,
       });
     } else {

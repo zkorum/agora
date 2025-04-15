@@ -28,7 +28,7 @@
 
         <div>
           <ZKButton
-            :use-extra-padding="true"
+            button-type="largeButton"
             :label="
               reportType == 'conversation'
                 ? 'Open ' + 'Conversation'
@@ -98,7 +98,7 @@ async function openPage() {
       await router.push({
         name: "/conversation/[postSlugId]",
         params: { postSlugId: route.params.conversationSlugId },
-        query: { opinionSlugId: route.params.opinionSlugId },
+        query: { opinion: route.params.opinionSlugId },
       });
     } else {
       console.log("Unknown report type");

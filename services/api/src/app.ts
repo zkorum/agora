@@ -22,6 +22,10 @@ const configSchema = z.object({
         .enum(["development", "staging", "production"])
         .default("development"),
     MODE: z.enum(["web", "capacitor"]).default("web"),
+    IMAGES_SERVICE_BASE_URL: z
+        .string()
+        .url()
+        .default("https://staging.agoracitizen.network/images/"),
     SERVER_URL_DEV: z
         .string()
         .url()
@@ -78,12 +82,6 @@ const configSchema = z.object({
             )
             .pipe(z.array(z.string()).min(2).max(3)), // summary, comments, votes csv
     ),
-    // for production
-    AWS_SECRET_ID: z.string().optional(),
-    AWS_SECRET_REGION: z.string().optional(),
-    DB_HOST: z.string().optional(),
-    DB_PORT: z.coerce.number().int().nonnegative().default(5432),
-    DB_NAME: z.string().default("agora"),
     VOTE_NOTIF_MILESTONES: z
         .string()
         .transform((value) =>
@@ -95,6 +93,181 @@ const configSchema = z.object({
         .default(
             "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
         ),
+    // for production
+    AWS_SECRET_ID: z.string().optional(),
+    AWS_SECRET_REGION: z.string().optional(),
+    AWS_AI_LABEL_SUMMARY_ENABLE: z.boolean().default(true),
+    AWS_AI_LABEL_SUMMARY_REGION: z.string().default("us-east-1"),
+    AWS_AI_LABEL_SUMMARY_MODEL_ID: z
+        .string()
+        .default("mistral.mistral-small-2402-v1:0"),
+    AWS_AI_LABEL_SUMMARY_TEMPERATURE: z.string().default("0.4"),
+    AWS_AI_LABEL_SUMMARY_TOP_P: z.string().default("0.8"),
+    AWS_AI_LABEL_SUMMARY_TOP_K: z.string().default("70"),
+    AWS_AI_LABEL_SUMMARY_MAX_TOKENS: z.string().default("8192"),
+    AWS_AI_LABEL_SUMMARY_PROMPT: z.string().default(
+        `You are an expert analyst summarizing group discussion results. Your task is to generate a concise JSON output based on a given JSON input about a group conversation. Adhere strictly to the following rules:
+
+I. Output must follow this general skeleton format:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["summary", "clusters"],
+  "properties": {
+	"summary": {
+  	"type": "string",
+  	"maxLength": 300,
+  	"description": "Overall conversation summary (max 300 characters)"
+	},
+	"clusters": {
+  	"type": "object",
+  	"additionalProperties": {
+    	"type": "object",
+    	"required": ["label", "summary"],
+    	"properties": {
+      	"label": {
+        	"type": "string",
+        	"pattern": "^\\S+(?:\\s\\S+)?$",
+        	"maxLength": 60,
+        	"description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+      	},
+      	"summary": {
+        	"type": "string",
+        	"maxLength": 300,
+        	"description": "Cluster summary (max 300 characters)"
+      	}
+    	}
+  	}
+	}
+  }
+}
+
+Do not print this skeleton format in your output.
+
+II. Language Detection Rule (High Priority):
+1. Before generating the output, detect the primary language used in the input conversation. The entire output must be written in this language, including summary, labels, and all text in the JSON. Do not default to English unless the conversation is in English.
+2 Step-by-Step Language Handling:
+    - Identify the language of the conversation (e.g., French, Spanish, German).
+    - Generate all text in that language.
+    - If multiple languages are present, choose the one most frequently used.
+    - Strictly do not mix languages in the output.
+
+II. Cluster Labels Rules
+    1. Length and Format:
+        - Must be exactly 1 or 2 words.
+        - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
+        - Avoid policy-specific terms or geographic references.
+        - Avoid abstract concepts (e.g. avoid “Concerns”)
+    2. Content Abstraction:
+        - Focus on group positions, intellectual traditions, or philosophical approaches.
+        - Overt discussion-specific context may be omitted if the context is implied by opposing clusters (e.g. use labels like “Skeptics”, “Technologists”, and “Ethicists” instead of "AI Skeptics", "AI Tool Advocates", "AI Ethicists")
+        - Avoid describing specific mechanisms (e.g., avoid "Income Threshold Supporters" or “Rural Educators”).
+   3. Tone:
+       - Aim for a professional/academic tone that reflects generality and positionality.
+       - Use terms that could apply across contexts (e.g., "Pragmatists", "Skeptics").
+   4. Language of communication:
+       - Use the language predominantly used in the conversation (e.g., English, French, etc.).
+   5. Examples:
+       - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
+       - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
+   6. Generation Process:
+       a) Identify the language of communication.
+       b) Identify the core stance or intellectual tradition within the cluster.
+       c) Abstract this stance into a general term using agentive suffixes or an equivalent rule if the target language is not English.
+       d) Validate that the label avoids policy specifics and geographic references.
+       e) Validate that the label is either 1 or 2 words.
+
+III. Summaries:
+   - Maximum 300 characters
+   - Capture key insights objectively
+   - Focus on group perspectives and disagreements
+   - Maintain a neutral tone
+   - Write in the language predominantly used in the conversation (e.g., English, French, etc.).
+
+IV. Strictly adhere to the input data. Do not invent new clusters or information.
+
+V. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
+
+Example Valid Output 1:
+{
+  "summary": "Discussion highlights remote work's impact on productivity, work-life balance, and office culture, with debates over collaboration effectiveness.",
+  "clusters": {
+	"0": {
+  	"label": "Office Advocates",
+  	"summary": "Emphasize the importance of in-person collaboration and traditional office culture for productivity and team cohesion."
+	},
+	"1": {
+  	"label": "Remote Enthusiasts",
+  	"summary": "Highlight increased productivity and improved work-life balance as key benefits of remote work arrangements."
+	}
+  }
+}
+
+Use the language predominantly used in the conversation, as shown in the following examples:
+    - Example Valid Output 2 if and only if the language predominantly used in the conversation is English:
+    {
+      "summary": "Debate focuses on regional versus urban immigration allocations and economic contribution metrics for family reunification visas.",
+      "clusters": {
+        "0": {
+          "label": "Decentralists",
+          "summary": "Favor distributed population strategies over urban concentration."
+        },
+        "1": {
+          "label": "Meritocrats",
+          "summary": "Support economic contribution metrics in migration systems."
+        }
+      }
+    }
+    - Example Valid Output 3 if and only if the language predominantly used in the conversation is French:
+    {
+      "summary": "Le débat porte sur la répartition de l'immigration entre les régions et les zones urbaines, ainsi que sur les critères de contribution économique pour les visas de regroupement familial.",
+      "clusters": {
+        "0": {
+          "label": "Décentralistes",
+          "summary": "Privilégient des stratégies de répartition de la population plutôt que la concentration urbaine."
+        },
+        "1": {
+          "label": "Méritocrates",
+          "summary": "Soutiennent l'utilisation de critères de contribution économique dans les systèmes migratoires."
+        }
+      }
+    }
+
+Example Invalid Output 1:
+{ // INVALID: Overall conversation summary not printed
+  "clusters": {
+	"0": {
+  	"label": "Traditional Work Supporters", // INVALID: Exceeds 2 words
+  	"summary": "Prefer in-office work for better collaboration." // Valid
+	},
+	"1": {
+  	"label": "Work Flexibility", // INVALID: Abstract concept, lacks agentive form
+  	"summary": "Advocate for remote work options and flexible schedules." // Valid
+	}
+  }
+}
+
+Example Invalid Output 2:
+{
+  "summary": "Debate focuses on regional versus urban immigration allocations and economic contribution metrics for family reunification visas.",
+  "clusters": {
+    "0": {
+      "label": "Regional Advocates", // INVALID: Ambiguous and does not convey group’s stance or positionality 
+      "summary": "Support higher immigration allocations in regional areas compared to cities."
+    },
+    "1": {
+      "label": "Income Threshold Supporters", // INVALID: describes a specific mechanism rather than an abstract intellectual stance
+      "summary": "Advocate for minimum income thresholds for family reunification visas."
+    }
+  }
+}
+
+Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
+        `,
+    ),
+    DB_HOST: z.string().optional(),
+    DB_PORT: z.coerce.number().int().nonnegative().default(5432),
+    DB_NAME: z.string().default("agora"),
 });
 
 export const config = configSchema.parse(process.env);

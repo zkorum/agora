@@ -25,12 +25,18 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "isLoggedIn": {
-                                            "type": "boolean"
+                                        "loggedInStatus": {
+                                            "type": "string",
+                                            "enum": [
+                                                "logged_in",
+                                                "unknown",
+                                                "unverified",
+                                                "logged_out"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "isLoggedIn"
+                                        "loggedInStatus"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -464,6 +470,37 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
+                                                            "isLoginRequired": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isIndexed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "organization": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "imageUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "name",
+                                                                    "imageUrl",
+                                                                    "websiteUrl",
+                                                                    "description"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
                                                             "moderation": {
                                                                 "anyOf": [
                                                                     {
@@ -542,6 +579,8 @@
                                                             "voteCount",
                                                             "participantCount",
                                                             "authorUsername",
+                                                            "isLoginRequired",
+                                                            "isIndexed",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -1071,17 +1110,25 @@
                                             "format": "date-time"
                                         },
                                         "username": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9_]*$"
                                         },
                                         "isModerator": {
                                             "type": "boolean"
+                                        },
+                                        "organizationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
                                         }
                                     },
                                     "required": [
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator"
+                                        "isModerator",
+                                        "organizationList"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -1152,6 +1199,37 @@
                                                     },
                                                     "authorUsername": {
                                                         "type": "string"
+                                                    },
+                                                    "isLoginRequired": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isIndexed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "organization": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "imageUrl": {
+                                                                "type": "string"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "description": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "imageUrl",
+                                                            "websiteUrl",
+                                                            "description"
+                                                        ],
+                                                        "additionalProperties": false
                                                     },
                                                     "moderation": {
                                                         "anyOf": [
@@ -1231,6 +1309,8 @@
                                                     "voteCount",
                                                     "participantCount",
                                                     "authorUsername",
+                                                    "isLoginRequired",
+                                                    "isIndexed",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1428,6 +1508,37 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
+                                                            "isLoginRequired": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isIndexed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "organization": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "imageUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "name",
+                                                                    "imageUrl",
+                                                                    "websiteUrl",
+                                                                    "description"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
                                                             "moderation": {
                                                                 "anyOf": [
                                                                     {
@@ -1506,6 +1617,8 @@
                                                             "voteCount",
                                                             "participantCount",
                                                             "authorUsername",
+                                                            "isLoginRequired",
+                                                            "isIndexed",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -2768,6 +2881,19 @@
                                     "conversationBody": {
                                         "type": "string"
                                     },
+                                    "postAsOrganization": {
+                                        "type": "string"
+                                    },
+                                    "indexConversationAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "isIndexed": {
+                                        "type": "boolean"
+                                    },
+                                    "isLoginRequired": {
+                                        "type": "boolean"
+                                    },
                                     "pollingOptionList": {
                                         "type": "array",
                                         "items": {
@@ -2778,7 +2904,9 @@
                                     }
                                 },
                                 "required": [
-                                    "conversationTitle"
+                                    "conversationTitle",
+                                    "isIndexed",
+                                    "isLoginRequired"
                                 ],
                                 "additionalProperties": false
                             }
@@ -2876,6 +3004,37 @@
                                                         "authorUsername": {
                                                             "type": "string"
                                                         },
+                                                        "isLoginRequired": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isIndexed": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "organization": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "name",
+                                                                "imageUrl",
+                                                                "websiteUrl",
+                                                                "description"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
                                                         "moderation": {
                                                             "anyOf": [
                                                                 {
@@ -2954,6 +3113,8 @@
                                                         "voteCount",
                                                         "participantCount",
                                                         "authorUsername",
+                                                        "isLoginRequired",
+                                                        "isIndexed",
                                                         "moderation"
                                                     ],
                                                     "additionalProperties": false
@@ -3302,6 +3463,243 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/add-user-organization-mapping": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    },
+                                    "organizationName": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "username",
+                                    "organizationName"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/remove-user-organization-mapping": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    },
+                                    "organizationName": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "username",
+                                    "organizationName"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/get-organization-names-by-username": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    }
+                                },
+                                "required": [
+                                    "username"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "organizationNameList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "organizationNameList"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/get-all-organizations": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "organizationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "imageUrl": {
+                                                        "type": "string"
+                                                    },
+                                                    "websiteUrl": {
+                                                        "type": "string",
+                                                        "format": "uri"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "imageUrl",
+                                                    "websiteUrl",
+                                                    "description"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "organizationList"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/create-organization": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "organizationName": {
+                                        "type": "string"
+                                    },
+                                    "imagePath": {
+                                        "type": "string"
+                                    },
+                                    "isFullImagePath": {
+                                        "type": "boolean"
+                                    },
+                                    "websiteUrl": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "organizationName",
+                                    "imagePath",
+                                    "isFullImagePath",
+                                    "websiteUrl",
+                                    "description"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/delete-organization": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "organizationName": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "organizationName"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
                     }
                 }
             }

@@ -109,7 +109,7 @@
                       <div class="longUrl">{{ verificationLink }}</div>
 
                       <ZKButton
-                        :use-extra-padding="true"
+                        button-type="standardButton"
                         label="Copy"
                         icon="mdi-content-copy"
                         @click="copyVerificationLink()"
@@ -125,7 +125,7 @@
                     class="verificationProcedureBlock"
                   >
                     <ZKButton
-                      :use-extra-padding="true"
+                      button-type="largeButton"
                       label="Verify"
                       color="primary"
                       @click="clickedVerifyButton()"
@@ -139,7 +139,7 @@
             </ZKCard>
 
             <ZKButton
-              :use-extra-padding="true"
+              button-type="largeButton"
               label="I'd rather verify with my phone number"
               text-color="primary"
               @click="goToPhoneVerification()"
@@ -172,6 +172,7 @@ import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import RarimoImageExample from "src/components/onboarding/backgrounds/RarimoImageExample.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const description =
   "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
@@ -244,6 +245,8 @@ async function generateVerificationLink(keyAction?: KeyAction) {
     verificationLinkGenerationFailed.value = true;
   }
 }
+
+const { routeUserAfterLogin } = useLoginIntentionStore();
 
 onMounted(async () => {
   await generateVerificationLink();
@@ -327,7 +330,7 @@ async function completeVerification() {
   await userLogin();
 
   if (onboardingMode == "LOGIN") {
-    await router.push({ name: "/" });
+    await routeUserAfterLogin();
   } else {
     await router.push({ name: "/onboarding/step4-username/" });
   }

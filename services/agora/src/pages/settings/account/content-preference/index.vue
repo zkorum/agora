@@ -41,7 +41,7 @@
           >
             <q-item>
               <q-item-section top avatar>
-                <UserAvatar :user-name="muteItem.username" :size="40" />
+                <UserAvatar :user-identity="muteItem.username" :size="40" />
               </q-item-section>
 
               <q-item-section>

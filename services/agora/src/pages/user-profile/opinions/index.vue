@@ -35,8 +35,9 @@
               <UserIdentity
                 :author-verified="false"
                 :created-at="commentItem.opinionItem.createdAt"
-                :username="commentItem.opinionItem.username"
+                :user-identity="commentItem.opinionItem.username"
                 :show-verified-text="false"
+                :organization-image-url="''"
               />
 
               <div>
@@ -99,7 +100,7 @@ async function openComment(postSlugId: string, commentSlugId: string) {
     name: "/conversation/[postSlugId]",
     params: { postSlugId: postSlugId },
     query: {
-      opinionSlugId: commentSlugId,
+      opinion: commentSlugId,
     },
   });
 }

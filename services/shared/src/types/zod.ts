@@ -7,6 +7,7 @@ import {
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
+    validateHtmlStringCharacterCount,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js/mobile";
 
@@ -39,6 +40,16 @@ export const zodPhoneNumber = z
             message: "Please use valid mobile phone number",
         },
     );
+export const zodOrganization = z
+    .object({
+        name: z.string(),
+        imageUrl: z.string(),
+        websiteUrl: z
+            .string()
+            .url({ message: "Invalid organization website url" }),
+        description: z.string(),
+    })
+    .strict();
 export const zodDidKey = z
     .string()
     .describe("Decentralized Identifier with did:key method")
@@ -75,7 +86,18 @@ export const zodDevice = z
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
-export const zodConversationBody = z.string().optional(); // Cannot specify length due to HTML tags
+export const zodConversationBody = z
+    .string()
+    .refine(
+        (val: string) => {
+            return validateHtmlStringCharacterCount(val, "conversation")
+                .isValid;
+        },
+        {
+            message: "The HTML body's character count had exceeded the limit",
+        },
+    )
+    .optional();
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
 export const zodPollOptionWithResult = z
     .object({
@@ -248,11 +270,24 @@ export const zodConversationMetadata = z
         voteCount: zodCount,
         participantCount: zodCount,
         authorUsername: z.string(),
+        isLoginRequired: z.boolean(),
+        isIndexed: z.boolean(),
+        organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
-export const zodOpinionContent = z.string().min(1); // Cannot specify the max length here due to the HTML tags
+export const zodOpinionContent = z
+    .string()
+    .min(1)
+    .refine(
+        (val: string) => {
+            return validateHtmlStringCharacterCount(val, "opinion").isValid;
+        },
+        {
+            message: "The HTML body's character count had exceeded the limit",
+        },
+    );
 export const zodClusterMetadata = z.object({
     key: zodPolisKey,
     numUsers: z.number().int().nonnegative(),
@@ -669,6 +704,68 @@ export const zodSupportedCountryCallingCode = z.enum([
     "64",
 ]);
 
+const zodGenLabelSummaryOutputClusterValue = z.object({
+    label: z
+        .string()
+        .max(60)
+        .regex(/^\S+(?:\s\S+)?$/, "Label must be exactly 1 or 2 words"),
+    summary: z.string().max(300),
+});
+
+const zodGenLabelSummaryOutputClusterKey = z.enum([
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+]);
+
+export const zodGenLabelSummaryOutputClusterStrict = z.record(
+    zodGenLabelSummaryOutputClusterKey,
+    zodGenLabelSummaryOutputClusterValue,
+);
+
+export const zodGenLabelSummaryOutputClusterLoose = z.record(
+    zodGenLabelSummaryOutputClusterKey,
+    z.object({
+        label: z.string(),
+        summary: z.string(),
+    }),
+);
+
+export const zodGenLabelSummaryOutputStrict = z.object({
+    summary: z.string().max(300),
+    clusters: zodGenLabelSummaryOutputClusterStrict,
+});
+
+export const zodGenLabelSummaryOutputLoose = z.object({
+    summary: z.coerce.string(),
+    clusters: zodGenLabelSummaryOutputClusterLoose,
+});
+
+export const zodGetDeviceStatusResponse = z.discriminatedUnion("isRegistered", [
+    z.object({
+        isRegistered: z.literal(false),
+    }),
+    z.object({
+        isRegistered: z.literal(true),
+        isLoggedIn: z.boolean(),
+        isVerified: z.boolean(),
+        userId: z.string(),
+    }),
+]);
+
+export const zodDeviceLoginStatus = z.enum([
+    "logged_in",
+    "unknown",
+    "unverified",
+    "logged_out",
+]);
+
+export type GetDeviceStatusResponse = z.infer<
+    typeof zodGetDeviceStatusResponse
+>;
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
@@ -721,3 +818,17 @@ export type PolisKey = z.infer<typeof zodPolisKey>;
 export type SupportedCountryCallingCode = z.infer<
     typeof zodSupportedCountryCallingCode
 >;
+export type GenLabelSummaryOutputStrict = z.infer<
+    typeof zodGenLabelSummaryOutputStrict
+>;
+export type GenLabelSummaryOutputLoose = z.infer<
+    typeof zodGenLabelSummaryOutputLoose
+>;
+export type GenLabelSummaryOutputClusterStrict = z.infer<
+    typeof zodGenLabelSummaryOutputClusterStrict
+>;
+export type GenLabelSummaryOutputClusterLoose = z.infer<
+    typeof zodGenLabelSummaryOutputClusterLoose
+>;
+export type OrganizationProperties = z.infer<typeof zodOrganization>;
+export type DeviceLoginStatus = z.infer<typeof zodDeviceLoginStatus>;

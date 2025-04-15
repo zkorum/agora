@@ -1,36 +1,25 @@
 {
-  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": true,
-  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "always"
   },
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "vue"],
-  "files.eol": "\n",
+  "eslint.validate": [
+    "html",
+    "markdown",
+    "vue",
+    "json",
+    "jsonc",
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact"
+  ],
   "files.watcherExclude": {
     "**/.git": true,
     "**/node_modules": true,
-    "**/.DS_Store": true,
-  },
-  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "[vue]": {
-   "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[scss]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "**/.DS_Store": true
   }
 }

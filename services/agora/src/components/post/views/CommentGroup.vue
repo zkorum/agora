@@ -19,7 +19,10 @@
         padding="1rem"
         class="commentItemBackground"
       >
-        <CommentConsensusSummary :summary="aiSummary" />
+        <CommentConsensusSummary
+          :summary="aiSummary"
+          :selected-cluster-key="selectedClusterKey"
+        />
       </ZKCard>
 
       <ZKCard
@@ -27,9 +30,8 @@
         :id="commentItem.opinionSlugId"
         :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
         padding="0rem"
+        class="commentItemBackground"
         :class="{
-          commentItemBackground:
-            initialCommentSlugId != commentItem.opinionSlugId,
           highlightCommentItem:
             initialCommentSlugId == commentItem.opinionSlugId,
         }"
@@ -40,8 +42,14 @@
           :post-slug-id="postSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
+          :participant-count="participantCount"
+          :login-required-to-participate="loginRequiredToParticipate"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
+          @change-vote="
+            (vote: VotingAction, opinionSlugId: string) =>
+              changeVote(vote, opinionSlugId)
+          "
         />
       </ZKCard>
     </div>
@@ -49,12 +57,16 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, PolisKey } from "src/shared/types/zod";
+import type { OpinionItem, PolisKey, VotingAction } from "src/shared/types/zod";
 import CommentSingle from "./CommentSingle.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 
-const emit = defineEmits(["deleted", "mutedComment"]);
+const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
+
+function changeVote(vote: VotingAction, opinionSlugId: string) {
+  emit("changeVote", vote, opinionSlugId);
+}
 
 defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -65,6 +77,8 @@ defineProps<{
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
   isLoading: boolean;
+  participantCount: number;
+  loginRequiredToParticipate: boolean;
 }>();
 
 function deletedComment() {
@@ -95,6 +109,8 @@ function mutedComment() {
 }
 
 .highlightCommentItem {
-  background-color: #d1d5db;
+  border-style: solid;
+  border-color: $primary;
+  border-width: 2px;
 }
 </style>

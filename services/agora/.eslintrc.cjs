@@ -1,5 +1,3 @@
-const { parse } = require("path");
-
 module.exports = {
   // https://eslint.org/docs/user-guide/configuring#configuration-cascading-and-hierarchy
   // This option interrupts the configuration hierarchy at this file
@@ -53,6 +51,10 @@ module.exports = {
     // https://github.com/typescript-eslint/typescript-eslint/issues/389#issuecomment-509292674
     // Prettier has not been included as plugin to avoid performance impact
     // add it as an extension for your IDE
+    "json",
+    "markdown",
+    "eslint-plugin-html",
+    "@html-eslint",
   ],
 
   globals: {
@@ -111,4 +113,27 @@ module.exports = {
     "@typescript-eslint/no-floating-promises": ["error"],
     // "@typescript-eslint/no-misused-promises": ["error"],
   },
+
+  overrides: [
+    {
+      files: ["**/*.html"],
+      extends: ["plugin:@html-eslint/recommended"],
+      parser: "@html-eslint/parser",
+      parserOptions: {
+        project: false, // Disable type information for HTML files
+      },
+    },
+    // {
+    //   files: ["**/*.json"],
+    //   extends: ["plugin:@eslintjson/recommended"],
+    // },
+    // {
+    //   files: ["**/*.jsonc"],
+    //   extends: ["plugin:@eslint/json/recommended"],
+    // },
+    // {
+    //   files: ["**/*.json5"],
+    //   extends: ["plugin:@eslint/json/recommended"],
+    // },
+  ],
 };

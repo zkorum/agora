@@ -537,7 +537,7 @@ export async function generateUnusedRandomUsername({
                         "Random username generation failed with numeric padding: " +
                             i.toString(),
                     );
-                    log.warn(error);
+                    log.warn(e);
                     const newUsername = generateRandomUsername(i);
                     const isInUse = await checkUserNameInUse({
                         db: db,
@@ -553,7 +553,7 @@ export async function generateUnusedRandomUsername({
                         "Random username generation failed with numeric padding: " +
                             i.toString(),
                     );
-                    log.warn(error);
+                    log.warn(err);
                 }
             }
         }
@@ -608,6 +608,7 @@ interface DeleteAccountProps {
     proof: string;
     didWrite: string;
     userId: string;
+    baseImageServiceUrl: string;
 }
 
 export async function deleteUserAccount({
@@ -615,6 +616,7 @@ export async function deleteUserAccount({
     userId,
     proof,
     didWrite,
+    baseImageServiceUrl,
 }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
     // 2. proof should be recorded once only
@@ -646,6 +648,7 @@ export async function deleteUserAccount({
                 db: tx,
                 userId: userId,
                 lastCommentSlugId: undefined,
+                baseImageServiceUrl,
             });
             for (const comment of userComments) {
                 await deleteOpinionBySlugId({
@@ -662,6 +665,7 @@ export async function deleteUserAccount({
                 db: tx,
                 userId: userId,
                 lastPostSlugId: undefined,
+                baseImageServiceUrl,
             });
             for (const post of userPosts.values()) {
                 await deletePostBySlugId({

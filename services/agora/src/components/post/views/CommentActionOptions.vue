@@ -1,12 +1,23 @@
 <template>
-  <ZKButton
-    :use-extra-padding="false"
-    flat
-    text-color="color-text-weak"
-    icon="mdi-dots-horizontal"
-    size="0.6rem"
-    @click.stop.prevent="optionButtonClicked()"
-  />
+  <div>
+    <ZKButton
+      button-type="icon"
+      flat
+      @click.stop.prevent="optionButtonClicked()"
+    >
+      <ZKIcon
+        color="black"
+        name="iconamoon:menu-kebab-horizontal-bold"
+        size="1rem"
+      />
+    </ZKButton>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginConfirmationOk"
+      :active-intention="'reportUserContent'"
+    />
+  </div>
 
   <q-dialog v-model="showReportDialog">
     <ReportContentDialog
@@ -18,9 +29,14 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useWebShare } from "src/utils/share/WebShare";
@@ -36,6 +52,8 @@ const props = defineProps<{
   commentItem: OpinionItem;
 }>();
 
+const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+
 const webShare = useWebShare();
 
 const { showNotifyMessage } = useNotify();
@@ -49,8 +67,23 @@ const router = useRouter();
 const { muteUser } = useBackendUserMuteApi();
 const { deleteCommentBySlugId } = useBackendCommentApi();
 
+const showLoginDialog = ref(false);
+
+const { createReportUserContentIntention } = useLoginIntentionStore();
+
+function onLoginConfirmationOk() {
+  createReportUserContentIntention(
+    props.postSlugId,
+    props.commentItem.opinionSlugId
+  );
+}
+
 function reportContentCallback() {
-  showReportDialog.value = true;
+  if (isAuthenticated.value) {
+    showReportDialog.value = true;
+  } else {
+    showLoginDialog.value = true;
+  }
 }
 
 async function openUserReportsCallback() {
@@ -70,7 +103,7 @@ async function shareOpinionCallback() {
     process.env.VITE_PUBLIC_DIR +
     "/conversation/" +
     props.postSlugId +
-    "?opinionSlugId=" +
+    "?opinion=" +
     props.commentItem.opinionSlugId;
   await webShare.share("Agora Opinion", sharePostUrl);
 }

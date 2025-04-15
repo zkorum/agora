@@ -1,17 +1,18 @@
 {
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
+    "editor.formatOnSave": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "always"
     },
-    "eslint.validate": ["javascript", "typescript"],
-    "eslint.codeActionsOnSave.rules": ["quotes", "semi", "indent"],
-    "files.eol": "\n",
+    "eslint.validate": [
+        "markdown",
+        "json",
+        "jsonc",
+        "javascript",
+        "typescript"
+    ],
     "files.watcherExclude": {
         "**/.git": true,
         "**/node_modules": true,

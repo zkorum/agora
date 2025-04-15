@@ -8,7 +8,7 @@
     >
       <q-editor
         ref="editorRef"
-        v-model="commentText"
+        v-model="modelText"
         :class="{
           whiteBackground: addBackgroundColor,
           plainBackground: !addBackgroundColor,
@@ -25,13 +25,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { ref, watch } from "vue";
+
+const modelText = defineModel<string>({ required: true });
 
 defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
-  focusEditor: boolean;
   addBackgroundColor: boolean;
 }>();
 
@@ -39,42 +40,20 @@ const emit = defineEmits(["manuallyFocused"]);
 
 const editorRef = ref<HTMLElement | null>(null);
 
-const commentText = ref("");
-
-const modelText = defineModel<string>();
-
 const toolbarButtons = [
   ["bold", "italic", "strike", "underline"],
   ["undo", "redo"],
 ];
 
-onMounted(() => {
-  // processFocus();
-});
-
-/*
-watch(() => props.focusEditor, () => {
-  if (props.focusEditor) {
-    processFocus();
+watch(modelText, () => {
+  if (modelText.value == "<br>") {
+    modelText.value = "";
   }
-})
-  */
-
-watch(commentText, () => {
-  modelText.value = commentText.value;
 });
 
 function editorFocused() {
   emit("manuallyFocused");
 }
-
-/*
-function processFocus() {
-  if (props.focusEditor == true) {
-    editorRef.value?.focus();
-  }
-}
-*/
 
 function onPaste(evt: Event) {
   // Let inputs do their thing, so we don't break pasting of links.

@@ -3,7 +3,7 @@
     <div class="agreementButtons">
       <div class="buttonContainer">
         <ZKButton
-          :use-extra-padding="true"
+          button-type="largeButton"
           class="maxWidth"
           :disable="isPostLocked"
           label="Disagree"
@@ -18,7 +18,7 @@
 
         <div v-if="userCastedVote" class="voteCountLabelDisagree">
           <div>
-            Total: {{ numDisagreesLocal }} ({{
+            Total: {{ props.commentItem.numDisagrees }} ({{
               formatPercentage(totalPercentageDisagrees)
             }})
           </div>
@@ -28,9 +28,9 @@
               :key="clusterItem.key"
               :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
             >
-              Group
-              {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
-              {{ clusterItem.numDisagrees }} ({{
+              {{
+                formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
+              }}: {{ clusterItem.numDisagrees }} ({{
                 formatPercentage(
                   calculatePercentage(
                     clusterItem.numDisagrees,
@@ -45,7 +45,7 @@
 
       <div class="buttonContainer">
         <ZKButton
-          :use-extra-padding="true"
+          button-type="largeButton"
           class="maxWidth"
           :disable="isPostLocked"
           label="Agree"
@@ -70,9 +70,9 @@
               :key="clusterItem.key"
               :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
             >
-              Group
-              {{ formatClusterLabel(clusterItem.key, clusterItem.aiLabel) }}:
-              {{ clusterItem.numAgrees }} ({{
+              {{
+                formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
+              }}: {{ clusterItem.numAgrees }} ({{
                 formatPercentage(
                   calculatePercentage(
                     clusterItem.numAgrees,
@@ -85,6 +85,12 @@
         </div>
       </div>
     </div>
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      :active-intention="'agreement'"
+    />
   </div>
 </template>
 
@@ -98,11 +104,12 @@ import {
   type VotingAction,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useDialog } from "src/utils/ui/dialog";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 
 const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -110,16 +117,24 @@ const props = defineProps<{
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
+  participantCount: number;
+  loginRequiredToParticipate: boolean;
 }>();
 
-const { showLoginConfirmationDialog } = useDialog();
+const emit = defineEmits(["changeVote"]);
+
+const showLoginDialog = ref(false);
+const { createOpinionAgreementIntention } = useLoginIntentionStore();
+
 const { showNotifyMessage } = useNotify();
 
 const { castVoteForComment } = useBackendVoteApi();
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
 
-const numAgreesLocal = ref(props.commentItem.numAgrees);
-const numDisagreesLocal = ref(props.commentItem.numDisagrees);
+// we use computed to make the changes update immediately on-click, without waiting for this whole child component to re-render upon emit
+const numAgreesLocal = computed(() => props.commentItem.numAgrees);
+const numDisagreesLocal = computed(() => props.commentItem.numDisagrees);
+const participantCountLocal = computed(() => props.participantCount);
 
 const userCastedVote = computed(() => {
   const hasEntry = props.commentSlugIdLikedMap.has(
@@ -173,29 +188,30 @@ const upvoteIcon = computed<IconObject>(() => {
 });
 
 const totalPercentageAgrees = computed(() => {
-  return calculatePercentage(
-    numAgreesLocal.value,
-    numDisagreesLocal.value + numAgreesLocal.value
-  );
+  return calculatePercentage(numAgreesLocal.value, participantCountLocal.value);
 });
 
 const totalPercentageDisagrees = computed(() => {
   return calculatePercentage(
     numDisagreesLocal.value,
-    numDisagreesLocal.value + numAgreesLocal.value
+    participantCountLocal.value
   );
 });
+
+function onLoginCallback() {
+  createOpinionAgreementIntention(
+    props.postSlugId,
+    props.commentItem.opinionSlugId
+  );
+}
 
 async function castPersonalVote(
   commentSlugId: string,
   isUpvoteButton: boolean
 ) {
-  if (!isAuthenticated.value) {
-    showLoginConfirmationDialog();
+  if (props.loginRequiredToParticipate && !isAuthenticated.value) {
+    showLoginDialog.value = true;
   } else {
-    const numLikesBackup = numAgreesLocal.value;
-    const numDislikesBackup = numDisagreesLocal.value;
-
     let targetState: VotingAction = "cancel";
     const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
     if (originalSelection == undefined) {
@@ -220,39 +236,15 @@ async function castPersonalVote(
       // }
     }
 
-    // TODO: uncomment what's below whenever it's fixed:
-    // if (targetState == "cancel") {
-    //   props.commentSlugIdLikedMap.delete(commentSlugId);
-    //   if (originalSelection == "agree") {
-    //     numAgreesLocal.value = numAgreesLocal.value - 1;
-    //   } else {
-    //     numDisagreesLocal.value = numDisagreesLocal.value - 1;
-    //   }
-    /* else */ if (targetState == "agree") {
-      props.commentSlugIdLikedMap.set(commentSlugId, "agree");
-      numAgreesLocal.value = numAgreesLocal.value + 1;
-      if (originalSelection == "disagree") {
-        numDisagreesLocal.value = numDisagreesLocal.value - 1;
-      }
-    } else {
-      props.commentSlugIdLikedMap.set(commentSlugId, "disagree");
-      numDisagreesLocal.value = numDisagreesLocal.value + 1;
-      if (originalSelection == "agree") {
-        numAgreesLocal.value = numAgreesLocal.value - 1;
-      }
-    }
+    emit("changeVote", targetState);
 
     const response = await castVoteForComment(commentSlugId, targetState);
     if (!response) {
       // Revert
-      if (originalSelection == undefined) {
-        props.commentSlugIdLikedMap.delete(commentSlugId);
-      } else {
-        props.commentSlugIdLikedMap.set(commentSlugId, originalSelection);
-      }
-
-      numAgreesLocal.value = numLikesBackup;
-      numDisagreesLocal.value = numDislikesBackup;
+      emit(
+        "changeVote",
+        originalSelection !== undefined ? originalSelection : "cancel"
+      );
     }
   }
 }

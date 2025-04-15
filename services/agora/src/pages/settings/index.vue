@@ -34,6 +34,10 @@
       <div v-if="isAuthenticated">
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
+
+      <div v-if="isAuthenticated && profileData.isModerator">
+        <SettingsSection :settings-item-list="moderatorSettings" />
+      </div>
     </div>
   </DrawerLayout>
 </template>
@@ -44,6 +48,7 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
@@ -51,6 +56,8 @@ import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
 
 const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { profileData } = storeToRefs(useUserStore());
+
 const { showDeleteAccountDialog } = useDialog();
 
 const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
@@ -61,7 +68,7 @@ const { showNotifyMessage } = useNotify();
 async function logoutRequested() {
   try {
     await logoutFromServer();
-    await logoutDataCleanup();
+    await logoutDataCleanup({ doDeleteKeypair: true });
     await showLogoutMessageAndRedirect();
   } catch (e) {
     console.error("Unexpected error when logging out", e);
@@ -111,6 +118,18 @@ const logoutSettings: SettingsInterface[] = [
   },
 ];
 
+const moderatorSettings: SettingsInterface[] = [
+  {
+    label: "Moderator - Organization",
+    action: async () => {
+      await router.push({
+        name: "/settings/account/administrator/organization/",
+      });
+    },
+    style: "none",
+  },
+];
+
 const deleteAccountSettings: SettingsInterface[] = [
   {
     label: "Delete Account",
@@ -120,7 +139,7 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(logoutDataCleanup);
+  showDeleteAccountDialog(() => logoutDataCleanup({ doDeleteKeypair: true }));
 }
 </script>
 
