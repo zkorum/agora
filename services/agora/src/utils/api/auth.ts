@@ -148,24 +148,29 @@ export function useBackendAuthApi() {
   }
 
   async function initializeAuthState() {
-    const deviceLoginStatus = await deviceIsLoggedIn();
-    isAuthInitialized.value = true;
-    if (deviceLoginStatus === "logged_in") {
-      isAuthenticated.value = true;
-      await loadAuthenticatedModules();
-    } else {
-      await logoutDataCleanup({
-        doDeleteKeypair: deviceLoginStatus === "logged_out",
-      });
+    try {
+      const deviceLoginStatus = await deviceIsLoggedIn();
+      if (deviceLoginStatus === "logged_in") {
+        isAuthenticated.value = true;
+        await loadAuthenticatedModules();
+      } else {
+        await logoutDataCleanup({
+          doDeleteKeypair: deviceLoginStatus === "logged_out",
+        });
 
-      setTimeout(async function () {
-        const needRedirect = needRedirectUnauthenticatedUser();
-        if (needRedirect) {
-          await showLogoutMessageAndRedirect();
-        } else {
-          await loadPostData(false);
-        }
-      }, 500);
+        setTimeout(async function () {
+          const needRedirect = needRedirectUnauthenticatedUser();
+          if (needRedirect) {
+            await showLogoutMessageAndRedirect();
+          } else {
+            await loadPostData(false);
+          }
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error while initializing authentication state");
+    } finally {
+      isAuthInitialized.value = true;
     }
   }
 
