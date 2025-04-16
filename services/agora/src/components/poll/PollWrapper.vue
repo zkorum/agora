@@ -25,6 +25,7 @@
           v-for="optionItem in localPollOptionList"
           :key="optionItem.index"
           :option="optionItem.option"
+          :display-mode="'result'"
           :voted-by-user="
             userVoteStatus.votedIndex == optionItem.index &&
             userVoteStatus.hasVoted
