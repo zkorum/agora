@@ -9,14 +9,20 @@
         'gradient-border-option': displayMode == 'option',
       }"
     >
-      <div class="pollOverlay">
+      <div
+        class="pollOverlayBase"
+        :class="{
+          pollOverlayLeft: displayMode == 'result',
+          pollOverlayCenter: displayMode == 'option',
+        }"
+      >
         <div>
           {{ option }}
           <span v-if="votedByUser" :style="{ paddingLeft: '0.2rem' }">
             <q-icon name="mdi-check-circle" color="white" size="1rem" />
           </span>
         </div>
-        <div>{{ optionPercentage }}%</div>
+        <div v-if="votedByUser">{{ optionPercentage }}%</div>
       </div>
     </div>
   </div>
@@ -32,12 +38,20 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-.pollOverlay {
+.pollOverlayLeft {
+  justify-content: space-between;
+}
+
+.pollOverlayCenter {
+  justify-content: center;
+}
+
+.pollOverlayBase {
   position: absolute;
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: space-between;
+
   height: 100%;
   padding-right: 1rem;
   padding-left: 1rem;
@@ -97,7 +111,7 @@ defineProps<{
   color: black;
   background:
     linear-gradient(to right, white, white),
-    linear-gradient(to right, #a391ff, #96bffb);
+    linear-gradient(to right, #b4a5ff, #aaccff);
   background-clip: padding-box, border-box;
   background-origin: padding-box, border-box;
   position: relative;
@@ -105,7 +119,11 @@ defineProps<{
   cursor: pointer;
 }
 
+.gradient-border-option:hover::before {
+  background: linear-gradient(135deg, #d0c6ff, #d0c6ff);
+}
+
 .gradient-border-option::before {
-  background: linear-gradient(135deg, #ecf0ff, #ecf0ff);
+  background: linear-gradient(135deg, #f1eeff, #e8f1ff);
 }
 </style>

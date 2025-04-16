@@ -4,13 +4,20 @@
       <!-- Show buttons for voting -->
       <div v-if="currentDisplayMode == DisplayModes.Vote">
         <div class="pollOptionList">
-          <ZKButton
+          <option-view
             v-for="optionItem in localPollOptionList"
             :key="optionItem.index"
-            button-type="largeButton"
-            outline
-            :label="optionItem.option"
-            text-color="primary"
+            :option="optionItem.option"
+            :display-mode="'option'"
+            :voted-by-user="
+              userVoteStatus.votedIndex == optionItem.index &&
+              userVoteStatus.hasVoted
+            "
+            :option-percentage="
+              totalVoteCount === 0
+                ? 0
+                : Math.round((optionItem.numResponses * 100) / totalVoteCount)
+            "
             @click.stop.prevent="voteCasted(optionItem.index)"
           />
         </div>
