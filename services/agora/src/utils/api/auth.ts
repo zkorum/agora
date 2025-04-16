@@ -40,7 +40,9 @@ interface VerifyPhoneOtpProps {
 
 export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
-  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+  const { isAuthenticated, isAuthInitialized } = storeToRefs(
+    useAuthenticationStore()
+  );
   const { loadPostData } = usePostStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
   const { loadNotificationData } = useNotificationStore();
@@ -147,6 +149,7 @@ export function useBackendAuthApi() {
 
   async function initializeAuthState() {
     const deviceLoginStatus = await deviceIsLoggedIn();
+    isAuthInitialized.value = true;
     if (deviceLoginStatus === "logged_in") {
       isAuthenticated.value = true;
       await loadAuthenticatedModules();

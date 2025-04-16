@@ -23,7 +23,12 @@
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
+      <q-infinite-scroll
+        v-if="isAuthInitialized"
+        :offset="2000"
+        :disable="!hasMore"
+        @load="onLoad"
+      >
         <div class="widthConstraint">
           <div class="notificaitonListFlexStyle">
             <div
@@ -89,8 +94,10 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 const { notificationList } = storeToRefs(useNotificationStore());
+const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 const { loadNotificationData } = useNotificationStore();
 
 const { markAllNotificationsAsRead } = useBackendNotificationApi();

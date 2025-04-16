@@ -1,7 +1,12 @@
 <template>
   <div ref="postContainerRef">
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
+      <q-infinite-scroll
+        v-if="isAuthInitialized"
+        :offset="2000"
+        :disable="!canLoadMore"
+        @load="onLoad"
+      >
         <div
           v-if="masterPostDataList.length == 0 && dataReady"
           class="emptyDivPadding"
@@ -95,6 +100,7 @@ import { onMounted, ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useDocumentVisibility } from "@vueuse/core";
 import { useRouter } from "vue-router";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 const {
   masterPostDataList,
@@ -108,6 +114,7 @@ const { loadPostData, hasNewPosts } = usePostStore();
 const router = useRouter();
 
 const pageIsVisible = useDocumentVisibility();
+const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
 

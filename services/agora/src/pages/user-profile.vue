@@ -71,6 +71,7 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import { RouteNamedMap } from "vue-router/auto-routes";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import UserMetadata from "src/components/post/views/UserMetadata.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 const router = useRouter();
 
@@ -96,6 +97,7 @@ const tabList: CustomTab[] = [
 ];
 
 const { profileData } = storeToRefs(useUserStore());
+const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const currentTab = ref(0);
 
@@ -104,12 +106,22 @@ const route = useRoute();
 applyCurrentTab();
 
 onMounted(async () => {
-  await loadUserProfile();
+  await initialize();
+});
+
+watch(isAuthInitialized, async () => {
+  await initialize();
 });
 
 watch(route, () => {
   applyCurrentTab();
 });
+
+async function initialize() {
+  if (isAuthInitialized.value) {
+    await loadUserProfile();
+  }
+}
 
 async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {

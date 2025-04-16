@@ -131,6 +131,7 @@ export const usePostStore = defineStore("post", () => {
   ]);
 
   async function loadPostData(loadMoreData: boolean): Promise<boolean> {
+    console.log("loadpostdata");
     let lastSlugId: undefined | string = undefined;
 
     if (loadMoreData) {

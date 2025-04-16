@@ -24,17 +24,21 @@
       <ZKCard padding="1rem" class="cardBackground">
         <div class="titleStyle">Change username</div>
 
-        <UsernameChange :show-submit-button="true" />
+        <UsernameChange v-if="isAuthInitialized" :show-submit-button="true" />
       </ZKCard>
     </div>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import UsernameChange from "src/components/account/UsernameChange.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+
+const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 </script>
 
 <style scoped lang="scss">

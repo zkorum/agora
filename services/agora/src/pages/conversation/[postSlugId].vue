@@ -41,11 +41,13 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { usePostStore } from "src/stores/post";
 import { useBackendPostApi } from "src/utils/api/post";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const { fetchPostBySlugId } = useBackendPostApi();
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isAuthenticated, isAuthInitialized } = storeToRefs(
+  useAuthenticationStore()
+);
 const { emptyPost } = usePostStore();
 const postData = ref<ExtendedConversation>(emptyPost);
 
@@ -63,11 +65,21 @@ clearOpinionAgreementIntention();
 clearReportUserContentIntention();
 
 onMounted(async () => {
-  const isSuccessful = await loadData();
-  if (isSuccessful) {
-    dataLoaded.value = true;
-  }
+  await initialize();
 });
+
+watch(isAuthInitialized, async () => {
+  await initialize();
+});
+
+async function initialize() {
+  if (isAuthInitialized.value) {
+    const isSuccessful = await loadData();
+    if (isSuccessful) {
+      dataLoaded.value = true;
+    }
+  }
+}
 
 async function loadData() {
   if (route.name == "/conversation/[postSlugId]") {
