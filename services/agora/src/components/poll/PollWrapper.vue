@@ -1,30 +1,14 @@
 <template>
   <div @click.stop.prevent="">
     <div v-if="dataLoaded" class="pollContainer">
-      <!-- Show buttons for voting -->
-      <div v-if="currentDisplayMode == DisplayModes.Vote">
-        <div class="pollOptionList">
-          <ZKButton
-            v-for="optionItem in localPollOptionList"
-            :key="optionItem.index"
-            button-type="largeButton"
-            outline
-            :label="optionItem.option"
-            text-color="primary"
-            @click.stop.prevent="voteCasted(optionItem.index)"
-          />
-        </div>
-      </div>
-
-      <!-- Show the final result -->
-      <div
-        v-if="currentDisplayMode == DisplayModes.Results"
-        class="pollOptionList"
-      >
+      <div class="pollOptionList">
         <option-view
           v-for="optionItem in localPollOptionList"
           :key="optionItem.index"
           :option="optionItem.option"
+          :display-mode="
+            currentDisplayMode == DisplayModes.Vote ? 'option' : 'result'
+          "
           :voted-by-user="
             userVoteStatus.votedIndex == optionItem.index &&
             userVoteStatus.hasVoted
@@ -34,6 +18,7 @@
               ? 0
               : Math.round((optionItem.numResponses * 100) / totalVoteCount)
           "
+          @click.stop.prevent="clickedOptionView(optionItem.index)"
         />
       </div>
 
@@ -203,19 +188,24 @@ function showVoteInterface() {
   currentDisplayMode.value = DisplayModes.Vote;
 }
 
-async function voteCasted(selectedIndex: number) {
-  if (isAuthenticated.value) {
-    const response = await backendPollApi.submitPollResponse(
-      selectedIndex,
-      props.postSlugId
-    );
-    if (response == true) {
-      await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
-      incrementLocalPollIndex(selectedIndex);
-      totalVoteCount.value += 1;
+async function clickedOptionView(selectedIndex: number) {
+  if (currentDisplayMode.value == DisplayModes.Vote) {
+    if (isAuthenticated.value) {
+      const response = await backendPollApi.submitPollResponse(
+        selectedIndex,
+        props.postSlugId
+      );
+      if (response == true) {
+        await Promise.all([
+          loadPostData(false),
+          fetchUserPollResponseData(true),
+        ]);
+        incrementLocalPollIndex(selectedIndex);
+        totalVoteCount.value += 1;
+      }
+    } else {
+      showLoginDialog.value = true;
     }
-  } else {
-    showLoginDialog.value = true;
   }
 }
 
