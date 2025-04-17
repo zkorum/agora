@@ -1,7 +1,11 @@
 <template>
   <div>
     <q-layout :key="drawerBehavior" :view="'lHh LpR lFf'">
-      <q-header reveal :model-value="props.generalProps.enableHeader">
+      <q-header
+        reveal
+        :model-value="props.generalProps.enableHeader"
+        @reveal="captureHeaderReval"
+      >
         <slot name="header"></slot>
       </q-header>
 
@@ -50,6 +54,7 @@ import { storeToRefs } from "pinia";
 import FooterBar from "src/components/navigation/footer/FooterBar.vue";
 import SideDrawer from "src/components/navigation/SideDrawer.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNotificationRefresher } from "src/utils/component/notification/menuRefresher";
 import { type MainLayoutProps } from "src/utils/model/props";
@@ -57,9 +62,17 @@ import { type MainLayoutProps } from "src/utils/model/props";
 const props = defineProps<MainLayoutProps>();
 
 const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
+const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());
+
 useNotificationRefresher();
 
 const noSwipeOpen = process.env.MODE != "capacitor";
+
+function captureHeaderReval(reveal: boolean) {
+  if (drawerBehavior.value == "mobile") {
+    revealHeader.value = reveal;
+  }
+}
 </script>
 
 <style scoped lang="scss">
