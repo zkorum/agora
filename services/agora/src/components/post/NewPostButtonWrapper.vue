@@ -1,14 +1,16 @@
 <template>
   <div>
-    <div v-if="drawerBehavior == 'mobile' && revealHeader">
-      <q-page-sticky position="bottom-right" :offset="[15, 15]">
-        <RouterLink :to="{ name: '/conversation/create/' }">
-          <div class="stickyButton">
-            <img :src="newConversationButton" />
-          </div>
-        </RouterLink>
-      </q-page-sticky>
-    </div>
+    <q-page-sticky
+      v-if="drawerBehavior == 'mobile' && revealHeader"
+      position="bottom-right"
+      :offset="[15, 15]"
+    >
+      <RouterLink :to="{ name: '/conversation/create/' }">
+        <div class="stickyButton">
+          <img :src="newConversationButton" />
+        </div>
+      </RouterLink>
+    </q-page-sticky>
   </div>
 </template>
 
