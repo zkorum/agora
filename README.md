@@ -19,6 +19,7 @@ We are at a critical moment where social media platforms are increasingly evolvi
 - Q1 2025: [Agora MVP](https://agoracitizen.network/feed/) is live and actively seeking your feedback - [Get in touch!](https://linktr.ee/yutingzkorum)
 - Q2 2025: Evolving from MVP to SLCP (Simple, Lovable, Complete Product) – Launch mobile apps in May.
 - Q2 & Q3 2025: Develop pilot projects with institutions, NGOs, market research firms, newspapers, and other partners looking to engage their audiences through Agora.
+## Check out detailed product development roadmap [here](https://github.com/zkorum/product/issues/34) 
 
 ## Development
 
