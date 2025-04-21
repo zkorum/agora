@@ -52,7 +52,7 @@ const props = defineProps<{
   commentItem: OpinionItem;
 }>();
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const webShare = useWebShare();
 
@@ -79,7 +79,7 @@ function onLoginConfirmationOk() {
 }
 
 function reportContentCallback() {
-  if (isAuthenticated.value) {
+  if (isLoggedIn.value) {
     showReportDialog.value = true;
   } else {
     showLoginDialog.value = true;

@@ -7,15 +7,13 @@
           <img :src="drawerIconLogo2" class="logoStyle2" />
         </div>
 
-        <div v-if="isAuthenticated" class="usernameBar">
+        <div v-if="isGuestOrLoggedIn" class="usernameBar">
           <UserAvatar
             :key="profileData.userName"
             :user-identity="profileData.userName"
             :size="35"
           />
-          <div>
-            {{ profileData.userName }}
-          </div>
+          <Username :username="profileData.userName" :show-is-guest="isGuest" />
         </div>
 
         <div class="menuListFlex">
@@ -73,22 +71,23 @@
 </template>
 
 <script setup lang="ts">
-import { RouteMap, useRoute, useRouter } from "vue-router";
-import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
-import UserAvatar from "../account/UserAvatar.vue";
-import { useUserStore } from "src/stores/user";
 import { useNavigationStore } from "src/stores/navigation";
+import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
-import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
-import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
+import { RouteMap, useRoute, useRouter } from "vue-router";
+import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
+import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
+import Username from "../post/views/Username.vue";
+import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
+import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
 
@@ -173,7 +172,7 @@ function initializeMenu() {
 }
 
 async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
-  if (requireAuth && isAuthenticated.value == false) {
+  if (requireAuth && !isGuestOrLoggedIn) {
     showLoginDialog.value = true;
   } else {
     if (drawerBehavior.value == "mobile") {

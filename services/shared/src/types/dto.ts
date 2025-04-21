@@ -99,14 +99,6 @@ export class Dto {
             })
             .strict(),
     ]);
-    static getDeviceStatusResp = z
-        .object({
-            userId: zodUserId,
-            isLoggedIn: z.boolean(),
-            sessionExpiry: z.date(),
-        })
-        .strict()
-        .optional();
     static fetchFeedRequest = z
         .object({
             lastSlugId: zodSlugId.optional(),
@@ -452,7 +444,6 @@ export type AuthenticateResponse = z.infer<typeof Dto.authenticate200>;
 export type VerifyOtp200 = z.infer<typeof Dto.verifyOtp200>;
 export type VerifyOtpReqBody = z.infer<typeof Dto.verifyOtpReqBody>;
 export type IsLoggedInResponse = z.infer<typeof Dto.isLoggedInResponse>;
-export type GetDeviceStatusResp = z.infer<typeof Dto.getDeviceStatusResp>;
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
 export type CreateNewConversationRequest = z.infer<
     typeof Dto.createNewConversationRequest

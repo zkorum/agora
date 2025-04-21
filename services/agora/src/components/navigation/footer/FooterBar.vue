@@ -55,7 +55,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const route = useRoute();
 const router = useRouter();
@@ -71,7 +71,7 @@ async function accessHomeFeed() {
 }
 
 async function accessNotifications() {
-  if (!isAuthenticated.value) {
+  if (!isGuestOrLoggedIn) {
     showLoginDialog.value = true;
   } else {
     await router.push({ name: "/notification/" });

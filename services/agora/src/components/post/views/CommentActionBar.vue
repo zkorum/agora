@@ -95,21 +95,22 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useBackendVoteApi } from "src/utils/api/vote";
-import { computed, ref } from "vue";
 import {
   PolisKey,
   type OpinionItem,
   type VotingAction,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { formatPercentage, calculatePercentage } from "src/utils/common";
-import { storeToRefs } from "pinia";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import { useBackendVoteApi } from "src/utils/api/vote";
+import { calculatePercentage, formatPercentage } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   selectedClusterKey: PolisKey | undefined;
@@ -129,7 +130,8 @@ const { createOpinionAgreementIntention } = useLoginIntentionStore();
 const { showNotifyMessage } = useNotify();
 
 const { castVoteForComment } = useBackendVoteApi();
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { updateAuthState } = useBackendAuthApi();
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 // we use computed to make the changes update immediately on-click, without waiting for this whole child component to re-render upon emit
 const numAgreesLocal = computed(() => props.commentItem.numAgrees);
@@ -209,7 +211,7 @@ async function castPersonalVote(
   commentSlugId: string,
   isUpvoteButton: boolean
 ) {
-  if (props.loginRequiredToParticipate && !isAuthenticated.value) {
+  if (props.loginRequiredToParticipate && !isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
     let targetState: VotingAction = "cancel";
@@ -239,12 +241,15 @@ async function castPersonalVote(
     emit("changeVote", targetState);
 
     const response = await castVoteForComment(commentSlugId, targetState);
+    // TODO: refactor backend to return error and reason if any, and react appropriately
     if (!response) {
       // Revert
       emit(
         "changeVote",
         originalSelection !== undefined ? originalSelection : "cancel"
       );
+    } else {
+      await updateAuthState({ partialLoginStatus: { isKnown: true } });
     }
   }
 }

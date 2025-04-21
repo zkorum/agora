@@ -1,8 +1,10 @@
 <template>
   <div class="authorContainer">
-    <div class="usernameStyle">
-      {{ userIdentity }}
-    </div>
+    <Username
+      class="usernameStyle"
+      :username="userIdentity"
+      :show-is-guest="showIsGuest"
+    />
     <div v-if="authorVerified" class="verifiedMessage">
       <q-icon name="mdi-check-decagram" class="verifiedIconStyle" />
       <div v-if="showVerifiedText">ID verified</div>
@@ -11,7 +13,10 @@
 </template>
 
 <script setup lang="ts">
+import Username from "./Username.vue";
+
 defineProps<{
+  showIsGuest: boolean;
   userIdentity: string;
   authorVerified: boolean;
   showVerifiedText: boolean;

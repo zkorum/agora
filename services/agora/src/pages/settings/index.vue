@@ -21,21 +21,21 @@
     </template>
 
     <div class="container">
-      <div v-if="isAuthenticated">
+      <div v-if="isGuestOrLoggedIn">
         <SettingsSection :settings-item-list="accountSettings" />
       </div>
 
       <SettingsSection :settings-item-list="aboutSettings" />
 
-      <div v-if="isAuthenticated">
+      <div v-if="isGuestOrLoggedIn">
         <SettingsSection :settings-item-list="deleteAccountSettings" />
       </div>
 
-      <div v-if="isAuthenticated">
+      <div v-if="isLoggedIn">
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
 
-      <div v-if="isAuthenticated && profileData.isModerator">
+      <div v-if="isLoggedIn && profileData.isModerator">
         <SettingsSection :settings-item-list="moderatorSettings" />
       </div>
     </div>
@@ -53,9 +53,10 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 const { showDeleteAccountDialog } = useDialog();
@@ -64,6 +65,10 @@ const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
   useBackendAuthApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
+
+const deleteAccountLabel = computed(() =>
+  isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
+);
 
 async function logoutRequested() {
   try {
@@ -132,7 +137,7 @@ const moderatorSettings: SettingsInterface[] = [
 
 const deleteAccountSettings: SettingsInterface[] = [
   {
-    label: "Delete Account",
+    label: deleteAccountLabel.value,
     action: processDeleteAccount,
     style: "negative",
   },

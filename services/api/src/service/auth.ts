@@ -15,7 +15,6 @@ import { nowZeroMs } from "@/shared/common/util.js";
 import type {
     AuthenticateRequestBody,
     AuthenticateResponse,
-    GetDeviceStatusResp,
     VerifyOtp200,
 } from "@/shared/types/dto.js";
 import { eq, and } from "drizzle-orm";
@@ -32,7 +31,6 @@ import {
 } from "@/shared/shared.js";
 import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
-import { isLoggedIn } from "./authUtil.js";
 import * as polisService from "@/service/polis.js";
 import type { AxiosInstance } from "axios";
 import twilio from "twilio";
@@ -198,30 +196,6 @@ interface SendOtpPhoneNumberProps {
     twilioServiceSid: string;
 }
 
-export async function getDeviceStatus(
-    db: PostgresDatabase,
-    didWrite: string,
-    now: Date,
-): Promise<GetDeviceStatusResp> {
-    const resultDevice = await db
-        .select({
-            userId: deviceTable.userId,
-            sessionExpiry: deviceTable.sessionExpiry,
-        })
-        .from(deviceTable)
-        .where(eq(deviceTable.didWrite, didWrite));
-    if (resultDevice.length === 0) {
-        // device has never been registered
-        return undefined;
-    } else {
-        return {
-            userId: resultDevice[0].userId,
-            isLoggedIn: resultDevice[0].sessionExpiry > now,
-            sessionExpiry: resultDevice[0].sessionExpiry,
-        };
-    }
-}
-
 interface RegisterOrLoginWithPhoneNumberProps {
     db: PostgresDatabase;
     type: AuthenticateType;
@@ -336,13 +310,6 @@ export async function verifyPhoneOtp({
         throw httpErrors.internalServerError("Internal Error");
     }
     const now = nowZeroMs();
-    const status = await isLoggedIn(db, didWrite);
-    if (status.isLoggedIn) {
-        return {
-            success: false,
-            reason: "already_logged_in",
-        };
-    }
     const resultOtp = await db
         .select({
             userId: authAttemptPhoneTable.userId,
@@ -597,7 +564,8 @@ export async function registerWithPhoneNumber({
 }
 
 // Note: device is assumed to be unknown
-export async function registerWithoutVerification({
+// device is saved and associated with a new unverified user
+export async function createGuestUser({
     db,
     didWrite,
     now,
@@ -1019,15 +987,6 @@ export async function authenticateAttempt({
     twilioServiceSid,
 }: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
     const now = nowZeroMs();
-    // TODO: move this check to verifyUCAN directly in the controller:
-    const status = await isLoggedIn(db, didWrite);
-    if (status.isLoggedIn) {
-        return {
-            success: false,
-            reason: "already_logged_in",
-        };
-    }
-
     const { type, userId } = await getPhoneAuthenticationTypeByNumber({
         db,
         phoneNumber: authenticateRequestBody.phoneNumber,

@@ -10,6 +10,8 @@ import type { HttpErrors } from "@fastify/sensible";
 import { eq, sql, and } from "drizzle-orm";
 import { log } from "@/app.js";
 import type { GetUserPollResponseByConversations200 } from "@/shared/types/dto.js";
+import * as authUtilService from "@/service/authUtil.js";
+import type { AxiosInstance } from "axios";
 
 interface GetUserPollResponseProps {
     db: PostgresDatabase;
@@ -74,32 +76,59 @@ interface SubmitPollResponseProps {
     db: PostgresDatabase;
     postSlugId: string;
     voteOptionChoice: number;
-    authorId: string;
     httpErrors: HttpErrors;
     didWrite: string;
     proof: string;
+    userAgent: string;
+    axiosPolis: AxiosInstance | undefined;
+    polisUserEmailDomain: string;
+    polisUserEmailLocalPart: string;
+    polisUserPassword: string;
+    now: Date;
 }
 
 export async function submitPollResponse({
     db,
     postSlugId,
     voteOptionChoice,
-    authorId,
     httpErrors,
     didWrite,
     proof,
+    userAgent,
+    axiosPolis,
+    polisUserEmailDomain,
+    polisUserEmailLocalPart,
+    polisUserPassword,
+    now,
 }: SubmitPollResponseProps) {
-    const { id: postId, contentId: postContentId } =
-        await useCommonPost().getPostMetadataFromSlugId({
-            db: db,
-            conversationSlugId: postSlugId,
-        });
+    const {
+        id: postId,
+        contentId: postContentId,
+        isIndexed: conversationIsIndexed,
+        isLoginRequired: conversationIsLoginRequired,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        conversationSlugId: postSlugId,
+    });
 
     if (postContentId == null) {
         throw httpErrors.notFound(
             "Failed to locate post resource: " + postSlugId,
         );
     }
+
+    const authorId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+        db,
+        didWrite,
+        conversationIsIndexed,
+        conversationIsLoginRequired,
+        userAgent,
+        axiosPolis,
+        polisUserEmailDomain,
+        polisUserEmailLocalPart,
+        polisUserPassword,
+        now,
+    });
 
     try {
         await db.transaction(async (tx) => {

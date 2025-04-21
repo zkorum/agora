@@ -13,7 +13,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import type { IsLoggedInResponse } from "@/shared/types/dto.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 import { httpErrors } from "@fastify/sensible";
-import type { GetDeviceStatusResponse } from "@/shared/types/zod.js";
+import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as authService from "@/service/auth.js";
 
@@ -96,9 +96,9 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     let userId: string;
     const deviceStatus = await getDeviceStatus(db, didWrite);
     if (conversationIsIndexed || conversationIsLoginRequired) {
-        if (!deviceStatus.isRegistered) {
+        if (!deviceStatus.isKnown) {
             throw httpErrors.unauthorized("Device is unknown");
-        } else if (!deviceStatus.isVerified) {
+        } else if (!deviceStatus.isRegistered) {
             throw httpErrors.unauthorized(
                 "Device is not registered with a verified user",
             );
@@ -106,12 +106,16 @@ export async function getOrRegisterUserIdFromDeviceStatus({
             throw httpErrors.unauthorized("Device is not logged in");
         }
         userId = deviceStatus.userId;
-    } else if (deviceStatus.isRegistered) {
-        // even registered device associated with a verified user, but logged-out, can comment on unindexed+loginNotRequired posts
+    } else if (deviceStatus.isKnown) {
+        if (deviceStatus.isRegistered && !deviceStatus.isLoggedIn) {
+            throw httpErrors.unauthorized(
+                "Registered device must be logged-in to add or delete content to their account",
+            );
+        }
         userId = deviceStatus.userId;
     } else {
-        // register device to a new un-verified user
-        userId = await authService.registerWithoutVerification({
+        // save device and associate it with a brand new unverified user
+        userId = await authService.createGuestUser({
             db,
             didWrite,
             now,
@@ -165,7 +169,7 @@ export async function isUserPartOfOrganization({
 export async function getDeviceStatus(
     db: PostgresDatabase,
     didWrite: string,
-): Promise<GetDeviceStatusResponse> {
+): Promise<DeviceLoginStatusExtended> {
     const now = nowZeroMs();
     const resultDevice = await db
         .select({
@@ -182,18 +186,17 @@ export async function getDeviceStatus(
         .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
     if (resultDevice.length === 0) {
-        // device is unknown
-        return { isRegistered: false };
+        return { isKnown: false, isLoggedIn: false, isRegistered: false };
     } else {
         const sessionExpiry = resultDevice[0].sessionExpiry;
         const isLoggedIn = sessionExpiry.getTime() > now.getTime();
-        const isVerified =
+        const isRegistered =
             resultDevice[0].phoneTableId !== null ||
             resultDevice[0].zkPassportTableId !== null;
         return {
-            isRegistered: true,
-            isLoggedIn,
-            isVerified,
+            isKnown: true,
+            isLoggedIn: isRegistered && isLoggedIn,
+            isRegistered: isRegistered,
             userId: resultDevice[0].userId,
         };
     }

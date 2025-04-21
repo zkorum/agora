@@ -74,18 +74,20 @@ import PollOption from "src/components/poll/PollOption.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { usePostStore, type DummyPollOptionFormat } from "src/stores/post";
 import { onBeforeMount, ref, watch } from "vue";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useBackendAuthApi } from "src/utils/api/auth";
 
 const props = defineProps<{
   userResponse: UserInteraction;
   pollOptions: PollList;
   postSlugId: string;
+  loginRequiredToParticipate: boolean;
 }>();
 
 const localPollOptionList = ref<DummyPollOptionFormat[]>([]);
@@ -94,8 +96,9 @@ initializeLocalPoll();
 const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { loadPostData } = usePostStore();
+const { updateAuthState } = useBackendAuthApi();
 
 const { createVotingIntention } = useLoginIntentionStore();
 
@@ -189,23 +192,31 @@ function showVoteInterface() {
 }
 
 async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
-  if (currentDisplayMode.value == DisplayModes.Vote) {
+  if (currentDisplayMode.value === DisplayModes.Results) {
+    return
+  }
     event.stopPropagation();
 
-    if (isAuthenticated.value) {
-      const response = await backendPollApi.submitPollResponse(
-        selectedIndex,
-        props.postSlugId
-      );
-      if (response == true) {
-        await Promise.all([
+    if (props.loginRequiredToParticipate && !isLoggedIn.value) {
+    showLoginDialog.value = true;
+    return;
+  }
+    const response = await backendPollApi.submitPollResponse(
+      selectedIndex,
+      props.postSlugId
+    );
+  // TODO: refactor backend to send error and reason if any, and react appropriately
+  // and eventual change in state (isGuest etc)
+    if (response == true) {
+    // TODO: refactor because there arep potentially redundant requests (loadPostData inside updateAuthState)
+    await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      await Promise.all([
           loadPostData(false),
           fetchUserPollResponseData(true),
         ]);
-        incrementLocalPollIndex(selectedIndex);
-        totalVoteCount.value += 1;
-      }
-    } else {
+      incrementLocalPollIndex(selectedIndex);
+      totalVoteCount.value += 1;
+      } else {
       showLoginDialog.value = true;
     }
   }

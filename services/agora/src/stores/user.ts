@@ -45,13 +45,13 @@ export const useUserStore = defineStore("user", () => {
       fetchUserComments(undefined),
     ]);
 
-    if (userProfile && userPosts && userComments) {
+    if (userProfile) {
       profileData.value = {
         activePostCount: userProfile.activePostCount,
         createdAt: new Date(userProfile.createdAt),
         userName: String(userProfile.username),
-        userPostList: userPosts,
-        userCommentList: userComments,
+        userPostList: userPosts ?? [],
+        userCommentList: userComments ?? [],
         isModerator: userProfile.isModerator,
         dataLoaded: true,
         organizationList: userProfile.organizationList,

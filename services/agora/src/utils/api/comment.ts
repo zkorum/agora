@@ -19,10 +19,13 @@ import {
 import { useNotify } from "../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
+import { CreateCommentResponse } from "src/shared/types/dto";
+import { useBackendAuthApi } from "./auth";
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan } = useCommonApi();
-  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { updateAuthState } = useBackendAuthApi();
 
   const { showNotifyMessage } = useNotify();
 
@@ -127,7 +130,7 @@ export function useBackendCommentApi() {
         clusterKey: clusterKey,
       };
 
-      if (isAuthenticated.value) {
+      if (isGuestOrLoggedIn.value) {
         const { url, options } =
           await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
             params
@@ -179,7 +182,23 @@ export function useBackendCommentApi() {
       },
     });
 
-    return response.data;
+      if (!response.data.success) {
+        if (response.data.reason == "conversation_locked") {
+          showNotifyMessage(
+            "Cannot create opinion because the conversation is locked"
+          );
+          // TODO: manage that appropriately instead of returning undefined
+          return;
+        }
+      }
+      // TODO: properly manage errors in backend and return login status
+      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      return response.data;
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage("Failed to add opinion to the conversation");
+      return undefined;
+    }
   }
 
   async function deleteCommentBySlugId(commentSlugId: string) {

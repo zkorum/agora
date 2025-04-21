@@ -264,7 +264,7 @@ import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -333,7 +333,8 @@ function onLoginCallback() {
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (isPostEdited() && isLockedRoute()) {
     showExitDialog.value = true;
-    if (isAuthenticated.value) {
+    // TODO: not sure for this below if condition
+    if (isLoggedIn.value) {
       savedToRoute.value = to;
     }
     return false;
@@ -395,7 +396,7 @@ function removePollOption(index: number) {
 }
 
 async function onSubmit() {
-  if (!isAuthenticated.value) {
+  if (!isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
     quasar.loading.show();
