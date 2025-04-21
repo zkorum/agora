@@ -333,10 +333,7 @@ function onLoginCallback() {
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (isPostEdited() && isLockedRoute()) {
     showExitDialog.value = true;
-    // TODO: not sure for this below if condition
-    if (isLoggedIn.value) {
-      savedToRoute.value = to;
-    }
+    savedToRoute.value = to;
     return false;
   } else {
     return true;
