@@ -19,7 +19,6 @@ import {
 import { useNotify } from "../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import { CreateCommentResponse } from "src/shared/types/dto";
 import { useBackendAuthApi } from "./auth";
 
 export function useBackendCommentApi() {
@@ -182,23 +181,11 @@ export function useBackendCommentApi() {
       },
     });
 
-      if (!response.data.success) {
-        if (response.data.reason == "conversation_locked") {
-          showNotifyMessage(
-            "Cannot create opinion because the conversation is locked"
-          );
-          // TODO: manage that appropriately instead of returning undefined
-          return;
-        }
-      }
-      // TODO: properly manage errors in backend and return login status
+    if (response.data.success) {
+      // TODO: properly manage errors in backend and return login status to update to
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
-      return response.data;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to add opinion to the conversation");
-      return undefined;
     }
+    return response.data;
   }
 
   async function deleteCommentBySlugId(commentSlugId: string) {

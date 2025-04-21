@@ -193,32 +193,28 @@ function showVoteInterface() {
 
 async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
   if (currentDisplayMode.value === DisplayModes.Results) {
-    return
+    return;
   }
-    event.stopPropagation();
+  event.stopPropagation();
 
-    if (props.loginRequiredToParticipate && !isLoggedIn.value) {
+  if (props.loginRequiredToParticipate && !isLoggedIn.value) {
     showLoginDialog.value = true;
     return;
   }
-    const response = await backendPollApi.submitPollResponse(
-      selectedIndex,
-      props.postSlugId
-    );
+  const response = await backendPollApi.submitPollResponse(
+    selectedIndex,
+    props.postSlugId
+  );
   // TODO: refactor backend to send error and reason if any, and react appropriately
   // and eventual change in state (isGuest etc)
-    if (response == true) {
+  if (response == true) {
     // TODO: refactor because there arep potentially redundant requests (loadPostData inside updateAuthState)
     await updateAuthState({ partialLoginStatus: { isKnown: true } });
-      await Promise.all([
-          loadPostData(false),
-          fetchUserPollResponseData(true),
-        ]);
-      incrementLocalPollIndex(selectedIndex);
-      totalVoteCount.value += 1;
-      } else {
-      showLoginDialog.value = true;
-    }
+    await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
+    incrementLocalPollIndex(selectedIndex);
+    totalVoteCount.value += 1;
+  } else {
+    showLoginDialog.value = true;
   }
 }
 
