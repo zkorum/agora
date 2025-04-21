@@ -26,12 +26,59 @@
                                     "type": "object",
                                     "properties": {
                                         "loggedInStatus": {
-                                            "type": "string",
-                                            "enum": [
-                                                "logged_in",
-                                                "unknown",
-                                                "unverified",
-                                                "logged_out"
+                                            "anyOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "isKnown": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "isRegistered": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "isLoggedIn": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "isKnown",
+                                                        "isRegistered",
+                                                        "isLoggedIn"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "isKnown": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                true
+                                                            ]
+                                                        },
+                                                        "isRegistered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isLoggedIn": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "isKnown",
+                                                        "isRegistered",
+                                                        "isLoggedIn"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
                                             ]
                                         }
                                     },

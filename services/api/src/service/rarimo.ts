@@ -210,15 +210,16 @@ export async function verifyUserStatusAndAuthenticate({
 }: VerifyUserStatusProps): Promise<VerifyUserStatusAndAuthenticate200> {
     const now = nowZeroMs();
     // TODO: move this check to verifyUCAN directly in the controller:
-    const deviceStatus = await isLoggedInOrExistsAndAssociatedWithNoNullifier({
-        db,
-        didWrite,
-        now,
-    });
-    if (deviceStatus !== undefined) {
+    const badStatusReason =
+        await isLoggedInOrExistsAndAssociatedWithNoNullifier({
+            db,
+            didWrite,
+            now,
+        });
+    if (badStatusReason !== undefined) {
         return {
             success: false,
-            reason: deviceStatus,
+            reason: badStatusReason,
         };
     }
     const verifyUserStatusUrl = `/integrations/verificator-svc/light/private/verification-status/${didWrite}`;

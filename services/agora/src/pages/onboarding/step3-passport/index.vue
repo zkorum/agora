@@ -160,7 +160,6 @@ import { useQRCode } from "@vueuse/integrations/useQRCode";
 import { useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import { useAuthSetup } from "src/utils/auth/setup";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
 import { useCommonApi, type KeyAction } from "src/utils/api/common";
 import { api } from "src/boot/axios";
@@ -173,6 +172,7 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import RarimoImageExample from "src/components/onboarding/backgrounds/RarimoImageExample.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useBackendAuthApi } from "src/utils/api/auth";
 
 const description =
   "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
@@ -191,7 +191,7 @@ const verificationLink = ref("");
 
 const qrcode = useQRCode(verificationLink);
 
-const { userLogin } = useAuthSetup();
+const { updateAuthState } = useBackendAuthApi();
 
 const rarimeStoreLink = ref("");
 
@@ -327,7 +327,10 @@ async function clickedVerifyButton() {
 async function completeVerification() {
   window.clearInterval(isDeviceLoggedInIntervalId);
   showNotifyMessage("Verification successful 🎉");
-  await userLogin();
+  await updateAuthState({
+    partialLoginStatus: { isLoggedIn: true },
+    forceRefresh: true,
+  });
 
   if (onboardingMode == "LOGIN") {
     await routeUserAfterLogin();

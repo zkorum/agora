@@ -19,10 +19,12 @@ import {
 import { useNotify } from "../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
+import { useBackendAuthApi } from "./auth";
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan } = useCommonApi();
-  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { updateAuthState } = useBackendAuthApi();
 
   const { showNotifyMessage } = useNotify();
 
@@ -127,7 +129,7 @@ export function useBackendCommentApi() {
         clusterKey: clusterKey,
       };
 
-      if (isAuthenticated.value) {
+      if (isGuestOrLoggedIn.value) {
         const { url, options } =
           await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
             params
@@ -179,6 +181,10 @@ export function useBackendCommentApi() {
       },
     });
 
+    if (response.data.success) {
+      // TODO: properly manage errors in backend and return login status to update to
+      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+    }
     return response.data;
   }
 

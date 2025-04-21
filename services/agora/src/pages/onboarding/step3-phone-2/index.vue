@@ -86,7 +86,6 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { useBackendPhoneVerification } from "src/utils/api/phoneVerification";
 import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
-import { useAuthSetup } from "src/utils/auth/setup";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import type { KeyAction } from "src/utils/api/common";
 import { useNotify } from "src/utils/ui/notify";
@@ -96,6 +95,7 @@ import { getPlatform } from "src/utils/common";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useBackendAuthApi } from "src/utils/api/auth";
 
 const $q = useQuasar();
 let platform: "mobile" | "web" = "web";
@@ -110,7 +110,7 @@ const verificationCodeExpirySeconds = ref(0);
 
 const router = useRouter();
 
-const { userLogin } = useAuthSetup();
+const { updateAuthState } = useBackendAuthApi();
 
 const { requestCode, submitCode } = useBackendPhoneVerification();
 
@@ -142,7 +142,10 @@ async function nextButtonClicked() {
     });
     if (response.success) {
       showNotifyMessage("Verification successful 🎉");
-      await userLogin();
+      await updateAuthState({
+        partialLoginStatus: { isLoggedIn: true },
+        forceRefresh: true,
+      });
       if (onboardingMode == "LOGIN") {
         await routeUserAfterLogin();
       } else {
@@ -163,7 +166,10 @@ async function nextButtonClicked() {
           break;
         case "already_logged_in":
           showNotifyMessage("Verification successful 🎉");
-          await userLogin();
+          await updateAuthState({
+            partialLoginStatus: { isLoggedIn: true },
+            forceRefresh: true,
+          });
           if (onboardingMode == "LOGIN") {
             await routeUserAfterLogin();
           } else {
@@ -200,7 +206,10 @@ async function requestCodeClicked(
       switch (response.reason) {
         case "already_logged_in":
           showNotifyMessage("Verification successful 🎉");
-          await userLogin();
+          await updateAuthState({
+            partialLoginStatus: { isLoggedIn: true },
+            forceRefresh: true,
+          });
           if (onboardingMode == "LOGIN") {
             await routeUserAfterLogin();
           } else {

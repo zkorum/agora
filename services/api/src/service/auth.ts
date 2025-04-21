@@ -15,10 +15,9 @@ import { nowZeroMs } from "@/shared/common/util.js";
 import type {
     AuthenticateRequestBody,
     AuthenticateResponse,
-    GetDeviceStatusResp,
     VerifyOtp200,
 } from "@/shared/types/dto.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, TransactionRollbackError } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { base64 } from "@/shared/common/index.js";
 import parsePhoneNumberFromString, {
@@ -32,8 +31,8 @@ import {
 } from "@/shared/shared.js";
 import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
-import { isLoggedIn } from "./authUtil.js";
 import * as polisService from "@/service/polis.js";
+import * as authUtilService from "@/service/authUtil.js";
 import type { AxiosInstance } from "axios";
 import twilio from "twilio";
 
@@ -198,30 +197,6 @@ interface SendOtpPhoneNumberProps {
     twilioServiceSid: string;
 }
 
-export async function getDeviceStatus(
-    db: PostgresDatabase,
-    didWrite: string,
-    now: Date,
-): Promise<GetDeviceStatusResp> {
-    const resultDevice = await db
-        .select({
-            userId: deviceTable.userId,
-            sessionExpiry: deviceTable.sessionExpiry,
-        })
-        .from(deviceTable)
-        .where(eq(deviceTable.didWrite, didWrite));
-    if (resultDevice.length === 0) {
-        // device has never been registered
-        return undefined;
-    } else {
-        return {
-            userId: resultDevice[0].userId,
-            isLoggedIn: resultDevice[0].sessionExpiry > now,
-            sessionExpiry: resultDevice[0].sessionExpiry,
-        };
-    }
-}
-
 interface RegisterOrLoginWithPhoneNumberProps {
     db: PostgresDatabase;
     type: AuthenticateType;
@@ -336,13 +311,6 @@ export async function verifyPhoneOtp({
         throw httpErrors.internalServerError("Internal Error");
     }
     const now = nowZeroMs();
-    const status = await isLoggedIn(db, didWrite);
-    if (status.isLoggedIn) {
-        return {
-            success: false,
-            reason: "already_logged_in",
-        };
-    }
     const resultOtp = await db
         .select({
             userId: authAttemptPhoneTable.userId,
@@ -596,8 +564,12 @@ export async function registerWithPhoneNumber({
     });
 }
 
-// Note: device is assumed to be unknown
-export async function registerWithoutVerification({
+// Note: the device is assumed to be potentially already existing
+// that is because the user controlling the device might send multiple requests
+// to interact with the app, while it takes times to create the user
+// so multiple concurrent requests can be made to create the user
+// device is saved and associated with a new unverified user
+export async function createGuestUser({
     db,
     didWrite,
     now,
@@ -606,31 +578,59 @@ export async function registerWithoutVerification({
     polisUserEmailDomain,
     polisUserEmailLocalPart,
     polisUserPassword,
-}: RegisterWithoutVerificationProps): Promise<string> {
+}: RegisterWithoutVerificationProps): Promise<{
+    userId: string;
+    wasUserJustCreated: boolean;
+}> {
     const userId = generateUUID();
     const loginSessionExpiry = new Date(now);
-    await db.transaction(async (tx) => {
-        await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({ db: db }),
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: loginSessionExpiry,
-        });
-        if (axiosPolis !== undefined) {
-            await polisService.createUser({
-                axiosPolis,
-                polisUserEmailDomain,
-                polisUserEmailLocalPart,
-                polisUserPassword,
-                userId,
+    try {
+        return await db.transaction(async (tx) => {
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({ db: db }),
+                id: userId,
             });
+            const insertedDevice = await tx
+                .insert(deviceTable)
+                .values({
+                    userId: userId,
+                    didWrite: didWrite,
+                    userAgent: userAgent,
+                    sessionExpiry: loginSessionExpiry,
+                })
+                .onConflictDoNothing()
+                .returning();
+            if (insertedDevice.length === 0) {
+                // might happen when a user clicks multiple times on votes for the first time
+                tx.rollback(); // will throw
+            }
+            if (axiosPolis !== undefined) {
+                await polisService.createUser({
+                    axiosPolis,
+                    polisUserEmailDomain,
+                    polisUserEmailLocalPart,
+                    polisUserPassword,
+                    userId,
+                });
+            }
+            return { userId: userId, wasUserJustCreated: true };
+        });
+    } catch (e) {
+        if (e instanceof TransactionRollbackError) {
+            log.info("Inside inserted device");
+            const deviceStatus = await authUtilService.getDeviceStatus(
+                db,
+                didWrite,
+            );
+            if (!deviceStatus.isKnown) {
+                throw httpErrors.internalServerError(
+                    "Rollback occurred for another reason than manually actioning it, or sync error: device was deleted immediately after having seen it existing",
+                );
+            }
+            return { userId: deviceStatus.userId, wasUserJustCreated: false };
         }
-    });
-    return userId;
+        throw e;
+    }
 }
 
 export async function registerWithZKP({
@@ -1019,15 +1019,6 @@ export async function authenticateAttempt({
     twilioServiceSid,
 }: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
     const now = nowZeroMs();
-    // TODO: move this check to verifyUCAN directly in the controller:
-    const status = await isLoggedIn(db, didWrite);
-    if (status.isLoggedIn) {
-        return {
-            success: false,
-            reason: "already_logged_in",
-        };
-    }
-
     const { type, userId } = await getPhoneAuthenticationTypeByNumber({
         db,
         phoneNumber: authenticateRequestBody.phoneNumber,

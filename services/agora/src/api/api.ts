@@ -335,21 +335,61 @@ export type ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = typeof ApiV
 export interface ApiV1AuthCheckLoginStatusPost200Response {
     /**
      * 
-     * @type {string}
+     * @type {ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus}
      * @memberof ApiV1AuthCheckLoginStatusPost200Response
      */
-    'loggedInStatus': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum;
+    'loggedInStatus': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus;
 }
-
-export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum = {
-    LoggedIn: 'logged_in',
-    Unknown: 'unknown',
-    Unverified: 'unverified',
-    LoggedOut: 'logged_out'
-} as const;
-
-export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusEnum];
-
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus
+ */
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus
+     */
+    'isKnown': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus
+     */
+    'isRegistered': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus
+     */
+    'isLoggedIn': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf
+ */
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf
+     */
+    'isKnown': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf
+     */
+    'isRegistered': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf
+     */
+    'isLoggedIn': boolean;
+}
 /**
  * 
  * @export

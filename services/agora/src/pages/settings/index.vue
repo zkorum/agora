@@ -21,21 +21,21 @@
     </template>
 
     <div class="container">
-      <div v-if="isAuthenticated">
+      <div v-if="isGuestOrLoggedIn">
         <SettingsSection :settings-item-list="accountSettings" />
       </div>
 
       <SettingsSection :settings-item-list="aboutSettings" />
 
-      <div v-if="isAuthenticated">
+      <div v-if="isGuestOrLoggedIn">
         <SettingsSection :settings-item-list="deleteAccountSettings" />
       </div>
 
-      <div v-if="isAuthenticated">
+      <div v-if="isLoggedIn">
         <SettingsSection :settings-item-list="logoutSettings" />
       </div>
 
-      <div v-if="isAuthenticated && profileData.isModerator">
+      <div v-if="isLoggedIn && profileData.isModerator">
         <SettingsSection :settings-item-list="moderatorSettings" />
       </div>
     </div>
@@ -49,27 +49,33 @@ import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
+import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 const { showDeleteAccountDialog } = useDialog();
 
-const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
-  useBackendAuthApi();
+const { deleteUserAccount } = useBackendAccountApi();
+const { updateAuthState, logoutFromServer } = useBackendAuthApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
+
+const deleteAccountLabel = computed(() =>
+  isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
+);
 
 async function logoutRequested() {
   try {
     await logoutFromServer();
-    await logoutDataCleanup({ doDeleteKeypair: true });
-    await showLogoutMessageAndRedirect();
+    await updateAuthState({ partialLoginStatus: { isLoggedIn: false } });
+    showNotifyMessage("Logged out");
   } catch (e) {
     console.error("Unexpected error when logging out", e);
     showNotifyMessage("Oops! Logout failed. Please try again");
@@ -132,14 +138,23 @@ const moderatorSettings: SettingsInterface[] = [
 
 const deleteAccountSettings: SettingsInterface[] = [
   {
-    label: "Delete Account",
+    label: deleteAccountLabel.value,
     action: processDeleteAccount,
     style: "negative",
   },
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(() => logoutDataCleanup({ doDeleteKeypair: true }));
+  showDeleteAccountDialog(async () => {
+    try {
+      await deleteUserAccount();
+      await updateAuthState({ partialLoginStatus: { isKnown: false } });
+      showNotifyMessage("Account deleted");
+    } catch (e) {
+      console.error("Failed to delete user account", e);
+      showNotifyMessage("Oops! Account deletion failed. Please try again");
+    }
+  });
 }
 </script>
 

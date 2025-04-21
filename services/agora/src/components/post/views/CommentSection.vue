@@ -192,7 +192,7 @@ const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const isLoadingCommentItemsNew = ref<boolean>(true);
 const isLoadingCommentItemsDiscover = ref<boolean>(true);
@@ -326,7 +326,7 @@ async function resetRouteParams() {
 }
 
 async function fetchPersonalLikes() {
-  if (isAuthenticated.value) {
+  if (isGuestOrLoggedIn.value) {
     commentSlugIdLikedMap.value = new Map();
     const response = await fetchUserVotesForPostSlugIds([props.postSlugId]);
     if (response) {

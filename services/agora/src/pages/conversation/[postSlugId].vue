@@ -45,7 +45,7 @@ import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const { fetchPostBySlugId } = useBackendPostApi();
-const { isAuthenticated, isAuthInitialized } = storeToRefs(
+const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
   useAuthenticationStore()
 );
 const { emptyPost } = usePostStore();
@@ -85,7 +85,7 @@ async function loadData() {
   if (route.name == "/conversation/[postSlugId]") {
     const response = await fetchPostBySlugId(
       route.params.postSlugId,
-      isAuthenticated.value
+      isGuestOrLoggedIn.value
     );
     if (response != null) {
       postData.value = response;

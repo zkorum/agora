@@ -80,6 +80,10 @@
                 class="pollContainer"
               >
                 <PollWrapper
+                  :login-required-to-participate="
+                    extendedPostData.metadata.isIndexed ||
+                    extendedPostData.metadata.isLoginRequired
+                  "
                   :poll-options="extendedPostData.payload.poll"
                   :post-slug-id="extendedPostData.metadata.conversationSlugId"
                   :user-response="extendedPostData.interaction"

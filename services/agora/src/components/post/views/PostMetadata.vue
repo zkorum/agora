@@ -89,7 +89,7 @@ const route = useRoute();
 
 const { showPostOptionSelector } = useBottomSheet();
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = usePostStore();
@@ -105,7 +105,7 @@ function onLoginConfirmationOk() {
 }
 
 function reportContentCallback() {
-  if (isAuthenticated.value) {
+  if (isLoggedIn.value) {
     showReportDialog.value = true;
   } else {
     showLoginDialog.value = true;

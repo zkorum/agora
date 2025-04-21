@@ -30,6 +30,7 @@
             <UserMetadata
               :author-verified="false"
               :user-identity="profileData.userName"
+              :show-is-guest="isGuest"
               :show-verified-text="true"
             />
           </div>
@@ -76,6 +77,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 const router = useRouter();
 
 const { loadUserProfile } = useUserStore();
+const { isGuest } = storeToRefs(useAuthenticationStore());
 
 interface CustomTab {
   route: keyof RouteNamedMap;

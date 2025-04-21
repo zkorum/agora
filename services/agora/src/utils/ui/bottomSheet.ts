@@ -21,7 +21,7 @@ export const useBottomSheet = () => {
   const { profileData } = storeToRefs(useUserStore());
   const { loadUserProfile } = useUserStore();
   const { loadPostData } = usePostStore();
-  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+  const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
   interface QuasarAction {
     label: string;
@@ -46,7 +46,7 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.value.userName != posterUserName && isAuthenticated.value) {
+    if (profileData.value.userName != posterUserName && isLoggedIn.value) {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
@@ -129,7 +129,7 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.value.userName != posterUserName && isAuthenticated.value) {
+    if (profileData.value.userName != posterUserName && isLoggedIn.value) {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",

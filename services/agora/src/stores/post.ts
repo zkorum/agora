@@ -74,7 +74,7 @@ export const usePostStore = defineStore("post", () => {
 
   const { loadUserProfile } = useUserStore();
 
-  const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
   const hasPendingNewPosts = ref(false);
 
@@ -140,7 +140,7 @@ export const usePostStore = defineStore("post", () => {
       }
     }
 
-    const response = await fetchRecentPost(lastSlugId, isAuthenticated.value);
+    const response = await fetchRecentPost(lastSlugId, isGuestOrLoggedIn.value);
 
     if (response != null) {
       const internalDataList = composeInternalPostList(response.postDataList);
@@ -176,7 +176,7 @@ export const usePostStore = defineStore("post", () => {
   }
 
   async function hasNewPosts() {
-    const response = await fetchRecentPost(undefined, isAuthenticated.value);
+    const response = await fetchRecentPost(undefined, isGuestOrLoggedIn.value);
     if (response != null) {
       if (
         response.postDataList.length > 0 &&

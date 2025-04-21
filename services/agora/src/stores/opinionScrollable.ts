@@ -13,7 +13,7 @@ export const useOpinionScrollableStore = defineStore(
 
     const hasMore = ref(true);
 
-    const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+    const { isLoggedIn } = storeToRefs(useAuthenticationStore());
     const { showNotifyMessage } = useNotify();
 
     function loadMore() {
@@ -87,7 +87,8 @@ export const useOpinionScrollableStore = defineStore(
         }
       }
 
-      if (!isAuthenticated.value) {
+      // TODO: not sure about this if
+      if (!isLoggedIn.value) {
         showNotifyMessage("This opinion has been removed by the moderators");
         return "discover";
       } else {

@@ -16,6 +16,7 @@ useHtmlNodeCssPatch();
 
 onMounted(async () => {
   try {
+    console.log("Initializing authentication state");
     await authenticationStore.initializeAuthState();
   } catch (e) {
     console.error("Error while trying to get logged-in status", e);

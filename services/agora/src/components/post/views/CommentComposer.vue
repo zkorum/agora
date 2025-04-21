@@ -86,7 +86,7 @@ const dummyInput = ref<HTMLInputElement>();
 
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
@@ -174,7 +174,7 @@ function routeLeaveCallback() {
 function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (characterCount.value > 0 && isLockedRoute()) {
     showExitDialog.value = true;
-    if (isAuthenticated.value) {
+    if (props.loginRequiredToParticipate ? isLoggedIn.value : true) {
       savedToRoute.value = to;
     }
     return false;
@@ -202,7 +202,7 @@ function checkWordCount() {
 }
 
 async function submitPostClicked() {
-  if (!isAuthenticated.value && props.loginRequiredToParticipate) {
+  if (!isLoggedIn.value && props.loginRequiredToParticipate) {
     showLoginDialog.value = true;
   } else {
     isSubmissionLoading.value = true;

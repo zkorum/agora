@@ -1,7 +1,12 @@
-import { Dto, type GetConversationResponse } from "@/shared/types/dto.js";
+import {
+    Dto,
+    type AuthenticateResponse,
+    type GetConversationResponse,
+    type VerifyOtp200,
+} from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
-import fastifySensible, { httpErrors } from "@fastify/sensible";
+import fastifySensible from "@fastify/sensible";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
 import {
@@ -97,7 +102,10 @@ import {
     getOrganizationNamesByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
-import type { DeviceLoginStatus } from "./shared/types/zod.js";
+import type {
+    DeviceIsKnownTrueLoginStatusExtended,
+    DeviceLoginStatusExtended,
+} from "./shared/types/zod.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -165,8 +173,14 @@ if (config.NODE_ENV === "development") {
 }
 let relay: Relay;
 if (config.NOSTR_PROOF_CHANNEL_EVENT_ID !== undefined) {
-    relay = await Relay.connect(config.NOSTR_DEFAULT_RELAY_URL);
-    log.info(`Connected to ${relay.url}`);
+    try {
+        relay = await Relay.connect(config.NOSTR_DEFAULT_RELAY_URL);
+        log.info(`Connected to ${relay.url}`);
+    } catch (e) {
+        log.error("Unable to start the connection with the Nostr relay");
+        log.error(e);
+        process.exit(1);
+    }
 }
 
 const mustSendActualSms = config.NODE_ENV === "production";
@@ -315,10 +329,13 @@ if (
                 username: credentials.username,
                 password: credentials.password,
                 ssl: "require",
+                connect_timeout: 10,
             });
         } catch (error) {
             log.error(error);
-            log.error("Unable to parse received SecretString in JSON");
+            log.error(
+                "Unable to parse received SecretString in JSON or connect to DB",
+            );
             process.exit(1);
         }
     } catch (e) {
@@ -327,7 +344,15 @@ if (
         process.exit(1);
     }
 } else if (config.CONNECTION_STRING !== undefined) {
-    client = postgres(config.CONNECTION_STRING);
+    try {
+        client = postgres(config.CONNECTION_STRING, {
+            connect_timeout: 10,
+        });
+    } catch (e) {
+        log.error("Unable to connect to the database");
+        log.error(e);
+        process.exit(1);
+    }
 } else {
     log.error(
         "CONNECTION_STRING cannot be undefined in any mode except production",
@@ -340,13 +365,26 @@ export const db = drizzle(client, {
 });
 
 interface ExpectedDeviceStatus {
-    now: Date;
     userId?: string;
+    isKnown?: boolean;
     isLoggedIn?: boolean;
+    isRegistered?: boolean;
+    isGuestOrLoggedIn?: boolean;
 }
 
 interface OptionsVerifyUcan {
     expectedDeviceStatus?: ExpectedDeviceStatus;
+}
+
+interface ExpectedKnownDeviceStatus {
+    userId?: string;
+    isLoggedIn?: boolean;
+    isRegistered?: boolean;
+    isGuestOrLoggedIn?: boolean; // lowest precedence
+}
+
+interface OptionsVerifyUcanKnownDevice {
+    expectedKnownDeviceStatus?: ExpectedKnownDeviceStatus;
 }
 
 const SERVER_URL =
@@ -378,24 +416,22 @@ function getEncodedUcan(request: FastifyRequest): string {
     return encodedUcan;
 }
 
-interface VerifyUCANReturn {
+interface VerifyUcanAndDeviceStatusReturn {
+    didWrite: string;
+    encodedUcan: string;
+    deviceStatus: DeviceLoginStatusExtended;
+}
+interface VerifyUcanKnownDeviceReturn {
+    didWrite: string;
+    encodedUcan: string;
+    deviceStatus: DeviceIsKnownTrueLoginStatusExtended;
+}
+
+interface VerifyUcanReturn {
     didWrite: string;
     encodedUcan: string;
 }
-
-// auth for account profile interaction
-// TODO: store UCAN in ucan table at the end and check whether UCAN has already been seen in the ucan table on the first place - if yes, throw unauthorized error and log the potential replay attack attempt.
-// ! WARNING: will not work if there are queryParams. We only use POST requests and JSON body requests (JSON-RPC style).
-async function verifyUCAN(
-    db: PostgresDatabase,
-    request: FastifyRequest,
-    options: OptionsVerifyUcan = {
-        expectedDeviceStatus: {
-            now: nowZeroMs(),
-            isLoggedIn: true,
-        },
-    },
-): Promise<VerifyUCANReturn> {
+async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
     const encodedUcan = getEncodedUcan(request);
     const { scheme, hierPart } = httpUrlToResourcePointer(
         new URL(request.originalUrl, SERVER_URL),
@@ -434,42 +470,123 @@ async function verifyUCAN(
             new AggregateError(result.error),
         );
     }
-    if (options.expectedDeviceStatus !== undefined) {
-        const deviceStatus = await authService.getDeviceStatus(
-            db,
-            rootIssuerDid,
-            options.expectedDeviceStatus.now,
-        );
-        if (deviceStatus === undefined) {
-            if (options.expectedDeviceStatus.isLoggedIn !== undefined) {
-                throw server.httpErrors.unauthorized(
-                    `[${rootIssuerDid}] has not been registered but is expected to have a log in status`,
-                );
-            } else if (options.expectedDeviceStatus.userId !== undefined) {
-                throw server.httpErrors.forbidden(
-                    `[${rootIssuerDid}] has not been registered but is expected to have a specific userId`,
-                );
-            }
-        } else {
-            const { userId, isLoggedIn } = deviceStatus;
-            if (
-                options.expectedDeviceStatus.isLoggedIn !== undefined &&
-                options.expectedDeviceStatus.isLoggedIn !== isLoggedIn
-            ) {
-                throw server.httpErrors.unauthorized(
-                    `[${rootIssuerDid}] is expected to have 'isLoggedIn=${options.expectedDeviceStatus.isLoggedIn.toString()}' but has 'isLoggedIn=${isLoggedIn.toString()}'`,
-                );
-            } else if (
-                options.expectedDeviceStatus.userId !== undefined &&
-                options.expectedDeviceStatus.userId !== userId
-            ) {
-                throw server.httpErrors.forbidden(
-                    `[${rootIssuerDid}] is expected to have 'userId=${options.expectedDeviceStatus.userId}' but has 'userId=${userId}'`,
-                );
-            }
-        }
+    return {
+        encodedUcan: encodedUcan,
+        didWrite: rootIssuerDid,
+    };
+}
+
+async function verifyUcanAndDeviceStatus(
+    db: PostgresDatabase,
+    request: FastifyRequest,
+    options?: OptionsVerifyUcan,
+): Promise<VerifyUcanAndDeviceStatusReturn> {
+    const defaultOptions = {
+        expectedDeviceStatus: {
+            isLoggedIn: true,
+            isKnown: true,
+            isRegistered: true,
+            isGuestOrLoggedIn: false,
+        },
+    };
+    let actualOptions = options;
+    if (actualOptions == undefined) {
+        actualOptions = defaultOptions;
     }
-    return { didWrite: rootIssuerDid, encodedUcan: encodedUcan };
+    const { encodedUcan, didWrite } = await verifyUcan(request);
+    const deviceStatus = await authUtilService.getDeviceStatus(db, didWrite);
+    if (
+        actualOptions.expectedDeviceStatus?.isKnown !== undefined &&
+        actualOptions.expectedDeviceStatus.isKnown !== deviceStatus.isKnown
+    ) {
+        throw server.httpErrors.unauthorized(
+            `[${didWrite}] is expected to have 'isKnown=${actualOptions.expectedDeviceStatus.isKnown.toString()}' but has 'isKnown=${deviceStatus.isKnown.toString()}'`,
+        );
+    } else if (
+        actualOptions.expectedDeviceStatus?.isRegistered !== undefined &&
+        actualOptions.expectedDeviceStatus.isRegistered !==
+            deviceStatus.isRegistered
+    ) {
+        throw server.httpErrors.unauthorized(
+            `[${didWrite}] is expected to have 'isRegistered=${actualOptions.expectedDeviceStatus.isRegistered.toString()}' but has 'isRegistered=${deviceStatus.isRegistered.toString()}'`,
+        );
+    } else if (
+        actualOptions.expectedDeviceStatus?.isLoggedIn !== undefined &&
+        actualOptions.expectedDeviceStatus.isLoggedIn !==
+            deviceStatus.isLoggedIn
+    ) {
+        throw server.httpErrors.unauthorized(
+            `[${didWrite}] is expected to have 'isLoggedIn=${actualOptions.expectedDeviceStatus.isLoggedIn.toString()}' but has 'isLoggedIn=${deviceStatus.isLoggedIn.toString()}'`,
+        );
+    } else if (
+        actualOptions.expectedDeviceStatus?.userId !== undefined &&
+        !deviceStatus.isKnown
+    ) {
+        throw server.httpErrors.forbidden(
+            `[${didWrite}] is expected to have 'userId=${actualOptions.expectedDeviceStatus.userId}' but is unknown`,
+        );
+    } else if (
+        actualOptions.expectedDeviceStatus?.userId !== undefined &&
+        deviceStatus.isKnown &&
+        actualOptions.expectedDeviceStatus.userId !== deviceStatus.userId
+    ) {
+        throw server.httpErrors.forbidden(
+            `[${didWrite}] is expected to have 'userId=${actualOptions.expectedDeviceStatus.userId}' but has 'userId=${deviceStatus.userId}'`,
+        );
+    } else if (
+        actualOptions.expectedDeviceStatus?.isGuestOrLoggedIn !== undefined &&
+        actualOptions.expectedDeviceStatus.isGuestOrLoggedIn ===
+            !(deviceStatus.isKnown && !deviceStatus.isRegistered) && // neither guest
+        !(deviceStatus.isLoggedIn && deviceStatus.isRegistered) // nor logged-in
+    ) {
+        throw server.httpErrors.forbidden(
+            `[${didWrite}] is expected to be either Guest or a Logged-In registered user but it is neither`,
+        );
+    }
+    return {
+        didWrite: didWrite,
+        encodedUcan: encodedUcan,
+        deviceStatus: deviceStatus,
+    };
+}
+
+// always return userId !== undefined
+async function verifyUcanAndKnownDeviceStatus(
+    db: PostgresDatabase,
+    request: FastifyRequest,
+    options?: OptionsVerifyUcanKnownDevice,
+): Promise<VerifyUcanKnownDeviceReturn> {
+    const defaultOptions = {
+        expectedDeviceStatus: {
+            isKnown: true,
+            isRegistered: true,
+            isLoggedIn: true,
+            isGuestOrLoggedIn: false,
+        },
+    };
+    let actualOptions: OptionsVerifyUcan;
+    if (options !== undefined) {
+        actualOptions = {
+            expectedDeviceStatus: { isKnown: true, ...options },
+        };
+    } else {
+        actualOptions = defaultOptions;
+    }
+    const { didWrite, encodedUcan, deviceStatus } =
+        await verifyUcanAndDeviceStatus(db, request, actualOptions);
+    if (!deviceStatus.isKnown) {
+        log.error(
+            "The error below is unexpected, it should have been checked already by `verifyUcanAndDeviceStatus`",
+        );
+        throw server.httpErrors.unauthorized(
+            `[${didWrite}] is expected to be a known device`,
+        );
+    }
+    return {
+        didWrite,
+        encodedUcan,
+        deviceStatus,
+    };
 }
 
 const apiVersion = "v1";
@@ -487,21 +604,31 @@ server.after(() => {
             response: { 200: Dto.checkLoginStatusResponse },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
-
-            const status = await authUtilService.getDeviceStatus(db, didWrite);
-            const loggedInStatus: DeviceLoginStatus = !status.isRegistered
-                ? "unknown"
-                : !status.isVerified
-                ? "unverified"
-                : !status.isLoggedIn
-                ? "logged_out"
-                : "logged_in";
-            return {
-                loggedInStatus: loggedInStatus,
-            };
+            const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                db,
+                request,
+                {
+                    expectedDeviceStatus: undefined,
+                },
+            );
+            // if-else statements are just for typescript and the zod discriminated union thing
+            if (deviceStatus.isKnown) {
+                return {
+                    loggedInStatus: {
+                        isKnown: deviceStatus.isKnown,
+                        isLoggedIn: deviceStatus.isLoggedIn,
+                        isRegistered: deviceStatus.isRegistered,
+                    },
+                };
+            } else {
+                return {
+                    loggedInStatus: {
+                        isKnown: deviceStatus.isKnown,
+                        isLoggedIn: deviceStatus.isLoggedIn,
+                        isRegistered: deviceStatus.isRegistered,
+                    },
+                };
+            }
         },
     });
 
@@ -515,32 +642,47 @@ server.after(() => {
         handler: async (request) => {
             // This endpoint is accessible without being logged in
             // this endpoint could be especially subject to attacks such as DDoS or man-in-the-middle (to associate their own DID instead of the legitimate user's ones for example)
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined, // TODO: return already_logged_in here instead of doing it inside the function below
-            });
-            const userAgent = request.headers["user-agent"] ?? "Unknown device";
-
-            // backend intentionally does NOT say whether it is a register or a login - in order to protect privacy and give no information to potential attackers
-            return await authService.authenticateAttempt({
+            const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
                 db,
-                twilioClient,
-                twilioServiceSid: config.TWILIO_SERVICE_SID,
-                doUseTestCode:
-                    !mustSendActualSms &&
-                    speciallyAuthorizedPhones.includes(
-                        request.body.phoneNumber,
-                    ),
-                testCode: config.TEST_CODE,
-                authenticateRequestBody: request.body,
-                minutesBeforeSmsCodeExpiry:
-                    config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
-                didWrite,
-                throttleSmsMinutesInterval:
-                    config.THROTTLE_SMS_MINUTES_INTERVAL,
-                // awsMailConf: awsMailConf,
-                userAgent: userAgent,
-                peppers: config.PEPPERS,
-            });
+                request,
+                {
+                    expectedDeviceStatus: undefined,
+                },
+            );
+            // wrapper function for Typescript to be happy with the zod discriminated union type
+            async function doAuthenticate(): Promise<AuthenticateResponse> {
+                if (deviceStatus.isLoggedIn) {
+                    return {
+                        success: false,
+                        reason: "already_logged_in",
+                    };
+                }
+                const userAgent =
+                    request.headers["user-agent"] ?? "Unknown device";
+
+                // backend intentionally does NOT say whether it is a register or a login - in order to protect privacy and give no information to potential attackers
+                return await authService.authenticateAttempt({
+                    db,
+                    twilioClient,
+                    twilioServiceSid: config.TWILIO_SERVICE_SID,
+                    doUseTestCode:
+                        !mustSendActualSms &&
+                        speciallyAuthorizedPhones.includes(
+                            request.body.phoneNumber,
+                        ),
+                    testCode: config.TEST_CODE,
+                    authenticateRequestBody: request.body,
+                    minutesBeforeSmsCodeExpiry:
+                        config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
+                    didWrite,
+                    throttleSmsMinutesInterval:
+                        config.THROTTLE_SMS_MINUTES_INTERVAL,
+                    // awsMailConf: awsMailConf,
+                    userAgent: userAgent,
+                    peppers: config.PEPPERS,
+                });
+            }
+            return await doAuthenticate();
         },
     });
 
@@ -556,37 +698,53 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
-            return await authService.verifyPhoneOtp({
+            const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
                 db,
-                maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
-                didWrite,
-                code: request.body.code,
-                axiosPolis: axiosPolis,
-                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                polisUserPassword: config.POLIS_USER_PASSWORD,
-                phoneNumber: request.body.phoneNumber,
-                defaultCallingCode: request.body.defaultCallingCode,
-                twilioClient: twilioClient,
-                twilioServiceSid: config.TWILIO_SERVICE_SID,
-                peppers: config.PEPPERS,
-            });
+                request,
+                {
+                    expectedDeviceStatus: undefined,
+                },
+            );
+            async function doVerifyPhoneOtp(): Promise<VerifyOtp200> {
+                if (deviceStatus.isLoggedIn) {
+                    return {
+                        success: false,
+                        reason: "already_logged_in",
+                    };
+                }
+                return await authService.verifyPhoneOtp({
+                    db,
+                    maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
+                    didWrite,
+                    code: request.body.code,
+                    axiosPolis: axiosPolis,
+                    polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                    polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                    polisUserPassword: config.POLIS_USER_PASSWORD,
+                    phoneNumber: request.body.phoneNumber,
+                    defaultCallingCode: request.body.defaultCallingCode,
+                    twilioClient: twilioClient,
+                    twilioServiceSid: config.TWILIO_SERVICE_SID,
+                    peppers: config.PEPPERS,
+                });
+            }
+            return await doVerifyPhoneOtp();
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/logout`,
         handler: async (request) => {
-            const now = nowZeroMs();
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: {
-                    isLoggedIn: true,
-                    now: now,
+            const { didWrite } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
                 },
-            });
+            );
             await authService.logout(db, didWrite);
         },
     });
@@ -609,23 +767,20 @@ server.after(() => {
                 isAuthenticatedRequest = false;
             }
             if (isAuthenticatedRequest) {
-                const { didWrite } = await verifyUCAN(db, request, {
-                    expectedDeviceStatus: undefined,
-                });
+                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                    },
+                );
 
-                const status = await authUtilService.isLoggedIn(db, didWrite);
-                if (!status.isLoggedIn) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not logged in",
-                    );
-                } else {
-                    return await feedService.fetchFeed({
-                        db: db,
-                        lastSlugId: request.body.lastSlugId,
-                        personalizationUserId: status.userId,
-                        baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                    });
-                }
+                return await feedService.fetchFeed({
+                    db: db,
+                    lastSlugId: request.body.lastSlugId,
+                    personalizationUserId: deviceStatus.userId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                });
             } else {
                 return await feedService.fetchFeed({
                     db: db,
@@ -643,33 +798,33 @@ server.after(() => {
             body: Dto.moderateReportPostRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await moderateByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                    moderationReason: request.body.moderationReason,
-                    moderationAction: request.body.moderationAction,
-                    moderationExplanation: request.body.moderationExplanation,
-                    userId: status.userId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await moderateByPostSlugId({
+                db: db,
+                postSlugId: request.body.conversationSlugId,
+                moderationReason: request.body.moderationReason,
+                moderationAction: request.body.moderationAction,
+                moderationExplanation: request.body.moderationExplanation,
+                userId: deviceStatus.userId,
+            });
         },
     });
 
@@ -680,33 +835,33 @@ server.after(() => {
             body: Dto.moderateReportCommentRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await moderateByCommentSlugId({
-                    db: db,
-                    commentSlugId: request.body.opinionSlugId,
-                    moderationReason: request.body.moderationReason,
-                    moderationAction: request.body.moderationAction,
-                    moderationExplanation: request.body.moderationExplanation,
-                    userId: status.userId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await moderateByCommentSlugId({
+                db: db,
+                commentSlugId: request.body.opinionSlugId,
+                moderationReason: request.body.moderationReason,
+                moderationAction: request.body.moderationAction,
+                moderationExplanation: request.body.moderationExplanation,
+                userId: deviceStatus.userId,
+            });
         },
     });
 
@@ -717,29 +872,29 @@ server.after(() => {
             body: Dto.moderateCancelConversationReportRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await withdrawModerationReportByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await withdrawModerationReportByPostSlugId({
+                db: db,
+                postSlugId: request.body.conversationSlugId,
+            });
         },
     });
 
@@ -750,29 +905,29 @@ server.after(() => {
             body: Dto.moderateCancelOpinionReportRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await withdrawModerationReportByCommentSlugId({
-                    db: db,
-                    commentSlugId: request.body.opinionSlugId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await withdrawModerationReportByCommentSlugId({
+                db: db,
+                commentSlugId: request.body.opinionSlugId,
+            });
         },
     });
 
@@ -786,29 +941,29 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                return await getConversationModerationStatus({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            return await getConversationModerationStatus({
+                db: db,
+                postSlugId: request.body.conversationSlugId,
+            });
         },
     });
 
@@ -822,29 +977,29 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                return await getOpinionModerationStatus({
-                    db: db,
-                    commentSlugId: request.body.opinionSlugId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            return await getOpinionModerationStatus({
+                db: db,
+                commentSlugId: request.body.opinionSlugId,
+            });
         },
     });
 
@@ -857,18 +1012,17 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await getUserProfile({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                return await getUserProfile({
-                    db: db,
-                    userId: status.userId,
-                });
-            }
         },
     });
 
@@ -882,21 +1036,20 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            const conversationsMap = await getUserPosts({
+                db: db,
+                userId: deviceStatus.userId,
+                lastPostSlugId: request.body.lastConversationSlugId,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const conversationsMap = await getUserPosts({
-                    db: db,
-                    userId: status.userId,
-                    lastPostSlugId: request.body.lastConversationSlugId,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                });
-                return Array.from(conversationsMap.values());
-            }
+            return Array.from(conversationsMap.values());
         },
     });
 
@@ -910,20 +1063,19 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await getUserComments({
+                db: db,
+                userId: deviceStatus.userId,
+                lastCommentSlugId: request.body.lastOpinionSlugId,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                return await getUserComments({
-                    db: db,
-                    userId: status.userId,
-                    lastCommentSlugId: request.body.lastOpinionSlugId,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                });
-            }
         },
     });
 
@@ -937,19 +1089,18 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await getUserVotesByConversations({
+                db: db,
+                postSlugIdList: request.body.conversationSlugIdList,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                return await getUserVotesByConversations({
-                    db: db,
-                    postSlugIdList: request.body.conversationSlugIdList,
-                    userId: status.userId,
-                });
-            }
         },
     });
 
@@ -963,9 +1114,7 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
+            const { didWrite, encodedUcan } = await verifyUcan(request);
 
             const now = nowZeroMs();
             const castVoteResponse = await castVoteForOpinionSlugId({
@@ -1025,42 +1174,39 @@ server.after(() => {
             body: Dto.pollRespondRequest,
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { didWrite, encodedUcan } = await verifyUcan(request);
+            const now = nowZeroMs();
+            await submitPollResponse({
+                db: db,
+                proof: encodedUcan,
+                didWrite: didWrite,
+                httpErrors: server.httpErrors,
+                postSlugId: request.body.conversationSlugId,
+                voteOptionChoice: request.body.voteOptionChoice,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                axiosPolis: axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
+                now: now,
             });
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await submitPollResponse({
-                    db: db,
-                    proof: encodedUcan,
-                    authorId: status.userId,
-                    didWrite: didWrite,
-                    httpErrors: server.httpErrors,
-                    postSlugId: request.body.conversationSlugId,
-                    voteOptionChoice: request.body.voteOptionChoice,
-                });
-                reply.send();
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+            reply.send();
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1076,19 +1222,20 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, undefined);
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
 
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                return await getUserPollResponse({
-                    db: db,
-                    postSlugIdList: request.body,
-                    authorId: status.userId,
-                    httpErrors: server.httpErrors,
-                });
-            }
+            return await getUserPollResponse({
+                db: db,
+                postSlugIdList: request.body,
+                authorId: deviceStatus.userId,
+                httpErrors: server.httpErrors,
+            });
         },
     });
 
@@ -1099,42 +1246,35 @@ server.after(() => {
             body: Dto.deleteOpinionRequest,
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(
-                db,
-                request,
-                undefined,
-            );
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await deleteOpinionBySlugId({
-                    db: db,
-                    opinionSlugId: request.body.opinionSlugId,
-                    userId: status.userId,
-                    proof: encodedUcan,
-                    didWrite: didWrite,
+            const { deviceStatus, encodedUcan, didWrite } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
-                reply.send();
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+
+            await deleteOpinionBySlugId({
+                db: db,
+                opinionSlugId: request.body.opinionSlugId,
+                userId: deviceStatus.userId,
+                proof: encodedUcan,
+                didWrite: didWrite,
+            });
+            reply.send();
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1150,9 +1290,7 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
+            const { didWrite, encodedUcan } = await verifyUcan(request);
             const now = nowZeroMs();
             const newOpinionResponse = await postNewOpinion({
                 db: db,
@@ -1207,26 +1345,23 @@ server.after(() => {
                 isAuthenticatedRequest = false;
             }
             if (isAuthenticatedRequest) {
-                const { didWrite } = await verifyUCAN(db, request, {
-                    expectedDeviceStatus: undefined,
-                });
+                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                    },
+                );
 
-                const status = await authUtilService.isLoggedIn(db, didWrite);
-                if (!status.isLoggedIn) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not logged in",
-                    );
-                } else {
-                    const opinionItemsPerSlugId =
-                        await fetchOpinionsByConversationSlugId({
-                            db: db,
-                            postSlugId: request.body.conversationSlugId,
-                            fetchTarget: request.body.filter,
-                            personalizationUserId: status.userId,
-                            clusterKey: request.body.clusterKey,
-                        });
-                    return Array.from(opinionItemsPerSlugId.values());
-                }
+                const opinionItemsPerSlugId =
+                    await fetchOpinionsByConversationSlugId({
+                        db: db,
+                        postSlugId: request.body.conversationSlugId,
+                        fetchTarget: request.body.filter,
+                        personalizationUserId: deviceStatus.userId,
+                        clusterKey: request.body.clusterKey,
+                    });
+                return Array.from(opinionItemsPerSlugId.values());
             } else {
                 const opinionItemsPerSlugId =
                     await fetchOpinionsByConversationSlugId({
@@ -1267,31 +1402,31 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-                const opinionItemsPerSlugId =
-                    await fetchOpinionsByConversationSlugId({
-                        db: db,
-                        postSlugId: request.body.conversationSlugId,
-                        fetchTarget: "hidden",
-                    });
-                return Array.from(opinionItemsPerSlugId.values());
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+            const opinionItemsPerSlugId =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "hidden",
+                });
+            return Array.from(opinionItemsPerSlugId.values());
         },
     });
 
@@ -1302,40 +1437,34 @@ server.after(() => {
             body: Dto.deleteConversationRequest,
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await postService.deletePostBySlugId({
-                    db: db,
-                    conversationSlugId: request.body.conversationSlugId,
-                    userId: status.userId,
-                    proof: encodedUcan,
-                    didWrite: didWrite,
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isLoggedIn: true },
                 });
-                reply.send();
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+            await postService.deletePostBySlugId({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                proof: encodedUcan,
+                didWrite: didWrite,
+            });
+            reply.send();
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1351,54 +1480,52 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const postResponse = await postService.createNewPost({
-                    db: db,
-                    conversationTitle: request.body.conversationTitle,
-                    conversationBody: request.body.conversationBody ?? null,
-                    pollingOptionList: request.body.pollingOptionList ?? null,
-                    authorId: status.userId,
-                    didWrite: didWrite,
-                    proof: encodedUcan,
-                    axiosPolis: axiosPolis,
-                    indexConversationAt: request.body.indexConversationAt,
-                    postAsOrganization: request.body.postAsOrganization,
-                    isIndexed: request.body.isIndexed,
-                    isLoginRequired: request.body.isLoginRequired,
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
                 });
-                reply.send(postResponse);
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+
+            const postResponse = await postService.createNewPost({
+                db: db,
+                conversationTitle: request.body.conversationTitle,
+                conversationBody: request.body.conversationBody ?? null,
+                pollingOptionList: request.body.pollingOptionList ?? null,
+                authorId: deviceStatus.userId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                axiosPolis: axiosPolis,
+                indexConversationAt: request.body.indexConversationAt,
+                postAsOrganization: request.body.postAsOrganization,
+                isIndexed: request.body.isIndexed,
+                isLoginRequired: request.body.isLoginRequired,
+            });
+            reply.send(postResponse);
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
-                // await p2pService.broadcastProof({
-                //     proof: encodedUcan,
-                //     node: node,
-                //     topic: WAKU_TOPIC_CREATE_POST,
-                // });
             }
+            // await p2pService.broadcastProof({
+            //     proof: encodedUcan,
+            //     node: node,
+            //     topic: WAKU_TOPIC_CREATE_POST,
+            // });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -1419,26 +1546,25 @@ server.after(() => {
                 isAuthenticatedRequest = false;
             }
             if (isAuthenticatedRequest) {
-                const { didWrite } = await verifyUCAN(db, request, {
-                    expectedDeviceStatus: undefined,
+                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                    },
+                );
+
+                const postItem = await postService.fetchPostBySlugId({
+                    db: db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    personalizedUserId: deviceStatus.userId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 });
 
-                const status = await authUtilService.isLoggedIn(db, didWrite);
-                if (!status.isLoggedIn) {
-                    throw httpErrors.unauthorized("User is not logged in");
-                } else {
-                    const postItem = await postService.fetchPostBySlugId({
-                        db: db,
-                        conversationSlugId: request.body.conversationSlugId,
-                        personalizedUserId: status.userId,
-                        baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                    });
-
-                    const response: GetConversationResponse = {
-                        conversationData: postItem,
-                    };
-                    return response;
-                }
+                const response: GetConversationResponse = {
+                    conversationData: postItem,
+                };
+                return response;
             } else {
                 const postItem = await postService.fetchPostBySlugId({
                     db: db,
@@ -1462,9 +1588,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
+            const { didWrite } = await verifyUcan(request);
             return await generateVerificationLink({
                 db,
                 didWrite,
@@ -1482,9 +1606,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
+            const { didWrite } = await verifyUcan(request);
             const userAgent = request.headers["user-agent"] ?? "Unknown device";
             const verificationStatusAndNullifier =
                 await verifyUserStatusAndAuthenticate({
@@ -1506,40 +1628,35 @@ server.after(() => {
         url: `/api/${apiVersion}/user/delete`,
         schema: {},
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
-
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await deleteUserAccount({
-                    proof: encodedUcan,
-                    db: db,
-                    didWrite: didWrite,
-                    userId: status.userId,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
-                reply.send();
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
+
+            await deleteUserAccount({
+                proof: encodedUcan,
+                db: db,
+                didWrite: didWrite,
+                userId: deviceStatus.userId,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+            });
+            reply.send();
+            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+            if (proofChannel40EventId !== undefined) {
+                try {
+                    await nostrService.broadcastProof({
+                        proof: encodedUcan,
+                        secretKey: nostrSecretKey,
+                        publicKey: nostrPublicKey,
+                        proofChannel40EventId: proofChannel40EventId,
+                        relay: relay,
+                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                    });
+                } catch (e) {
+                    log.error(
+                        "Error while trying to broadcast proof to Nostr:",
+                    );
+                    log.error(e);
                 }
             }
         },
@@ -1552,20 +1669,19 @@ server.after(() => {
             body: Dto.updateUsernameRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
-            });
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
 
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await submitUsernameChange({
-                    db: db,
-                    username: request.body.username,
-                    userId: status.userId,
-                });
-            }
+            await submitUsernameChange({
+                db: db,
+                username: request.body.username,
+                userId: deviceStatus.userId,
+            });
         },
     });
 
@@ -1608,31 +1724,31 @@ server.after(() => {
             body: Dto.addUserOrganizationMappingRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await addUserOrganizationMapping({
-                    db: db,
-                    username: request.body.username,
-                    organizationName: request.body.organizationName,
-                });
-                return;
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await addUserOrganizationMapping({
+                db: db,
+                username: request.body.username,
+                organizationName: request.body.organizationName,
+            });
+            return;
         },
     });
 
@@ -1643,31 +1759,31 @@ server.after(() => {
             body: Dto.addUserOrganizationMappingRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await removeUserOrganizationMapping({
-                    db: db,
-                    username: request.body.username,
-                    organizationName: request.body.organizationName,
-                });
-                return;
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await removeUserOrganizationMapping({
+                db: db,
+                username: request.body.username,
+                organizationName: request.body.organizationName,
+            });
+            return;
         },
     });
 
@@ -1681,29 +1797,29 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                return await getOrganizationNamesByUsername({
-                    db: db,
-                    username: request.body.username,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            return await getOrganizationNamesByUsername({
+                db: db,
+                username: request.body.username,
+            });
         },
     });
 
@@ -1716,29 +1832,29 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                return await getAllOrganizations({
-                    db: db,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            return await getAllOrganizations({
+                db: db,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+            });
         },
     });
 
@@ -1749,33 +1865,33 @@ server.after(() => {
             body: Dto.createOrganizationRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await createOrganization({
-                    db: db,
-                    organizationName: request.body.organizationName,
-                    imagePath: request.body.imagePath,
-                    isFullImagePath: request.body.isFullImagePath,
-                    websiteUrl: request.body.websiteUrl,
-                    description: request.body.description,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await createOrganization({
+                db: db,
+                organizationName: request.body.organizationName,
+                imagePath: request.body.imagePath,
+                isFullImagePath: request.body.isFullImagePath,
+                websiteUrl: request.body.websiteUrl,
+                description: request.body.description,
+            });
         },
     });
 
@@ -1786,29 +1902,29 @@ server.after(() => {
             body: Dto.deleteOrganizationRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                await deleteOrganization({
-                    db: db,
-                    organizationName: request.body.organizationName,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            await deleteOrganization({
+                db: db,
+                organizationName: request.body.organizationName,
+            });
         },
     });
 
@@ -1819,22 +1935,24 @@ server.after(() => {
             body: Dto.createConversationReportRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            await createUserReportByPostSlugId({
+                db: db,
+                postSlugId: request.body.conversationSlugId,
+                userReportReason: request.body.reportReason,
+                userReportExplanation: request.body.reportExplanation,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await createUserReportByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                    userReportReason: request.body.reportReason,
-                    userReportExplanation: request.body.reportExplanation,
-                    userId: status.userId,
-                });
-                return;
-            }
+            return;
         },
     });
 
@@ -1845,22 +1963,24 @@ server.after(() => {
             body: Dto.createOpinionReportRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            await createUserReportByCommentSlugId({
+                db: db,
+                commentSlugId: request.body.opinionSlugId,
+                userReportReason: request.body.reportReason,
+                userReportExplanation: request.body.reportExplanation,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await createUserReportByCommentSlugId({
-                    db: db,
-                    commentSlugId: request.body.opinionSlugId,
-                    userReportReason: request.body.reportReason,
-                    userReportExplanation: request.body.reportExplanation,
-                    userId: status.userId,
-                });
-                return;
-            }
+            return;
         },
     });
 
@@ -1874,29 +1994,29 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                return await fetchUserReportsByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            return await fetchUserReportsByPostSlugId({
+                db: db,
+                postSlugId: request.body.conversationSlugId,
+            });
         },
     });
 
@@ -1910,29 +2030,29 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                const isModerator = await isModeratorAccount({
-                    db: db,
-                    userId: status.userId,
-                });
 
-                if (!isModerator) {
-                    throw server.httpErrors.unauthorized(
-                        "User is not a moderator",
-                    );
-                }
-
-                return await fetchUserReportsByCommentSlugId({
-                    db: db,
-                    commentSlugId: request.body.opinionSlugId,
-                });
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
             }
+
+            return await fetchUserReportsByCommentSlugId({
+                db: db,
+                commentSlugId: request.body.opinionSlugId,
+            });
         },
     });
 
@@ -1945,18 +2065,20 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            return await getUserMutePreferences({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                return await getUserMutePreferences({
-                    db: db,
-                    userId: status.userId,
-                });
-            }
         },
     });
 
@@ -1967,20 +2089,22 @@ server.after(() => {
             body: Dto.muteUserByUsernameRequest,
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isRegistered: true,
+                        isLoggedIn: true,
+                    },
+                },
+            );
+            await muteUserByUsername({
+                db: db,
+                muteAction: request.body.action,
+                sourceUserId: deviceStatus.userId,
+                targetUsername: request.body.targetUsername,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await muteUserByUsername({
-                    db: db,
-                    muteAction: request.body.action,
-                    sourceUserId: status.userId,
-                    targetUsername: request.body.targetUsername,
-                });
-            }
         },
     });
 
@@ -1994,19 +2118,18 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await getNotifications({
+                db: db,
+                userId: deviceStatus.userId,
+                lastSlugId: request.body.lastSlugId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                return await getNotifications({
-                    db: db,
-                    userId: status.userId,
-                    lastSlugId: request.body.lastSlugId,
-                });
-            }
         },
     });
 
@@ -2015,18 +2138,17 @@ server.after(() => {
         url: `/api/${apiVersion}/notification/mark-all-read`,
         schema: {},
         handler: async (request) => {
-            const { didWrite } = await verifyUCAN(db, request, {
-                expectedDeviceStatus: undefined,
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            await markAllNotificationsAsRead({
+                db: db,
+                userId: deviceStatus.userId,
             });
-            const status = await authUtilService.isLoggedIn(db, didWrite);
-            if (!status.isLoggedIn) {
-                throw server.httpErrors.unauthorized("Device is not logged in");
-            } else {
-                await markAllNotificationsAsRead({
-                    db: db,
-                    userId: status.userId,
-                });
-            }
         },
     });
 });

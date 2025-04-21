@@ -18,6 +18,7 @@
     <div class="userNameTimeContainer">
       <div>
         <UserMetadata
+          :show-is-guest="false"
           :author-verified="authorVerified"
           :user-identity="userIdentity"
           :show-verified-text="showVerifiedText"

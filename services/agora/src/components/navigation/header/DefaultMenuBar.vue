@@ -11,7 +11,7 @@
               <div>
                 <UserAvatar
                   v-if="
-                    isAuthenticated &&
+                    isGuestOrLoggedIn &&
                     !isCapacitor &&
                     drawerBehavior == 'mobile'
                   "
@@ -24,7 +24,9 @@
 
               <ZKButton
                 v-if="
-                  !isAuthenticated && !isCapacitor && drawerBehavior == 'mobile'
+                  !isGuestOrLoggedIn &&
+                  !isCapacitor &&
+                  drawerBehavior == 'mobile'
                 "
                 button-type="standardButton"
                 icon="mdi-menu"
@@ -50,7 +52,7 @@
           >
             <div>
               <RouterLink
-                v-if="hasLoginButton && !isAuthenticated && showAuthButton"
+                v-if="hasLoginButton && !isLoggedIn && showAuthButton"
                 :to="{ name: '/welcome/' }"
               >
                 <ZKButton
@@ -91,7 +93,7 @@ const { profileData } = storeToRefs(useUserStore());
 
 const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
 
-const { isAuthenticated } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn, isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const showAuthButton = ref(false);
 

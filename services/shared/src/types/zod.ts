@@ -744,28 +744,34 @@ export const zodGenLabelSummaryOutputLoose = z.object({
     clusters: zodGenLabelSummaryOutputClusterLoose,
 });
 
-export const zodGetDeviceStatusResponse = z.discriminatedUnion("isRegistered", [
-    z.object({
-        isRegistered: z.literal(false),
-    }),
-    z.object({
-        isRegistered: z.literal(true),
+const zodIsKnownTrueLoginStatus = z
+    .object({
+        isKnown: z.literal(true),
+        isRegistered: z.boolean(),
         isLoggedIn: z.boolean(),
-        isVerified: z.boolean(),
-        userId: z.string(),
-    }),
+    })
+    .strict();
+
+const zodIsKnownTrueLoginStatusExtended = zodIsKnownTrueLoginStatus.extend({
+    userId: z.string(),
+});
+
+const zodIsKnownFalseLoginStatus = z.object({
+    isKnown: z.literal(false),
+    isRegistered: z.literal(false),
+    isLoggedIn: z.literal(false),
+});
+
+export const zodGetDeviceStatusResponse = z.discriminatedUnion("isKnown", [
+    zodIsKnownFalseLoginStatus,
+    zodIsKnownTrueLoginStatusExtended,
 ]);
 
-export const zodDeviceLoginStatus = z.enum([
-    "logged_in",
-    "unknown",
-    "unverified",
-    "logged_out",
+export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
+    zodIsKnownFalseLoginStatus,
+    zodIsKnownTrueLoginStatus,
 ]);
 
-export type GetDeviceStatusResponse = z.infer<
-    typeof zodGetDeviceStatusResponse
->;
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
@@ -832,3 +838,12 @@ export type GenLabelSummaryOutputClusterLoose = z.infer<
 >;
 export type OrganizationProperties = z.infer<typeof zodOrganization>;
 export type DeviceLoginStatus = z.infer<typeof zodDeviceLoginStatus>;
+export type DeviceLoginStatusExtended = z.infer<
+    typeof zodGetDeviceStatusResponse
+>;
+export type DeviceIsKnownTrueLoginStatus = z.infer<
+    typeof zodIsKnownTrueLoginStatus
+>;
+export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
+    typeof zodIsKnownTrueLoginStatusExtended
+>;
