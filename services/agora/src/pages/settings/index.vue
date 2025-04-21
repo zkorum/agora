@@ -49,6 +49,7 @@ import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
+import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
@@ -61,8 +62,8 @@ const { profileData } = storeToRefs(useUserStore());
 
 const { showDeleteAccountDialog } = useDialog();
 
-const { logoutFromServer, logoutDataCleanup, showLogoutMessageAndRedirect } =
-  useBackendAuthApi();
+const { deleteUserAccount } = useBackendAccountApi();
+const { updateAuthState, logoutFromServer } = useBackendAuthApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
@@ -73,8 +74,8 @@ const deleteAccountLabel = computed(() =>
 async function logoutRequested() {
   try {
     await logoutFromServer();
-    await logoutDataCleanup({ doDeleteKeypair: true });
-    await showLogoutMessageAndRedirect();
+    await updateAuthState({ partialLoginStatus: { isLoggedIn: false } });
+    showNotifyMessage("Logged out");
   } catch (e) {
     console.error("Unexpected error when logging out", e);
     showNotifyMessage("Oops! Logout failed. Please try again");
@@ -144,7 +145,16 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(() => logoutDataCleanup({ doDeleteKeypair: true }));
+  showDeleteAccountDialog(async () => {
+    try {
+      await deleteUserAccount();
+      await updateAuthState({ partialLoginStatus: { isKnown: false } });
+      showNotifyMessage("Account deleted");
+    } catch (e) {
+      console.error("Failed to delete user account", e);
+      showNotifyMessage("Oops! Account deletion failed. Please try again");
+    }
+  });
 }
 </script>
 

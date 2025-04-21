@@ -172,7 +172,7 @@ function initializeMenu() {
 }
 
 async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
-  if (requireAuth && !isGuestOrLoggedIn) {
+  if (requireAuth && isGuestOrLoggedIn.value === false) {
     showLoginDialog.value = true;
   } else {
     if (drawerBehavior.value == "mobile") {

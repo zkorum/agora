@@ -54,25 +54,15 @@ export function useBackendAccountApi() {
     }
   }
 
-  async function deleteUserAccount(): Promise<boolean> {
-    try {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserDeletePost();
-      const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(undefined, undefined, api).apiV1UserDeletePost({
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
-      showNotifyMessage("Account deleted");
-      return true;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage(
-        "Failed to delete user account. Please contact support for further assistance."
-      );
-      return false;
-    }
+  async function deleteUserAccount(): Promise<void> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1UserDeletePost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+    await DefaultApiFactory(undefined, undefined, api).apiV1UserDeletePost({
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
   }
 
   async function isUsernameInUse(username: string): Promise<boolean | null> {

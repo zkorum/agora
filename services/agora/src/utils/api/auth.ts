@@ -22,7 +22,6 @@ import { RouteMap, useRoute, useRouter } from "vue-router";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
-import { useNotify } from "../ui/notify";
 import { useCommonApi, type KeyAction } from "./common";
 
 interface SendSmsCodeProps {
@@ -50,7 +49,6 @@ export function useBackendAuthApi() {
 
   const $q = useQuasar();
 
-  const { showNotifyMessage } = useNotify();
   const router = useRouter();
   const route = useRoute();
 
@@ -166,11 +164,11 @@ export function useBackendAuthApi() {
         newLoginStatus.isKnown == false
       ) {
         console.log("Cleaning data from detecting change to unknown device");
-        await logoutDataCleanup({ doDeleteKeypair: false });
+        await logoutDataCleanup();
         setTimeout(async function () {
           const needRedirect = needRedirectUnauthenticatedUser();
           if (needRedirect) {
-            await showLogoutMessageAndRedirect();
+            await redirectToWelcomePage();
           } else {
             await loadPostData(false);
           }
@@ -186,11 +184,11 @@ export function useBackendAuthApi() {
           await loadAuthenticatedModules();
         } else {
           console.log("Cleaning data from logging out");
-          await logoutDataCleanup({ doDeleteKeypair: true });
+          await logoutDataCleanup();
           setTimeout(async function () {
             const needRedirect = needRedirectUnauthenticatedUser();
             if (needRedirect) {
-              await showLogoutMessageAndRedirect();
+              await redirectToWelcomePage();
             } else {
               await loadPostData(false);
             }
@@ -211,8 +209,7 @@ export function useBackendAuthApi() {
     });
   }
 
-  async function showLogoutMessageAndRedirect() {
-    showNotifyMessage("Logged out");
+  async function redirectToWelcomePage() {
     await router.push({ name: "/welcome/" });
   }
 
@@ -246,16 +243,10 @@ export function useBackendAuthApi() {
     }
   }
 
-  async function logoutDataCleanup({
-    doDeleteKeypair,
-  }: {
-    doDeleteKeypair: boolean;
-  }) {
+  async function logoutDataCleanup() {
     const platform: "mobile" | "web" = getPlatform($q.platform);
 
-    if (doDeleteKeypair) {
-      await deleteDid(platform);
-    }
+    await deleteDid(platform);
     clearConversationDrafts();
     clearOpinionDrafts();
 
@@ -273,6 +264,5 @@ export function useBackendAuthApi() {
     updateAuthState,
     initializeAuthState,
     logoutDataCleanup,
-    showLogoutMessageAndRedirect,
   };
 }

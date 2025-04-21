@@ -71,7 +71,7 @@ async function accessHomeFeed() {
 }
 
 async function accessNotifications() {
-  if (!isGuestOrLoggedIn) {
+  if (isGuestOrLoggedIn.value === false) {
     showLoginDialog.value = true;
   } else {
     await router.push({ name: "/notification/" });

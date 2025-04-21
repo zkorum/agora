@@ -1,10 +1,10 @@
 import { useQuasar } from "quasar";
-import { useBackendAccountApi } from "../api/account";
+import { useNotify } from "./notify";
 
 export const useDialog = () => {
   const quasar = useQuasar();
+  const { showNotifyMessage } = useNotify();
 
-  const { deleteUserAccount } = useBackendAccountApi();
   function showReportDialog(itemName: "post" | "comment") {
     quasar.dialog({
       title: "Thank you for the report",
@@ -44,12 +44,11 @@ export const useDialog = () => {
       })
       .onOk(async (data) => {
         if (data == "DELETE") {
-          const isDeleted = await deleteUserAccount();
-          if (isDeleted) {
-            callbackSuccess();
-          }
+          callbackSuccess();
         } else {
-          console.log("cancel");
+          showNotifyMessage(
+            "Account deletion request failed. Try again later."
+          );
         }
       })
       .onCancel(() => {

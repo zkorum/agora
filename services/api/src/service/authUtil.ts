@@ -93,30 +93,31 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     polisUserPassword,
     now,
 }: GetOrRegisterUserIdFromDeviceStatusProps): Promise<string> {
-    let userId: string;
     const deviceStatus = await getDeviceStatus(db, didWrite);
-    if (conversationIsIndexed || conversationIsLoginRequired) {
-        if (!deviceStatus.isKnown) {
-            throw httpErrors.unauthorized("Device is unknown");
-        } else if (!deviceStatus.isRegistered) {
-            throw httpErrors.unauthorized(
-                "Device is not registered with a verified user",
-            );
-        } else if (!deviceStatus.isLoggedIn) {
-            throw httpErrors.unauthorized("Device is not logged in");
+    return await db.transaction(async (tx) => {
+        if (conversationIsIndexed || conversationIsLoginRequired) {
+            if (!deviceStatus.isKnown) {
+                throw httpErrors.unauthorized("Device is unknown");
+            } else if (!deviceStatus.isRegistered) {
+                throw httpErrors.unauthorized(
+                    "Device is not registered with a verified user",
+                );
+            } else if (!deviceStatus.isLoggedIn) {
+                throw httpErrors.unauthorized("Device is not logged in");
+            }
+            return deviceStatus.userId;
         }
-        userId = deviceStatus.userId;
-    } else if (deviceStatus.isKnown) {
-        if (deviceStatus.isRegistered && !deviceStatus.isLoggedIn) {
-            throw httpErrors.unauthorized(
-                "Registered device must be logged-in to add or delete content to their account",
-            );
+        if (deviceStatus.isKnown) {
+            if (deviceStatus.isRegistered && !deviceStatus.isLoggedIn) {
+                throw httpErrors.unauthorized(
+                    "Registered device must be logged-in to add or delete content to their account",
+                );
+            }
+            return deviceStatus.userId;
         }
-        userId = deviceStatus.userId;
-    } else {
-        // save device and associate it with a brand new unverified user
-        userId = await authService.createGuestUser({
-            db,
+        // save device and associate it with a brand new unverified user -- unless the device is already known
+        const { userId } = await authService.createGuestUser({
+            db: tx,
             didWrite,
             now,
             userAgent,
@@ -125,8 +126,8 @@ export async function getOrRegisterUserIdFromDeviceStatus({
             polisUserEmailLocalPart,
             polisUserPassword,
         });
-    }
-    return userId;
+        return userId;
+    });
 }
 
 interface IsUserPartOfOrganizationProps {
@@ -177,15 +178,17 @@ export async function getDeviceStatus(
             phoneTableId: phoneTable.id,
             zkPassportTableId: zkPassportTable.id,
             userId: deviceTable.userId,
+            isDeleted: userTable.isDeleted,
         })
         .from(deviceTable)
+        .innerJoin(userTable, eq(deviceTable.userId, userTable.id))
         .leftJoin(
             zkPassportTable,
             eq(zkPassportTable.userId, deviceTable.userId),
         )
         .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
-    if (resultDevice.length === 0) {
+    if (resultDevice.length === 0 || resultDevice[0].isDeleted) {
         return { isKnown: false, isLoggedIn: false, isRegistered: false };
     } else {
         const sessionExpiry = resultDevice[0].sessionExpiry;
