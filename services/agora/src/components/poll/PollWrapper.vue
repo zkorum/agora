@@ -1,8 +1,8 @@
 <template>
-  <div @click.stop.prevent="">
+  <div>
     <div v-if="dataLoaded" class="pollContainer">
       <div class="pollOptionList">
-        <option-view
+        <poll-option
           v-for="optionItem in localPollOptionList"
           :key="optionItem.index"
           :option="optionItem.option"
@@ -18,7 +18,7 @@
               ? 0
               : Math.round((optionItem.numResponses * 100) / totalVoteCount)
           "
-          @click.stop.prevent="clickedOptionView(optionItem.index)"
+          @click="clickedVotingOption(optionItem.index, $event)"
         />
       </div>
 
@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import OptionView from "components/poll/OptionView.vue";
+import PollOption from "src/components/poll/PollOption.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { usePostStore, type DummyPollOptionFormat } from "src/stores/post";
 import { onBeforeMount, ref, watch } from "vue";
@@ -188,8 +188,10 @@ function showVoteInterface() {
   currentDisplayMode.value = DisplayModes.Vote;
 }
 
-async function clickedOptionView(selectedIndex: number) {
+async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
   if (currentDisplayMode.value == DisplayModes.Vote) {
+    event.stopPropagation();
+
     if (isAuthenticated.value) {
       const response = await backendPollApi.submitPollResponse(
         selectedIndex,
