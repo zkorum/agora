@@ -702,6 +702,7 @@ export const zodSupportedCountryCallingCode = z.enum([
     "689",
     "687",
     "64",
+    "971",
 ]);
 
 const zodGenLabelSummaryOutputClusterValue = z.object({
