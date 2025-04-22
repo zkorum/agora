@@ -605,13 +605,15 @@
           "name": "is_indexed",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": true
         },
         "is_login_required": {
           "name": "is_login_required",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": true
         },
         "created_at": {
           "name": "created_at",
