@@ -1040,8 +1040,8 @@ export const conversationTable = pgTable(
             mode: "date",
             precision: 0,
         }),
-        isIndexed: boolean("is_indexed").notNull(), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
-        isLoginRequired: boolean("is_login_required").notNull(), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
+        isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
