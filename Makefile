@@ -2,10 +2,10 @@ all: dev
 
 generate:
 	docker run --rm \
-  -v ${PWD}:/local openapitools/openapi-generator-cli:latest-release generate \
-  -i /local/services/api/openapi-zkorum.json \
-  -g typescript-axios \
-  -o /local/services/agora/src/api
+		-v ${PWD}:/local openapitools/openapi-generator-cli:v7.12.0 generate \
+		-i /local/services/api/openapi-zkorum.json \
+		-g typescript-axios \
+		-o /local/services/agora/src/api
 
 sync:
 	cd services/shared && pnpm run sync
