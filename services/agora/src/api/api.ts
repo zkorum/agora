@@ -322,7 +322,8 @@ export const ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = {
     _5999: '5999',
     _689: '689',
     _687: '687',
-    _64: '64'
+    _64: '64',
+    _971: '971'
 } as const;
 
 export type ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = typeof ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum];
@@ -570,7 +571,8 @@ export const ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = {
     _5999: '5999',
     _689: '689',
     _687: '687',
-    _64: '64'
+    _64: '64',
+    _971: '971'
 } as const;
 
 export type ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum];
