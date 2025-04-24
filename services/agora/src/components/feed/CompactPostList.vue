@@ -1,5 +1,5 @@
 <template>
-  <div ref="postContainerRef">
+  <div>
     <q-pull-to-refresh @refresh="pullDownTriggered">
       <q-infinite-scroll
         v-if="isAuthInitialized"
@@ -101,9 +101,9 @@
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
 import { usePostStore } from "src/stores/post";
-import { onMounted, ref, useTemplateRef, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useWindowFocus } from "@vueuse/core";
+import { useWindowFocus, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
@@ -123,9 +123,9 @@ const windowFocused = useWindowFocus();
 
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
-const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
-
 const canLoadMore = ref(true);
+
+const { y: windowY } = useWindowScroll();
 
 onMounted(async () => {
   await newPostCheck();
@@ -169,9 +169,7 @@ async function openPost(postSlugId: string) {
 }
 
 async function refreshPage(done: () => void) {
-  if (postContainerRef.value) {
-    postContainerRef.value.scrollTop = 0;
-  }
+  windowY.value = 0;
 
   canLoadMore.value = await loadPostData(false);
 
