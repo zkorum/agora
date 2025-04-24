@@ -1,5 +1,5 @@
 <template>
-  <div ref="postContainerRef">
+  <div>
     <q-pull-to-refresh @refresh="pullDownTriggered">
       <q-infinite-scroll
         v-if="isAuthInitialized"
@@ -78,17 +78,22 @@
 
     <q-page-sticky
       v-if="hasPendingNewPosts"
-      position="bottom"
-      :offset="[0, 30]"
+      position="top"
+      :offset="[0, 20]"
       @click="refreshPage(() => {})"
     >
-      <q-btn
-        fab
-        label="Refresh"
-        icon="mdi-arrow-up"
-        color="accent"
+      <ZKButton
+        :button-type="'standardButton'"
+        rounded
+        color="primary"
+        no-caps
         unelevated
-      />
+      >
+        <div class="newConversationIcon">
+          <q-icon name="mdi-arrow-up" />
+          <div>New conversations</div>
+        </div>
+      </ZKButton>
     </q-page-sticky>
   </div>
 </template>
@@ -96,11 +101,12 @@
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
 import { usePostStore } from "src/stores/post";
-import { onMounted, ref, useTemplateRef, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useDocumentVisibility } from "@vueuse/core";
+import { useWindowFocus, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
+import ZKButton from "../ui-library/ZKButton.vue";
 
 const {
   masterPostDataList,
@@ -113,19 +119,20 @@ const { loadPostData, hasNewPosts } = usePostStore();
 
 const router = useRouter();
 
-const pageIsVisible = useDocumentVisibility();
+const windowFocused = useWindowFocus();
+
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
-const postContainerRef = useTemplateRef<HTMLElement>("postContainerRef");
-
 const canLoadMore = ref(true);
+
+const { y: windowY } = useWindowScroll();
 
 onMounted(async () => {
   await newPostCheck();
 });
 
-watch(pageIsVisible, async () => {
-  if (pageIsVisible.value == "visible") {
+watch(windowFocused, async () => {
+  if (windowFocused.value) {
     await newPostCheck();
   }
 });
@@ -147,11 +154,7 @@ async function pullDownTriggered(done: () => void) {
 }
 
 async function newPostCheck() {
-  if (
-    hasPendingNewPosts.value == false &&
-    dataReady.value &&
-    pageIsVisible.value == "visible"
-  ) {
+  if (hasPendingNewPosts.value == false && dataReady.value) {
     hasPendingNewPosts.value = await hasNewPosts();
   }
 }
@@ -166,9 +169,7 @@ async function openPost(postSlugId: string) {
 }
 
 async function refreshPage(done: () => void) {
-  if (postContainerRef.value) {
-    postContainerRef.value.scrollTop = 0;
-  }
+  windowY.value = 0;
 
   canLoadMore.value = await loadPostData(false);
 
@@ -205,5 +206,11 @@ async function refreshPage(done: () => void) {
   position: relative;
   width: min(100%, 35rem);
   margin: auto;
+}
+
+.newConversationIcon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>
