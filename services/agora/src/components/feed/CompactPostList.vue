@@ -84,9 +84,10 @@
     >
       <q-btn
         fab
-        label="Refresh"
+        label="New conversations"
         icon="mdi-arrow-up"
-        color="accent"
+        color="primary"
+        no-caps
         unelevated
       />
     </q-page-sticky>
