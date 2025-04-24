@@ -3,12 +3,16 @@
     <div
       class="commonBase commonBefore"
       :class="{
-        'gradient-border-result-notvoted':
-          displayMode == 'result' && !votedByUser,
-        'gradient-border-result-voted': displayMode == 'result' && votedByUser,
+        'gradient-border-result': displayMode == 'result',
         'gradient-border-option': displayMode == 'option',
       }"
     >
+      <div
+        v-if="displayMode == 'result'"
+        class="progress-bar"
+        :style="{ width: optionPercentage + '%' }"
+      ></div>
+
       <div
         class="pollOverlayBase"
         :class="{
@@ -79,7 +83,7 @@ defineProps<{
   border-image-slice: 1;
 }
 
-.gradient-border-result-notvoted {
+.gradient-border-result {
   color: black;
   background:
     linear-gradient(to right, white, white),
@@ -90,23 +94,8 @@ defineProps<{
   overflow: hidden;
 }
 
-.gradient-border-result-notvoted::before {
+.gradient-border-result::before {
   background: linear-gradient(135deg, #f1eeff, #e8f1ff);
-}
-
-.gradient-border-result-voted {
-  color: white;
-  background:
-    linear-gradient(to right, white, white),
-    linear-gradient(to right, #dbd4ff, #dbd4ff);
-  background-clip: padding-box, border-box;
-  background-origin: padding-box, border-box;
-  position: relative;
-  overflow: hidden;
-}
-
-.gradient-border-result-voted::before {
-  background: linear-gradient(135deg, #6b4eff, #4f92f6);
 }
 
 .gradient-border-option {
@@ -127,5 +116,12 @@ defineProps<{
 
 .gradient-border-option::before {
   background: linear-gradient(135deg, #f1eeff, #e8f1ff);
+}
+
+.progress-bar {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(135deg, #a694ff, #a6caff);
+  border-radius: 8px;
 }
 </style>
