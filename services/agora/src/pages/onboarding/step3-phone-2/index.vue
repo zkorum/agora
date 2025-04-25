@@ -10,6 +10,7 @@
           :total-steps="5"
           :enable-next-button="verificationCode.length == 6"
           :show-next-button="true"
+          :show-loading-button="false"
         >
           <template #header>
             <InfoHeader
@@ -84,7 +85,6 @@ import { onMounted, ref } from "vue";
 import InputOtp from "primevue/inputotp";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
-import { useBackendPhoneVerification } from "src/utils/api/phoneVerification";
 import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import type { KeyAction } from "src/utils/api/common";
@@ -112,7 +112,7 @@ const router = useRouter();
 
 const { updateAuthState } = useBackendAuthApi();
 
-const { requestCode, submitCode } = useBackendPhoneVerification();
+const { sendSmsCode, verifyPhoneOtp } = useBackendAuthApi();
 
 const { onboardingMode } = onboardingFlowStore();
 
@@ -134,13 +134,13 @@ async function clickedResendButton() {
 }
 
 async function nextButtonClicked() {
-  try {
-    const response = await submitCode({
-      code: Number(verificationCode.value),
-      phoneNumber: verificationPhoneNumber.value.phoneNumber,
-      defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
-    });
-    if (response.success) {
+  const response = await verifyPhoneOtp({
+    code: Number(verificationCode.value),
+    phoneNumber: verificationPhoneNumber.value.phoneNumber,
+    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+  });
+  if (response.status == "success") {
+    if (response.data.success) {
       showNotifyMessage("Verification successful 🎉");
       await updateAuthState({
         partialLoginStatus: { isLoggedIn: true },
@@ -152,7 +152,7 @@ async function nextButtonClicked() {
         await router.push({ name: "/onboarding/step4-username/" });
       }
     } else {
-      switch (response.reason) {
+      switch (response.data.reason) {
         case "expired_code":
           codeExpired();
           showNotifyMessage("Code expired—resend a new code");
@@ -183,8 +183,8 @@ async function nextButtonClicked() {
         }
       }
     }
-  } catch (e) {
-    console.error("Error while verifying code", e);
+  } else {
+    console.error("Error while verifying code", response.message);
     showNotifyMessage("Oops! Something is wrong");
   }
 }
@@ -193,17 +193,17 @@ async function requestCodeClicked(
   isRequestingNewCode: boolean,
   keyAction?: KeyAction
 ) {
-  try {
-    const response = await requestCode({
-      isRequestingNewCode: isRequestingNewCode,
-      phoneNumber: verificationPhoneNumber.value.phoneNumber,
-      defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
-      keyAction: keyAction,
-    });
-    if (response.success) {
-      processRequestCodeResponse(response);
+  const response = await sendSmsCode({
+    isRequestingNewCode: isRequestingNewCode,
+    phoneNumber: verificationPhoneNumber.value.phoneNumber,
+    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+    keyAction: keyAction,
+  });
+  if (response.status == "success") {
+    if (response.data.success) {
+      processRequestCodeResponse(response.data);
     } else {
-      switch (response.reason) {
+      switch (response.data.reason) {
         case "already_logged_in":
           showNotifyMessage("Verification successful 🎉");
           await updateAuthState({
@@ -221,27 +221,27 @@ async function requestCodeClicked(
           await requestCodeClicked(isRequestingNewCode, "overwrite");
           break;
         case "throttled":
-          processRequestCodeResponse(response);
+          processRequestCodeResponse(response.data);
           showNotifyMessage(
             "Too many attempts—please wait before requesting a new code"
           );
           break;
         case "invalid_phone_number":
-          processRequestCodeResponse(response);
+          processRequestCodeResponse(response.data);
           showNotifyMessage(
             "Sorry, this phone number is invalid. Please check and try again."
           );
           break;
         case "restricted_phone_type":
-          processRequestCodeResponse(response);
+          processRequestCodeResponse(response.data);
           showNotifyMessage(
             "Sorry, this phone number is not supported for security reasons. Please try another."
           );
           break;
       }
     }
-  } catch (e) {
-    console.error("Error while requesting a code", e);
+  } else {
+    console.error("Error while requesting a code", response.message);
     showNotifyMessage("Oops! Something is wrong");
   }
 }

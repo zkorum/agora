@@ -14,7 +14,7 @@
           :color="enableNextButton ? 'primary' : 'button-background-color'"
           :text-color="enableNextButton ? 'white' : 'color-text-strong'"
           :disable="!enableNextButton"
-          :loading="!enableNextButton"
+          :loading="showLoadingButton"
           type="submit"
           @click="submitCallBack"
         />
@@ -33,6 +33,7 @@ defineProps<{
   totalSteps: number;
   enableNextButton: boolean;
   showNextButton: boolean;
+  showLoadingButton: boolean;
 }>();
 </script>
 

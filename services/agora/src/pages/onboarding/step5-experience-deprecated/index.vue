@@ -14,6 +14,7 @@
       :total-steps="6"
       :enable-next-button="true"
       :show-next-button="false"
+      :show-loading-button="false"
     >
       <template #header>
         <InfoHeader

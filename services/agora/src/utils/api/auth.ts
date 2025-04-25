@@ -22,7 +22,12 @@ import { RouteMap, useRoute, useRouter } from "vue-router";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
-import { useCommonApi, type KeyAction } from "./common";
+import {
+  AxiosErrorResponse,
+  AxiosSuccessResponse,
+  useCommonApi,
+  type KeyAction,
+} from "./common";
 
 interface SendSmsCodeProps {
   phoneNumber: string;
@@ -38,7 +43,11 @@ interface VerifyPhoneOtpProps {
 }
 
 export function useBackendAuthApi() {
-  const { buildEncodedUcan } = useCommonApi();
+  const {
+    buildEncodedUcan,
+    createAxiosErrorResponse,
+    createRawAxiosRequestConfig,
+  } = useCommonApi();
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
   const { loadPostData } = usePostStore();
@@ -52,55 +61,83 @@ export function useBackendAuthApi() {
   const router = useRouter();
   const route = useRoute();
 
+  type SendSmsCodeSuccessResponse =
+    AxiosSuccessResponse<ApiV1AuthAuthenticatePost200Response>;
+
+  type SendSmsCodeResponse = SendSmsCodeSuccessResponse | AxiosErrorResponse;
+
   async function sendSmsCode({
     phoneNumber,
     defaultCallingCode,
     isRequestingNewCode,
     keyAction,
-  }: SendSmsCodeProps): Promise<ApiV1AuthAuthenticatePost200Response> {
-    const params: ApiV1AuthAuthenticatePostRequest = {
-      phoneNumber: phoneNumber,
-      defaultCallingCode: defaultCallingCode,
-      isRequestingNewCode: isRequestingNewCode,
-    };
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthAuthenticatePost(params);
-    const encodedUcan = await buildEncodedUcan(url, options, keyAction);
-    const otpDetails = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1AuthAuthenticatePost(params, {
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
-    return otpDetails.data;
+  }: SendSmsCodeProps): Promise<SendSmsCodeResponse> {
+    try {
+      const params: ApiV1AuthAuthenticatePostRequest = {
+        phoneNumber: phoneNumber,
+        defaultCallingCode: defaultCallingCode,
+        isRequestingNewCode: isRequestingNewCode,
+      };
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AuthAuthenticatePost(params);
+      const encodedUcan = await buildEncodedUcan(url, options, keyAction);
+      const otpDetails = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AuthAuthenticatePost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+      return {
+        status: "success",
+        data: otpDetails.data,
+      };
+    } catch (error) {
+      return createAxiosErrorResponse(error);
+    }
   }
+
+  type VerifyPhoneOtpSuccessResponse =
+    AxiosSuccessResponse<ApiV1AuthPhoneVerifyOtpPost200Response>;
+
+  type VerifyPhoneOtpResponse =
+    | VerifyPhoneOtpSuccessResponse
+    | AxiosErrorResponse;
 
   async function verifyPhoneOtp({
     code,
     phoneNumber,
     defaultCallingCode,
-  }: VerifyPhoneOtpProps): Promise<ApiV1AuthPhoneVerifyOtpPost200Response> {
-    const params: ApiV1AuthPhoneVerifyOtpPostRequest = {
-      code: code,
-      phoneNumber: phoneNumber,
-      defaultCallingCode: defaultCallingCode,
-    };
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthPhoneVerifyOtpPost(params);
-    const encodedUcan = await buildEncodedUcan(url, options);
-    const response = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1AuthPhoneVerifyOtpPost(params, {
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
-    return response.data;
+  }: VerifyPhoneOtpProps): Promise<VerifyPhoneOtpResponse> {
+    if (process.env.VITE_DEV_AUTHORIZED_PHONES) {
+      code = 0;
+    }
+
+    try {
+      const params: ApiV1AuthPhoneVerifyOtpPostRequest = {
+        code: code,
+        phoneNumber: phoneNumber,
+        defaultCallingCode: defaultCallingCode,
+      };
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1AuthPhoneVerifyOtpPost(params);
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1AuthPhoneVerifyOtpPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+      return {
+        status: "success",
+        data: response.data,
+      };
+    } catch (error) {
+      return createAxiosErrorResponse(error);
+    }
   }
 
   async function getDeviceLoginStatus(): Promise<DeviceLoginStatus> {

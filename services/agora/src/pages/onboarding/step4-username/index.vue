@@ -7,7 +7,8 @@
         :submit-call-back="goToNextRoute"
         :current-step="4"
         :total-steps="5"
-        :enable-next-button="isValidUsername && !isSubmitButtonLoading"
+        :enable-next-button="isValidUsername"
+        :show-loading-button="isSubmitButtonLoading"
         :show-next-button="true"
       >
         <template #header>
