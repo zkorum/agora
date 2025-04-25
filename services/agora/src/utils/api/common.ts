@@ -8,6 +8,7 @@ import {
   getDid,
 } from "../crypto/ucan/operation";
 import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
+import { useNotify } from "../ui/notify";
 
 export type KeyAction = "overwrite" | "get" | "create";
 
@@ -16,30 +17,50 @@ export interface AxiosSuccessResponse<T> {
   status: "success";
 }
 
+export type AxiosErrorCodes =
+  | "ERR_FR_TOO_MANY_REDIRECTS"
+  | "ERR_BAD_OPTION_VALUE"
+  | "ERR_BAD_OPTION"
+  | "ERR_NETWORK"
+  | "ERR_DEPRECATED"
+  | "ERR_BAD_RESPONSE"
+  | "ERR_BAD_REQUEST"
+  | "ERR_CANCELED"
+  | "ECONNABORTED"
+  | "ETIMEDOUT";
+
 export interface AxiosErrorResponse {
   status: "error";
   message: string;
   name: string;
-  code:
-    | "ERR_FR_TOO_MANY_REDIRECTS"
-    | "ERR_BAD_OPTION_VALUE"
-    | "ERR_BAD_OPTION"
-    | "ERR_NETWORK"
-    | "ERR_DEPRECATED"
-    | "ERR_BAD_RESPONSE"
-    | "ERR_BAD_REQUEST"
-    | "ERR_CANCELED"
-    | "ECONNABORTED"
-    | "ETIMEDOUT";
+  code: AxiosErrorCodes;
 }
 
 export function useCommonApi() {
   const $q = useQuasar();
 
+  const { showNotifyMessage } = useNotify();
+
   const API_TIMEOUT_LIMIT_MS = 5000;
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
+  }
+
+  interface HandleAxiosStatusCodesProps {
+    axiosErrorCode: AxiosErrorCodes;
+    defaultMessage: string;
+  }
+
+  function handleAxiosErrorStatusCodes({
+    axiosErrorCode,
+    defaultMessage,
+  }: HandleAxiosStatusCodesProps) {
+    if (axiosErrorCode == "ECONNABORTED") {
+      showNotifyMessage("No internet connection");
+    } else {
+      showNotifyMessage(defaultMessage);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,5 +144,6 @@ export function useCommonApi() {
     createRawAxiosRequestConfig,
     buildEncodedUcan,
     createAxiosErrorResponse,
+    handleAxiosErrorStatusCodes,
   };
 }

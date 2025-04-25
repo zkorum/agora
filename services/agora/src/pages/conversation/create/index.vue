@@ -263,7 +263,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
-import { useNotify } from "src/utils/ui/notify";
+import { useCommonApi } from "src/utils/api/common";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -302,11 +302,11 @@ const showLoginDialog = ref(false);
 
 const isSubmitButtonLoading = ref(false);
 
+const { handleAxiosErrorStatusCodes } = useCommonApi();
+
 const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
 clearNewConversationIntention();
-
-const { showNotifyMessage } = useNotify();
 
 onMounted(() => {
   lockRoute();
@@ -396,9 +396,9 @@ async function onSubmit() {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
-    isSubmitButtonLoading.value = true;
-
     unlockRoute();
+
+    isSubmitButtonLoading.value = true;
 
     const response = await createNewPost(
       postDraft.value.postTitle,
@@ -412,10 +412,10 @@ async function onSubmit() {
       !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
     );
 
+    isSubmitButtonLoading.value = false;
+
     if (response.status == "success") {
       postDraft.value = getEmptyConversationDraft();
-
-      isSubmitButtonLoading.value = false;
 
       await loadPostData(false);
 
@@ -424,12 +424,10 @@ async function onSubmit() {
         params: { postSlugId: response.data.conversationSlugId },
       });
     } else {
-      if (response.code == "ECONNABORTED") {
-        showNotifyMessage("No internet connection");
-      } else {
-        showNotifyMessage("Error while creating new conversation.");
-      }
-      isSubmitButtonLoading.value = false;
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to create a new conversation",
+      });
     }
   }
 }

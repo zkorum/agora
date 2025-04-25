@@ -72,6 +72,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
+import { useCommonApi } from "src/utils/api/common";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
@@ -125,6 +126,8 @@ const {
   showExitDialog,
   leaveRoute,
 } = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+
+const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
@@ -216,6 +219,8 @@ async function submitPostClicked() {
       props.postSlugId
     );
 
+    isSubmissionLoading.value = false;
+
     if (response.status == "success") {
       if (!response.data.success) {
         if (response.data.reason == "conversation_locked") {
@@ -230,14 +235,11 @@ async function submitPostClicked() {
         characterCount.value = 0;
       }
     } else {
-      if (response.code == "ECONNABORTED") {
-        showNotifyMessage("No internet connection");
-      } else {
-        showNotifyMessage("Error while creating new opinion.");
-      }
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to create a new opinion",
+      });
     }
-
-    isSubmissionLoading.value = false;
   }
 }
 </script>

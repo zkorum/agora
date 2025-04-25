@@ -48,6 +48,7 @@ import ZKButton from "../ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import { useNotify } from "src/utils/ui/notify";
+import { useCommonApi } from "src/utils/api/common";
 
 defineProps<{
   showSubmitButton: boolean;
@@ -63,6 +64,8 @@ const isValidUsername = ref(true);
 
 const { isUsernameInUse, generateUnusedRandomUsername, submitUsernameChange } =
   useBackendAccountApi();
+
+const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const { showNotifyMessage } = useNotify();
 
@@ -92,9 +95,16 @@ async function submitButtonClicked() {
     profileData.value.userName
   );
   if (response.status == "success") {
-    showNotifyMessage("Username changed");
+    if (response.data) {
+      showNotifyMessage("Username changed");
+    } else {
+      showNotifyMessage("Username is already in use");
+    }
   } else {
-    showNotifyMessage("Username is already in use");
+    handleAxiosErrorStatusCodes({
+      axiosErrorCode: response.code,
+      defaultMessage: "Error while trying to submit username change",
+    });
   }
   isSubmitButtonLoading.value = false;
 }
