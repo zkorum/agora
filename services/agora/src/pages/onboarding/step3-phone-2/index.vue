@@ -10,7 +10,7 @@
           :total-steps="5"
           :enable-next-button="verificationCode.length == 6"
           :show-next-button="true"
-          :show-loading-button="false"
+          :show-loading-button="isSubmitButtonLoading"
         >
           <template #header>
             <InfoHeader
@@ -120,6 +120,8 @@ const { showNotifyMessage } = useNotify();
 
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
+const isSubmitButtonLoading = ref(false);
+
 onMounted(async () => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
     changePhoneNumber();
@@ -134,11 +136,16 @@ async function clickedResendButton() {
 }
 
 async function nextButtonClicked() {
+  isSubmitButtonLoading.value = true;
+
   const response = await verifyPhoneOtp({
     code: Number(verificationCode.value),
     phoneNumber: verificationPhoneNumber.value.phoneNumber,
     defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
   });
+
+  isSubmitButtonLoading.value = false;
+
   if (response.status == "success") {
     if (response.data.success) {
       showNotifyMessage("Verification successful 🎉");

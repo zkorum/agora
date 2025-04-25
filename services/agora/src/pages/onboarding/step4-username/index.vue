@@ -8,8 +8,8 @@
         :current-step="4"
         :total-steps="5"
         :enable-next-button="isValidUsername"
-        :show-loading-button="isSubmitButtonLoading"
         :show-next-button="true"
+        :show-loading-button="isSubmitButtonLoading"
       >
         <template #header>
           <InfoHeader
