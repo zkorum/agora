@@ -5,26 +5,42 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import { useNotify } from "../ui/notify";
-import { useCommonApi } from "./common";
+import {
+  AxiosErrorResponse,
+  AxiosSuccessResponse,
+  useCommonApi,
+} from "./common";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { usePostStore } from "src/stores/post";
 import { useUserStore } from "src/stores/user";
 
-export const NAME_UPDATE_SUCCESS_MESSAGE = "Username updated";
 export function useBackendAccountApi() {
-  const { buildEncodedUcan } = useCommonApi();
+  const {
+    buildEncodedUcan,
+    createAxiosErrorResponse,
+    createRawAxiosRequestConfig,
+  } = useCommonApi();
 
   const { loadPostData } = usePostStore();
   const { loadUserProfile } = useUserStore();
 
   const { showNotifyMessage } = useNotify();
 
+  type SubmitUsernameChangeSuccessResponse = AxiosSuccessResponse<boolean>;
+
+  type SubmitUsernameChangeResponse =
+    | SubmitUsernameChangeSuccessResponse
+    | AxiosErrorResponse;
+
   async function submitUsernameChange(
     username: string,
-    profileUsername: string
-  ): Promise<boolean> {
-    if (username == profileUsername) {
-      return true;
+    currentProfileUsername: string
+  ): Promise<SubmitUsernameChangeResponse> {
+    if (username == currentProfileUsername) {
+      return {
+        status: "success",
+        data: true,
+      };
     }
 
     try {
@@ -39,18 +55,18 @@ export function useBackendAccountApi() {
         undefined,
         undefined,
         api
-      ).apiV1UserUsernameUpdatePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1UserUsernameUpdatePost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
       await loadPostData(false);
       await loadUserProfile();
-      return true;
+      return {
+        status: "success",
+        data: true,
+      };
     } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to update username");
-      return false;
+      return createAxiosErrorResponse(e);
     }
   }
 

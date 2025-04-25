@@ -7,7 +7,7 @@
         :submit-call-back="goToNextRoute"
         :current-step="4"
         :total-steps="5"
-        :enable-next-button="isValidUsername"
+        :enable-next-button="isValidUsername && !isSubmitButtonLoading"
         :show-next-button="true"
       >
         <template #header>
@@ -45,6 +45,7 @@ import { storeToRefs } from "pinia";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useNotify } from "src/utils/ui/notify";
 
 const { submitUsernameChange } = useBackendAccountApi();
 
@@ -55,14 +56,22 @@ const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const { profileData } = storeToRefs(useUserStore());
 
+const { showNotifyMessage } = useNotify();
+
+const isSubmitButtonLoading = ref(false);
+
 async function goToNextRoute() {
-  const isSuccessful = await submitUsernameChange(
+  isSubmitButtonLoading.value = true;
+  const response = await submitUsernameChange(
     userName.value,
     profileData.value.userName
   );
-  if (isSuccessful) {
+  if (response.status == "success") {
     await routeUserAfterLogin();
+  } else {
+    showNotifyMessage("Username is already in use");
   }
+  isSubmitButtonLoading.value = false;
 }
 </script>
 

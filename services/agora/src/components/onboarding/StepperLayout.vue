@@ -14,6 +14,7 @@
           :color="enableNextButton ? 'primary' : 'button-background-color'"
           :text-color="enableNextButton ? 'white' : 'color-text-strong'"
           :disable="!enableNextButton"
+          :loading="!enableNextButton"
           type="submit"
           @click="submitCallBack"
         />
