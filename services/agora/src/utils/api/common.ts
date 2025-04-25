@@ -11,9 +11,15 @@ import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
 
 export type KeyAction = "overwrite" | "get" | "create";
 
+export interface AxiosSuccessResponse<T> {
+  data: T;
+  status: "success";
+}
+
 export interface AxiosErrorResponse {
   status: "error";
   message: string;
+  name: string;
   code:
     | "ERR_FR_TOO_MANY_REDIRECTS"
     | "ERR_BAD_OPTION_VALUE"
@@ -34,6 +40,26 @@ export function useCommonApi() {
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function createAxiosErrorResponse(error: any): AxiosErrorResponse {
+    if ("message" in error && "code" in error && "name" in error) {
+      return {
+        status: "error",
+        message: error.message,
+        code: error.code,
+        name: error.name,
+      };
+    } else {
+      console.error("Unknown error response");
+      return {
+        status: "error",
+        message: "",
+        code: "ECONNABORTED",
+        name: error.name,
+      };
+    }
   }
 
   function createRawAxiosRequestConfig({
@@ -96,5 +122,6 @@ export function useCommonApi() {
   return {
     createRawAxiosRequestConfig,
     buildEncodedUcan,
+    createAxiosErrorResponse,
   };
 }

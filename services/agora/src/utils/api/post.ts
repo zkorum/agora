@@ -9,7 +9,11 @@ import {
   type ApiV1ModerationConversationWithdrawPostRequest,
   ApiV1ConversationCreatePost200Response,
 } from "src/api";
-import { AxiosErrorResponse, useCommonApi } from "./common";
+import {
+  AxiosErrorResponse,
+  AxiosSuccessResponse,
+  useCommonApi,
+} from "./common";
 import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 import type {
@@ -19,7 +23,11 @@ import type {
 import type { DummyPollOptionFormat } from "src/stores/post";
 
 export function useBackendPostApi() {
-  const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
+  const {
+    buildEncodedUcan,
+    createRawAxiosRequestConfig,
+    createAxiosErrorResponse,
+  } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
 
@@ -143,10 +151,8 @@ export function useBackendPostApi() {
     }
   }
 
-  interface CreateNewPostSuccessResponse {
-    data: ApiV1ConversationCreatePost200Response;
-    status: "success";
-  }
+  type CreateNewPostSuccessResponse =
+    AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
 
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
@@ -189,11 +195,7 @@ export function useBackendPostApi() {
         status: "success",
       };
     } catch (e) {
-      return {
-        status: "error",
-        message: e.message,
-        code: e.code,
-      };
+      return createAxiosErrorResponse(e);
     }
   }
 

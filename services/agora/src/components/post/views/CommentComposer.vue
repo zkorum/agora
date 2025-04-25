@@ -30,7 +30,11 @@
           button-type="largeButton"
           label="Post"
           color="primary"
-          :disable="characterProgress > 100 || characterProgress == 0"
+          :disable="
+            characterProgress > 100 ||
+            characterProgress == 0 ||
+            isSubmissionLoading
+          "
           :loading="isSubmissionLoading"
           @click="submitPostClicked()"
         />
@@ -206,29 +210,34 @@ async function submitPostClicked() {
     showLoginDialog.value = true;
   } else {
     isSubmissionLoading.value = true;
-    try {
-      const response = await createNewComment(
-        opinionBody.value,
-        props.postSlugId
-      );
 
-      if (!response.success) {
-        if (response.reason == "conversation_locked") {
+    const response = await createNewComment(
+      opinionBody.value,
+      props.postSlugId
+    );
+
+    if (response.status == "success") {
+      if (!response.data.success) {
+        if (response.data.reason == "conversation_locked") {
           showNotifyMessage(
             "Cannot create opinion because the conversation is locked"
           );
         }
       } else {
-        emit("submittedComment", response.opinionSlugId);
+        emit("submittedComment", response.data.opinionSlugId);
         innerFocus.value = false;
         opinionBody.value = "";
         characterCount.value = 0;
       }
-    } catch (error) {
-      showNotifyMessage("Failed to create a new opinion");
-    } finally {
-      isSubmissionLoading.value = false;
+    } else {
+      if (response.code == "ECONNABORTED") {
+        showNotifyMessage("No internet connection");
+      } else {
+        showNotifyMessage("Error while creating new opinion.");
+      }
     }
+
+    isSubmissionLoading.value = false;
   }
 }
 </script>

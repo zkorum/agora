@@ -1,6 +1,7 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
+  ApiV1OpinionCreatePost200Response,
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchByConversationPostRequest,
   ApiV1OpinionFetchBySlugIdListPostRequest,
@@ -9,7 +10,11 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import { useCommonApi } from "./common";
+import {
+  AxiosErrorResponse,
+  AxiosSuccessResponse,
+  useCommonApi,
+} from "./common";
 import {
   PolisKey,
   type CommentFeedFilter,
@@ -22,7 +27,11 @@ import { storeToRefs } from "pinia";
 import { useBackendAuthApi } from "./auth";
 
 export function useBackendCommentApi() {
-  const { buildEncodedUcan } = useCommonApi();
+  const {
+    buildEncodedUcan,
+    createRawAxiosRequestConfig,
+    createAxiosErrorResponse,
+  } = useCommonApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { updateAuthState } = useBackendAuthApi();
 
@@ -162,30 +171,46 @@ export function useBackendCommentApi() {
     }
   }
 
-  async function createNewComment(commentBody: string, postSlugId: string) {
-    const params: ApiV1OpinionCreatePostRequest = {
-      opinionBody: commentBody,
-      conversationSlugId: postSlugId,
-    };
+  type CreateNewCommentSuccessResponse =
+    AxiosSuccessResponse<ApiV1OpinionCreatePost200Response>;
 
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
-    const encodedUcan = await buildEncodedUcan(url, options);
-    const response = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1OpinionCreatePost(params, {
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
+  type CreateNewCommentResponse =
+    | CreateNewCommentSuccessResponse
+    | AxiosErrorResponse;
 
-    if (response.data.success) {
-      // TODO: properly manage errors in backend and return login status to update to
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+  async function createNewComment(
+    commentBody: string,
+    postSlugId: string
+  ): Promise<CreateNewCommentResponse> {
+    try {
+      const params: ApiV1OpinionCreatePostRequest = {
+        opinionBody: commentBody,
+        conversationSlugId: postSlugId,
+      };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionCreatePost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+
+      if (response.data.success) {
+        // TODO: properly manage errors in backend and return login status to update to
+        await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      }
+      return {
+        data: response.data,
+        status: "success",
+      };
+    } catch (e) {
+      return createAxiosErrorResponse(e);
     }
-    return response.data;
   }
 
   async function deleteCommentBySlugId(commentSlugId: string) {
