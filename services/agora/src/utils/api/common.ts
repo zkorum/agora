@@ -2,6 +2,7 @@ import { type RawAxiosRequestConfig } from "axios";
 import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
 import {
+  buildAuthorizationHeader,
   buildUcan,
   createDidIfDoesNotExist,
   getDid,
@@ -10,8 +11,43 @@ import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
 
 export type KeyAction = "overwrite" | "get" | "create";
 
+export interface AxiosErrorResponse {
+  status: "error";
+  message: string;
+  code:
+    | "ERR_FR_TOO_MANY_REDIRECTS"
+    | "ERR_BAD_OPTION_VALUE"
+    | "ERR_BAD_OPTION"
+    | "ERR_NETWORK"
+    | "ERR_DEPRECATED"
+    | "ERR_BAD_RESPONSE"
+    | "ERR_BAD_REQUEST"
+    | "ERR_CANCELED"
+    | "ECONNABORTED"
+    | "ETIMEDOUT";
+}
+
 export function useCommonApi() {
   const $q = useQuasar();
+
+  const API_TIMEOUT_LIMIT_MS = 5000;
+
+  interface CreateRawAxiosRequestConfigProps {
+    encodedUcan?: string;
+  }
+
+  function createRawAxiosRequestConfig({
+    encodedUcan,
+  }: CreateRawAxiosRequestConfigProps): RawAxiosRequestConfig {
+    return {
+      headers: encodedUcan
+        ? {
+            ...buildAuthorizationHeader(encodedUcan),
+          }
+        : undefined,
+      timeout: API_TIMEOUT_LIMIT_MS,
+    };
+  }
 
   async function buildEncodedUcan(
     url: string,
@@ -57,5 +93,8 @@ export function useCommonApi() {
     // later after verification, will store UUID => prefixedKey
   }
 
-  return { buildEncodedUcan };
+  return {
+    createRawAxiosRequestConfig,
+    buildEncodedUcan,
+  };
 }
