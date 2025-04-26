@@ -1,80 +1,82 @@
 <template>
   <div>
-    <q-pull-to-refresh @refresh="pullDownTriggered">
-      <q-infinite-scroll
-        v-if="isAuthInitialized"
-        :offset="2000"
-        :disable="!canLoadMore"
-        @load="onLoad"
-      >
-        <div
-          v-if="masterPostDataList.length == 0 && dataReady"
-          class="emptyDivPadding"
+    <WidthWrapper :enable="true">
+      <q-pull-to-refresh @refresh="pullDownTriggered">
+        <q-infinite-scroll
+          v-if="isAuthInitialized"
+          :offset="2000"
+          :disable="!canLoadMore"
+          @load="onLoad"
         >
-          <div class="centerMessage">
-            <div>
-              <q-icon name="mdi-account-group" size="4rem" />
-            </div>
+          <div
+            v-if="masterPostDataList.length == 0 && dataReady"
+            class="emptyDivPadding"
+          >
+            <div class="centerMessage">
+              <div>
+                <q-icon name="mdi-account-group" size="4rem" />
+              </div>
 
-            <div :style="{ fontSize: '1.3rem' }">It is too quiet here...</div>
+              <div :style="{ fontSize: '1.3rem' }">It is too quiet here...</div>
 
-            <div>
-              Create a new conversation using the
-              <q-icon name="mdi-plus-circle" /> button.
+              <div>
+                Create a new conversation using the
+                <q-icon name="mdi-plus-circle" /> button.
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="widthConstraint">
-          <div v-if="!dataReady" class="postListFlex">
+          <div class="widthConstraint">
+            <div v-if="!dataReady" class="postListFlex">
+              <div
+                v-for="postData in emptyPostDataList"
+                :key="postData.metadata.conversationSlugId"
+              >
+                <PostDetails
+                  :extended-post-data="postData"
+                  :compact-mode="true"
+                  :show-comment-section="false"
+                  :skeleton-mode="true"
+                  class="showCursor"
+                  @click="openPost(postData.metadata.conversationSlugId)"
+                />
+              </div>
+            </div>
+
             <div
-              v-for="postData in emptyPostDataList"
-              :key="postData.metadata.conversationSlugId"
+              v-if="dataReady && masterPostDataList.length > 0"
+              class="postListFlex"
             >
-              <PostDetails
-                :extended-post-data="postData"
-                :compact-mode="true"
-                :show-comment-section="false"
-                :skeleton-mode="true"
-                class="showCursor"
-                @click="openPost(postData.metadata.conversationSlugId)"
-              />
+              <div
+                v-for="postData in masterPostDataList"
+                :key="postData.metadata.conversationSlugId"
+              >
+                <PostDetails
+                  :extended-post-data="postData"
+                  :compact-mode="true"
+                  :show-comment-section="false"
+                  :skeleton-mode="false"
+                  @click="openPost(postData.metadata.conversationSlugId)"
+                />
+              </div>
             </div>
           </div>
 
           <div
-            v-if="dataReady && masterPostDataList.length > 0"
-            class="postListFlex"
+            v-if="dataReady && endOfFeed && masterPostDataList.length > 0"
+            class="centerMessage"
           >
-            <div
-              v-for="postData in masterPostDataList"
-              :key="postData.metadata.conversationSlugId"
-            >
-              <PostDetails
-                :extended-post-data="postData"
-                :compact-mode="true"
-                :show-comment-section="false"
-                :skeleton-mode="false"
-                @click="openPost(postData.metadata.conversationSlugId)"
-              />
+            <div>
+              <q-icon name="mdi-check" size="4rem" />
             </div>
+
+            <div :style="{ fontSize: '1.3rem' }">You're all caught up</div>
+
+            <div>You have seen all the new conversations.</div>
           </div>
-        </div>
-
-        <div
-          v-if="dataReady && endOfFeed && masterPostDataList.length > 0"
-          class="centerMessage"
-        >
-          <div>
-            <q-icon name="mdi-check" size="4rem" />
-          </div>
-
-          <div :style="{ fontSize: '1.3rem' }">You're all caught up</div>
-
-          <div>You have seen all the new conversations.</div>
-        </div>
-      </q-infinite-scroll>
-    </q-pull-to-refresh>
+        </q-infinite-scroll>
+      </q-pull-to-refresh>
+    </WidthWrapper>
 
     <q-page-sticky
       v-if="hasPendingNewPosts"
@@ -107,6 +109,7 @@ import { useWindowFocus, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
+import WidthWrapper from "../navigation/WidthWrapper.vue";
 
 const {
   masterPostDataList,
@@ -200,12 +203,6 @@ async function refreshPage(done: () => void) {
   padding-top: 8rem;
   padding-bottom: 8rem;
   flex-direction: column;
-}
-
-.widthConstraint {
-  position: relative;
-  width: min(100%, 35rem);
-  margin: auto;
 }
 
 .newConversationIcon {
