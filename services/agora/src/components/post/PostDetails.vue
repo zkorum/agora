@@ -157,7 +157,7 @@
         </div>
       </ZKHoverEffect>
 
-      <FloatingBottomContainer v-if="!compactMode && !isLocked">
+      <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
         <CommentComposer
           :post-slug-id="extendedPostData.metadata.conversationSlugId"
           :login-required-to-participate="
@@ -180,7 +180,7 @@ import PostMetadata from "./views/PostMetadata.vue";
 import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -211,14 +211,9 @@ const webShare = useWebShare();
 const { loadMore } = useOpinionScrollableStore();
 const { hasMore } = storeToRefs(useOpinionScrollableStore());
 
-const isLocked = computed(() => {
-  if (props.extendedPostData.metadata.moderation.status == "moderated") {
-    if (props.extendedPostData.metadata.moderation.action == "lock") {
-      return true;
-    }
-  }
-  return false;
-});
+const isPostLocked =
+  props.extendedPostData.metadata.moderation.status === "moderated" &&
+  props.extendedPostData.metadata.moderation.action === "lock";
 
 function onLoad(index: number, done: () => void) {
   loadMore();
