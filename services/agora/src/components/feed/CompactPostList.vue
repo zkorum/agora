@@ -26,7 +26,7 @@
             </div>
           </div>
 
-          <div class="widthConstraint">
+          <div>
             <div v-if="!dataReady" class="postListFlex">
               <div
                 v-for="postData in emptyPostDataList"
