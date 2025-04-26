@@ -9,7 +9,7 @@
           @load="onLoad"
         >
           <div
-            v-if="masterPostDataList.length == 0 && dataReady"
+            v-if="masterPostDataList.length == 0 && initializedFeed"
             class="emptyDivPadding"
           >
             <div class="centerMessage">
@@ -27,7 +27,7 @@
           </div>
 
           <div>
-            <div v-if="!dataReady" class="postListFlex">
+            <div v-if="!initializedFeed" class="postListFlex">
               <div
                 v-for="postData in emptyPostDataList"
                 :key="postData.metadata.conversationSlugId"
@@ -44,7 +44,7 @@
             </div>
 
             <div
-              v-if="dataReady && masterPostDataList.length > 0"
+              v-if="initializedFeed && masterPostDataList.length > 0"
               class="postListFlex"
             >
               <div
@@ -63,7 +63,7 @@
           </div>
 
           <div
-            v-if="dataReady && endOfFeed && masterPostDataList.length > 0"
+            v-if="initializedFeed && endOfFeed && masterPostDataList.length > 0"
             class="centerMessage"
           >
             <div>
@@ -114,11 +114,11 @@ import WidthWrapper from "../navigation/WidthWrapper.vue";
 const {
   masterPostDataList,
   emptyPostDataList,
-  dataReady,
   endOfFeed,
   hasPendingNewPosts,
+  initializedFeed,
 } = storeToRefs(usePostStore());
-const { loadPostData, hasNewPosts } = usePostStore();
+const { loadPostData, hasNewPostCheck } = usePostStore();
 
 const router = useRouter();
 
@@ -131,12 +131,12 @@ const canLoadMore = ref(true);
 const { y: windowY } = useWindowScroll();
 
 onMounted(async () => {
-  await newPostCheck();
+  await hasNewPostCheck();
 });
 
 watch(windowFocused, async () => {
   if (windowFocused.value) {
-    await newPostCheck();
+    await hasNewPostCheck();
   }
 });
 
@@ -150,25 +150,16 @@ async function onLoad(index: number, done: () => void) {
 async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {
     await loadPostData(false);
-    hasPendingNewPosts.value = false;
     canLoadMore.value = true;
     done();
   }, 500);
 }
 
-async function newPostCheck() {
-  if (hasPendingNewPosts.value == false && dataReady.value) {
-    hasPendingNewPosts.value = await hasNewPosts();
-  }
-}
-
 async function openPost(postSlugId: string) {
-  if (dataReady.value) {
-    await router.push({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: postSlugId },
-    });
-  }
+  await router.push({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: postSlugId },
+  });
 }
 
 async function refreshPage(done: () => void) {
@@ -179,8 +170,6 @@ async function refreshPage(done: () => void) {
   setTimeout(() => {
     done();
   }, 500);
-
-  hasPendingNewPosts.value = false;
 }
 </script>
 
