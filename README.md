@@ -19,8 +19,8 @@ We are at a critical moment where social media platforms are increasingly evolvi
 - Q1 2025: [Agora MVP](https://agoracitizen.network/feed/) is live and actively seeking your feedback - [Get in touch!](https://linktr.ee/yutingzkorum)
 - Q2 2025: Evolving from MVP to SLCP (Simple, Lovable, Complete Product) – Launch mobile apps in May.
 - Q2 & Q3 2025: Develop pilot projects with institutions, NGOs, market research firms, newspapers, and other partners looking to engage their audiences through Agora.
-  
-#### Check out detailed product development roadmap [here](https://github.com/zkorum/product/issues/34) 
+
+#### Check out detailed product development roadmap [here](https://github.com/zkorum/product/issues/34)
 
 ## Development
 
@@ -61,13 +61,13 @@ OpenAPI tab - automatically generate frontend stub from backends and subsequent 
 make dev-generate
 ```
 
-Frontend tab:
+Frontend App tab:
 
 ```
-make dev-front
+make dev-app
 ```
 
-Backend tab:
+Backend API tab:
 
 ```
 make dev-back
@@ -95,7 +95,7 @@ Some typescript source files are shared directly without using npm packages - by
 
 ## Security disclosures
 
-If you discover any security issues, please send an email to security@zkorum.com. The email is automatically CCed to the entire team, and we'll respond promptly. See [SECURITY](./SECURITY.md) for more info.
+If you discover any security issues, please send an email to <security@zkorum.com>. The email is automatically CCed to the entire team, and we'll respond promptly. See [SECURITY](./SECURITY.md) for more info.
 
 ## Contributing
 
