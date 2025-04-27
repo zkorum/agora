@@ -75,7 +75,7 @@ export const useRouteStateStore = defineStore("routeState", () => {
     }
   }
 
-  function storeFromName(
+  function captureRouteState(
     fromName: keyof RouteMap,
     fromParams: RouteMapGeneric[keyof RouteMap]["params"],
     fromQuery: LocationQuery,
@@ -106,5 +106,5 @@ export const useRouteStateStore = defineStore("routeState", () => {
     // console.log(routingHistoryList);
   }
 
-  return { goBack, storeFromName };
+  return { goBack, captureRouteState };
 });

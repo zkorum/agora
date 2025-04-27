@@ -17,7 +17,6 @@ export function useGoBackButtonHandler() {
       });
       await router.push(routeObj);
     } else {
-      console.log("???");
       router.go(-1);
     }
   }

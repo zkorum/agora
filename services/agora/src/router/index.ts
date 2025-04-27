@@ -18,7 +18,7 @@ import { useRouteStateStore } from "src/stores/routeState";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { storeFromName } = useRouteStateStore();
+  const { captureRouteState } = useRouteStateStore();
 
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -27,13 +27,13 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       : createWebHashHistory;
 
   const Router = createRouter({
-    scrollBehavior: (to, from) => {
+    scrollBehavior: (to, from, savedPosition) => {
       // to, from, savedPosition
       if (from.name && to.name) {
-        storeFromName(from.name, from.params, from.query, to.name);
+        captureRouteState(from.name, from.params, from.query, to.name);
       }
 
-      return { left: 0, top: 0 };
+      return { left: 0, top: savedPosition?.top };
     },
     routes,
     // Leave this as is and make changes in quasar.conf.js instead!
