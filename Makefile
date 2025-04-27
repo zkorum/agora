@@ -16,7 +16,7 @@ dev-sync:
 dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
 
-dev-front:
+dev-app:
 	cd services/agora && yarn dev 
 
 dev-api:
