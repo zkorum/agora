@@ -11,6 +11,7 @@
 
       <q-footer
         v-if="drawerBehavior == 'mobile' && props.generalProps.enableFooter"
+        v-model="revealHeader"
         class="footerBackground"
       >
         <FooterBar />
@@ -102,6 +103,9 @@ function captureHeaderReval(reveal: boolean) {
 
 .footerBackground {
   background-color: white;
+  box-shadow:
+    0px 0px 1px rgba(20, 20, 20, 0.04),
+    0px 0px 8px rgba(20, 20, 20, 0.08);
 }
 
 .generalPagePadding {

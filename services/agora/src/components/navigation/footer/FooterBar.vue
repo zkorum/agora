@@ -1,6 +1,5 @@
 <template>
   <div>
-    <q-separator />
     <div class="flexIcons container">
       <div class="iconStyle" @click="accessHomeFeed()">
         <ZKStyledIcon
