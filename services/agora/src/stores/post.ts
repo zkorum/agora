@@ -181,7 +181,7 @@ export const usePostStore = defineStore("post", () => {
   }
 
   async function hasNewPostCheck(): Promise<void> {
-    if (hasPendingNewPosts.value == true && initializedFeed.value) {
+    if (hasPendingNewPosts.value == true || !initializedFeed.value) {
       return;
     }
 
