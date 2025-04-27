@@ -39,7 +39,8 @@
               label="Post"
               type="submit"
               size="0.8rem"
-              :disable="exceededBodyWordCount"
+              :loading="isSubmitButtonLoading"
+              :disable="exceededBodyWordCount || isSubmitButtonLoading"
             />
           </div>
         </TopMenuWrapper>
@@ -252,7 +253,6 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { usePostStore } from "src/stores/post";
-import { useQuasar } from "quasar";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
@@ -263,6 +263,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
+import { useCommonApi } from "src/utils/api/common";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -270,8 +271,6 @@ const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
 
 const router = useRouter();
-
-const quasar = useQuasar();
 
 const { visualViewPortHeight } = useViewPorts();
 
@@ -300,6 +299,10 @@ const { createNewPost } = useBackendPostApi();
 const { loadPostData } = usePostStore();
 const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
+
+const isSubmitButtonLoading = ref(false);
+
+const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
@@ -355,10 +358,7 @@ function checkWordCount() {
 
 function routeLeaveCallback() {
   if (isPostEdited()) {
-    console.log("post edited...");
     return "Changes that you made may not be saved.";
-  } else {
-    console.log("???");
   }
 }
 
@@ -396,9 +396,9 @@ async function onSubmit() {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
-    quasar.loading.show();
-
     unlockRoute();
+
+    isSubmitButtonLoading.value = true;
 
     const response = await createNewPost(
       postDraft.value.postTitle,
@@ -412,19 +412,22 @@ async function onSubmit() {
       !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
     );
 
-    if (response != null) {
-      postDraft.value = getEmptyConversationDraft();
+    isSubmitButtonLoading.value = false;
 
-      quasar.loading.hide();
+    if (response.status == "success") {
+      postDraft.value = getEmptyConversationDraft();
 
       await loadPostData(false);
 
       await router.push({
         name: "/conversation/[postSlugId]",
-        params: { postSlugId: response.conversationSlugId },
+        params: { postSlugId: response.data.conversationSlugId },
       });
     } else {
-      quasar.loading.hide();
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to create a new conversation",
+      });
     }
   }
 }

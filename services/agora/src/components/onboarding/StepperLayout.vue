@@ -13,7 +13,8 @@
           icon="mdi-arrow-right"
           :color="enableNextButton ? 'primary' : 'button-background-color'"
           :text-color="enableNextButton ? 'white' : 'color-text-strong'"
-          :disable="!enableNextButton"
+          :disable="!enableNextButton || showLoadingButton"
+          :loading="showLoadingButton"
           type="submit"
           @click="submitCallBack"
         />
@@ -32,6 +33,7 @@ defineProps<{
   totalSteps: number;
   enableNextButton: boolean;
   showNextButton: boolean;
+  showLoadingButton: boolean;
 }>();
 </script>
 

@@ -12,6 +12,7 @@
             selectedCountryCode.code.length > 0 && inputNumber.length > 0
           "
           :show-next-button="true"
+          :show-loading-button="false"
         >
           <template #header>
             <InfoHeader

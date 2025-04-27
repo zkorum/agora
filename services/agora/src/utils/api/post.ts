@@ -7,8 +7,13 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
   type ApiV1ModerationConversationWithdrawPostRequest,
+  ApiV1ConversationCreatePost200Response,
 } from "src/api";
-import { useCommonApi } from "./common";
+import {
+  AxiosErrorResponse,
+  AxiosSuccessResponse,
+  useCommonApi,
+} from "./common";
 import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 import type {
@@ -18,7 +23,11 @@ import type {
 import type { DummyPollOptionFormat } from "src/stores/post";
 
 export function useBackendPostApi() {
-  const { buildEncodedUcan } = useCommonApi();
+  const {
+    buildEncodedUcan,
+    createRawAxiosRequestConfig,
+    createAxiosErrorResponse,
+  } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
 
@@ -142,6 +151,13 @@ export function useBackendPostApi() {
     }
   }
 
+  type CreateNewPostSuccessResponse =
+    AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
+
+  type CreateNewPostResponse =
+    | CreateNewPostSuccessResponse
+    | AxiosErrorResponse;
+
   async function createNewPost(
     postTitle: string,
     postBody: string | undefined,
@@ -150,7 +166,7 @@ export function useBackendPostApi() {
     targetIsoConvertDateString: string | undefined,
     isIndexed: boolean,
     isLoginRequired: boolean
-  ) {
+  ): Promise<CreateNewPostResponse> {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
         conversationTitle: postTitle,
@@ -169,16 +185,17 @@ export function useBackendPostApi() {
         undefined,
         undefined,
         api
-      ).apiV1ConversationCreatePost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
-      return response.data;
+      ).apiV1ConversationCreatePost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+
+      return {
+        data: response.data,
+        status: "success",
+      };
     } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to create the new post.");
-      return null;
+      return createAxiosErrorResponse(e);
     }
   }
 

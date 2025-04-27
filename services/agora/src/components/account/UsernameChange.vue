@@ -17,6 +17,7 @@
           icon="mdi-dice-6"
           color="black"
           flat
+          :disable="isSubmitButtonLoading"
           @click="refreshName()"
         />
       </div>
@@ -40,16 +41,14 @@
 <script setup lang="ts">
 import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { zodUsername } from "src/shared/types/zod";
-import {
-  NAME_UPDATE_SUCCESS_MESSAGE,
-  useBackendAccountApi,
-} from "src/utils/api/account";
+import { useBackendAccountApi } from "src/utils/api/account";
 import { ref, onMounted, watch } from "vue";
 import { ZodError } from "zod";
 import ZKButton from "../ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import { useNotify } from "src/utils/ui/notify";
+import { useCommonApi } from "src/utils/api/common";
 
 defineProps<{
   showSubmitButton: boolean;
@@ -66,11 +65,15 @@ const isValidUsername = ref(true);
 const { isUsernameInUse, generateUnusedRandomUsername, submitUsernameChange } =
   useBackendAccountApi();
 
+const { handleAxiosErrorStatusCodes } = useCommonApi();
+
 const { showNotifyMessage } = useNotify();
 
 const validationMessage = ref("");
 
 const userName = ref("");
+
+const isSubmitButtonLoading = ref(false);
 
 onMounted(async () => {
   await loadUserProfile();
@@ -86,8 +89,24 @@ watch(isValidUsername, () => {
 });
 
 async function submitButtonClicked() {
-  await submitUsernameChange(userName.value, profileData.value.userName);
-  showNotifyMessage(NAME_UPDATE_SUCCESS_MESSAGE);
+  isSubmitButtonLoading.value = true;
+  const response = await submitUsernameChange(
+    userName.value,
+    profileData.value.userName
+  );
+  if (response.status == "success") {
+    if (response.data) {
+      showNotifyMessage("Username changed");
+    } else {
+      showNotifyMessage("Username is already in use");
+    }
+  } else {
+    handleAxiosErrorStatusCodes({
+      axiosErrorCode: response.code,
+      defaultMessage: "Error while trying to submit username change",
+    });
+  }
+  isSubmitButtonLoading.value = false;
 }
 
 async function nameContainsValidCharacters(): Promise<boolean> {

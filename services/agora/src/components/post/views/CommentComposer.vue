@@ -30,7 +30,11 @@
           button-type="largeButton"
           label="Post"
           color="primary"
-          :disable="characterProgress > 100 || characterProgress == 0"
+          :disable="
+            characterProgress > 100 ||
+            characterProgress == 0 ||
+            isSubmissionLoading
+          "
           :loading="isSubmissionLoading"
           @click="submitPostClicked()"
         />
@@ -68,6 +72,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment";
+import { useCommonApi } from "src/utils/api/common";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
@@ -121,6 +126,8 @@ const {
   showExitDialog,
   leaveRoute,
 } = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+
+const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
@@ -206,28 +213,32 @@ async function submitPostClicked() {
     showLoginDialog.value = true;
   } else {
     isSubmissionLoading.value = true;
-    try {
-      const response = await createNewComment(
-        opinionBody.value,
-        props.postSlugId
-      );
 
-      if (!response.success) {
-        if (response.reason == "conversation_locked") {
+    const response = await createNewComment(
+      opinionBody.value,
+      props.postSlugId
+    );
+
+    isSubmissionLoading.value = false;
+
+    if (response.status == "success") {
+      if (!response.data.success) {
+        if (response.data.reason == "conversation_locked") {
           showNotifyMessage(
             "Cannot create opinion because the conversation is locked"
           );
         }
       } else {
-        emit("submittedComment", response.opinionSlugId);
+        emit("submittedComment", response.data.opinionSlugId);
         innerFocus.value = false;
         opinionBody.value = "";
         characterCount.value = 0;
       }
-    } catch (error) {
-      showNotifyMessage("Failed to create a new opinion");
-    } finally {
-      isSubmissionLoading.value = false;
+    } else {
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to create a new opinion",
+      });
     }
   }
 }
