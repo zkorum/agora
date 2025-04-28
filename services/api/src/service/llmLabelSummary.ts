@@ -76,6 +76,7 @@ export async function updateAiLabelsAndSummaries({
         conversationId,
     });
     const genLabelSummaryOutput = await invokeRemoteModel({
+        conversationId,
         conversationInsights,
         awsAiLabelSummaryRegion,
         awsAiLabelSummaryModelId,
@@ -85,6 +86,11 @@ export async function updateAiLabelsAndSummaries({
         awsAiLabelSummaryMaxTokens,
         awsAiLabelSummaryPrompt,
     });
+    log.info(
+        `[LLM] Received Label and Summary Prompt results for conversation ${String(
+            conversationId,
+        )}: ${JSON.stringify(genLabelSummaryOutput)}`,
+    );
     await doUpdateAiLabelsAndSummaries({
         db,
         conversationId,
@@ -185,6 +191,7 @@ async function updateConversationSummary({
 }
 
 interface InvokeRemoteModelProps {
+    conversationId: number;
     conversationInsights: ConversationInsights;
     awsAiLabelSummaryRegion: string;
     awsAiLabelSummaryModelId: string;
@@ -196,6 +203,7 @@ interface InvokeRemoteModelProps {
 }
 
 async function invokeRemoteModel({
+    conversationId,
     conversationInsights,
     awsAiLabelSummaryRegion,
     awsAiLabelSummaryModelId,
@@ -220,10 +228,15 @@ async function invokeRemoteModel({
     const client = new BedrockRuntimeClient({
         region: awsAiLabelSummaryRegion,
     });
+    // "Bad escaped character in JSON" ('\' character which ends up alone)
     const prompt = `${awsAiLabelSummaryPrompt}\n\n${JSON.stringify(
         conversationInsights,
-    )}`;
-    log.info(`Sending Generate Label and Summary Prompt to LLM:\n${prompt}`);
+    ).replace(/\\\\"/g, '"')}`; // a string with '"' inside is JSON.stringify to '"\\""' hence if it's JSON.stringify again it bugs
+    log.info(
+        `[LLM] Sending Generate Label and Summary Prompt for conversation ${String(
+            conversationId,
+        )}:\n${prompt}`,
+    );
     const command = new InvokeModelCommand({
         modelId: awsAiLabelSummaryModelId,
         contentType: "application/json",
@@ -243,7 +256,7 @@ async function invokeRemoteModel({
     const typedResponseBody = zodInvokeModelResponse.safeParse(responseBody);
     if (!typedResponseBody.success) {
         throw new Error(
-            `Unable to parse AWS Bedrock response: '${decodedResponseBody}'`,
+            `[LLM]: Unable to parse AWS Bedrock response: '${decodedResponseBody}'`,
             { cause: typedResponseBody.error },
         );
     }
@@ -256,15 +269,15 @@ async function invokeRemoteModel({
         return resultStrict.data;
     } else {
         log.warn(
-            `Unable to parse AI Label and Summary output object using strict mode: '${modelResponseStr}'`,
+            resultStrict.error,
+            `[LLM]: Unable to parse AI Label and Summary output object using strict mode: '${modelResponseStr}'`,
         );
-        log.warn(resultStrict.error);
     }
     // will throw and be caught by the generic fastify handler eventually
     const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
     if (!resultLoose.success) {
         throw new Error(
-            `Unable to parse AI Label and Summary output object using loose mode: '${modelResponseStr}'`,
+            `[LLM]: Unable to parse AI Label and Summary output object using loose mode: '${modelResponseStr}'`,
             { cause: resultLoose.error },
         );
     }

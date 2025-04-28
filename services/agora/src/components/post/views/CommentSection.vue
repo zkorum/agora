@@ -4,7 +4,7 @@
       <CommentClusterGraph
         v-if="showClusterMap"
         :clusters="polis.clusters"
-        :total-participant-count="participantCount"
+        :total-participant-count="participantCountLocal"
         :current-cluster-tab="currentClusterTab"
         @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
       />
