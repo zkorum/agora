@@ -24,7 +24,7 @@ We decided to use an LLM to generate summaries and cluster labels for group conv
 We initially focused on testing DeepSeek Distil models (4-bit quantized) because of their low costs, but these were too slow for our use-case and struggled specifically to adhere to word/character limits -- which is an important constraint for the app for optimal readability/UI. We turned to testing Mistral models, which are positioned as direct competitors to the Deepseek models. We chose Mistral Small 3 (24B) which generated much better results and is "reasonably" small. However, the Mistral Small 3 is too large/expensive to self-host on EC2, so we decided to use AWS credits (available via Station F) and deployed the model using AWS Bedrock. 
 
 We tested different combinations of prompts ("System Instructions") and inference parameters (temperature, top P, top K). The version currently in use is:
-* Prompt: [Prompt Version 4](./AWS_mistral_testing.md#prompt-version-4-current-version))
+* Prompt: [Prompt Version 4](./AWS_mistral_testing.md#prompt-version-4-current-version)
 * Model: mistral-small-2402-v1:0  
 * Temperature: 0.4
 * Max tokens: 8192
