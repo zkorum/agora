@@ -815,9 +815,9 @@ export async function delayedPolisGetAndUpdateMath({
                 });
             } catch (e: unknown) {
                 log.error(
-                    `Error while trying to update the AI Label and Summary for conversationSlugId=${conversationSlugId}`,
+                    e,
+                    `[LLM]: Error while trying to update the AI Label and Summary for conversationSlugId=${conversationSlugId}`,
                 );
-                log.error(e);
             }
         }
     });

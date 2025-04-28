@@ -60,15 +60,20 @@
 
 <script setup lang="ts">
 import CommentActionBar from "./CommentActionBar.vue";
-import type { OpinionItem, PolisKey, VotingAction } from "src/shared/types/zod";
+import type {
+  ClusterStats,
+  OpinionItem,
+  PolisKey,
+  VotingAction,
+} from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { calculatePercentage } from "src/utils/common";
 import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import UserHtmlBody from "./UserHtmlBody.vue";
 import { computed } from "vue";
+import { isControversial, isMajority } from "src/shared/conversationLogic";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 
@@ -89,81 +94,73 @@ function changeVote(vote: VotingAction) {
 }
 
 function calculateTotalReasonLabel() {
-  const totalPercentageAgrees = calculatePercentage(
-    props.commentItem.numAgrees,
-    props.participantCount
-  );
-  const totalPercentageDisagrees = calculatePercentage(
-    props.commentItem.numDisagrees,
-    props.participantCount
-  );
-  if (totalPercentageAgrees > 50 || totalPercentageDisagrees > 50) {
-    return "Majority (Total)";
-  }
   if (
-    totalPercentageDisagrees + totalPercentageAgrees > 50 &&
-    Math.abs(totalPercentageAgrees - totalPercentageDisagrees) < 50
+    isControversial({
+      numAgrees: props.commentItem.numAgrees,
+      numDisagrees: props.commentItem.numDisagrees,
+      memberCount: props.participantCount,
+    })
   ) {
     return "Debated (Total)";
   }
+  if (
+    isMajority({
+      numAgrees: props.commentItem.numAgrees,
+      numDisagrees: props.commentItem.numDisagrees,
+      memberCount: props.participantCount,
+    })
+  ) {
+    return "Majority (Total)";
+  }
 }
 
-function calculateClusterReasonLabel() {
+function doCalculateClusterReasonLabel(
+  clusterStats: ClusterStats
+): string | undefined {
+  const labelCluster =
+    clusterStats.aiLabel ??
+    formatClusterLabel(clusterStats.key, true, clusterStats.aiLabel);
+  if (
+    isControversial({
+      numAgrees: clusterStats.numAgrees,
+      numDisagrees: clusterStats.numDisagrees,
+      memberCount: clusterStats.numUsers,
+    })
+  ) {
+    return `Debated (${labelCluster})`;
+  }
+  if (
+    isMajority({
+      numAgrees: clusterStats.numAgrees,
+      numDisagrees: clusterStats.numDisagrees,
+      memberCount: clusterStats.numUsers,
+    })
+  ) {
+    return `Majority (${labelCluster})`;
+  }
+}
+
+function calculateClusterReasonLabel(): string | undefined {
   if (props.commentItem.clustersStats.length >= 2) {
-    if (props.selectedClusterKey !== undefined) {
-      const clusterStat =
+    if (
+      props.selectedClusterKey !== undefined &&
+      props.selectedClusterKey in props.commentItem.clustersStats
+    ) {
+      const clusterStats =
         props.commentItem.clustersStats[props.selectedClusterKey];
-      const selectedClusterPercentageAgrees = calculatePercentage(
-        clusterStat.numAgrees,
-        clusterStat.numUsers
-      );
-      const selectedClusterPercentageDisagrees = calculatePercentage(
-        clusterStat.numDisagrees,
-        clusterStat.numUsers
-      );
-      const labelCluster =
-        clusterStat.aiLabel ??
-        formatClusterLabel(clusterStat.key, true, clusterStat.aiLabel);
-      if (
-        selectedClusterPercentageAgrees > 50 ||
-        selectedClusterPercentageDisagrees > 50
-      ) {
-        return `Majority (${labelCluster})`;
-      }
-      if (
-        selectedClusterPercentageDisagrees + selectedClusterPercentageAgrees >
-          50 &&
-        Math.abs(
-          selectedClusterPercentageAgrees - selectedClusterPercentageDisagrees
-        ) < 50
-      ) {
-        return `Debated (${labelCluster})`;
+      const reasonLabel = doCalculateClusterReasonLabel(clusterStats);
+      if (reasonLabel !== undefined) {
+        return reasonLabel;
       }
     }
-    for (const clusterStat of props.commentItem.clustersStats) {
-      if (clusterStat.key === props.selectedClusterKey) {
+    for (const clusterStats of props.commentItem.clustersStats) {
+      if (clusterStats.key === props.selectedClusterKey) {
         // already done
         continue;
       }
-      const clusterPercentageAgrees = calculatePercentage(
-        clusterStat.numAgrees,
-        clusterStat.numUsers
-      );
-      const clusterPercentageDisagrees = calculatePercentage(
-        clusterStat.numDisagrees,
-        clusterStat.numUsers
-      );
-      const labelCluster =
-        clusterStat.aiLabel ??
-        formatClusterLabel(clusterStat.key, true, clusterStat.aiLabel);
-      if (clusterPercentageAgrees > 50 || clusterPercentageDisagrees > 50) {
-        return `Majority (${labelCluster})`;
-      }
-      if (
-        clusterPercentageDisagrees + clusterPercentageAgrees > 50 &&
-        Math.abs(clusterPercentageAgrees - clusterPercentageDisagrees) < 50
-      ) {
-        return `Debated (${labelCluster})`;
+      const reasonLabel = doCalculateClusterReasonLabel(clusterStats);
+      if (reasonLabel !== undefined) {
+        return reasonLabel;
       }
     }
   }

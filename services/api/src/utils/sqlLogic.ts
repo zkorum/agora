@@ -1,4 +1,4 @@
-import { DEFAULT_THRESHOLD } from "@/shared/conversationLogic.js";
+import { DEFAULT_MIN_VOTERS } from "@/shared/conversationLogic.js";
 import { SQL, and, gt, lt, or, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 
@@ -42,7 +42,7 @@ export function isSqlUnpopular({
 }: IsSqlUnpopularProps): SQL {
     let actualThreshold = threshold;
     if (threshold === undefined) {
-        actualThreshold = DEFAULT_THRESHOLD;
+        actualThreshold = DEFAULT_MIN_VOTERS;
     }
     return gt(
         sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numDisagreesColumn}, 0) / ${memberCountColumn}::float END`,
@@ -63,7 +63,7 @@ export function isSqlPopular({
 }: IsSqlPopularProps): SQL {
     let actualThreshold = threshold;
     if (threshold === undefined) {
-        actualThreshold = DEFAULT_THRESHOLD;
+        actualThreshold = DEFAULT_MIN_VOTERS;
     }
     return gt(
         sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numAgreesColumn}, 0) / ${memberCountColumn}::float END`,
@@ -79,7 +79,7 @@ export function isSqlControversial({
 }: IsSqlClassifyProps): SQL | undefined {
     let actualThreshold = threshold;
     if (threshold === undefined) {
-        actualThreshold = DEFAULT_THRESHOLD;
+        actualThreshold = DEFAULT_MIN_VOTERS;
     }
     return and(
         lt(

@@ -105,10 +105,10 @@ const configSchema = z.object({
     AWS_AI_LABEL_SUMMARY_TOP_P: z.string().default("0.8"),
     AWS_AI_LABEL_SUMMARY_TOP_K: z.string().default("70"),
     AWS_AI_LABEL_SUMMARY_MAX_TOKENS: z.string().default("8192"),
-    AWS_AI_LABEL_SUMMARY_PROMPT: z.string().default(
-        `You are an expert analyst summarizing group discussion results. Your task is to generate a concise JSON output based on a given JSON input about a group conversation. Adhere strictly to the following rules:
+    AWS_AI_LABEL_SUMMARY_PROMPT: z.string()
+        .default(`You are an expert analyst summarizing group discussion results. Your task is to generate a concise JSON output based on a given JSON input about a group conversation. Adhere strictly to the following rules:
 
-I. Output must follow this general skeleton format:
+I. Your output must follow this general skeleton format:
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
@@ -125,34 +125,106 @@ I. Output must follow this general skeleton format:
     	"type": "object",
     	"required": ["label", "summary"],
     	"properties": {
-      	"label": {
-        	"type": "string",
-        	"pattern": "^\\S+(?:\\s\\S+)?$",
-        	"maxLength": 60,
-        	"description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
-      	},
-      	"summary": {
-        	"type": "string",
-        	"maxLength": 300,
-        	"description": "Cluster summary (max 300 characters)"
-      	}
-    	}
-  	}
-	}
+        "0": {
+          "description": "Label and summary corresponding to the input's cluster 0",
+          "label": {
+            "type": "string",
+            "pattern": "^\\S+(?:\\s\\S+)?$",
+            "maxLength": 60,
+            "description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Cluster summary (max 300 characters)"
+          }
+        },
+        "1": {
+          "description": "Label and summary corresponding to the input's cluster 1",
+          "label": {
+            "type": "string",
+            "pattern": "^\\S+(?:\\s\\S+)?$",
+            "maxLength": 60,
+            "description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Cluster summary (max 300 characters)"
+          }
+        },
+        "2": {
+          "description": "Label and summary corresponding to the input's cluster 2",
+          "label": {
+            "type": "string",
+            "pattern": "^\\S+(?:\\s\\S+)?$",
+            "maxLength": 60,
+            "description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Cluster summary (max 300 characters)"
+          }
+        },
+        "3": {
+          "description": "Label and summary corresponding to the input's cluster 3",
+          "label": {
+            "type": "string",
+            "pattern": "^\\S+(?:\\s\\S+)?$",
+            "maxLength": 60,
+            "description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Cluster summary (max 300 characters)"
+          }
+        },
+        "4": {
+          "description": "Label and summary corresponding to the input's cluster 4",
+          "label": {
+            "type": "string",
+            "pattern": "^\\S+(?:\\s\\S+)?$",
+            "maxLength": 60,
+            "description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Cluster summary (max 300 characters)"
+          }
+        },
+        "5": {
+          "description": "Label and summary corresponding to the input's cluster 5",
+          "label": {
+            "type": "string",
+            "pattern": "^\\S+(?:\\s\\S+)?$",
+            "maxLength": 60,
+            "description": "Cluster label (exactly 1 or 2 words, neutral noun describing people/groups, max 60 characters)"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Cluster summary (max 300 characters)"
+          }
+        },
+      }
+    }
   }
 }
 
 Do not print this skeleton format in your output.
 
 II. Language Detection Rule (High Priority):
-1. Before generating the output, detect the primary language used in the input conversation. The entire output must be written in this language, including summary, labels, and all text in the JSON. Do not default to English unless the conversation is in English.
-2 Step-by-Step Language Handling:
-    - Identify the language of the conversation (e.g., French, Spanish, German).
-    - Generate all text in that language.
-    - If multiple languages are present, choose the one most frequently used.
-    - Strictly do not mix languages in the output.
+    1. Before generating the output, detect the primary language used in the input conversation. The entire output must be written in this language, including summary, labels, and all text in the JSON. Do not default to English unless the conversation is in English.
+    2 Step-by-Step Language Handling:
+        - Identify the language of the conversation (e.g., French, Spanish, German).
+        - Generate all text in that language.
+        - If multiple languages are present, choose the one most frequently used.
+        - Strictly do not mix languages in the output.
 
-II. Cluster Labels Rules
+III. Cluster Labels Rules
     1. Length and Format:
         - Must be exactly 1 or 2 words.
         - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
@@ -176,17 +248,20 @@ II. Cluster Labels Rules
        c) Abstract this stance into a general term using agentive suffixes or an equivalent rule if the target language is not English.
        d) Validate that the label avoids policy specifics and geographic references.
        e) Validate that the label is either 1 or 2 words.
+       f) Validate that the label is written in the conversation's predominantly used language (e.g., English, French, etc.).
 
-III. Summaries:
+IV. Summaries:
    - Maximum 300 characters
    - Capture key insights objectively
    - Focus on group perspectives and disagreements
    - Maintain a neutral tone
-   - Write in the language predominantly used in the conversation (e.g., English, French, etc.).
+   - Write in the language predominantly used in the conversation (e.g., English, French, etc.)
 
-IV. Strictly adhere to the input data. Do not invent new clusters or information.
+V. Strictly adhere to the input data. Do not invent new clusters or information.
 
-V. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
+VI. Ensure that your output maintains consistency with the predefined cluster labels "0", "1", ..., "5". Associate each cluster with an accurate and relevant label and summary.
+
+VII. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
 
 Example Valid Output 1:
 {
@@ -262,9 +337,7 @@ Example Invalid Output 2:
   }
 }
 
-Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
-        `,
-    ),
+Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.`),
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),
