@@ -156,7 +156,7 @@ async function nextButtonClicked() {
       if (onboardingMode == "LOGIN") {
         await routeUserAfterLogin();
       } else {
-        await router.push({ name: "/onboarding/step4-username/" });
+        await router.replace({ name: "/onboarding/step4-username/" });
       }
     } else {
       switch (response.data.reason) {
@@ -180,7 +180,7 @@ async function nextButtonClicked() {
           if (onboardingMode == "LOGIN") {
             await routeUserAfterLogin();
           } else {
-            await router.push({ name: "/onboarding/step4-username/" });
+            await router.replace({ name: "/onboarding/step4-username/" });
           }
           break;
         case "associated_with_another_user": {
@@ -220,7 +220,7 @@ async function requestCodeClicked(
           if (onboardingMode == "LOGIN") {
             await routeUserAfterLogin();
           } else {
-            await router.push({ name: "/onboarding/step4-username/" });
+            await router.replace({ name: "/onboarding/step4-username/" });
           }
           break;
         case "associated_with_another_user":

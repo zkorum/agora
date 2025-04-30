@@ -57,11 +57,11 @@ const description = "Please select a log in method.";
 const router = useRouter();
 
 async function goToPassportLogin() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+  await router.replace({ name: "/onboarding/step3-passport/" });
 }
 
 async function goToPhoneLogin() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+  await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

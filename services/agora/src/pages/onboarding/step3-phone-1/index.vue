@@ -181,7 +181,7 @@ const devAuthorizedNumbers: PhoneNumber[] = [];
 checkDevAuthorizedNumbers();
 
 async function goToPassportVerification() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+  await router.replace({ name: "/onboarding/step3-passport/" });
 }
 
 function getFlagLink(country: string) {
@@ -251,7 +251,7 @@ async function validateNumber() {
       defaultCallingCode: callingCode.data,
       phoneNumber: phoneNumber.number,
     };
-    await router.push({ name: "/onboarding/step3-phone-2/" });
+    await router.replace({ name: "/onboarding/step3-phone-2/" });
   } catch (e) {
     // TODO: make sure this never happen one the first place
     console.error("Failed to parse phone number", e);

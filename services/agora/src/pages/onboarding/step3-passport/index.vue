@@ -336,12 +336,12 @@ async function completeVerification() {
   if (onboardingMode == "LOGIN") {
     await routeUserAfterLogin();
   } else {
-    await router.push({ name: "/onboarding/step4-username/" });
+    await router.replace({ name: "/onboarding/step4-username/" });
   }
 }
 
 async function goToPhoneVerification() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+  await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

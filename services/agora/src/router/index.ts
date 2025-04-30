@@ -6,7 +6,6 @@ import {
   createWebHistory,
 } from "vue-router";
 import { routes } from "vue-router/auto-routes";
-import { useRouteStateStore } from "src/stores/routeState";
 
 /*
  * If not building with SSR mode, you can
@@ -18,8 +17,6 @@ import { useRouteStateStore } from "src/stores/routeState";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { captureRouteState } = useRouteStateStore();
-
   const createHistory = process.env.SERVER
     ? createMemoryHistory
     : process.env.VUE_ROUTER_MODE === "history"
@@ -28,11 +25,6 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
   const Router = createRouter({
     scrollBehavior: (to, from, savedPosition) => {
-      // to, from, savedPosition
-      if (from.name && to.name) {
-        captureRouteState(from.name, from.params, from.query, to.name);
-      }
-
       return { left: 0, top: savedPosition?.top };
     },
     routes,

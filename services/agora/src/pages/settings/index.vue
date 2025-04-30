@@ -51,6 +51,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { useAuthSetup } from "src/utils/auth/setup";
 import { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
@@ -63,24 +64,15 @@ const { profileData } = storeToRefs(useUserStore());
 const { showDeleteAccountDialog } = useDialog();
 
 const { deleteUserAccount } = useBackendAccountApi();
-const { updateAuthState, logoutFromServer } = useBackendAuthApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
+const { logoutRequested } = useAuthSetup();
+
+const { updateAuthState } = useBackendAuthApi();
 
 const deleteAccountLabel = computed(() =>
   isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
 );
-
-async function logoutRequested() {
-  try {
-    await logoutFromServer();
-    await updateAuthState({ partialLoginStatus: { isLoggedIn: false } });
-    showNotifyMessage("Logged out");
-  } catch (e) {
-    console.error("Unexpected error when logging out", e);
-    showNotifyMessage("Oops! Logout failed. Please try again");
-  }
-}
 
 const accountSettings: SettingsInterface[] = [
   {

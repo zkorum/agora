@@ -59,11 +59,11 @@ const description =
   "More than half of internet traffic comes from bots. That’s why we verify users, so you’re debating people, not robots plotting world domination!";
 
 async function goToNextRoute() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+  await router.replace({ name: "/onboarding/step3-passport/" });
 }
 
 async function verifyPhone() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+  await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 
