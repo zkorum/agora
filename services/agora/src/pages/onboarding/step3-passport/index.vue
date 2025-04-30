@@ -336,7 +336,7 @@ async function completeVerification() {
   if (onboardingMode == "LOGIN") {
     await routeUserAfterLogin();
   } else {
-    await router.replace({ name: "/onboarding/step4-username/" });
+    await router.push({ name: "/onboarding/step4-username/" });
   }
 }
 
