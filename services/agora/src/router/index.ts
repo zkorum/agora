@@ -25,7 +25,8 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
   const Router = createRouter({
     scrollBehavior: (to, from, savedPosition) => {
-      return { left: 0, top: savedPosition?.top };
+      const scrollTop = savedPosition ? savedPosition.top : 0;
+      return { left: 0, top: scrollTop };
     },
     routes,
     // Leave this as is and make changes in quasar.conf.js instead!
