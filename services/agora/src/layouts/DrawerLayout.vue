@@ -42,7 +42,7 @@
         :no-swipe-open="noSwipeOpen"
         bordered
       >
-        <q-scroll-area class="fit">
+        <q-scroll-area class="scrollContainer">
           <SideDrawer />
         </q-scroll-area>
       </q-drawer>
@@ -110,5 +110,10 @@ function captureHeaderReval(reveal: boolean) {
 
 .generalPagePadding {
   padding: 1rem;
+}
+
+.scrollContainer {
+  width: 100%;
+  height: 100%;
 }
 </style>
