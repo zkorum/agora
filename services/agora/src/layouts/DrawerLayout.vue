@@ -2,7 +2,7 @@
   <div>
     <q-layout :key="drawerBehavior" :view="'lHh LpR lFf'">
       <q-header
-        reveal
+        :reveal="enableHeaderReveal"
         :model-value="props.generalProps.enableHeader"
         @reveal="captureHeaderReval"
       >
@@ -59,6 +59,7 @@ import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNotificationRefresher } from "src/utils/component/notification/menuRefresher";
 import { type MainLayoutProps } from "src/utils/model/props";
+import { ref } from "vue";
 
 const props = defineProps<MainLayoutProps>();
 
@@ -68,6 +69,11 @@ const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());
 useNotificationRefresher();
 
 const noSwipeOpen = process.env.MODE != "capacitor";
+
+const enableHeaderReveal = ref(false);
+setTimeout(() => {
+  enableHeaderReveal.value = true;
+}, 500);
 
 function captureHeaderReval(reveal: boolean) {
   if (drawerBehavior.value == "mobile") {
