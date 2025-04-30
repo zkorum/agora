@@ -232,7 +232,7 @@ async function submittedComment(opinionSlugId: string) {
   commentCountOffset.value += 1;
   commentSectionKey.value += Date.now();
 
-  await router.push({
+  await router.replace({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
     query: { opinion: opinionSlugId },

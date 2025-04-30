@@ -142,9 +142,9 @@ function applyCurrentTab() {
 
 async function selectedTab(routeName: keyof RouteNamedMap) {
   if (routeName == "/user-profile/conversations/") {
-    await router.push({ name: "/user-profile/conversations/" });
+    await router.replace({ name: "/user-profile/conversations/" });
   } else if (routeName == "/user-profile/opinions/") {
-    await router.push({ name: "/user-profile/opinions/" });
+    await router.replace({ name: "/user-profile/opinions/" });
   } else {
     console.error("Unknown route: " + routeName);
   }
