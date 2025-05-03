@@ -1,0 +1,77 @@
+services:
+  polis-agora-server:
+    image: zkorum/polis-server:1.0.0
+    container_name: polis-agora-server
+    # env_file: ../../server/.envrc
+    environment:
+      STATIC_FILES_HOST: file-server
+      STATIC_FILES_PORT: 8080
+      DATABASE_URL: postgres://postgres:7QPgtYETx4EdzvqUeNfo@postgres_container:5432/polis
+      DOMAIN_OVERRIDE: polis-agora-server:8000
+      PORT: 8000
+      STATIC_FILES_ADMINDASH_PORT: 8080
+      DATABASE_FOR_READS_NAME: DATABASE_URL
+      DEV_MODE: true
+      NODE_ENV: development
+      ENCRYPTION_PASSWORD_00001: somesecret
+      MATH_ENV: prod
+      WEBSERVER_USERNAME: ws-user
+      WEBSERVER_PASS: ws-pass
+      PRIVACY_URL: "/privacy"
+      TERMS_OF_SERVICE_URL: "/tos"
+      EMAIL_TRANSPORT_TYPES: maildev
+      POLIS_FROM_ADDRESS: "Example <team@example.com>"
+      MAILDEV_HOST: maildev
+      MAILDEV_SMTP_PORT: 1025
+    depends_on:
+      - "polis-agora-file-server"
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    # Scale the server container to a given number of instances.
+    scale: 1
+    restart: unless-stopped
+    networks:
+      - "api_default"
+  polis-agora-math:
+    image: zkorum/polis-math:1.1.2
+    container_name: polis-agora-math
+    # env_file: ../../math/.envrc
+    # The following overrides the env_file ...
+    environment:
+      DATABASE_HOST: postgres_container
+      DATABASE_PASSWORD: 7QPgtYETx4EdzvqUeNfo
+      DATABASE_PORT: 5432
+      DATABASE_DB: polis
+      DATABASE_USER: postgres
+      WEBSERVER_USERNAME: ws-user
+      WEBSERVER_PASS: ws-pass
+      CHOKIDAR_USEPOLLING: true
+      MATH_ENV: prod
+    networks:
+      - "api_default"
+  polis-agora-file-server:
+    image: zkorum/polis-file-server:1.0.0
+    container_name: polis-agora-file-server
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+    networks:
+      - "api_default"
+  polis-reverse-proxy:
+    image: zkorum/polis-reverse-proxy:1.0.0
+    ports:
+      - 3000:80
+    environment:
+      - POLIS_SERVER_HOST=http://polis-agora-server:8004
+    depends_on:
+      - "polis-agora-server"
+    restart: unless-stopped
+    networks:
+      - "api_default"
+
+networks:
+  api_default:
+    name: "api_default"
+    external: true

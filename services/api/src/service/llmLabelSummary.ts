@@ -231,7 +231,8 @@ async function invokeRemoteModel({
     // "Bad escaped character in JSON" ('\' character which ends up alone)
     const prompt = `${awsAiLabelSummaryPrompt}\n\n${JSON.stringify(
         conversationInsights,
-    ).replace(/\\\\"/g, '"')}`; // a string with '"' inside is JSON.stringify to '"\\""' hence if it's JSON.stringify again it bugs
+        // eslint-disable-next-line no-useless-escape
+    ).replace(/\\\\\\\"/g, '\\"')}`; // an opinion with '"' is stringified with '\\\"' so the subsequent stringify will lead to bugs
     log.info(
         `[LLM] Sending Generate Label and Summary Prompt for conversation ${String(
             conversationId,
