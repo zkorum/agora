@@ -1,5 +1,5 @@
 import PrimeVue from "primevue/config";
-import Aura from "@primevue/themes/aura";
+import Aura from "@primeuix/themes/aura";
 import { defineBoot } from "#q-app/wrappers";
 
 export default defineBoot(({ app }) => {

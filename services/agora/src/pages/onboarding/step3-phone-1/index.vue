@@ -181,7 +181,7 @@ const devAuthorizedNumbers: PhoneNumber[] = [];
 checkDevAuthorizedNumbers();
 
 async function goToPassportVerification() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+  await router.replace({ name: "/onboarding/step3-passport/" });
 }
 
 function getFlagLink(country: string) {

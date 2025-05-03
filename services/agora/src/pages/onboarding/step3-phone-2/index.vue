@@ -124,7 +124,7 @@ const isSubmitButtonLoading = ref(false);
 
 onMounted(async () => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
-    changePhoneNumber();
+    await changePhoneNumber();
   } else {
     await requestCodeClicked(false);
   }
@@ -301,8 +301,8 @@ function decrementNextCodeTimer() {
   }
 }
 
-function changePhoneNumber() {
-  history.back();
+async function changePhoneNumber() {
+  await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

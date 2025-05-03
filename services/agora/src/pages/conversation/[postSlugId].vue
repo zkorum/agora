@@ -20,13 +20,15 @@
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <PostDetails
-        v-if="dataLoaded"
-        :key="postData.metadata.opinionCount"
-        :extended-post-data="postData"
-        :compact-mode="false"
-        :skeleton-mode="false"
-      />
+      <WidthWrapper :enable="true">
+        <PostDetails
+          v-if="dataLoaded"
+          :key="postData.metadata.opinionCount"
+          :extended-post-data="postData"
+          :compact-mode="false"
+          :skeleton-mode="false"
+        />
+      </WidthWrapper>
     </q-pull-to-refresh>
   </DrawerLayout>
 </template>
@@ -34,6 +36,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";

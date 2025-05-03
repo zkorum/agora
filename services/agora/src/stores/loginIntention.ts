@@ -124,32 +124,32 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
     switch (activeUserIntention.value) {
       case "none":
-        await router.push({ name: "/" });
+        await router.replace({ name: "/" });
         break;
       case "agreement":
-        await router.push({
+        await router.replace({
           name: "/conversation/[postSlugId]",
           params: { postSlugId: opinionAgreementIntention.conversationSlugId },
           query: { opinion: opinionAgreementIntention.opinionSlugId },
         });
         break;
       case "newConversation":
-        await router.push({ name: "/conversation/create/" });
+        await router.replace({ name: "/conversation/create/" });
         break;
       case "newOpinion":
-        await router.push({
+        await router.replace({
           name: "/conversation/[postSlugId]",
           params: { postSlugId: newOpinionIntention.conversationSlugId },
         });
         break;
       case "voting":
-        await router.push({
+        await router.replace({
           name: "/conversation/[postSlugId]",
           params: { postSlugId: votingIntention.conversationSlugId },
         });
         break;
       case "reportUserContent":
-        await router.push({
+        await router.replace({
           name: "/conversation/[postSlugId]",
           params: { postSlugId: reportUserContentIntention.conversationSlugId },
           query: { opinion: reportUserContentIntention.opinionSlugId },

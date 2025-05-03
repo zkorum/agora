@@ -78,8 +78,9 @@ export const usePostStore = defineStore("post", () => {
 
   const hasPendingNewPosts = ref(false);
 
-  const dataReady = ref(false);
   const endOfFeed = ref(false);
+
+  const initializedFeed = ref(false);
 
   const emptyPost: DummyPostDataFormat = {
     metadata: {
@@ -148,13 +149,17 @@ export const usePostStore = defineStore("post", () => {
         if (response.postDataList.length > 0) {
           masterPostDataList.value.push(...internalDataList);
           trimHomeFeedSize(60);
+        } else {
+          // Empty so do nothing
         }
       } else {
         masterPostDataList.value = internalDataList;
+        hasPendingNewPosts.value = false;
       }
 
       endOfFeed.value = response.reachedEndOfFeed;
-      dataReady.value = true;
+
+      initializedFeed.value = true;
 
       if (response.postDataList.length > 0) {
         return true;
@@ -162,7 +167,7 @@ export const usePostStore = defineStore("post", () => {
         return false;
       }
     } else {
-      dataReady.value = false;
+      initializedFeed.value = true;
       return false;
     }
   }
@@ -175,26 +180,31 @@ export const usePostStore = defineStore("post", () => {
     }
   }
 
-  async function hasNewPosts() {
+  async function hasNewPostCheck(): Promise<void> {
+    if (hasPendingNewPosts.value == true || !initializedFeed.value) {
+      return;
+    }
+
     const response = await fetchRecentPost(undefined, isGuestOrLoggedIn.value);
     if (response != null) {
-      if (
-        response.postDataList.length > 0 &&
-        masterPostDataList.value.length > 0
-      ) {
-        if (
-          new Date(response.postDataList[0].metadata.createdAt).getTime() !=
-          masterPostDataList.value[0].metadata.createdAt.getTime()
-        ) {
-          return true;
-        } else {
-          return false;
-        }
+      if (response.postDataList.length == 0) {
+        hasPendingNewPosts.value = false;
       } else {
-        return false;
+        if (masterPostDataList.value.length == 0) {
+          hasPendingNewPosts.value = true;
+        } else {
+          if (
+            new Date(response.postDataList[0].metadata.createdAt).getTime() !=
+            masterPostDataList.value[0].metadata.createdAt.getTime()
+          ) {
+            hasPendingNewPosts.value = true;
+          } else {
+            hasPendingNewPosts.value = false;
+          }
+        }
       }
     } else {
-      return false;
+      hasPendingNewPosts.value = false;
     }
   }
 
@@ -205,13 +215,13 @@ export const usePostStore = defineStore("post", () => {
 
   return {
     loadPostData,
-    hasNewPosts,
+    hasNewPostCheck,
     resetPostData,
     masterPostDataList,
     emptyPostDataList,
     emptyPost,
-    dataReady,
     endOfFeed,
     hasPendingNewPosts,
+    initializedFeed,
   };
 });

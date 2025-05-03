@@ -341,7 +341,7 @@ async function completeVerification() {
 }
 
 async function goToPhoneVerification() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+  await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

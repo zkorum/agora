@@ -4,7 +4,7 @@
     :style="{ backgroundImage: 'url(' + welcomeBackgroundImagePath + ')' }"
   >
     <img :src="brandImagePath" class="welcomeImage" />
-    <div class="buttonFlex">
+    <div v-if="!isLoggedIn" class="buttonFlex">
       <ZKButton
         button-type="largeButton"
         label="Sign Up"
@@ -28,13 +28,33 @@
         @click="skipAuthentication()"
       />
     </div>
+
+    <div v-if="isLoggedIn" class="buttonFlex">
+      <ZKButton
+        button-type="largeButton"
+        text-color="white"
+        color="primary"
+        label="Launch App"
+        @click="skipAuthentication()"
+      />
+
+      <ZKButton
+        button-type="largeButton"
+        label="Log Out"
+        color="secondary"
+        text-color="black"
+        @click="logoutRequested()"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { useAuthSetup } from "src/utils/auth/setup";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -46,6 +66,10 @@ const welcomeBackgroundImagePath =
   process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
 
 const { onboardingMode } = storeToRefs(onboardingFlowStore());
+
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+const { logoutRequested } = useAuthSetup();
 
 async function skipAuthentication() {
   await router.push({ name: "/" });

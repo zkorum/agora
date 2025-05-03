@@ -52,7 +52,7 @@
           >
             <div>
               <RouterLink
-                v-if="hasLoginButton && !isLoggedIn && showAuthButton"
+                v-if="hasLoginButton && !isLoggedIn && isAuthInitialized"
                 :to="{ name: '/welcome/' }"
               >
                 <ZKButton
@@ -78,7 +78,6 @@ import BackButton from "../buttons/BackButton.vue";
 import { type DefaultMenuBarProps } from "src/utils/model/props";
 import TopMenuWrapper from "./TopMenuWrapper.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { onMounted, ref } from "vue";
 import CloseButton from "../buttons/CloseButton.vue";
 import { storeToRefs } from "pinia";
 import { useNavigationStore } from "src/stores/navigation";
@@ -93,15 +92,9 @@ const { profileData } = storeToRefs(useUserStore());
 
 const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
 
-const { isLoggedIn, isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
-
-const showAuthButton = ref(false);
-
-onMounted(() => {
-  setTimeout(function () {
-    showAuthButton.value = true;
-  }, 50);
-});
+const { isLoggedIn, isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
+  useAuthenticationStore()
+);
 
 function menuButtonClicked() {
   showMobileDrawer.value = !showMobileDrawer.value;

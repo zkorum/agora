@@ -419,7 +419,7 @@ async function onSubmit() {
 
       await loadPostData(false);
 
-      await router.push({
+      await router.replace({
         name: "/conversation/[postSlugId]",
         params: { postSlugId: response.data.conversationSlugId },
       });

@@ -15,7 +15,7 @@ import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 const goBackButtonHandler = useGoBackButtonHandler();
 
 async function buttonClicked() {
-  await goBackButtonHandler.goBack();
+  await goBackButtonHandler.safeNavigateBack();
 }
 </script>
 

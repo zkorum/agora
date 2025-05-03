@@ -6,7 +6,6 @@ import {
   createWebHistory,
 } from "vue-router";
 import { routes } from "vue-router/auto-routes";
-import { useRouteStateStore } from "src/stores/routeState";
 
 /*
  * If not building with SSR mode, you can
@@ -18,8 +17,6 @@ import { useRouteStateStore } from "src/stores/routeState";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { storeFromName } = useRouteStateStore();
-
   const createHistory = process.env.SERVER
     ? createMemoryHistory
     : process.env.VUE_ROUTER_MODE === "history"
@@ -27,13 +24,9 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       : createWebHashHistory;
 
   const Router = createRouter({
-    scrollBehavior: (to, from) => {
-      // to, from, savedPosition
-      if (from.name && to.name) {
-        storeFromName(from.name, from.params, from.query, to.name);
-      }
-
-      return { left: 0, top: 0 };
+    scrollBehavior: (to, from, savedPosition) => {
+      const scrollTop = savedPosition ? savedPosition.top : 0;
+      return { left: 0, top: scrollTop };
     },
     routes,
     // Leave this as is and make changes in quasar.conf.js instead!

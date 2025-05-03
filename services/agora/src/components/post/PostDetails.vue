@@ -5,172 +5,170 @@
       :disable="compactMode || !hasMore"
       @load="onLoad"
     >
-      <WidthWrapper :enable="true">
-        <ZKHoverEffect :enable-hover="compactMode">
+      <ZKHoverEffect :enable-hover="compactMode">
+        <div
+          class="container"
+          :class="{
+            compactBackground: compactMode,
+          }"
+        >
           <div
-            class="container"
-            :class="{
-              compactBackground: compactMode,
-            }"
+            class="innerContainer postPadding"
+            :class="{ postPaddingCompact: compactMode }"
           >
-            <div
-              class="innerContainer postPadding"
-              :class="{ postPaddingCompact: compactMode }"
-            >
-              <!-- TODO: Pass author verified flag here -->
-              <PostMetadata
-                :poster-user-name="extendedPostData.metadata.authorUsername"
-                :created-at="new Date(extendedPostData.metadata.createdAt)"
-                :skeleton-mode="skeletonMode"
-                :post-slug-id="extendedPostData.metadata.conversationSlugId"
-                :author-verified="false"
-                :organization-url="
-                  extendedPostData.metadata.organization?.imageUrl || ''
-                "
-                :organization-name="
-                  extendedPostData.metadata.organization?.name || ''
-                "
-                @open-moderation-history="openModerationHistory()"
-              />
+            <!-- TODO: Pass author verified flag here -->
+            <PostMetadata
+              :poster-user-name="extendedPostData.metadata.authorUsername"
+              :created-at="new Date(extendedPostData.metadata.createdAt)"
+              :skeleton-mode="skeletonMode"
+              :post-slug-id="extendedPostData.metadata.conversationSlugId"
+              :author-verified="false"
+              :organization-url="
+                extendedPostData.metadata.organization?.imageUrl || ''
+              "
+              :organization-name="
+                extendedPostData.metadata.organization?.name || ''
+              "
+              @open-moderation-history="openModerationHistory()"
+            />
 
-              <div class="postDiv">
-                <div>
-                  <div v-if="!skeletonMode" class="titleDiv titlePadding">
-                    {{ extendedPostData.payload.title }}
-                  </div>
-
-                  <div v-if="skeletonMode" class="titleDiv">
-                    <Skeleton
-                      width="100%"
-                      height="4rem"
-                      border-radius="16px"
-                    ></Skeleton>
-                  </div>
+            <div class="postDiv">
+              <div>
+                <div v-if="!skeletonMode" class="titleDiv titlePadding">
+                  {{ extendedPostData.payload.title }}
                 </div>
 
-                <div
-                  v-if="
-                    extendedPostData.payload.body != undefined &&
-                    extendedPostData.payload.body.length > 0
-                  "
-                  class="bodyDiv"
-                >
-                  <UserHtmlBody
-                    :html-body="extendedPostData.payload.body"
-                    :compact-mode="compactMode"
-                  />
+                <div v-if="skeletonMode" class="titleDiv">
+                  <Skeleton
+                    width="100%"
+                    height="4rem"
+                    border-radius="16px"
+                  ></Skeleton>
                 </div>
-
-                <ZKCard
-                  v-if="
-                    extendedPostData.metadata.moderation.status == 'moderated'
-                  "
-                  padding="1rem"
-                  class="lockCardStyle"
-                >
-                  <PostLockedMessage
-                    :moderation-property="extendedPostData.metadata.moderation"
-                    :post-slug-id="extendedPostData.metadata.conversationSlugId"
-                  />
-                </ZKCard>
               </div>
 
               <div
-                v-if="extendedPostData.payload.poll && !skeletonMode"
-                class="pollContainer"
+                v-if="
+                  extendedPostData.payload.body != undefined &&
+                  extendedPostData.payload.body.length > 0
+                "
+                class="bodyDiv"
               >
-                <PollWrapper
-                  :login-required-to-participate="
-                    extendedPostData.metadata.isIndexed ||
-                    extendedPostData.metadata.isLoginRequired
-                  "
-                  :poll-options="extendedPostData.payload.poll"
-                  :post-slug-id="extendedPostData.metadata.conversationSlugId"
-                  :user-response="extendedPostData.interaction"
+                <UserHtmlBody
+                  :html-body="extendedPostData.payload.body"
+                  :compact-mode="compactMode"
                 />
               </div>
 
-              <div class="bottomButtons">
-                <div class="leftButtonCluster">
-                  <div v-if="!skeletonMode">
-                    <div class="commentCountStyle">
-                      <ZKIcon
-                        color="#7D7A85"
-                        name="meteor-icons:comment"
-                        size="1rem"
-                      />
-                      <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
-                        {{
-                          (
-                            extendedPostData.metadata.opinionCount +
-                            commentCountOffset
-                          ).toString()
-                        }}
-                      </div>
-                    </div>
-                  </div>
-                  <div v-if="skeletonMode">
-                    <Skeleton
-                      width="3rem"
-                      height="2rem"
-                      border-radius="16px"
-                    ></Skeleton>
-                  </div>
-                </div>
-
-                <div>
-                  <div v-if="!skeletonMode">
-                    <ZKButton
-                      button-type="standardButton"
-                      @click.stop.prevent="shareClicked()"
-                    >
-                      <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
-                    </ZKButton>
-                  </div>
-                  <div v-if="skeletonMode">
-                    <Skeleton
-                      width="3rem"
-                      height="2rem"
-                      border-radius="16px"
-                    ></Skeleton>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="!compactMode" class="commentSectionPadding">
-              <CommentSection
-                :key="commentSectionKey"
-                ref="commentSectionRef"
-                :post-slug-id="extendedPostData.metadata.conversationSlugId"
-                :participant-count="extendedPostData.metadata.participantCount"
-                :polis="extendedPostData.polis"
-                :is-post-locked="
+              <ZKCard
+                v-if="
                   extendedPostData.metadata.moderation.status == 'moderated'
                 "
+                padding="1rem"
+                class="lockCardStyle"
+              >
+                <PostLockedMessage
+                  :moderation-property="extendedPostData.metadata.moderation"
+                  :post-slug-id="extendedPostData.metadata.conversationSlugId"
+                />
+              </ZKCard>
+            </div>
+
+            <div
+              v-if="extendedPostData.payload.poll && !skeletonMode"
+              class="pollContainer"
+            >
+              <PollWrapper
                 :login-required-to-participate="
                   extendedPostData.metadata.isIndexed ||
                   extendedPostData.metadata.isLoginRequired
                 "
-                @deleted="decrementCommentCount()"
+                :poll-options="extendedPostData.payload.poll"
+                :post-slug-id="extendedPostData.metadata.conversationSlugId"
+                :user-response="extendedPostData.interaction"
               />
             </div>
-          </div>
-        </ZKHoverEffect>
 
-        <FloatingBottomContainer v-if="!compactMode && !isLocked">
-          <CommentComposer
-            :post-slug-id="extendedPostData.metadata.conversationSlugId"
-            :login-required-to-participate="
-              extendedPostData.metadata.isIndexed ||
-              extendedPostData.metadata.isLoginRequired
-            "
-            @submitted-comment="
-              (opinionSlugId: string) => submittedComment(opinionSlugId)
-            "
-          />
-        </FloatingBottomContainer>
-      </WidthWrapper>
+            <div class="bottomButtons">
+              <div class="leftButtonCluster">
+                <div v-if="!skeletonMode">
+                  <div class="commentCountStyle">
+                    <ZKIcon
+                      color="#7D7A85"
+                      name="meteor-icons:comment"
+                      size="1rem"
+                    />
+                    <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
+                      {{
+                        (
+                          extendedPostData.metadata.opinionCount +
+                          commentCountOffset
+                        ).toString()
+                      }}
+                    </div>
+                  </div>
+                </div>
+                <div v-if="skeletonMode">
+                  <Skeleton
+                    width="3rem"
+                    height="2rem"
+                    border-radius="16px"
+                  ></Skeleton>
+                </div>
+              </div>
+
+              <div>
+                <div v-if="!skeletonMode">
+                  <ZKButton
+                    button-type="standardButton"
+                    @click.stop.prevent="shareClicked()"
+                  >
+                    <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
+                  </ZKButton>
+                </div>
+                <div v-if="skeletonMode">
+                  <Skeleton
+                    width="3rem"
+                    height="2rem"
+                    border-radius="16px"
+                  ></Skeleton>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!compactMode" class="commentSectionPadding">
+            <CommentSection
+              :key="commentSectionKey"
+              ref="commentSectionRef"
+              :post-slug-id="extendedPostData.metadata.conversationSlugId"
+              :participant-count="extendedPostData.metadata.participantCount"
+              :polis="extendedPostData.polis"
+              :is-post-locked="
+                extendedPostData.metadata.moderation.status == 'moderated'
+              "
+              :login-required-to-participate="
+                extendedPostData.metadata.isIndexed ||
+                extendedPostData.metadata.isLoginRequired
+              "
+              @deleted="decrementCommentCount()"
+            />
+          </div>
+        </div>
+      </ZKHoverEffect>
+
+      <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
+        <CommentComposer
+          :post-slug-id="extendedPostData.metadata.conversationSlugId"
+          :login-required-to-participate="
+            extendedPostData.metadata.isIndexed ||
+            extendedPostData.metadata.isLoginRequired
+          "
+          @submitted-comment="
+            (opinionSlugId: string) => submittedComment(opinionSlugId)
+          "
+        />
+      </FloatingBottomContainer>
     </q-infinite-scroll>
   </div>
 </template>
@@ -182,7 +180,7 @@ import PostMetadata from "./views/PostMetadata.vue";
 import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./views/CommentComposer.vue";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -191,7 +189,6 @@ import type { ExtendedConversation } from "src/shared/types/zod";
 import ZKCard from "../ui-library/ZKCard.vue";
 import PostLockedMessage from "./views/PostLockedMessage.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import WidthWrapper from "../navigation/WidthWrapper.vue";
 import UserHtmlBody from "./views/UserHtmlBody.vue";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
@@ -214,14 +211,9 @@ const webShare = useWebShare();
 const { loadMore } = useOpinionScrollableStore();
 const { hasMore } = storeToRefs(useOpinionScrollableStore());
 
-const isLocked = computed(() => {
-  if (props.extendedPostData.metadata.moderation.status == "moderated") {
-    if (props.extendedPostData.metadata.moderation.action == "lock") {
-      return true;
-    }
-  }
-  return false;
-});
+const isPostLocked =
+  props.extendedPostData.metadata.moderation.status === "moderated" &&
+  props.extendedPostData.metadata.moderation.action === "lock";
 
 function onLoad(index: number, done: () => void) {
   loadMore();
@@ -240,7 +232,7 @@ async function submittedComment(opinionSlugId: string) {
   commentCountOffset.value += 1;
   commentSectionKey.value += Date.now();
 
-  await router.push({
+  await router.replace({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
     query: { opinion: opinionSlugId },
