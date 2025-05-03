@@ -1,40 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   width="145"
-   height="71"
-   viewBox="0 0 145 71"
-   fill="none"
-   version="1.1"
-   id="svg1"
-   sodipodi:docname="cluster6-6-on.svg"
-   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs1" />
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="11.492958"
-     inkscape:cx="72.522672"
-     inkscape:cy="35.5"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="-6"
-     inkscape:window-y="-6"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg1" />
-  <path
-     d="M32.5059 1.30706L0.304626 31.0421L32.5059 68.298L103.553 70.7372L144.528 13.5902L132.689 0.368164L32.5059 1.30706Z"
-     fill="#E2E1E7"
-     id="path1"
-     style="fill:#cacdf9;fill-opacity:1" />
+<svg width="120" height="57" viewBox="0 0 120 57" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M27.359 1.29017L0.861938 24.8924L27.359 54.4642L85.8202 56.4003L119.537 11.0399L109.795 0.544922L27.359 1.29017Z" fill="url(#paint0_linear_18611_22551)"/>
+<defs>
+<linearGradient id="paint0_linear_18611_22551" x1="60.1997" y1="0.544922" x2="60.1997" y2="56.4003" gradientUnits="userSpaceOnUse">
+<stop stop-color="#CEC7FB"/>
+<stop offset="1" stop-color="#C6D8F7"/>
+</linearGradient>
+</defs>
 </svg>

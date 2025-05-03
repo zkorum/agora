@@ -18,10 +18,18 @@
         :key="imageIndex"
         class="imageStyle"
         :style="{
-          width: activeCluster.clusterWidthPercent + '%',
+          width: imgItem.clusterWidthPercent + '%',
           top: imgItem.top + '%',
           left: imgItem.left + '%',
         }"
+        @click="
+          emit(
+            'selectedCluster',
+            String(
+              imageIndex
+            ) as PolisKey /* this is enforce because of the zod type below */
+          )
+        "
       >
         <!-- TODO: Integration the show me label -->
         <div
@@ -32,17 +40,7 @@
           Me
         </div>
 
-        <div
-          :style="{ position: 'relative' }"
-          @click="
-            emit(
-              'selectedCluster',
-              String(
-                imageIndex
-              ) as PolisKey /* this is enforce because of the zod type below */
-            )
-          "
-        >
+        <div :style="{ position: 'relative' }">
           <img
             :src="
               composeImagePath(
@@ -114,6 +112,7 @@ const showClusterInformation = ref(false);
 const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
 
 const zodClusterImg = z.object({
+  clusterWidthPercent: z.number(),
   top: z.number(),
   left: z.number(),
   isSelected: z.boolean(),
@@ -121,7 +120,6 @@ const zodClusterImg = z.object({
 
 const zodClusterConfig = z.object({
   numNodes: z.number(),
-  clusterWidthPercent: z.number(),
   imgList: z.array(zodClusterImg).max(5).min(0),
 });
 
@@ -130,130 +128,145 @@ type ClusterConfig = z.infer<typeof zodClusterConfig>;
 const clusterConfig: ClusterConfig[] = [
   {
     numNodes: 2,
-    clusterWidthPercent: 35,
     imgList: [
       {
+        clusterWidthPercent: 35,
         top: 15,
-        left: 15,
+        left: 11,
         isSelected: false,
       },
       {
+        clusterWidthPercent: 35,
         top: 25,
-        left: 50,
-        isSelected: false,
-      },
-    ],
-  },
-  {
-    numNodes: 3,
-    clusterWidthPercent: 30,
-    imgList: [
-      {
-        top: 15,
-        left: 30,
-        isSelected: false,
-      },
-      {
-        top: 48,
-        left: 20,
-        isSelected: false,
-      },
-      {
-        top: 50,
         left: 48,
         isSelected: false,
       },
     ],
   },
   {
-    numNodes: 4,
-    clusterWidthPercent: 30,
+    numNodes: 3,
     imgList: [
       {
-        top: 5,
-        left: 15,
+        clusterWidthPercent: 30,
+        top: 14,
+        left: 30,
         isSelected: false,
       },
       {
-        top: 5,
-        left: 45,
-        isSelected: false,
-      },
-      {
+        clusterWidthPercent: 30,
         top: 50,
+        left: 22,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 51,
+        left: 50,
+        isSelected: false,
+      },
+    ],
+  },
+  {
+    numNodes: 4,
+    imgList: [
+      {
+        clusterWidthPercent: 30,
+        top: 10,
         left: 15,
         isSelected: false,
       },
       {
-        top: 53,
-        left: 46,
+        clusterWidthPercent: 30,
+        top: 5,
+        left: 44,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 55,
+        left: 13,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 51,
+        left: 42,
         isSelected: false,
       },
     ],
   },
   {
     numNodes: 5,
-    clusterWidthPercent: 30,
     imgList: [
       {
-        top: 2,
-        left: 15,
+        clusterWidthPercent: 30,
+        top: 1,
+        left: 14,
         isSelected: false,
       },
       {
-        top: 5,
-        left: 45,
+        clusterWidthPercent: 30,
+        top: 7,
+        left: 42,
         isSelected: false,
       },
       {
-        top: 45,
-        left: 10,
+        clusterWidthPercent: 30,
+        top: 41,
+        left: 4,
         isSelected: false,
       },
       {
-        top: 45,
-        left: 37,
+        clusterWidthPercent: 30,
+        top: 41,
+        left: 29,
         isSelected: false,
       },
       {
-        top: 40,
-        left: 68,
+        clusterWidthPercent: 30,
+        top: 43,
+        left: 58,
         isSelected: false,
       },
     ],
   },
   {
     numNodes: 6,
-    clusterWidthPercent: 30,
     imgList: [
       {
-        top: 5,
-        left: 15,
+        clusterWidthPercent: 28,
+        top: 6,
+        left: 14,
         isSelected: false,
       },
       {
-        top: 12,
-        left: 50,
-        isSelected: false,
-      },
-      {
-        top: 37,
-        left: 10,
-        isSelected: false,
-      },
-      {
-        top: 32,
-        left: 35,
-        isSelected: false,
-      },
-      {
-        top: 42,
-        left: 70,
-        isSelected: false,
-      },
-      {
-        top: 75,
+        clusterWidthPercent: 35,
+        top: 10,
         left: 40,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 23,
+        top: 37,
+        left: 13,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 32,
+        left: 33,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 23,
+        top: 45,
+        left: 65,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 35,
+        top: 75,
+        left: 30,
         isSelected: false,
       },
     ],

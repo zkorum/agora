@@ -1,89 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   width="121"
-   height="122"
-   viewBox="0 0 121 122"
-   fill="none"
-   version="1.1"
-   id="svg3"
-   sodipodi:docname="Vector.svg"
-   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview3"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="6.6885246"
-     inkscape:cx="60.476716"
-     inkscape:cy="61"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="-6"
-     inkscape:window-y="-6"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="g1" />
-  <g
-     filter="url(#filter0_d_20166_8395)"
-     id="g1">
-    <path
-       d="M116.201 112.085L115.846 55.9747L82.3927 23.7993L39.1929 0.728516L16.1866 18.9802L4.76758 58.2869L61.5264 114.007"
-       fill="#E2E1E7"
-       id="path1"
-       style="fill:#cacdf9;fill-opacity:1" />
-  </g>
-  <defs
-     id="defs3">
-    <filter
-       id="filter0_d_20166_8395"
-       x="0.767578"
-       y="0.728516"
-       width="119.434"
-       height="121.279"
-       filterUnits="userSpaceOnUse"
-       color-interpolation-filters="sRGB">
-      <feFlood
-         flood-opacity="0"
-         result="BackgroundImageFix"
-         id="feFlood1" />
-      <feColorMatrix
-         in="SourceAlpha"
-         type="matrix"
-         values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-         result="hardAlpha"
-         id="feColorMatrix1" />
-      <feOffset
-         dy="4"
-         id="feOffset1" />
-      <feGaussianBlur
-         stdDeviation="2"
-         id="feGaussianBlur1" />
-      <feComposite
-         in2="hardAlpha"
-         operator="out"
-         id="feComposite1" />
-      <feColorMatrix
-         type="matrix"
-         values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"
-         id="feColorMatrix2" />
-      <feBlend
-         mode="normal"
-         in2="BackgroundImageFix"
-         result="effect1_dropShadow_20166_8395"
-         id="feBlend2" />
-      <feBlend
-         mode="normal"
-         in="SourceGraphic"
-         in2="effect1_dropShadow_20166_8395"
-         result="shape"
-         id="feBlend3" />
-    </filter>
-  </defs>
+<svg width="93" height="104" viewBox="0 0 93 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M92.1764 101.949L91.8852 51.0488L64.4534 21.8611L29.0295 0.932617L10.1644 17.4895L0.800751 53.1463L47.3429 103.693" fill="url(#paint0_linear_18611_22352)"/>
+<defs>
+<linearGradient id="paint0_linear_18611_22352" x1="46.4886" y1="0.932617" x2="46.4886" y2="103.693" gradientUnits="userSpaceOnUse">
+<stop stop-color="#CEC7FB"/>
+<stop offset="1" stop-color="#C6D8F7"/>
+</linearGradient>
+</defs>
 </svg>
