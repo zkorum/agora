@@ -136,7 +136,7 @@ const clusterConfig: ClusterConfig[] = [
         isSelected: false,
       },
       {
-        clusterWidthPercent: 35,
+        clusterWidthPercent: 32,
         top: 25,
         left: 48,
         isSelected: false,
@@ -317,6 +317,7 @@ function composeImagePath(
   clusterNumber: number
 ) {
   const imgSuffix = isSelected ? "-on" : "-off";
+  const version = "-v2";
 
   return (
     VITE_PUBLIC_DIR +
@@ -325,6 +326,7 @@ function composeImagePath(
     "-" +
     (index + 1) +
     imgSuffix +
+    version +
     ".svg"
   );
 }
