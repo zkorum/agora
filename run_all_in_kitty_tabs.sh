@@ -1,12 +1,13 @@
 #!/bin/zsh
 
 BASE_DIR=$HOME/github/nicobao/agora
+# BASE_DIR_SCRIPT=$HOME/github/nicobao/agora/script
 
 # Make sure remote control is enabled: allow_remote_control yes
 # kitty --session kitty_openapi_session.conf
 kitty @ launch --type=tab --title "App" --cwd=$BASE_DIR zsh -ic "make dev-app" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "API" --cwd=$BASE_DIR zsh -ic "make dev-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Polis" --cwd=$BASE_DIR zsh -ic "docker compose -f script/docker-compose-polis.yml up" > /dev/null
+# kitty @ launch --type=tab --title "Polis" --cwd=$BASE_DIR_SCRIPT zsh -ic "docker compose -f docker-compose-polis.yml up" > /dev/null # podman-compose just stops
 kitty @ launch --type=tab --title "OpenAPI" --cwd=$BASE_DIR zsh -ic "make dev-generate" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Shared" --cwd=$BASE_DIR zsh -ic "make dev-sync" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Autocomplete" --cwd=$BASE_DIR zsh -ic "autocomplete_server" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
