@@ -153,11 +153,9 @@ export function useBackendPostApi() {
 
   type CreateNewPostSuccessResponse =
     AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
-
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
     | AxiosErrorResponse;
-
   async function createNewPost(
     postTitle: string,
     postBody: string | undefined,
