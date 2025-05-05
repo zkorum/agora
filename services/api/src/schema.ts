@@ -635,6 +635,69 @@ export const userOrganizationMappingTable = pgTable(
     ],
 );
 
+export const conversationTopicMappingTable = pgTable(
+    "conversation_topic_mapping",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        topicId: integer("topic_id")
+            .references(() => topicTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_topic_mapping_index").on(t.conversationId),
+        unique("conversation_topic_mapping_unique").on(
+            t.conversationId,
+            t.topicId,
+        ),
+    ],
+);
+
+export const topicTable = pgTable("topic", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    code: text("code").unique().notNull(),
+    name: text("name").unique().notNull(),
+    description: text("description").unique().notNull(),
+    score_weight: integer("score_weight").notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const userFollowedTopicTable = pgTable(
+    "user_followed_topic",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        topicId: integer("topic_id")
+            .references(() => topicTable.id)
+            .notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("user_followed_topic_index").on(t.userId),
+        unique("user_followed_topic_unique").on(t.userId, t.topicId),
+    ],
+);
+
 export const userMutePreferenceTable = pgTable(
     "user_mute_preference",
     {
@@ -692,41 +755,6 @@ export const userLanguageTable = pgTable("user_language", {
         .defaultNow()
         .notNull(),
 });
-
-export const conversationTopicTable = pgTable("conversation_topic", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: text("name"),
-    code: text("code"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
-export const userConversationTopicPreferenceTable = pgTable(
-    "user_conversation_topic_preference",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: uuid("user_id")
-            .references(() => userTable.id)
-            .notNull(),
-        conversationTagId: integer("conversation_tag_id")
-            .references(() => conversationTopicTable.id)
-            .notNull(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [
-        index("user_idx_topic").on(t.userId),
-        unique("user_unique_topic").on(t.userId, t.conversationTagId),
-    ],
-);
 
 export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
