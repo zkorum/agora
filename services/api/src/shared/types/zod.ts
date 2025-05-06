@@ -198,7 +198,6 @@ export const zodTopicObject = z
     .object({
         code: z.string(),
         name: z.string(),
-        description: z.string(),
     })
     .strict();
 

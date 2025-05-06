@@ -25,7 +25,6 @@ export async function getAllTopics({
         topicTableResponse.forEach((topicObject) => {
             topicList.push({
                 code: topicObject.code,
-                description: topicObject.description,
                 name: topicObject.name,
             });
         });
