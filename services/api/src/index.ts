@@ -1517,7 +1517,6 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
-                topicCodeList: request.body.topicCodeList,
             });
             reply.send(postResponse);
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
