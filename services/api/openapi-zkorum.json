@@ -2952,20 +2952,12 @@
                                             "maxLength": 30,
                                             "minLength": 1
                                         }
-                                    },
-                                    "topicCodeList": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "minItems": 1
                                     }
                                 },
                                 "required": [
                                     "conversationTitle",
                                     "isIndexed",
-                                    "isLoginRequired",
-                                    "topicCodeList"
+                                    "isLoginRequired"
                                 ],
                                 "additionalProperties": false
                             }
