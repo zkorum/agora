@@ -25,7 +25,7 @@ services:
             - ./database/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
         ports:
             - "5432:5432"
-        restart: unless-stopped
+        restart: always
     pgadmin:
         container_name: pgadmin_container
         image: dpage/pgadmin4:latest
@@ -36,7 +36,7 @@ services:
             - pgadmin:/var/lib/pgadmin
         ports:
             - "5050:80"
-        restart: unless-stopped
+        restart: always
 
 volumes:
     postgres:
