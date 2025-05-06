@@ -255,6 +255,7 @@ export function useBackendAuthApi() {
     if (currentRouteName) {
       const whiteListedRoutes: (keyof RouteMap)[] = [
         "/",
+        "/topic/[topicCode]",
         "/topics/",
         "/conversation/[postSlugId]",
         "/conversation/create/",
