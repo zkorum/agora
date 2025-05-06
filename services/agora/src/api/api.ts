@@ -789,12 +789,6 @@ export interface ApiV1ConversationCreatePostRequest {
      * @memberof ApiV1ConversationCreatePostRequest
      */
     'pollingOptionList'?: Array<string>;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof ApiV1ConversationCreatePostRequest
-     */
-    'topicCodeList': Array<string>;
 }
 /**
  * 
