@@ -22,7 +22,7 @@
 
     <div class="container">
       <div class="topicContainer">
-        <div v-for="topic in topicList" :key="topic.code">
+        <div v-for="topic in fullTopicList" :key="topic.code">
           <ZKButton
             :button-type="'standardButton'"
             :label="topic.name"
@@ -35,35 +35,19 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { ZodTopicObject } from "src/shared/types/zod";
-import { useCommonApi } from "src/utils/api/common";
-import { useBackendTopicApi } from "src/utils/api/topic";
-import { onMounted, ref } from "vue";
+import { useTopicStore } from "src/stores/topic";
+import { onMounted } from "vue";
 
-const { getAllTopics } = useBackendTopicApi();
-const { handleAxiosErrorStatusCodes } = useCommonApi();
-
-const topicList = ref<ZodTopicObject[]>([]);
+const { loadTopicList } = useTopicStore();
+const { fullTopicList } = storeToRefs(useTopicStore());
 
 onMounted(async () => {
-  await fetchTopics();
+  await loadTopicList();
 });
-
-async function fetchTopics() {
-  const response = await getAllTopics();
-
-  if (response.status == "success") {
-    topicList.value = response.data.topicList;
-  } else {
-    handleAxiosErrorStatusCodes({
-      axiosErrorCode: response.code,
-      defaultMessage: "Error while trying to create a new conversation",
-    });
-  }
-}
 </script>
 
 <style scoped lang="scss">
