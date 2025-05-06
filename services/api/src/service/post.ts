@@ -7,7 +7,7 @@ import {
     conversationProofTable,
     conversationTable,
     userTable,
-    conversationTopicMappingTable,
+    conversationTopicTable,
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
 import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
@@ -266,7 +266,7 @@ export async function createNewPost({
                 topicCode: topicCode,
             });
 
-            await tx.insert(conversationTopicMappingTable).values({
+            await tx.insert(conversationTopicTable).values({
                 conversationId: conversationId,
                 topicId: topicId,
             });

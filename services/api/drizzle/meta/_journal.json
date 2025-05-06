@@ -50,6 +50,13 @@
       "when": 1746442296435,
       "tag": "0006_smooth_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1746514216920,
+      "tag": "0007_marvelous_donald_blake",
+      "breakpoints": true
     }
   ]
 }
