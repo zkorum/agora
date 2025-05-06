@@ -653,11 +653,8 @@ export const conversationTopicTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("conversation_topic_mapping_index").on(t.conversationId),
-        unique("conversation_topic_mapping_unique").on(
-            t.conversationId,
-            t.topicId,
-        ),
+        index("conversation_topic_index").on(t.conversationId),
+        unique("conversation_topic_unique").on(t.conversationId, t.topicId),
     ],
 );
 
@@ -693,8 +690,8 @@ export const followedTopicTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_followed_topic_index").on(t.userId),
-        unique("user_followed_topic_unique").on(t.userId, t.topicId),
+        index("followed_topic_index").on(t.userId),
+        unique("followed_topic_unique").on(t.userId, t.topicId),
     ],
 );
 
