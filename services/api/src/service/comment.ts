@@ -47,6 +47,7 @@ import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
+import { castVoteForOpinionSlugId } from "./voting.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -1022,6 +1023,16 @@ interface PostNewOpinionProps {
     polisUserEmailDomain: string;
     polisUserEmailLocalPart: string;
     polisUserPassword: string;
+    polisDelayToFetch: number;
+    voteNotifMilestones: number[];
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryTopK: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
     now: Date;
 }
 
@@ -1122,16 +1133,30 @@ export async function postNewOpinion({
     polisUserEmailDomain,
     polisUserEmailLocalPart,
     polisUserPassword,
+    polisDelayToFetch,
+    voteNotifMilestones,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryTopK,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
+    const { getPostMetadataFromSlugId, getOpinionCountBypassCache } =
+        useCommonPost();
     const {
         id: conversationId,
         contentId: conversationContentId,
         authorId: conversationAuthorId,
         isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
-    } = await useCommonPost().getPostMetadataFromSlugId({
+        opinionCount: conversationOpinionCount,
+    } = await getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
+        useCache: false,
     });
     if (conversationContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
@@ -1221,15 +1246,20 @@ export async function postNewOpinion({
         await tx
             .update(conversationTable)
             .set({
-                opinionCount: sql`${conversationTable.opinionCount} + 1`,
+                opinionCount: conversationOpinionCount + 1,
             })
             .where(eq(conversationTable.slugId, conversationSlugId));
 
         // Update the user profile's comment count
+        const userOpinionCountBeforeAction = await getOpinionCountBypassCache({
+            db,
+            conversationId,
+            userId,
+        });
         await tx
             .update(userTable)
             .set({
-                totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
+                totalOpinionCount: userOpinionCountBeforeAction + 1,
             })
             .where(eq(userTable.id, userId));
 
@@ -1267,6 +1297,31 @@ export async function postNewOpinion({
                 conversationSlugId,
             });
         }
+
+        // opinion author agrees automatically on its own opinion
+        await castVoteForOpinionSlugId({
+            db: tx,
+            opinionSlugId: opinionSlugId,
+            didWrite: didWrite,
+            proof: proof,
+            votingAction: "agree",
+            userAgent: userAgent,
+            axiosPolis: axiosPolis,
+            polisUserEmailDomain,
+            polisUserEmailLocalPart,
+            polisUserPassword,
+            polisDelayToFetch,
+            voteNotifMilestones,
+            awsAiLabelSummaryEnable,
+            awsAiLabelSummaryRegion,
+            awsAiLabelSummaryModelId,
+            awsAiLabelSummaryTemperature,
+            awsAiLabelSummaryTopP,
+            awsAiLabelSummaryTopK,
+            awsAiLabelSummaryMaxTokens,
+            awsAiLabelSummaryPrompt,
+            now: now,
+        });
     });
 
     return {

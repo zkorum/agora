@@ -4,7 +4,7 @@
       <CommentClusterGraph
         v-if="showClusterMap"
         :clusters="polis.clusters"
-        :total-participant-count="participantCountLocal"
+        :total-participant-count="props.participantCount"
         :current-cluster-tab="currentClusterTab"
         @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
       />
@@ -34,9 +34,9 @@
         :post-slug-id="postSlugId"
         :ai-summary="polis.aiSummary"
         :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="participantCountLocal"
+        :participant-count="props.participantCount"
         :login-required-to-participate="props.loginRequiredToParticipate"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -56,7 +56,7 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="participantCountLocal"
+        :participant-count="props.participantCount"
         :login-required-to-participate="false"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -73,9 +73,9 @@
         :is-loading="isLoadingCommentItemsModerated"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="participantCountLocal"
+        :participant-count="props.participantCount"
         :login-required-to-participate="false"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -92,9 +92,9 @@
         :is-loading="isLoadingCommentItemsHidden"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="participantCountLocal"
+        :participant-count="props.participantCount"
         :login-required-to-participate="false"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -116,9 +116,9 @@
             : undefined
         "
         :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="participantCountLocal"
+        :participant-count="props.participantCount"
         :login-required-to-participate="props.loginRequiredToParticipate"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -159,7 +159,11 @@ defineExpose({
   openModerationHistory,
 });
 
-const emit = defineEmits(["deleted"]);
+const emit = defineEmits([
+  "deleted",
+  "changeVote",
+  "updateCommentSlugIdLikedMap",
+]);
 
 const props = defineProps<{
   postSlugId: string;
@@ -167,9 +171,9 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
+  opinionItemListPartial: OpinionItem[];
+  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
 }>();
-
-const participantCountLocal = ref(props.participantCount);
 
 const sortAlgorithm = ref<CommentFilterOptions>("discover");
 const requestedCommentSlugId = ref("");
@@ -205,11 +209,9 @@ let commentItemsModerated: OpinionItem[] = [];
 let commentItemsHidden: OpinionItem[] = [];
 
 const clusterCommentItemsMap = ref<Map<PolisKey, OpinionItem[]>>(new Map());
-const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
 
 const { setupOpinionlist, detectOpinionFilterBySlugId } =
   useOpinionScrollableStore();
-const { opinionItemListPartial } = storeToRefs(useOpinionScrollableStore());
 
 let isMounted = false;
 
@@ -327,14 +329,14 @@ async function resetRouteParams() {
 
 async function fetchPersonalLikes() {
   if (isGuestOrLoggedIn.value) {
-    commentSlugIdLikedMap.value = new Map();
+    emit("updateCommentSlugIdLikedMap", new Map());
     const response = await fetchUserVotesForPostSlugIds([props.postSlugId]);
     if (response) {
       const newMap = new Map();
       response.forEach((userVote) => {
         newMap.set(userVote.opinionSlugId, userVote.votingAction);
       });
-      commentSlugIdLikedMap.value = newMap;
+      emit("updateCommentSlugIdLikedMap", newMap);
     }
   }
 }
@@ -458,72 +460,7 @@ function toggleClusterSelection(clusterKey: PolisKey) {
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
-  switch (vote) {
-    case "agree": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "agree");
-      commentSlugIdLikedMap.value = newMap;
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numAgrees = opinionItem.numAgrees + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
-      break;
-    }
-    case "disagree": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "disagree");
-      commentSlugIdLikedMap.value = newMap;
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
-      break;
-    }
-    case "cancel": {
-      if (commentSlugIdLikedMap.value.size === 1) {
-        participantCountLocal.value = participantCountLocal.value - 1;
-      }
-      const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
-      if (originalVote !== undefined) {
-        const newOpinionItemList = opinionItemListPartial.value.map(
-          (opinionItem) => {
-            if (opinionItem.opinionSlugId === opinionSlugId) {
-              switch (originalVote) {
-                case "agree":
-                  opinionItem.numAgrees = opinionItem.numDisagrees - 1;
-                  break;
-                case "disagree":
-                  opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
-                  break;
-              }
-            }
-            return opinionItem;
-          }
-        );
-        opinionItemListPartial.value = newOpinionItemList;
-      }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.delete(opinionSlugId);
-      commentSlugIdLikedMap.value = newMap;
-      break;
-    }
-  }
+  emit("changeVote", vote, opinionSlugId);
 }
 </script>
 

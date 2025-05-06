@@ -142,7 +142,7 @@
               :key="commentSectionKey"
               ref="commentSectionRef"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
-              :participant-count="extendedPostData.metadata.participantCount"
+              :participant-count="participantCountLocal"
               :polis="extendedPostData.polis"
               :is-post-locked="
                 extendedPostData.metadata.moderation.status == 'moderated'
@@ -151,7 +151,17 @@
                 extendedPostData.metadata.isIndexed ||
                 extendedPostData.metadata.isLoginRequired
               "
+              :opinion-item-list-partial="opinionItemListPartial"
+              :comment-slug-id-liked-map="commentSlugIdLikedMap"
               @deleted="decrementCommentCount()"
+              @change-vote="
+                (vote: VotingAction, opinionSlugId: string) =>
+                  changeVote(vote, opinionSlugId)
+              "
+              @update-comment-slug-id-liked-map="
+                (map: Map<string, 'agree' | 'disagree'>) =>
+                  updateCommentSlugIdLikedMap(map)
+              "
             />
           </div>
         </div>
@@ -185,7 +195,7 @@ import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import Skeleton from "primevue/skeleton";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import ZKCard from "../ui-library/ZKCard.vue";
 import PostLockedMessage from "./views/PostLockedMessage.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
@@ -209,7 +219,13 @@ const router = useRouter();
 const webShare = useWebShare();
 
 const { loadMore } = useOpinionScrollableStore();
-const { hasMore } = storeToRefs(useOpinionScrollableStore());
+const { hasMore, opinionItemListPartial } = storeToRefs(
+  useOpinionScrollableStore()
+);
+const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
+const participantCountLocal = ref(
+  props.extendedPostData.metadata.participantCount
+);
 
 const isPostLocked =
   props.extendedPostData.metadata.moderation.status === "moderated" &&
@@ -237,6 +253,79 @@ async function submittedComment(opinionSlugId: string) {
     params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
     query: { opinion: opinionSlugId },
   });
+}
+
+function changeVote(vote: VotingAction, opinionSlugId: string) {
+  switch (vote) {
+    case "agree": {
+      if (commentSlugIdLikedMap.value.size === 0) {
+        participantCountLocal.value = participantCountLocal.value + 1;
+      }
+      const newMap = new Map(commentSlugIdLikedMap.value);
+      newMap.set(opinionSlugId, "agree");
+      commentSlugIdLikedMap.value = newMap;
+      const newOpinionItemList = opinionItemListPartial.value.map(
+        (opinionItem) => {
+          if (opinionItem.opinionSlugId === opinionSlugId) {
+            opinionItem.numAgrees = opinionItem.numAgrees + 1;
+          }
+          return opinionItem;
+        }
+      );
+      opinionItemListPartial.value = newOpinionItemList;
+      break;
+    }
+    case "disagree": {
+      if (commentSlugIdLikedMap.value.size === 0) {
+        participantCountLocal.value = participantCountLocal.value + 1;
+      }
+      const newMap = new Map(commentSlugIdLikedMap.value);
+      newMap.set(opinionSlugId, "disagree");
+      commentSlugIdLikedMap.value = newMap;
+      const newOpinionItemList = opinionItemListPartial.value.map(
+        (opinionItem) => {
+          if (opinionItem.opinionSlugId === opinionSlugId) {
+            opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
+          }
+          return opinionItem;
+        }
+      );
+      opinionItemListPartial.value = newOpinionItemList;
+      break;
+    }
+    case "cancel": {
+      if (commentSlugIdLikedMap.value.size === 1) {
+        participantCountLocal.value = participantCountLocal.value - 1;
+      }
+      const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
+      if (originalVote !== undefined) {
+        const newOpinionItemList = opinionItemListPartial.value.map(
+          (opinionItem) => {
+            if (opinionItem.opinionSlugId === opinionSlugId) {
+              switch (originalVote) {
+                case "agree":
+                  opinionItem.numAgrees = opinionItem.numDisagrees - 1;
+                  break;
+                case "disagree":
+                  opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
+                  break;
+              }
+            }
+            return opinionItem;
+          }
+        );
+        opinionItemListPartial.value = newOpinionItemList;
+      }
+      const newMap = new Map(commentSlugIdLikedMap.value);
+      newMap.delete(opinionSlugId);
+      commentSlugIdLikedMap.value = newMap;
+      break;
+    }
+  }
+}
+
+function updateCommentSlugIdLikedMap(map: Map<string, "agree" | "disagree">) {
+  commentSlugIdLikedMap.value = map;
 }
 
 async function shareClicked() {

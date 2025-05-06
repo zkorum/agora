@@ -9,6 +9,7 @@ import {
     polisClusterTable,
     participantTable,
     organizationTable,
+    voteTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -20,7 +21,7 @@ import type {
     ExtendedConversation,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL, and } from "drizzle-orm";
+import { eq, desc, SQL, and, count } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
@@ -62,6 +63,77 @@ export function useCommonPost() {
     interface IsPostSlugIdLockedProps {
         db: PostgresJsDatabase;
         postSlugId: string;
+    }
+    async function getParticipantCountBypassCache({
+        db,
+        conversationId,
+    }: {
+        db: PostgresJsDatabase;
+        conversationId: number;
+    }): Promise<number> {
+        const participantResults = await db
+            .select({ count: count() })
+            .from(participantTable)
+            .where(eq(participantTable.conversationId, conversationId));
+
+        const participantCount =
+            participantResults.length === 0 ? 0 : participantResults[0].count;
+        return participantCount;
+    }
+
+    async function getVoteCountBypassCache({
+        db,
+        conversationId,
+        userId,
+    }: {
+        db: PostgresJsDatabase;
+        conversationId: number;
+        userId?: string;
+    }): Promise<number> {
+        let whereClause;
+        if (userId !== undefined) {
+            whereClause = and(
+                eq(voteTable.authorId, userId),
+                eq(opinionTable.conversationId, conversationId),
+            );
+        } else {
+            whereClause = and(eq(opinionTable.conversationId, conversationId));
+        }
+        const voteResponse = await db
+            .select({ count: count() })
+            .from(voteTable)
+            .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+            .where(whereClause);
+
+        const voteCount = voteResponse.length === 0 ? 0 : voteResponse[0].count;
+        return voteCount;
+    }
+
+    async function getOpinionCountBypassCache({
+        db,
+        conversationId,
+        userId,
+    }: {
+        db: PostgresJsDatabase;
+        conversationId: number;
+        userId?: string;
+    }): Promise<number> {
+        let whereClause;
+        if (userId !== undefined) {
+            whereClause = and(
+                eq(opinionTable.authorId, userId),
+                eq(opinionTable.conversationId, conversationId),
+            );
+        } else {
+            whereClause = and(eq(opinionTable.conversationId, conversationId));
+        }
+        const opinionResponse = await db
+            .select({ count: count() })
+            .from(opinionTable)
+            .where(whereClause);
+        const opinionCount =
+            opinionResponse.length === 0 ? 0 : opinionResponse[0].count;
+        return opinionCount;
     }
 
     async function isPostSlugIdLocked({
@@ -628,6 +700,8 @@ export function useCommonPost() {
         contentId: number | null;
         authorId: string;
         participantCount: number;
+        opinionCount: number;
+        voteCount: number;
         isIndexed: boolean;
         isLoginRequired: boolean;
     }
@@ -635,11 +709,13 @@ export function useCommonPost() {
     interface GetPostMetadataFromSlugIdProps {
         db: PostgresJsDatabase;
         conversationSlugId: string;
+        useCache?: boolean;
     }
 
     async function getPostMetadataFromSlugId({
         db,
         conversationSlugId,
+        useCache = true,
     }: GetPostMetadataFromSlugIdProps): Promise<PostMetadata> {
         const postTableResponse = await db
             .select({
@@ -647,6 +723,8 @@ export function useCommonPost() {
                 currentContentId: conversationTable.currentContentId,
                 authorId: conversationTable.authorId,
                 participantCount: conversationTable.participantCount,
+                voteCount: conversationTable.voteCount,
+                opinionCount: conversationTable.opinionCount,
                 isIndexed: conversationTable.isIndexed,
                 isLoginRequired: conversationTable.isLoginRequired,
             })
@@ -654,11 +732,37 @@ export function useCommonPost() {
             .where(eq(conversationTable.slugId, conversationSlugId));
 
         if (postTableResponse.length == 1) {
+            if (useCache) {
+                return {
+                    contentId: postTableResponse[0].currentContentId,
+                    id: postTableResponse[0].id,
+                    authorId: postTableResponse[0].authorId,
+                    participantCount: postTableResponse[0].participantCount,
+                    voteCount: postTableResponse[0].voteCount,
+                    opinionCount: postTableResponse[0].opinionCount,
+                    isIndexed: postTableResponse[0].isIndexed,
+                    isLoginRequired: postTableResponse[0].isLoginRequired,
+                };
+            }
+            const participantCount = await getParticipantCountBypassCache({
+                db,
+                conversationId: postTableResponse[0].id,
+            });
+            const voteCount = await getVoteCountBypassCache({
+                db,
+                conversationId: postTableResponse[0].id,
+            });
+            const opinionCount = await getOpinionCountBypassCache({
+                db,
+                conversationId: postTableResponse[0].id,
+            });
             return {
                 contentId: postTableResponse[0].currentContentId,
                 id: postTableResponse[0].id,
                 authorId: postTableResponse[0].authorId,
-                participantCount: postTableResponse[0].participantCount,
+                participantCount: participantCount,
+                opinionCount: opinionCount,
+                voteCount: voteCount,
                 isIndexed: postTableResponse[0].isIndexed,
                 isLoginRequired: postTableResponse[0].isLoginRequired,
             };
@@ -676,6 +780,9 @@ export function useCommonPost() {
         getPostMetadataFromSlugId,
         isPostSlugIdLocked,
         createCompactHtmlBody,
+        getParticipantCountBypassCache,
+        getOpinionCountBypassCache,
+        getVoteCountBypassCache,
     };
 }
 
@@ -683,6 +790,7 @@ interface GetCountForParticipantProps {
     db: PostgresJsDatabase;
     conversationId: number;
     userId: string;
+    useCache?: boolean;
 }
 
 export function useCommonComment() {
@@ -695,35 +803,57 @@ export function useCommonComment() {
         db,
         conversationId,
         userId,
-    }: GetCountForParticipantProps) {
-        const response = await db
-            .select({
-                voteCount: participantTable.voteCount,
-                opinionCount: participantTable.opinionCount,
-            })
-            .from(participantTable)
-            .where(
-                and(
-                    eq(participantTable.conversationId, conversationId),
-                    eq(participantTable.userId, userId),
-                ),
-            );
-        if (response.length == 1) {
-            return {
-                voteCount: response[0].voteCount,
-                opinionCount: response[0].opinionCount,
-            };
-        } else if (response.length > 1) {
-            throw httpErrors.internalServerError(
-                "Participant contains multiple duplicates",
-            );
-        } else {
-            // not found
-            return {
-                voteCount: 0,
-                opinionCount: 0,
-            };
+        useCache = true,
+    }: GetCountForParticipantProps): Promise<{
+        voteCount: number;
+        opinionCount: number;
+    }> {
+        if (useCache) {
+            const response = await db
+                .select({
+                    voteCount: participantTable.voteCount,
+                    opinionCount: participantTable.opinionCount,
+                })
+                .from(participantTable)
+                .where(
+                    and(
+                        eq(participantTable.conversationId, conversationId),
+                        eq(participantTable.userId, userId),
+                    ),
+                );
+            if (response.length == 1) {
+                return {
+                    voteCount: response[0].voteCount,
+                    opinionCount: response[0].opinionCount,
+                };
+            } else if (response.length > 1) {
+                throw httpErrors.internalServerError(
+                    "Participant contains multiple duplicates",
+                );
+            } else {
+                // not found
+                return {
+                    voteCount: 0,
+                    opinionCount: 0,
+                };
+            }
         }
+        const { getOpinionCountBypassCache, getVoteCountBypassCache } =
+            useCommonPost();
+        const voteCount = await getVoteCountBypassCache({
+            db,
+            conversationId,
+            userId,
+        });
+        const opinionCount = await getOpinionCountBypassCache({
+            db,
+            conversationId,
+            userId,
+        });
+        return {
+            voteCount: voteCount,
+            opinionCount: opinionCount,
+        };
     }
 
     async function getCommentIdFromCommentSlugId({
@@ -771,7 +901,7 @@ export function useCommonComment() {
 
         if (opinionTableResponse.length != 1) {
             throw httpErrors.internalServerError(
-                "Failed to locate conversation slug ID from opinio slug ID: " +
+                "Failed to locate conversation slug ID from opinion slug ID: " +
                     opinionSlugId,
             );
         }

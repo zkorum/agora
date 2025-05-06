@@ -1303,6 +1303,21 @@ server.after(() => {
                 polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
                 polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
                 polisUserPassword: config.POLIS_USER_PASSWORD,
+                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
+                awsAiLabelSummaryEnable:
+                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                    (config.NODE_ENV === "production" ||
+                        config.NODE_ENV === "staging"),
+                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                awsAiLabelSummaryTemperature:
+                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
+                awsAiLabelSummaryMaxTokens:
+                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 now: now,
             });
             reply.send(newOpinionResponse);

@@ -219,8 +219,8 @@ export async function importNewVote({
         .where(eq(opinionTable.currentContentId, opinionContentId));
 
     const {
-        voteCount: participantCurrentVoteCount,
-        opinionCount: participantCurrentOpinionCount,
+        voteCount: participantVoteCountBeforeAction,
+        opinionCount: participantOpinionCountBeforeAction,
     } = await useCommonComment().getCountsForParticipant({
         db: db,
         conversationId,
@@ -248,11 +248,11 @@ export async function importNewVote({
     if (votingAction === "cancel") {
         // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
         const participantVoteCountAfterDeletion =
-            participantCurrentVoteCount - 1;
+            participantVoteCountBeforeAction - 1;
         /* <= to account for potential sync errors though it should not happen with db transactions... */
         const isParticipantDeleted =
             participantVoteCountAfterDeletion <= 0 &&
-            participantCurrentOpinionCount <= 0;
+            participantOpinionCountBeforeAction <= 0;
         if (isParticipantDeleted) {
             await db
                 .update(conversationTable)
@@ -271,8 +271,8 @@ export async function importNewVote({
         }
     } else {
         if (
-            participantCurrentVoteCount === 0 &&
-            participantCurrentOpinionCount === 0
+            participantVoteCountBeforeAction === 0 &&
+            participantOpinionCountBeforeAction === 0
         ) {
             // new participant!
             await db
@@ -360,13 +360,17 @@ export async function castVoteForOpinionSlugId({
             db: db,
         });
 
+    // "update through cache" recalculate existing counts before taking into account new vote
     const {
         isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
         contentId: conversationContentId,
+        participantCount: conversationParticipantCount,
+        voteCount: conversationVoteCount,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
+        useCache: false,
     });
     if (conversationContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
@@ -471,6 +475,17 @@ export async function castVoteForOpinionSlugId({
         throw httpErrors.internalServerError("Database relation error");
     }
 
+    // update conversation counts
+    // "update through cache" recalculate existing counts before taking into account new vote
+    // both values are 0 if the user is a new participant!
+    // IMPORTANT to select this BEFORE inserting vote
+    const { voteCount: participantVoteCountBeforeAction } =
+        await useCommonComment().getCountsForParticipant({
+            db: db,
+            conversationId,
+            userId,
+            useCache: false,
+        });
     await db.transaction(async (tx) => {
         let voteTableId = 0;
 
@@ -514,18 +529,6 @@ export async function castVoteForOpinionSlugId({
             })
             .returning({ voteProofTableId: voteProofTable.id });
 
-        // update conversation counts
-        // both values are 0 if the user is a new participant!
-        const {
-            voteCount: participantCurrentVoteCount,
-            opinionCount: participantCurrentOpinionCount,
-        } = await useCommonComment().getCountsForParticipant({
-            db: tx,
-            conversationId,
-            userId,
-        });
-
-        // important to run AFTER the above select
         await db
             .insert(participantTable)
             .values({
@@ -541,8 +544,8 @@ export async function castVoteForOpinionSlugId({
                 set: {
                     voteCount:
                         votingAction == "cancel"
-                            ? sql`${participantTable.voteCount} - 1`
-                            : sql`${participantTable.voteCount} + 1`,
+                            ? participantVoteCountBeforeAction - 1
+                            : participantVoteCountBeforeAction + 1,
                 },
             })
             .returning({ newVoteCount: participantTable.voteCount });
@@ -550,38 +553,33 @@ export async function castVoteForOpinionSlugId({
         if (votingAction === "cancel") {
             // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
             const participantVoteCountAfterDeletion =
-                participantCurrentVoteCount - 1;
+                participantVoteCountBeforeAction - 1;
             /* <= to account for potential sync errors though it should not happen with db transactions... */
-            const isParticipantDeleted =
-                participantVoteCountAfterDeletion <= 0 &&
-                participantCurrentOpinionCount <= 0;
+            const isParticipantDeleted = participantVoteCountAfterDeletion <= 0;
             if (isParticipantDeleted) {
                 await tx
                     .update(conversationTable)
                     .set({
-                        voteCount: sql`${conversationTable.voteCount} - 1`,
-                        participantCount: sql`${conversationTable.participantCount} - 1`,
+                        voteCount: conversationVoteCount - 1,
+                        participantCount: conversationParticipantCount - 1,
                     })
                     .where(eq(conversationTable.id, conversationId));
             } else {
                 await tx
                     .update(conversationTable)
                     .set({
-                        voteCount: sql`${conversationTable.voteCount} - 1`,
+                        voteCount: conversationVoteCount - 1,
                     })
                     .where(eq(conversationTable.id, conversationId));
             }
         } else {
-            if (
-                participantCurrentVoteCount === 0 &&
-                participantCurrentOpinionCount === 0
-            ) {
+            if (participantVoteCountBeforeAction === 0) {
                 // new participant!
                 await tx
                     .update(conversationTable)
                     .set({
-                        voteCount: sql`${conversationTable.voteCount} + 1`,
-                        participantCount: sql`${conversationTable.participantCount} + 1`,
+                        voteCount: conversationVoteCount + 1,
+                        participantCount: conversationParticipantCount + 1,
                     })
                     .where(eq(conversationTable.slugId, conversationSlugId));
             } else {
@@ -589,7 +587,7 @@ export async function castVoteForOpinionSlugId({
                 await tx
                     .update(conversationTable)
                     .set({
-                        voteCount: sql`${conversationTable.voteCount} + 1`,
+                        voteCount: conversationVoteCount + 1,
                     })
                     .where(eq(conversationTable.slugId, conversationSlugId));
             }
