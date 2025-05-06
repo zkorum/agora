@@ -635,8 +635,8 @@ export const userOrganizationMappingTable = pgTable(
     ],
 );
 
-export const conversationTopicMappingTable = pgTable(
-    "conversation_topic_mapping",
+export const conversationTopicTable = pgTable(
+    "conversation_topic",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         conversationId: integer("conversation_id")
@@ -675,8 +675,8 @@ export const topicTable = pgTable("topic", {
         .notNull(),
 });
 
-export const userFollowedTopicTable = pgTable(
-    "user_followed_topic",
+export const followedTopicTable = pgTable(
+    "followed_topic",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         userId: uuid("user_id")
