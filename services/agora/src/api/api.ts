@@ -789,6 +789,12 @@ export interface ApiV1ConversationCreatePostRequest {
      * @memberof ApiV1ConversationCreatePostRequest
      */
     'pollingOptionList'?: Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'topicCodeList': Array<string>;
 }
 /**
  * 
@@ -2124,12 +2130,6 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
      * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
      */
     'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
-     */
-    'description': string;
 }
 /**
  * 
