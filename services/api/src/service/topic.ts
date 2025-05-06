@@ -4,6 +4,29 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ZodTopicObject } from "@/shared/types/zod.js";
+import { eq } from "drizzle-orm";
+
+interface MapTopicCodeToIdProps {
+    db: PostgresJsDatabase;
+    topicCode: string;
+}
+
+export async function mapTopicCodeToId({
+    db,
+    topicCode,
+}: MapTopicCodeToIdProps) {
+    const topicTableResponse = await db
+        .select({
+            id: topicTable.id,
+        })
+        .from(topicTable)
+        .where(eq(topicTable.code, topicCode));
+    if (topicTableResponse.length == 1) {
+        return topicTableResponse[0].id;
+    } else {
+        throw httpErrors.notFound("Failed to locate topic code: " + topicCode);
+    }
+}
 
 interface GetAllTopicsProps {
     db: PostgresJsDatabase;

@@ -2952,12 +2952,20 @@
                                             "maxLength": 30,
                                             "minLength": 1
                                         }
+                                    },
+                                    "topicCodeList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "minItems": 1
                                     }
                                 },
                                 "required": [
                                     "conversationTitle",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "isLoginRequired",
+                                    "topicCodeList"
                                 ],
                                 "additionalProperties": false
                             }
@@ -4251,15 +4259,11 @@
                                                     },
                                                     "name": {
                                                         "type": "string"
-                                                    },
-                                                    "description": {
-                                                        "type": "string"
                                                     }
                                                 },
                                                 "required": [
                                                     "code",
-                                                    "name",
-                                                    "description"
+                                                    "name"
                                                 ],
                                                 "additionalProperties": false
                                             }
