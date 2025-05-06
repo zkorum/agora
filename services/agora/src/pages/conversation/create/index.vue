@@ -103,6 +103,33 @@
             </div>
           </ZKCard>
 
+          <ZKCard padding="1rem" class="cardBackground">
+            <div class="topicInstructions">Select one or more topics:</div>
+
+            <div class="topicSelectorDiv">
+              <div v-for="topic in fullTopicList" :key="topic.code">
+                <q-btn
+                  :ripple="false"
+                  no-caps
+                  no-wrap
+                  size="md"
+                  :label="topic.name"
+                  unelevated
+                  :outline="!selectedTopicCodeSet.has(topic.code)"
+                  :color="
+                    selectedTopicCodeSet.has(topic.code) ? 'primary' : undefined
+                  "
+                  :icon="
+                    selectedTopicCodeSet.has(topic.code)
+                      ? 'mdi-check-circle-outline'
+                      : undefined
+                  "
+                  @click="toggleTopic(topic.code)"
+                />
+              </div>
+            </div>
+          </ZKCard>
+
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -264,6 +291,8 @@ import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
 import { useCommonApi } from "src/utils/api/common";
+import { useTopicStore } from "src/stores/topic";
+import { useNotify } from "src/utils/ui/notify";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -308,9 +337,29 @@ const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
 clearNewConversationIntention();
 
-onMounted(() => {
+const { fullTopicList } = storeToRefs(useTopicStore());
+const { loadTopicList } = useTopicStore();
+
+const selectedTopicCodeSet = ref(new Set<string>());
+
+const { showNotifyMessage } = useNotify();
+
+onMounted(async () => {
+  await loadTopicList();
   lockRoute();
 });
+
+function toggleTopic(code: string) {
+  if (selectedTopicCodeSet.value.has(code)) {
+    selectedTopicCodeSet.value.delete(code);
+  } else {
+    if (selectedTopicCodeSet.value.size == 3) {
+      showNotifyMessage("A maximum of 3 topics can be selected");
+    } else {
+      selectedTopicCodeSet.value.add(code);
+    }
+  }
+}
 
 function getTomorrowsDate(): Date {
   const today = new Date();
@@ -393,6 +442,11 @@ function removePollOption(index: number) {
 }
 
 async function onSubmit() {
+  if (selectedTopicCodeSet.value.size == 0) {
+    showNotifyMessage("Add topics for the conversation");
+    return;
+  }
+
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
@@ -400,17 +454,25 @@ async function onSubmit() {
 
     isSubmitButtonLoading.value = true;
 
-    const response = await createNewPost(
-      postDraft.value.postTitle,
-      postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
-      postDraft.value.enablePolling
+    const response = await createNewPost({
+      postTitle: postDraft.value.postTitle,
+      postBody:
+        postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
+      pollingOptionList: postDraft.value.enablePolling
         ? postDraft.value.pollingOptionList
         : undefined,
-      postAsOrganization.value ? selectedOrganization.value : "",
-      autoConvertDate.value ? targetConvertDate.value.toISOString() : undefined,
-      !isPrivatePost.value,
-      !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
-    );
+      postAsOrganizationName: postAsOrganization.value
+        ? selectedOrganization.value
+        : "",
+      targetIsoConvertDateString: autoConvertDate.value
+        ? targetConvertDate.value.toISOString()
+        : undefined,
+      isIndexed: !isPrivatePost.value,
+      isLoginRequired: !isPrivatePost.value
+        ? false
+        : isLoginRequiredToParticipate.value,
+      topicCodeList: Array.from(selectedTopicCodeSet.value),
+    });
 
     isSubmitButtonLoading.value = false;
 
@@ -531,5 +593,17 @@ async function onSubmit() {
   flex-direction: column;
   gap: 1rem;
   padding-top: 1rem;
+}
+
+.topicSelectorDiv {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+.topicInstructions {
+  padding-bottom: 0.5rem;
+  font-weight: 500;
 }
 </style>
