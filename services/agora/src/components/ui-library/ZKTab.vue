@@ -26,8 +26,9 @@ defineProps<{
 .highlightTab {
   border-bottom: 3px solid;
   border-color: $primary;
-  background-image: $gradient-hero;
   color: transparent;
+  background-image: $gradient-hero;
+  -webkit-background-clip: text;
   background-clip: text;
 }
 </style>
