@@ -217,7 +217,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background-color: $app-background-color;
+  background-color: white;
 }
 
 .settingItemStyle {
