@@ -159,7 +159,6 @@ export function useBackendPostApi() {
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     isLoginRequired: boolean;
-    topicCodeList: string[];
   }
 
   type CreateNewPostSuccessResponse =
@@ -175,7 +174,6 @@ export function useBackendPostApi() {
     targetIsoConvertDateString,
     isIndexed,
     isLoginRequired,
-    topicCodeList,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
@@ -186,7 +184,6 @@ export function useBackendPostApi() {
         isLoginRequired: isLoginRequired,
         postAsOrganization: postAsOrganizationName,
         indexConversationAt: targetIsoConvertDateString,
-        topicCodeList: topicCodeList,
       };
 
       const { url, options } =
