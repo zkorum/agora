@@ -47,7 +47,7 @@ export function useBackendNotificationApi() {
       };
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch user notifications");
+      // showNotifyMessage("Failed to fetch user notifications");
       return undefined;
     }
   }
