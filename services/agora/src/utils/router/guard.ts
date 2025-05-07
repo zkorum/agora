@@ -31,8 +31,6 @@ export function useRouterGuard() {
       "/settings/",
     ];
 
-    console.log(toName);
-
     if (!unauthenticatedRoutes.includes(toName)) {
       await router.push({ name: "/welcome/" });
     }

@@ -3,6 +3,7 @@ import { usePostStore } from "src/stores/post";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "../api/auth";
 import { useNotify } from "../ui/notify";
+import { useRouter } from "vue-router";
 
 export function useAuthSetup() {
   const { loadPostData } = usePostStore();
@@ -11,6 +12,8 @@ export function useAuthSetup() {
 
   const { logoutFromServer, updateAuthState } = useBackendAuthApi();
   const { showNotifyMessage } = useNotify();
+
+  const router = useRouter();
 
   async function userLogin() {
     authStore.setLoginStatus({
@@ -25,6 +28,7 @@ export function useAuthSetup() {
       await logoutFromServer();
       await updateAuthState({ partialLoginStatus: { isLoggedIn: false } });
       showNotifyMessage("Logged out");
+      await router.push({ name: "/welcome/" });
     } catch (e) {
       console.error("Unexpected error when logging out", e);
       showNotifyMessage("Oops! Logout failed. Please try again");
