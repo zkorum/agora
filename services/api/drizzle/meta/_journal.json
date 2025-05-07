@@ -43,6 +43,13 @@
       "when": 1744217590220,
       "tag": "0005_lucky_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1746636272704,
+      "tag": "0006_slim_gressill",
+      "breakpoints": true
     }
   ]
 }

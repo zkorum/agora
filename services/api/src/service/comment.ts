@@ -1197,6 +1197,11 @@ export async function postNewOpinion({
     });
 
     const opinionSlugId = generateRandomSlugId();
+    const userOpinionCountBeforeAction = await getOpinionCountBypassCache({
+        db,
+        conversationId,
+        userId,
+    });
 
     await db.transaction(async (tx) => {
         const insertCommentResponse = await tx
@@ -1251,11 +1256,6 @@ export async function postNewOpinion({
             .where(eq(conversationTable.slugId, conversationSlugId));
 
         // Update the user profile's comment count
-        const userOpinionCountBeforeAction = await getOpinionCountBypassCache({
-            db,
-            conversationId,
-            userId,
-        });
         await tx
             .update(userTable)
             .set({

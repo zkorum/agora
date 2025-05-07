@@ -324,63 +324,55 @@ export async function deletePostBySlugId({
     proof,
     didWrite,
 }: DeletePostBySlugIdProps): Promise<void> {
-    try {
-        await db.transaction(async (tx) => {
-            // Delete the conversation
-            const updatedConversationIdResponse = await tx
-                .update(conversationTable)
-                .set({
-                    currentContentId: null,
-                })
-                .where(
-                    and(
-                        eq(conversationTable.authorId, userId),
-                        eq(conversationTable.slugId, conversationSlugId),
-                    ),
-                )
-                .returning({ conversationId: conversationTable.id });
+    await db.transaction(async (tx) => {
+        // Delete the conversation
+        const updatedConversationIdResponse = await tx
+            .update(conversationTable)
+            .set({
+                currentContentId: null,
+            })
+            .where(
+                and(
+                    eq(conversationTable.authorId, userId),
+                    eq(conversationTable.slugId, conversationSlugId),
+                ),
+            )
+            .returning({ conversationId: conversationTable.id });
 
-            if (updatedConversationIdResponse.length != 1) {
-                tx.rollback();
-            }
+        if (updatedConversationIdResponse.length != 1) {
+            tx.rollback();
+        }
 
-            const conversationId =
-                updatedConversationIdResponse[0].conversationId;
+        const conversationId = updatedConversationIdResponse[0].conversationId;
 
-            // Update the user's active conversation count
-            await tx
-                .update(userTable)
-                .set({
-                    activeConversationCount: sql`${userTable.activeConversationCount} - 1`,
-                })
-                .where(eq(userTable.id, userId));
+        // Update the user's active conversation count
+        await tx
+            .update(userTable)
+            .set({
+                activeConversationCount: sql`${userTable.activeConversationCount} - 1`,
+            })
+            .where(eq(userTable.id, userId));
 
-            // Create the delete proof
-            await tx
-                .insert(conversationProofTable)
-                .values({
-                    type: "deletion",
-                    conversationId: conversationId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
-                })
-                .returning({ proofId: conversationProofTable.id });
+        // Create the delete proof
+        await tx
+            .insert(conversationProofTable)
+            .values({
+                type: "deletion",
+                conversationId: conversationId,
+                authorDid: didWrite,
+                proof: proof,
+                proofVersion: 1,
+            })
+            .returning({ proofId: conversationProofTable.id });
 
-            // Mark all of the opinions as deleted
-            await tx
-                .update(opinionTable)
-                .set({
-                    currentContentId: null,
-                })
-                .where(eq(opinionTable.conversationId, conversationId));
-        });
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Failed to delete conversation by slug ID: " + conversationSlugId,
-        );
-    }
+        // Mark all of the opinions as deleted
+        await tx
+            .update(opinionTable)
+            .set({
+                currentContentId: null,
+            })
+            .where(eq(opinionTable.conversationId, conversationId));
+    });
 }
 
 // interface CreateConversationFromPolisProps {

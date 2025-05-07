@@ -12,7 +12,6 @@ import {
     polisContentTable,
     opinionTable,
     conversationTable,
-    participantTable,
 } from "@/schema.js";
 import { polisClusterTable } from "@/schema.js";
 import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
@@ -430,19 +429,6 @@ export async function delayedPolisGetAndUpdateMath({
             } else {
                 log.warn("No members to insert in polisClusterUserTable");
             }
-            for (const member of members) {
-                tx.update(participantTable)
-                    .set({
-                        polisClusterId: polisClusterId,
-                    })
-                    .where(
-                        and(
-                            eq(participantTable.userId, member.userId),
-                            eq(participantTable.conversationId, conversationId),
-                        ),
-                    );
-            }
-
             const repnesses = repnessEntries[clusterKey][1]
                 .filter((repness) => {
                     if (!(repness.tid in opinionSlugIdByTid)) {

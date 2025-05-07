@@ -6,7 +6,11 @@ import {
     polisClusterTable,
     polisContentTable,
 } from "@/schema.js";
-import { isControversial, isMajority } from "@/shared/conversationLogic.js";
+import {
+    isControversial,
+    isMajorityAgree,
+    isMajorityDisagree,
+} from "@/shared/conversationLogic.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { isSqlControversial, isSqlMajority } from "@/utils/sqlLogic.js";
 import { eq, and, or, isNotNull, sql } from "drizzle-orm";
@@ -14,7 +18,8 @@ import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     BedrockRuntimeClient,
-    InvokeModelCommand,
+    ConverseCommand,
+    type Message,
 } from "@aws-sdk/client-bedrock-runtime";
 import {
     zodGenLabelSummaryOutputStrict,
@@ -25,7 +30,6 @@ import {
     type GenLabelSummaryOutputClusterStrict,
 } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
-import { z } from "zod";
 
 interface UpdateAiLabelsAndSummariesProps {
     db: PostgresJsDatabase;
@@ -47,7 +51,8 @@ interface OpinionInsight {
 
 interface ClusterInsights {
     memberCount: number;
-    majorityOpinions: OpinionInsight[];
+    majorityAgreeOpinions: OpinionInsight[];
+    majorityDisagreeOpinions: OpinionInsight[];
     controversialOpinions: OpinionInsight[];
 }
 
@@ -55,7 +60,8 @@ interface ConversationInsights {
     conversationTitle: string;
     conversationBody?: string;
     participantCount: number;
-    majorityOpinions: OpinionInsight[];
+    majorityAgreeOpinions: OpinionInsight[];
+    majorityDisagreeOpinions: OpinionInsight[];
     controversialOpinions: OpinionInsight[];
     clusters: Record<string, ClusterInsights>;
 }
@@ -215,74 +221,75 @@ async function invokeRemoteModel({
 }: InvokeRemoteModelProps): Promise<
     GenLabelSummaryOutputStrict | GenLabelSummaryOutputLoose
 > {
-    const zodInvokeModelResponse = z.object({
-        outputs: z
-            .array(
-                z.object({
-                    text: z.string(),
-                }),
-            )
-            .min(1),
+    const userPrompt = JSON.stringify(conversationInsights);
+    const conversation: Message[] = [
+        {
+            role: "user",
+            content: [{ text: userPrompt }],
+        },
+    ];
+    const command = new ConverseCommand({
+        modelId: awsAiLabelSummaryModelId,
+        system: [{ text: JSON.stringify(awsAiLabelSummaryPrompt) }],
+        messages: conversation,
+        inferenceConfig: {
+            maxTokens: Number(awsAiLabelSummaryMaxTokens),
+            temperature: Number(awsAiLabelSummaryTemperature),
+            topP: Number(awsAiLabelSummaryTopP),
+        },
     });
-
     const client = new BedrockRuntimeClient({
         region: awsAiLabelSummaryRegion,
     });
-    // "Bad escaped character in JSON" ('\' character which ends up alone)
-    const prompt = `${awsAiLabelSummaryPrompt}\n\n${JSON.stringify(
-        conversationInsights,
-        // eslint-disable-next-line no-useless-escape
-    ).replace(/\\\\\\\"/g, '\\"')}`; // an opinion with '"' is stringified with '\\\"' so the subsequent stringify will lead to bugs
     log.info(
         `[LLM] Sending Generate Label and Summary Prompt for conversation ${String(
             conversationId,
-        )}:\n${prompt}`,
+        )}:\n${userPrompt}`,
     );
-    const command = new InvokeModelCommand({
-        modelId: awsAiLabelSummaryModelId,
-        contentType: "application/json",
-        accept: "application/json",
-        body: JSON.stringify({
-            prompt: prompt,
-            temperature: awsAiLabelSummaryTemperature,
-            top_p: awsAiLabelSummaryTopP,
-            top_k: awsAiLabelSummaryTopK,
-            max_tokens: awsAiLabelSummaryMaxTokens,
-        }),
-    });
-    // we let this throw if any error occurs, it will be caught by the generic error handler
     const response = await client.send(command);
-    const decodedResponseBody = new TextDecoder().decode(response.body);
-    const responseBody: unknown = JSON.parse(decodedResponseBody);
-    const typedResponseBody = zodInvokeModelResponse.safeParse(responseBody);
-    if (!typedResponseBody.success) {
+    const message = response.output?.message;
+    const modelResponseStr =
+        message !== undefined
+            ? message.content !== undefined
+                ? message.content[0].text
+                : undefined
+            : undefined;
+    if (modelResponseStr === undefined) {
         throw new Error(
-            `[LLM]: Unable to parse AWS Bedrock response: '${decodedResponseBody}'`,
-            { cause: typedResponseBody.error },
+            `[LLM]: Unable to parse AWS Bedrock response: '${JSON.stringify(
+                response,
+            )}'`,
         );
     }
-    const modelResponseStr = typedResponseBody.data.outputs[0].text;
-    const modelResponse: unknown = JSON.parse(modelResponseStr);
-    // try strict first
-    const resultStrict =
-        zodGenLabelSummaryOutputStrict.safeParse(modelResponse);
-    if (resultStrict.success) {
-        return resultStrict.data;
-    } else {
-        log.warn(
-            resultStrict.error,
-            `[LLM]: Unable to parse AI Label and Summary output object using strict mode: '${modelResponseStr}'`,
-        );
-    }
-    // will throw and be caught by the generic fastify handler eventually
-    const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
-    if (!resultLoose.success) {
+    try {
+        const modelResponse: unknown = JSON.parse(modelResponseStr);
+        // try strict first
+        const resultStrict =
+            zodGenLabelSummaryOutputStrict.safeParse(modelResponse);
+        if (resultStrict.success) {
+            return resultStrict.data;
+        } else {
+            log.warn(
+                resultStrict.error,
+                `[LLM]: Unable to parse AI Label and Summary output object using strict mode: '${modelResponseStr}'`,
+            );
+        }
+        // will throw and be caught by the generic fastify handler eventually
+        const resultLoose =
+            zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
+        if (!resultLoose.success) {
+            throw new Error(
+                `[LLM]: Unable to parse AI Label and Summary output object using loose mode: '${modelResponseStr}'`,
+                { cause: resultLoose.error },
+            );
+        }
+        return resultLoose.data;
+    } catch (e) {
         throw new Error(
-            `[LLM]: Unable to parse AI Label and Summary output object using loose mode: '${modelResponseStr}'`,
-            { cause: resultLoose.error },
+            `[LLM]: Unable to parse model reponse to JSON:\n${modelResponseStr}`,
+            { cause: e },
         );
     }
-    return resultLoose.data;
 }
 
 interface GetConversationInsightsProps {
@@ -326,7 +333,8 @@ async function getConversationInsights({
 }
 
 interface CoreOpinions {
-    majorityOpinions: OpinionInsight[];
+    majorityAgreeOpinions: OpinionInsight[];
+    majorityDisagreeOpinions: OpinionInsight[];
     controversialOpinions: OpinionInsight[];
     clusters: Record<string, ClusterInsights>;
 }
@@ -548,7 +556,8 @@ async function getCoreOpinions({
             ),
         );
 
-    const majorityOpinions: OpinionInsight[] = [];
+    const majorityAgreeOpinions: OpinionInsight[] = [];
+    const majorityDisagreeOpinions: OpinionInsight[] = [];
     const controversialOpinions: OpinionInsight[] = [];
     const clusters: Record<string, ClusterInsights> = {};
     for (const conversationData of conversationDataResults) {
@@ -561,13 +570,20 @@ async function getCoreOpinions({
                 conversationData.participantCount,
         };
         if (
-            isMajority({
+            isMajorityAgree({
                 numAgrees: conversationData.numAgrees,
                 memberCount: conversationData.participantCount,
-                numDisagrees: conversationData.numDisagrees,
             })
         ) {
-            majorityOpinions.push(newOpinionTotal);
+            majorityAgreeOpinions.push(newOpinionTotal);
+        }
+        if (
+            isMajorityDisagree({
+                numDisagrees: conversationData.numDisagrees,
+                memberCount: conversationData.participantCount,
+            })
+        ) {
+            majorityDisagreeOpinions.push(newOpinionTotal);
         }
         if (
             isControversial({
@@ -594,18 +610,39 @@ async function getCoreOpinions({
                     conversationData.cluster0NumUsers,
             };
             if (
-                isMajority({
+                isMajorityAgree({
                     numAgrees: conversationData.cluster0NumAgrees,
+                    memberCount: conversationData.cluster0NumUsers,
+                })
+            ) {
+                if ("0" in clusters) {
+                    clusters["0"].majorityAgreeOpinions.push(
+                        newOpinionCluster0,
+                    );
+                } else {
+                    clusters["0"] = {
+                        memberCount: conversationData.cluster0NumUsers,
+                        majorityAgreeOpinions: [newOpinionCluster0],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                    };
+                }
+            }
+            if (
+                isMajorityDisagree({
                     numDisagrees: conversationData.cluster0NumDisagrees,
                     memberCount: conversationData.cluster0NumUsers,
                 })
             ) {
                 if ("0" in clusters) {
-                    clusters["0"].majorityOpinions.push(newOpinionCluster0);
+                    clusters["0"].majorityDisagreeOpinions.push(
+                        newOpinionCluster0,
+                    );
                 } else {
                     clusters["0"] = {
                         memberCount: conversationData.cluster0NumUsers,
-                        majorityOpinions: [newOpinionCluster0],
+                        majorityDisagreeOpinions: [newOpinionCluster0],
+                        majorityAgreeOpinions: [],
                         controversialOpinions: [],
                     };
                 }
@@ -624,7 +661,8 @@ async function getCoreOpinions({
                 } else {
                     clusters["0"] = {
                         memberCount: conversationData.cluster0NumUsers,
-                        majorityOpinions: [],
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
                         controversialOpinions: [newOpinionCluster0],
                     };
                 }
@@ -645,18 +683,39 @@ async function getCoreOpinions({
                     conversationData.cluster1NumUsers,
             };
             if (
-                isMajority({
+                isMajorityAgree({
                     numAgrees: conversationData.cluster1NumAgrees,
+                    memberCount: conversationData.cluster1NumUsers,
+                })
+            ) {
+                if ("1" in clusters) {
+                    clusters["1"].majorityAgreeOpinions.push(
+                        newOpinionCluster1,
+                    );
+                } else {
+                    clusters["1"] = {
+                        memberCount: conversationData.cluster1NumUsers,
+                        majorityAgreeOpinions: [newOpinionCluster1],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                    };
+                }
+            }
+            if (
+                isMajorityDisagree({
                     numDisagrees: conversationData.cluster1NumDisagrees,
                     memberCount: conversationData.cluster1NumUsers,
                 })
             ) {
                 if ("1" in clusters) {
-                    clusters["1"].majorityOpinions.push(newOpinionCluster1);
+                    clusters["1"].majorityDisagreeOpinions.push(
+                        newOpinionCluster1,
+                    );
                 } else {
                     clusters["1"] = {
                         memberCount: conversationData.cluster1NumUsers,
-                        majorityOpinions: [newOpinionCluster1],
+                        majorityDisagreeOpinions: [newOpinionCluster1],
+                        majorityAgreeOpinions: [],
                         controversialOpinions: [],
                     };
                 }
@@ -675,7 +734,8 @@ async function getCoreOpinions({
                 } else {
                     clusters["1"] = {
                         memberCount: conversationData.cluster1NumUsers,
-                        majorityOpinions: [],
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
                         controversialOpinions: [newOpinionCluster1],
                     };
                 }
@@ -695,18 +755,39 @@ async function getCoreOpinions({
                         conversationData.cluster2NumUsers,
                 };
                 if (
-                    isMajority({
+                    isMajorityAgree({
                         numAgrees: conversationData.cluster2NumAgrees,
+                        memberCount: conversationData.cluster2NumUsers,
+                    })
+                ) {
+                    if ("2" in clusters) {
+                        clusters["2"].majorityAgreeOpinions.push(
+                            newOpinionCluster2,
+                        );
+                    } else {
+                        clusters["2"] = {
+                            memberCount: conversationData.cluster2NumUsers,
+                            majorityAgreeOpinions: [newOpinionCluster2],
+                            majorityDisagreeOpinions: [],
+                            controversialOpinions: [],
+                        };
+                    }
+                }
+                if (
+                    isMajorityDisagree({
                         numDisagrees: conversationData.cluster2NumDisagrees,
                         memberCount: conversationData.cluster2NumUsers,
                     })
                 ) {
                     if ("2" in clusters) {
-                        clusters["2"].majorityOpinions.push(newOpinionCluster2);
+                        clusters["2"].majorityDisagreeOpinions.push(
+                            newOpinionCluster2,
+                        );
                     } else {
                         clusters["2"] = {
                             memberCount: conversationData.cluster2NumUsers,
-                            majorityOpinions: [newOpinionCluster2],
+                            majorityDisagreeOpinions: [newOpinionCluster2],
+                            majorityAgreeOpinions: [],
                             controversialOpinions: [],
                         };
                     }
@@ -725,7 +806,8 @@ async function getCoreOpinions({
                     } else {
                         clusters["2"] = {
                             memberCount: conversationData.cluster2NumUsers,
-                            majorityOpinions: [],
+                            majorityAgreeOpinions: [],
+                            majorityDisagreeOpinions: [],
                             controversialOpinions: [newOpinionCluster2],
                         };
                     }
@@ -745,20 +827,39 @@ async function getCoreOpinions({
                             conversationData.cluster3NumUsers,
                     };
                     if (
-                        isMajority({
+                        isMajorityAgree({
                             numAgrees: conversationData.cluster3NumAgrees,
-                            numDisagrees: conversationData.cluster3NumDisagrees,
                             memberCount: conversationData.cluster3NumUsers,
                         })
                     ) {
                         if ("3" in clusters) {
-                            clusters["3"].majorityOpinions.push(
+                            clusters["3"].majorityAgreeOpinions.push(
                                 newOpinionCluster3,
                             );
                         } else {
                             clusters["3"] = {
                                 memberCount: conversationData.cluster3NumUsers,
-                                majorityOpinions: [newOpinionCluster3],
+                                majorityAgreeOpinions: [newOpinionCluster3],
+                                majorityDisagreeOpinions: [],
+                                controversialOpinions: [],
+                            };
+                        }
+                    }
+                    if (
+                        isMajorityDisagree({
+                            numDisagrees: conversationData.cluster3NumDisagrees,
+                            memberCount: conversationData.cluster3NumUsers,
+                        })
+                    ) {
+                        if ("3" in clusters) {
+                            clusters["3"].majorityDisagreeOpinions.push(
+                                newOpinionCluster3,
+                            );
+                        } else {
+                            clusters["3"] = {
+                                memberCount: conversationData.cluster3NumUsers,
+                                majorityDisagreeOpinions: [newOpinionCluster3],
+                                majorityAgreeOpinions: [],
                                 controversialOpinions: [],
                             };
                         }
@@ -777,7 +878,8 @@ async function getCoreOpinions({
                         } else {
                             clusters["3"] = {
                                 memberCount: conversationData.cluster3NumUsers,
-                                majorityOpinions: [],
+                                majorityAgreeOpinions: [],
+                                majorityDisagreeOpinions: [],
                                 controversialOpinions: [newOpinionCluster3],
                             };
                         }
@@ -798,20 +900,39 @@ async function getCoreOpinions({
                             conversationData.cluster4NumUsers,
                     };
                     if (
-                        isMajority({
+                        isMajorityAgree({
                             numAgrees: conversationData.cluster4NumAgrees,
-                            numDisagrees: conversationData.cluster4NumDisagrees,
                             memberCount: conversationData.cluster4NumUsers,
                         })
                     ) {
                         if ("4" in clusters) {
-                            clusters["4"].majorityOpinions.push(
+                            clusters["4"].majorityAgreeOpinions.push(
                                 newOpinionCluster4,
                             );
                         } else {
                             clusters["4"] = {
                                 memberCount: conversationData.cluster4NumUsers,
-                                majorityOpinions: [newOpinionCluster4],
+                                majorityAgreeOpinions: [newOpinionCluster4],
+                                majorityDisagreeOpinions: [],
+                                controversialOpinions: [],
+                            };
+                        }
+                    }
+                    if (
+                        isMajorityDisagree({
+                            numDisagrees: conversationData.cluster4NumDisagrees,
+                            memberCount: conversationData.cluster4NumUsers,
+                        })
+                    ) {
+                        if ("4" in clusters) {
+                            clusters["4"].majorityDisagreeOpinions.push(
+                                newOpinionCluster4,
+                            );
+                        } else {
+                            clusters["4"] = {
+                                memberCount: conversationData.cluster4NumUsers,
+                                majorityDisagreeOpinions: [newOpinionCluster4],
+                                majorityAgreeOpinions: [],
                                 controversialOpinions: [],
                             };
                         }
@@ -830,7 +951,8 @@ async function getCoreOpinions({
                         } else {
                             clusters["4"] = {
                                 memberCount: conversationData.cluster4NumUsers,
-                                majorityOpinions: [],
+                                majorityAgreeOpinions: [],
+                                majorityDisagreeOpinions: [],
                                 controversialOpinions: [newOpinionCluster4],
                             };
                         }
@@ -851,20 +973,39 @@ async function getCoreOpinions({
                             conversationData.cluster5NumUsers,
                     };
                     if (
-                        isMajority({
+                        isMajorityAgree({
                             numAgrees: conversationData.cluster5NumAgrees,
-                            numDisagrees: conversationData.cluster5NumDisagrees,
                             memberCount: conversationData.cluster5NumUsers,
                         })
                     ) {
                         if ("5" in clusters) {
-                            clusters["5"].majorityOpinions.push(
+                            clusters["5"].majorityAgreeOpinions.push(
                                 newOpinionCluster5,
                             );
                         } else {
                             clusters["5"] = {
                                 memberCount: conversationData.cluster5NumUsers,
-                                majorityOpinions: [newOpinionCluster5],
+                                majorityAgreeOpinions: [newOpinionCluster5],
+                                majorityDisagreeOpinions: [],
+                                controversialOpinions: [],
+                            };
+                        }
+                    }
+                    if (
+                        isMajorityDisagree({
+                            numDisagrees: conversationData.cluster5NumDisagrees,
+                            memberCount: conversationData.cluster5NumUsers,
+                        })
+                    ) {
+                        if ("5" in clusters) {
+                            clusters["5"].majorityDisagreeOpinions.push(
+                                newOpinionCluster5,
+                            );
+                        } else {
+                            clusters["5"] = {
+                                memberCount: conversationData.cluster5NumUsers,
+                                majorityDisagreeOpinions: [newOpinionCluster5],
+                                majorityAgreeOpinions: [],
                                 controversialOpinions: [],
                             };
                         }
@@ -883,7 +1024,8 @@ async function getCoreOpinions({
                         } else {
                             clusters["5"] = {
                                 memberCount: conversationData.cluster5NumUsers,
-                                majorityOpinions: [],
+                                majorityAgreeOpinions: [],
+                                majorityDisagreeOpinions: [],
                                 controversialOpinions: [newOpinionCluster5],
                             };
                         }
@@ -893,7 +1035,8 @@ async function getCoreOpinions({
         }
     }
     return {
-        majorityOpinions,
+        majorityAgreeOpinions,
+        majorityDisagreeOpinions,
         controversialOpinions,
         clusters,
     };

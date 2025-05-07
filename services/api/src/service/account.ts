@@ -624,63 +624,58 @@ export async function deleteUserAccount({
     // 3. old proofs should be set to be deleted as well, except the deletion proof and the proofs binding the devices together
     // 4. conversation deletion should not necessarily delete other people's opinion
     // 5. opinion deletion should not necessarily delete other people's replies
-    try {
-        await db.transaction(async (tx) => {
-            const updatedUserTableResponse = await tx
-                .update(userTable)
-                .set({
-                    isDeleted: true,
-                    updatedAt: nowZeroMs(),
-                })
-                .where(eq(userTable.id, userId))
-                .returning({ id: userTable.id });
+    const userComments = await getUserComments({
+        db: db,
+        userId: userId,
+        lastCommentSlugId: undefined,
+        baseImageServiceUrl,
+    });
+    await db.transaction(async (tx) => {
+        const updatedUserTableResponse = await tx
+            .update(userTable)
+            .set({
+                isDeleted: true,
+                updatedAt: nowZeroMs(),
+            })
+            .where(eq(userTable.id, userId))
+            .returning({ id: userTable.id });
 
-            if (updatedUserTableResponse.length != 1) {
-                log.error(
-                    "User table update has an invalid number of affected rows: " +
-                        userId,
-                );
-                tx.rollback();
-            }
+        if (updatedUserTableResponse.length != 1) {
+            log.error(
+                "User table update has an invalid number of affected rows: " +
+                    userId,
+            );
+            tx.rollback();
+        }
 
-            // Delete user comments
-            const userComments = await getUserComments({
+        // Delete user comments
+        for (const comment of userComments) {
+            await deleteOpinionBySlugId({
+                proof: proof,
+                opinionSlugId: comment.opinionItem.opinionSlugId,
                 db: tx,
+                didWrite: didWrite,
                 userId: userId,
-                lastCommentSlugId: undefined,
-                baseImageServiceUrl,
             });
-            for (const comment of userComments) {
-                await deleteOpinionBySlugId({
-                    proof: proof,
-                    opinionSlugId: comment.opinionItem.opinionSlugId,
-                    db: tx,
-                    didWrite: didWrite,
-                    userId: userId,
-                });
-            }
+        }
 
-            // Delete user posts
-            const userPosts = await getUserPosts({
-                db: tx,
-                userId: userId,
-                lastPostSlugId: undefined,
-                baseImageServiceUrl,
-            });
-            for (const post of userPosts.values()) {
-                await deletePostBySlugId({
-                    proof: proof,
-                    db: tx,
-                    didWrite: didWrite,
-                    conversationSlugId: post.metadata.conversationSlugId,
-                    userId: userId,
-                });
-            }
-
-            await logout(tx, didWrite);
+        // Delete user posts
+        const userPosts = await getUserPosts({
+            db: tx,
+            userId: userId,
+            lastPostSlugId: undefined,
+            baseImageServiceUrl,
         });
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError("Failed to delete user account");
-    }
+        for (const post of userPosts.values()) {
+            await deletePostBySlugId({
+                proof: proof,
+                db: tx,
+                didWrite: didWrite,
+                conversationSlugId: post.metadata.conversationSlugId,
+                userId: userId,
+            });
+        }
+
+        await logout(tx, didWrite);
+    });
 }
