@@ -39,7 +39,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   Router.beforeEach(async (to) => {
-    const skipOnboarding = onboardingGuard(to.name);
+    const { skipOnboarding } = onboardingGuard(to.name);
     if (skipOnboarding) {
       return { name: "/welcome/" };
     }

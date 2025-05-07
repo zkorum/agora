@@ -5,7 +5,9 @@ import { RouteMap, useRouter } from "vue-router";
 export function useRouterGuard() {
   const router = useRouter();
 
-  const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { isLoggedIn, isAuthInitialized } = storeToRefs(
+    useAuthenticationStore()
+  );
 
   const onboardingRoutes: (keyof RouteMap)[] = [
     "/onboarding/step1-login/",
@@ -36,11 +38,17 @@ export function useRouterGuard() {
     }
   }
 
-  function onboardingGuard(toName: keyof RouteMap): boolean {
-    if (isLoggedIn.value && onboardingRoutes.includes(toName)) {
-      return true;
+  function onboardingGuard(toName: keyof RouteMap): {
+    skipOnboarding: boolean;
+  } {
+    if (isAuthInitialized.value) {
+      if (isLoggedIn.value && onboardingRoutes.includes(toName)) {
+        return { skipOnboarding: true };
+      } else {
+        return { skipOnboarding: false };
+      }
     } else {
-      return false;
+      return { skipOnboarding: false };
     }
   }
 

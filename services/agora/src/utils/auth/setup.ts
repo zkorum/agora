@@ -1,27 +1,12 @@
-import { useAuthenticationStore } from "src/stores/authentication";
-import { usePostStore } from "src/stores/post";
-import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "../api/auth";
 import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 
 export function useAuthSetup() {
-  const { loadPostData } = usePostStore();
-  const { loadUserProfile } = useUserStore();
-  const authStore = useAuthenticationStore();
-
   const { logoutFromServer, updateAuthState } = useBackendAuthApi();
   const { showNotifyMessage } = useNotify();
 
   const router = useRouter();
-
-  async function userLogin() {
-    authStore.setLoginStatus({
-      isLoggedIn: true,
-    });
-    await loadPostData(false);
-    await loadUserProfile();
-  }
 
   async function logoutRequested() {
     try {
@@ -35,5 +20,5 @@ export function useAuthSetup() {
     }
   }
 
-  return { userLogin, logoutRequested };
+  return { logoutRequested };
 }
