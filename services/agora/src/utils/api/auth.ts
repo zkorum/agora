@@ -56,6 +56,7 @@ export function useBackendAuthApi() {
   const { loadNotificationData } = useNotificationStore();
   const { clearConversationDrafts } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
+  const { clearNotificationData } = useNotificationStore();
 
   const route = useRoute();
 
@@ -246,6 +247,8 @@ export function useBackendAuthApi() {
 
     await loadPostData(false);
     clearProfileData();
+
+    clearNotificationData();
   }
 
   return {
