@@ -18,7 +18,7 @@ import { routes } from "vue-router/auto-routes";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { onboardingGuard } = useRouterGuard();
+  const { conversationGuard } = useRouterGuard();
 
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -39,9 +39,9 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   Router.beforeEach(async (to, from) => {
-    const { jumpToHome } = onboardingGuard(to.name, from.name);
-    if (jumpToHome) {
-      return { name: "/" };
+    const target = conversationGuard(to.name, from.name);
+    if (target == "home") {
+      await Router.replace({ name: "/" });
     }
   });
 
