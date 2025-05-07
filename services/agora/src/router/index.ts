@@ -1,4 +1,5 @@
 import { defineRouter } from "#q-app/wrappers";
+import { useRouterGuard } from "src/utils/router/guard";
 import {
   createMemoryHistory,
   createRouter,
@@ -17,6 +18,8 @@ import { routes } from "vue-router/auto-routes";
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
+  const { onboardingGuard } = useRouterGuard();
+
   const createHistory = process.env.SERVER
     ? createMemoryHistory
     : process.env.VUE_ROUTER_MODE === "history"
@@ -35,7 +38,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach(async () => {});
+  Router.beforeEach(async (to) => {
+    const skipOnboarding = onboardingGuard(to.name);
+    if (skipOnboarding) {
+      return { name: "/welcome/" };
+    }
+  });
 
   /*
   // @see https://stackoverflow.com/questions/69300341/typeerror-failed-to-fetch-dynamically-imported-module-on-vue-vite-vanilla-set

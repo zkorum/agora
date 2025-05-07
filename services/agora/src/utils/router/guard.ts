@@ -1,7 +1,11 @@
+import { storeToRefs } from "pinia";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { RouteMap, useRouter } from "vue-router";
 
 export function useRouterGuard() {
   const router = useRouter();
+
+  const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
   const onboardingRoutes: (keyof RouteMap)[] = [
     "/onboarding/step1-login/",
@@ -27,10 +31,20 @@ export function useRouterGuard() {
       "/settings/",
     ];
 
+    console.log(toName);
+
     if (!unauthenticatedRoutes.includes(toName)) {
       await router.push({ name: "/welcome/" });
     }
   }
 
-  return { firstLoadGuard };
+  function onboardingGuard(toName: keyof RouteMap): boolean {
+    if (isLoggedIn.value && onboardingRoutes.includes(toName)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  return { firstLoadGuard, onboardingGuard };
 }
