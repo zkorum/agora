@@ -18,7 +18,6 @@ import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
 import { usePostStore } from "src/stores/post";
 import { useUserStore } from "src/stores/user";
-import { RouteMap, useRoute, useRouter } from "vue-router";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
@@ -28,6 +27,8 @@ import {
   useCommonApi,
   type KeyAction,
 } from "./common";
+import { useRoute } from "vue-router";
+import { useRouterGuard } from "../router/guard";
 
 interface SendSmsCodeProps {
   phoneNumber: string;
@@ -56,10 +57,11 @@ export function useBackendAuthApi() {
   const { clearConversationDrafts } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
 
-  const $q = useQuasar();
-
-  const router = useRouter();
   const route = useRoute();
+
+  const { firstLoadGuard } = useRouterGuard();
+
+  const $q = useQuasar();
 
   type SendSmsCodeSuccessResponse =
     AxiosSuccessResponse<ApiV1AuthAuthenticatePost200Response>;
@@ -202,15 +204,7 @@ export function useBackendAuthApi() {
       ) {
         console.log("Cleaning data from detecting change to unknown device");
         await logoutDataCleanup();
-        setTimeout(async function () {
-          const needRedirect = needRedirectUnauthenticatedUser();
-          if (needRedirect) {
-            await redirectToWelcomePage();
-          } else {
-            await loadPostData(false);
-          }
-        }, 500);
-        return;
+        await firstLoadGuard(route.name);
       }
 
       if (forceRefresh || oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn)
@@ -222,14 +216,7 @@ export function useBackendAuthApi() {
         } else {
           console.log("Cleaning data from logging out");
           await logoutDataCleanup();
-          setTimeout(async function () {
-            const needRedirect = needRedirectUnauthenticatedUser();
-            if (needRedirect) {
-              await redirectToWelcomePage();
-            } else {
-              await loadPostData(false);
-            }
-          }, 500);
+          await firstLoadGuard(route.name);
         }
     } catch (e) {
       console.error("Failed to update authentication state", e);
@@ -244,40 +231,6 @@ export function useBackendAuthApi() {
       partialLoginStatus: deviceLoginStatus,
       forceRefresh: true,
     });
-  }
-
-  async function redirectToWelcomePage() {
-    await router.push({ name: "/welcome/" });
-  }
-
-  function needRedirectUnauthenticatedUser(): boolean {
-    const currentRouteName = route.name;
-    if (currentRouteName) {
-      const whiteListedRoutes: (keyof RouteMap)[] = [
-        "/",
-        "/conversation/[postSlugId]",
-        "/conversation/create/",
-        "/legal/privacy/",
-        "/legal/terms/",
-        "/onboarding/step1-login/",
-        "/onboarding/step1-signup/",
-        "/onboarding/step2-signup/",
-        "/onboarding/step3-passport/",
-        "/onboarding/step3-phone-1/",
-        "/onboarding/step3-phone-2/",
-        "/onboarding/step4-username/",
-        "/onboarding/step5-experience-deprecated/",
-        "/onboarding/step5-preferences-deprecated/",
-      ];
-      if (whiteListedRoutes.includes(currentRouteName)) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
-      console.log(`Failed to detect current route name: ${currentRouteName}`);
-      return true;
-    }
   }
 
   async function logoutDataCleanup() {
