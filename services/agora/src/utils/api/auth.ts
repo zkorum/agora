@@ -205,6 +205,7 @@ export function useBackendAuthApi() {
         console.log("Cleaning data from detecting change to unknown device");
         await logoutDataCleanup();
         await firstLoadGuard(route.name);
+        return;
       }
 
       if (forceRefresh || oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn)
@@ -217,6 +218,7 @@ export function useBackendAuthApi() {
           console.log("Cleaning data from logging out");
           await logoutDataCleanup();
           await firstLoadGuard(route.name);
+          return;
         }
     } catch (e) {
       console.error("Failed to update authentication state", e);
