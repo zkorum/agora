@@ -38,10 +38,10 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach(async (to) => {
-    const { skipOnboarding } = onboardingGuard(to.name);
-    if (skipOnboarding) {
-      return { name: "/welcome/" };
+  Router.beforeEach(async (to, from) => {
+    const { jumpToHome } = onboardingGuard(to.name, from.name);
+    if (jumpToHome) {
+      return { name: "/" };
     }
   });
 
