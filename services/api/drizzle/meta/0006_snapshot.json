@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "id": "583570c0-bb75-458b-a7d2-a9138d58a946",
+=======
+  "id": "084d49df-d78c-47b9-90c8-711bab320a00",
+>>>>>>> adbeed6f (Create tables for user topics)
   "prevId": "44c9db4a-49b2-4e30-8f74-1bd8f9666ac8",
   "version": "7",
   "dialect": "postgresql",
@@ -757,8 +761,13 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.conversation_topic": {
       "name": "conversation_topic",
+=======
+    "public.conversation_topic_mapping": {
+      "name": "conversation_topic_mapping",
+>>>>>>> adbeed6f (Create tables for user topics)
       "schema": "",
       "columns": {
         "id": {
@@ -768,7 +777,11 @@
           "notNull": true,
           "identity": {
             "type": "always",
+<<<<<<< HEAD
             "name": "conversation_topic_id_seq",
+=======
+            "name": "conversation_topic_mapping_id_seq",
+>>>>>>> adbeed6f (Create tables for user topics)
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -778,6 +791,7 @@
             "cycle": false
           }
         },
+<<<<<<< HEAD
         "name": {
           "name": "name",
           "type": "text",
@@ -789,6 +803,19 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+=======
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "topic_id": {
+          "name": "topic_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+>>>>>>> adbeed6f (Create tables for user topics)
         },
         "created_at": {
           "name": "created_at",
@@ -798,10 +825,69 @@
           "default": "now()"
         }
       },
+<<<<<<< HEAD
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+=======
+      "indexes": {
+        "conversation_topic_mapping_index": {
+          "name": "conversation_topic_mapping_index",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_topic_mapping_conversation_id_conversation_id_fk": {
+          "name": "conversation_topic_mapping_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_topic_mapping",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_topic_mapping_topic_id_topic_id_fk": {
+          "name": "conversation_topic_mapping_topic_id_topic_id_fk",
+          "tableFrom": "conversation_topic_mapping",
+          "tableTo": "topic",
+          "columnsFrom": [
+            "topic_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "conversation_topic_mapping_unique": {
+          "name": "conversation_topic_mapping_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id",
+            "topic_id"
+          ]
+        }
+      },
+>>>>>>> adbeed6f (Create tables for user topics)
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2231,6 +2317,134 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
+=======
+    "public.participant": {
+      "name": "participant",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "participant_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "polis_cluster_id": {
+          "name": "polis_cluster_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opinion_count": {
+          "name": "opinion_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "vote_count": {
+          "name": "vote_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participant_conversation_id_conversation_id_fk": {
+          "name": "participant_conversation_id_conversation_id_fk",
+          "tableFrom": "participant",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "participant_user_id_user_id_fk": {
+          "name": "participant_user_id_user_id_fk",
+          "tableFrom": "participant",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "participant_polis_cluster_id_polis_cluster_id_fk": {
+          "name": "participant_polis_cluster_id_polis_cluster_id_fk",
+          "tableFrom": "participant",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "polis_cluster_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_cluster_per_participant": {
+          "name": "unique_cluster_per_participant",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+>>>>>>> adbeed6f (Create tables for user topics)
     "public.phone": {
       "name": "phone",
       "schema": "",
@@ -3194,8 +3408,13 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.user_conversation_topic_preference": {
       "name": "user_conversation_topic_preference",
+=======
+    "public.topic": {
+      "name": "topic",
+>>>>>>> adbeed6f (Create tables for user topics)
       "schema": "",
       "columns": {
         "id": {
@@ -3205,7 +3424,94 @@
           "notNull": true,
           "identity": {
             "type": "always",
+<<<<<<< HEAD
             "name": "user_conversation_topic_preference_id_seq",
+=======
+            "name": "topic_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score_weight": {
+          "name": "score_weight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "topic_code_unique": {
+          "name": "topic_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        },
+        "topic_name_unique": {
+          "name": "topic_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        },
+        "topic_description_unique": {
+          "name": "topic_description_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "description"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_followed_topic": {
+      "name": "user_followed_topic",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "user_followed_topic_id_seq",
+>>>>>>> adbeed6f (Create tables for user topics)
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -3221,8 +3527,13 @@
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "conversation_tag_id": {
           "name": "conversation_tag_id",
+=======
+        "topic_id": {
+          "name": "topic_id",
+>>>>>>> adbeed6f (Create tables for user topics)
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -3236,8 +3547,13 @@
         }
       },
       "indexes": {
+<<<<<<< HEAD
         "user_idx_topic": {
           "name": "user_idx_topic",
+=======
+        "user_followed_topic_index": {
+          "name": "user_followed_topic_index",
+>>>>>>> adbeed6f (Create tables for user topics)
           "columns": [
             {
               "expression": "user_id",
@@ -3253,9 +3569,15 @@
         }
       },
       "foreignKeys": {
+<<<<<<< HEAD
         "user_conversation_topic_preference_user_id_user_id_fk": {
           "name": "user_conversation_topic_preference_user_id_user_id_fk",
           "tableFrom": "user_conversation_topic_preference",
+=======
+        "user_followed_topic_user_id_user_id_fk": {
+          "name": "user_followed_topic_user_id_user_id_fk",
+          "tableFrom": "user_followed_topic",
+>>>>>>> adbeed6f (Create tables for user topics)
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -3266,12 +3588,21 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+<<<<<<< HEAD
         "user_conversation_topic_preference_conversation_tag_id_conversation_topic_id_fk": {
           "name": "user_conversation_topic_preference_conversation_tag_id_conversation_topic_id_fk",
           "tableFrom": "user_conversation_topic_preference",
           "tableTo": "conversation_topic",
           "columnsFrom": [
             "conversation_tag_id"
+=======
+        "user_followed_topic_topic_id_topic_id_fk": {
+          "name": "user_followed_topic_topic_id_topic_id_fk",
+          "tableFrom": "user_followed_topic",
+          "tableTo": "topic",
+          "columnsFrom": [
+            "topic_id"
+>>>>>>> adbeed6f (Create tables for user topics)
           ],
           "columnsTo": [
             "id"
@@ -3282,12 +3613,21 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
+<<<<<<< HEAD
         "user_unique_topic": {
           "name": "user_unique_topic",
           "nullsNotDistinct": false,
           "columns": [
             "user_id",
             "conversation_tag_id"
+=======
+        "user_followed_topic_unique": {
+          "name": "user_followed_topic_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "topic_id"
+>>>>>>> adbeed6f (Create tables for user topics)
           ]
         }
       },
