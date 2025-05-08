@@ -23,7 +23,7 @@
       <WidthWrapper :enable="true">
         <PostDetails
           v-if="dataLoaded"
-          :key="postData.metadata.opinionCount"
+          :key="postKey"
           :extended-post-data="postData"
           :compact-mode="false"
           :skeleton-mode="false"
@@ -57,6 +57,8 @@ const postData = ref<ExtendedConversation>(emptyPost);
 const dataLoaded = ref(false);
 
 const route = useRoute();
+
+const postKey = ref(0);
 
 const {
   clearVotingIntention,
@@ -106,6 +108,7 @@ async function loadData() {
 async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {
     await loadData();
+    postKey.value = postKey.value + 1;
     done();
   }, 500);
 }
