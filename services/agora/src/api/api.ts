@@ -2124,6 +2124,15 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
      * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
      */
     'name': string;
+<<<<<<< HEAD
+=======
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
+     */
+    'description': string;
+>>>>>>> 86fc66bd (Add topics page)
 }
 /**
  * 

@@ -4251,11 +4251,22 @@
                                                     },
                                                     "name": {
                                                         "type": "string"
+<<<<<<< HEAD
+=======
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+>>>>>>> 86fc66bd (Add topics page)
                                                     }
                                                 },
                                                 "required": [
                                                     "code",
+<<<<<<< HEAD
                                                     "name"
+=======
+                                                    "name",
+                                                    "description"
+>>>>>>> 86fc66bd (Add topics page)
                                                 ],
                                                 "additionalProperties": false
                                             }
