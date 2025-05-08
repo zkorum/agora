@@ -146,7 +146,6 @@ import {
 import { storeToRefs } from "pinia";
 import CommentGroup from "./CommentGroup.vue";
 import { useNotify } from "src/utils/ui/notify";
-import { useRouter } from "vue-router";
 import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./CommentSortingSelector.vue";
 import { CommentFilterOptions } from "src/utils/component/opinion";
@@ -190,7 +189,6 @@ const commentFilterQuery = useRouteQuery("filter", "", {
 });
 
 const { showNotifyMessage } = useNotify();
-const router = useRouter();
 
 const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
@@ -220,7 +218,6 @@ loadCommentFilterQuery();
 onMounted(async () => {
   await Promise.all([initializeData(), fetchPersonalLikes()]);
   updateInfiniteScrollingList(sortAlgorithm.value);
-  await resetRouteParams();
   isMounted = true;
 });
 
@@ -319,12 +316,6 @@ async function deletedComment() {
   emit("deleted");
   await initializeData();
   updateInfiniteScrollingList(sortAlgorithm.value);
-}
-
-async function resetRouteParams() {
-  await router.replace({
-    query: {},
-  });
 }
 
 async function fetchPersonalLikes() {
