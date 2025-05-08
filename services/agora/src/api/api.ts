@@ -789,6 +789,12 @@ export interface ApiV1ConversationCreatePostRequest {
      * @memberof ApiV1ConversationCreatePostRequest
      */
     'pollingOptionList'?: Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'topicCodeList': Array<string>;
 }
 /**
  * 
@@ -2125,6 +2131,7 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
      */
     'name': string;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     /**
      * 
@@ -2133,6 +2140,8 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
      */
     'description': string;
 >>>>>>> 86fc66bd (Add topics page)
+=======
+>>>>>>> 96643b5f (Add topics to createConversation API)
 }
 /**
  * 

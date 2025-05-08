@@ -7,6 +7,7 @@ import {
     conversationProofTable,
     conversationTable,
     userTable,
+    conversationTopicMappingTable,
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
 import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
@@ -19,6 +20,7 @@ import type { ExtendedConversation } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import * as authUtilService from "@/service/authUtil.js";
+import { mapTopicCodeToId } from "./topic.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -33,6 +35,7 @@ interface CreateNewPostProps {
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    topicCodeList: string[];
 }
 
 interface ImportNewPostProps {
@@ -132,6 +135,7 @@ export async function createNewPost({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    topicCodeList,
 }: CreateNewPostProps): Promise<CreateNewConversationResponse> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
@@ -252,6 +256,19 @@ export async function createNewPost({
                 userId: authorId,
                 conversationSlugId: conversationSlugId,
                 axiosPolis,
+            });
+        }
+
+        // Update the topics
+        for (const topicCode of topicCodeList) {
+            const topicId = await mapTopicCodeToId({
+                db: db,
+                topicCode: topicCode,
+            });
+
+            await tx.insert(conversationTopicMappingTable).values({
+                conversationId: conversationId,
+                topicId: topicId,
             });
         }
     });

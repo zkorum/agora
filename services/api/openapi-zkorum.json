@@ -2952,12 +2952,20 @@
                                             "maxLength": 30,
                                             "minLength": 1
                                         }
+                                    },
+                                    "topicCodeList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "minItems": 1
                                     }
                                 },
                                 "required": [
                                     "conversationTitle",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "isLoginRequired",
+                                    "topicCodeList"
                                 ],
                                 "additionalProperties": false
                             }
@@ -4252,21 +4260,28 @@
                                                     "name": {
                                                         "type": "string"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                                                     },
                                                     "description": {
                                                         "type": "string"
 >>>>>>> 86fc66bd (Add topics page)
+=======
+>>>>>>> 96643b5f (Add topics to createConversation API)
                                                     }
                                                 },
                                                 "required": [
                                                     "code",
+<<<<<<< HEAD
 <<<<<<< HEAD
                                                     "name"
 =======
                                                     "name",
                                                     "description"
 >>>>>>> 86fc66bd (Add topics page)
+=======
+                                                    "name"
+>>>>>>> 96643b5f (Add topics to createConversation API)
                                                 ],
                                                 "additionalProperties": false
                                             }
