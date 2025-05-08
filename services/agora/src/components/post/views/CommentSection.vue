@@ -3,7 +3,7 @@
     <div class="container">
       <CommentClusterGraph
         v-if="showClusterMap"
-        :clusters="polis.clusters"
+        :clusters="props.polis.clusters"
         :total-participant-count="props.participantCount"
         :current-cluster-tab="currentClusterTab"
         @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
@@ -320,7 +320,6 @@ async function deletedComment() {
 
 async function fetchPersonalLikes() {
   if (isGuestOrLoggedIn.value) {
-    emit("updateCommentSlugIdLikedMap", new Map());
     const response = await fetchUserVotesForPostSlugIds([props.postSlugId]);
     if (response) {
       const newMap = new Map();
@@ -328,6 +327,8 @@ async function fetchPersonalLikes() {
         newMap.set(userVote.opinionSlugId, userVote.votingAction);
       });
       emit("updateCommentSlugIdLikedMap", newMap);
+    } else {
+      emit("updateCommentSlugIdLikedMap", new Map());
     }
   }
 }
