@@ -213,8 +213,6 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
       await router.push({ name: "/" });
     } else if (routeName == "/topics/") {
       await router.push({ name: "/topics/" });
-    } else if (routeName == "/topics/") {
-      await router.push({ name: "/topics/" });
     } else {
       console.error(
         "Unknown route name when entering route in side bar: " + routeName
