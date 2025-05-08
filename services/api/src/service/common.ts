@@ -7,7 +7,6 @@ import {
     conversationModerationTable,
     polisContentTable,
     polisClusterTable,
-    participantTable,
     organizationTable,
     voteTable,
 } from "@/schema.js";
@@ -71,13 +70,31 @@ export function useCommonPost() {
         db: PostgresJsDatabase;
         conversationId: number;
     }): Promise<number> {
-        const participantResults = await db
-            .select({ count: count() })
-            .from(participantTable)
-            .where(eq(participantTable.conversationId, conversationId));
+        // TODO: optimize this
+        const voteResponse = await db
+            .select({ authorId: voteTable.authorId })
+            .from(voteTable)
+            .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+            .where(eq(opinionTable.conversationId, conversationId));
+        // this is not necessary normally since every opinion author are necessarily voting "agree"
+        // and opinion author are not participants unless they vote...
+        // TODO: remove this once we move to external polis and update the old convos
+        const opinionResponse = await db
+            .select({ authorId: opinionTable.authorId })
+            .from(opinionTable)
+            .where(eq(opinionTable.conversationId, conversationId));
+        const participantCount = new Set(
+            voteResponse
+                .map((voteVal) => voteVal.authorId)
+                .concat(
+                    opinionResponse.map((opinionVal) => opinionVal.authorId),
+                ),
+        ).size;
+        // const participantResults = await db
+        //     .select({ count: count() })
+        //     .from(participantTable)
+        //     .where(eq(participantTable.conversationId, conversationId));
 
-        const participantCount =
-            participantResults.length === 0 ? 0 : participantResults[0].count;
         return participantCount;
     }
 
@@ -730,20 +747,21 @@ export function useCommonPost() {
             })
             .from(conversationTable)
             .where(eq(conversationTable.slugId, conversationSlugId));
-
-        if (postTableResponse.length == 1) {
-            if (useCache) {
-                return {
-                    contentId: postTableResponse[0].currentContentId,
-                    id: postTableResponse[0].id,
-                    authorId: postTableResponse[0].authorId,
-                    participantCount: postTableResponse[0].participantCount,
-                    voteCount: postTableResponse[0].voteCount,
-                    opinionCount: postTableResponse[0].opinionCount,
-                    isIndexed: postTableResponse[0].isIndexed,
-                    isLoginRequired: postTableResponse[0].isLoginRequired,
-                };
-            }
+        if (postTableResponse.length === 0) {
+            throw httpErrors.notFound("Conversation slugId not found");
+        }
+        if (useCache) {
+            return {
+                contentId: postTableResponse[0].currentContentId,
+                id: postTableResponse[0].id,
+                authorId: postTableResponse[0].authorId,
+                participantCount: postTableResponse[0].participantCount,
+                voteCount: postTableResponse[0].voteCount,
+                opinionCount: postTableResponse[0].opinionCount,
+                isIndexed: postTableResponse[0].isIndexed,
+                isLoginRequired: postTableResponse[0].isLoginRequired,
+            };
+        } else {
             const participantCount = await getParticipantCountBypassCache({
                 db,
                 conversationId: postTableResponse[0].id,
@@ -766,12 +784,6 @@ export function useCommonPost() {
                 isIndexed: postTableResponse[0].isIndexed,
                 isLoginRequired: postTableResponse[0].isLoginRequired,
             };
-        } else if (postTableResponse.length > 1) {
-            throw httpErrors.notFound(
-                "Conversation slug id contains multiple duplicates",
-            );
-        } else {
-            throw httpErrors.notFound("Conversation slugId not found");
         }
     }
 
@@ -803,41 +815,10 @@ export function useCommonComment() {
         db,
         conversationId,
         userId,
-        useCache = true,
     }: GetCountForParticipantProps): Promise<{
         voteCount: number;
         opinionCount: number;
     }> {
-        if (useCache) {
-            const response = await db
-                .select({
-                    voteCount: participantTable.voteCount,
-                    opinionCount: participantTable.opinionCount,
-                })
-                .from(participantTable)
-                .where(
-                    and(
-                        eq(participantTable.conversationId, conversationId),
-                        eq(participantTable.userId, userId),
-                    ),
-                );
-            if (response.length == 1) {
-                return {
-                    voteCount: response[0].voteCount,
-                    opinionCount: response[0].opinionCount,
-                };
-            } else if (response.length > 1) {
-                throw httpErrors.internalServerError(
-                    "Participant contains multiple duplicates",
-                );
-            } else {
-                // not found
-                return {
-                    voteCount: 0,
-                    opinionCount: 0,
-                };
-            }
-        }
         const { getOpinionCountBypassCache, getVoteCountBypassCache } =
             useCommonPost();
         const voteCount = await getVoteCountBypassCache({

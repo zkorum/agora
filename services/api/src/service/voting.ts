@@ -6,7 +6,6 @@ import {
     voteTable,
     notificationTable,
     notificationOpinionVoteTable,
-    participantTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and, desc, isNotNull } from "drizzle-orm";
@@ -19,6 +18,7 @@ import * as polisService from "@/service/polis.js";
 import { log } from "@/app.js";
 import { insertNewVoteNotification } from "./notification.js";
 import * as authUtilService from "@/service/authUtil.js";
+import { PgTransaction } from "drizzle-orm/pg-core";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -226,24 +226,6 @@ export async function importNewVote({
         conversationId,
         userId,
     });
-
-    // important to run AFTER the above select
-    await db
-        .insert(participantTable)
-        .values({
-            conversationId: conversationId,
-            userId: userId,
-            voteCount: 1,
-        })
-        .onConflictDoUpdate({
-            target: [participantTable.conversationId, participantTable.userId],
-            set: {
-                voteCount:
-                    votingAction == "cancel"
-                        ? sql`${participantTable.voteCount} - 1`
-                        : sql`${participantTable.voteCount} + 1`,
-            },
-        });
 
     if (votingAction === "cancel") {
         // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
@@ -486,12 +468,13 @@ export async function castVoteForOpinionSlugId({
             userId,
             useCache: false,
         });
-    await db.transaction(async (tx) => {
+
+    async function doUpdateCastVote(db: PostgresJsDatabase): Promise<void> {
         let voteTableId = 0;
 
         if (existingVoteTableResponse.length == 0) {
             // There are no votes yet
-            const voteTableResponse = await tx
+            const voteTableResponse = await db
                 .insert(voteTable)
                 .values({
                     authorId: userId,
@@ -502,7 +485,7 @@ export async function castVoteForOpinionSlugId({
             voteTableId = voteTableResponse[0].voteTableId;
         } else {
             if (votingAction == "cancel") {
-                await tx
+                await db
                     .update(voteTable)
                     .set({
                         currentContentId: null,
@@ -518,7 +501,7 @@ export async function castVoteForOpinionSlugId({
             voteTableId = existingVoteTableResponse[0].voteTableId;
         }
 
-        const voteProofTableResponse = await tx
+        const voteProofTableResponse = await db
             .insert(voteProofTable)
             .values({
                 type: votingAction == "cancel" ? "deletion" : "creation",
@@ -529,27 +512,6 @@ export async function castVoteForOpinionSlugId({
             })
             .returning({ voteProofTableId: voteProofTable.id });
 
-        await db
-            .insert(participantTable)
-            .values({
-                conversationId: conversationId,
-                userId: userId,
-                voteCount: 1,
-            })
-            .onConflictDoUpdate({
-                target: [
-                    participantTable.conversationId,
-                    participantTable.userId,
-                ],
-                set: {
-                    voteCount:
-                        votingAction == "cancel"
-                            ? participantVoteCountBeforeAction - 1
-                            : participantVoteCountBeforeAction + 1,
-                },
-            })
-            .returning({ newVoteCount: participantTable.voteCount });
-
         if (votingAction === "cancel") {
             // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
             const participantVoteCountAfterDeletion =
@@ -557,7 +519,7 @@ export async function castVoteForOpinionSlugId({
             /* <= to account for potential sync errors though it should not happen with db transactions... */
             const isParticipantDeleted = participantVoteCountAfterDeletion <= 0;
             if (isParticipantDeleted) {
-                await tx
+                await db
                     .update(conversationTable)
                     .set({
                         voteCount: conversationVoteCount - 1,
@@ -565,17 +527,18 @@ export async function castVoteForOpinionSlugId({
                     })
                     .where(eq(conversationTable.id, conversationId));
             } else {
-                await tx
+                await db
                     .update(conversationTable)
                     .set({
                         voteCount: conversationVoteCount - 1,
+                        participantCount: conversationParticipantCount,
                     })
                     .where(eq(conversationTable.id, conversationId));
             }
         } else {
             if (participantVoteCountBeforeAction === 0) {
                 // new participant!
-                await tx
+                await db
                     .update(conversationTable)
                     .set({
                         voteCount: conversationVoteCount + 1,
@@ -584,10 +547,11 @@ export async function castVoteForOpinionSlugId({
                     .where(eq(conversationTable.slugId, conversationSlugId));
             } else {
                 // existing participant!
-                await tx
+                await db
                     .update(conversationTable)
                     .set({
                         voteCount: conversationVoteCount + 1,
+                        participantCount: conversationParticipantCount,
                     })
                     .where(eq(conversationTable.slugId, conversationSlugId));
             }
@@ -595,7 +559,7 @@ export async function castVoteForOpinionSlugId({
 
         const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
 
-        const updateOpinionResponse = await tx
+        const updateOpinionResponse = await db
             .update(opinionTable)
             .set({
                 numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
@@ -608,7 +572,7 @@ export async function castVoteForOpinionSlugId({
             });
 
         if (votingAction != "cancel") {
-            const voteContentTableResponse = await tx
+            const voteContentTableResponse = await db
                 .insert(voteContentTable)
                 .values({
                     voteId: voteTableId,
@@ -621,7 +585,7 @@ export async function castVoteForOpinionSlugId({
             const voteContentTableId =
                 voteContentTableResponse[0].voteContentTableId;
 
-            await tx
+            await db
                 .update(voteTable)
                 .set({
                     currentContentId: voteContentTableId,
@@ -655,7 +619,7 @@ export async function castVoteForOpinionSlugId({
                     .orderBy(desc(notificationOpinionVoteTable.numVotes));
                 if (existingVoteNotifications.length === 0) {
                     await insertNewVoteNotification({
-                        db: tx,
+                        db: db,
                         userId: commentData.userId,
                         opinionId: commentData.commentId,
                         conversationId: conversationId,
@@ -663,7 +627,7 @@ export async function castVoteForOpinionSlugId({
                     });
                 } else {
                     // identify whether the author of the opinion has voted on his own opinion or not
-                    const selectAuthorVoteResponse = await tx
+                    const selectAuthorVoteResponse = await db
                         .select()
                         .from(voteTable)
                         .where(
@@ -697,7 +661,7 @@ export async function castVoteForOpinionSlugId({
                         );
                     } else if (voteNotifMilestones.includes(newNumVotes)) {
                         await insertNewVoteNotification({
-                            db: tx,
+                            db: db,
                             userId: commentData.userId,
                             opinionId: commentData.commentId,
                             conversationId: conversationId,
@@ -722,7 +686,19 @@ export async function castVoteForOpinionSlugId({
                 axiosPolis,
             });
         }
-    });
+    }
+
+    let doTransaction = true;
+    if (db instanceof PgTransaction) {
+        doTransaction = false;
+    }
+    if (doTransaction) {
+        await db.transaction(async (tx) => {
+            await doUpdateCastVote(tx);
+        });
+    } else {
+        await doUpdateCastVote(db);
+    }
 
     if (axiosPolis !== undefined) {
         polisService

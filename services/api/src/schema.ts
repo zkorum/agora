@@ -1137,42 +1137,6 @@ export const pollResponseContentTable = pgTable("poll_response_content", {
         .notNull(),
 });
 
-export const participantTable = pgTable(
-    "participant",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .references(() => conversationTable.id)
-            .notNull(), // used to delete all opinionContent when deleting an opinion
-        userId: uuid("user_id") // the user who owns this notification
-            .references(() => userTable.id)
-            .notNull(),
-        polisClusterId: integer("polis_cluster_id").references(
-            () => polisClusterTable.id,
-        ), // cluster the participant belongs for the given conversation
-        opinionCount: integer("opinion_count").notNull().default(0),
-        voteCount: integer("vote_count").notNull().default(0),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (table) => [
-        unique("unique_cluster_per_participant").on(
-            table.conversationId,
-            table.userId,
-        ),
-    ],
-);
-
 export const opinionProofTable = pgTable("opinion_proof", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: proofTypeEnum("proof_type").notNull(),

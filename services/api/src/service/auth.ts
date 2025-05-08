@@ -617,7 +617,6 @@ export async function createGuestUser({
         });
     } catch (e) {
         if (e instanceof TransactionRollbackError) {
-            log.info("Inside inserted device");
             const deviceStatus = await authUtilService.getDeviceStatus(
                 db,
                 didWrite,

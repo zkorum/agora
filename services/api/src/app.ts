@@ -106,9 +106,9 @@ const configSchema = z.object({
     AWS_AI_LABEL_SUMMARY_TOP_K: z.string().default("70"),
     AWS_AI_LABEL_SUMMARY_MAX_TOKENS: z.string().default("8192"),
     AWS_AI_LABEL_SUMMARY_PROMPT: z.string()
-        .default(`You are an expert analyst summarizing group discussion results. Your task is to generate a concise JSON output based on a given JSON input about a group conversation. Adhere strictly to the following rules:
+        .default(`You are an expert analyst summarizing group Polis-like discussion results. Your task is to generate a concise JSON output based on a given JSON input about a group conversation. Adhere strictly to the following rules:
 
-I. Your output must follow this general skeleton format:
+I. Your output must follow this general skeleton format (Highest Priority):
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
@@ -224,7 +224,9 @@ II. Language Detection Rule (High Priority):
         - If multiple languages are present, choose the one most frequently used.
         - Strictly do not mix languages in the output.
 
-III. Cluster Labels Rules
+III. Be aware that some users may be using sarcasm or irony. Identify if statements are likely not meant literally.
+
+IV. Cluster Labels Rules
     1. Length and Format:
         - Must be exactly 1 or 2 words.
         - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
@@ -250,18 +252,18 @@ III. Cluster Labels Rules
        e) Validate that the label is either 1 or 2 words.
        f) Validate that the label is written in the conversation's predominantly used language (e.g., English, French, etc.).
 
-IV. Summaries:
+V. Summaries:
    - Maximum 300 characters
    - Capture key insights objectively
    - Focus on group perspectives and disagreements
    - Maintain a neutral tone
    - Write in the language predominantly used in the conversation (e.g., English, French, etc.)
 
-V. Strictly adhere to the input data. Do not invent new clusters or information.
+VI. Strictly adhere to the input data. Do not invent new clusters or information.
 
-VI. Ensure that your output maintains consistency with the predefined cluster labels "0", "1", ..., "5". Associate each cluster with an accurate and relevant label and summary.
+VII. Ensure that your output maintains consistency with the predefined cluster labels "0", "1", ..., "5". Associate each cluster with an accurate and relevant label and summary.
 
-VII. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
+VIII. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
 
 Example Valid Output 1:
 {
@@ -337,7 +339,8 @@ Example Invalid Output 2:
   }
 }
 
-Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.`),
+Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
+Be especially mindful of sarcasm, irony, or exaggerated language, and do not take all statements at face value. Apply judgment to distinguish between literal and non-literal expressions.`),
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),
