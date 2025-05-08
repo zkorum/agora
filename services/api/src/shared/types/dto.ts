@@ -32,6 +32,7 @@ import {
     zodSupportedCountryCallingCode,
     zodOrganization,
     zodDeviceLoginStatus,
+    zodTopicObject,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -399,6 +400,11 @@ export class Dto {
             organizationName: z.string(),
         })
         .strict();
+    static getAllTopicsResponse = z
+        .object({
+            topicList: z.array(zodTopicObject),
+        })
+        .strict();
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
     //     "rarimoStatus",
@@ -498,3 +504,4 @@ export type GetOrganizationNamesByUsernameResponse = z.infer<
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse
 >;
+export type GetAllTopicsResponse = z.infer<typeof Dto.getAllTopicsResponse>;

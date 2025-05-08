@@ -134,6 +134,18 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
+      icon: "iconamoon:home-fill",
+      name: "Topics",
+      route: "/topics/",
+      matchRouteList: ["/topics/"],
+      requireAuth: false,
+      svgPath:
+        "M11 3C11 3 9.5 1 6 1C2.5 1 1 3 1 3V17C1 17 2.5 16 6 16C9.5 16 11 17 11 17M11 3V17M11 3C11 3 12.5 1 16 1C19.5 1 21 3 21 3V17C21 17 19.5 16 16 16C12.5 16 11 17 11 17",
+      width: 21,
+      height: 20,
+    });
+
+    settingItemList.value.push({
       icon: "ion:notifications",
       name: "Dings",
       route: "/notification/",
@@ -187,8 +199,15 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
       await router.push({ name: "/settings/" });
     } else if (routeName == "/") {
       await router.push({ name: "/" });
+    } else if (routeName == "/topics/") {
+      await router.push({ name: "/topics/" });
     } else {
-      console.error("Unknown route name: " + routeName);
+      console.error(
+        "Unknown route name when entering route in side bar: " + routeName
+      );
+      console.error(
+        "Unknown route name when entering route in side bar: " + routeName
+      );
     }
   }
 }

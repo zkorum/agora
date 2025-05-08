@@ -308,7 +308,7 @@ const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
 clearNewConversationIntention();
 
-onMounted(() => {
+onMounted(async () => {
   lockRoute();
 });
 
@@ -400,17 +400,24 @@ async function onSubmit() {
 
     isSubmitButtonLoading.value = true;
 
-    const response = await createNewPost(
-      postDraft.value.postTitle,
-      postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
-      postDraft.value.enablePolling
+    const response = await createNewPost({
+      postTitle: postDraft.value.postTitle,
+      postBody:
+        postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
+      pollingOptionList: postDraft.value.enablePolling
         ? postDraft.value.pollingOptionList
         : undefined,
-      postAsOrganization.value ? selectedOrganization.value : "",
-      autoConvertDate.value ? targetConvertDate.value.toISOString() : undefined,
-      !isPrivatePost.value,
-      !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
-    );
+      postAsOrganizationName: postAsOrganization.value
+        ? selectedOrganization.value
+        : "",
+      targetIsoConvertDateString: autoConvertDate.value
+        ? targetConvertDate.value.toISOString()
+        : undefined,
+      isIndexed: !isPrivatePost.value,
+      isLoginRequired: !isPrivatePost.value
+        ? false
+        : isLoginRequiredToParticipate.value,
+    });
 
     isSubmitButtonLoading.value = false;
 

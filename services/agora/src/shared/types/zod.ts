@@ -194,6 +194,13 @@ export const zodRouteTarget = z
     })
     .strict();
 
+export const zodTopicObject = z
+    .object({
+        code: z.string(),
+        name: z.string(),
+    })
+    .strict();
+
 // WARNING: change this together with the below values!
 export const zodNotificationType = z.enum(["opinion_vote", "new_opinion"]);
 export const zodNotificationItem = z.discriminatedUnion("type", [
@@ -850,3 +857,4 @@ export type DeviceIsKnownTrueLoginStatus = z.infer<
 export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
     typeof zodIsKnownTrueLoginStatusExtended
 >;
+export type ZodTopicObject = z.infer<typeof zodTopicObject>;

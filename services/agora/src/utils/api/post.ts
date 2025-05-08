@@ -151,22 +151,30 @@ export function useBackendPostApi() {
     }
   }
 
+  interface CreateNewPostProps {
+    postTitle: string;
+    postBody: string | undefined;
+    pollingOptionList: string[] | undefined;
+    postAsOrganizationName: string;
+    targetIsoConvertDateString: string | undefined;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+  }
+
   type CreateNewPostSuccessResponse =
     AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
-
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
     | AxiosErrorResponse;
-
-  async function createNewPost(
-    postTitle: string,
-    postBody: string | undefined,
-    pollingOptionList: string[] | undefined,
-    postAsOrganizationName: string,
-    targetIsoConvertDateString: string | undefined,
-    isIndexed: boolean,
-    isLoginRequired: boolean
-  ): Promise<CreateNewPostResponse> {
+  async function createNewPost({
+    postTitle,
+    postBody,
+    pollingOptionList,
+    postAsOrganizationName,
+    targetIsoConvertDateString,
+    isIndexed,
+    isLoginRequired,
+  }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
         conversationTitle: postTitle,

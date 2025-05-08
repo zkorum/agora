@@ -106,6 +106,7 @@ import type {
     DeviceIsKnownTrueLoginStatusExtended,
     DeviceLoginStatusExtended,
 } from "./shared/types/zod.js";
+import { getAllTopics } from "./service/topic.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -2163,6 +2164,21 @@ server.after(() => {
             await markAllNotificationsAsRead({
                 db: db,
                 userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/topic/get-all-topics`,
+        schema: {
+            response: {
+                200: Dto.getAllTopicsResponse,
+            },
+        },
+        handler: async () => {
+            return await getAllTopics({
+                db: db,
             });
         },
     });
