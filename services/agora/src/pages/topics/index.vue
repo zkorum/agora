@@ -23,11 +23,18 @@
     <div class="container">
       <div class="topicContainer">
         <div v-for="topic in fullTopicList" :key="topic.code">
-          <ZKButton
-            :button-type="'standardButton'"
-            :label="topic.name"
-            color="primary"
-          />
+          <RouterLink
+            :to="{
+              name: '/topic/[topicCode]',
+              params: { topicCode: topic.code },
+            }"
+          >
+            <ZKButton
+              :button-type="'standardButton'"
+              :label="topic.name"
+              color="primary"
+            />
+          </RouterLink>
         </div>
       </div>
     </div>
