@@ -48,8 +48,14 @@ export const useNotificationStore = defineStore("notification", () => {
     numNewNotifications.value = newNotificationCount;
   }
 
+  function clearNotificationData() {
+    notificationList.value = [];
+    numNewNotifications.value = 0;
+  }
+
   return {
     loadNotificationData,
+    clearNotificationData,
     numNewNotifications,
     notificationList,
   };
