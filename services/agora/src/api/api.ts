@@ -2124,21 +2124,6 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
      * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
      */
     'name': string;
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
-     */
-    'description': string;
->>>>>>> 86fc66bd (Add topics page)
-=======
->>>>>>> 96643b5f (Add topics to createConversation API)
-=======
->>>>>>> 5b946366f6b80938aa145fe9a6b18f0daadd70f1
 }
 /**
  * 
