@@ -635,8 +635,13 @@ export const userOrganizationMappingTable = pgTable(
     ],
 );
 
+<<<<<<< HEAD
 export const conversationTopicTable = pgTable(
     "conversation_topic",
+=======
+export const conversationTopicMappingTable = pgTable(
+    "conversation_topic_mapping",
+>>>>>>> 6e108e2f (Create tables for user topics)
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         conversationId: integer("conversation_id")
@@ -653,8 +658,16 @@ export const conversationTopicTable = pgTable(
             .notNull(),
     },
     (t) => [
+<<<<<<< HEAD
         index("conversation_topic_index").on(t.conversationId),
         unique("conversation_topic_unique").on(t.conversationId, t.topicId),
+=======
+        index("conversation_topic_mapping_index").on(t.conversationId),
+        unique("conversation_topic_mapping_unique").on(
+            t.conversationId,
+            t.topicId,
+        ),
+>>>>>>> 6e108e2f (Create tables for user topics)
     ],
 );
 

@@ -44,7 +44,7 @@ export function isControversial({
     }
 }
 
-export function isMajorityAgree({
+export function isPopular({
     numAgrees,
     memberCount,
     threshold,
@@ -57,7 +57,7 @@ export function isMajorityAgree({
     }
 }
 
-export function isMajorityDisagree({
+export function isUnpopular({
     numDisagrees,
     memberCount,
     threshold,
@@ -77,8 +77,8 @@ export function isMajority({
     minVoters,
 }: ClassifyProps): boolean {
     if (
-        isMajorityAgree({ numAgrees, memberCount, threshold: minVoters }) ||
-        isMajorityDisagree({ numDisagrees, memberCount, threshold: minVoters })
+        isPopular({ numAgrees, memberCount, threshold: minVoters }) ||
+        isUnpopular({ numDisagrees, memberCount, threshold: minVoters })
     ) {
         return true;
     } else {
