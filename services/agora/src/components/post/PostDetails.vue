@@ -247,6 +247,9 @@ function decrementCommentCount() {
 async function submittedComment(opinionSlugId: string) {
   commentCountOffset.value += 1;
   commentSectionKey.value += Date.now();
+  // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
+  // Change this if you change this behaviour.
+  changeVote("agree", opinionSlugId);
 
   await router.replace({
     name: "/conversation/[postSlugId]",
