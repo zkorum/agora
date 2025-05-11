@@ -2,6 +2,10 @@
   <div class="authorContainer">
     <Username
       class="usernameStyle"
+      :class="{
+        wordBreakNormal: userType == 'normal',
+        wordBreakOrganization: userType == 'organization',
+      }"
       :username="userIdentity"
       :show-is-guest="showIsGuest"
     />
@@ -20,6 +24,7 @@ defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   showVerifiedText: boolean;
+  userType: "organization" | "normal";
 }>();
 </script>
 
@@ -28,7 +33,14 @@ defineProps<{
   font-size: 0.875rem;
   font-weight: 500;
   color: #0a0714;
+}
+
+.wordBreakNormal {
   word-break: break-all;
+}
+
+.wordBreakOrganization {
+  word-break: break-word;
 }
 
 .verifiedMessage {
