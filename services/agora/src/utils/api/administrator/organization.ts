@@ -197,15 +197,15 @@ export function useBackendAdministratorOrganizationApi() {
       });
 
       if (response.status == 200) {
-        showNotifyMessage("Updated user organization");
+        showNotifyMessage("Created user organization");
         return true;
       } else {
-        showNotifyMessage("Failed to set user organization");
+        showNotifyMessage("Failed to create user organization");
         return false;
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to set user organization");
+      showNotifyMessage("Failed to create user organization");
       return false;
     }
   }
