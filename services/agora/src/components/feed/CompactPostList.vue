@@ -2,6 +2,26 @@
   <div>
     <WidthWrapper :enable="true">
       <q-pull-to-refresh @refresh="pullDownTriggered">
+        <div class="tabCluster">
+          <div class="tabItem" @click="selectedTab('following')">
+            <ZKTab
+              :text="isLoggedIn ? 'Following' : 'Popular'"
+              :is-highlighted="currentTab === 'following'"
+              :show-underline="false"
+            />
+          </div>
+
+          <div class="tabItem" @click="selectedTab('new')">
+            <ZKTab
+              text="New"
+              :is-highlighted="currentTab === 'new'"
+              :show-underline="false"
+            />
+          </div>
+        </div>
+
+        <div :style="{ height: '0.5rem' }"></div>
+
         <q-infinite-scroll
           v-if="isAuthInitialized"
           :offset="2000"
@@ -110,6 +130,7 @@ import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
+import ZKTab from "../ui-library/ZKTab.vue";
 
 const {
   masterPostDataList,
@@ -124,11 +145,15 @@ const router = useRouter();
 
 const windowFocused = useWindowFocus();
 
-const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
+const { isAuthInitialized, isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const canLoadMore = ref(true);
 
 const { y: windowY } = useWindowScroll();
+
+type TabType = "following" | "new";
+
+const currentTab = ref<TabType>("following");
 
 onMounted(async () => {
   await hasNewPostCheck();
@@ -139,6 +164,10 @@ watch(windowFocused, async () => {
     await hasNewPostCheck();
   }
 });
+
+function selectedTab(tab: TabType) {
+  currentTab.value = tab;
+}
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
@@ -198,5 +227,27 @@ async function refreshPage(done: () => void) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.tabCluster {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  grid-template-rows: 1fr;
+  gap: 0px 0px;
+  grid-template-areas: ". .";
+}
+
+.tabItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 15px;
+}
+
+.tabItem:hover {
+  cursor: pointer;
+  background-color: white;
 }
 </style>
