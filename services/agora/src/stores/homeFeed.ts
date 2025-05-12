@@ -1,5 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useBackendPostApi } from "src/utils/api/post";
 import { useAuthenticationStore } from "./authentication";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -69,7 +69,9 @@ export interface DummyPostDataFormat extends ExtendedConversation {
   };
 }
 
-export const usePostStore = defineStore("post", () => {
+export type HomeFeedSortOption = "following" | "new";
+
+export const useHomeFeedStore = defineStore("homeFeed", () => {
   const { fetchRecentPost, composeInternalPostList } = useBackendPostApi();
 
   const { loadUserProfile } = useUserStore();
@@ -81,6 +83,8 @@ export const usePostStore = defineStore("post", () => {
   const endOfFeed = ref(false);
 
   const initializedFeed = ref(false);
+
+  const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
 
   const emptyPost: DummyPostDataFormat = {
     metadata: {
@@ -130,6 +134,10 @@ export const usePostStore = defineStore("post", () => {
     emptyPost,
     emptyPost,
   ]);
+
+  watch(currentHomeFeedTab, async () => {
+    await loadPostData(false);
+  });
 
   async function loadPostData(loadMoreData: boolean): Promise<boolean> {
     let lastSlugId: undefined | string = undefined;
@@ -223,5 +231,6 @@ export const usePostStore = defineStore("post", () => {
     endOfFeed,
     hasPendingNewPosts,
     initializedFeed,
+    currentHomeFeedTab,
   };
 });

@@ -6,7 +6,7 @@
           <div class="tabItem" @click="selectedTab('following')">
             <ZKTab
               :text="isLoggedIn ? 'Following' : 'Popular'"
-              :is-highlighted="currentTab === 'following'"
+              :is-highlighted="currentHomeFeedTab === 'following'"
               :show-underline="false"
             />
           </div>
@@ -14,7 +14,7 @@
           <div class="tabItem" @click="selectedTab('new')">
             <ZKTab
               text="New"
-              :is-highlighted="currentTab === 'new'"
+              :is-highlighted="currentHomeFeedTab === 'new'"
               :show-underline="false"
             />
           </div>
@@ -122,7 +122,7 @@
 
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
-import { usePostStore } from "src/stores/post";
+import { HomeFeedSortOption, useHomeFeedStore } from "src/stores/homeFeed";
 import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useWindowFocus, useWindowScroll } from "@vueuse/core";
@@ -138,8 +138,9 @@ const {
   endOfFeed,
   hasPendingNewPosts,
   initializedFeed,
-} = storeToRefs(usePostStore());
-const { loadPostData, hasNewPostCheck } = usePostStore();
+  currentHomeFeedTab,
+} = storeToRefs(useHomeFeedStore());
+const { loadPostData, hasNewPostCheck } = useHomeFeedStore();
 
 const router = useRouter();
 
@@ -151,10 +152,6 @@ const canLoadMore = ref(true);
 
 const { y: windowY } = useWindowScroll();
 
-type TabType = "following" | "new";
-
-const currentTab = ref<TabType>("following");
-
 onMounted(async () => {
   await hasNewPostCheck();
 });
@@ -165,8 +162,8 @@ watch(windowFocused, async () => {
   }
 });
 
-function selectedTab(tab: TabType) {
-  currentTab.value = tab;
+function selectedTab(tab: HomeFeedSortOption) {
+  currentHomeFeedTab.value = tab;
 }
 
 async function onLoad(index: number, done: () => void) {
@@ -244,6 +241,7 @@ async function refreshPage(done: () => void) {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
   border-radius: 15px;
+  margin: 0.2rem;
 }
 
 .tabItem:hover {

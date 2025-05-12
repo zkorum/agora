@@ -49,12 +49,12 @@ import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { UserMuteItem } from "src/shared/types/zod";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { ref, onMounted } from "vue";
 
 const { getMutedUsers, muteUser } = useBackendUserMuteApi();
-const { loadPostData } = usePostStore();
+const { loadPostData } = useHomeFeedStore();
 
 const userMuteItemList = ref<UserMuteItem[]>([]);
 const dataLoaded = ref(false);

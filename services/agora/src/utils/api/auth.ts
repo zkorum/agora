@@ -16,7 +16,7 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
 import { getPlatform } from "../common";
@@ -51,7 +51,7 @@ export function useBackendAuthApi() {
   } = useCommonApi();
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
-  const { loadPostData } = usePostStore();
+  const { loadPostData } = useHomeFeedStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
   const { loadNotificationData } = useNotificationStore();
   const { clearConversationDrafts } = useNewPostDraftsStore();

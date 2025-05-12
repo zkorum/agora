@@ -20,7 +20,7 @@ import type {
   ExtendedConversation,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import type { DummyPollOptionFormat } from "src/stores/post";
+import type { DummyPollOptionFormat } from "src/stores/homeFeed";
 
 export function useBackendPostApi() {
   const {

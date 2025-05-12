@@ -11,7 +11,7 @@ import {
   useCommonApi,
 } from "./common";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 
 export function useBackendAccountApi() {
@@ -21,7 +21,7 @@ export function useBackendAccountApi() {
     createRawAxiosRequestConfig,
   } = useCommonApi();
 
-  const { loadPostData } = usePostStore();
+  const { loadPostData } = useHomeFeedStore();
   const { loadUserProfile } = useUserStore();
 
   const { showNotifyMessage } = useNotify();

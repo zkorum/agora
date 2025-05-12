@@ -72,7 +72,10 @@
 <script setup lang="ts">
 import PollOption from "src/components/poll/PollOption.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
-import { usePostStore, type DummyPollOptionFormat } from "src/stores/post";
+import {
+  useHomeFeedStore,
+  type DummyPollOptionFormat,
+} from "src/stores/homeFeed";
 import { onBeforeMount, ref, watch } from "vue";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
@@ -97,7 +100,7 @@ const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
-const { loadPostData } = usePostStore();
+const { loadPostData } = useHomeFeedStore();
 const { updateAuthState } = useBackendAuthApi();
 
 const { createVotingIntention } = useLoginIntentionStore();

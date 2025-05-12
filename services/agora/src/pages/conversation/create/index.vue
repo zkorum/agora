@@ -252,7 +252,7 @@ import {
   MAX_LENGTH_BODY,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
@@ -296,7 +296,7 @@ const {
 } = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const { createNewPost } = useBackendPostApi();
-const { loadPostData } = usePostStore();
+const { loadPostData } = useHomeFeedStore();
 const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
 

@@ -87,7 +87,7 @@ import {
   moderationActionPostsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
@@ -101,7 +101,7 @@ const {
 const route = useRoute();
 const router = useRouter();
 
-const { loadPostData, emptyPost } = usePostStore();
+const { loadPostData, emptyPost } = useHomeFeedStore();
 const { fetchPostBySlugId } = useBackendPostApi();
 
 const DEFAULT_MODERATION_ACTION = "lock";

@@ -2,7 +2,7 @@ import { useQuasar } from "quasar";
 import { type Ref } from "vue";
 import { useBackendPostApi } from "../api/post";
 import { useUserStore } from "src/stores/user";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNotify } from "./notify";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -20,7 +20,7 @@ export const useBottomSheet = () => {
 
   const { profileData } = storeToRefs(useUserStore());
   const { loadUserProfile } = useUserStore();
-  const { loadPostData } = usePostStore();
+  const { loadPostData } = useHomeFeedStore();
   const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
   interface QuasarAction {
