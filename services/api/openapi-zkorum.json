@@ -467,12 +467,23 @@
                                     "lastSlugId": {
                                         "type": "string",
                                         "maxLength": 10
+                                    },
+                                    "sortAlgorithm": {
+                                        "type": "string",
+                                        "enum": [
+                                            "following",
+                                            "new"
+                                        ]
                                     }
                                 },
+                                "required": [
+                                    "sortAlgorithm"
+                                ],
                                 "additionalProperties": false
                             }
                         }
-                    }
+                    },
+                    "required": true
                 },
                 "responses": {
                     "200": {

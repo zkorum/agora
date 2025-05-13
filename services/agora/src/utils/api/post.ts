@@ -18,6 +18,7 @@ import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 import type {
   ExtendedConversation,
+  FeedSortAlgorithm,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import type { DummyPollOptionFormat } from "src/stores/homeFeed";
@@ -103,13 +104,21 @@ export function useBackendPostApi() {
     }
   }
 
-  async function fetchRecentPost(
-    lastSlugId: string | undefined,
-    loadUserPollData: boolean
-  ) {
+  interface FetchRecentPostProps {
+    lastSlugId: string | undefined;
+    loadUserPollData: boolean;
+    sortAlgorithm: FeedSortAlgorithm;
+  }
+
+  async function fetchRecentPost({
+    lastSlugId,
+    loadUserPollData,
+    sortAlgorithm,
+  }: FetchRecentPostProps) {
     try {
       const params: ApiV1ConversationFetchRecentPostRequest = {
         lastSlugId: lastSlugId,
+        sortAlgorithm: sortAlgorithm,
       };
 
       if (!loadUserPollData) {

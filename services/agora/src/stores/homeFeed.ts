@@ -149,7 +149,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       }
     }
 
-    const response = await fetchRecentPost(lastSlugId, isGuestOrLoggedIn.value);
+    const response = await fetchRecentPost({
+      lastSlugId: lastSlugId,
+      loadUserPollData: isGuestOrLoggedIn.value,
+      sortAlgorithm: "following",
+    });
 
     if (response != null) {
       const internalDataList = composeInternalPostList(response.postDataList);
@@ -193,7 +197,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       return;
     }
 
-    const response = await fetchRecentPost(undefined, isGuestOrLoggedIn.value);
+    const response = await fetchRecentPost({
+      lastSlugId: undefined,
+      loadUserPollData: isGuestOrLoggedIn.value,
+      sortAlgorithm: "following",
+    });
     if (response != null) {
       if (response.postDataList.length == 0) {
         hasPendingNewPosts.value = false;

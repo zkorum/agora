@@ -32,6 +32,7 @@ import {
     zodOrganization,
     zodDeviceLoginStatus,
     zodTopicObject,
+    zodFeedSortAlgorithm,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -103,6 +104,7 @@ export class Dto {
     static fetchFeedRequest = z
         .object({
             lastSlugId: zodSlugId.optional(),
+            sortAlgorithm: zodFeedSortAlgorithm,
         })
         .strict();
     static fetchFeedResponse = z.object({

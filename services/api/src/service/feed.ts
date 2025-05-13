@@ -1,5 +1,8 @@
 import { conversationTable } from "@/schema.js";
-import type { ExtendedConversationPerSlugId } from "@/shared/types/zod.js";
+import type {
+    ExtendedConversationPerSlugId,
+    FeedSortAlgorithm,
+} from "@/shared/types/zod.js";
 import { and, eq, lt, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -37,6 +40,7 @@ interface FetchFeedProps {
     limit?: number;
     personalizationUserId?: string;
     baseImageServiceUrl: string;
+    sortAlgorithm: FeedSortAlgorithm;
 }
 
 export async function fetchFeed({
