@@ -71,7 +71,7 @@ async function loadMuteData() {
 async function removeMutedUser(targetUsername: string) {
   await muteUser(targetUsername, "unmute");
   await loadMuteData();
-  await loadPostData(false);
+  await loadPostData();
 }
 </script>
 

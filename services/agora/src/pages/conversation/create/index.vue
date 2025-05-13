@@ -424,7 +424,7 @@ async function onSubmit() {
     if (response.status == "success") {
       postDraft.value = getEmptyConversationDraft();
 
-      await loadPostData(false);
+      await loadPostData();
 
       await router.replace({
         name: "/conversation/[postSlugId]",

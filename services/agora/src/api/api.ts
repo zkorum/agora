@@ -804,10 +804,10 @@ export interface ApiV1ConversationFetchRecentPost200Response {
     'conversationDataList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>;
     /**
      * 
-     * @type {boolean}
+     * @type {Set<string>}
      * @memberof ApiV1ConversationFetchRecentPost200Response
      */
-    'reachedEndOfFeed': boolean;
+    'topConversationSlugIdSet': Set<string>;
 }
 /**
  * 

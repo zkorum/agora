@@ -59,7 +59,7 @@ export function useBackendAccountApi() {
         params,
         createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
       );
-      await loadPostData(false);
+      await loadPostData();
       await loadUserProfile();
       return {
         status: "success",

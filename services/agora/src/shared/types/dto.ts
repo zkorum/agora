@@ -110,7 +110,7 @@ export class Dto {
         .strict();
     static fetchFeedResponse = z.object({
         conversationDataList: z.array(zodExtendedConversationData),
-        reachedEndOfFeed: z.boolean(),
+        topConversationSlugIdSet: z.set(zodSlugId), // used to determine if the feed is stale
     });
     static postFetchRequest = z
         .object({

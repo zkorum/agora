@@ -178,7 +178,7 @@ export const useBottomSheet = () => {
           const response = await deletePostBySlugId(postSlugId);
           if (response) {
             showNotifyMessage("Conversation deleted");
-            await loadPostData(false);
+            await loadPostData();
             await loadUserProfile();
             if (route.name == "/conversation/[postSlugId]") {
               await router.push({ name: "/" });

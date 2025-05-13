@@ -83,7 +83,7 @@
           </div>
 
           <div
-            v-if="initializedFeed && endOfFeed && masterPostDataList.length > 0"
+            v-if="initializedFeed && masterPostDataList.length > 0"
             class="centerMessage"
           >
             <div>
@@ -135,7 +135,6 @@ import ZKTab from "../ui-library/ZKTab.vue";
 const {
   masterPostDataList,
   emptyPostDataList,
-  endOfFeed,
   hasPendingNewPosts,
   initializedFeed,
   currentHomeFeedTab,
@@ -168,14 +167,14 @@ function selectedTab(tab: HomeFeedSortOption) {
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
-    canLoadMore.value = await loadPostData(true);
+    canLoadMore.value = await loadPostData();
   }
   done();
 }
 
 async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {
-    await loadPostData(false);
+    await loadPostData();
     canLoadMore.value = true;
     done();
   }, 500);
@@ -191,7 +190,7 @@ async function openPost(postSlugId: string) {
 async function refreshPage(done: () => void) {
   windowY.value = 0;
 
-  canLoadMore.value = await loadPostData(false);
+  canLoadMore.value = await loadPostData();
 
   setTimeout(() => {
     done();

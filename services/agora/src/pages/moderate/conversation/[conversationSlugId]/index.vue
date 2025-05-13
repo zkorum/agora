@@ -170,7 +170,7 @@ async function clickedWithdraw() {
     const isSuccessful = await cancelModerationPostReport(postSlugId);
     if (isSuccessful) {
       await initializeData();
-      await loadPostData(false);
+      await loadPostData();
       await redirectToPost();
     }
   } else {
@@ -188,7 +188,7 @@ async function clickedSubmit() {
     );
 
     if (isSuccessful) {
-      await loadPostData(false);
+      await loadPostData();
       await redirectToPost();
     }
   }

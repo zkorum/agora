@@ -179,7 +179,7 @@ export function useBackendAuthApi() {
   async function loadAuthenticatedModules() {
     await Promise.all([
       loadUserProfile(),
-      loadPostData(false),
+      loadPostData(),
       loadNotificationData(false),
     ]);
   }
@@ -245,7 +245,7 @@ export function useBackendAuthApi() {
 
     authStore.setLoginStatus({ isKnown: false });
 
-    await loadPostData(false);
+    await loadPostData();
     clearProfileData();
 
     clearNotificationData();

@@ -37,7 +37,6 @@ export async function getPostSlugIdLastCreatedAt({
 interface FetchFeedProps {
     db: PostgresDatabase;
     lastSlugId: string | undefined;
-    limit?: number;
     personalizationUserId?: string;
     baseImageServiceUrl: string;
     sortAlgorithm: FeedSortAlgorithm;
@@ -46,12 +45,10 @@ interface FetchFeedProps {
 export async function fetchFeed({
     db,
     lastSlugId,
-    limit,
     personalizationUserId,
     baseImageServiceUrl,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
-    const defaultLimit = 10;
-    const targetLimit = limit ?? defaultLimit;
+    const targetFetchLimit = 200;
 
     const lastCreatedAt = await getPostSlugIdLastCreatedAt({
         lastSlugId: lastSlugId,
@@ -70,7 +67,7 @@ export async function fetchFeed({
 
     const conversations: ExtendedConversationPerSlugId = await fetchPostItems({
         db: db,
-        limit: targetLimit + 1,
+        limit: targetFetchLimit,
         where: whereClause,
         enableCompactBody: true,
         personalizedUserId: personalizationUserId,
@@ -79,17 +76,8 @@ export async function fetchFeed({
         baseImageServiceUrl,
     });
 
-    let reachedEndOfFeed = true;
-    if (conversations.size === targetLimit + 1) {
-        const lastKey = Array.from(conversations.keys()).pop(); // Get the last key--here Map respecting order is important!
-        if (lastKey !== undefined) {
-            conversations.delete(lastKey);
-        }
-        reachedEndOfFeed = false;
-    }
-
     return {
         conversationDataList: Array.from(conversations.values()),
-        reachedEndOfFeed: reachedEndOfFeed,
+        topConversationSlugIdSet: new Set<string>(),
     };
 }

@@ -22,6 +22,7 @@ import type {
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import type { DummyPollOptionFormat } from "src/stores/homeFeed";
+import { FetchFeedResponse } from "src/shared/types/dto";
 
 export function useBackendPostApi() {
   const {
@@ -104,6 +105,12 @@ export function useBackendPostApi() {
     }
   }
 
+  type FetchRecentPostSuccessResponse = AxiosSuccessResponse<FetchFeedResponse>;
+
+  type FetchRecentPostResponse =
+    | FetchRecentPostSuccessResponse
+    | AxiosErrorResponse;
+
   interface FetchRecentPostProps {
     lastSlugId: string | undefined;
     loadUserPollData: boolean;
@@ -114,7 +121,7 @@ export function useBackendPostApi() {
     lastSlugId,
     loadUserPollData,
     sortAlgorithm,
-  }: FetchRecentPostProps) {
+  }: FetchRecentPostProps): Promise<FetchRecentPostResponse> {
     try {
       const params: ApiV1ConversationFetchRecentPostRequest = {
         lastSlugId: lastSlugId,
@@ -129,8 +136,13 @@ export function useBackendPostApi() {
         ).apiV1ConversationFetchRecentPost(params, {});
 
         return {
-          postDataList: response.data.conversationDataList,
-          reachedEndOfFeed: response.data.reachedEndOfFeed,
+          status: "success",
+          data: {
+            conversationDataList: composeInternalPostList(
+              response.data.conversationDataList
+            ),
+            topConversationSlugIdSet: response.data.topConversationSlugIdSet,
+          },
         };
       } else {
         const { url, options } =
@@ -149,14 +161,19 @@ export function useBackendPostApi() {
         });
 
         return {
-          postDataList: response.data.conversationDataList,
-          reachedEndOfFeed: response.data.reachedEndOfFeed,
+          status: "success",
+          data: {
+            conversationDataList: composeInternalPostList(
+              response.data.conversationDataList
+            ),
+            topConversationSlugIdSet: response.data.topConversationSlugIdSet,
+          },
         };
       }
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch recent posts from the server.");
-      return null;
+      return createAxiosErrorResponse(e);
     }
   }
 
@@ -300,7 +317,6 @@ export function useBackendPostApi() {
     fetchRecentPost,
     fetchPostBySlugId,
     createInternalPostData,
-    composeInternalPostList,
     deletePostBySlugId,
   };
 }

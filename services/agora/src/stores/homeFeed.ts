@@ -72,7 +72,7 @@ export interface DummyPostDataFormat extends ExtendedConversation {
 export type HomeFeedSortOption = "following" | "new";
 
 export const useHomeFeedStore = defineStore("homeFeed", () => {
-  const { fetchRecentPost, composeInternalPostList } = useBackendPostApi();
+  const { fetchRecentPost } = useBackendPostApi();
 
   const { loadUserProfile } = useUserStore();
 
@@ -80,11 +80,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   const hasPendingNewPosts = ref(false);
 
-  const endOfFeed = ref(false);
-
   const initializedFeed = ref(false);
 
   const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
+
+  let localTopConversationSlugIdSet = new Set<string>();
 
   const emptyPost: DummyPostDataFormat = {
     metadata: {
@@ -136,59 +136,26 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   ]);
 
   watch(currentHomeFeedTab, async () => {
-    await loadPostData(false);
+    await loadPostData();
   });
 
-  async function loadPostData(loadMoreData: boolean): Promise<boolean> {
-    let lastSlugId: undefined | string = undefined;
-
-    if (loadMoreData) {
-      const lastPostItem = masterPostDataList.value.at(-1);
-      if (lastPostItem) {
-        lastSlugId = lastPostItem.metadata.conversationSlugId;
-      }
-    }
-
+  async function loadPostData(): Promise<boolean> {
     const response = await fetchRecentPost({
-      lastSlugId: lastSlugId,
+      lastSlugId: undefined,
       loadUserPollData: isGuestOrLoggedIn.value,
       sortAlgorithm: "following",
     });
 
-    if (response != null) {
-      const internalDataList = composeInternalPostList(response.postDataList);
-      if (loadMoreData) {
-        if (response.postDataList.length > 0) {
-          masterPostDataList.value.push(...internalDataList);
-          trimHomeFeedSize(60);
-        } else {
-          // Empty so do nothing
-        }
-      } else {
-        masterPostDataList.value = internalDataList;
-        hasPendingNewPosts.value = false;
-      }
-
-      endOfFeed.value = response.reachedEndOfFeed;
+    if (response.status == "success") {
+      masterPostDataList.value = response.data.conversationDataList;
+      hasPendingNewPosts.value = false;
 
       initializedFeed.value = true;
 
-      if (response.postDataList.length > 0) {
-        return true;
-      } else {
-        return false;
-      }
+      return false;
     } else {
       initializedFeed.value = true;
       return false;
-    }
-  }
-
-  function trimHomeFeedSize(targetPostSize: number) {
-    if (masterPostDataList.value.length > targetPostSize) {
-      masterPostDataList.value = masterPostDataList.value.slice(
-        masterPostDataList.value.length - targetPostSize
-      );
     }
   }
 
@@ -202,21 +169,17 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       loadUserPollData: isGuestOrLoggedIn.value,
       sortAlgorithm: "following",
     });
-    if (response != null) {
-      if (response.postDataList.length == 0) {
-        hasPendingNewPosts.value = false;
-      } else {
-        if (masterPostDataList.value.length == 0) {
+    if (
+      response.status == "success" &&
+      response.data.topConversationSlugIdSet.size > 0
+    ) {
+      // Check for any new slug IDs
+      for (const slugId of response.data.topConversationSlugIdSet) {
+        if (!localTopConversationSlugIdSet.has(slugId)) {
           hasPendingNewPosts.value = true;
-        } else {
-          if (
-            new Date(response.postDataList[0].metadata.createdAt).getTime() !=
-            masterPostDataList.value[0].metadata.createdAt.getTime()
-          ) {
-            hasPendingNewPosts.value = true;
-          } else {
-            hasPendingNewPosts.value = false;
-          }
+          localTopConversationSlugIdSet =
+            response.data.topConversationSlugIdSet;
+          break;
         }
       }
     } else {
@@ -226,7 +189,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   async function resetPostData() {
     masterPostDataList.value = [];
-    await Promise.all([loadPostData(false), loadUserProfile()]);
+    await Promise.all([loadPostData(), loadUserProfile()]);
   }
 
   return {
@@ -236,7 +199,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     masterPostDataList,
     emptyPostDataList,
     emptyPost,
-    endOfFeed,
     hasPendingNewPosts,
     initializedFeed,
     currentHomeFeedTab,

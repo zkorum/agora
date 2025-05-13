@@ -769,13 +769,18 @@
                                                 "additionalProperties": false
                                             }
                                         },
-                                        "reachedEndOfFeed": {
-                                            "type": "boolean"
+                                        "topConversationSlugIdSet": {
+                                            "type": "array",
+                                            "uniqueItems": true,
+                                            "items": {
+                                                "type": "string",
+                                                "maxLength": 10
+                                            }
                                         }
                                     },
                                     "required": [
                                         "conversationDataList",
-                                        "reachedEndOfFeed"
+                                        "topConversationSlugIdSet"
                                     ],
                                     "additionalProperties": false
                                 }

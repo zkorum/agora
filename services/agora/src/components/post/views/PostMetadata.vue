@@ -125,7 +125,7 @@ async function openUserReportsCallback() {
 async function muteUserCallback() {
   const isSuccessful = await muteUser(props.posterUserName, "mute");
   if (isSuccessful) {
-    await loadPostData(false);
+    await loadPostData();
   }
 }
 

@@ -213,7 +213,7 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
   if (response == true) {
     // TODO: refactor because there arep potentially redundant requests (loadPostData inside updateAuthState)
     await updateAuthState({ partialLoginStatus: { isKnown: true } });
-    await Promise.all([loadPostData(false), fetchUserPollResponseData(true)]);
+    await Promise.all([loadPostData(), fetchUserPollResponseData(true)]);
     incrementLocalPollIndex(selectedIndex);
     totalVoteCount.value += 1;
   } else {
