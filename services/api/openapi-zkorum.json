@@ -769,9 +769,8 @@
                                                 "additionalProperties": false
                                             }
                                         },
-                                        "topConversationSlugIdSet": {
+                                        "topConversationSlugIdList": {
                                             "type": "array",
-                                            "uniqueItems": true,
                                             "items": {
                                                 "type": "string",
                                                 "maxLength": 10
@@ -780,7 +779,7 @@
                                     },
                                     "required": [
                                         "conversationDataList",
-                                        "topConversationSlugIdSet"
+                                        "topConversationSlugIdList"
                                     ],
                                     "additionalProperties": false
                                 }

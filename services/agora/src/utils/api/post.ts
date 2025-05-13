@@ -141,7 +141,7 @@ export function useBackendPostApi() {
             conversationDataList: composeInternalPostList(
               response.data.conversationDataList
             ),
-            topConversationSlugIdSet: response.data.topConversationSlugIdSet,
+            topConversationSlugIdList: response.data.topConversationSlugIdList,
           },
         };
       } else {
@@ -166,7 +166,7 @@ export function useBackendPostApi() {
             conversationDataList: composeInternalPostList(
               response.data.conversationDataList
             ),
-            topConversationSlugIdSet: response.data.topConversationSlugIdSet,
+            topConversationSlugIdList: response.data.topConversationSlugIdList,
           },
         };
       }

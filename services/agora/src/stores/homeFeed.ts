@@ -84,7 +84,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
 
-  let localTopConversationSlugIdSet = new Set<string>();
+  let localTopConversationSlugIdList: string[] = [];
 
   const emptyPost: DummyPostDataFormat = {
     metadata: {
@@ -171,17 +171,14 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     });
     if (
       response.status == "success" &&
-      response.data.topConversationSlugIdSet.size > 0
+      response.data.topConversationSlugIdList.length > 0
     ) {
       // Check for any new slug IDs
-      for (const slugId of response.data.topConversationSlugIdSet) {
-        if (!localTopConversationSlugIdSet.has(slugId)) {
-          hasPendingNewPosts.value = true;
-          localTopConversationSlugIdSet =
-            response.data.topConversationSlugIdSet;
-          break;
-        }
-      }
+      const newItems = response.data.topConversationSlugIdList.filter(
+        (slugId) => !localTopConversationSlugIdList.includes(slugId)
+      );
+      localTopConversationSlugIdList = response.data.topConversationSlugIdList;
+      hasPendingNewPosts.value = newItems.length > 0;
     } else {
       hasPendingNewPosts.value = false;
     }

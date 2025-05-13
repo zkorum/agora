@@ -76,8 +76,13 @@ export async function fetchFeed({
         baseImageServiceUrl,
     });
 
+    const topSlugIdList = Array.from(conversations.keys()).slice(
+        0,
+        Math.min(10, conversations.size),
+    );
+
     return {
         conversationDataList: Array.from(conversations.values()),
-        topConversationSlugIdSet: new Set<string>(),
+        topConversationSlugIdList: topSlugIdList,
     };
 }
