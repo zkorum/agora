@@ -381,6 +381,7 @@ export async function getUserPosts({
                 excludeLockedPosts: false,
                 removeMutedAuthors: false,
                 baseImageServiceUrl,
+                sortAlgorithm: "new",
             });
 
         return conversations;

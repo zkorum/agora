@@ -18,6 +18,7 @@ import type {
     ExtendedConversationPolis,
     ExtendedConversationPerSlugId,
     ExtendedConversation,
+    FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, count } from "drizzle-orm";
@@ -30,6 +31,7 @@ import { alias } from "drizzle-orm/pg-core";
 import * as polisService from "@/service/polis.js";
 import type { ClusterMetadata } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { getConversationEngagementScore } from "./recommendationSystem.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -194,6 +196,7 @@ export function useCommonPost() {
         excludeLockedPosts: boolean;
         removeMutedAuthors: boolean;
         baseImageServiceUrl: string;
+        sortAlgorithm: FeedSortAlgorithm;
     }
 
     async function fetchPostItems({
@@ -205,6 +208,7 @@ export function useCommonPost() {
         excludeLockedPosts,
         removeMutedAuthors,
         baseImageServiceUrl,
+        sortAlgorithm,
     }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
         let postItems;
 
@@ -383,6 +387,24 @@ export function useCommonPost() {
             postItems = await postItemsQuery.$dynamic().limit(limit);
         } else {
             postItems = await postItemsQuery;
+        }
+
+        if (sortAlgorithm == "following") {
+            postItems.sort((post1, post2) => {
+                const score1 = getConversationEngagementScore({
+                    createdAt: post1.createdAt,
+                    opinionCount: post1.opinionCount,
+                    participantCount: post1.participantCount,
+                });
+
+                const score2 = getConversationEngagementScore({
+                    createdAt: post2.createdAt,
+                    opinionCount: post2.opinionCount,
+                    participantCount: post2.participantCount,
+                });
+
+                return score2 - score1; // Higher engagements first
+            });
         }
 
         const extendedConversationMap: ExtendedConversationPerSlugId = new Map<

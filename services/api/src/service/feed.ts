@@ -45,8 +45,9 @@ export async function fetchFeed({
     db,
     personalizationUserId,
     baseImageServiceUrl,
+    sortAlgorithm,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
-    const targetFetchLimit = 200;
+    const targetFetchLimit = 1000;
 
     const whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
 
@@ -61,6 +62,7 @@ export async function fetchFeed({
         excludeLockedPosts: true,
         removeMutedAuthors: true,
         baseImageServiceUrl,
+        sortAlgorithm,
     });
 
     const topSlugIdList = Array.from(conversations.keys()).slice(
