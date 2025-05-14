@@ -104,7 +104,6 @@ export class Dto {
     ]);
     static fetchFeedRequest = z
         .object({
-            lastSlugId: zodSlugId.optional(),
             sortAlgorithm: zodFeedSortAlgorithm,
         })
         .strict();

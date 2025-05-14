@@ -144,7 +144,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   async function loadPostData(): Promise<boolean> {
     const response = await fetchRecentPost({
-      lastSlugId: undefined,
       loadUserPollData: isGuestOrLoggedIn.value,
       sortAlgorithm: currentHomeFeedTab.value,
     });
@@ -172,7 +171,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     }
 
     const response = await fetchRecentPost({
-      lastSlugId: undefined,
       loadUserPollData: isGuestOrLoggedIn.value,
       sortAlgorithm: "following",
     });

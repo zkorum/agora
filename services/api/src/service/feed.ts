@@ -3,7 +3,7 @@ import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
-import { and, eq, lt, SQL } from "drizzle-orm";
+import { eq, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import type { FetchFeedResponse } from "@/shared/types/dto.js";
@@ -36,7 +36,6 @@ export async function getPostSlugIdLastCreatedAt({
 
 interface FetchFeedProps {
     db: PostgresDatabase;
-    lastSlugId: string | undefined;
     personalizationUserId?: string;
     baseImageServiceUrl: string;
     sortAlgorithm: FeedSortAlgorithm;
@@ -44,24 +43,12 @@ interface FetchFeedProps {
 
 export async function fetchFeed({
     db,
-    lastSlugId,
     personalizationUserId,
     baseImageServiceUrl,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const targetFetchLimit = 200;
 
-    const lastCreatedAt = await getPostSlugIdLastCreatedAt({
-        lastSlugId: lastSlugId,
-        db: db,
-    });
-
-    let whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
-    if (lastSlugId) {
-        whereClause = and(
-            whereClause,
-            lt(conversationTable.createdAt, lastCreatedAt),
-        );
-    }
+    const whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
 
     const { fetchPostItems } = useCommonPost();
 

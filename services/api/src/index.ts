@@ -778,7 +778,6 @@ server.after(() => {
 
                 return await feedService.fetchFeed({
                     db: db,
-                    lastSlugId: request.body.lastSlugId,
                     personalizationUserId: deviceStatus.userId,
                     baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                     sortAlgorithm: request.body.sortAlgorithm,
@@ -786,7 +785,6 @@ server.after(() => {
             } else {
                 return await feedService.fetchFeed({
                     db: db,
-                    lastSlugId: request.body.lastSlugId,
                     baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                     sortAlgorithm: request.body.sortAlgorithm,
                 });

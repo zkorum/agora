@@ -1248,12 +1248,6 @@ export interface ApiV1ConversationFetchRecentPostRequest {
      * @type {string}
      * @memberof ApiV1ConversationFetchRecentPostRequest
      */
-    'lastSlugId'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationFetchRecentPostRequest
-     */
     'sortAlgorithm': ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum;
 }
 

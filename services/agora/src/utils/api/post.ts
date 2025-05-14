@@ -112,19 +112,16 @@ export function useBackendPostApi() {
     | AxiosErrorResponse;
 
   interface FetchRecentPostProps {
-    lastSlugId: string | undefined;
     loadUserPollData: boolean;
     sortAlgorithm: FeedSortAlgorithm;
   }
 
   async function fetchRecentPost({
-    lastSlugId,
     loadUserPollData,
     sortAlgorithm,
   }: FetchRecentPostProps): Promise<FetchRecentPostResponse> {
     try {
       const params: ApiV1ConversationFetchRecentPostRequest = {
-        lastSlugId: lastSlugId,
         sortAlgorithm: sortAlgorithm,
       };
 

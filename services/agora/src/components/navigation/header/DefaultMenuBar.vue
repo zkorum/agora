@@ -108,7 +108,7 @@ function scrollToTop() {
 <style scoped lang="scss">
 .gridContainer {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
   gap: 1rem 1rem;
   grid-template-areas: ". . .";
@@ -125,7 +125,9 @@ function scrollToTop() {
 }
 
 .container {
-  padding: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.5rem;
 }
 
 .leftContainer {

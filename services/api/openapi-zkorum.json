@@ -464,10 +464,6 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "lastSlugId": {
-                                        "type": "string",
-                                        "maxLength": 10
-                                    },
                                     "sortAlgorithm": {
                                         "type": "string",
                                         "enum": [
