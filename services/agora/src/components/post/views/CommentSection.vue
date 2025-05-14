@@ -2,7 +2,7 @@
   <div>
     <div class="container">
       <CommentClusterGraph
-        v-if="showClusterMap"
+        v-if="showClusterMap && mode === 'analysis'"
         :clusters="props.polis.clusters"
         :total-participant-count="props.participantCount"
         :current-cluster-tab="currentClusterTab"
@@ -11,13 +11,14 @@
 
       <div class="commentSectionToolbar">
         <ClusterTabs
+          v-if="mode === 'analysis' && showClusterMap"
           v-model="currentClusterTab"
           :cluster-metadata-list="props.polis.clusters"
         />
 
-        <div>
+        <div class="commentSortingSelector">
           <CommentSortingSelector
-            v-if="currentClusterTab == 'all'"
+            v-if="mode === 'comment' || currentClusterTab == 'all'"
             :filter-value="sortAlgorithm"
             @changed-algorithm="
               (filterValue: CommentFilterOptions) => changeFilter(filterValue)
@@ -28,6 +29,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'discover'"
+        :mode="props.mode"
         :selected-cluster-key="undefined"
         :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsDiscover"
@@ -48,6 +50,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'new'"
+        :mode="props.mode"
         :selected-cluster-key="undefined"
         :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsNew"
@@ -68,6 +71,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'moderated'"
+        :mode="props.mode"
         :selected-cluster-key="undefined"
         :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsModerated"
@@ -87,6 +91,7 @@
 
       <CommentGroup
         v-if="currentClusterTab == 'all' && sortAlgorithm == 'hidden'"
+        :mode="props.mode"
         :selected-cluster-key="undefined"
         :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsHidden"
@@ -106,6 +111,7 @@
 
       <CommentGroup
         v-if="currentClusterTab != 'all'"
+        :mode="props.mode"
         :selected-cluster-key="currentClusterTab"
         :comment-item-list="opinionItemListPartial"
         :is-loading="isLoadingCommentItemsCluster"
@@ -165,6 +171,7 @@ const emit = defineEmits([
 ]);
 
 const props = defineProps<{
+  mode: "comment" | "analysis";
   postSlugId: string;
   participantCount: number;
   polis: ExtendedConversationPolis;
@@ -245,6 +252,19 @@ watch(currentClusterTab, async () => {
   }
   requestedCommentSlugId.value = "";
 });
+
+watch(
+  () => props.mode,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal && newVal === "comment")
+      if (isMounted) {
+        sortAlgorithm.value = "discover";
+        currentClusterTab.value = "all";
+        updateInfiniteScrollingList("discover");
+        requestedCommentSlugId.value = "";
+      }
+  }
+);
 
 const showClusterMap = computed(() => {
   return props.polis.clusters.length >= 2;
@@ -468,7 +488,10 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
   flex-wrap: nowrap;
   gap: 1rem;
   align-items: end;
-  justify-content: space-between;
+}
+
+.commentSortingSelector {
+  margin-left: auto;
 }
 
 .clusterTabSelector {

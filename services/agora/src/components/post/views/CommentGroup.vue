@@ -37,6 +37,7 @@
         }"
       >
         <CommentSingle
+          :mode="mode"
           :selected-cluster-key="selectedClusterKey"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
@@ -69,6 +70,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
 }
 
 defineProps<{
+  mode: "comment" | "analysis";
   selectedClusterKey: PolisKey | undefined;
   commentItemList: OpinionItem[];
   postSlugId: string;

@@ -17,12 +17,17 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelDisagree">
-          <div>
-            Total: {{ props.commentItem.numDisagrees }} ({{
-              formatPercentage(totalPercentageDisagrees)
-            }})
+          <div v-if="mode === 'analysis'">
+            Total: {{ props.commentItem.numDisagrees }} •
+            {{ formatPercentage(absoluteTotalPercentageDisagrees) }}
           </div>
-          <div v-if="commentItem.clustersStats.length >= 2">
+          <div v-if="mode === 'comment'">
+            {{ props.commentItem.numDisagrees }} •
+            {{ formatPercentage(relativeTotalPercentageDisagrees) }}
+          </div>
+          <div
+            v-if="mode === 'analysis' && commentItem.clustersStats.length >= 2"
+          >
             <div
               v-for="clusterItem in commentItem.clustersStats"
               :key="clusterItem.key"
@@ -30,14 +35,15 @@
             >
               {{
                 formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
-              }}: {{ clusterItem.numDisagrees }} ({{
+              }}: {{ clusterItem.numDisagrees }} •
+              {{
                 formatPercentage(
                   calculatePercentage(
                     clusterItem.numDisagrees,
                     clusterItem.numUsers
                   )
                 )
-              }})
+              }}
             </div>
           </div>
         </div>
@@ -59,12 +65,17 @@
         </ZKButton>
 
         <div v-if="userCastedVote" class="voteCountLabelAgree">
-          <div>
-            Total: {{ numAgreesLocal }} ({{
-              formatPercentage(totalPercentageAgrees)
-            }})
+          <div v-if="mode === 'analysis'">
+            Total: {{ numAgreesLocal }} •
+            {{ formatPercentage(absoluteTotalPercentageAgrees) }}
           </div>
-          <div v-if="commentItem.clustersStats.length >= 2">
+          <div v-if="mode === 'comment'">
+            {{ numAgreesLocal }} •
+            {{ formatPercentage(relativeTotalPercentageAgrees) }}
+          </div>
+          <div
+            v-if="mode === 'analysis' && commentItem.clustersStats.length >= 2"
+          >
             <div
               v-for="clusterItem in commentItem.clustersStats"
               :key="clusterItem.key"
@@ -72,14 +83,15 @@
             >
               {{
                 formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
-              }}: {{ clusterItem.numAgrees }} ({{
+              }}: {{ clusterItem.numAgrees }} •
+              {{
                 formatPercentage(
                   calculatePercentage(
                     clusterItem.numAgrees,
                     clusterItem.numUsers
                   )
                 )
-              }})
+              }}
             </div>
           </div>
         </div>
@@ -113,6 +125,7 @@ import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 
 const props = defineProps<{
+  mode: "comment" | "analysis";
   selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
@@ -189,14 +202,28 @@ const upvoteIcon = computed<IconObject>(() => {
   }
 });
 
-const totalPercentageAgrees = computed(() => {
+const absoluteTotalPercentageAgrees = computed(() => {
   return calculatePercentage(numAgreesLocal.value, participantCountLocal.value);
 });
 
-const totalPercentageDisagrees = computed(() => {
+const relativeTotalPercentageAgrees = computed(() => {
+  return calculatePercentage(
+    numAgreesLocal.value,
+    numAgreesLocal.value + numDisagreesLocal.value
+  );
+});
+
+const absoluteTotalPercentageDisagrees = computed(() => {
   return calculatePercentage(
     numDisagreesLocal.value,
     participantCountLocal.value
+  );
+});
+
+const relativeTotalPercentageDisagrees = computed(() => {
+  return calculatePercentage(
+    numDisagreesLocal.value,
+    numAgreesLocal.value + numDisagreesLocal.value
   );
 });
 

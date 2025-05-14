@@ -92,7 +92,7 @@
             <div class="bottomButtons">
               <div class="leftButtonCluster">
                 <div v-if="!skeletonMode">
-                  <div class="commentCountStyle">
+                  <div v-if="compactMode" class="commentCountStyle">
                     <ZKIcon
                       color="#7D7A85"
                       name="meteor-icons:comment"
@@ -107,6 +107,14 @@
                       }}
                     </div>
                   </div>
+                  <CommentAnalysisTabs
+                    v-if="!compactMode"
+                    v-model="currentTab"
+                    :opinion-count="
+                      extendedPostData.metadata.opinionCount +
+                      commentCountOffset
+                    "
+                  />
                 </div>
                 <div v-if="skeletonMode">
                   <Skeleton
@@ -123,7 +131,12 @@
                     button-type="standardButton"
                     @click.stop.prevent="shareClicked()"
                   >
-                    <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
+                    <div class="shareButtonContentContainer">
+                      <div>
+                        <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
+                      </div>
+                      <div>Share</div>
+                    </div>
                   </ZKButton>
                 </div>
                 <div v-if="skeletonMode">
@@ -141,6 +154,7 @@
             <CommentSection
               :key="commentSectionKey"
               ref="commentSectionRef"
+              :mode="currentTab"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
               :participant-count="participantCountLocal"
               :polis="extendedPostData.polis"
@@ -202,6 +216,7 @@ import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import UserHtmlBody from "./views/UserHtmlBody.vue";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
+import CommentAnalysisTabs from "./views/CommentAnalysisTabs.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -213,6 +228,7 @@ const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 
 const commentCountOffset = ref(0);
 const commentSectionKey = ref(Date.now());
+const currentTab = ref<"comment" | "analysis">("comment");
 
 const router = useRouter();
 
@@ -420,12 +436,20 @@ async function shareClicked() {
 .commentCountStyle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   padding-top: 0.5rem;
 }
 
 .commentSectionPadding {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.shareButtonContentContainer {
+  gap: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7d7a85;
 }
 </style>
