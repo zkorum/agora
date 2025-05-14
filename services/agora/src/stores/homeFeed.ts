@@ -172,7 +172,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
     const response = await fetchRecentPost({
       loadUserPollData: isGuestOrLoggedIn.value,
-      sortAlgorithm: "following",
+      sortAlgorithm: currentHomeFeedTab.value,
     });
     if (
       response.status == "success" &&
