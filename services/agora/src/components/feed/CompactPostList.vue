@@ -29,7 +29,7 @@
           @load="onLoad"
         >
           <div
-            v-if="masterPostDataList.length == 0 && initializedFeed"
+            v-if="partialHomeFeedList.length == 0 && initializedFeed"
             class="emptyDivPadding"
           >
             <div class="centerMessage">
@@ -64,11 +64,11 @@
             </div>
 
             <div
-              v-if="initializedFeed && masterPostDataList.length > 0"
+              v-if="initializedFeed && partialHomeFeedList.length > 0"
               class="postListFlex"
             >
               <div
-                v-for="postData in masterPostDataList"
+                v-for="postData in partialHomeFeedList"
                 :key="postData.metadata.conversationSlugId"
               >
                 <PostDetails
@@ -83,7 +83,7 @@
           </div>
 
           <div
-            v-if="initializedFeed && masterPostDataList.length > 0"
+            v-if="initializedFeed && partialHomeFeedList.length > 0"
             class="centerMessage"
           >
             <div>
@@ -133,13 +133,13 @@ import WidthWrapper from "../navigation/WidthWrapper.vue";
 import ZKTab from "../ui-library/ZKTab.vue";
 
 const {
-  masterPostDataList,
+  partialHomeFeedList,
   emptyPostDataList,
   hasPendingNewPosts,
   initializedFeed,
   currentHomeFeedTab,
 } = storeToRefs(useHomeFeedStore());
-const { loadPostData, hasNewPostCheck } = useHomeFeedStore();
+const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
 
 const router = useRouter();
 
@@ -165,9 +165,9 @@ function selectedTab(tab: HomeFeedSortOption) {
   currentHomeFeedTab.value = tab;
 }
 
-async function onLoad(index: number, done: () => void) {
+function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
-    canLoadMore.value = await loadPostData();
+    canLoadMore.value = loadMore();
   }
   done();
 }

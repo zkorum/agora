@@ -127,7 +127,9 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     },
   };
 
-  const masterPostDataList = ref<ExtendedConversation[]>([]);
+  let fullHomeFeedList: ExtendedConversation[] = [];
+  const partialHomeFeedList = ref<ExtendedConversation[]>([]);
+
   const emptyPostDataList = ref<ExtendedConversation[]>([
     emptyPost,
     emptyPost,
@@ -143,11 +145,13 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     const response = await fetchRecentPost({
       lastSlugId: undefined,
       loadUserPollData: isGuestOrLoggedIn.value,
-      sortAlgorithm: "following",
+      sortAlgorithm: currentHomeFeedTab.value,
     });
 
     if (response.status == "success") {
-      masterPostDataList.value = response.data.conversationDataList;
+      fullHomeFeedList = response.data.conversationDataList;
+      partialHomeFeedList.value = fullHomeFeedList;
+
       hasPendingNewPosts.value = false;
       localTopConversationSlugIdList = response.data.topConversationSlugIdList;
       initializedFeed.value = true;
@@ -189,15 +193,22 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   async function resetPostData() {
-    masterPostDataList.value = [];
+    fullHomeFeedList = [];
+    partialHomeFeedList.value = [];
     await Promise.all([loadPostData(), loadUserProfile()]);
+  }
+
+  function loadMore(): boolean {
+    partialHomeFeedList.value = fullHomeFeedList;
+    return false;
   }
 
   return {
     loadPostData,
     hasNewPostCheck,
     resetPostData,
-    masterPostDataList,
+    loadMore,
+    partialHomeFeedList,
     emptyPostDataList,
     emptyPost,
     hasPendingNewPosts,
