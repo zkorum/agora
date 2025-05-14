@@ -149,9 +149,8 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     if (response.status == "success") {
       masterPostDataList.value = response.data.conversationDataList;
       hasPendingNewPosts.value = false;
-
+      localTopConversationSlugIdList = response.data.topConversationSlugIdList;
       initializedFeed.value = true;
-
       return false;
     } else {
       initializedFeed.value = true;
@@ -177,8 +176,13 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       const newItems = response.data.topConversationSlugIdList.filter(
         (slugId) => !localTopConversationSlugIdList.includes(slugId)
       );
-      localTopConversationSlugIdList = response.data.topConversationSlugIdList;
-      hasPendingNewPosts.value = newItems.length > 0;
+      if (newItems.length > 0) {
+        localTopConversationSlugIdList =
+          response.data.topConversationSlugIdList;
+        hasPendingNewPosts.value = true;
+      } else {
+        hasPendingNewPosts.value = false;
+      }
     } else {
       hasPendingNewPosts.value = false;
     }
