@@ -133,6 +133,7 @@ function initializeMenu() {
       height: 20,
     });
 
+    /*
     settingItemList.value.push({
       icon: "iconamoon:home-fill",
       name: "Topics",
@@ -144,6 +145,7 @@ function initializeMenu() {
       width: 21,
       height: 20,
     });
+    */
 
     settingItemList.value.push({
       icon: "ion:notifications",
