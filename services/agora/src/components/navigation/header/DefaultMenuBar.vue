@@ -125,9 +125,7 @@ function scrollToTop() {
 }
 
 .container {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  padding-top: 0.5rem;
+  padding: 0.5rem;
 }
 
 .leftContainer {

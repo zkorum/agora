@@ -107,6 +107,7 @@ function selectedTab(tab: HomeFeedSortOption) {
   gap: 0px 0px;
   grid-template-areas: ". .";
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .tabItem {
@@ -126,7 +127,7 @@ function selectedTab(tab: HomeFeedSortOption) {
 
 .commonTabBorder {
   border-bottom: 3px solid;
-  padding-bottom: 4px;
+  padding-bottom: 8px;
 }
 
 .unselectedTab {
