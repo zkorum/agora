@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container">
-      <div class="pushReasonPosition">
+      <div v-if="mode === 'analysis'" class="pushReasonPosition">
         <ZKCard padding="0rem" class="labelBackground">
           <div
             v-if="reasonLabel !== undefined"
@@ -43,6 +43,7 @@
 
         <div>
           <CommentActionBar
+            :mode="mode"
             :selected-cluster-key="selectedClusterKey"
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
@@ -78,6 +79,7 @@ import { isControversial, isMajority } from "src/shared/conversationLogic";
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 
 const props = defineProps<{
+  mode: "comment" | "analysis";
   selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
