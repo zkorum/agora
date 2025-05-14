@@ -203,7 +203,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   function loadMore(): boolean {
-    console.log("load more");
     const loadLimit = 5;
     if (fullHomeFeedList.length > 0) {
       const itemsToLoad: ExtendedConversation[] = fullHomeFeedList.splice(

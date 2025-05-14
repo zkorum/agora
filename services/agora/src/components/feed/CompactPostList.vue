@@ -230,6 +230,8 @@ async function refreshPage(done: () => void) {
   grid-template-rows: 1fr;
   gap: 0px 0px;
   grid-template-areas: ". .";
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .tabItem {
