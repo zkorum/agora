@@ -81,6 +81,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   const hasPendingNewPosts = ref(false);
 
   const initializedFeed = ref(false);
+  const canLoadMore = ref(true);
 
   const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
 
@@ -150,11 +151,14 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
     if (response.status == "success") {
       fullHomeFeedList = response.data.conversationDataList;
-      partialHomeFeedList.value = fullHomeFeedList;
-
+      partialHomeFeedList.value = [];
       hasPendingNewPosts.value = false;
       localTopConversationSlugIdList = response.data.topConversationSlugIdList;
       initializedFeed.value = true;
+
+      canLoadMore.value = true;
+      loadMore();
+
       return false;
     } else {
       initializedFeed.value = true;
@@ -199,8 +203,18 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   function loadMore(): boolean {
-    partialHomeFeedList.value = fullHomeFeedList;
-    return false;
+    console.log("load more");
+    const loadLimit = 5;
+    if (fullHomeFeedList.length > 0) {
+      const itemsToLoad: ExtendedConversation[] = fullHomeFeedList.splice(
+        0,
+        Math.min(loadLimit, fullHomeFeedList.length)
+      );
+      partialHomeFeedList.value = partialHomeFeedList.value.concat(itemsToLoad);
+    }
+
+    const hasMore = fullHomeFeedList.length > 0;
+    return hasMore;
   }
 
   return {
@@ -214,5 +228,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     hasPendingNewPosts,
     initializedFeed,
     currentHomeFeedTab,
+    canLoadMore,
   };
 });

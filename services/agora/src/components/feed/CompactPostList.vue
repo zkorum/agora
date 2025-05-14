@@ -123,7 +123,7 @@
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
 import { HomeFeedSortOption, useHomeFeedStore } from "src/stores/homeFeed";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useWindowFocus, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
@@ -138,6 +138,7 @@ const {
   hasPendingNewPosts,
   initializedFeed,
   currentHomeFeedTab,
+  canLoadMore,
 } = storeToRefs(useHomeFeedStore());
 const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
 
@@ -146,8 +147,6 @@ const router = useRouter();
 const windowFocused = useWindowFocus();
 
 const { isAuthInitialized, isLoggedIn } = storeToRefs(useAuthenticationStore());
-
-const canLoadMore = ref(true);
 
 const { y: windowY } = useWindowScroll();
 
