@@ -125,9 +125,7 @@ function scrollToTop() {
 }
 
 .container {
-  background-color: $app-background-color;
   padding: 0.5rem;
-  font: black;
 }
 
 .leftContainer {

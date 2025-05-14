@@ -2,26 +2,6 @@
   <div>
     <WidthWrapper :enable="true">
       <q-pull-to-refresh @refresh="pullDownTriggered">
-        <div class="tabCluster">
-          <div class="tabItem" @click="selectedTab('following')">
-            <ZKTab
-              :text="isLoggedIn ? 'Following' : 'Popular'"
-              :is-highlighted="currentHomeFeedTab === 'following'"
-              :show-underline="false"
-            />
-          </div>
-
-          <div class="tabItem" @click="selectedTab('new')">
-            <ZKTab
-              text="New"
-              :is-highlighted="currentHomeFeedTab === 'new'"
-              :show-underline="false"
-            />
-          </div>
-        </div>
-
-        <div :style="{ height: '0.5rem' }"></div>
-
         <q-infinite-scroll
           v-if="isAuthInitialized"
           :offset="2000"
@@ -122,7 +102,7 @@
 
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
-import { HomeFeedSortOption, useHomeFeedStore } from "src/stores/homeFeed";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useWindowFocus, useWindowScroll } from "@vueuse/core";
@@ -130,14 +110,12 @@ import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
-import ZKTab from "../ui-library/ZKTab.vue";
 
 const {
   partialHomeFeedList,
   emptyPostDataList,
   hasPendingNewPosts,
   initializedFeed,
-  currentHomeFeedTab,
   canLoadMore,
 } = storeToRefs(useHomeFeedStore());
 const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
@@ -146,7 +124,7 @@ const router = useRouter();
 
 const windowFocused = useWindowFocus();
 
-const { isAuthInitialized, isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const { y: windowY } = useWindowScroll();
 
@@ -159,10 +137,6 @@ watch(windowFocused, async () => {
     await hasNewPostCheck();
   }
 });
-
-function selectedTab(tab: HomeFeedSortOption) {
-  currentHomeFeedTab.value = tab;
-}
 
 function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
@@ -222,30 +196,5 @@ async function refreshPage(done: () => void) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.tabCluster {
-  display: grid;
-  grid-template-columns: 50% 50%;
-  grid-template-rows: 1fr;
-  gap: 0px 0px;
-  grid-template-areas: ". .";
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.tabItem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 15px;
-  margin: 0.2rem;
-}
-
-.tabItem:hover {
-  cursor: pointer;
-  background-color: white;
 }
 </style>

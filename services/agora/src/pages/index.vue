@@ -24,6 +24,36 @@
           />
         </template>
       </DefaultMenuBar>
+
+      <WidthWrapper :enable="true">
+        <div class="tabCluster">
+          <div class="tabItem" @click="selectedTab('following')">
+            <ZKTab
+              class="commonTabBorder"
+              :class="{
+                selectedTab: currentHomeFeedTab === 'following',
+                unselectedTab: currentHomeFeedTab !== 'following',
+              }"
+              :text="isLoggedIn ? 'Following' : 'Popular'"
+              :is-highlighted="currentHomeFeedTab === 'following'"
+              :show-underline="false"
+            />
+          </div>
+
+          <div class="tabItem" @click="selectedTab('new')">
+            <ZKTab
+              class="commonTabBorder"
+              :class="{
+                selectedTab: currentHomeFeedTab === 'new',
+                unselectedTab: currentHomeFeedTab !== 'new',
+              }"
+              text="New"
+              :is-highlighted="currentHomeFeedTab === 'new'"
+              :show-underline="false"
+            />
+          </div>
+        </div>
+      </WidthWrapper>
     </template>
 
     <div class="container">
@@ -38,16 +68,27 @@
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
+import ZKTab from "src/components/ui-library/ZKTab.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { HomeFeedSortOption, useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
 
 const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
+
+const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+function selectedTab(tab: HomeFeedSortOption) {
+  currentHomeFeedTab.value = tab;
+}
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .container {
   display: flex;
   flex-direction: column;
@@ -57,5 +98,43 @@ const { drawerBehavior } = storeToRefs(useNavigationStore());
 .agoraLogoStyle {
   width: 2rem;
   height: 2rem;
+}
+
+.tabCluster {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  grid-template-rows: 1fr;
+  gap: 0px 0px;
+  grid-template-areas: ". .";
+  font-weight: 600;
+}
+
+.tabItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.8rem;
+  margin-bottom: 0.5rem;
+  border-radius: 15px;
+}
+
+.tabItem:hover {
+  cursor: pointer;
+  background-color: white;
+}
+
+.commonTabBorder {
+  border-bottom: 3px solid;
+  padding-bottom: 4px;
+}
+
+.unselectedTab {
+  border-color: transparent;
+}
+
+.selectedTab {
+  border-color: $primary;
+  background-color: white;
 }
 </style>
