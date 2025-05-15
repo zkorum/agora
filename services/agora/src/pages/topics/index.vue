@@ -3,17 +3,17 @@
     :general-props="{
       addGeneralPadding: false,
       addBottomPadding: true,
-      enableFooter: false,
+      enableFooter: true,
       enableHeader: true,
       reducedWidth: true,
     }"
   >
     <template #header>
       <DefaultMenuBar
-        :has-back-button="true"
+        :has-back-button="false"
         :has-close-button="false"
         :has-login-button="false"
-        :has-menu-button="false"
+        :has-menu-button="true"
         :fixed-height="true"
       >
         <template #middle> Topics </template>
