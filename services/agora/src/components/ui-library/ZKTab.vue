@@ -1,5 +1,11 @@
 <template>
-  <div class="tabStyle" :class="{ highlightTab: isHighlighted }">
+  <div
+    class="tabStyle"
+    :class="{
+      highlightTab: isHighlighted,
+      underlineTab: isHighlighted && isUnderlined,
+    }"
+  >
     <!--  TODO: proper icon color -->
     <!-- :color="isHighlighted ? 'primary' : '#7D7A85'" -->
     <ZKIcon
@@ -20,6 +26,7 @@ defineProps<{
   text?: string;
   iconCode?: string;
   isHighlighted: boolean;
+  isUnderlined: boolean;
 }>();
 </script>
 

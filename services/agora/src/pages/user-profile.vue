@@ -52,6 +52,7 @@
             :text="tabItem.label"
             :is-highlighted="currentTab === tabItem.value"
             :show-underline="true"
+            :is-underlined="true"
             @click="selectedTab(tabItem.route)"
           />
         </div>
