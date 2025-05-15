@@ -24,6 +24,26 @@
           />
         </template>
       </DefaultMenuBar>
+
+      <WidthWrapper :enable="true">
+        <div class="tabCluster">
+          <div class="tabItem" @click="selectedTab('following')">
+            <ZKTab
+              :text="isLoggedIn ? 'Following' : 'Popular'"
+              :is-highlighted="currentHomeFeedTab === 'following'"
+              :show-underline="false"
+            />
+          </div>
+
+          <div class="tabItem" @click="selectedTab('new')">
+            <ZKTab
+              text="New"
+              :is-highlighted="currentHomeFeedTab === 'new'"
+              :show-underline="false"
+            />
+          </div>
+        </div>
+      </WidthWrapper>
     </template>
 
     <div class="container">
@@ -38,16 +58,28 @@
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
+import ZKTab from "src/components/ui-library/ZKTab.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { HomeFeedSortOption, useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
 
 const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
+
+const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+function selectedTab(tab: HomeFeedSortOption) {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  currentHomeFeedTab.value = tab;
+}
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .container {
   display: flex;
   flex-direction: column;
@@ -57,5 +89,28 @@ const { drawerBehavior } = storeToRefs(useNavigationStore());
 .agoraLogoStyle {
   width: 2rem;
   height: 2rem;
+}
+
+.tabCluster {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  padding-bottom: 0.8rem;
+}
+
+.tabItem {
+  min-width: 8rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-radius: 15px;
+}
+
+.tabItem:hover {
+  cursor: pointer;
 }
 </style>

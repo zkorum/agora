@@ -65,7 +65,7 @@ import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import UserIdentity from "./UserIdentity.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -92,7 +92,7 @@ const { showPostOptionSelector } = useBottomSheet();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const { muteUser } = useBackendUserMuteApi();
-const { loadPostData } = usePostStore();
+const { loadPostData } = useHomeFeedStore();
 
 const showReportDialog = ref(false);
 
@@ -125,7 +125,7 @@ async function openUserReportsCallback() {
 async function muteUserCallback() {
   const isSuccessful = await muteUser(props.posterUserName, "mute");
   if (isSuccessful) {
-    await loadPostData(false);
+    await loadPostData();
   }
 }
 

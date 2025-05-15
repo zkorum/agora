@@ -23,7 +23,7 @@
       <WidthWrapper :enable="true">
         <PostDetails
           v-if="dataLoaded"
-          :key="postKey"
+          :key="postData.metadata.opinionCount"
           :extended-post-data="postData"
           :compact-mode="false"
           :skeleton-mode="false"
@@ -42,7 +42,7 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendPostApi } from "src/utils/api/post";
 import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -51,14 +51,12 @@ const { fetchPostBySlugId } = useBackendPostApi();
 const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
   useAuthenticationStore()
 );
-const { emptyPost } = usePostStore();
+const { emptyPost } = useHomeFeedStore();
 const postData = ref<ExtendedConversation>(emptyPost);
 
 const dataLoaded = ref(false);
 
 const route = useRoute();
-
-const postKey = ref(0);
 
 const {
   clearVotingIntention,
@@ -108,7 +106,6 @@ async function loadData() {
 async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {
     await loadData();
-    postKey.value = postKey.value + 1;
     done();
   }, 500);
 }

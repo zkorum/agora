@@ -18,9 +18,11 @@ import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 import type {
   ExtendedConversation,
+  FeedSortAlgorithm,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import type { DummyPollOptionFormat } from "src/stores/post";
+import type { DummyPollOptionFormat } from "src/stores/homeFeed";
+import { FetchFeedResponse } from "src/shared/types/dto";
 
 export function useBackendPostApi() {
   const {
@@ -103,13 +105,24 @@ export function useBackendPostApi() {
     }
   }
 
-  async function fetchRecentPost(
-    lastSlugId: string | undefined,
-    loadUserPollData: boolean
-  ) {
+  type FetchRecentPostSuccessResponse = AxiosSuccessResponse<FetchFeedResponse>;
+
+  type FetchRecentPostResponse =
+    | FetchRecentPostSuccessResponse
+    | AxiosErrorResponse;
+
+  interface FetchRecentPostProps {
+    loadUserPollData: boolean;
+    sortAlgorithm: FeedSortAlgorithm;
+  }
+
+  async function fetchRecentPost({
+    loadUserPollData,
+    sortAlgorithm,
+  }: FetchRecentPostProps): Promise<FetchRecentPostResponse> {
     try {
       const params: ApiV1ConversationFetchRecentPostRequest = {
-        lastSlugId: lastSlugId,
+        sortAlgorithm: sortAlgorithm,
       };
 
       if (!loadUserPollData) {
@@ -120,8 +133,13 @@ export function useBackendPostApi() {
         ).apiV1ConversationFetchRecentPost(params, {});
 
         return {
-          postDataList: response.data.conversationDataList,
-          reachedEndOfFeed: response.data.reachedEndOfFeed,
+          status: "success",
+          data: {
+            conversationDataList: composeInternalPostList(
+              response.data.conversationDataList
+            ),
+            topConversationSlugIdList: response.data.topConversationSlugIdList,
+          },
         };
       } else {
         const { url, options } =
@@ -140,33 +158,46 @@ export function useBackendPostApi() {
         });
 
         return {
-          postDataList: response.data.conversationDataList,
-          reachedEndOfFeed: response.data.reachedEndOfFeed,
+          status: "success",
+          data: {
+            conversationDataList: composeInternalPostList(
+              response.data.conversationDataList
+            ),
+            topConversationSlugIdList: response.data.topConversationSlugIdList,
+          },
         };
       }
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch recent posts from the server.");
-      return null;
+      return createAxiosErrorResponse(e);
     }
+  }
+
+  interface CreateNewPostProps {
+    postTitle: string;
+    postBody: string | undefined;
+    pollingOptionList: string[] | undefined;
+    postAsOrganizationName: string;
+    targetIsoConvertDateString: string | undefined;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
   }
 
   type CreateNewPostSuccessResponse =
     AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
-
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
     | AxiosErrorResponse;
-
-  async function createNewPost(
-    postTitle: string,
-    postBody: string | undefined,
-    pollingOptionList: string[] | undefined,
-    postAsOrganizationName: string,
-    targetIsoConvertDateString: string | undefined,
-    isIndexed: boolean,
-    isLoginRequired: boolean
-  ): Promise<CreateNewPostResponse> {
+  async function createNewPost({
+    postTitle,
+    postBody,
+    pollingOptionList,
+    postAsOrganizationName,
+    targetIsoConvertDateString,
+    isIndexed,
+    isLoginRequired,
+  }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
         conversationTitle: postTitle,
@@ -283,7 +314,6 @@ export function useBackendPostApi() {
     fetchRecentPost,
     fetchPostBySlugId,
     createInternalPostData,
-    composeInternalPostList,
     deletePostBySlugId,
   };
 }

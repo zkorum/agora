@@ -40,11 +40,14 @@ defineProps<{
 }
 
 .highlightTab {
-  border-bottom: 3px solid;
-  border-color: $primary;
   color: transparent;
   background-image: $gradient-hero;
   -webkit-background-clip: text;
   background-clip: text;
+}
+
+.underlineTab {
+  border-bottom: 3px solid;
+  border-color: $primary;
 }
 </style>

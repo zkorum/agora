@@ -28,6 +28,7 @@ export const zodModerationReason = z.enum([
     "sexual",
     "spam",
 ]);
+export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
 export const zodPhoneNumber = z
@@ -191,6 +192,13 @@ export const zodRouteTarget = z
     .object({
         conversationSlugId: zodSlugId,
         opinionSlugId: zodSlugId,
+    })
+    .strict();
+
+export const zodTopicObject = z
+    .object({
+        code: z.string(),
+        name: z.string(),
     })
     .strict();
 
@@ -850,3 +858,5 @@ export type DeviceIsKnownTrueLoginStatus = z.infer<
 export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
     typeof zodIsKnownTrueLoginStatusExtended
 >;
+export type ZodTopicObject = z.infer<typeof zodTopicObject>;
+export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;

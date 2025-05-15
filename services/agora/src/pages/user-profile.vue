@@ -51,6 +51,7 @@
           <ZKTab
             :text="tabItem.label"
             :is-highlighted="currentTab === tabItem.value"
+            :show-underline="true"
             @click="selectedTab(tabItem.route)"
           />
         </div>

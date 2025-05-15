@@ -284,6 +284,7 @@ export async function fetchPostBySlugId({
             excludeLockedPosts: false,
             removeMutedAuthors: false,
             baseImageServiceUrl,
+            sortAlgorithm: "new",
         });
 
         if (postData.size == 1) {

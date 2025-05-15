@@ -31,6 +31,8 @@ import {
     zodSupportedCountryCallingCode,
     zodOrganization,
     zodDeviceLoginStatus,
+    zodTopicObject,
+    zodFeedSortAlgorithm,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -101,12 +103,12 @@ export class Dto {
     ]);
     static fetchFeedRequest = z
         .object({
-            lastSlugId: zodSlugId.optional(),
+            sortAlgorithm: zodFeedSortAlgorithm,
         })
         .strict();
     static fetchFeedResponse = z.object({
         conversationDataList: z.array(zodExtendedConversationData),
-        reachedEndOfFeed: z.boolean(),
+        topConversationSlugIdList: z.array(zodSlugId), // used to determine if the feed is stale
     });
     static postFetchRequest = z
         .object({
@@ -398,6 +400,11 @@ export class Dto {
             organizationName: z.string(),
         })
         .strict();
+    static getAllTopicsResponse = z
+        .object({
+            topicList: z.array(zodTopicObject),
+        })
+        .strict();
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
     //     "rarimoStatus",
@@ -497,3 +504,4 @@ export type GetOrganizationNamesByUsernameResponse = z.infer<
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse
 >;
+export type GetAllTopicsResponse = z.infer<typeof Dto.getAllTopicsResponse>;
