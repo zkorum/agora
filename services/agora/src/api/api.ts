@@ -1786,13 +1786,13 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'opinionSlugId': string;
 }
 /**
- *
+ * 
  * @export
  * @interface ApiV1NotificationFetchPostRequest
  */
 export interface ApiV1NotificationFetchPostRequest {
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1NotificationFetchPostRequest
      */
@@ -2115,32 +2115,32 @@ export const ApiV1ReportOpinionCreatePostRequestReportReasonEnum = {
 export type ApiV1ReportOpinionCreatePostRequestReportReasonEnum = typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum[keyof typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum];
 
 /**
- *
+ * 
  * @export
  * @interface ApiV1TopicGetAllTopicsPost200Response
  */
 export interface ApiV1TopicGetAllTopicsPost200Response {
     /**
-     *
+     * 
      * @type {Array<ApiV1TopicGetAllTopicsPost200ResponseTopicListInner>}
      * @memberof ApiV1TopicGetAllTopicsPost200Response
      */
     'topicList': Array<ApiV1TopicGetAllTopicsPost200ResponseTopicListInner>;
 }
 /**
- *
+ * 
  * @export
  * @interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
  */
 export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
      */
     'code': string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1TopicGetAllTopicsPost200ResponseTopicListInner
      */
@@ -3047,7 +3047,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest
+         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3431,7 +3431,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest]
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3890,7 +3890,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3912,7 +3912,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -4414,7 +4414,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest
+         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4533,7 +4533,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest]
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4675,7 +4675,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4929,7 +4929,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest
+         * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5018,7 +5018,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest]
+         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5124,7 +5124,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         *
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5383,7 +5383,7 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest
+     * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -5492,7 +5492,7 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest]
+     * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -5622,7 +5622,7 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
+     * 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
