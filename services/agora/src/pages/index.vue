@@ -112,6 +112,5 @@ function selectedTab(tab: HomeFeedSortOption) {
 
 .tabItem:hover {
   cursor: pointer;
-  background-color: white;
 }
 </style>
