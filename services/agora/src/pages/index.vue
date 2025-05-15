@@ -74,6 +74,7 @@ const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 function selectedTab(tab: HomeFeedSortOption) {
+  window.scrollTo({ top: 0, behavior: "smooth" });
   currentHomeFeedTab.value = tab;
 }
 </script>
