@@ -29,11 +29,6 @@
         <div class="tabCluster">
           <div class="tabItem" @click="selectedTab('following')">
             <ZKTab
-              class="commonTabBorder"
-              :class="{
-                selectedTab: currentHomeFeedTab === 'following',
-                unselectedTab: currentHomeFeedTab !== 'following',
-              }"
               :text="isLoggedIn ? 'Following' : 'Popular'"
               :is-highlighted="currentHomeFeedTab === 'following'"
               :show-underline="false"
@@ -42,11 +37,6 @@
 
           <div class="tabItem" @click="selectedTab('new')">
             <ZKTab
-              class="commonTabBorder"
-              :class="{
-                selectedTab: currentHomeFeedTab === 'new',
-                unselectedTab: currentHomeFeedTab !== 'new',
-              }"
               text="New"
               :is-highlighted="currentHomeFeedTab === 'new'"
               :show-underline="false"
@@ -108,34 +98,20 @@ function selectedTab(tab: HomeFeedSortOption) {
   grid-template-areas: ". .";
   font-weight: 600;
   font-size: 1rem;
+  padding-bottom: 1rem;
 }
 
 .tabItem {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: 0.5rem;
-  padding-bottom: 0.8rem;
-  margin-bottom: 0.5rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
   border-radius: 15px;
 }
 
 .tabItem:hover {
   cursor: pointer;
-  background-color: white;
-}
-
-.commonTabBorder {
-  border-bottom: 3px solid;
-  padding-bottom: 8px;
-}
-
-.unselectedTab {
-  border-color: transparent;
-}
-
-.selectedTab {
-  border-color: $primary;
   background-color: white;
 }
 </style>
