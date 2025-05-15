@@ -4,7 +4,7 @@
       <ZKTab
         text="All"
         :is-highlighted="model === 'all'"
-        :is-underlined="true"
+        :should-underline-on-highlight="true"
         @click="clickedTab('all')"
       />
 
@@ -14,7 +14,7 @@
             formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
           "
           :is-highlighted="model === clusterItem.key"
-          :is-underlined="true"
+          :should-underline-on-highlight="true"
           @click="clickedTab(clusterItem.key)"
         />
       </div>

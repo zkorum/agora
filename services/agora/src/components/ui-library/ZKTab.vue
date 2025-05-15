@@ -3,7 +3,7 @@
     class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
-      underlineTab: isHighlighted && isUnderlined,
+      underlineTab: isHighlighted && shouldUnderlineOnHighlight,
     }"
   >
     <!--  TODO: proper icon color -->
@@ -26,7 +26,7 @@ defineProps<{
   text?: string;
   iconCode?: string;
   isHighlighted: boolean;
-  isUnderlined: boolean;
+  shouldUnderlineOnHighlight: boolean;
 }>();
 </script>
 
