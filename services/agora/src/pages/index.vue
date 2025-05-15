@@ -31,8 +31,7 @@
             <ZKTab
               :text="isLoggedIn ? 'Following' : 'Popular'"
               :is-highlighted="currentHomeFeedTab === 'following'"
-              :is-underlined="false"
-              :show-underline="false"
+              :should-underline-on-highlight="false"
             />
           </div>
 
@@ -40,8 +39,7 @@
             <ZKTab
               text="New"
               :is-highlighted="currentHomeFeedTab === 'new'"
-              :is-underlined="false"
-              :show-underline="false"
+              :should-underline-on-highlight="false"
             />
           </div>
         </div>
