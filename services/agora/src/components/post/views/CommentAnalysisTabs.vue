@@ -5,12 +5,14 @@
         icon-code="meteor-icons:comment"
         :text="String(opinionCount)"
         :is-highlighted="model === 'comment'"
+        :is-underlined="true"
         @click="clickedTab('comment')"
       />
       <ZKTab
         icon-code="ph:chart-donut"
         text="Analysis"
         :is-highlighted="model === 'analysis'"
+        :is-underlined="true"
         @click="clickedTab('analysis')"
       />
     </div>
