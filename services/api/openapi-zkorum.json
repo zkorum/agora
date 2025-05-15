@@ -464,15 +464,22 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "lastSlugId": {
+                                    "sortAlgorithm": {
                                         "type": "string",
-                                        "maxLength": 10
+                                        "enum": [
+                                            "following",
+                                            "new"
+                                        ]
                                     }
                                 },
+                                "required": [
+                                    "sortAlgorithm"
+                                ],
                                 "additionalProperties": false
                             }
                         }
-                    }
+                    },
+                    "required": true
                 },
                 "responses": {
                     "200": {
@@ -758,13 +765,17 @@
                                                 "additionalProperties": false
                                             }
                                         },
-                                        "reachedEndOfFeed": {
-                                            "type": "boolean"
+                                        "topConversationSlugIdList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "maxLength": 10
+                                            }
                                         }
                                     },
                                     "required": [
                                         "conversationDataList",
-                                        "reachedEndOfFeed"
+                                        "topConversationSlugIdList"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -4227,6 +4238,47 @@
                 "responses": {
                     "200": {
                         "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/topic/get-all-topics": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "topicList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "name"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "topicList"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
                     }
                 }
             }

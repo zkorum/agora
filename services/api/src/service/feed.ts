@@ -1,6 +1,9 @@
 import { conversationTable } from "@/schema.js";
-import type { ExtendedConversationPerSlugId } from "@/shared/types/zod.js";
-import { and, eq, lt, SQL } from "drizzle-orm";
+import type {
+    ExtendedConversationPerSlugId,
+    FeedSortAlgorithm,
+} from "@/shared/types/zod.js";
+import { eq, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import type { FetchFeedResponse } from "@/shared/types/dto.js";
@@ -33,59 +36,42 @@ export async function getPostSlugIdLastCreatedAt({
 
 interface FetchFeedProps {
     db: PostgresDatabase;
-    lastSlugId: string | undefined;
-    limit?: number;
     personalizationUserId?: string;
     baseImageServiceUrl: string;
+    sortAlgorithm: FeedSortAlgorithm;
 }
 
 export async function fetchFeed({
     db,
-    lastSlugId,
-    limit,
     personalizationUserId,
     baseImageServiceUrl,
+    sortAlgorithm,
 }: FetchFeedProps): Promise<FetchFeedResponse> {
-    const defaultLimit = 10;
-    const targetLimit = limit ?? defaultLimit;
+    const targetFetchLimit = 1000;
 
-    const lastCreatedAt = await getPostSlugIdLastCreatedAt({
-        lastSlugId: lastSlugId,
-        db: db,
-    });
-
-    let whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
-    if (lastSlugId) {
-        whereClause = and(
-            whereClause,
-            lt(conversationTable.createdAt, lastCreatedAt),
-        );
-    }
+    const whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
 
     const { fetchPostItems } = useCommonPost();
 
     const conversations: ExtendedConversationPerSlugId = await fetchPostItems({
         db: db,
-        limit: targetLimit + 1,
+        limit: targetFetchLimit,
         where: whereClause,
         enableCompactBody: true,
         personalizedUserId: personalizationUserId,
         excludeLockedPosts: true,
         removeMutedAuthors: true,
         baseImageServiceUrl,
+        sortAlgorithm,
     });
 
-    let reachedEndOfFeed = true;
-    if (conversations.size === targetLimit + 1) {
-        const lastKey = Array.from(conversations.keys()).pop(); // Get the last key--here Map respecting order is important!
-        if (lastKey !== undefined) {
-            conversations.delete(lastKey);
-        }
-        reachedEndOfFeed = false;
-    }
+    const topSlugIdList = Array.from(conversations.keys()).slice(
+        0,
+        Math.min(10, conversations.size),
+    );
 
     return {
         conversationDataList: Array.from(conversations.values()),
-        reachedEndOfFeed: reachedEndOfFeed,
+        topConversationSlugIdList: topSlugIdList,
     };
 }

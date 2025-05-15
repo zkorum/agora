@@ -9,7 +9,7 @@
           @load="onLoad"
         >
           <div
-            v-if="masterPostDataList.length == 0 && initializedFeed"
+            v-if="partialHomeFeedList.length == 0 && initializedFeed"
             class="emptyDivPadding"
           >
             <div class="centerMessage">
@@ -44,11 +44,11 @@
             </div>
 
             <div
-              v-if="initializedFeed && masterPostDataList.length > 0"
+              v-if="initializedFeed && partialHomeFeedList.length > 0"
               class="postListFlex"
             >
               <div
-                v-for="postData in masterPostDataList"
+                v-for="postData in partialHomeFeedList"
                 :key="postData.metadata.conversationSlugId"
               >
                 <PostDetails
@@ -63,7 +63,7 @@
           </div>
 
           <div
-            v-if="initializedFeed && endOfFeed && masterPostDataList.length > 0"
+            v-if="initializedFeed && partialHomeFeedList.length > 0"
             class="centerMessage"
           >
             <div>
@@ -102,8 +102,8 @@
 
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
-import { usePostStore } from "src/stores/post";
-import { onMounted, ref, watch } from "vue";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useWindowFocus, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
@@ -112,21 +112,19 @@ import ZKButton from "../ui-library/ZKButton.vue";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 
 const {
-  masterPostDataList,
+  partialHomeFeedList,
   emptyPostDataList,
-  endOfFeed,
   hasPendingNewPosts,
   initializedFeed,
-} = storeToRefs(usePostStore());
-const { loadPostData, hasNewPostCheck } = usePostStore();
+  canLoadMore,
+} = storeToRefs(useHomeFeedStore());
+const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
 
 const router = useRouter();
 
 const windowFocused = useWindowFocus();
 
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
-
-const canLoadMore = ref(true);
 
 const { y: windowY } = useWindowScroll();
 
@@ -140,16 +138,16 @@ watch(windowFocused, async () => {
   }
 });
 
-async function onLoad(index: number, done: () => void) {
+function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
-    canLoadMore.value = await loadPostData(true);
+    canLoadMore.value = loadMore();
   }
   done();
 }
 
 async function pullDownTriggered(done: () => void) {
   setTimeout(async () => {
-    await loadPostData(false);
+    await loadPostData();
     canLoadMore.value = true;
     done();
   }, 500);
@@ -165,7 +163,7 @@ async function openPost(postSlugId: string) {
 async function refreshPage(done: () => void) {
   windowY.value = 0;
 
-  canLoadMore.value = await loadPostData(false);
+  canLoadMore.value = await loadPostData();
 
   setTimeout(() => {
     done();

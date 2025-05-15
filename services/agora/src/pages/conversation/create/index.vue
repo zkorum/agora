@@ -252,7 +252,7 @@ import {
   MAX_LENGTH_BODY,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import { usePostStore } from "src/stores/post";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
@@ -296,7 +296,7 @@ const {
 } = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
 
 const { createNewPost } = useBackendPostApi();
-const { loadPostData } = usePostStore();
+const { loadPostData } = useHomeFeedStore();
 const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
 
@@ -308,7 +308,7 @@ const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
 clearNewConversationIntention();
 
-onMounted(() => {
+onMounted(async () => {
   lockRoute();
 });
 
@@ -400,24 +400,31 @@ async function onSubmit() {
 
     isSubmitButtonLoading.value = true;
 
-    const response = await createNewPost(
-      postDraft.value.postTitle,
-      postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
-      postDraft.value.enablePolling
+    const response = await createNewPost({
+      postTitle: postDraft.value.postTitle,
+      postBody:
+        postDraft.value.postBody == "" ? undefined : postDraft.value.postBody,
+      pollingOptionList: postDraft.value.enablePolling
         ? postDraft.value.pollingOptionList
         : undefined,
-      postAsOrganization.value ? selectedOrganization.value : "",
-      autoConvertDate.value ? targetConvertDate.value.toISOString() : undefined,
-      !isPrivatePost.value,
-      !isPrivatePost.value ? false : isLoginRequiredToParticipate.value
-    );
+      postAsOrganizationName: postAsOrganization.value
+        ? selectedOrganization.value
+        : "",
+      targetIsoConvertDateString: autoConvertDate.value
+        ? targetConvertDate.value.toISOString()
+        : undefined,
+      isIndexed: !isPrivatePost.value,
+      isLoginRequired: !isPrivatePost.value
+        ? false
+        : isLoginRequiredToParticipate.value,
+    });
 
     isSubmitButtonLoading.value = false;
 
     if (response.status == "success") {
       postDraft.value = getEmptyConversationDraft();
 
-      await loadPostData(false);
+      await loadPostData();
 
       await router.replace({
         name: "/conversation/[postSlugId]",

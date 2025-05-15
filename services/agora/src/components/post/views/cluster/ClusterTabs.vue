@@ -1,45 +1,50 @@
 <template>
-  <div>
-    <div v-if="clusterMetadataList.length > 1" class="container">
-      <ZKTab
-        text="All"
-        :is-highlighted="model === 'all'"
-        @click="clickedTab('all')"
-      />
-
-      <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
-        <ZKTab
-          :text="
-            formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
-          "
-          :is-highlighted="model === clusterItem.key"
-          @click="clickedTab(clusterItem.key)"
-        />
-      </div>
+  <div class="tabStyle" :class="{ highlightTab: isHighlighted }">
+    <!--  TODO: proper icon color -->
+    <!-- :color="isHighlighted ? 'primary' : '#7D7A85'" -->
+    <ZKIcon
+      v-if="iconCode !== undefined"
+      :color="isHighlighted ? '#6b4eff' : '#7D7A85'"
+      :name="iconCode"
+      size="1rem"
+    />
+    <div v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
+      {{ text }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import ZKTab from "src/components/ui-library/ZKTab.vue";
-import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
-import { formatClusterLabel } from "src/utils/component/opinion";
-
-const model = defineModel({ required: true, type: String });
-
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 defineProps<{
-  clusterMetadataList: ClusterMetadata[];
+  text?: string;
+  iconCode?: string;
+  isHighlighted: boolean;
 }>();
-
-function clickedTab(tabKey: PolisKey | "all") {
-  model.value = tabKey;
-}
 </script>
 
 <style lang="scss" scoped>
-.container {
+.tabStyle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.3rem;
+  font-weight: 500;
+  color: #7d7a85;
+  user-select: none;
+}
+
+.highlightTab {
+  border-bottom: 3px solid;
+  border-color: $primary;
+  color: transparent;
+  background-image: $gradient-hero;
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 </style>

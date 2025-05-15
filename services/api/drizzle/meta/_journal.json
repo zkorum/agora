@@ -50,6 +50,13 @@
       "when": 1746636272704,
       "tag": "0006_slim_gressill",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1746723515230,
+      "tag": "0007_sturdy_rhino",
+      "breakpoints": true
     }
   ]
 }

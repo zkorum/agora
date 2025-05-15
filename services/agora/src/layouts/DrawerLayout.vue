@@ -4,6 +4,7 @@
       <q-header
         :reveal="enableHeaderReveal"
         :model-value="props.generalProps.enableHeader"
+        class="headerStyle"
         @reveal="captureHeaderReval"
       >
         <slot name="header"></slot>
@@ -121,5 +122,9 @@ function captureHeaderReval(reveal: boolean) {
 .scrollContainer {
   width: 100%;
   height: 100%;
+}
+
+.headerStyle {
+  background-color: $app-background-color;
 }
 </style>
