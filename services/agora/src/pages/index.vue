@@ -91,22 +91,21 @@ function selectedTab(tab: HomeFeedSortOption) {
 }
 
 .tabCluster {
-  display: grid;
-  grid-template-columns: 50% 50%;
-  grid-template-rows: 1fr;
-  gap: 0px 0px;
-  grid-template-areas: ". .";
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
   font-weight: 600;
   font-size: 1rem;
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem;
 }
 
 .tabItem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 8rem;
   padding-top: 0.3rem;
   padding-bottom: 0.3rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   border-radius: 15px;
 }
 
