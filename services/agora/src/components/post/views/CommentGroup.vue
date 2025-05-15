@@ -15,7 +15,7 @@
       class="commentListFlex"
     >
       <ZKCard
-        v-if="aiSummary !== undefined"
+        v-if="mode === 'analysis' && aiSummary !== undefined"
         padding="1rem"
         class="commentItemBackground"
       >
