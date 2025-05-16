@@ -25,6 +25,7 @@
       </template>
 
       <template #body>
+        <!--
         <div class="headerContainer">
           <q-icon name="mdi-translate" size="2rem" />
           What languages do you speak?
@@ -50,31 +51,41 @@
           </div>
           <q-btn round outline no-caps color="secondary" icon="mdi-plus" />
         </div>
+        -->
 
         <div class="headerContainer">
           <q-icon name="mdi-pound" size="2rem" />
-          Select topics to get started
+          <span class="title"> Select topics to get started </span>
         </div>
 
         <div class="tagContainer">
-          <q-btn
-            v-for="topic in topicList"
-            :key="topic"
-            outline
-            no-caps
-            :label="topic"
-            class="tagStyle"
+          <Button
+            v-for="topic in fullTopicList"
+            :key="topic.code"
+            :label="topic.name"
             rounded
-            size="small"
-            text-color="primary"
+            :pt="
+              toggle
+                ? {
+                    root: {
+                      class: 'followingButtonStyle generalStyle',
+                    },
+                  }
+                : {
+                    root: {
+                      class: 'followButtonStyle generalStyle',
+                    },
+                  }
+            "
+            @click="toggle = !toggle"
           />
         </div>
 
         <ZKButton
           button-type="largeButton"
-          label="Save and Close"
+          label="Save & Close"
           color="primary"
-          @click="goToHome"
+          @click="clickedSaveAndClose()"
         />
       </template>
     </StepperLayout>
@@ -85,16 +96,26 @@
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useRouter } from "vue-router";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { storeToRefs } from "pinia";
+import { useTopicStore } from "src/stores/topic";
+import { onMounted, ref } from "vue";
+import Button from "primevue/button";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 
-const router = useRouter();
+const { loadTopicList } = useTopicStore();
+const { fullTopicList } = storeToRefs(useTopicStore());
 
-const languageList = ["English", "Spanish", "French", "Chinese"];
-const topicList = ["Technology", "Environment", "Politics"];
+const toggle = ref(false);
 
-async function goToHome() {
-  await router.push({ name: "/" });
+const { routeUserAfterLogin } = useLoginIntentionStore();
+
+onMounted(async () => {
+  await loadTopicList();
+});
+
+async function clickedSaveAndClose() {
+  await routeUserAfterLogin();
 }
 </script>
 
@@ -112,10 +133,6 @@ async function goToHome() {
   align-items: center;
 }
 
-.tagStyle:hover {
-  cursor: pointer;
-}
-
 .tagWrapper {
   position: relative;
 }
@@ -124,5 +141,33 @@ async function goToHome() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.generalStyle {
+  font-weight: 400;
+  font-size: 1rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 15px;
+}
+
+.followButtonStyle {
+  background-color: transparent;
+  border-color: #e9e9f2;
+  color: black;
+}
+
+.followingButtonStyle {
+  background-color: $primary;
+  border-color: transparent;
+  color: white;
+}
+
+.title {
+  font-size: 1.1rem;
 }
 </style>

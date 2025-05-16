@@ -27,6 +27,7 @@ defineProps<{
 <style scoped lang="scss">
 .flexLayout {
   display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
