@@ -64,9 +64,11 @@
             :key="topic.code"
             :label="topic.name"
             rounded
-            :icon="toggle ? 'pi pi-check' : ''"
+            :icon="
+              followedTopicCodeList.includes(topic.code) ? 'pi pi-check' : ''
+            "
             :pt="
-              toggle
+              followedTopicCodeList.includes(topic.code)
                 ? {
                     root: {
                       class: 'followingButtonStyle generalStyle',
@@ -78,7 +80,6 @@
                     },
                   }
             "
-            @click="toggle = !toggle"
           />
         </div>
 
@@ -100,19 +101,17 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { storeToRefs } from "pinia";
 import { useTopicStore } from "src/stores/topic";
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import Button from "primevue/button";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 
-const { loadTopicList } = useTopicStore();
-const { fullTopicList } = storeToRefs(useTopicStore());
-
-const toggle = ref(false);
+const { loadTopicsData } = useTopicStore();
+const { fullTopicList, followedTopicCodeList } = storeToRefs(useTopicStore());
 
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
 onMounted(async () => {
-  await loadTopicList();
+  await loadTopicsData();
 });
 
 async function clickedSaveAndClose() {

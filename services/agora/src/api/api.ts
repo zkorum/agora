@@ -2149,6 +2149,19 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
 /**
  * 
  * @export
+ * @interface ApiV1TopicGetFollowedPost200Response
+ */
+export interface ApiV1TopicGetFollowedPost200Response {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1TopicGetFollowedPost200Response
+     */
+    'followedTopicCodeList': Array<string>;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1UserConversationFetchPostRequest
  */
 export interface ApiV1UserConversationFetchPostRequest {
@@ -3924,6 +3937,39 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1TopicGetFollowedPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/topic/get-followed`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4687,6 +4733,17 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1TopicGetFollowedPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1TopicGetFollowedPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1TopicGetFollowedPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1TopicGetFollowedPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5130,6 +5187,14 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1TopicGetAllTopicsPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1TopicGetAllTopicsPost200Response> {
             return localVarFp.apiV1TopicGetAllTopicsPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1TopicGetFollowedPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1TopicGetFollowedPost200Response> {
+            return localVarFp.apiV1TopicGetFollowedPost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -5629,6 +5694,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1TopicGetAllTopicsPost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1TopicGetAllTopicsPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1TopicGetFollowedPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1TopicGetFollowedPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
