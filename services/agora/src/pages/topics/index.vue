@@ -16,25 +16,23 @@
         :has-menu-button="true"
         :fixed-height="true"
       >
-        <template #middle> Topics </template>
+        <template #middle> Explore Topics </template>
       </DefaultMenuBar>
     </template>
 
-    <div class="container">
+    <div>
       <div class="topicContainer">
         <div v-for="topic in fullTopicList" :key="topic.code">
-          <RouterLink
-            :to="{
-              name: '/topic/[topicCode]',
-              params: { topicCode: topic.code },
+          <Chip
+            :label="topic.name"
+            variant="outlined"
+            rounded
+            :pt="{
+              root: {
+                class: 'buttonStyle',
+              },
             }"
-          >
-            <ZKButton
-              :button-type="'standardButton'"
-              :label="topic.name"
-              color="primary"
-            />
-          </RouterLink>
+          />
         </div>
       </div>
     </div>
@@ -43,8 +41,8 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Chip from "primevue/chip";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted } from "vue";
@@ -60,6 +58,21 @@ onMounted(async () => {
 <style scoped lang="scss">
 .topicContainer {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
+}
+
+.buttonStyle {
+  background-color: white;
+  border-color: #e2e1e7;
+  border-width: 2px;
+  border-style: solid;
+  color: black;
+  font-weight: 400;
+  font-size: 0.9rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 </style>
