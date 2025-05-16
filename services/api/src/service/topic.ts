@@ -1,5 +1,8 @@
-import { topicTable } from "@/schema.js";
-import type { GetAllTopicsResponse } from "@/shared/types/dto.js";
+import { followedTopicTable, topicTable } from "@/schema.js";
+import type {
+    GetAllTopicsResponse,
+    GetUserFollowedTopicCodesResponse,
+} from "@/shared/types/dto.js";
 import { httpErrors } from "@fastify/sensible";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ZodTopicObject } from "@/shared/types/zod.js";
@@ -51,5 +54,51 @@ export async function getAllTopics({
 
     return {
         topicList: topicList,
+    };
+}
+
+interface UserFollowTopicByCodeProps {
+    db: PostgresJsDatabase;
+    topicCode: string;
+}
+
+export function userFollowTopicByCode({ db }: UserFollowTopicByCodeProps) {
+    console.log(db);
+}
+
+interface UserUnfollowTopicByCodeProps {
+    db: PostgresJsDatabase;
+    topicCode: string;
+}
+
+export function userUnfollowTopicByCode({ db }: UserUnfollowTopicByCodeProps) {
+    console.log(db);
+}
+
+interface GetUserFollowedTopicsProps {
+    db: PostgresJsDatabase;
+    userId: string;
+}
+
+export async function getUserFollowedTopics({
+    db,
+    userId,
+}: GetUserFollowedTopicsProps): Promise<GetUserFollowedTopicCodesResponse> {
+    const followedTopicTableResponse = await db
+        .select({
+            code: topicTable.code,
+        })
+        .from(followedTopicTable)
+        .innerJoin(topicTable, eq(topicTable.id, followedTopicTable.topicId))
+        .where(eq(followedTopicTable.userId, userId));
+
+    const topicCodeList: string[] = [];
+
+    followedTopicTableResponse.forEach((followedTopic) => {
+        topicCodeList.push(followedTopic.code);
+    });
+
+    return {
+        followedTopicCodeList: topicCodeList,
     };
 }

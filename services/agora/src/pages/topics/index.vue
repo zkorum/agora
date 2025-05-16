@@ -32,11 +32,15 @@
         />
 
         <Button
-          :label="isFollowing ? 'Following' : 'Follow'"
-          :variant="isFollowing ? '' : 'outlined'"
+          :label="
+            followedTopicCodeList.includes(topic.code) ? 'Following' : 'Follow'
+          "
+          :variant="
+            followedTopicCodeList.includes(topic.code) ? '' : 'outlined'
+          "
           rounded
           :pt="
-            isFollowing
+            followedTopicCodeList.includes(topic.code)
               ? {
                   root: {
                     class: 'followingButtonStyle generalStyle',
@@ -72,24 +76,22 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, ref } from "vue";
 
-const { loadTopicList } = useTopicStore();
-const { fullTopicList } = storeToRefs(useTopicStore());
+const { loadTopicsData } = useTopicStore();
+const { fullTopicList, followedTopicCodeList } = storeToRefs(useTopicStore());
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const showLoginDialog = ref(false);
 
-const isFollowing = ref(false);
-
 onMounted(async () => {
-  await loadTopicList();
+  await loadTopicsData();
 });
 
 function clickedFollowButton() {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
-    isFollowing.value = !isFollowing.value;
+    // TODO ADD
   }
 }
 </script>
