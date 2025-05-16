@@ -64,6 +64,7 @@
             :key="topic.code"
             :label="topic.name"
             rounded
+            :icon="toggle ? 'pi pi-check' : ''"
             :pt="
               toggle
                 ? {
