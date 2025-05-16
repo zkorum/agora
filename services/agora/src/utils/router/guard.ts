@@ -25,6 +25,8 @@ export function useRouterGuard() {
       "/legal/privacy/",
       "/legal/terms/",
       "/settings/",
+      "/topic/[topicCode]",
+      "/topics/",
     ];
 
     if (!unauthenticatedRoutes.includes(toName)) {
