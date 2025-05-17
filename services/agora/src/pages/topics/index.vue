@@ -32,15 +32,11 @@
         />
 
         <Button
-          :label="
-            followedTopicCodeList.includes(topic.code) ? 'Following' : 'Follow'
-          "
-          :variant="
-            followedTopicCodeList.includes(topic.code) ? '' : 'outlined'
-          "
+          :label="followedTopicCodeSet.has(topic.code) ? 'Following' : 'Follow'"
+          :variant="followedTopicCodeSet.has(topic.code) ? '' : 'outlined'"
           rounded
           :pt="
-            followedTopicCodeList.includes(topic.code)
+            followedTopicCodeSet.has(topic.code)
               ? {
                   root: {
                     class: 'followingButtonStyle generalStyle',
@@ -52,7 +48,12 @@
                   },
                 }
           "
-          @click="clickedFollowButton()"
+          @click="
+            clickedFollowButton(
+              topic.code,
+              followedTopicCodeSet.has(topic.code) ? 'unfollow' : 'follow'
+            )
+          "
         />
       </div>
     </div>
@@ -76,8 +77,8 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, ref } from "vue";
 
-const { loadTopicsData } = useTopicStore();
-const { fullTopicList, followedTopicCodeList } = storeToRefs(useTopicStore());
+const { loadTopicsData, followTopic, unfollowTopic } = useTopicStore();
+const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -87,11 +88,20 @@ onMounted(async () => {
   await loadTopicsData();
 });
 
-function clickedFollowButton() {
+async function clickedFollowButton(
+  topicCode: string,
+  action: "follow" | "unfollow"
+) {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
   } else {
-    // TODO ADD
+    if (action == "follow") {
+      await followTopic({ topicCode: topicCode });
+      followedTopicCodeSet.value.add(topicCode);
+    } else {
+      await unfollowTopic({ topicCode: topicCode });
+      followedTopicCodeSet.value.delete(topicCode);
+    }
   }
 }
 </script>

@@ -411,6 +411,16 @@ export class Dto {
             followedTopicCodeList: z.array(z.string()),
         })
         .strict();
+    static userFollowTopicCodeRequest = z
+        .object({
+            topicCode: z.string(),
+        })
+        .strict();
+    static userUnfollowTopicCodeRequest = z
+        .object({
+            topicCode: z.string(),
+        })
+        .strict();
 
     // this generates enum with openapigenerator without the verified state...
     // static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
@@ -514,4 +524,10 @@ export type GetAllOrganizationsResponse = z.infer<
 export type GetAllTopicsResponse = z.infer<typeof Dto.getAllTopicsResponse>;
 export type GetUserFollowedTopicCodesResponse = z.infer<
     typeof Dto.getUserFollowedTopicCodesResponse
+>;
+export type UserFollowTopicCodeRequest = z.infer<
+    typeof Dto.userFollowTopicCodeRequest
+>;
+export type UserUnfollowTopicCodeRequest = z.infer<
+    typeof Dto.userUnfollowTopicCodeRequest
 >;
