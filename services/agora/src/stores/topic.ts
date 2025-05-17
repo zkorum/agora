@@ -18,6 +18,11 @@ export const useTopicStore = defineStore("topic", () => {
   const fullTopicList = ref<ZodTopicObject[]>([]);
   const followedTopicCodeSet = ref(new Set<string>());
 
+  function clearTopicsData() {
+    fullTopicList.value = [];
+    followedTopicCodeSet.value.clear;
+  }
+
   interface FollowTopicProps {
     topicCode: string;
   }
@@ -77,5 +82,6 @@ export const useTopicStore = defineStore("topic", () => {
     loadTopicsData,
     followTopic,
     unfollowTopic,
+    clearTopicsData,
   };
 });

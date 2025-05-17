@@ -54,7 +54,7 @@ export function useBackendAuthApi() {
   const { isAuthInitialized } = storeToRefs(authStore);
   const { loadPostData } = useHomeFeedStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
-  const { loadTopicsData } = useTopicStore();
+  const { loadTopicsData, clearTopicsData } = useTopicStore();
   const { loadNotificationData } = useNotificationStore();
   const { clearConversationDrafts } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
@@ -252,6 +252,8 @@ export function useBackendAuthApi() {
     clearProfileData();
 
     clearNotificationData();
+
+    clearTopicsData();
   }
 
   return {
