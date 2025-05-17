@@ -123,7 +123,7 @@ export async function userUnfollowTopicByCode({
         .delete(followedTopicTable)
         .where(
             and(
-                eq(followedTopicTable.id, topicId),
+                eq(followedTopicTable.topicId, topicId),
                 eq(followedTopicTable.userId, userId),
             ),
         )
