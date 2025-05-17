@@ -119,14 +119,21 @@ export async function userUnfollowTopicByCode({
         topicCode: topicCode,
     });
 
-    await db
+    const deletedTopicFollow = await db
         .delete(followedTopicTable)
         .where(
             and(
                 eq(followedTopicTable.id, topicId),
                 eq(followedTopicTable.userId, userId),
             ),
+        )
+        .returning();
+
+    if (deletedTopicFollow.length != 1) {
+        throw httpErrors.internalServerError(
+            "Failed to unfollow topic: " + topicCode,
         );
+    }
 }
 
 interface GetUserFollowedTopicsProps {
