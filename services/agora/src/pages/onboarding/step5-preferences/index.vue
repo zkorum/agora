@@ -40,6 +40,12 @@
                       },
                     }
               "
+              @click="
+                topicButtonClicked(
+                  topic.code,
+                  followedTopicCodeSet.has(topic.code) ? 'unfollow' : 'follow'
+                )
+              "
             />
           </div>
 
@@ -66,7 +72,7 @@ import Button from "primevue/button";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 
-const { loadTopicsData } = useTopicStore();
+const { loadTopicsData, followTopic, unfollowTopic } = useTopicStore();
 const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());
 
 const { routeUserAfterLogin } = useLoginIntentionStore();
@@ -77,6 +83,17 @@ onMounted(async () => {
 
 async function clickedSaveAndClose() {
   await routeUserAfterLogin();
+}
+
+async function topicButtonClicked(
+  topicCode: string,
+  action: "follow" | "unfollow"
+) {
+  if (action == "follow") {
+    await followTopic({ topicCode: topicCode });
+  } else {
+    await unfollowTopic({ topicCode: topicCode });
+  }
 }
 </script>
 

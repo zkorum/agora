@@ -97,10 +97,8 @@ async function clickedFollowButton(
   } else {
     if (action == "follow") {
       await followTopic({ topicCode: topicCode });
-      followedTopicCodeSet.value.add(topicCode);
     } else {
       await unfollowTopic({ topicCode: topicCode });
-      followedTopicCodeSet.value.delete(topicCode);
     }
   }
 }

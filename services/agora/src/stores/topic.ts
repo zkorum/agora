@@ -4,6 +4,7 @@ import { useCommonApi } from "src/utils/api/common";
 import { useBackendTopicApi } from "src/utils/api/topic";
 import { ref } from "vue";
 import { useAuthenticationStore } from "./authentication";
+import { useNotify } from "src/utils/ui/notify";
 
 export const useTopicStore = defineStore("topic", () => {
   const {
@@ -14,6 +15,8 @@ export const useTopicStore = defineStore("topic", () => {
   } = useBackendTopicApi();
   const { handleAxiosErrorStatusCodes } = useCommonApi();
   const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+  const { showNotifyMessage } = useNotify();
 
   const fullTopicList = ref<ZodTopicObject[]>([]);
   const followedTopicCodeSet = ref(new Set<string>());
@@ -28,9 +31,14 @@ export const useTopicStore = defineStore("topic", () => {
   }
 
   async function followTopic({ topicCode }: FollowTopicProps) {
-    await userFollowTopicCode({
+    const response = await userFollowTopicCode({
       topicCode: topicCode,
     });
+    if (response.status == "success") {
+      followedTopicCodeSet.value.add(topicCode);
+    } else {
+      showNotifyMessage("Failed to follow topic");
+    }
   }
 
   interface UnfollowTopicProps {
@@ -38,9 +46,14 @@ export const useTopicStore = defineStore("topic", () => {
   }
 
   async function unfollowTopic({ topicCode }: UnfollowTopicProps) {
-    await userUnfollowTopicCode({
+    const response = await userUnfollowTopicCode({
       topicCode: topicCode,
     });
+    if (response.status == "success") {
+      followedTopicCodeSet.value.delete(topicCode);
+    } else {
+      showNotifyMessage("Failed to unfollow topic");
+    }
   }
 
   async function loadTopicsData() {
