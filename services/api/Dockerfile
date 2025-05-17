@@ -1,4 +1,4 @@
-FROM node:20.10.0-alpine
+FROM node:22.14.0-alpine
 WORKDIR /app
 RUN npm install -g pnpm
 ENV PATH=/app/node_modules/.bin:$PATH
