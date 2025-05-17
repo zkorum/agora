@@ -150,7 +150,7 @@ interface AuthenticateAttemptProps {
     minutesBeforeSmsCodeExpiry: number;
     didWrite: string;
     userAgent: string;
-    throttleSmsMinutesInterval: number;
+    throttleSmsSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
     peppers: string[];
@@ -166,7 +166,7 @@ interface UpdateAuthAttemptCodeProps {
     didWrite: string;
     now: Date;
     authenticateRequestBody: AuthenticateRequestBody;
-    throttleSmsMinutesInterval: number;
+    throttleSmsSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
     peppers: string[];
@@ -183,7 +183,7 @@ interface InsertAuthAttemptCodeProps {
     now: Date;
     userAgent: string;
     authenticateRequestBody: AuthenticateRequestBody;
-    throttleSmsMinutesInterval: number;
+    throttleSmsSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
     peppers: string[];
@@ -1010,7 +1010,7 @@ export async function authenticateAttempt({
     minutesBeforeSmsCodeExpiry,
     didWrite,
     userAgent,
-    throttleSmsMinutesInterval,
+    throttleSmsSecondsInterval,
     testCode,
     doUseTestCode,
     peppers,
@@ -1048,7 +1048,7 @@ export async function authenticateAttempt({
             now,
             userAgent,
             authenticateRequestBody,
-            throttleSmsMinutesInterval,
+            throttleSmsSecondsInterval,
             doUseTestCode,
             testCode,
             peppers,
@@ -1065,7 +1065,7 @@ export async function authenticateAttempt({
             didWrite,
             now,
             authenticateRequestBody,
-            throttleSmsMinutesInterval,
+            throttleSmsSecondsInterval,
             // awsMailConf,
             doUseTestCode,
             testCode,
@@ -1076,8 +1076,8 @@ export async function authenticateAttempt({
     } else if (resultHasAttempted[0].codeExpiry > now) {
         // code hasn't expired
         const nextCodeSoonestTime = resultHasAttempted[0].lastOtpSentAt;
-        nextCodeSoonestTime.setMinutes(
-            nextCodeSoonestTime.getMinutes() + throttleSmsMinutesInterval,
+        nextCodeSoonestTime.setSeconds(
+            nextCodeSoonestTime.getSeconds() + throttleSmsSecondsInterval,
         );
         return {
             success: true,
@@ -1094,7 +1094,7 @@ export async function authenticateAttempt({
             didWrite,
             now,
             authenticateRequestBody,
-            throttleSmsMinutesInterval,
+            throttleSmsSecondsInterval: throttleSmsSecondsInterval,
             // awsMailConf,
             doUseTestCode,
             testCode,
@@ -1156,7 +1156,7 @@ export async function insertAuthAttemptCode({
     now,
     userAgent,
     authenticateRequestBody,
-    throttleSmsMinutesInterval,
+    throttleSmsSecondsInterval,
     testCode,
     doUseTestCode,
     peppers,
@@ -1176,7 +1176,7 @@ export async function insertAuthAttemptCode({
     const isThrottled = await isThrottledByPhoneHash(
         db,
         phoneHash,
-        throttleSmsMinutesInterval,
+        throttleSmsSecondsInterval,
         minutesBeforeSmsCodeExpiry,
     );
     if (isThrottled) {
@@ -1187,7 +1187,7 @@ export async function insertAuthAttemptCode({
     }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
-    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
+    codeExpiry.setSeconds(codeExpiry.getSeconds() + minutesBeforeSmsCodeExpiry);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
@@ -1257,8 +1257,8 @@ export async function insertAuthAttemptCode({
         lastOtpSentAt: now,
     });
     const nextCodeSoonestTime = new Date(now);
-    nextCodeSoonestTime.setMinutes(
-        nextCodeSoonestTime.getMinutes() + throttleSmsMinutesInterval,
+    nextCodeSoonestTime.setSeconds(
+        nextCodeSoonestTime.getSeconds() + throttleSmsSecondsInterval,
     );
     return {
         success: true,
@@ -1275,7 +1275,7 @@ export async function updateAuthAttemptCode({
     didWrite,
     now,
     authenticateRequestBody,
-    throttleSmsMinutesInterval,
+    throttleSmsSecondsInterval,
     doUseTestCode,
     testCode,
     peppers,
@@ -1297,7 +1297,7 @@ export async function updateAuthAttemptCode({
     const isThrottled = await isThrottledByPhoneHash(
         db,
         phoneHash,
-        throttleSmsMinutesInterval,
+        throttleSmsSecondsInterval,
         minutesBeforeSmsCodeExpiry,
     );
     if (isThrottled) {
@@ -1308,7 +1308,7 @@ export async function updateAuthAttemptCode({
     }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
-    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
+    codeExpiry.setSeconds(codeExpiry.getSeconds() + minutesBeforeSmsCodeExpiry);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
@@ -1357,8 +1357,8 @@ export async function updateAuthAttemptCode({
         })
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
     const nextCodeSoonestTime = new Date(now);
-    nextCodeSoonestTime.setMinutes(
-        nextCodeSoonestTime.getMinutes() + throttleSmsMinutesInterval,
+    nextCodeSoonestTime.setSeconds(
+        nextCodeSoonestTime.getSeconds() + throttleSmsSecondsInterval,
     );
     return {
         success: true,
@@ -1377,8 +1377,8 @@ export async function isThrottledByPhoneHash(
     const now = nowZeroMs();
     // now - 3 minutes if minutesInterval == 3
     const minutesIntervalAgo = new Date(now);
-    minutesIntervalAgo.setMinutes(
-        minutesIntervalAgo.getMinutes() - minutesInterval,
+    minutesIntervalAgo.setSeconds(
+        minutesIntervalAgo.getSeconds() - minutesInterval,
     );
 
     const results = await db
@@ -1390,8 +1390,8 @@ export async function isThrottledByPhoneHash(
         .where(eq(authAttemptPhoneTable.phoneHash, phoneHash));
     for (const result of results) {
         const expectedExpiryTime = new Date(result.lastOtpSentAt);
-        expectedExpiryTime.setMinutes(
-            expectedExpiryTime.getMinutes() + minutesBeforeSmsCodeExpiry,
+        expectedExpiryTime.setSeconds(
+            expectedExpiryTime.getSeconds() + minutesBeforeSmsCodeExpiry,
         );
         if (
             result.lastOtpSentAt.getTime() >= minutesIntervalAgo.getTime() &&
