@@ -7,8 +7,10 @@
         class="iconStyle"
         @click="iconItem.callback"
       >
-        <div :style="{ position: 'relative' }">
-          <NewNotificationIndicator v-if="route.name === iconItem.route" />
+        <div class="iconDiv">
+          <NewNotificationIndicator
+            v-if="iconItem.route === '/notification/'"
+          />
           <ZKStyledIcon
             :svg-string="
               route.name === iconItem.route
@@ -147,5 +149,12 @@ async function accessNotifications() {
 
 .container {
   background-color: white;
+}
+
+.iconDiv {
+  position: relative;
+  width: 2rem;
+  display: flex;
+  justify-content: center;
 }
 </style>
