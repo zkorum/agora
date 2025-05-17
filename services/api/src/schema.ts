@@ -1600,8 +1600,8 @@ export const polisClusterTable = pgTable("polis_cluster", {
     key: polisKeyEnum("key").notNull(), // arbitrary id created by external polis system
     externalId: integer("external_id").notNull(),
     numUsers: integer("num_users").notNull(),
-    aiLabel: varchar("ai_label", { length: 30 }), // TODO: set max-length appropriately
-    aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
+    aiLabel: varchar("ai_label", { length: 100 }), // TODO: set max-length appropriately
+    aiSummary: varchar("ai_summary", { length: 1000 }), // TODO: set max-length appropriately
     mathCenter: real("math_center").array().notNull(), // extracted from external polis system
     createdAt: timestamp("created_at", {
         mode: "date",

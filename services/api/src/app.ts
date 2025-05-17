@@ -3,7 +3,7 @@ import { z } from "zod";
 import Fastify from "fastify";
 import { zodDidWeb } from "./shared/types/zod.js";
 
-export type Environment = "development" | "production" | "staging";
+export type Environment = "development" | "production" | "staging" | "test";
 
 const defaultPort = 8080;
 
@@ -19,9 +19,9 @@ const configSchema = z.object({
     CONNECTION_STRING: z.string().optional(),
     PORT: z.coerce.number().int().nonnegative().default(defaultPort),
     NODE_ENV: z
-        .enum(["development", "staging", "production"])
+        .enum(["development", "staging", "production", "test"])
         .default("development"),
-    MODE: z.enum(["web", "capacitor"]).default("web"),
+    MODE: z.enum(["web", "capacitor", "test"]).default("web"),
     IMAGES_SERVICE_BASE_URL: z
         .string()
         .url()
@@ -103,12 +103,11 @@ const configSchema = z.object({
         .default("mistral.mistral-small-2402-v1:0"),
     AWS_AI_LABEL_SUMMARY_TEMPERATURE: z.string().default("0.4"),
     AWS_AI_LABEL_SUMMARY_TOP_P: z.string().default("0.8"),
-    AWS_AI_LABEL_SUMMARY_TOP_K: z.string().default("70"),
     AWS_AI_LABEL_SUMMARY_MAX_TOKENS: z.string().default("8192"),
     AWS_AI_LABEL_SUMMARY_PROMPT: z.string()
-        .default(`You are an expert analyst summarizing group Polis-like discussion results. Your task is to generate a concise JSON output based on a given JSON input about a group conversation. Adhere strictly to the following rules:
-
-I. Your output must follow this general skeleton format (Highest Priority):
+        .default(`You are a JSON API that acts as an expert analyst of group conversations similar to those conducted using Polis. Your response must contain no explanation, no markdown, and no extra text before or after the JSON output.
+⚠️ STRICT OUTPUT RULES — FOLLOW THESE INSTRUCTIONS EXACTLY:
+I. Your output must only contain one raw JSON object matching the following schema (Highest Priority):
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
@@ -216,17 +215,25 @@ I. Your output must follow this general skeleton format (Highest Priority):
 
 Do not print this skeleton format in your output.
 
-II. Language Detection Rule (High Priority):
-    1. Before generating the output, detect the primary language used in the input conversation. The entire output must be written in this language, including summary, labels, and all text in the JSON. Do not default to English unless the conversation is in English.
-    2 Step-by-Step Language Handling:
-        - Identify the language of the conversation (e.g., French, Spanish, German).
-        - Generate all text in that language.
-        - If multiple languages are present, choose the one most frequently used.
-        - Strictly do not mix languages in the output.
 
-III. Be aware that some users may be using sarcasm or irony. Identify if statements are likely not meant literally.
+II. Strictly adhere to the input data. Do not invent new clusters or information. (High Priority
 
-IV. Cluster Labels Rules
+III. Language Detection Rule
+    1. Detect Primary Language:
+        - Before generating any output, determine the primary language used in the input conversation. The language of this prompt and the JSON structure is English by default, but focus on detecting the language used in the opinions and conversational content.
+        - Do not include the detected language in the output.
+        - All values in the JSON output—such as labels, summaries, and any descriptive text—must be written in the detected language.
+        - The JSON structure (keys, field names, and overall schema) must remain unchanged according to the schema defined in Section I.
+        - Default to English only if the input conversation is predominantly in English.
+
+    2. Step-by-Step Language Handling:
+        - Identify the primary language used in the conversation (e.g., French, Spanish, German).
+        - If multiple languages are present, select the one that is most frequently used.
+        - Remember this language and apply it consistently in all subsequent steps (Sections III, IV, etc.).
+
+IV. Be aware that some users may be using sarcasm or irony. Identify if statements are likely not meant literally.
+
+V. Cluster Labels Rules
     1. Length and Format:
         - Must be exactly 1 or 2 words.
         - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
@@ -252,14 +259,12 @@ IV. Cluster Labels Rules
        e) Validate that the label is either 1 or 2 words.
        f) Validate that the label is written in the conversation's predominantly used language (e.g., English, French, etc.).
 
-V. Summaries:
+VI. Summaries:
    - Maximum 300 characters
    - Capture key insights objectively
    - Focus on group perspectives and disagreements
    - Maintain a neutral tone
    - Write in the language predominantly used in the conversation (e.g., English, French, etc.)
-
-VI. Strictly adhere to the input data. Do not invent new clusters or information.
 
 VII. Ensure that your output maintains consistency with the predefined cluster labels "0", "1", ..., "5". Associate each cluster with an accurate and relevant label and summary.
 
@@ -350,6 +355,7 @@ export const config = configSchema.parse(process.env);
 function envToLogger(env: Environment) {
     switch (env) {
         case "development":
+        case "test":
             return {
                 transport: {
                     target: "pino-pretty",

@@ -1030,7 +1030,6 @@ interface PostNewOpinionProps {
     awsAiLabelSummaryModelId: string;
     awsAiLabelSummaryTemperature: string;
     awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryTopK: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
     now: Date;
@@ -1140,7 +1139,6 @@ export async function postNewOpinion({
     awsAiLabelSummaryModelId,
     awsAiLabelSummaryTemperature,
     awsAiLabelSummaryTopP,
-    awsAiLabelSummaryTopK,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
@@ -1317,7 +1315,6 @@ export async function postNewOpinion({
             awsAiLabelSummaryModelId,
             awsAiLabelSummaryTemperature,
             awsAiLabelSummaryTopP,
-            awsAiLabelSummaryTopK,
             awsAiLabelSummaryMaxTokens,
             awsAiLabelSummaryPrompt,
             now: now,
@@ -1345,64 +1342,58 @@ export async function deleteOpinionBySlugId({
     proof,
     didWrite,
 }: DeleteCommentBySlugIdProps): Promise<void> {
-    try {
-        await db.transaction(async (tx) => {
-            const { isOpinionDeleted } =
-                await useCommonComment().getOpinionMetadataFromOpinionSlugId({
-                    db: tx,
-                    opinionSlugId,
-                });
-            if (isOpinionDeleted) {
-                throw httpErrors.conflict("Opinion had already been deleted");
-            }
-            const updatedCommentIdResponse = await tx
-                .update(opinionTable)
-                .set({
-                    currentContentId: null,
-                })
-                .where(
-                    and(
-                        eq(opinionTable.authorId, userId),
-                        eq(opinionTable.slugId, opinionSlugId),
-                    ),
-                )
-                .returning({
-                    updateCommentId: opinionTable.id,
-                    postId: opinionTable.conversationId,
-                });
-
-            if (updatedCommentIdResponse.length != 1) {
-                log.error(
-                    "Invalid comment table update response length: " +
-                        updatedCommentIdResponse.length.toString(),
-                );
-                tx.rollback();
-            }
-
-            const commentId = updatedCommentIdResponse[0].updateCommentId;
-
-            await tx.insert(opinionProofTable).values({
-                type: "deletion",
-                opinionId: commentId,
-                authorDid: didWrite,
-                proof: proof,
-                proofVersion: 1,
+    const { isOpinionDeleted } =
+        await useCommonComment().getOpinionMetadataFromOpinionSlugId({
+            db: db,
+            opinionSlugId,
+        });
+    if (isOpinionDeleted) {
+        throw httpErrors.conflict("Opinion had already been deleted");
+    }
+    await db.transaction(async (tx) => {
+        const updatedCommentIdResponse = await tx
+            .update(opinionTable)
+            .set({
+                currentContentId: null,
+            })
+            .where(
+                and(
+                    eq(opinionTable.authorId, userId),
+                    eq(opinionTable.slugId, opinionSlugId),
+                ),
+            )
+            .returning({
+                updateCommentId: opinionTable.id,
+                postId: opinionTable.conversationId,
             });
 
-            const postId = updatedCommentIdResponse[0].postId;
+        if (updatedCommentIdResponse.length != 1) {
+            log.error(
+                "Invalid comment table update response length: " +
+                    updatedCommentIdResponse.length.toString(),
+            );
+            tx.rollback();
+        }
 
-            await tx
-                .update(conversationTable)
-                .set({
-                    opinionCount: sql`${conversationTable.opinionCount} - 1`,
-                })
-                .where(eq(conversationTable.id, postId));
-            // TODO: delete from Polis as well!
+        const commentId = updatedCommentIdResponse[0].updateCommentId;
+
+        await tx.insert(opinionProofTable).values({
+            type: "deletion",
+            opinionId: commentId,
+            authorDid: didWrite,
+            proof: proof,
+            proofVersion: 1,
         });
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Failed to delete comment by comment ID: " + opinionSlugId,
-        );
-    }
+
+        const postId = updatedCommentIdResponse[0].postId;
+
+        await tx
+            .update(conversationTable)
+            .set({
+                opinionCount: sql`${conversationTable.opinionCount} - 1`,
+            })
+            .where(eq(conversationTable.id, postId));
+        // TODO: delete from Polis as well!
+        // don't count votes on deleted opinions => recalculate polis clusters
+    });
 }

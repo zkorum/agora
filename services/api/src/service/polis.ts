@@ -192,7 +192,6 @@ interface DelayedPolisGetAndUpdateMathProps {
     awsAiLabelSummaryModelId: string;
     awsAiLabelSummaryTemperature: string;
     awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryTopK: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
 }
@@ -208,7 +207,6 @@ export async function delayedPolisGetAndUpdateMath({
     awsAiLabelSummaryModelId,
     awsAiLabelSummaryTemperature,
     awsAiLabelSummaryTopP,
-    awsAiLabelSummaryTopK,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: DelayedPolisGetAndUpdateMathProps) {
@@ -795,7 +793,6 @@ export async function delayedPolisGetAndUpdateMath({
                     awsAiLabelSummaryModelId,
                     awsAiLabelSummaryTemperature,
                     awsAiLabelSummaryTopP,
-                    awsAiLabelSummaryTopK,
                     awsAiLabelSummaryMaxTokens,
                     awsAiLabelSummaryPrompt,
                 });

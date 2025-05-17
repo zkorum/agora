@@ -1,0 +1,12 @@
+import { expect, test } from "vitest";
+import { parseLlmOutputJson } from "../src/utils/llmParse.js";
+import { parseJSONObject } from "parse-json-object";
+
+test("extract JSON within prompt", () => {
+    const testPromptReturnedStr =
+        'Based on the provided JSON input, here\'s the concise JSON output:\n\n```json\n{\n  "summary": "Discussion revolves around the use of technology to ensure universal legal identity for refugees, with concerns raised about privacy and human rights. Participants debate the risks of biometric data collection and the role of Western countries in promoting tech IDs.",\n  "clusters": {\n    "0": {\n      "label": "Privacy Advocates",\n      "summary": "Express concern about the potential dangers of biometric data collection, especially in unstable host countries, and argue against making digital ID a condition for receiving aid."\n    },\n    "1": {\n      "label": "Critics of Western Policy",\n      "summary": "Criticize Western countries for promoting tech IDs for refugees without sharing responsibility for hosting them and argue that IDs alone won\'t prevent states from deporting or detaining refugees."\n    }\n  }\n}\n```\n\nThis output follows the provided rules, including using neutral agentive nouns for labels, maintaining a professional tone, and capturing key insights objectively. It also takes into account the potential use of sarcasm or irony in the input.';
+    const expectedValueStr =
+        '{\n  "summary": "Discussion revolves around the use of technology to ensure universal legal identity for refugees, with concerns raised about privacy and human rights. Participants debate the risks of biometric data collection and the role of Western countries in promoting tech IDs.",\n  "clusters": {\n    "0": {\n      "label": "Privacy Advocates",\n      "summary": "Express concern about the potential dangers of biometric data collection, especially in unstable host countries, and argue against making digital ID a condition for receiving aid."\n    },\n    "1": {\n      "label": "Critics of Western Policy",\n      "summary": "Criticize Western countries for promoting tech IDs for refugees without sharing responsibility for hosting them and argue that IDs alone won\'t prevent states from deporting or detaining refugees."\n    }\n  }\n}';
+    const returnedValue = parseLlmOutputJson(testPromptReturnedStr);
+    expect(returnedValue).toStrictEqual(parseJSONObject(expectedValueStr));
+});

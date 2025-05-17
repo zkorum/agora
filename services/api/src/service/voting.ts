@@ -307,7 +307,6 @@ interface CastVoteForOpinionSlugIdProps {
     awsAiLabelSummaryModelId: string;
     awsAiLabelSummaryTemperature: string;
     awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryTopK: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
     now: Date;
@@ -331,7 +330,6 @@ export async function castVoteForOpinionSlugId({
     awsAiLabelSummaryModelId,
     awsAiLabelSummaryTemperature,
     awsAiLabelSummaryTopP,
-    awsAiLabelSummaryTopK,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
     now,
@@ -713,7 +711,6 @@ export async function castVoteForOpinionSlugId({
                 awsAiLabelSummaryModelId,
                 awsAiLabelSummaryTemperature,
                 awsAiLabelSummaryTopP,
-                awsAiLabelSummaryTopK,
                 awsAiLabelSummaryMaxTokens,
                 awsAiLabelSummaryPrompt,
             })
