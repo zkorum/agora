@@ -5,7 +5,7 @@
     <template #footer>
       <StepperLayout
         :submit-call-back="() => {}"
-        :current-step="4"
+        :current-step="5"
         :total-steps="5"
         :enable-next-button="false"
         :show-next-button="false"
