@@ -22,7 +22,6 @@ export const useTopicStore = defineStore("topic", () => {
   const followedTopicCodeSet = ref(new Set<string>());
 
   function clearTopicsData() {
-    fullTopicList.value = [];
     followedTopicCodeSet.value.clear;
   }
 
@@ -58,7 +57,7 @@ export const useTopicStore = defineStore("topic", () => {
 
   async function loadTopicsData() {
     await loadTopicList();
-    if (isLoggedIn) {
+    if (isLoggedIn.value) {
       await loadUserFollowedTopics();
     }
   }
