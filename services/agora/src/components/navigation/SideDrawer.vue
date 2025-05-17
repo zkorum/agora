@@ -37,6 +37,7 @@
                         : settingItem.svgStringStandard
                     "
                   />
+
                   <NewNotificationIndicator
                     v-if="settingItem.name == 'Dings'"
                   />
@@ -284,7 +285,7 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
 }
 
 .iconItem {
-  position: "relative";
+  position: relative;
   width: 2rem;
   display: flex;
   justify-content: center;
