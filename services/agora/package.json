@@ -51,6 +51,7 @@
     "libphonenumber-js": "^1.12.7",
     "multiformats": "^13.3.0",
     "pinia": "^3.0.2",
+    "primeicons": "^7.0.0",
     "primevue": "^4.3.3",
     "qrcode": "^1",
     "quasar": "^2.18.1",

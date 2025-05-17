@@ -11,8 +11,8 @@ export function useRouterGuard() {
     "/onboarding/step3-phone-1/",
     "/onboarding/step3-phone-2/",
     "/onboarding/step4-username/",
+    "/onboarding/step5-preferences/",
     "/onboarding/step5-experience-deprecated/",
-    "/onboarding/step5-preferences-deprecated/",
   ];
 
   async function firstLoadGuard(toName: keyof RouteMap) {
@@ -25,6 +25,8 @@ export function useRouterGuard() {
       "/legal/privacy/",
       "/legal/terms/",
       "/settings/",
+      "/topic/[topicCode]",
+      "/topics/",
     ];
 
     if (!unauthenticatedRoutes.includes(toName)) {
