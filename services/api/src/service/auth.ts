@@ -1094,7 +1094,7 @@ export async function authenticateAttempt({
             didWrite,
             now,
             authenticateRequestBody,
-            throttleSmsSecondsInterval: throttleSmsSecondsInterval,
+            throttleSmsSecondsInterval,
             // awsMailConf,
             doUseTestCode,
             testCode,
@@ -1187,7 +1187,7 @@ export async function insertAuthAttemptCode({
     }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
-    codeExpiry.setSeconds(codeExpiry.getSeconds() + minutesBeforeSmsCodeExpiry);
+    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
@@ -1308,7 +1308,7 @@ export async function updateAuthAttemptCode({
     }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
-    codeExpiry.setSeconds(codeExpiry.getSeconds() + minutesBeforeSmsCodeExpiry);
+    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
@@ -1367,18 +1367,18 @@ export async function updateAuthAttemptCode({
     };
 }
 
-// minutesInterval: "3" in "we allow one sms every 3 minutes"
+// throttleSmsSecondsInterval: "10" in "we allow one sms every 10 seconds"
 export async function isThrottledByPhoneHash(
     db: PostgresDatabase,
     phoneHash: string,
-    minutesInterval: number,
+    throttleSmsSecondsInterval: number,
     minutesBeforeSmsCodeExpiry: number,
 ): Promise<boolean> {
     const now = nowZeroMs();
-    // now - 3 minutes if minutesInterval == 3
-    const minutesIntervalAgo = new Date(now);
-    minutesIntervalAgo.setSeconds(
-        minutesIntervalAgo.getSeconds() - minutesInterval,
+    // now - 10 seconds if throttleSmsSecondsInterval == 10
+    const secondsIntervalAgo = new Date(now);
+    secondsIntervalAgo.setSeconds(
+        secondsIntervalAgo.getSeconds() - throttleSmsSecondsInterval,
     );
 
     const results = await db
@@ -1390,11 +1390,11 @@ export async function isThrottledByPhoneHash(
         .where(eq(authAttemptPhoneTable.phoneHash, phoneHash));
     for (const result of results) {
         const expectedExpiryTime = new Date(result.lastOtpSentAt);
-        expectedExpiryTime.setSeconds(
-            expectedExpiryTime.getSeconds() + minutesBeforeSmsCodeExpiry,
+        expectedExpiryTime.setMinutes(
+            expectedExpiryTime.getMinutes() + minutesBeforeSmsCodeExpiry,
         );
         if (
-            result.lastOtpSentAt.getTime() >= minutesIntervalAgo.getTime() &&
+            result.lastOtpSentAt.getTime() > secondsIntervalAgo.getTime() &&
             expectedExpiryTime.getTime() === result.codeExpiry.getTime() // code hasn't been guessed, because otherwise it would have been manually expired before the normal expiry time
         ) {
             return true;
