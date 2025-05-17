@@ -6,7 +6,7 @@ import type {
 import { httpErrors } from "@fastify/sensible";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ZodTopicObject } from "@/shared/types/zod.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 interface MapTopicCodeToIdProps {
     db: PostgresJsDatabase;
@@ -57,22 +57,76 @@ export async function getAllTopics({
     };
 }
 
-interface UserFollowTopicByCodeProps {
+interface GetTopicIdFromTopicCodeProps {
     db: PostgresJsDatabase;
     topicCode: string;
 }
 
-export function userFollowTopicByCode({ db }: UserFollowTopicByCodeProps) {
-    console.log(db);
+async function getTopicIdFromTopicCode({
+    db,
+    topicCode,
+}: GetTopicIdFromTopicCodeProps): Promise<number> {
+    const topicTableResponse = await db
+        .select({
+            id: topicTable.id,
+        })
+        .from(topicTable)
+        .where(eq(topicTable.code, topicCode));
+    if (topicTableResponse.length == 1) {
+        return topicTableResponse[0].id;
+    } else {
+        throw httpErrors.internalServerError(
+            "Failed to locate topic code: " + topicCode,
+        );
+    }
+}
+
+interface UserFollowTopicByCodeProps {
+    db: PostgresJsDatabase;
+    topicCode: string;
+    userId: string;
+}
+
+export async function userFollowTopicByCode({
+    db,
+    topicCode,
+    userId,
+}: UserFollowTopicByCodeProps) {
+    const topicId = await getTopicIdFromTopicCode({
+        db: db,
+        topicCode: topicCode,
+    });
+
+    await db.insert(followedTopicTable).values({
+        topicId: topicId,
+        userId: userId,
+    });
 }
 
 interface UserUnfollowTopicByCodeProps {
     db: PostgresJsDatabase;
     topicCode: string;
+    userId: string;
 }
 
-export function userUnfollowTopicByCode({ db }: UserUnfollowTopicByCodeProps) {
-    console.log(db);
+export async function userUnfollowTopicByCode({
+    db,
+    topicCode,
+    userId,
+}: UserUnfollowTopicByCodeProps) {
+    const topicId = await getTopicIdFromTopicCode({
+        db: db,
+        topicCode: topicCode,
+    });
+
+    await db
+        .delete(followedTopicTable)
+        .where(
+            and(
+                eq(followedTopicTable.id, topicId),
+                eq(followedTopicTable.userId, userId),
+            ),
+        );
 }
 
 interface GetUserFollowedTopicsProps {

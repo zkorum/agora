@@ -1,26 +1,55 @@
-import { defineStore } from "pinia";
+import { defineStore, storeToRefs } from "pinia";
 import { ZodTopicObject } from "src/shared/types/zod";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendTopicApi } from "src/utils/api/topic";
 import { ref } from "vue";
+import { useAuthenticationStore } from "./authentication";
 
 export const useTopicStore = defineStore("topic", () => {
-  const { getAllTopics, getUserFollowedTopics } = useBackendTopicApi();
+  const {
+    getAllTopics,
+    getUserFollowedTopics,
+    userFollowTopicCode,
+    userUnfollowTopicCode,
+  } = useBackendTopicApi();
   const { handleAxiosErrorStatusCodes } = useCommonApi();
+  const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
   const fullTopicList = ref<ZodTopicObject[]>([]);
-  const followedTopicCodeList = ref<string[]>(["asdf"]);
+  const followedTopicCodeSet = ref(new Set<string>());
+
+  interface FollowTopicProps {
+    topicCode: string;
+  }
+
+  async function followTopic({ topicCode }: FollowTopicProps) {
+    await userFollowTopicCode({
+      topicCode: topicCode,
+    });
+  }
+
+  interface UnfollowTopicProps {
+    topicCode: string;
+  }
+
+  async function unfollowTopic({ topicCode }: UnfollowTopicProps) {
+    await userUnfollowTopicCode({
+      topicCode: topicCode,
+    });
+  }
 
   async function loadTopicsData() {
-    await loadUserFollowedTopics();
     await loadTopicList();
+    if (isLoggedIn) {
+      await loadUserFollowedTopics();
+    }
   }
 
   async function loadUserFollowedTopics() {
     const response = await getUserFollowedTopics();
 
     if (response.status == "success") {
-      followedTopicCodeList.value = response.data.followedTopicCodeList;
+      followedTopicCodeSet.value = new Set(response.data.followedTopicCodeList);
     } else {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: response.code,
@@ -42,5 +71,11 @@ export const useTopicStore = defineStore("topic", () => {
     }
   }
 
-  return { fullTopicList, followedTopicCodeList, loadTopicsData };
+  return {
+    fullTopicList,
+    followedTopicCodeSet,
+    loadTopicsData,
+    followTopic,
+    unfollowTopic,
+  };
 });

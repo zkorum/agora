@@ -64,11 +64,9 @@
             :key="topic.code"
             :label="topic.name"
             rounded
-            :icon="
-              followedTopicCodeList.includes(topic.code) ? 'pi pi-check' : ''
-            "
+            :icon="followedTopicCodeSet.has(topic.code) ? 'pi pi-check' : ''"
             :pt="
-              followedTopicCodeList.includes(topic.code)
+              followedTopicCodeSet.has(topic.code)
                 ? {
                     root: {
                       class: 'followingButtonStyle generalStyle',
@@ -106,7 +104,7 @@ import Button from "primevue/button";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 
 const { loadTopicsData } = useTopicStore();
-const { fullTopicList, followedTopicCodeList } = storeToRefs(useTopicStore());
+const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());
 
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
