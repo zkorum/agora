@@ -1140,7 +1140,6 @@ server.after(() => {
                 awsAiLabelSummaryTemperature:
                     config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
                 awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
                 awsAiLabelSummaryMaxTokens:
                     config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
                 awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
@@ -1315,7 +1314,6 @@ server.after(() => {
                 awsAiLabelSummaryTemperature:
                     config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
                 awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryTopK: config.AWS_AI_LABEL_SUMMARY_TOP_K,
                 awsAiLabelSummaryMaxTokens:
                     config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
                 awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,

@@ -1,3 +1,4 @@
+import { log } from "@/app.js";
 import {
     conversationContentTable,
     conversationTable,
@@ -12,24 +13,25 @@ import {
     isMajorityDisagree,
 } from "@/shared/conversationLogic.js";
 import { toUnionUndefined } from "@/shared/shared.js";
+import {
+    zodGenLabelSummaryOutputLoose,
+    zodGenLabelSummaryOutputStrict,
+    type GenLabelSummaryOutputClusterLoose,
+    type GenLabelSummaryOutputClusterStrict,
+    type GenLabelSummaryOutputLoose,
+    type GenLabelSummaryOutputStrict,
+} from "@/shared/types/zod.js";
+import { parseLlmOutputJson } from "@/utils/llmParse.js";
 import { isSqlControversial, isSqlMajority } from "@/utils/sqlLogic.js";
-import { eq, and, or, isNotNull, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     BedrockRuntimeClient,
     ConverseCommand,
     type Message,
 } from "@aws-sdk/client-bedrock-runtime";
-import {
-    zodGenLabelSummaryOutputStrict,
-    type GenLabelSummaryOutputLoose,
-    type GenLabelSummaryOutputStrict,
-    zodGenLabelSummaryOutputLoose,
-    type GenLabelSummaryOutputClusterLoose,
-    type GenLabelSummaryOutputClusterStrict,
-} from "@/shared/types/zod.js";
-import { log } from "@/app.js";
+import { and, eq, isNotNull, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { type JSONObject } from "extract-first-json";
 
 interface UpdateAiLabelsAndSummariesProps {
     db: PostgresJsDatabase;
@@ -38,7 +40,6 @@ interface UpdateAiLabelsAndSummariesProps {
     awsAiLabelSummaryModelId: string;
     awsAiLabelSummaryTemperature: string;
     awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryTopK: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
 }
@@ -73,7 +74,6 @@ export async function updateAiLabelsAndSummaries({
     awsAiLabelSummaryModelId,
     awsAiLabelSummaryTemperature,
     awsAiLabelSummaryTopP,
-    awsAiLabelSummaryTopK,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: UpdateAiLabelsAndSummariesProps): Promise<void> {
@@ -88,7 +88,6 @@ export async function updateAiLabelsAndSummaries({
         awsAiLabelSummaryModelId,
         awsAiLabelSummaryTemperature,
         awsAiLabelSummaryTopP,
-        awsAiLabelSummaryTopK,
         awsAiLabelSummaryMaxTokens,
         awsAiLabelSummaryPrompt,
     });
@@ -203,7 +202,6 @@ interface InvokeRemoteModelProps {
     awsAiLabelSummaryModelId: string;
     awsAiLabelSummaryTemperature: string;
     awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryTopK: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
 }
@@ -215,7 +213,6 @@ async function invokeRemoteModel({
     awsAiLabelSummaryModelId,
     awsAiLabelSummaryTemperature,
     awsAiLabelSummaryTopP,
-    awsAiLabelSummaryTopK,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: InvokeRemoteModelProps): Promise<
@@ -261,35 +258,31 @@ async function invokeRemoteModel({
             )}'`,
         );
     }
-    try {
-        const modelResponse: unknown = JSON.parse(modelResponseStr);
-        // try strict first
-        const resultStrict =
-            zodGenLabelSummaryOutputStrict.safeParse(modelResponse);
-        if (resultStrict.success) {
-            return resultStrict.data;
-        } else {
-            log.warn(
-                resultStrict.error,
-                `[LLM]: Unable to parse AI Label and Summary output object using strict mode: '${modelResponseStr}'`,
-            );
-        }
-        // will throw and be caught by the generic fastify handler eventually
-        const resultLoose =
-            zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
-        if (!resultLoose.success) {
-            throw new Error(
-                `[LLM]: Unable to parse AI Label and Summary output object using loose mode: '${modelResponseStr}'`,
-                { cause: resultLoose.error },
-            );
-        }
-        return resultLoose.data;
-    } catch (e) {
-        throw new Error(
-            `[LLM]: Unable to parse model reponse to JSON:\n${modelResponseStr}`,
-            { cause: e },
+    const modelResponse: JSONObject = parseLlmOutputJson(modelResponseStr);
+    // try strict first
+    const resultStrict =
+        zodGenLabelSummaryOutputStrict.safeParse(modelResponse);
+    if (resultStrict.success) {
+        return resultStrict.data;
+    } else {
+        log.warn(
+            resultStrict.error,
+            `[LLM]: Unable to parse AI Label and Summary output object using strict mode:\n'${JSON.stringify(
+                modelResponse,
+            )}'`,
         );
     }
+    // will throw and be caught by the generic fastify handler eventually
+    const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
+    if (!resultLoose.success) {
+        throw new Error(
+            `[LLM]: Unable to parse AI Label and Summary output object using loose mode:\n'${JSON.stringify(
+                modelResponse,
+            )}'`,
+            { cause: resultLoose.error },
+        );
+    }
+    return resultLoose.data;
 }
 
 interface GetConversationInsightsProps {

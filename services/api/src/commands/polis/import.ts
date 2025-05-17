@@ -412,7 +412,6 @@ async function importToAgora({
             awsAiLabelSummaryModelId: "",
             awsAiLabelSummaryTemperature: "",
             awsAiLabelSummaryTopP: "",
-            awsAiLabelSummaryTopK: "",
             awsAiLabelSummaryMaxTokens: "",
             awsAiLabelSummaryPrompt: "",
         });
