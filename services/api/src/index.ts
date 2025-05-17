@@ -676,8 +676,8 @@ server.after(() => {
                     minutesBeforeSmsCodeExpiry:
                         config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
                     didWrite,
-                    throttleSmsMinutesInterval:
-                        config.THROTTLE_SMS_MINUTES_INTERVAL,
+                    throttleSmsSecondsInterval:
+                        config.THROTTLE_SMS_SECONDS_INTERVAL,
                     // awsMailConf: awsMailConf,
                     userAgent: userAgent,
                     peppers: config.PEPPERS,

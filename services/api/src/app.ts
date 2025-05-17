@@ -43,7 +43,7 @@ const configSchema = z.object({
     ),
     SERVER_DID_PROD: zodDidWeb.default(`did:web:agoracitizen.network`),
     EMAIL_OTP_MAX_ATTEMPT_AMOUNT: z.number().int().min(1).max(5).default(3),
-    THROTTLE_SMS_MINUTES_INTERVAL: z.number().int().min(3).default(3),
+    THROTTLE_SMS_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
     TWILIO_ACCOUNT_SID: z.string().optional(),
     TWILIO_AUTH_TOKEN: z.string().optional(),
