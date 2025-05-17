@@ -64,7 +64,7 @@
                     ? 'Resend Code in ' + verificationNextCodeSeconds + 's'
                     : 'Resend Code'
                 "
-                :disabled="verificationNextCodeSeconds > 0"
+                :disable="verificationNextCodeSeconds > 0"
                 text-color="primary"
                 @click="clickedResendButton()"
               />
@@ -107,6 +107,8 @@ const verificationCode = ref("");
 
 const verificationNextCodeSeconds = ref(0);
 const verificationCodeExpirySeconds = ref(0);
+let nextCodeTimerId: ReturnType<typeof setTimeout> | undefined = undefined;
+let codeExpiryTimerId: ReturnType<typeof setTimeout> | undefined = undefined;
 
 const router = useRouter();
 
@@ -260,12 +262,14 @@ function codeExpired() {
 function processRequestCodeResponse(
   data: ApiV1AuthAuthenticatePost200Response
 ) {
+  const nowMinusMinusOneSecond = new Date();
+  nowMinusMinusOneSecond.setSeconds(nowMinusMinusOneSecond.getSeconds() - 1); // this is to avoid rounding errors that make us wait 9 seconds instead of 10
   {
     const nextCodeSoonestTime = new Date(data.nextCodeSoonestTime);
-    const now = new Date();
 
-    const diff = nextCodeSoonestTime.getTime() - now.getTime();
-    const nextCodeSecondsWait = Math.round(diff / 1000);
+    const diff =
+      nextCodeSoonestTime.getTime() - nowMinusMinusOneSecond.getTime();
+    const nextCodeSecondsWait = Math.ceil(diff / 1000);
 
     verificationNextCodeSeconds.value = nextCodeSecondsWait;
     decrementNextCodeTimer();
@@ -273,10 +277,9 @@ function processRequestCodeResponse(
 
   {
     const codeExpiryTime = new Date(data.codeExpiry);
-    const now = new Date();
 
-    const diff = codeExpiryTime.getTime() - now.getTime();
-    const codeExpirySeconds = Math.round(diff / 1000);
+    const diff = codeExpiryTime.getTime() - nowMinusMinusOneSecond.getTime();
+    const codeExpirySeconds = Math.ceil(diff / 1000);
 
     verificationCodeExpirySeconds.value = codeExpirySeconds;
     decrementCodeExpiryTimer();
@@ -284,18 +287,28 @@ function processRequestCodeResponse(
 }
 
 function decrementCodeExpiryTimer() {
+  clearTimeout(codeExpiryTimerId);
+  if (verificationCodeExpirySeconds.value <= 0) {
+    verificationCodeExpirySeconds.value = 0;
+    return;
+  }
   verificationCodeExpirySeconds.value -= 1;
   if (verificationCodeExpirySeconds.value > 0) {
-    setTimeout(function () {
+    codeExpiryTimerId = setTimeout(function () {
       decrementCodeExpiryTimer();
     }, 1000);
   }
 }
 
 function decrementNextCodeTimer() {
+  clearTimeout(nextCodeTimerId);
+  if (verificationNextCodeSeconds.value <= 0) {
+    verificationNextCodeSeconds.value = 0;
+    return;
+  }
   verificationNextCodeSeconds.value -= 1;
-  if (verificationNextCodeSeconds.value != 0) {
-    setTimeout(function () {
+  if (verificationNextCodeSeconds.value > 0) {
+    nextCodeTimerId = setTimeout(function () {
       decrementNextCodeTimer();
     }, 1000);
   }
