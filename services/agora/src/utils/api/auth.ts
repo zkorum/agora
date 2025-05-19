@@ -29,6 +29,7 @@ import {
 } from "./common";
 import { useRoute } from "vue-router";
 import { useRouterGuard } from "../router/guard";
+import { useTopicStore } from "src/stores/topic";
 
 interface SendSmsCodeProps {
   phoneNumber: string;
@@ -53,6 +54,7 @@ export function useBackendAuthApi() {
   const { isAuthInitialized } = storeToRefs(authStore);
   const { loadPostData } = useHomeFeedStore();
   const { loadUserProfile, clearProfileData } = useUserStore();
+  const { loadTopicsData, clearTopicsData } = useTopicStore();
   const { loadNotificationData } = useNotificationStore();
   const { clearConversationDrafts } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
@@ -181,6 +183,7 @@ export function useBackendAuthApi() {
       loadUserProfile(),
       loadPostData(),
       loadNotificationData(false),
+      loadTopicsData(),
     ]);
   }
 
@@ -249,6 +252,8 @@ export function useBackendAuthApi() {
     clearProfileData();
 
     clearNotificationData();
+
+    clearTopicsData();
   }
 
   return {
