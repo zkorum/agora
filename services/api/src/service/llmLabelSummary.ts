@@ -22,7 +22,10 @@ import {
     type GenLabelSummaryOutputStrict,
 } from "@/shared/types/zod.js";
 import { parseLlmOutputJson } from "@/utils/llmParse.js";
-import { isSqlControversial, isSqlMajority } from "@/utils/sqlLogic.js";
+import {
+    isSqlWhereControversial,
+    isSqlWhereMajority,
+} from "@/utils/sqlLogic.js";
 import {
     BedrockRuntimeClient,
     ConverseCommand,
@@ -457,89 +460,89 @@ async function getCoreOpinions({
                 isNotNull(opinionTable.currentContentId),
                 or(
                     // total
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.numAgrees,
                         numDisagreesColumn: opinionTable.numDisagrees,
                         memberCountColumn: conversationTable.participantCount,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.numAgrees,
                         memberCountColumn: conversationTable.participantCount,
                         numDisagreesColumn: opinionTable.numDisagrees,
                     }),
                     // 0
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster0NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster0NumDisagrees,
                         memberCountColumn: polisClusterTableAlias0.numUsers,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.polisCluster0NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster0NumDisagrees,
                         memberCountColumn: polisClusterTableAlias0.numUsers,
                     }),
                     // 1
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster1NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster1NumDisagrees,
                         memberCountColumn: polisClusterTableAlias1.numUsers,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.polisCluster1NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster1NumDisagrees,
                         memberCountColumn: polisClusterTableAlias1.numUsers,
                     }),
                     // 2
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster2NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster2NumDisagrees,
                         memberCountColumn: polisClusterTableAlias2.numUsers,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.polisCluster2NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster2NumDisagrees,
                         memberCountColumn: polisClusterTableAlias2.numUsers,
                     }),
                     // 3
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster3NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster3NumDisagrees,
                         memberCountColumn: polisClusterTableAlias3.numUsers,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.polisCluster3NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster3NumDisagrees,
                         memberCountColumn: polisClusterTableAlias3.numUsers,
                     }),
                     // 4
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster4NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster4NumDisagrees,
                         memberCountColumn: polisClusterTableAlias4.numUsers,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.polisCluster4NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster4NumDisagrees,
                         memberCountColumn: polisClusterTableAlias4.numUsers,
                     }),
                     // 5
-                    isSqlMajority({
+                    isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster5NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster5NumDisagrees,
                         memberCountColumn: polisClusterTableAlias5.numUsers,
                     }),
-                    isSqlControversial({
+                    isSqlWhereControversial({
                         numAgreesColumn: opinionTable.polisCluster5NumAgrees,
                         numDisagreesColumn:
                             opinionTable.polisCluster5NumDisagrees,

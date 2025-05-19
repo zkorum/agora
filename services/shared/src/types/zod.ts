@@ -124,11 +124,14 @@ export const zodPollResponse = z
 export const zodSlugId = z.string().max(10);
 export const zodCount = z.number().int().nonnegative();
 export const zodCommentFeedFilter = z.enum([
+    "hidden",
     "moderated",
     "new",
     "discover",
+    // analysis:
+    // TODO: move this elsewhere
+    "all",
     "cluster",
-    "hidden",
 ]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}

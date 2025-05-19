@@ -2287,11 +2287,12 @@
                                     "filter": {
                                         "type": "string",
                                         "enum": [
+                                            "hidden",
                                             "moderated",
                                             "new",
                                             "discover",
-                                            "cluster",
-                                            "hidden"
+                                            "all",
+                                            "cluster"
                                         ]
                                     },
                                     "clusterKey": {
