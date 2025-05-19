@@ -120,7 +120,7 @@ const zodClusterImg = z.object({
 
 const zodClusterConfig = z.object({
   numNodes: z.number(),
-  imgList: z.array(zodClusterImg).max(6).min(2),
+  imgList: z.array(zodClusterImg).max(5).min(0),
 });
 
 type ClusterConfig = z.infer<typeof zodClusterConfig>;

@@ -106,7 +106,12 @@ import type {
     DeviceIsKnownTrueLoginStatusExtended,
     DeviceLoginStatusExtended,
 } from "./shared/types/zod.js";
-import { getAllTopics } from "./service/topic.js";
+import {
+    getAllTopics,
+    getUserFollowedTopics,
+    userFollowTopicByCode,
+    userUnfollowTopicByCode,
+} from "./service/topic.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -1000,6 +1005,75 @@ server.after(() => {
             return await getOpinionModerationStatus({
                 db: db,
                 commentSlugId: request.body.opinionSlugId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/topic/get-followed`,
+        schema: {
+            response: {
+                200: Dto.getUserFollowedTopicCodesResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await getUserFollowedTopics({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/topic/follow`,
+        schema: {
+            body: Dto.userFollowTopicCodeRequest,
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+
+            await userFollowTopicByCode({
+                db: db,
+                topicCode: request.body.topicCode,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/topic/unfollow`,
+        schema: {
+            body: Dto.userUnfollowTopicCodeRequest,
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+
+            await userUnfollowTopicByCode({
+                db: db,
+                topicCode: request.body.topicCode,
+                userId: deviceStatus.userId,
             });
         },
     });

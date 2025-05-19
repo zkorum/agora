@@ -45,21 +45,21 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNotify } from "src/utils/ui/notify";
+import { useRouter } from "vue-router";
 
 const { submitUsernameChange } = useBackendAccountApi();
 
 const isValidUsername = ref(true);
 const userName = ref("");
 
-const { routeUserAfterLogin } = useLoginIntentionStore();
-
 const { profileData } = storeToRefs(useUserStore());
 
 const { showNotifyMessage } = useNotify();
 
 const isSubmitButtonLoading = ref(false);
+
+const router = useRouter();
 
 async function goToNextRoute() {
   isSubmitButtonLoading.value = true;
@@ -68,7 +68,7 @@ async function goToNextRoute() {
     profileData.value.userName
   );
   if (response.status == "success") {
-    await routeUserAfterLogin();
+    await router.push({ name: "/onboarding/step5-preferences/" });
   } else {
     showNotifyMessage("Username is already in use");
   }
