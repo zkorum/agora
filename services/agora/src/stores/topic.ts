@@ -1,14 +1,79 @@
-import { defineStore } from "pinia";
+import { defineStore, storeToRefs } from "pinia";
 import { ZodTopicObject } from "src/shared/types/zod";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendTopicApi } from "src/utils/api/topic";
 import { ref } from "vue";
+import { useAuthenticationStore } from "./authentication";
+import { useNotify } from "src/utils/ui/notify";
 
 export const useTopicStore = defineStore("topic", () => {
-  const { getAllTopics } = useBackendTopicApi();
+  const {
+    getAllTopics,
+    getUserFollowedTopics,
+    userFollowTopicCode,
+    userUnfollowTopicCode,
+  } = useBackendTopicApi();
   const { handleAxiosErrorStatusCodes } = useCommonApi();
+  const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+  const { showNotifyMessage } = useNotify();
 
   const fullTopicList = ref<ZodTopicObject[]>([]);
+  const followedTopicCodeSet = ref(new Set<string>());
+
+  function clearTopicsData() {
+    followedTopicCodeSet.value.clear;
+  }
+
+  interface FollowTopicProps {
+    topicCode: string;
+  }
+
+  async function followTopic({ topicCode }: FollowTopicProps) {
+    const response = await userFollowTopicCode({
+      topicCode: topicCode,
+    });
+    if (response.status == "success") {
+      followedTopicCodeSet.value.add(topicCode);
+    } else {
+      showNotifyMessage("Failed to follow topic");
+    }
+  }
+
+  interface UnfollowTopicProps {
+    topicCode: string;
+  }
+
+  async function unfollowTopic({ topicCode }: UnfollowTopicProps) {
+    const response = await userUnfollowTopicCode({
+      topicCode: topicCode,
+    });
+    if (response.status == "success") {
+      followedTopicCodeSet.value.delete(topicCode);
+    } else {
+      showNotifyMessage("Failed to unfollow topic");
+    }
+  }
+
+  async function loadTopicsData() {
+    await loadTopicList();
+    if (isLoggedIn.value) {
+      await loadUserFollowedTopics();
+    }
+  }
+
+  async function loadUserFollowedTopics() {
+    const response = await getUserFollowedTopics();
+
+    if (response.status == "success") {
+      followedTopicCodeSet.value = new Set(response.data.followedTopicCodeList);
+    } else {
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to load user followed topic list",
+      });
+    }
+  }
 
   async function loadTopicList() {
     const response = await getAllTopics();
@@ -23,5 +88,12 @@ export const useTopicStore = defineStore("topic", () => {
     }
   }
 
-  return { fullTopicList, loadTopicList };
+  return {
+    fullTopicList,
+    followedTopicCodeSet,
+    loadTopicsData,
+    followTopic,
+    unfollowTopic,
+    clearTopicsData,
+  };
 });

@@ -1153,6 +1153,90 @@
                 }
             }
         },
+        "/api/v1/topic/get-followed": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "followedTopicCodeList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "followedTopicCodeList"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/topic/follow": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "topicCode": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "topicCode"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/topic/unfollow": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "topicCode": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "topicCode"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
         "/api/v1/user/profile/get": {
             "post": {
                 "responses": {
@@ -2287,12 +2371,11 @@
                                     "filter": {
                                         "type": "string",
                                         "enum": [
-                                            "hidden",
                                             "moderated",
                                             "new",
                                             "discover",
-                                            "all",
-                                            "cluster"
+                                            "cluster",
+                                            "hidden"
                                         ]
                                     },
                                     "clusterKey": {
