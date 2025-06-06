@@ -179,7 +179,7 @@ export async function generateVerificationLink({
     const proofParams = response.data.data.attributes.get_proof_params;
     return {
         success: true,
-        verificationLink: `rarime://external?type=light-verification&proof_params_url=${proofParams}`,
+        verificationLink: `https://app.rarime.com/external?type=light-verification&proof_params_url=${proofParams}`,
     };
 }
 

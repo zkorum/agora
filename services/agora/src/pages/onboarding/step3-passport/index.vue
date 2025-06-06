@@ -102,10 +102,7 @@
                       class="verificationProcedureBlock"
                     >
                       <img :src="qrcode" alt="QR Code" />
-                      <div>
-                        Or open the below link on your mobile browser (Safari or
-                        Firefox):
-                      </div>
+                      <div>Or open the below link on your mobile browser:</div>
                       <!-- make this copyable -->
                       <div class="longUrl">{{ verificationLink }}</div>
 
