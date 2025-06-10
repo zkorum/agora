@@ -41,7 +41,7 @@ export function useCommonApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  const API_TIMEOUT_LIMIT_MS = 5000;
+  const API_TIMEOUT_LIMIT_MS = 8000;
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
