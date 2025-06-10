@@ -255,7 +255,7 @@ function loadAnalysisModeToOpinionList() {
       );
     }
   } else {
-    updateInfiniteScrollingList(sortAlgorithm.value);
+    updateInfiniteScrollingList("all");
   }
   requestedCommentSlugId.value = "";
 }
