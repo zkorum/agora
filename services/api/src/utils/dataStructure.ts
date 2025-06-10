@@ -25,3 +25,15 @@ export function createInterleavingMapFrom<K, V>(
     }
     return interleavedMap;
 }
+
+export function hexToUtf8(hexStr: string): string {
+    const hexBuffer = Buffer.from(hexStr, "hex");
+    const utf8Str = hexBuffer.toString("utf-8");
+
+    return utf8Str;
+}
+
+export function decimalToHex(decimalStr: string): string {
+    const hexStr = BigInt(decimalStr).toString(16);
+    return hexStr;
+}

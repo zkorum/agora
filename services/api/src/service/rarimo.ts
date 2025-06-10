@@ -16,6 +16,7 @@ import {
     loginNewDeviceWithZKP,
     registerWithZKP,
 } from "@/service/auth.js";
+import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;
@@ -47,15 +48,23 @@ export interface VerificationLinksResponse {
     data: Links;
 }
 
+// ProofData represents the SnarkJS library result of proof generation
+interface ProofData {
+    pi_a: string[];
+    pi_b: string[][];
+    pi_c: string[];
+    protocol: string;
+}
+
+// ZKProof is proof data with public signals
+interface ZKProof {
+    proof: ProofData;
+    pub_signals: string[];
+}
+
 interface UserParamsAttributes {
     // Lower user age limit
-    ageLowerBound: number;
-    // User nationality
-    nationality: string;
-    // User nullifier
-    nullifier: string;
-    // User sex
-    sex: string;
+    proof: ZKProof;
 }
 
 interface UserParams {
@@ -152,7 +161,7 @@ export async function generateVerificationLink({
         };
     }
     const getVerificationLinkUrl =
-        "/integrations/verificator-svc/light/private/verification-link";
+        "/integrations/verificator-svc/private/verification-link";
     const userId = didWrite;
     const body = {
         data: {
@@ -179,7 +188,16 @@ export async function generateVerificationLink({
     const proofParams = response.data.data.attributes.get_proof_params;
     return {
         success: true,
-        verificationLink: `https://app.rarime.com/external?type=light-verification&proof_params_url=${proofParams}`,
+        verificationLink: `https://app.rarime.com/external?type=proof-request&proof_params_url=${proofParams}`,
+    };
+}
+
+// see https://github.com/rarimo/passport-zk-circuits?tab=readme-ov-file#query-circuit-public-signals
+function extractDataFromPubSignals(pubSignals: string[]): GetUserProofReturn {
+    return {
+        nationality: hexToUtf8(decimalToHex(pubSignals[6])),
+        nullifier: decimalToHex(pubSignals[0]),
+        sex: hexToUtf8(decimalToHex(pubSignals[7])),
     };
 }
 
@@ -187,15 +205,14 @@ async function getUserProof({
     didWrite,
     axiosVerificatorSvc,
 }: GetUserProofProps): Promise<GetUserProofReturn> {
-    const getUserProofUrl = `/integrations/verificator-svc/light/private/user/${didWrite}`;
+    const getUserProofUrl = `/integrations/verificator-svc/private/proof/${didWrite}`;
     const response =
         await axiosVerificatorSvc.get<UserParamsRequest>(getUserProofUrl);
     const userParamsRequest: UserParamsRequest = response.data;
-    return {
-        nullifier: userParamsRequest.data.attributes.nullifier,
-        sex: userParamsRequest.data.attributes.sex,
-        nationality: userParamsRequest.data.attributes.nationality,
-    };
+    const extractedData = extractDataFromPubSignals(
+        userParamsRequest.data.attributes.proof.pub_signals,
+    );
+    return extractedData;
 }
 
 export async function verifyUserStatusAndAuthenticate({
@@ -222,7 +239,7 @@ export async function verifyUserStatusAndAuthenticate({
             reason: badStatusReason,
         };
     }
-    const verifyUserStatusUrl = `/integrations/verificator-svc/light/private/verification-status/${didWrite}`;
+    const verifyUserStatusUrl = `/integrations/verificator-svc/private/verification-status/${didWrite}`;
     const response =
         await axiosVerificatorSvc.get<StatusResponse>(verifyUserStatusUrl);
     const statusResponse: StatusResponse = response.data;
