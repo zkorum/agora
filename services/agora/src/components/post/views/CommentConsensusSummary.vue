@@ -25,8 +25,8 @@
         <div class="titleStyle">AI Summary</div>
 
         <div>
-          We use Mistral Small 3 (LLM model) to generate the summary & labels
-          for each consensus group.
+          We use Mistral Large (LLM model) to generate the summary & labels for
+          each consensus group.
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
