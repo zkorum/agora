@@ -1,5 +1,5 @@
 import { DEFAULT_MIN_VOTERS } from "@/shared/conversationLogic.js";
-import { SQL, and, gt, lt, or, sql } from "drizzle-orm";
+import { SQL, and, asc, desc, gt, lt, or, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 
 interface IsSqlClassifyProps {
@@ -9,19 +9,24 @@ interface IsSqlClassifyProps {
     threshold?: number;
 }
 
-export function isSqlMajority({
+interface IsSqlOrderByProps {
+    numAgreesColumn: PgColumn;
+    numDisagreesColumn: PgColumn;
+}
+
+export function isSqlWhereMajority({
     numAgreesColumn,
     numDisagreesColumn,
     memberCountColumn,
     threshold,
 }: IsSqlClassifyProps): SQL | undefined {
     return or(
-        isSqlPopular({
+        isSqlWhereMajorityAgree({
             numAgreesColumn: numAgreesColumn,
             memberCountColumn: memberCountColumn,
             threshold,
         }),
-        isSqlUnpopular({
+        isSqlWhereMajorityDisagree({
             numDisagreesColumn: numDisagreesColumn,
             memberCountColumn: memberCountColumn,
             threshold,
@@ -35,7 +40,7 @@ interface IsSqlUnpopularProps {
     threshold?: number;
 }
 
-export function isSqlUnpopular({
+export function isSqlWhereMajorityDisagree({
     numDisagreesColumn,
     memberCountColumn,
     threshold,
@@ -56,7 +61,7 @@ interface IsSqlPopularProps {
     threshold?: number;
 }
 
-export function isSqlPopular({
+export function isSqlWhereMajorityAgree({
     numAgreesColumn,
     memberCountColumn,
     threshold,
@@ -71,7 +76,7 @@ export function isSqlPopular({
     );
 }
 
-export function isSqlControversial({
+export function isSqlWhereControversial({
     numAgreesColumn,
     numDisagreesColumn,
     memberCountColumn,
@@ -91,4 +96,37 @@ export function isSqlControversial({
             actualThreshold,
         ),
     );
+}
+
+export function isSqlOrderByControversial({
+    numAgreesColumn,
+    numDisagreesColumn,
+}: IsSqlOrderByProps): SQL[] {
+    const orderByClause = [
+        asc(
+            sql`
+                        CASE 
+                          WHEN (COALESCE(${numDisagreesColumn}, 0) + COALESCE(${numAgreesColumn}, 0)) = 0 
+                          THEN 'Infinity'::float -- Assign a large value when no interactions so it will be picked last
+                          ELSE ABS(COALESCE(${numAgreesColumn}, 0) - COALESCE(${numDisagreesColumn}, 0)) 
+                               / (COALESCE(${numDisagreesColumn}, 0) + COALESCE(${numAgreesColumn}, 0))
+                        END
+              `,
+        ),
+    ];
+    return orderByClause;
+}
+
+export function isSqlOrderByMajority({
+    numAgreesColumn,
+    numDisagreesColumn,
+}: IsSqlOrderByProps): SQL[] {
+    const orderByClause = [
+        desc(
+            // we ponderate by the number of votes (if just 1-0 then it's not interesting....)
+            sql`(COALESCE(${numDisagreesColumn}, 0) + COALESCE(${numAgreesColumn}, 0)) * 
+                    ABS(COALESCE(${numAgreesColumn}, 0) - COALESCE(${numDisagreesColumn}, 0))`,
+        ),
+    ];
+    return orderByClause;
 }

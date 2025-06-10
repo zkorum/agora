@@ -17,17 +17,7 @@ import type {
     GetOpinionBySlugIdListResponse,
 } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import {
-    desc,
-    eq,
-    sql,
-    and,
-    isNull,
-    isNotNull,
-    ne,
-    SQL,
-    asc,
-} from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type {
     ClusterStats,
     CommentFeedFilter,
@@ -48,6 +38,13 @@ import * as polisService from "@/service/polis.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
+import {
+    isSqlWhereControversial,
+    isSqlWhereMajority,
+    isSqlOrderByControversial,
+    isSqlOrderByMajority,
+} from "@/utils/sqlLogic.js";
+import { createInterleavingMapFrom } from "@/utils/dataStructure.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -102,59 +99,7 @@ export async function fetchOpinions({
     const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
 
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
-    let orderByClause: SQL[];
-    switch (filterTarget) {
-        case "moderated": {
-            whereClause = and(
-                whereClause,
-                ne(opinionModerationTable.moderationAction, "hide"),
-                isNotNull(opinionModerationTable.id),
-            );
-            orderByClause = [desc(opinionTable.createdAt)];
-            break;
-        }
-        case "hidden": {
-            whereClause = and(
-                whereClause,
-                eq(opinionModerationTable.moderationAction, "hide"),
-                isNotNull(opinionModerationTable.id),
-            );
-            orderByClause = [desc(opinionTable.createdAt)];
-            break;
-        }
-        case "new": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = [desc(opinionTable.createdAt)];
-            break;
-        }
-        case "majority": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = [
-                desc(
-                    // we ponderate by the number of votes (if just 1-0 then it's not interesting....)
-                    sql`(COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0)) *
-                    ABS(COALESCE(${opinionTable.polisCluster0NumAgrees}, 0) - COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0))`,
-                ),
-            ];
-            break;
-        }
-        case "controversial": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = [
-                asc(
-                    sql`
-                        CASE
-                          WHEN (COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0)) = 0
-                          THEN 'Infinity'::float -- Assign a large value when no interactions so it will be picked last
-                          ELSE ABS(COALESCE(${opinionTable.polisCluster0NumAgrees}, 0) - COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0))
-                               / (COALESCE(${opinionTable.polisCluster0NumDisagrees}, 0) + COALESCE(${opinionTable.polisCluster0NumAgrees}, 0))
-                        END
-              `,
-                ),
-            ];
-            break;
-        }
-    }
+    let orderByClause = [desc(opinionTable.createdAt)]; // default value, shouldn't be needed but ts doesn't understand how to terminate nested switch
     if (clusterKey != undefined) {
         switch (clusterKey) {
             case "0": {
@@ -223,6 +168,297 @@ export async function fetchOpinions({
                 );
                 break;
             }
+        }
+    }
+    switch (filterTarget) {
+        case "moderated": {
+            whereClause = and(
+                whereClause,
+                ne(opinionModerationTable.moderationAction, "hide"),
+                isNotNull(opinionModerationTable.id),
+            );
+            break;
+        }
+        case "hidden": {
+            whereClause = and(
+                whereClause,
+                eq(opinionModerationTable.moderationAction, "hide"),
+                isNotNull(opinionModerationTable.id),
+            );
+            break;
+        }
+        case "new": {
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            break;
+        }
+        case "majority": {
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            if (clusterKey === undefined) {
+                whereClause = and(
+                    whereClause,
+                    isSqlWhereMajority({
+                        numAgreesColumn: opinionTable.numAgrees,
+                        numDisagreesColumn: opinionTable.numDisagrees,
+                        memberCountColumn: conversationTable.participantCount,
+                    }),
+                );
+                orderByClause = isSqlOrderByMajority({
+                    numAgreesColumn: opinionTable.numAgrees,
+                    numDisagreesColumn: opinionTable.numDisagrees,
+                });
+            } else {
+                switch (clusterKey) {
+                    case "0": {
+                        whereClause = and(
+                            whereClause,
+                            isSqlWhereMajority({
+                                numAgreesColumn:
+                                    opinionTable.polisCluster0NumAgrees,
+                                numDisagreesColumn:
+                                    opinionTable.polisCluster0NumDisagrees,
+                                memberCountColumn:
+                                    polisClusterTableAlias0.numUsers,
+                            }),
+                        );
+                        orderByClause = isSqlOrderByMajority({
+                            numAgreesColumn:
+                                opinionTable.polisCluster0NumAgrees,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster0NumDisagrees,
+                        });
+                        break;
+                    }
+                    case "1": {
+                        whereClause = and(
+                            whereClause,
+                            isSqlWhereMajority({
+                                numAgreesColumn:
+                                    opinionTable.polisCluster1NumAgrees,
+                                numDisagreesColumn:
+                                    opinionTable.polisCluster1NumDisagrees,
+                                memberCountColumn:
+                                    polisClusterTableAlias1.numUsers,
+                            }),
+                        );
+                        orderByClause = isSqlOrderByMajority({
+                            numAgreesColumn:
+                                opinionTable.polisCluster1NumAgrees,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster1NumDisagrees,
+                        });
+                        break;
+                    }
+                    case "2": {
+                        whereClause = and(
+                            whereClause,
+                            isSqlWhereMajority({
+                                numAgreesColumn:
+                                    opinionTable.polisCluster2NumAgrees,
+                                numDisagreesColumn:
+                                    opinionTable.polisCluster2NumDisagrees,
+                                memberCountColumn:
+                                    polisClusterTableAlias2.numUsers,
+                            }),
+                        );
+                        orderByClause = isSqlOrderByMajority({
+                            numAgreesColumn:
+                                opinionTable.polisCluster2NumAgrees,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster2NumDisagrees,
+                        });
+                        break;
+                    }
+                    case "3": {
+                        whereClause = and(
+                            whereClause,
+                            isSqlWhereMajority({
+                                numAgreesColumn:
+                                    opinionTable.polisCluster3NumAgrees,
+                                numDisagreesColumn:
+                                    opinionTable.polisCluster3NumDisagrees,
+                                memberCountColumn:
+                                    polisClusterTableAlias3.numUsers,
+                            }),
+                        );
+                        orderByClause = isSqlOrderByMajority({
+                            numAgreesColumn:
+                                opinionTable.polisCluster3NumAgrees,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster3NumDisagrees,
+                        });
+                        break;
+                    }
+                    case "4": {
+                        whereClause = and(
+                            whereClause,
+                            isSqlWhereMajority({
+                                numAgreesColumn:
+                                    opinionTable.polisCluster4NumAgrees,
+                                numDisagreesColumn:
+                                    opinionTable.polisCluster4NumDisagrees,
+                                memberCountColumn:
+                                    polisClusterTableAlias4.numUsers,
+                            }),
+                        );
+                        orderByClause = isSqlOrderByMajority({
+                            numAgreesColumn:
+                                opinionTable.polisCluster4NumAgrees,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster4NumDisagrees,
+                        });
+                        break;
+                    }
+                    case "5": {
+                        whereClause = and(
+                            whereClause,
+                            isSqlWhereMajority({
+                                numAgreesColumn:
+                                    opinionTable.polisCluster5NumAgrees,
+                                numDisagreesColumn:
+                                    opinionTable.polisCluster5NumDisagrees,
+                                memberCountColumn:
+                                    polisClusterTableAlias5.numUsers,
+                            }),
+                        );
+                        orderByClause = isSqlOrderByMajority({
+                            numAgreesColumn:
+                                opinionTable.polisCluster5NumAgrees,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster5NumDisagrees,
+                        });
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case "controversial": {
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            if (clusterKey === undefined) {
+                whereClause = and(
+                    whereClause,
+                    isSqlWhereControversial({
+                        numAgreesColumn: opinionTable.numAgrees,
+                        memberCountColumn: conversationTable.participantCount,
+                        numDisagreesColumn: opinionTable.numDisagrees,
+                    }),
+                );
+                orderByClause = isSqlOrderByControversial({
+                    numAgreesColumn: opinionTable.numAgrees,
+                    numDisagreesColumn: opinionTable.numDisagrees,
+                });
+            }
+            switch (clusterKey) {
+                case "0": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereControversial({
+                            numAgreesColumn:
+                                opinionTable.polisCluster0NumAgrees,
+                            memberCountColumn: polisClusterTableAlias0.numUsers,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster0NumDisagrees,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByControversial({
+                        numAgreesColumn: opinionTable.polisCluster0NumAgrees,
+                        numDisagreesColumn:
+                            opinionTable.polisCluster0NumDisagrees,
+                    });
+                    break;
+                }
+                case "1": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereControversial({
+                            numAgreesColumn:
+                                opinionTable.polisCluster1NumAgrees,
+                            memberCountColumn: polisClusterTableAlias1.numUsers,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster1NumDisagrees,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByControversial({
+                        numAgreesColumn: opinionTable.polisCluster1NumAgrees,
+                        numDisagreesColumn:
+                            opinionTable.polisCluster1NumDisagrees,
+                    });
+                    break;
+                }
+                case "2": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereControversial({
+                            numAgreesColumn:
+                                opinionTable.polisCluster2NumAgrees,
+                            memberCountColumn: polisClusterTableAlias2.numUsers,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster2NumDisagrees,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByControversial({
+                        numAgreesColumn: opinionTable.polisCluster2NumAgrees,
+                        numDisagreesColumn:
+                            opinionTable.polisCluster2NumDisagrees,
+                    });
+                    break;
+                }
+                case "3": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereControversial({
+                            numAgreesColumn:
+                                opinionTable.polisCluster3NumAgrees,
+                            memberCountColumn: polisClusterTableAlias3.numUsers,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster3NumDisagrees,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByControversial({
+                        numAgreesColumn: opinionTable.polisCluster3NumAgrees,
+                        numDisagreesColumn:
+                            opinionTable.polisCluster3NumDisagrees,
+                    });
+                    break;
+                }
+                case "4": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereControversial({
+                            numAgreesColumn:
+                                opinionTable.polisCluster4NumAgrees,
+                            memberCountColumn: polisClusterTableAlias4.numUsers,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster4NumDisagrees,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByControversial({
+                        numAgreesColumn: opinionTable.polisCluster4NumAgrees,
+                        numDisagreesColumn:
+                            opinionTable.polisCluster4NumDisagrees,
+                    });
+                    break;
+                }
+                case "5": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereControversial({
+                            numAgreesColumn:
+                                opinionTable.polisCluster5NumAgrees,
+                            memberCountColumn: polisClusterTableAlias5.numUsers,
+                            numDisagreesColumn:
+                                opinionTable.polisCluster5NumDisagrees,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByControversial({
+                        numAgreesColumn: opinionTable.polisCluster5NumAgrees,
+                        numDisagreesColumn:
+                            opinionTable.polisCluster5NumDisagrees,
+                    });
+                    break;
+                }
+            }
+            break;
         }
     }
     const results = await db
@@ -538,9 +774,6 @@ export async function fetchOpinionsByConversationSlugId({
                         clusterKey,
                         limit: limit,
                     });
-                const opinionItemMajorityEntries = Array.from(
-                    opinionItemMapMajority.entries(),
-                );
                 const opinionItemMapControversial: OpinionItemPerSlugId =
                     await fetchOpinions({
                         db,
@@ -550,38 +783,36 @@ export async function fetchOpinionsByConversationSlugId({
                         clusterKey,
                         limit: limit,
                     });
-                const opinionItemControversialEntries = Array.from(
-                    opinionItemMapControversial.entries(),
-                );
                 // Create a new map that interleaves entries from map1 and map2
-                opinionItemMap = new Map<string, OpinionItem>();
-                for (
-                    let i = 0;
-                    i <
-                    Math.max(
-                        opinionItemMapMajority.size,
-                        opinionItemMapControversial.size,
-                    );
-                    i++
-                ) {
-                    if (i < opinionItemMapMajority.size) {
-                        const key = opinionItemMajorityEntries[i][0];
-                        const value = opinionItemMajorityEntries[i][1];
-                        // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                        if (!opinionItemMap.has(key)) {
-                            opinionItemMap.set(key, value);
-                        }
-                    }
-                    if (i < opinionItemMapControversial.size) {
-                        const key = opinionItemControversialEntries[i][0];
-                        const value = opinionItemControversialEntries[i][1];
-                        // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                        if (!opinionItemMap.has(key)) {
-                            opinionItemMap.set(key, value);
-                        }
-                    }
-                }
+                opinionItemMap = createInterleavingMapFrom(
+                    opinionItemMapMajority,
+                    opinionItemMapControversial,
+                );
             }
+            break;
+        }
+        case "all": {
+            const opinionItemMapMajority: Map<string, OpinionItem> =
+                await fetchOpinions({
+                    db,
+                    postSlugId,
+                    personalizationUserId,
+                    filterTarget: "majority",
+                    limit: limit,
+                });
+            const opinionItemMapControversial: OpinionItemPerSlugId =
+                await fetchOpinions({
+                    db,
+                    postSlugId,
+                    personalizationUserId,
+                    filterTarget: "controversial",
+                    limit: limit,
+                });
+            // Create a new map that interleaves entries from map1 and map2
+            opinionItemMap = createInterleavingMapFrom(
+                opinionItemMapMajority,
+                opinionItemMapControversial,
+            );
             break;
         }
         case "discover": {

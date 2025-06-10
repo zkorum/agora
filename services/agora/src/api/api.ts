@@ -1921,11 +1921,12 @@ export interface ApiV1OpinionFetchByConversationPostRequest {
 }
 
 export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
+    Hidden: 'hidden',
     Moderated: 'moderated',
     New: 'new',
     Discover: 'discover',
-    Cluster: 'cluster',
-    Hidden: 'hidden'
+    All: 'all',
+    Cluster: 'cluster'
 } as const;
 
 export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum];
