@@ -2115,13 +2115,13 @@ export const ApiV1ReportOpinionCreatePostRequestReportReasonEnum = {
 export type ApiV1ReportOpinionCreatePostRequestReportReasonEnum = typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum[keyof typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum];
 
 /**
- *
+ * 
  * @export
  * @interface ApiV1TopicFollowPostRequest
  */
 export interface ApiV1TopicFollowPostRequest {
     /**
-     *
+     * 
      * @type {string}
      * @memberof ApiV1TopicFollowPostRequest
      */
@@ -2160,13 +2160,13 @@ export interface ApiV1TopicGetAllTopicsPost200ResponseTopicListInner {
     'name': string;
 }
 /**
- *
+ * 
  * @export
  * @interface ApiV1TopicGetFollowedPost200Response
  */
 export interface ApiV1TopicGetFollowedPost200Response {
     /**
-     *
+     * 
      * @type {Array<string>}
      * @memberof ApiV1TopicGetFollowedPost200Response
      */
@@ -3916,8 +3916,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
-         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+         * 
+         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3941,7 +3941,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -3988,7 +3988,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4010,7 +4010,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -4021,8 +4021,8 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         *
-         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+         * 
+         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4046,7 +4046,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
-
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -4812,8 +4812,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
-         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+         * 
+         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4835,7 +4835,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4846,8 +4846,8 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         *
-         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+         * 
+         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5296,8 +5296,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1ReportOpinionFetchPost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         *
-         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+         * 
+         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5313,7 +5313,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1TopicGetAllTopicsPost(options).then((request) => request(axios, basePath));
         },
         /**
-         *
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5321,8 +5321,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1TopicGetFollowedPost(options).then((request) => request(axios, basePath));
         },
         /**
-         *
-         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+         * 
+         * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5820,8 +5820,8 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
-     * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+     * 
+     * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -5841,7 +5841,7 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
+     * 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -5851,8 +5851,8 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     *
-     * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest
+     * 
+     * @param {ApiV1TopicFollowPostRequest} apiV1TopicFollowPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
