@@ -30,13 +30,16 @@ export const useTopicStore = defineStore("topic", () => {
   }
 
   async function followTopic({ topicCode }: FollowTopicProps) {
+    followedTopicCodeSet.value.add(topicCode);
+
     const response = await userFollowTopicCode({
       topicCode: topicCode,
     });
     if (response.status == "success") {
-      followedTopicCodeSet.value.add(topicCode);
+      // already captured state
     } else {
       showNotifyMessage("Failed to follow topic");
+      followedTopicCodeSet.value.delete(topicCode);
     }
   }
 
@@ -45,13 +48,16 @@ export const useTopicStore = defineStore("topic", () => {
   }
 
   async function unfollowTopic({ topicCode }: UnfollowTopicProps) {
+    followedTopicCodeSet.value.delete(topicCode);
+
     const response = await userUnfollowTopicCode({
       topicCode: topicCode,
     });
     if (response.status == "success") {
-      followedTopicCodeSet.value.delete(topicCode);
+      // already captured state
     } else {
       showNotifyMessage("Failed to unfollow topic");
+      followedTopicCodeSet.value.add(topicCode);
     }
   }
 
