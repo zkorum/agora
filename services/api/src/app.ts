@@ -97,10 +97,10 @@ const configSchema = z.object({
     AWS_SECRET_ID: z.string().optional(),
     AWS_SECRET_REGION: z.string().optional(),
     AWS_AI_LABEL_SUMMARY_ENABLE: z.boolean().default(true),
-    AWS_AI_LABEL_SUMMARY_REGION: z.string().default("us-east-1"),
+    AWS_AI_LABEL_SUMMARY_REGION: z.string().default("eu-west-1"),
     AWS_AI_LABEL_SUMMARY_MODEL_ID: z
         .string()
-        .default("mistral.mistral-small-2402-v1:0"),
+        .default("mistral.mistral-large-2402-v1:0"),
     AWS_AI_LABEL_SUMMARY_TEMPERATURE: z.string().default("0.4"),
     AWS_AI_LABEL_SUMMARY_TOP_P: z.string().default("0.8"),
     AWS_AI_LABEL_SUMMARY_MAX_TOKENS: z.string().default("8192"),
