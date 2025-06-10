@@ -156,7 +156,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useQuasar } from "quasar";
 import { useQRCode } from "@vueuse/integrations/useQRCode";
 import { useRouter } from "vue-router";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
 import { useCommonApi, type KeyAction } from "src/utils/api/common";
@@ -171,6 +171,9 @@ import RarimoImageExample from "src/components/onboarding/backgrounds/RarimoImag
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { storeToRefs } from "pinia";
+import { RarimoStatusAttributes } from "src/shared/types/zod";
 
 const description =
   "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
@@ -188,6 +191,7 @@ let isDeviceLoggedInIntervalId: number | undefined = undefined;
 const verificationLink = ref("");
 
 const qrcode = useQRCode(verificationLink);
+const qrcodeVerificationStatus = ref<RarimoStatusAttributes>("not_verified");
 
 const { updateAuthState } = useBackendAuthApi();
 
@@ -196,6 +200,7 @@ const rarimeStoreLink = ref("");
 const verificationLinkGenerationFailed = ref(false);
 
 const { onboardingMode } = onboardingFlowStore();
+const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 if (quasar.platform.is.android) {
   rarimeStoreLink.value =
@@ -224,11 +229,13 @@ async function generateVerificationLink(keyAction?: KeyAction) {
       verificationLink.value = response.data.verificationLink;
       if (isDeviceLoggedInIntervalId === undefined) {
         isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
+      } else {
+        window.clearInterval(isDeviceLoggedInIntervalId);
+        isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
       }
     } else {
       switch (response.data.reason) {
         case "already_logged_in":
-          showNotifyMessage("Verification successful 🎉");
           await completeVerification();
           break;
         case "associated_with_another_user":
@@ -247,7 +254,35 @@ async function generateVerificationLink(keyAction?: KeyAction) {
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
 onMounted(async () => {
-  await generateVerificationLink();
+  await initialize();
+});
+
+watch(isAuthInitialized, async () => {
+  await initialize();
+});
+
+async function initialize() {
+  if (isAuthInitialized.value) {
+    await generateVerificationLink();
+  }
+}
+
+watch(qrcodeVerificationStatus, async () => {
+  switch (qrcodeVerificationStatus.value) {
+    case "not_verified":
+      break;
+    case "verified":
+      await completeVerification();
+      break;
+    case "failed_verification":
+      showNotifyMessage("Verification attempt failed. Please retry.");
+      break;
+    case "uniqueness_check_failed":
+      showNotifyMessage(
+        "This passport is already linked to another RariMe account. Please try a different one."
+      );
+      break;
+  }
 });
 
 onUnmounted(() => {
@@ -277,21 +312,16 @@ async function isDeviceLoggedIn() {
     if (response.data.success) {
       switch (response.data.rarimoStatus) {
         case "not_verified":
+          qrcodeVerificationStatus.value = "not_verified";
           break;
         case "verified":
-          await completeVerification();
+          qrcodeVerificationStatus.value = "verified";
           break;
         case "failed_verification":
-          console.error(
-            "Verification failed while verifying proof",
-            response.data
-          );
+          qrcodeVerificationStatus.value = "failed_verification";
           break;
         case "uniqueness_check_failed":
-          console.error(
-            "Uniqueness-check failed while verifying proof",
-            response.data
-          );
+          qrcodeVerificationStatus.value = "uniqueness_check_failed";
           break;
       }
     } else {
@@ -304,17 +334,16 @@ async function isDeviceLoggedIn() {
           // Something wrong probably happened during keystore eviction on log out.
           // Retry, and this time overwrite the existing key with a new one.
           window.clearInterval(isDeviceLoggedInIntervalId);
-          await generateVerificationLink("overwrite");
           showNotifyMessage(
             "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!"
           );
+          await generateVerificationLink("overwrite");
           break;
       }
     }
   } catch (e) {
-    // TODO: handle connection error with just ONE app-wide meaningful "verify"
     console.error("Error while verifying proof", e);
-    showNotifyMessage("Failed to verify identity proof");
+    qrcodeVerificationStatus.value = "failed_verification";
   }
 }
 
