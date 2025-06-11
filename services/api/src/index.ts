@@ -145,9 +145,9 @@ const speciallyAuthorizedPhones: string[] =
     config.NODE_ENV === "production"
         ? []
         : config.SPECIALLY_AUTHORIZED_PHONES !== undefined &&
-          config.SPECIALLY_AUTHORIZED_PHONES.length !== 0
-        ? config.SPECIALLY_AUTHORIZED_PHONES.replace(/\s/g, "").split(",")
-        : [];
+            config.SPECIALLY_AUTHORIZED_PHONES.length !== 0
+          ? config.SPECIALLY_AUTHORIZED_PHONES.replace(/\s/g, "").split(",")
+          : [];
 
 const axiosVerificatorSvc: AxiosInstance = axios.create({
     baseURL: config.VERIFICATOR_SVC_BASE_URL,
@@ -397,15 +397,15 @@ const SERVER_URL =
     config.NODE_ENV === "production"
         ? config.SERVER_URL_PROD
         : config.NODE_ENV === "staging"
-        ? config.SERVER_URL_STAGING
-        : config.SERVER_URL_DEV;
+          ? config.SERVER_URL_STAGING
+          : config.SERVER_URL_DEV;
 
 const SERVER_DID =
     config.NODE_ENV === "production"
         ? config.SERVER_DID_PROD
         : config.NODE_ENV === "staging"
-        ? config.SERVER_DID_STAGING
-        : config.SERVER_DID_DEV;
+          ? config.SERVER_DID_STAGING
+          : config.SERVER_DID_DEV;
 
 function getAuthHeader(request: FastifyRequest) {
     const authHeader = request.headers.authorization;
@@ -496,9 +496,7 @@ async function verifyUcanAndDeviceStatus(
         },
     };
     let actualOptions = options;
-    if (actualOptions == undefined) {
-        actualOptions = defaultOptions;
-    }
+    actualOptions ??= defaultOptions;
     const { encodedUcan, didWrite } = await verifyUcan(request);
     const deviceStatus = await authUtilService.getDeviceStatus(db, didWrite);
     if (
@@ -1671,6 +1669,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/auth/zkp/generate-verification-link`, // there will be another subroute like /auth to _attach_ verified identifier to *already_logged_in accounts*.
         schema: {
+            body: Dto.generateVerificationLinkRequest,
             response: {
                 200: Dto.generateVerificationLink200,
             },
@@ -1681,6 +1680,7 @@ server.after(() => {
                 db,
                 didWrite,
                 axiosVerificatorSvc,
+                linkType: request.body.linkType,
                 baseEventId: config.BASE_EVENT_ID,
             });
         },

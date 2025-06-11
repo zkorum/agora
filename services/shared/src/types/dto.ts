@@ -33,6 +33,7 @@ import {
     zodDeviceLoginStatus,
     zodTopicObject,
     zodFeedSortAlgorithm,
+    zodLinkType,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -242,6 +243,9 @@ export class Dto {
             opinionSlugId: zodSlugId,
         })
         .strict();
+    static generateVerificationLinkRequest = z.object({
+        linkType: zodLinkType,
+    });
     static generateVerificationLink200 = z.discriminatedUnion("success", [
         z
             .object({
@@ -492,6 +496,7 @@ export type GetUserProfileResponse = z.infer<typeof Dto.getUserProfileResponse>;
 export type getUserConversationsResponse = z.infer<
     typeof Dto.fetchUserConversationsResponse
 >;
+export type LinkType = z.infer<typeof Dto.generateVerificationLink200>;
 export type GenerateVerificationLink200 = z.infer<
     typeof Dto.generateVerificationLink200
 >;

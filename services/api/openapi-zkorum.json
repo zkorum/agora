@@ -3401,6 +3401,29 @@
         },
         "/api/v1/auth/zkp/generate-verification-link": {
             "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "linkType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "http",
+                                            "deep"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "linkType"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",

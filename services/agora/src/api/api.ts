@@ -661,6 +661,27 @@ export type ApiV1AuthZkpGenerateVerificationLinkPost200ResponseAnyOf1ReasonEnum 
 /**
  * 
  * @export
+ * @interface ApiV1AuthZkpGenerateVerificationLinkPostRequest
+ */
+export interface ApiV1AuthZkpGenerateVerificationLinkPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpGenerateVerificationLinkPostRequest
+     */
+    'linkType': ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum;
+}
+
+export const ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum = {
+    Http: 'http',
+    Deep: 'deep'
+} as const;
+
+export type ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum = typeof ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum[keyof typeof ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
  */
 export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response {
@@ -2930,10 +2951,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1AuthZkpGenerateVerificationLinkPostRequest} apiV1AuthZkpGenerateVerificationLinkPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthZkpGenerateVerificationLinkPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1AuthZkpGenerateVerificationLinkPost: async (apiV1AuthZkpGenerateVerificationLinkPostRequest: ApiV1AuthZkpGenerateVerificationLinkPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthZkpGenerateVerificationLinkPostRequest' is not null or undefined
+            assertParamExists('apiV1AuthZkpGenerateVerificationLinkPost', 'apiV1AuthZkpGenerateVerificationLinkPostRequest', apiV1AuthZkpGenerateVerificationLinkPostRequest)
             const localVarPath = `/api/v1/auth/zkp/generate-verification-link`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2952,9 +2976,12 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthZkpGenerateVerificationLinkPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -4506,11 +4533,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AuthZkpGenerateVerificationLinkPostRequest} apiV1AuthZkpGenerateVerificationLinkPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthZkpGenerateVerificationLinkPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthZkpGenerateVerificationLinkPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthZkpGenerateVerificationLinkPost(options);
+        async apiV1AuthZkpGenerateVerificationLinkPost(apiV1AuthZkpGenerateVerificationLinkPostRequest: ApiV1AuthZkpGenerateVerificationLinkPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthZkpGenerateVerificationLinkPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthZkpGenerateVerificationLinkPost(apiV1AuthZkpGenerateVerificationLinkPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthZkpGenerateVerificationLinkPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -5068,11 +5096,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1AuthZkpGenerateVerificationLinkPostRequest} apiV1AuthZkpGenerateVerificationLinkPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthZkpGenerateVerificationLinkPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthZkpGenerateVerificationLinkPost200Response> {
-            return localVarFp.apiV1AuthZkpGenerateVerificationLinkPost(options).then((request) => request(axios, basePath));
+        apiV1AuthZkpGenerateVerificationLinkPost(apiV1AuthZkpGenerateVerificationLinkPostRequest: ApiV1AuthZkpGenerateVerificationLinkPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthZkpGenerateVerificationLinkPost200Response> {
+            return localVarFp.apiV1AuthZkpGenerateVerificationLinkPost(apiV1AuthZkpGenerateVerificationLinkPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -5540,12 +5569,13 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1AuthZkpGenerateVerificationLinkPostRequest} apiV1AuthZkpGenerateVerificationLinkPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1AuthZkpGenerateVerificationLinkPost(options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AuthZkpGenerateVerificationLinkPost(options).then((request) => request(this.axios, this.basePath));
+    public apiV1AuthZkpGenerateVerificationLinkPost(apiV1AuthZkpGenerateVerificationLinkPostRequest: ApiV1AuthZkpGenerateVerificationLinkPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthZkpGenerateVerificationLinkPost(apiV1AuthZkpGenerateVerificationLinkPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

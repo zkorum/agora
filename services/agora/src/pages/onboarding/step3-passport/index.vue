@@ -173,7 +173,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import { RarimoStatusAttributes } from "src/shared/types/zod";
+import { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
 
 const description =
   "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
@@ -212,15 +212,19 @@ if (quasar.platform.is.android) {
 }
 
 async function generateVerificationLink(keyAction?: KeyAction) {
+  const linkType: LinkType = quasar.platform.is.mobile ? "deep" : "http";
   try {
+    const params = { linkType: linkType };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1AuthZkpGenerateVerificationLinkPost();
+      await DefaultApiAxiosParamCreator().apiV1AuthZkpGenerateVerificationLinkPost(
+        params
+      );
     const encodedUcan = await buildEncodedUcan(url, options, keyAction);
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1AuthZkpGenerateVerificationLinkPost({
+    ).apiV1AuthZkpGenerateVerificationLinkPost(params, {
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },
@@ -348,7 +352,7 @@ async function isDeviceLoggedIn() {
 }
 
 async function clickedVerifyButton() {
-  window.open(verificationLink.value, "_blank");
+  window.open(verificationLink.value, "_self");
 }
 
 async function completeVerification() {

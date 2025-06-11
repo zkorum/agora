@@ -785,6 +785,8 @@ export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
     zodIsKnownTrueLoginStatus,
 ]);
 
+export const zodLinkType = z.enum(["http", "deep"]);
+
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
@@ -862,3 +864,4 @@ export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
 >;
 export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
+export type LinkType = z.infer<typeof zodLinkType>;
