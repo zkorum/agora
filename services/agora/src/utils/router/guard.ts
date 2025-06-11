@@ -1,9 +1,9 @@
-import { RouteMap, useRouter } from "vue-router";
+import { RouteRecordName, useRouter } from "vue-router";
 
 export function useRouterGuard() {
   const router = useRouter();
 
-  const onboardingRoutes: (keyof RouteMap)[] = [
+  const onboardingRoutes: RouteRecordName[] = [
     "/onboarding/step1-login/",
     "/onboarding/step1-signup/",
     "/onboarding/step2-signup/",
@@ -15,8 +15,8 @@ export function useRouterGuard() {
     "/onboarding/step5-experience-deprecated/",
   ];
 
-  async function firstLoadGuard(toName: keyof RouteMap) {
-    const unauthenticatedRoutes: (keyof RouteMap)[] = [
+  async function firstLoadGuard(toName: RouteRecordName) {
+    const unauthenticatedRoutes: RouteRecordName[] = [
       ...onboardingRoutes,
       "/",
       "/welcome/",
@@ -35,8 +35,8 @@ export function useRouterGuard() {
   }
 
   function conversationGuard(
-    toName: keyof RouteMap,
-    fromName: keyof RouteMap
+    toName: RouteRecordName,
+    fromName: RouteRecordName
   ): "home" | "ignore" {
     if (fromName == "/conversation/[postSlugId]") {
       if (onboardingRoutes.includes(toName) && toName != "/") {
