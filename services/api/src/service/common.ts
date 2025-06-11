@@ -21,7 +21,7 @@ import type {
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL, and, count } from "drizzle-orm";
+import { eq, desc, SQL, and, count, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
@@ -114,9 +114,13 @@ export function useCommonPost() {
             whereClause = and(
                 eq(voteTable.authorId, userId),
                 eq(opinionTable.conversationId, conversationId),
+                isNotNull(opinionTable.currentContentId), // only votes on non-deleted opinions matter in theory, TODO: migrate to our own pol.is arg because pol.is fork does not support deleting opinion and it messes up with the # of participants
             );
         } else {
-            whereClause = and(eq(opinionTable.conversationId, conversationId));
+            whereClause = and(
+                eq(opinionTable.conversationId, conversationId),
+                isNotNull(opinionTable.currentContentId), // only votes on non-deleted opinions matter in theory, TODO: migrate to our own pol.is arg because pol.is fork does not support deleting opinion and it messes up with the # of participants
+            );
         }
         const voteResponse = await db
             .select({ count: count() })
@@ -141,10 +145,14 @@ export function useCommonPost() {
         if (userId !== undefined) {
             whereClause = and(
                 eq(opinionTable.authorId, userId),
-                eq(opinionTable.conversationId, conversationId),
+                eq(opinionTable.conversationId, conversationId), // only non-deleted opinions count
+                isNotNull(opinionTable.currentContentId),
             );
         } else {
-            whereClause = and(eq(opinionTable.conversationId, conversationId));
+            whereClause = and(
+                eq(opinionTable.conversationId, conversationId),
+                isNotNull(opinionTable.currentContentId), // only non-deleted opinions count
+            );
         }
         const opinionResponse = await db
             .select({ count: count() })
