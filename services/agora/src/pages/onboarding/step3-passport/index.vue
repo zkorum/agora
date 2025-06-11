@@ -212,7 +212,7 @@ if (quasar.platform.is.android) {
 }
 
 async function generateVerificationLink(keyAction?: KeyAction) {
-  const linkType: LinkType = quasar.platform.is.mobile ? "deep" : "http";
+  const linkType: LinkType = "http"; // this parameter was implemented due a bug with applink, whic is now solved
   try {
     const params = { linkType: linkType };
     const { url, options } =
@@ -240,7 +240,7 @@ async function generateVerificationLink(keyAction?: KeyAction) {
     } else {
       switch (response.data.reason) {
         case "already_logged_in":
-          await completeVerification();
+          qrcodeVerificationStatus.value = "verified";
           break;
         case "associated_with_another_user":
           // TODO: make sure we don't get in an infinite loop...! (should not happen)
@@ -331,7 +331,7 @@ async function isDeviceLoggedIn() {
     } else {
       switch (response.data.reason) {
         case "already_logged_in":
-          await completeVerification();
+          qrcodeVerificationStatus.value = "verified";
           break;
         case "associated_with_another_user":
           // This did:key belongs to another phone number / nullifier.
@@ -352,7 +352,7 @@ async function isDeviceLoggedIn() {
 }
 
 async function clickedVerifyButton() {
-  window.open(verificationLink.value, "_self");
+  window.open(verificationLink.value, "_blank", "noopener, noreferrer");
 }
 
 async function completeVerification() {
