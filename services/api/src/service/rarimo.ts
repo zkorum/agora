@@ -5,7 +5,10 @@ import type {
     GenerateVerificationLink200,
     VerifyUserStatusAndAuthenticate200,
 } from "@/shared/types/dto.js";
-import { type RarimoStatusAttributes } from "@/shared/types/zod.js";
+import {
+    type LinkType,
+    type RarimoStatusAttributes,
+} from "@/shared/types/zod.js";
 import { type AxiosInstance } from "axios";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
@@ -29,6 +32,7 @@ interface GenerateVerificationLinkProps {
     didWrite: string;
     axiosVerificatorSvc: AxiosInstance;
     baseEventId: string;
+    linkType: LinkType;
 }
 
 // Representing the LinksAttributes structure
@@ -146,6 +150,7 @@ export async function generateVerificationLink({
     didWrite,
     axiosVerificatorSvc,
     baseEventId,
+    linkType,
 }: GenerateVerificationLinkProps): Promise<GenerateVerificationLink200> {
     const now = nowZeroMs();
     //TODO: move this to controller's verifyUCAN
@@ -185,10 +190,12 @@ export async function generateVerificationLink({
             },
         },
     );
+    const protocolType =
+        linkType === "deep" ? "rarime://" : "https://app.rarime.com/";
     const proofParams = response.data.data.attributes.get_proof_params;
     return {
         success: true,
-        verificationLink: `https://app.rarime.com/external?type=proof-request&proof_params_url=${proofParams}`,
+        verificationLink: `${protocolType}external?type=proof-request&proof_params_url=${proofParams}`,
     };
 }
 
