@@ -21,25 +21,13 @@
 
         <template #body>
           <div class="tagContainer">
-            <Button
+            <FollowButton
               v-for="topic in fullTopicList"
               :key="topic.code"
               :label="topic.name"
-              rounded
+              :variant="''"
+              :is-following="followedTopicCodeSet.has(topic.code)"
               :icon="followedTopicCodeSet.has(topic.code) ? 'pi pi-check' : ''"
-              :pt="
-                followedTopicCodeSet.has(topic.code)
-                  ? {
-                      root: {
-                        class: 'followingButtonStyle generalStyle',
-                      },
-                    }
-                  : {
-                      root: {
-                        class: 'followButtonStyle generalStyle',
-                      },
-                    }
-              "
               @click="
                 topicButtonClicked(
                   topic.code,
@@ -68,10 +56,10 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { storeToRefs } from "pinia";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted } from "vue";
-import Button from "primevue/button";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
 
 const { loadTopicsData, followTopic, unfollowTopic } = useTopicStore();
 const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());
@@ -104,29 +92,5 @@ async function topicButtonClicked(
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-}
-
-.generalStyle {
-  font-weight: 400;
-  font-size: 1rem;
-  padding-top: 0.4rem;
-  padding-bottom: 0.4rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 15px;
-}
-
-.followButtonStyle {
-  background-color: transparent;
-  border-color: #e9e9f2;
-  color: black;
-}
-
-.followingButtonStyle {
-  background-color: #a6a3d6;
-  border-color: transparent;
-  color: white;
 }
 </style>

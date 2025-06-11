@@ -31,23 +31,11 @@
           }"
         />
 
-        <Button
+        <FollowButton
           :label="followedTopicCodeSet.has(topic.code) ? 'Following' : 'Follow'"
           :variant="followedTopicCodeSet.has(topic.code) ? '' : 'outlined'"
-          rounded
-          :pt="
-            followedTopicCodeSet.has(topic.code)
-              ? {
-                  root: {
-                    class: 'followingButtonStyle generalStyle',
-                  },
-                }
-              : {
-                  root: {
-                    class: 'followButtonStyle generalStyle',
-                  },
-                }
-          "
+          :is-following="followedTopicCodeSet.has(topic.code)"
+          :icon="''"
           @click="
             clickedFollowButton(
               topic.code,
@@ -68,10 +56,10 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import Button from "primevue/button";
 import Chip from "primevue/chip";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
@@ -114,15 +102,6 @@ async function clickedFollowButton(
   padding-top: 1rem;
 }
 
-.generalStyle {
-  font-weight: 400;
-  font-size: 1rem;
-  padding-top: 0.4rem;
-  padding-bottom: 0.4rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
 .topicChipStyle {
   background-color: white;
   border-color: #e2e1e7;
@@ -131,20 +110,13 @@ async function clickedFollowButton(
   color: black;
 }
 
-.followButtonStyle {
-  background-color: $secondary;
-  border-color: $primary;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 10px;
-  color: $primary;
-}
-
-.followingButtonStyle {
-  background-color: #e9e9f2;
-  border: none;
-  border-radius: 10px;
-  color: #6d6a74;
+.generalStyle {
+  font-weight: 400;
+  font-size: 1rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .topicItem {
