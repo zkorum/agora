@@ -135,8 +135,12 @@ function loadRouteParams() {
     route.name ==
     "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/"
   ) {
-    postSlugId = route.params.conversationSlugId;
-    commentSlugId = route.params.opinionSlugId;
+    postSlugId = Array.isArray(route.params.conversationSlugId)
+      ? route.params.conversationSlugId[0]
+      : route.params.conversationSlugId;
+    commentSlugId = Array.isArray(route.params.opinionSlugId)
+      ? route.params.opinionSlugId[0]
+      : route.params.opinionSlugId;
   }
 }
 
