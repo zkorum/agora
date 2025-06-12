@@ -35,8 +35,6 @@
                 <PostDetails
                   :extended-post-data="postData"
                   :compact-mode="true"
-                  :show-comment-section="false"
-                  :skeleton-mode="true"
                   class="showCursor"
                   @click="openPost(postData.metadata.conversationSlugId)"
                 />
@@ -54,8 +52,6 @@
                 <PostDetails
                   :extended-post-data="postData"
                   :compact-mode="true"
-                  :show-comment-section="false"
-                  :skeleton-mode="false"
                   @click="openPost(postData.metadata.conversationSlugId)"
                 />
               </div>
