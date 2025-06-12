@@ -74,7 +74,7 @@ import { computed } from "vue";
 import { isControversial, isMajority } from "src/shared/conversationLogic";
 import CommentActionBar from "./CommentActionBar.vue";
 import HtmlContent from "../../../display/HtmlContent.vue";
-import UserIdentity from "../../../shared/UserIdentity.vue";
+import UserIdentity from "src/components/features/user/UserIdentityCard.vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 
