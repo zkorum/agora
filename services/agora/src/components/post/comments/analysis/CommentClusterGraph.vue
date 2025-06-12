@@ -94,8 +94,8 @@ import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { ref, watch } from "vue";
 import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ClusterInformationDialog from "./cluster/ClusterInformationDialog.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import ClusterInformationDialog from "../../views/cluster/ClusterInformationDialog.vue";
 
 const emit = defineEmits<{
   (e: "selectedCluster", clusterKey: PolisKey): void;

@@ -31,7 +31,7 @@
       </div>
 
       <div>
-        <UserHtmlBody :html-body="commentItem.opinion" :compact-mode="false" />
+        <HtmlContent :html-body="commentItem.opinion" :compact-mode="false" />
       </div>
 
       <div class="commentAdditionalDetailsFlex">
@@ -60,7 +60,6 @@
 </template>
 
 <script setup lang="ts">
-import CommentActionBar from "./CommentActionBar.vue";
 import type {
   ClusterStats,
   OpinionItem,
@@ -70,11 +69,12 @@ import type {
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import UserHtmlBody from "./UserHtmlBody.vue";
 import { computed } from "vue";
 import { isControversial, isMajority } from "src/shared/conversationLogic";
+import CommentActionBar from "./CommentActionBar.vue";
+import HtmlContent from "../../display/HtmlContent.vue";
+import UserIdentity from "../../shared/UserIdentity.vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 

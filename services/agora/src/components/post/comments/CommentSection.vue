@@ -168,15 +168,15 @@ import {
   type OpinionItem,
 } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
-import CommentGroup from "./CommentGroup.vue";
+import CommentGroup from "./group/CommentGroup.vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouteQuery } from "@vueuse/router";
-import CommentSortingSelector from "./CommentSortingSelector.vue";
+import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import CommentClusterGraph from "./CommentClusterGraph.vue";
+import CommentClusterGraph from "./analysis/CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import ClusterTabs from "./cluster/ClusterTabs.vue";
+import ClusterTabs from "./analysis/ClusterTabs.vue";
 
 defineExpose({
   openModerationHistory,
