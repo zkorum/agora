@@ -95,7 +95,7 @@ import { ref, watch } from "vue";
 import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import ClusterInformationDialog from "../views/cluster/ClusterInformationDialog.vue";
+import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 
 const emit = defineEmits<{
   (e: "selectedCluster", clusterKey: PolisKey): void;
