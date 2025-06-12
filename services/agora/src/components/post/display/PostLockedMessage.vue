@@ -47,7 +47,7 @@ import { ref, watch } from "vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "src/stores/user";
-import ModerationTime from "../views/moderation/ModerationTime.vue";
+import ModerationTime from "../common/moderation/ModerationTime.vue";
 
 const props = defineProps<{
   moderationProperty: ConversationModerationProperties;
