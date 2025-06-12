@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import PostMetadata from "./PostMetadata.vue";
 import HtmlContent from "./HtmlContent.vue";
-import PollWrapper from "../../poll/PollWrapper.vue";
+import PollWrapper from "../poll/PollWrapper.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";

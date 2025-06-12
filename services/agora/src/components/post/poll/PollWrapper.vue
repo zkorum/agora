@@ -70,8 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import PollOption from "src/components/poll/PollOption.vue";
-import ZKButton from "../ui-library/ZKButton.vue";
+import PollOption from "./PollOption.vue";
+import ZKButton from "../../ui-library/ZKButton.vue";
 import {
   useHomeFeedStore,
   type DummyPollOptionFormat,
@@ -80,9 +80,9 @@ import { onBeforeMount, ref, watch } from "vue";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
-import ZKIcon from "../ui-library/ZKIcon.vue";
+import ZKIcon from "../../ui-library/ZKIcon.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
+import PreLoginIntentionDialog from "../../authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 
