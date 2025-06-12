@@ -174,9 +174,9 @@ import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import CommentClusterGraph from "../analysis/CommentClusterGraph.vue";
+import CommentClusterGraph from "../analysis/cluster/CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import ClusterTabs from "../analysis/ClusterTabs.vue";
+import ClusterTabs from "../analysis/cluster/ClusterTabs.vue";
 
 defineExpose({
   openModerationHistory,
