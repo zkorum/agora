@@ -56,7 +56,7 @@ import type { OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ModerationTime from "../../../views/moderation/ModerationTime.vue";
+import ModerationTime from "src/components/post/common/moderation/ModerationTime.vue";
 
 defineProps<{
   commentItem: OpinionItem;

@@ -73,7 +73,7 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import type { RouteRecordName } from "vue-router";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
-import UserMetadata from "src/components/post/views/UserMetadata.vue";
+import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 
 const router = useRouter();

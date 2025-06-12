@@ -37,7 +37,7 @@
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
-import UserMetadata from "src/components/post/views/UserMetadata.vue";
+import UserMetadata from "src/components/features/user/UserMetadata.vue";
 
 defineProps<{
   userIdentity: string;
