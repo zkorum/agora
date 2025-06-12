@@ -246,8 +246,8 @@ function onLoginCallback() {
   flex-direction: column;
   gap: 1rem;
   color: black;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .voteCount {
