@@ -13,7 +13,10 @@
             :user-identity="profileData.userName"
             :size="35"
           />
-          <Username :username="profileData.userName" :show-is-guest="isGuest" />
+          <DisplayUsername
+            :username="profileData.userName"
+            :show-is-guest="isGuest"
+          />
         </div>
 
         <div class="menuListFlex">
@@ -83,9 +86,9 @@ import type { RouteRecordName } from "vue-router";
 import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
-import Username from "../post/views/Username.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
+import DisplayUsername from "../features/user/DisplayUsername.vue";
 
 const newConversationButton =
   process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";

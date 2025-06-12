@@ -1,6 +1,6 @@
 <template>
   <div class="authorContainer">
-    <Username
+    <DisplayUsername
       class="usernameStyle"
       :class="{
         wordBreakNormal: userType == 'normal',
@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import Username from "./Username.vue";
+import DisplayUsername from "src/components/features/user/DisplayUsername.vue";
 
 defineProps<{
   showIsGuest: boolean;
