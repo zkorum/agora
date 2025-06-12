@@ -7,7 +7,7 @@
           {{ opinionCount.toString() }}
         </div>
       </div>
-      <CommentAnalysisTabs
+      <ViewTabs
         v-if="!compactMode"
         v-model="localCurrentTab"
         :opinion-count="opinionCount"
@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
-import CommentAnalysisTabs from "../comments/CommentAnalysisTabs.vue";
+import ViewTabs from "../comments/ViewTabs.vue";
 import { ref, watch } from "vue";
 
 const props = defineProps<{
