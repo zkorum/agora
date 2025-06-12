@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="innerContainer postPadding"
-    :class="{ postPaddingCompact: compactMode }"
-  >
+  <div class="innerContainer" :class="{ postPaddingCompact: compactMode }">
     <PostMetadata
       :poster-user-name="extendedPostData.metadata.authorUsername"
       :created-at="new Date(extendedPostData.metadata.createdAt)"
@@ -102,14 +99,8 @@ defineProps<{
   gap: 0.5rem;
 }
 
-.postPadding {
-  padding-top: $container-padding;
-  padding-left: $container-padding;
-  padding-right: $container-padding;
-}
-
 .postPaddingCompact {
-  padding-bottom: $container-padding;
+  padding-bottom: 1rem;
 }
 
 .titlePadding {
