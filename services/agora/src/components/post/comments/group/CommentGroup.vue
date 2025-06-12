@@ -59,9 +59,9 @@
 
 <script setup lang="ts">
 import type { OpinionItem, PolisKey, VotingAction } from "src/shared/types/zod";
-import CommentItem from "../item/CommentItem.vue";
+import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import CommentConsensusSummary from "../analysis/CommentConsensusSummary.vue";
+import CommentConsensusSummary from "../../analysis/CommentConsensusSummary.vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 

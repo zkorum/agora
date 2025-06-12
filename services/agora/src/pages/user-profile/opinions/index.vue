@@ -75,8 +75,8 @@ import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import CommentActionOptions from "src/components/post/comments/item/CommentActionOptions.vue";
-import CommentModeration from "src/components/post/comments/item/CommentModeration.vue";
+import CommentActionOptions from "src/components/post/comments/group/item/CommentActionOptions.vue";
+import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
 import HtmlContent from "src/components/post/display/HtmlContent.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
