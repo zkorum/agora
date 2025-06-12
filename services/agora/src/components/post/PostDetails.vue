@@ -7,120 +7,26 @@
     >
       <ZKHoverEffect :enable-hover="compactMode">
         <div
-          class="container"
+          class="container postPadding"
           :class="{
             compactBackground: compactMode,
           }"
         >
-          <div
-            class="innerContainer postPadding"
-            :class="{ postPaddingCompact: compactMode }"
-          >
-            <!-- TODO: Pass author verified flag here -->
-            <PostMetadata
-              :poster-user-name="extendedPostData.metadata.authorUsername"
-              :created-at="new Date(extendedPostData.metadata.createdAt)"
-              :post-slug-id="extendedPostData.metadata.conversationSlugId"
-              :author-verified="false"
-              :organization-url="
-                extendedPostData.metadata.organization?.imageUrl || ''
-              "
-              :organization-name="
-                extendedPostData.metadata.organization?.name || ''
-              "
-              @open-moderation-history="openModerationHistory()"
-            />
+          <PostContent
+            :extended-post-data="extendedPostData"
+            :compact-mode="compactMode"
+            @open-moderation-history="openModerationHistory()"
+          />
 
-            <div class="postDiv">
-              <div>
-                <div class="titleDiv titlePadding">
-                  {{ extendedPostData.payload.title }}
-                </div>
-              </div>
-
-              <div
-                v-if="
-                  extendedPostData.payload.body != undefined &&
-                  extendedPostData.payload.body.length > 0
-                "
-                class="bodyDiv"
-              >
-                <HtmlContent
-                  :html-body="extendedPostData.payload.body"
-                  :compact-mode="compactMode"
-                />
-              </div>
-
-              <ZKCard
-                v-if="
-                  extendedPostData.metadata.moderation.status == 'moderated'
-                "
-                padding="1rem"
-                class="lockCardStyle"
-              >
-                <PostLockedMessage
-                  :moderation-property="extendedPostData.metadata.moderation"
-                  :post-slug-id="extendedPostData.metadata.conversationSlugId"
-                />
-              </ZKCard>
-            </div>
-
-            <div v-if="extendedPostData.payload.poll" class="pollContainer">
-              <PollWrapper
-                :login-required-to-participate="
-                  extendedPostData.metadata.isIndexed ||
-                  extendedPostData.metadata.isLoginRequired
-                "
-                :poll-options="extendedPostData.payload.poll"
-                :post-slug-id="extendedPostData.metadata.conversationSlugId"
-                :user-response="extendedPostData.interaction"
-              />
-            </div>
-
-            <div
-              class="buttonClusterBar"
-              :class="{ buttonClusterBorder: !compactMode }"
-            >
-              <div class="leftButtonCluster">
-                <div v-if="compactMode" class="commentCountStyle">
-                  <ZKIcon
-                    color="#7D7A85"
-                    name="meteor-icons:comment"
-                    size="1rem"
-                  />
-                  <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
-                    {{
-                      (
-                        extendedPostData.metadata.opinionCount +
-                        commentCountOffset
-                      ).toString()
-                    }}
-                  </div>
-                </div>
-                <CommentAnalysisTabs
-                  v-if="!compactMode"
-                  v-model="currentTab"
-                  :opinion-count="
-                    extendedPostData.metadata.opinionCount + commentCountOffset
-                  "
-                />
-              </div>
-
-              <div>
-                <ZKButton
-                  button-type="standardButton"
-                  @click.stop.prevent="shareClicked()"
-                >
-                  <div class="shareButtonContentContainer">
-                    <div>
-                      <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
-                    </div>
-                    <div>Share</div>
-                  </div>
-                </ZKButton>
-              </div>
-            </div>
-          </div>
+          <PostActionBar
+            :compact-mode="compactMode"
+            :current-tab="currentTab"
+            :opinion-count="
+              extendedPostData.metadata.opinionCount + commentCountOffset
+            "
+            @share="shareClicked()"
+            @tab-change="(tab) => (currentTab = tab)"
+          />
 
           <div v-if="!compactMode" class="commentSectionPadding">
             <CommentSection
@@ -170,10 +76,9 @@
 </template>
 
 <script setup lang="ts">
-import ZKButton from "../ui-library/ZKButton.vue";
 import CommentSection from "./comments/CommentSection.vue";
-import PostMetadata from "./display/PostMetadata.vue";
-import PollWrapper from "../poll/PollWrapper.vue";
+import PostContent from "./display/PostContent.vue";
+import PostActionBar from "./interaction/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import { ref } from "vue";
@@ -181,13 +86,8 @@ import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
-import ZKCard from "../ui-library/ZKCard.vue";
-import PostLockedMessage from "./display/PostLockedMessage.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
-import ZKIcon from "../ui-library/ZKIcon.vue";
-import CommentAnalysisTabs from "./comments/CommentAnalysisTabs.vue";
-import HtmlContent from "./display/HtmlContent.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -331,48 +231,9 @@ async function shareClicked() {
 </script>
 
 <style scoped lang="scss">
-.innerContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.pollContainer {
-  padding-bottom: 1rem;
-}
-
-.titleDiv {
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
-.bodyDiv {
-  padding-bottom: 1rem;
-}
-
-.postDiv {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.buttonClusterBar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.buttonClusterBorder {
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: #e2e1e7;
-}
-
 .container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
 }
 
 .compactBackground {
@@ -383,49 +244,15 @@ async function shareClicked() {
   background-color: $mouse-hover-color;
 }
 
-.leftButtonCluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+.commentSectionPadding {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .postPadding {
   padding-top: $container-padding;
   padding-left: $container-padding;
   padding-right: $container-padding;
-}
-
-.postPaddingCompact {
-  padding-bottom: $container-padding;
-}
-
-.titlePadding {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-.lockCardStyle {
-  background-color: white;
-  margin-bottom: 1rem;
-}
-
-.commentCountStyle {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding-top: 0.5rem;
-}
-
-.commentSectionPadding {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
-.shareButtonContentContainer {
-  gap: 0.3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #7d7a85;
+  padding-bottom: 1rem;
 }
 </style>
