@@ -89,7 +89,10 @@
               />
             </div>
 
-            <div class="bottomButtons">
+            <div
+              class="buttonClusterBar"
+              :class="{ buttonClusterBorder: !compactMode }"
+            >
               <div class="leftButtonCluster">
                 <div v-if="!skeletonMode">
                   <div v-if="compactMode" class="commentCountStyle">
@@ -386,11 +389,17 @@ async function shareClicked() {
   gap: 0.5rem;
 }
 
-.bottomButtons {
+.buttonClusterBar {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.buttonClusterBorder {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: #e2e1e7;
 }
 
 .container {
