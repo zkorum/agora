@@ -20,7 +20,6 @@
             <PostMetadata
               :poster-user-name="extendedPostData.metadata.authorUsername"
               :created-at="new Date(extendedPostData.metadata.createdAt)"
-              :skeleton-mode="skeletonMode"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
               :author-verified="false"
               :organization-url="
@@ -34,16 +33,8 @@
 
             <div class="postDiv">
               <div>
-                <div v-if="!skeletonMode" class="titleDiv titlePadding">
+                <div class="titleDiv titlePadding">
                   {{ extendedPostData.payload.title }}
-                </div>
-
-                <div v-if="skeletonMode" class="titleDiv">
-                  <Skeleton
-                    width="100%"
-                    height="4rem"
-                    border-radius="16px"
-                  ></Skeleton>
                 </div>
               </div>
 
@@ -74,10 +65,7 @@
               </ZKCard>
             </div>
 
-            <div
-              v-if="extendedPostData.payload.poll && !skeletonMode"
-              class="pollContainer"
-            >
+            <div v-if="extendedPostData.payload.poll" class="pollContainer">
               <PollWrapper
                 :login-required-to-participate="
                   extendedPostData.metadata.isIndexed ||
@@ -94,61 +82,42 @@
               :class="{ buttonClusterBorder: !compactMode }"
             >
               <div class="leftButtonCluster">
-                <div v-if="!skeletonMode">
-                  <div v-if="compactMode" class="commentCountStyle">
-                    <ZKIcon
-                      color="#7D7A85"
-                      name="meteor-icons:comment"
-                      size="1rem"
-                    />
-                    <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
-                      {{
-                        (
-                          extendedPostData.metadata.opinionCount +
-                          commentCountOffset
-                        ).toString()
-                      }}
-                    </div>
-                  </div>
-                  <CommentAnalysisTabs
-                    v-if="!compactMode"
-                    v-model="currentTab"
-                    :opinion-count="
-                      extendedPostData.metadata.opinionCount +
-                      commentCountOffset
-                    "
+                <div v-if="compactMode" class="commentCountStyle">
+                  <ZKIcon
+                    color="#7D7A85"
+                    name="meteor-icons:comment"
+                    size="1rem"
                   />
+                  <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
+                    {{
+                      (
+                        extendedPostData.metadata.opinionCount +
+                        commentCountOffset
+                      ).toString()
+                    }}
+                  </div>
                 </div>
-                <div v-if="skeletonMode">
-                  <Skeleton
-                    width="3rem"
-                    height="2rem"
-                    border-radius="16px"
-                  ></Skeleton>
-                </div>
+                <CommentAnalysisTabs
+                  v-if="!compactMode"
+                  v-model="currentTab"
+                  :opinion-count="
+                    extendedPostData.metadata.opinionCount + commentCountOffset
+                  "
+                />
               </div>
 
               <div>
-                <div v-if="!skeletonMode">
-                  <ZKButton
-                    button-type="standardButton"
-                    @click.stop.prevent="shareClicked()"
-                  >
-                    <div class="shareButtonContentContainer">
-                      <div>
-                        <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
-                      </div>
-                      <div>Share</div>
+                <ZKButton
+                  button-type="standardButton"
+                  @click.stop.prevent="shareClicked()"
+                >
+                  <div class="shareButtonContentContainer">
+                    <div>
+                      <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
                     </div>
-                  </ZKButton>
-                </div>
-                <div v-if="skeletonMode">
-                  <Skeleton
-                    width="3rem"
-                    height="2rem"
-                    border-radius="16px"
-                  ></Skeleton>
-                </div>
+                    <div>Share</div>
+                  </div>
+                </ZKButton>
               </div>
             </div>
           </div>
@@ -211,7 +180,6 @@ import { ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import Skeleton from "primevue/skeleton";
 import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import ZKCard from "../ui-library/ZKCard.vue";
 import PostLockedMessage from "./views/PostLockedMessage.vue";
@@ -224,7 +192,6 @@ import CommentAnalysisTabs from "./views/CommentAnalysisTabs.vue";
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
   compactMode: boolean;
-  skeletonMode: boolean;
 }>();
 
 const commentSectionRef = ref<InstanceType<typeof CommentSection>>();

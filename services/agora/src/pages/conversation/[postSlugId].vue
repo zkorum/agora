@@ -26,7 +26,6 @@
           :key="postData.metadata.opinionCount"
           :extended-post-data="postData"
           :compact-mode="false"
-          :skeleton-mode="false"
         />
       </WidthWrapper>
     </q-pull-to-refresh>
