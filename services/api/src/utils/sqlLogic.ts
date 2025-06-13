@@ -1,12 +1,36 @@
-import { DEFAULT_MIN_VOTERS } from "@/shared/conversationLogic.js";
+import {
+    DEFAULT_DIFFERENCE_THRESHOLD,
+    DEFAULT_MAJORITY_THRESHOLD,
+    DEFAULT_MIN_VOTERS,
+} from "@/shared/conversationLogic.js";
 import { SQL, and, asc, desc, gt, lt, or, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 
-interface IsSqlClassifyProps {
+interface IsSqlMajorityProps {
     numAgreesColumn: PgColumn;
     numDisagreesColumn: PgColumn;
     memberCountColumn: PgColumn;
     threshold?: number;
+}
+
+interface IsSqlMajorityDisagreeProps {
+    numDisagreesColumn: PgColumn;
+    memberCountColumn: PgColumn;
+    threshold?: number;
+}
+
+interface IsSqlMajorityAgreeProps {
+    numAgreesColumn: PgColumn;
+    memberCountColumn: PgColumn;
+    threshold?: number;
+}
+
+interface IsSqlControversialProps {
+    numAgreesColumn: PgColumn;
+    numDisagreesColumn: PgColumn;
+    memberCountColumn: PgColumn;
+    minVoters?: number;
+    differenceThreshold?: number;
 }
 
 interface IsSqlOrderByProps {
@@ -19,7 +43,7 @@ export function isSqlWhereMajority({
     numDisagreesColumn,
     memberCountColumn,
     threshold,
-}: IsSqlClassifyProps): SQL | undefined {
+}: IsSqlMajorityProps): SQL | undefined {
     return or(
         isSqlWhereMajorityAgree({
             numAgreesColumn: numAgreesColumn,
@@ -34,42 +58,25 @@ export function isSqlWhereMajority({
     );
 }
 
-interface IsSqlUnpopularProps {
-    numDisagreesColumn: PgColumn;
-    memberCountColumn: PgColumn;
-    threshold?: number;
-}
-
 export function isSqlWhereMajorityDisagree({
     numDisagreesColumn,
     memberCountColumn,
     threshold,
-}: IsSqlUnpopularProps): SQL {
+}: IsSqlMajorityDisagreeProps): SQL {
     let actualThreshold = threshold;
-    if (threshold === undefined) {
-        actualThreshold = DEFAULT_MIN_VOTERS;
-    }
+    actualThreshold ??= DEFAULT_MAJORITY_THRESHOLD;
     return gt(
         sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numDisagreesColumn}, 0) / ${memberCountColumn}::float END`,
         actualThreshold,
     );
 }
-
-interface IsSqlPopularProps {
-    numAgreesColumn: PgColumn;
-    memberCountColumn: PgColumn;
-    threshold?: number;
-}
-
 export function isSqlWhereMajorityAgree({
     numAgreesColumn,
     memberCountColumn,
     threshold,
-}: IsSqlPopularProps): SQL {
+}: IsSqlMajorityAgreeProps): SQL {
     let actualThreshold = threshold;
-    if (threshold === undefined) {
-        actualThreshold = DEFAULT_MIN_VOTERS;
-    }
+    actualThreshold ??= DEFAULT_MAJORITY_THRESHOLD;
     return gt(
         sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numAgreesColumn}, 0) / ${memberCountColumn}::float END`,
         actualThreshold,
@@ -80,20 +87,21 @@ export function isSqlWhereControversial({
     numAgreesColumn,
     numDisagreesColumn,
     memberCountColumn,
-    threshold,
-}: IsSqlClassifyProps): SQL | undefined {
-    let actualThreshold = threshold;
-    if (threshold === undefined) {
-        actualThreshold = DEFAULT_MIN_VOTERS;
-    }
+    minVoters,
+    differenceThreshold,
+}: IsSqlControversialProps): SQL | undefined {
+    let actualMinVoters = minVoters;
+    actualMinVoters ??= DEFAULT_MIN_VOTERS;
+    let actualDifferenceThreshold = differenceThreshold;
+    actualDifferenceThreshold ??= DEFAULT_DIFFERENCE_THRESHOLD;
     return and(
         lt(
             sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 'Infinity'::float ELSE ABS(COALESCE(${numAgreesColumn}, 0) - COALESCE(${numDisagreesColumn}, 0)) / ${memberCountColumn}::float END`,
-            actualThreshold,
+            actualDifferenceThreshold,
         ),
         gt(
             sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE (COALESCE(${numAgreesColumn}, 0) + COALESCE(${numDisagreesColumn}, 0)) / ${memberCountColumn}::float END`,
-            actualThreshold,
+            actualMinVoters,
         ),
     );
 }
