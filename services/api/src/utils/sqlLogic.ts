@@ -66,7 +66,7 @@ export function isSqlWhereMajorityDisagree({
     let actualThreshold = threshold;
     actualThreshold ??= DEFAULT_MAJORITY_THRESHOLD;
     return gt(
-        sql`CASE WHEN COALESCE(${numDisagreesColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numDisagreesColumn}, 0) / ${memberCountColumn}::float END`,
+        sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numDisagreesColumn}, 0) / ${memberCountColumn}::float END`,
         actualThreshold,
     );
 }
@@ -78,7 +78,7 @@ export function isSqlWhereMajorityAgree({
     let actualThreshold = threshold;
     actualThreshold ??= DEFAULT_MAJORITY_THRESHOLD;
     return gt(
-        sql`CASE WHEN COALESCE(${numAgreesColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numAgreesColumn}, 0) / ${memberCountColumn}::float END`,
+        sql`CASE WHEN COALESCE(${memberCountColumn}, 0) = 0 THEN 0 ELSE COALESCE(${numAgreesColumn}, 0) / ${memberCountColumn}::float END`,
         actualThreshold,
     );
 }
