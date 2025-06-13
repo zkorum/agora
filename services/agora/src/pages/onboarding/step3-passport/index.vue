@@ -126,6 +126,7 @@
                       button-type="largeButton"
                       label="Verify"
                       color="primary"
+                      :loading="verificationLink === ''"
                       @click="clickedVerifyButton()"
                     />
                     <div class="waitingVerificationText">
@@ -188,7 +189,7 @@ const { buildEncodedUcan } = useCommonApi();
 const { showNotifyMessage } = useNotify();
 
 let isDeviceLoggedInIntervalId: number | undefined = undefined;
-const verificationLink = ref("");
+const verificationLink = ref<string>("");
 
 const qrcode = useQRCode(verificationLink);
 const qrcodeVerificationStatus = ref<RarimoStatusAttributes>("not_verified");
@@ -212,7 +213,7 @@ if (quasar.platform.is.android) {
 }
 
 async function generateVerificationLink(keyAction?: KeyAction) {
-  const linkType: LinkType = quasar.platform.is.mobile ? "deep" : "http";
+  const linkType: LinkType = "http";
   try {
     const params = { linkType: linkType };
     const { url, options } =
