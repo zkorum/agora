@@ -212,7 +212,7 @@ if (quasar.platform.is.android) {
 }
 
 async function generateVerificationLink(keyAction?: KeyAction) {
-  const linkType: LinkType = "http"; // this parameter was implemented due a bug with applink, whic is now solved
+  const linkType: LinkType = quasar.platform.is.mobile ? "deep" : "http";
   try {
     const params = { linkType: linkType };
     const { url, options } =
