@@ -15,6 +15,13 @@
           "
         >
         </ZKButton>
+
+        <div v-if="userCastedVote" class="voteCountLabelDisagree">
+          <div>
+            {{ props.commentItem.numDisagrees }} •
+            {{ formatPercentage(relativeTotalPercentageDisagrees) }}
+          </div>
+        </div>
       </div>
 
       <div class="buttonContainer">
@@ -31,6 +38,13 @@
           "
         >
         </ZKButton>
+
+        <div v-if="userCastedVote" class="voteCountLabelAgree">
+          <div>
+            {{ numAgreesLocal }} •
+            {{ formatPercentage(relativeTotalPercentageAgrees) }}
+          </div>
+        </div>
       </div>
     </div>
 
@@ -51,6 +65,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendVoteApi } from "src/utils/api/vote";
+import { calculatePercentage, formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 
@@ -73,6 +88,17 @@ const { showNotifyMessage } = useNotify();
 const { castVoteForComment } = useBackendVoteApi();
 const { updateAuthState } = useBackendAuthApi();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+// we use computed to make the changes update immediately on-click, without waiting for this whole child component to re-render upon emit
+const numAgreesLocal = computed(() => props.commentItem.numAgrees);
+const numDisagreesLocal = computed(() => props.commentItem.numDisagrees);
+
+const userCastedVote = computed(() => {
+  const hasEntry = props.commentSlugIdLikedMap.has(
+    props.commentItem.opinionSlugId
+  );
+  return hasEntry ? true : false;
+});
 
 interface IconObject {
   icon: string;
@@ -116,6 +142,20 @@ const upvoteIcon = computed<IconObject>(() => {
       backgroundColor: "button-agree-background-unselected",
     };
   }
+});
+
+const relativeTotalPercentageAgrees = computed(() => {
+  return calculatePercentage(
+    numAgreesLocal.value,
+    numAgreesLocal.value + numDisagreesLocal.value
+  );
+});
+
+const relativeTotalPercentageDisagrees = computed(() => {
+  return calculatePercentage(
+    numDisagreesLocal.value,
+    numAgreesLocal.value + numDisagreesLocal.value
+  );
 });
 
 function onLoginCallback() {
@@ -174,6 +214,10 @@ async function castPersonalVote(
 </script>
 
 <style scoped lang="scss">
+.voteCountLabel {
+  padding-left: 0.5rem;
+}
+
 .agreementButtons {
   display: grid;
   grid-template-columns: calc(50% - 0.5rem) calc(50% - 0.5rem);
@@ -193,5 +237,17 @@ async function castPersonalVote(
   flex-direction: column;
   gap: 0.5rem;
   align-items: center;
+}
+
+.voteCountLabelDisagree {
+  color: $button-disgree-text;
+}
+
+.voteCountLabelAgree {
+  color: $button-agree-text;
+}
+
+.highlightStat {
+  font-weight: bold;
 }
 </style>
