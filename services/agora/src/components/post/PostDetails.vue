@@ -122,7 +122,11 @@ function onLoad(index: number, done: () => void) {
 }
 
 function openModerationHistory() {
-  commentSectionRef.value?.openModerationHistory();
+  if (commentSectionRef.value) {
+    commentSectionRef.value.openModerationHistory();
+  } else {
+    console.warn("Comment section reference is undefined");
+  }
 }
 
 function decrementCommentCount() {
