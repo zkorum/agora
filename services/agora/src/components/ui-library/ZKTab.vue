@@ -1,8 +1,9 @@
 <template>
   <div
-    class="tabStyle underlineTab"
+    class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
+      underlineTab: shouldUnderlineOnHighlight,
       activeTabUnderlineColor: isHighlighted && shouldUnderlineOnHighlight,
       inactiveTabUnderlineColor: !isHighlighted && shouldUnderlineOnHighlight,
     }"
