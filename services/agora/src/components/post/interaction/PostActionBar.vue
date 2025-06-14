@@ -4,7 +4,7 @@
       <div v-if="compactMode" class="commentCountStyle">
         <ZKIcon color="#7D7A85" name="meteor-icons:comment" size="1rem" />
         <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
-          {{ opinionCount.toString() }}
+          {{ opinionCount }}
         </div>
       </div>
       <ViewTabs
