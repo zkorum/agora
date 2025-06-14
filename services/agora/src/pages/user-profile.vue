@@ -71,7 +71,7 @@ import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
-import { RouteNamedMap } from "vue-router/auto-routes";
+import type { RouteRecordName } from "vue-router";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import UserMetadata from "src/components/post/views/UserMetadata.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -82,7 +82,7 @@ const { loadUserProfile } = useUserStore();
 const { isGuest } = storeToRefs(useAuthenticationStore());
 
 interface CustomTab {
-  route: keyof RouteNamedMap;
+  route: RouteRecordName;
   label: string;
   value: number;
 }
@@ -142,13 +142,13 @@ function applyCurrentTab() {
   }
 }
 
-async function selectedTab(routeName: keyof RouteNamedMap) {
+async function selectedTab(routeName: RouteRecordName) {
   if (routeName == "/user-profile/conversations/") {
     await router.replace({ name: "/user-profile/conversations/" });
   } else if (routeName == "/user-profile/opinions/") {
     await router.replace({ name: "/user-profile/opinions/" });
   } else {
-    console.error("Unknown route: " + routeName);
+    console.error("Unknown route: " + String(routeName));
   }
 }
 </script>

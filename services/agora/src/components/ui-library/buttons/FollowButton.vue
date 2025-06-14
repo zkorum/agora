@@ -84,5 +84,6 @@ defineProps<{
 
 .followingStyle:hover {
   background-color: #c6c4ff !important;
+  border-color: #6b4eff !important;
 }
 </style>

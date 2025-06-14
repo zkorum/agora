@@ -86,10 +86,10 @@ async function initialize() {
 
 async function loadData() {
   if (route.name == "/conversation/[postSlugId]") {
-    const response = await fetchPostBySlugId(
-      route.params.postSlugId,
-      isGuestOrLoggedIn.value
-    );
+    const slugId: string = Array.isArray(route.params.postSlugId)
+      ? route.params.postSlugId[0]
+      : route.params.postSlugId;
+    const response = await fetchPostBySlugId(slugId, isGuestOrLoggedIn.value);
     if (response != null) {
       postData.value = response;
       return true;

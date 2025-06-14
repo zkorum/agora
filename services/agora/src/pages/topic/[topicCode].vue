@@ -40,7 +40,9 @@ onMounted(async () => {
 
 async function loadData() {
   if (route.name == "/topic/[topicCode]") {
-    topicCode.value = route.params.topicCode;
+    topicCode.value = Array.isArray(route.params.topicCode)
+      ? route.params.topicCode[0]
+      : route.params.topicCode;
     console.log(topicCode.value);
   } else {
     return false;

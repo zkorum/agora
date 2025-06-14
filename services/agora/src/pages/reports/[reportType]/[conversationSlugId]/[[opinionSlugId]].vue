@@ -89,16 +89,24 @@ async function openPage() {
     route.name ===
     "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
+    const conversationSlugId = Array.isArray(route.params.conversationSlugId)
+      ? route.params.conversationSlugId[0]
+      : route.params.conversationSlugId;
+
     if (route.params.reportType == "conversation") {
       await router.push({
         name: "/conversation/[postSlugId]",
-        params: { postSlugId: route.params.conversationSlugId },
+        params: { postSlugId: conversationSlugId },
       });
     } else if (route.params.reportType == "opinion") {
+      const opinionSlugId = Array.isArray(route.params.opinionSlugId)
+        ? route.params.opinionSlugId[0]
+        : route.params.opinionSlugId;
+
       await router.push({
         name: "/conversation/[postSlugId]",
-        params: { postSlugId: route.params.conversationSlugId },
-        query: { opinion: route.params.opinionSlugId },
+        params: { postSlugId: conversationSlugId },
+        query: { opinion: opinionSlugId },
       });
     } else {
       console.log("Unknown report type");
@@ -111,24 +119,30 @@ async function loadReports() {
     route.name ===
     "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
+    const conversationSlugId = Array.isArray(route.params.conversationSlugId)
+      ? route.params.conversationSlugId[0]
+      : route.params.conversationSlugId;
+
     if (route.params.reportType == "conversation") {
       reportType.value = "conversation";
-      reportItemList.value = await fetchUserReportsByPostSlugId(
-        route.params.conversationSlugId
-      );
+      reportItemList.value =
+        await fetchUserReportsByPostSlugId(conversationSlugId);
     } else if (
       route.params.reportType == "opinion" &&
       route.params.opinionSlugId
     ) {
       reportType.value = "opinion";
-      reportItemList.value = await fetchUserReportsByCommentSlugId(
-        route.params.opinionSlugId
-      );
+      const opinionSlugId = Array.isArray(route.params.opinionSlugId)
+        ? route.params.opinionSlugId[0]
+        : route.params.opinionSlugId;
+
+      reportItemList.value =
+        await fetchUserReportsByCommentSlugId(opinionSlugId);
     } else {
-      showNotifyMessage("Invlid report type");
+      showNotifyMessage("Invalid report type");
     }
   } else {
-    showNotifyMessage("Invlid slug ID param");
+    showNotifyMessage("Invalid slug ID param");
   }
 }
 </script>

@@ -78,7 +78,8 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
 import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
-import { RouteMap, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import type { RouteRecordName } from "vue-router";
 import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
@@ -105,8 +106,8 @@ const showLoginDialog = ref(false);
 
 interface SettingItem {
   name: string;
-  route: keyof RouteMap;
-  matchRouteList: (keyof RouteMap)[];
+  route: RouteRecordName;
+  matchRouteList: RouteRecordName[];
   requireAuth: boolean;
   svgStringStandard: string;
   svgStringFilled: string;
@@ -178,7 +179,7 @@ function initializeMenu() {
   });
 }
 
-async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
+async function enterRoute(routeName: RouteRecordName, requireAuth: boolean) {
   if (requireAuth && isGuestOrLoggedIn.value === false) {
     showLoginDialog.value = true;
   } else {
@@ -198,10 +199,12 @@ async function enterRoute(routeName: keyof RouteMap, requireAuth: boolean) {
       await router.push({ name: "/topics/" });
     } else {
       console.error(
-        "Unknown route name when entering route in side bar: " + routeName
+        "Unknown route name when entering route in side bar: " +
+          String(routeName)
       );
       console.error(
-        "Unknown route name when entering route in side bar: " + routeName
+        "Unknown route name when entering route in side bar: " +
+          String(routeName)
       );
     }
   }
