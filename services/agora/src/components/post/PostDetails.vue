@@ -243,6 +243,7 @@ async function shareClicked() {
 <style scoped lang="scss">
 .container {
   display: flex;
+  gap: 1rem;
   flex-direction: column;
 }
 

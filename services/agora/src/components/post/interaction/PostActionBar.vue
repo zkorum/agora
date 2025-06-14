@@ -1,12 +1,13 @@
 <template>
   <div class="buttonClusterBar" :class="{ buttonClusterBorder: !compactMode }">
-    <div class="leftButtonCluster">
+    <div>
       <div v-if="compactMode" class="commentCountStyle">
         <ZKIcon color="#7D7A85" name="meteor-icons:comment" size="1rem" />
         <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
           {{ opinionCount }}
         </div>
       </div>
+
       <ViewTabs
         v-if="!compactMode"
         v-model="currentTab"
@@ -59,12 +60,6 @@ defineEmits(["share"]);
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: #e2e1e7;
-}
-
-.leftButtonCluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
 }
 
 .commentCountStyle {
