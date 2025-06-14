@@ -85,7 +85,7 @@ function mutedComment() {
 .commentListFlex {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: $feed-flex-gap;
   padding-bottom: 10rem;
 }
 

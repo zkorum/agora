@@ -249,6 +249,7 @@ async function shareClicked() {
 
 .compactBackground {
   background-color: white;
+  transition: $mouse-hover-transition;
 }
 
 .compactBackground:hover {

@@ -170,6 +170,7 @@ async function redirectPage(routeTarget: RouteTarget) {
   gap: 0.5rem;
   padding: $container-padding;
   background-color: white;
+  transition: $mouse-hover-transition;
 }
 
 .notificationItemBase:hover {
@@ -195,7 +196,7 @@ async function redirectPage(routeTarget: RouteTarget) {
 .notificaitonListFlexStyle {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $feed-flex-gap;
 }
 
 .endOfFeed {

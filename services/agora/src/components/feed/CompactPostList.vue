@@ -167,11 +167,11 @@ async function refreshPage(done: () => void) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .postListFlex {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $feed-flex-gap;
 }
 
 .emptyDivPadding {
