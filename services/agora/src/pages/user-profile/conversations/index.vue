@@ -59,7 +59,7 @@ async function openPost(postSlugId: string) {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $feed-flex-gap;
 }
 
 .emptyMessage {

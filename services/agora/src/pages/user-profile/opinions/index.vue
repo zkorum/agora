@@ -123,7 +123,7 @@ async function commentDeleted() {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $feed-flex-gap;
 }
 
 .commentItemStyle {
@@ -143,6 +143,10 @@ async function commentDeleted() {
 .emptyMessage {
   padding: 2rem;
   text-align: center;
+}
+
+.hoverColor {
+  transition: $mouse-hover-transition;
 }
 
 .hoverColor:hover {

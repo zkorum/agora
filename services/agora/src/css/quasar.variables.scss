@@ -66,7 +66,10 @@ $lightweight-text-color: #6d6a74;
 
 $app-background-color: #f6f5f8;
 
-$mouse-hover-color: #fafafa;
+$mouse-hover-color: #e2e8f0;
+$mouse-hover-transition: background-color 0.3s ease;
+
+$feed-flex-gap: 0.5rem;
 
 .text-button-disagree-background-unselected {
   color: #ffefd7 !important;
