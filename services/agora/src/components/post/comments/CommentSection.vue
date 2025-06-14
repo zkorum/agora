@@ -1,22 +1,8 @@
 <template>
   <div>
     <div class="container">
-      <CommentClusterGraph
-        v-if="showClusterMap && mode === 'analysis'"
-        :clusters="props.polis.clusters"
-        :total-participant-count="props.participantCount"
-        :current-cluster-tab="currentClusterTab"
-        @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
-      />
-
       <div class="commentSectionToolbar">
-        <ClusterTabs
-          v-if="mode === 'analysis' && showClusterMap"
-          v-model="currentClusterTab"
-          :cluster-metadata-list="props.polis.clusters"
-        />
-
-        <div v-if="mode === 'comment'" class="commentSortingSelector">
+        <div class="commentSortingSelector">
           <CommentSortingSelector
             :filter-value="sortAlgorithm"
             @changed-algorithm="
@@ -27,8 +13,6 @@
       </div>
 
       <CommentGroup
-        :mode="props.mode"
-        :selected-cluster-key="currentSelectedClusterKey"
         :comment-item-list="opinionItemListPartial"
         :is-loading="isLoading"
         :post-slug-id="postSlugId"
@@ -37,7 +21,6 @@
         :is-post-locked="isPostLocked"
         :participant-count="props.participantCount"
         :login-required-to-participate="props.loginRequiredToParticipate"
-        :ai-summary="currentAiSummary"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
         @change-vote="
@@ -68,9 +51,7 @@ import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import CommentClusterGraph from "../analysis/cluster/CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import ClusterTabs from "../analysis/cluster/ClusterTabs.vue";
 
 defineExpose({
   openModerationHistory,
@@ -83,7 +64,6 @@ const emit = defineEmits([
 ]);
 
 const props = defineProps<{
-  mode: "comment" | "analysis";
   postSlugId: string;
   participantCount: number;
   polis: ExtendedConversationPolis;
@@ -95,8 +75,6 @@ const props = defineProps<{
 
 const sortAlgorithm = ref<CommentFilterOptions>("discover");
 const requestedCommentSlugId = ref("");
-
-const currentClusterTab = ref<PolisKey | "all">("all");
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -124,49 +102,20 @@ const isLoadingCommentItemsAll = ref<boolean>(true);
 
 // Computed properties for the unified CommentGroup component
 const isLoading = computed(() => {
-  if (props.mode === "comment") {
-    switch (sortAlgorithm.value) {
-      case "discover":
-        return isLoadingCommentItemsDiscover.value;
-      case "new":
-        return isLoadingCommentItemsNew.value;
-      case "moderated":
-        return isLoadingCommentItemsModerated.value;
-      case "hidden":
-        return isLoadingCommentItemsHidden.value;
-      default:
-        return isLoadingCommentItemsDiscover.value;
-    }
-  } else if (props.mode === "analysis") {
-    if (currentClusterTab.value === "all") {
+  switch (sortAlgorithm.value) {
+    case "discover":
       return isLoadingCommentItemsDiscover.value;
-    } else {
-      return isLoadingCommentItemsCluster.value;
-    }
+    case "new":
+      return isLoadingCommentItemsNew.value;
+    case "moderated":
+      return isLoadingCommentItemsModerated.value;
+    case "hidden":
+      return isLoadingCommentItemsHidden.value;
+    default:
+      return isLoadingCommentItemsDiscover.value;
   }
-  return true;
 });
 
-const currentSelectedClusterKey = computed(() => {
-  if (props.mode === "analysis" && currentClusterTab.value !== "all") {
-    return currentClusterTab.value;
-  }
-  return undefined;
-});
-
-const currentAiSummary = computed(() => {
-  if (props.mode === "analysis") {
-    if (currentClusterTab.value === "all") {
-      return props.polis.aiSummary;
-    } else if (
-      typeof currentClusterTab.value === "string" &&
-      parseInt(currentClusterTab.value) in props.polis.clusters
-    ) {
-      return props.polis.clusters[parseInt(currentClusterTab.value)].aiSummary;
-    }
-  }
-  return undefined;
-});
 let commentItemsNew: OpinionItem[] = [];
 let commentItemsDiscover: OpinionItem[] = [];
 let commentItemsModerated: OpinionItem[] = [];
@@ -181,24 +130,6 @@ const { setupOpinionlist, detectOpinionFilterBySlugId } =
 let isMounted = false;
 
 loadCommentFilterQuery();
-
-function loadAnalysisModeToOpinionList() {
-  if (currentClusterTab.value !== "all") {
-    const clusterKey = currentClusterTab.value;
-    const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
-    if (cachedCommentItems) {
-      setupOpinionlist(cachedCommentItems, requestedCommentSlugId.value);
-    } else {
-      setupOpinionlist([], requestedCommentSlugId.value);
-      console.error(
-        `Failed to locate comment items for cluster key: ${clusterKey}`
-      );
-    }
-  } else {
-    updateInfiniteScrollingList("all");
-  }
-  requestedCommentSlugId.value = "";
-}
 
 function loadCommentModeToOpinionList() {
   updateInfiniteScrollingList(sortAlgorithm.value);
@@ -217,30 +148,6 @@ watch(sortAlgorithm, () => {
   }
   loadCommentModeToOpinionList();
 });
-
-watch(currentClusterTab, async () => {
-  if (!isMounted) {
-    return;
-  }
-  loadAnalysisModeToOpinionList();
-});
-
-watch(
-  () => props.mode,
-  async () => {
-    if (!isMounted) {
-      return;
-    }
-    switch (props.mode) {
-      case "analysis":
-        loadAnalysisModeToOpinionList();
-        break;
-      case "comment":
-        loadCommentModeToOpinionList();
-        break;
-    }
-  }
-);
 
 const showClusterMap = computed(() => {
   return props.polis.clusters.length >= 2;
@@ -457,14 +364,6 @@ async function scrollToComment() {
 
 async function changeFilter(filterValue: CommentFilterOptions) {
   sortAlgorithm.value = filterValue;
-}
-
-function toggleClusterSelection(clusterKey: PolisKey) {
-  if (currentClusterTab.value == clusterKey) {
-    currentClusterTab.value = "all";
-  } else {
-    currentClusterTab.value = clusterKey;
-  }
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {

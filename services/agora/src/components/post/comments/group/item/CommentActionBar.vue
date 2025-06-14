@@ -15,38 +15,6 @@
           "
         >
         </ZKButton>
-
-        <div v-if="userCastedVote" class="voteCountLabelDisagree">
-          <div v-if="mode === 'analysis'">
-            Total: {{ props.commentItem.numDisagrees }} •
-            {{ formatPercentage(absoluteTotalPercentageDisagrees) }}
-          </div>
-          <div v-if="mode === 'comment'">
-            {{ props.commentItem.numDisagrees }} •
-            {{ formatPercentage(relativeTotalPercentageDisagrees) }}
-          </div>
-          <div
-            v-if="mode === 'analysis' && commentItem.clustersStats.length >= 2"
-          >
-            <div
-              v-for="clusterItem in commentItem.clustersStats"
-              :key="clusterItem.key"
-              :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
-            >
-              {{
-                formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
-              }}: {{ clusterItem.numDisagrees }} •
-              {{
-                formatPercentage(
-                  calculatePercentage(
-                    clusterItem.numDisagrees,
-                    clusterItem.numUsers
-                  )
-                )
-              }}
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="buttonContainer">
@@ -63,38 +31,6 @@
           "
         >
         </ZKButton>
-
-        <div v-if="userCastedVote" class="voteCountLabelAgree">
-          <div v-if="mode === 'analysis'">
-            Total: {{ numAgreesLocal }} •
-            {{ formatPercentage(absoluteTotalPercentageAgrees) }}
-          </div>
-          <div v-if="mode === 'comment'">
-            {{ numAgreesLocal }} •
-            {{ formatPercentage(relativeTotalPercentageAgrees) }}
-          </div>
-          <div
-            v-if="mode === 'analysis' && commentItem.clustersStats.length >= 2"
-          >
-            <div
-              v-for="clusterItem in commentItem.clustersStats"
-              :key="clusterItem.key"
-              :class="{ highlightStat: selectedClusterKey === clusterItem.key }"
-            >
-              {{
-                formatClusterLabel(clusterItem.key, true, clusterItem.aiLabel)
-              }}: {{ clusterItem.numAgrees }} •
-              {{
-                formatPercentage(
-                  calculatePercentage(
-                    clusterItem.numAgrees,
-                    clusterItem.numUsers
-                  )
-                )
-              }}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -110,23 +46,15 @@
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import {
-  PolisKey,
-  type OpinionItem,
-  type VotingAction,
-} from "src/shared/types/zod";
+import { type OpinionItem, type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendVoteApi } from "src/utils/api/vote";
-import { calculatePercentage, formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 
 const props = defineProps<{
-  mode: "comment" | "analysis";
-  selectedClusterKey: PolisKey | undefined;
   commentItem: OpinionItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
@@ -145,18 +73,6 @@ const { showNotifyMessage } = useNotify();
 const { castVoteForComment } = useBackendVoteApi();
 const { updateAuthState } = useBackendAuthApi();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
-
-// we use computed to make the changes update immediately on-click, without waiting for this whole child component to re-render upon emit
-const numAgreesLocal = computed(() => props.commentItem.numAgrees);
-const numDisagreesLocal = computed(() => props.commentItem.numDisagrees);
-const participantCountLocal = computed(() => props.participantCount);
-
-const userCastedVote = computed(() => {
-  const hasEntry = props.commentSlugIdLikedMap.has(
-    props.commentItem.opinionSlugId
-  );
-  return hasEntry ? true : false;
-});
 
 interface IconObject {
   icon: string;
@@ -200,31 +116,6 @@ const upvoteIcon = computed<IconObject>(() => {
       backgroundColor: "button-agree-background-unselected",
     };
   }
-});
-
-const absoluteTotalPercentageAgrees = computed(() => {
-  return calculatePercentage(numAgreesLocal.value, participantCountLocal.value);
-});
-
-const relativeTotalPercentageAgrees = computed(() => {
-  return calculatePercentage(
-    numAgreesLocal.value,
-    numAgreesLocal.value + numDisagreesLocal.value
-  );
-});
-
-const absoluteTotalPercentageDisagrees = computed(() => {
-  return calculatePercentage(
-    numDisagreesLocal.value,
-    participantCountLocal.value
-  );
-});
-
-const relativeTotalPercentageDisagrees = computed(() => {
-  return calculatePercentage(
-    numDisagreesLocal.value,
-    numAgreesLocal.value + numDisagreesLocal.value
-  );
 });
 
 function onLoginCallback() {
@@ -283,10 +174,6 @@ async function castPersonalVote(
 </script>
 
 <style scoped lang="scss">
-.voteCountLabel {
-  padding-left: 0.5rem;
-}
-
 .agreementButtons {
   display: grid;
   grid-template-columns: calc(50% - 0.5rem) calc(50% - 0.5rem);
@@ -306,17 +193,5 @@ async function castPersonalVote(
   flex-direction: column;
   gap: 0.5rem;
   align-items: center;
-}
-
-.voteCountLabelDisagree {
-  color: $button-disgree-text;
-}
-
-.voteCountLabelAgree {
-  color: $button-agree-text;
-}
-
-.highlightStat {
-  font-weight: bold;
 }
 </style>

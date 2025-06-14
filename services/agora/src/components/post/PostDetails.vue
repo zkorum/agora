@@ -28,10 +28,18 @@
           />
 
           <div v-if="!compactMode" class="commentSectionPadding">
+            <AnalysisTab
+              v-if="currentTab == 'analysis'"
+              :participant-count="
+                props.extendedPostData.metadata.participantCount
+              "
+              :polis="props.extendedPostData.polis"
+            />
+
             <CommentSection
+              v-if="currentTab == 'comment'"
               :key="commentSectionKey"
               ref="commentSectionRef"
-              :mode="currentTab"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
               :participant-count="participantCountLocal"
               :polis="extendedPostData.polis"
@@ -87,6 +95,7 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
+import AnalysisTab from "./analysis/AnalysisTab.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
@@ -196,7 +205,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
             if (opinionItem.opinionSlugId === opinionSlugId) {
               switch (originalVote) {
                 case "agree":
-                  opinionItem.numAgrees = opinionItem.numDisagrees - 1;
+                  opinionItem.numAgrees = opinionItem.numAgrees - 1;
                   break;
                 case "disagree":
                   opinionItem.numDisagrees = opinionItem.numDisagrees - 1;

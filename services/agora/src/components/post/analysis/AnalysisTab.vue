@@ -1,0 +1,63 @@
+<template>
+  <CommentClusterGraph
+    :clusters="props.polis.clusters"
+    :total-participant-count="props.participantCount"
+    :current-cluster-tab="currentClusterTab"
+    @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
+  />
+
+  <ClusterTabs
+    v-model="currentClusterTab"
+    :cluster-metadata-list="props.polis.clusters"
+  />
+
+  <CommentConsensusSummary
+    v-if="currentAiSummary"
+    :summary="currentAiSummary"
+    :selected-cluster-key="currentSelectedClusterKey"
+  />
+</template>
+
+<script setup lang="ts">
+import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
+import { computed, ref } from "vue";
+import CommentConsensusSummary from "./CommentConsensusSummary.vue";
+import CommentClusterGraph from "./cluster/CommentClusterGraph.vue";
+import ClusterTabs from "./cluster/ClusterTabs.vue";
+
+const props = defineProps<{
+  polis: ExtendedConversationPolis;
+  participantCount: number;
+}>();
+
+const currentClusterTab = ref<PolisKey | "all">("all");
+
+const currentSelectedClusterKey = computed(() => {
+  if (currentClusterTab.value !== "all") {
+    return currentClusterTab.value;
+  }
+  return undefined;
+});
+
+const currentAiSummary = computed(() => {
+  if (currentClusterTab.value === "all") {
+    return props.polis.aiSummary;
+  } else if (
+    typeof currentClusterTab.value === "string" &&
+    parseInt(currentClusterTab.value) in props.polis.clusters
+  ) {
+    return props.polis.clusters[parseInt(currentClusterTab.value)].aiSummary;
+  }
+  return undefined;
+});
+
+function toggleClusterSelection(clusterKey: PolisKey) {
+  if (currentClusterTab.value == clusterKey) {
+    currentClusterTab.value = "all";
+  } else {
+    currentClusterTab.value = clusterKey;
+  }
+}
+</script>
+
+<style lang="scss" scoped></style>
