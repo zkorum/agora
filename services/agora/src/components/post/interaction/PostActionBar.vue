@@ -9,9 +9,8 @@
       </div>
       <ViewTabs
         v-if="!compactMode"
-        v-model="localCurrentTab"
+        v-model="currentTab"
         :opinion-count="opinionCount"
-        @update:model-value="$emit('tabChange', $event)"
       />
     </div>
 
@@ -35,30 +34,17 @@
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
 import ViewTabs from "../comments/ViewTabs.vue";
-import { ref, watch } from "vue";
 
-const props = defineProps<{
+defineProps<{
   compactMode: boolean;
-  currentTab: "comment" | "analysis";
   opinionCount: number;
 }>();
 
-const emit = defineEmits(["share", "tabChange"]);
-
-const localCurrentTab = ref(props.currentTab);
-
-watch(
-  () => props.currentTab,
-  (newValue) => {
-    localCurrentTab.value = newValue;
-  }
-);
-
-watch(localCurrentTab, (newValue) => {
-  if (newValue !== props.currentTab) {
-    emit("tabChange", newValue);
-  }
+const currentTab = defineModel<"comment" | "analysis">({
+  required: true,
 });
+
+defineEmits(["share"]);
 </script>
 
 <style scoped lang="scss">
