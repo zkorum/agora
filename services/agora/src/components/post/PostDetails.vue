@@ -247,15 +247,10 @@ async function shareClicked() {
   background-color: $mouse-hover-color;
 }
 
-.commentSectionPadding {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
 .postPadding {
   padding-top: $container-padding;
-  padding-left: $container-padding;
-  padding-right: $container-padding;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   padding-bottom: 1rem;
 }
 </style>
