@@ -208,7 +208,9 @@ export function useBackendAuthApi() {
       ) {
         console.log("Cleaning data from detecting change to unknown device");
         await logoutDataCleanup();
-        await firstLoadGuard(route.name);
+        if (route.name) {
+          await firstLoadGuard(route.name);
+        }
         return;
       }
 
@@ -221,7 +223,9 @@ export function useBackendAuthApi() {
         } else {
           console.log("Cleaning data from logging out");
           await logoutDataCleanup();
-          await firstLoadGuard(route.name);
+          if (route.name) {
+            await firstLoadGuard(route.name);
+          }
           return;
         }
     } catch (e) {

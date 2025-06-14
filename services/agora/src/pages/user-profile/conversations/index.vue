@@ -9,8 +9,6 @@
           <PostDetails
             :extended-post-data="postData"
             :compact-mode="true"
-            :show-comment-section="false"
-            :skeleton-mode="false"
             class="showCursor"
             @click="openPost(postData.metadata.conversationSlugId)"
           />
@@ -61,7 +59,7 @@ async function openPost(postSlugId: string) {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $feed-flex-gap;
 }
 
 .emptyMessage {
