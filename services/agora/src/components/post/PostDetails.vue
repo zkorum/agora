@@ -7,10 +7,8 @@
     >
       <ZKHoverEffect :enable-hover="compactMode">
         <div
-          class="container postPadding"
-          :class="{
-            compactBackground: compactMode,
-          }"
+          class="container standardStyle"
+          :class="{ compactBackground: compactMode }"
         >
           <PostContent
             :extended-post-data="extendedPostData"
@@ -256,10 +254,10 @@ async function shareClicked() {
   background-color: $mouse-hover-color;
 }
 
-.postPadding {
-  padding-top: $container-padding;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+.standardStyle {
+  padding-top: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   padding-bottom: 1rem;
 }
 </style>
