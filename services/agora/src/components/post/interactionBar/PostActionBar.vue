@@ -1,16 +1,9 @@
 <template>
   <div class="buttonClusterBar" :class="{ buttonClusterBorder: !compactMode }">
     <div>
-      <div v-if="compactMode" class="commentCountStyle">
-        <ZKIcon color="#7D7A85" name="meteor-icons:comment" size="1rem" />
-        <div :style="{ color: '#7D7A85', paddingBottom: '3px' }">
-          {{ opinionCount }}
-        </div>
-      </div>
-
-      <ViewTabs
-        v-if="!compactMode"
+      <InteractionTab
         v-model="currentTab"
+        :compact-mode="props.compactMode"
         :opinion-count="opinionCount"
       />
     </div>
@@ -34,9 +27,9 @@
 <script setup lang="ts">
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
-import ViewTabs from "../comments/ViewTabs.vue";
+import InteractionTab from "./InteractionTab.vue";
 
-defineProps<{
+const props = defineProps<{
   compactMode: boolean;
   opinionCount: number;
 }>();
@@ -60,13 +53,6 @@ defineEmits(["share"]);
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: #e2e1e7;
-}
-
-.commentCountStyle {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding-top: 0.5rem;
 }
 
 .shareButtonContentContainer {

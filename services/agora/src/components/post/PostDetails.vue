@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import CommentSection from "./comments/CommentSection.vue";
 import PostContent from "./display/PostContent.vue";
-import PostActionBar from "./interaction/PostActionBar.vue";
+import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import { ref } from "vue";
