@@ -476,7 +476,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 
 .commentSectionToolbar {
