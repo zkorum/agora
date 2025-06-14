@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 
-const model = defineModel({ required: true, type: String });
+const model = defineModel<"comment" | "analysis">({ required: true });
 defineProps<{
   opinionCount: number;
 }>();

@@ -19,13 +19,12 @@
           />
 
           <PostActionBar
+            v-model="currentTab"
             :compact-mode="compactMode"
-            :current-tab="currentTab"
             :opinion-count="
               extendedPostData.metadata.opinionCount + commentCountOffset
             "
             @share="shareClicked()"
-            @tab-change="(tab) => (currentTab = tab)"
           />
 
           <div v-if="!compactMode" class="commentSectionPadding">
