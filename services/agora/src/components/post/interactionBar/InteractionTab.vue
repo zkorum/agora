@@ -4,11 +4,12 @@
       <ZKTab
         icon-code="meteor-icons:comment"
         :text="String(opinionCount)"
-        :is-highlighted="model === 'comment'"
+        :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
         @click="clickedTab('comment')"
       />
       <ZKTab
+        v-if="!compactMode"
         icon-code="ph:chart-donut"
         text="Analysis"
         :is-highlighted="model === 'analysis'"
@@ -23,12 +24,15 @@
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 
 const model = defineModel<"comment" | "analysis">({ required: true });
-defineProps<{
+const props = defineProps<{
   opinionCount: number;
+  compactMode: boolean;
 }>();
 
 function clickedTab(tabKey: "comment" | "analysis") {
-  model.value = tabKey;
+  if (!props.compactMode) {
+    model.value = tabKey;
+  }
 }
 </script>
 
