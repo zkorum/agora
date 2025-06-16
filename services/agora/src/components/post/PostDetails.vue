@@ -26,7 +26,7 @@
           />
 
           <div v-if="!compactMode" class="commentSectionPadding">
-            <AnalysisTab
+            <AnalysisPage
               v-if="currentTab == 'analysis'"
               :participant-count="
                 props.extendedPostData.metadata.participantCount
@@ -93,7 +93,7 @@ import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
-import AnalysisTab from "./analysis/AnalysisTab.vue";
+import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;
