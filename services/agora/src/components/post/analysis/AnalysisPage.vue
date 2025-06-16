@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <ShortcutBar />
+    <ShortcutBar @clicked-shortcut="handleShortcut" />
 
     <CommentClusterGraph
       :clusters="props.polis.clusters"
@@ -29,6 +29,7 @@ import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 import CommentClusterGraph from "./cluster/CommentClusterGraph.vue";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
+import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
@@ -62,6 +63,10 @@ function toggleClusterSelection(clusterKey: PolisKey) {
   } else {
     currentClusterTab.value = clusterKey;
   }
+}
+
+function handleShortcut(shortcutName: ShortcutItem) {
+  console.log("Shortcut clicked:", shortcutName);
 }
 </script>
 
