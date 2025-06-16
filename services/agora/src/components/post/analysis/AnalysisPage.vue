@@ -1,21 +1,25 @@
 <template>
-  <CommentClusterGraph
-    :clusters="props.polis.clusters"
-    :total-participant-count="props.participantCount"
-    :current-cluster-tab="currentClusterTab"
-    @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
-  />
+  <div class="container">
+    <ShortcutBar />
 
-  <ClusterTabs
-    v-model="currentClusterTab"
-    :cluster-metadata-list="props.polis.clusters"
-  />
+    <CommentClusterGraph
+      :clusters="props.polis.clusters"
+      :total-participant-count="props.participantCount"
+      :current-cluster-tab="currentClusterTab"
+      @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
+    />
 
-  <CommentConsensusSummary
-    v-if="currentAiSummary"
-    :summary="currentAiSummary"
-    :selected-cluster-key="currentSelectedClusterKey"
-  />
+    <ClusterTabs
+      v-model="currentClusterTab"
+      :cluster-metadata-list="props.polis.clusters"
+    />
+
+    <CommentConsensusSummary
+      v-if="currentAiSummary"
+      :summary="currentAiSummary"
+      :selected-cluster-key="currentSelectedClusterKey"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -24,6 +28,7 @@ import { computed, ref } from "vue";
 import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 import CommentClusterGraph from "./cluster/CommentClusterGraph.vue";
 import ClusterTabs from "./cluster/ClusterTabs.vue";
+import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
@@ -60,4 +65,12 @@ function toggleClusterSelection(clusterKey: PolisKey) {
 }
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.container {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 25px;
+  border-color: #e9e9f1;
+  border-width: 1px;
+}
+</style>
