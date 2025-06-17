@@ -1,12 +1,14 @@
 <template>
-  <div class="container">
-    <ShortcutButton
-      v-for="item in shortcutItemList"
-      :key="item"
-      :is-selected="true"
-      :label="item"
-      @click="clickedShortcutButton(item)"
-    />
+  <div>
+    <div class="container">
+      <ShortcutButton
+        v-for="item in shortcutItemList"
+        :key="item"
+        :is-selected="true"
+        :label="item"
+        @click="clickedShortcutButton(item)"
+      />
+    </div>
   </div>
 </template>
 

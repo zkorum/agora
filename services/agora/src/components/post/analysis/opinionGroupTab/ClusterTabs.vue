@@ -3,7 +3,7 @@
     <div v-if="clusterMetadataList.length > 1" class="container">
       <ZKTab
         text="All"
-        :is-highlighted="model === 'all'"
+        :is-highlighted="currentClusterTab === 'all'"
         :should-underline-on-highlight="true"
         @click="clickedTab('all')"
       />
@@ -13,7 +13,7 @@
           :text="
             formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
           "
-          :is-highlighted="model === clusterItem.key"
+          :is-highlighted="currentClusterTab === clusterItem.key"
           :should-underline-on-highlight="true"
           @click="clickedTab(clusterItem.key)"
         />
@@ -27,14 +27,14 @@ import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
-const model = defineModel({ required: true, type: String });
+const currentClusterTab = defineModel({ required: true, type: String });
 
 defineProps<{
   clusterMetadataList: ClusterMetadata[];
 }>();
 
 function clickedTab(tabKey: PolisKey | "all") {
-  model.value = tabKey;
+  currentClusterTab.value = tabKey;
 }
 </script>
 

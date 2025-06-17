@@ -1,5 +1,12 @@
 <template>
   <div>
+    <div>What are the opinion groups?</div>
+
+    <ClusterTabs
+      v-model="currentClusterTab"
+      :cluster-metadata-list="props.polis.clusters"
+    />
+
     <div class="container">
       <div class="infoIcon">
         <ZKButton button-type="icon" @click="showClusterInformation = true">
@@ -33,7 +40,7 @@
       >
         <!-- TODO: Integration the show me label -->
         <div
-          v-if="clusters[imageIndex].isUserInCluster"
+          v-if="props.polis.clusters[imageIndex].isUserInCluster"
           class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
         >
           <q-icon name="mdi-account-outline" />
@@ -62,18 +69,18 @@
               <div class="clusterOverlayFontBold">
                 {{
                   formatClusterLabel(
-                    clusters[imageIndex].key,
+                    props.polis.clusters[imageIndex].key,
                     false,
-                    clusters[imageIndex].aiLabel
+                    props.polis.clusters[imageIndex].aiLabel
                   )
                 }}
               </div>
               <div class="clusterGroupSize">
                 <q-icon name="mdi-account-supervisor-outline" />
-                {{ clusters[imageIndex].numUsers }} ({{
+                {{ props.polis.clusters[imageIndex].numUsers }} ({{
                   formatPercentage(
                     calculatePercentage(
-                      clusters[imageIndex].numUsers,
+                      props.polis.clusters[imageIndex].numUsers,
                       totalParticipantCount
                     )
                   )
@@ -88,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
+import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { ref, watch } from "vue";
@@ -96,14 +103,16 @@ import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ClusterInformationDialog from "./ClusterInformationDialog.vue";
+import ClusterTabs from "./ClusterTabs.vue";
 
 const emit = defineEmits<{
   (e: "selectedCluster", clusterKey: PolisKey): void;
 }>();
 
+const currentClusterTab = defineModel({ required: true, type: String });
+
 const props = defineProps<{
-  clusters: ClusterMetadata[];
-  currentClusterTab: string;
+  polis: ExtendedConversationPolis;
   totalParticipantCount: number;
 }>();
 
@@ -281,26 +290,23 @@ if (!result.success) {
 } // TODO: do this properly...
 
 let targetClusterIndex = 0;
-if (props.clusters.length >= 2 && props.clusters.length <= 6) {
-  targetClusterIndex = props.clusters.length - 2;
+if (props.polis.clusters.length >= 2 && props.polis.clusters.length <= 6) {
+  targetClusterIndex = props.polis.clusters.length - 2;
 }
 const activeCluster = ref<ClusterConfig>(clusterConfig[targetClusterIndex]);
 
 updateClusterTab();
 
-watch(
-  () => props.currentClusterTab,
-  () => {
-    updateClusterTab();
-  }
-);
+watch(currentClusterTab, () => {
+  updateClusterTab();
+});
 
 function updateClusterTab() {
-  if (props.currentClusterTab == "all") {
+  if (currentClusterTab.value == "all") {
     clearAllSelection(true);
   } else {
     clearAllSelection(false);
-    const currentTabKey = Number(props.currentClusterTab);
+    const currentTabKey = Number(currentClusterTab.value);
     activeCluster.value.imgList[currentTabKey].isSelected = true;
   }
 }

@@ -1,24 +1,27 @@
 <template>
-  <div class="container">
-    <ShortcutBar @clicked-shortcut="handleShortcut" />
+  <div>
+    <div class="container flexStyle">
+      <ShortcutBar @clicked-shortcut="handleShortcut" />
 
-    <CommentClusterGraph
-      :clusters="props.polis.clusters"
-      :total-participant-count="props.participantCount"
-      :current-cluster-tab="currentClusterTab"
-      @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
-    />
+      <MeTab />
 
-    <ClusterTabs
-      v-model="currentClusterTab"
-      :cluster-metadata-list="props.polis.clusters"
-    />
+      <ConsensusTab />
 
-    <CommentConsensusSummary
-      v-if="currentAiSummary"
-      :summary="currentAiSummary"
-      :selected-cluster-key="currentSelectedClusterKey"
-    />
+      <DivisivenessTab />
+
+      <OpinionGroupTab
+        v-model:model-value="currentClusterTab"
+        :polis="props.polis"
+        :total-participant-count="props.participantCount"
+        @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
+      />
+
+      <CommentConsensusSummary
+        v-if="currentAiSummary"
+        :summary="currentAiSummary"
+        :selected-cluster-key="currentClusterTab"
+      />
+    </div>
   </div>
 </template>
 
@@ -26,10 +29,12 @@
 import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import { computed, ref } from "vue";
 import CommentConsensusSummary from "./CommentConsensusSummary.vue";
-import CommentClusterGraph from "./cluster/CommentClusterGraph.vue";
-import ClusterTabs from "./cluster/ClusterTabs.vue";
+import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import MeTab from "./meTab/meTab.vue";
+import ConsensusTab from "./consensusTab/ConsensusTab.vue";
+import DivisivenessTab from "./divisivenessTab/DivisivenessTab.vue";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
@@ -37,13 +42,6 @@ const props = defineProps<{
 }>();
 
 const currentClusterTab = ref<PolisKey | "all">("all");
-
-const currentSelectedClusterKey = computed(() => {
-  if (currentClusterTab.value !== "all") {
-    return currentClusterTab.value;
-  }
-  return undefined;
-});
 
 const currentAiSummary = computed(() => {
   if (currentClusterTab.value === "all") {
@@ -77,5 +75,12 @@ function handleShortcut(shortcutName: ShortcutItem) {
   border-radius: 25px;
   border-color: #e9e9f1;
   border-width: 1px;
+  padding-bottom: 10rem;
+}
+
+.flexStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 </style>

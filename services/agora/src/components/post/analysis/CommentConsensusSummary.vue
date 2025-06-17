@@ -42,11 +42,11 @@ import { ref } from "vue";
 
 const props = defineProps<{
   summary: string;
-  selectedClusterKey: PolisKey | undefined;
+  selectedClusterKey: PolisKey | "all";
 }>();
 
 const summaryTitle =
-  props.selectedClusterKey === undefined ? "Summary" : "Group summary";
+  props.selectedClusterKey === "all" ? "Summary" : "Group summary";
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
