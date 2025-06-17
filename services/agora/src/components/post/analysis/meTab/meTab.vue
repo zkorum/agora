@@ -1,6 +1,15 @@
+<script setup lang="ts">
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+</script>
+
 <template>
   <div>
-    <div>Where do I stand?</div>
+    <AnalysisTitleHeader
+      title="Where do I stand"
+      :show-info-button="true"
+      :show-view-more="false"
+      :show-what-is-this="false"
+    />
 
     <div>
       You agree with Fiscal Reform - Fiscal reformists push for reforms related

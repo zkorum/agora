@@ -1,6 +1,11 @@
 <template>
   <div>
-    <div>Common ground: What do people across all groups agree on?</div>
+    <AnalysisTitleHeader
+      title="Common ground: What do people across all groups agree on?"
+      :show-info-button="false"
+      :show-view-more="true"
+      :show-what-is-this="false"
+    />
 
     <div
       v-for="consensusItem in consensusItemList"
@@ -12,6 +17,8 @@
 </template>
 
 <script setup lang="ts">
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+
 interface ConsensusItem {
   description: string;
   numAgree: number;
