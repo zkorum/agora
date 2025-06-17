@@ -43,7 +43,7 @@ function handleShortcut(shortcutName: ShortcutItem) {
   border-radius: 25px;
   border-color: #e9e9f1;
   border-width: 1px;
-  padding-bottom: 10rem;
+  margin-bottom: 5rem;
 }
 
 .flexStyle {
