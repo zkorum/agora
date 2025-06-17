@@ -37,12 +37,12 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { PolisKey } from "src/shared/types/zod";
+import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 import { ref } from "vue";
 
 const props = defineProps<{
   summary: string;
-  selectedClusterKey: PolisKey | "all";
+  selectedClusterKey: SelectedClusterKeyType;
 }>();
 
 const summaryTitle =
