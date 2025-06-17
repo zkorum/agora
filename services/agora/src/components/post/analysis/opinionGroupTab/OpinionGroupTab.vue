@@ -1,6 +1,11 @@
 <template>
   <div>
-    <div>What are the opinion groups?</div>
+    <AnalysisTitleHeader
+      title="What are the opinion groups?"
+      :show-info-button="false"
+      :show-view-more="false"
+      :show-what-is-this="true"
+    />
 
     <ClusterTabs
       :cluster-metadata-list="props.polis.clusters"
@@ -106,6 +111,7 @@ import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import ClusterTabs from "./ClusterTabs.vue";
 import CommentConsensusSummary from "../CommentConsensusSummary.vue";
 import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
