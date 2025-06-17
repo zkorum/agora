@@ -3,6 +3,7 @@
     <AnalysisSectionWrapper>
       <template #header>
         <AnalysisTitleHeader
+          :show-star-in-title="false"
           title="What is most divisive?"
           :show-choice="'viewMore'"
         />
