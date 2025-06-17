@@ -1,22 +1,27 @@
 <template>
   <div>
-    <AnalysisTitleHeader
-      title="What is most divisive?"
-      :show-info-button="false"
-      :show-view-more="true"
-      :show-what-is-this="false"
-    />
+    <AnalysisSectionWrapper>
+      <template #header>
+        <AnalysisTitleHeader
+          title="What is most divisive?"
+          :show-choice="'viewMore'"
+        />
+      </template>
 
-    <div
-      v-for="consensusItem in consensusItemList"
-      :key="consensusItem.description"
-    >
-      {{ consensusItem.description }}
-    </div>
+      <template #body>
+        <div
+          v-for="consensusItem in consensusItemList"
+          :key="consensusItem.description"
+        >
+          {{ consensusItem.description }}
+        </div>
+      </template>
+    </AnalysisSectionWrapper>
   </div>
 </template>
 
 <script setup lang="ts">
+import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 
 interface ConsensusItem {

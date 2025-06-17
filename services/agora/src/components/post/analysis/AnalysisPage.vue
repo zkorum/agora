@@ -49,6 +49,6 @@ function handleShortcut(shortcutName: ShortcutItem) {
 .flexStyle {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 </style>
