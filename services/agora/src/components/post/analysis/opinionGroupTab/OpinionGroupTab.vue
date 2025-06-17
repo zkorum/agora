@@ -3,8 +3,9 @@
     <div>What are the opinion groups?</div>
 
     <ClusterTabs
-      v-model="currentClusterTab"
       :cluster-metadata-list="props.polis.clusters"
+      :selected-cluster-key="currentClusterTab"
+      @changed-cluster-key="currentClusterTab = $event"
     />
 
     <div class="container">
@@ -29,14 +30,7 @@
           top: imgItem.top + '%',
           left: imgItem.left + '%',
         }"
-        @click="
-          emit(
-            'selectedCluster',
-            String(
-              imageIndex
-            ) as PolisKey /* this is enforce because of the zod type below */
-          )
-        "
+        @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
       >
         <!-- TODO: Integration the show me label -->
         <div
@@ -91,6 +85,12 @@
         </div>
       </div>
     </div>
+
+    <CommentConsensusSummary
+      v-if="currentAiSummary"
+      :summary="currentAiSummary"
+      :selected-cluster-key="currentClusterTab"
+    />
   </div>
 </template>
 
@@ -98,23 +98,21 @@
 import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import ClusterTabs from "./ClusterTabs.vue";
-
-const emit = defineEmits<{
-  (e: "selectedCluster", clusterKey: PolisKey): void;
-}>();
-
-const currentClusterTab = defineModel({ required: true, type: String });
+import CommentConsensusSummary from "../CommentConsensusSummary.vue";
+import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
   totalParticipantCount: number;
 }>();
+
+const currentClusterTab = ref<SelectedClusterKeyType>("all");
 
 const showClusterInformation = ref(false);
 
@@ -300,6 +298,26 @@ updateClusterTab();
 watch(currentClusterTab, () => {
   updateClusterTab();
 });
+
+const currentAiSummary = computed(() => {
+  if (currentClusterTab.value === "all") {
+    return props.polis.aiSummary;
+  } else if (
+    typeof currentClusterTab.value === "string" &&
+    parseInt(currentClusterTab.value) in props.polis.clusters
+  ) {
+    return props.polis.clusters[parseInt(currentClusterTab.value)].aiSummary;
+  }
+  return undefined;
+});
+
+function toggleClusterSelection(clusterKey: PolisKey) {
+  if (currentClusterTab.value == clusterKey) {
+    currentClusterTab.value = "all";
+  } else {
+    currentClusterTab.value = clusterKey;
+  }
+}
 
 function updateClusterTab() {
   if (currentClusterTab.value == "all") {

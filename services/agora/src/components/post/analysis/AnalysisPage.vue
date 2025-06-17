@@ -10,25 +10,15 @@
       <DivisivenessTab />
 
       <OpinionGroupTab
-        v-model:model-value="currentClusterTab"
         :polis="props.polis"
         :total-participant-count="props.participantCount"
-        @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
-      />
-
-      <CommentConsensusSummary
-        v-if="currentAiSummary"
-        :summary="currentAiSummary"
-        :selected-cluster-key="currentClusterTab"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
-import { computed, ref } from "vue";
-import CommentConsensusSummary from "./CommentConsensusSummary.vue";
+import { ExtendedConversationPolis } from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
@@ -40,28 +30,6 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   participantCount: number;
 }>();
-
-const currentClusterTab = ref<PolisKey | "all">("all");
-
-const currentAiSummary = computed(() => {
-  if (currentClusterTab.value === "all") {
-    return props.polis.aiSummary;
-  } else if (
-    typeof currentClusterTab.value === "string" &&
-    parseInt(currentClusterTab.value) in props.polis.clusters
-  ) {
-    return props.polis.clusters[parseInt(currentClusterTab.value)].aiSummary;
-  }
-  return undefined;
-});
-
-function toggleClusterSelection(clusterKey: PolisKey) {
-  if (currentClusterTab.value == clusterKey) {
-    currentClusterTab.value = "all";
-  } else {
-    currentClusterTab.value = clusterKey;
-  }
-}
 
 function handleShortcut(shortcutName: ShortcutItem) {
   console.log("Shortcut clicked:", shortcutName);

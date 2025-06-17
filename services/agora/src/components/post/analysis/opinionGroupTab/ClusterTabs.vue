@@ -3,7 +3,7 @@
     <div v-if="clusterMetadataList.length > 1" class="container">
       <ZKTab
         text="All"
-        :is-highlighted="currentClusterTab === 'all'"
+        :is-highlighted="selectedClusterKey === 'all'"
         :should-underline-on-highlight="true"
         @click="clickedTab('all')"
       />
@@ -13,7 +13,7 @@
           :text="
             formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
           "
-          :is-highlighted="currentClusterTab === clusterItem.key"
+          :is-highlighted="selectedClusterKey === clusterItem.key"
           :should-underline-on-highlight="true"
           @click="clickedTab(clusterItem.key)"
         />
@@ -24,17 +24,21 @@
 
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
-import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
+import { ClusterMetadata } from "src/shared/types/zod";
+import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 import { formatClusterLabel } from "src/utils/component/opinion";
-
-const currentClusterTab = defineModel({ required: true, type: String });
 
 defineProps<{
   clusterMetadataList: ClusterMetadata[];
+  selectedClusterKey: SelectedClusterKeyType;
 }>();
 
-function clickedTab(tabKey: PolisKey | "all") {
-  currentClusterTab.value = tabKey;
+const emit = defineEmits<{
+  (e: "changedClusterKey", key: SelectedClusterKeyType): void;
+}>();
+
+function clickedTab(tabKey: SelectedClusterKeyType) {
+  emit("changedClusterKey", tabKey);
 }
 </script>
 
