@@ -1,101 +1,105 @@
 <template>
   <div>
-    <AnalysisTitleHeader
-      title="What are the opinion groups?"
-      :show-info-button="false"
-      :show-view-more="false"
-      :show-what-is-this="true"
-    />
+    <AnalysisSectionWrapper>
+      <template #header>
+        <AnalysisTitleHeader
+          title="What are the opinion groups?"
+          :show-choice="'whatIsThis'"
+        />
+      </template>
 
-    <ClusterTabs
-      :cluster-metadata-list="props.polis.clusters"
-      :selected-cluster-key="currentClusterTab"
-      @changed-cluster-key="currentClusterTab = $event"
-    />
+      <template #body>
+        <div class="container">
+          <div class="infoIcon">
+            <ZKButton button-type="icon" @click="showClusterInformation = true">
+              <ZKIcon
+                color="#6d6a74"
+                name="mdi-information-outline"
+                size="1.2rem"
+              />
+            </ZKButton>
+          </div>
 
-    <div class="container">
-      <div class="infoIcon">
-        <ZKButton button-type="icon" @click="showClusterInformation = true">
-          <ZKIcon
-            color="#6d6a74"
-            name="mdi-information-outline"
-            size="1.2rem"
-          />
-        </ZKButton>
-      </div>
+          <ClusterInformationDialog v-model="showClusterInformation" />
 
-      <ClusterInformationDialog v-model="showClusterInformation" />
-
-      <div
-        v-for="(imgItem, imageIndex) in activeCluster.imgList"
-        :key="imageIndex"
-        class="imageStyle"
-        :style="{
-          width: imgItem.clusterWidthPercent + '%',
-          top: imgItem.top + '%',
-          left: imgItem.left + '%',
-        }"
-        @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
-      >
-        <!-- TODO: Integration the show me label -->
-        <div
-          v-if="props.polis.clusters[imageIndex].isUserInCluster"
-          class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
-        >
-          <q-icon name="mdi-account-outline" />
-          Me
-        </div>
-
-        <div :style="{ position: 'relative' }">
-          <img
-            :src="
-              composeImagePath(
-                imgItem.isSelected,
-                imageIndex,
-                activeCluster.numNodes
-              )
-            "
-            :style="{ width: '100%' }"
-          />
           <div
-            class="clusterNameOverlay borderStyle dynamicFont"
+            v-for="(imgItem, imageIndex) in activeCluster.imgList"
+            :key="imageIndex"
+            class="imageStyle"
             :style="{
-              top: '30%',
-              left: '22%',
+              width: imgItem.clusterWidthPercent + '%',
+              top: imgItem.top + '%',
+              left: imgItem.left + '%',
             }"
+            @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
           >
-            <div class="clusterLabelFlex">
-              <div class="clusterOverlayFontBold">
-                {{
-                  formatClusterLabel(
-                    props.polis.clusters[imageIndex].key,
-                    false,
-                    props.polis.clusters[imageIndex].aiLabel
+            <!-- TODO: Integration the show me label -->
+            <div
+              v-if="props.polis.clusters[imageIndex].isUserInCluster"
+              class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
+            >
+              <q-icon name="mdi-account-outline" />
+              Me
+            </div>
+
+            <div :style="{ position: 'relative' }">
+              <img
+                :src="
+                  composeImagePath(
+                    imgItem.isSelected,
+                    imageIndex,
+                    activeCluster.numNodes
                   )
-                }}
-              </div>
-              <div class="clusterGroupSize">
-                <q-icon name="mdi-account-supervisor-outline" />
-                {{ props.polis.clusters[imageIndex].numUsers }} ({{
-                  formatPercentage(
-                    calculatePercentage(
-                      props.polis.clusters[imageIndex].numUsers,
-                      totalParticipantCount
-                    )
-                  )
-                }})
+                "
+                :style="{ width: '100%' }"
+              />
+              <div
+                class="clusterNameOverlay borderStyle dynamicFont"
+                :style="{
+                  top: '30%',
+                  left: '22%',
+                }"
+              >
+                <div class="clusterLabelFlex">
+                  <div class="clusterOverlayFontBold">
+                    {{
+                      formatClusterLabel(
+                        props.polis.clusters[imageIndex].key,
+                        false,
+                        props.polis.clusters[imageIndex].aiLabel
+                      )
+                    }}
+                  </div>
+                  <div class="clusterGroupSize">
+                    <q-icon name="mdi-account-supervisor-outline" />
+                    {{ props.polis.clusters[imageIndex].numUsers }} ({{
+                      formatPercentage(
+                        calculatePercentage(
+                          props.polis.clusters[imageIndex].numUsers,
+                          totalParticipantCount
+                        )
+                      )
+                    }})
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <CommentConsensusSummary
-      v-if="currentAiSummary"
-      :summary="currentAiSummary"
-      :selected-cluster-key="currentClusterTab"
-    />
+        <ClusterTabs
+          :cluster-metadata-list="props.polis.clusters"
+          :selected-cluster-key="currentClusterTab"
+          @changed-cluster-key="currentClusterTab = $event"
+        />
+
+        <CommentConsensusSummary
+          v-if="currentAiSummary"
+          :summary="currentAiSummary"
+          :selected-cluster-key="currentClusterTab"
+        />
+      </template>
+    </AnalysisSectionWrapper>
   </div>
 </template>
 
@@ -112,6 +116,7 @@ import ClusterTabs from "./ClusterTabs.vue";
 import CommentConsensusSummary from "../CommentConsensusSummary.vue";
 import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
