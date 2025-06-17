@@ -38,7 +38,9 @@ const props = defineProps<{
 }
 
 .commonStyle:hover {
-  cursor: pointer;
+  background-color: #c6c4ff !important;
+  border-color: #6b4eff !important;
+  color: #6b4eff !important;
 }
 
 .rootStyleSelected {
