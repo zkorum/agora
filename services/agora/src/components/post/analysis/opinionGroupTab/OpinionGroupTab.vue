@@ -93,7 +93,7 @@
           @changed-cluster-key="currentClusterTab = $event"
         />
 
-        <CommentConsensusSummary
+        <GroupConsensusSummary
           v-if="currentAiSummary"
           :summary="currentAiSummary"
           :selected-cluster-key="currentClusterTab"
@@ -113,7 +113,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import ClusterTabs from "./ClusterTabs.vue";
-import CommentConsensusSummary from "../CommentConsensusSummary.vue";
+import GroupConsensusSummary from "./GroupConsensusSummary.vue";
 import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
