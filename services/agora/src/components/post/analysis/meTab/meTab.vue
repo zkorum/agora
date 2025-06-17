@@ -1,13 +1,9 @@
-<script setup lang="ts">
-import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
-import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
-</script>
-
 <template>
   <div>
     <AnalysisSectionWrapper>
       <template #header>
         <AnalysisTitleHeader
+          :show-star-in-title="true"
           title="Where do I stand"
           :show-choice="'infoButton'"
         />
@@ -23,3 +19,10 @@ import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
     </AnalysisSectionWrapper>
   </div>
 </template>
+
+<script setup lang="ts">
+import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+</script>
+
+<style lang="scss" scoped></style>

@@ -1,7 +1,14 @@
 <template>
   <div>
     <div class="container">
-      <div class="title">{{ props.title }}</div>
+      <div class="title">
+        <div v-if="showStarInTitle" :style="{ paddingTop: '0.2rem' }">
+          <StaticIcon :src="'/images/icons/stars.svg'" :size="'1rem'" />
+        </div>
+        <div>
+          {{ props.title }}
+        </div>
+      </div>
 
       <div v-if="showChoice == 'infoButton'">Info button</div>
       <div v-if="showChoice == 'viewMore'">View more</div>
@@ -11,9 +18,12 @@
 </template>
 
 <script setup lang="ts">
+import StaticIcon from "src/components/features/ui/StaticIcon.vue";
+
 const props = defineProps<{
   title: string;
   showChoice: "infoButton" | "viewMore" | "whatIsThis";
+  showStarInTitle: boolean;
 }>();
 </script>
 
@@ -26,5 +36,9 @@ const props = defineProps<{
 
 .title {
   font-weight: 500;
+  font-size: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 </style>

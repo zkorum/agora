@@ -3,6 +3,7 @@
     <AnalysisSectionWrapper>
       <template #header>
         <AnalysisTitleHeader
+          :show-star-in-title="false"
           title="Common ground: What do people across all groups agree on?"
           :show-choice="'viewMore'"
         />
