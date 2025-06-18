@@ -3,16 +3,44 @@
     <div class="container flexStyle">
       <ShortcutBar @clicked-shortcut="handleShortcut" />
 
-      <MeTab />
+      <div
+        ref="meTabRef"
+        class="tabComponent"
+        :class="{ 'highlight-section': highlightedSection === 'me' }"
+        @click="handleTabClick('me')"
+      >
+        <MeTab />
+      </div>
 
-      <ConsensusTab />
+      <div
+        ref="consensusTabRef"
+        class="tabComponent"
+        :class="{ 'highlight-section': highlightedSection === 'consensus' }"
+        @click="handleTabClick('consensus')"
+      >
+        <ConsensusTab />
+      </div>
 
-      <DivisivenessTab />
+      <div
+        ref="divisivenessTabRef"
+        class="tabComponent"
+        :class="{ 'highlight-section': highlightedSection === 'divisiveness' }"
+        @click="handleTabClick('divisiveness')"
+      >
+        <DivisivenessTab />
+      </div>
 
-      <OpinionGroupTab
-        :polis="props.polis"
-        :total-participant-count="props.participantCount"
-      />
+      <div
+        ref="opinionGroupTabRef"
+        class="tabComponent"
+        :class="{ 'highlight-section': highlightedSection === 'opinionGroup' }"
+        @click="handleTabClick('opinionGroup')"
+      >
+        <OpinionGroupTab
+          :polis="props.polis"
+          :total-participant-count="props.participantCount"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -25,14 +53,53 @@ import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import MeTab from "./meTab/meTab.vue";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisivenessTab from "./divisivenessTab/DivisivenessTab.vue";
+import { ref } from "vue";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
   participantCount: number;
 }>();
 
+const meTabRef = ref<HTMLElement | null>(null);
+const consensusTabRef = ref<HTMLElement | null>(null);
+const divisivenessTabRef = ref<HTMLElement | null>(null);
+const opinionGroupTabRef = ref<HTMLElement | null>(null);
+const highlightedSection = ref<string | null>(null);
+
+function scrollToElement(element: HTMLElement | null, sectionName: string) {
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    highlightedSection.value = sectionName;
+  }
+}
+
+function handleTabClick(sectionName: string) {
+  // Toggle highlight off if clicking on already highlighted section
+  if (highlightedSection.value === sectionName) {
+    highlightedSection.value = null;
+  } else {
+    highlightedSection.value = sectionName;
+  }
+}
+
 function handleShortcut(shortcutName: ShortcutItem) {
-  console.log("Shortcut clicked:", shortcutName);
+  switch (shortcutName) {
+    case "Me":
+      scrollToElement(meTabRef.value, "me");
+      break;
+    case "Consensus":
+      scrollToElement(consensusTabRef.value, "consensus");
+      break;
+    case "Divisiveness":
+      scrollToElement(divisivenessTabRef.value, "divisiveness");
+      break;
+    case "Opinion Groups":
+      scrollToElement(opinionGroupTabRef.value, "opinionGroup");
+      break;
+    default:
+      console.log("No matching component for shortcut:", shortcutName);
+  }
 }
 </script>
 
@@ -50,5 +117,15 @@ function handleShortcut(shortcutName: ShortcutItem) {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+/* Style for all tab components */
+.tabComponent {
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+.highlight-section {
+  background-color: rgba(237, 242, 247, 0.7);
 }
 </style>

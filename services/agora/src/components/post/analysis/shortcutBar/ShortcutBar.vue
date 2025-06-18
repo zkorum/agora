@@ -22,7 +22,6 @@ const shortcutItemList: ShortcutItem[] = [
   "Me",
   "Consensus",
   "Divisiveness",
-  "Uncertain",
   "Opinion Groups",
 ];
 
