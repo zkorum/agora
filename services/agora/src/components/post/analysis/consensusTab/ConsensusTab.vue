@@ -17,6 +17,7 @@
         >
           <div class="descriptionReadMoreContainer">
             <div
+              :ref="(el) => saveElementRef(consensusItem.id, el)"
               class="consensusDescription"
               :class="{ expanded: consensusItem.isDescriptionExpanded }"
             >
@@ -24,6 +25,10 @@
             </div>
 
             <button
+              v-if="
+                hasOverflow(consensusItem.id) ||
+                consensusItem.isDescriptionExpanded
+              "
               class="readMore"
               @click.stop="
                 consensusItem.isDescriptionExpanded =
@@ -60,8 +65,10 @@ import { ref } from "vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
+import { useElementOverflow } from "src/utils/ui/useElementOverflow";
 
 interface ConsensusItem {
+  id: number;
   description: string;
   numAgree: number;
   numDisagree: number;
@@ -73,24 +80,31 @@ const dummyDescription =
 
 const consensusItemList = ref<ConsensusItem[]>([
   {
+    id: 1,
+    description:
+      "Bringing unlocked me an striking ye perceive. Mr by wound hours oh happy. Me in resolution pianoforte continuing we. Most my no spot felt by no. He he",
+    numAgree: 100,
+    numDisagree: 20,
+    isDescriptionExpanded: false,
+  },
+  {
+    id: 2,
     description: dummyDescription,
     numAgree: 100,
     numDisagree: 20,
     isDescriptionExpanded: false,
   },
   {
-    description: dummyDescription,
-    numAgree: 100,
-    numDisagree: 20,
-    isDescriptionExpanded: false,
-  },
-  {
+    id: 3,
     description: dummyDescription,
     numAgree: 100,
     numDisagree: 20,
     isDescriptionExpanded: false,
   },
 ]);
+
+// Use the element overflow composable
+const { saveElementRef, hasOverflow } = useElementOverflow();
 </script>
 
 <style lang="scss" scoped>
