@@ -7,7 +7,6 @@
         ref="meTabRef"
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'me' }"
-        @click="handleTabClick('me')"
       >
         <MeTab />
       </div>
@@ -16,7 +15,6 @@
         ref="consensusTabRef"
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'consensus' }"
-        @click="handleTabClick('consensus')"
       >
         <ConsensusTab />
       </div>
@@ -25,7 +23,6 @@
         ref="divisivenessTabRef"
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'divisiveness' }"
-        @click="handleTabClick('divisiveness')"
       >
         <DivisivenessTab />
       </div>
@@ -34,7 +31,6 @@
         ref="opinionGroupTabRef"
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'opinionGroup' }"
-        @click="handleTabClick('opinionGroup')"
       >
         <OpinionGroupTab
           :polis="props.polis"
@@ -71,15 +67,10 @@ function scrollToElement(element: HTMLElement | null, sectionName: string) {
     element.scrollIntoView({ behavior: "smooth", block: "center" });
 
     highlightedSection.value = sectionName;
-  }
-}
 
-function handleTabClick(sectionName: string) {
-  // Toggle highlight off if clicking on already highlighted section
-  if (highlightedSection.value === sectionName) {
-    highlightedSection.value = null;
-  } else {
-    highlightedSection.value = sectionName;
+    setTimeout(() => {
+      highlightedSection.value = null;
+    }, 2000);
   }
 }
 
