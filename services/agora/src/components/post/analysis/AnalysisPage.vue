@@ -111,6 +111,7 @@ function handleShortcut(shortcutName: ShortcutItem) {
   border-color: #e9e9f1;
   border-width: 1px;
   margin-bottom: 5rem;
+  color: #333238;
 }
 
 .flexStyle {

@@ -51,6 +51,7 @@ const props = defineProps<{
 .title {
   font-weight: 500;
   font-size: 1rem;
+  color: #0a0714;
   display: flex;
   gap: 1rem;
   align-items: center;
