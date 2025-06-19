@@ -19,9 +19,11 @@ import ShortcutButton from "./ShortcutButton.vue";
 const emit = defineEmits(["clicked-shortcut"]);
 
 const shortcutItemList: ShortcutItem[] = [
+  "Summary",
   "Me",
   "Consensus",
-  "Divisiveness",
+  "Majority",
+  "Divisive",
   "Opinion Groups",
 ];
 

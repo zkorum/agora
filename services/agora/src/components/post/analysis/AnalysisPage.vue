@@ -4,9 +4,17 @@
       <ShortcutBar @clicked-shortcut="handleShortcut" />
 
       <div
+        ref="summaryTabRef"
+        class="tabComponent"
+        :class="{ 'highlight-section': highlightedSection === 'Summary' }"
+      >
+        Summary placeholder
+      </div>
+
+      <div
         ref="meTabRef"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'me' }"
+        :class="{ 'highlight-section': highlightedSection === 'Me' }"
       >
         <MeTab />
       </div>
@@ -14,23 +22,33 @@
       <div
         ref="consensusTabRef"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'consensus' }"
+        :class="{ 'highlight-section': highlightedSection === 'Consensus' }"
       >
         <ConsensusTab />
       </div>
 
       <div
-        ref="divisivenessTabRef"
+        ref="majorityTabRef"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'divisiveness' }"
+        :class="{ 'highlight-section': highlightedSection === 'Majority' }"
       >
-        <DivisivenessTab />
+        Majority placeholder
+      </div>
+
+      <div
+        ref="divisiveTabRef"
+        class="tabComponent"
+        :class="{ 'highlight-section': highlightedSection === 'Divisive' }"
+      >
+        <DivisiveTab />
       </div>
 
       <div
         ref="opinionGroupTabRef"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'opinionGroup' }"
+        :class="{
+          'highlight-section': highlightedSection === 'Opinion Groups',
+        }"
       >
         <OpinionGroupTab
           :polis="props.polis"
@@ -48,7 +66,7 @@ import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import MeTab from "./meTab/meTab.vue";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
-import DivisivenessTab from "./divisivenessTab/DivisivenessTab.vue";
+import DivisiveTab from "./divisiveTab/DivisiveTab.vue";
 import { ref } from "vue";
 
 const props = defineProps<{
@@ -56,13 +74,18 @@ const props = defineProps<{
   participantCount: number;
 }>();
 
+const summaryTabRef = ref<HTMLElement | null>(null);
 const meTabRef = ref<HTMLElement | null>(null);
 const consensusTabRef = ref<HTMLElement | null>(null);
-const divisivenessTabRef = ref<HTMLElement | null>(null);
+const majorityTabRef = ref<HTMLElement | null>(null);
+const divisiveTabRef = ref<HTMLElement | null>(null);
 const opinionGroupTabRef = ref<HTMLElement | null>(null);
-const highlightedSection = ref<string | null>(null);
+const highlightedSection = ref<ShortcutItem | null>(null);
 
-function scrollToElement(element: HTMLElement | null, sectionName: string) {
+function scrollToElement(
+  element: HTMLElement | null,
+  sectionName: ShortcutItem
+) {
   if (element) {
     element.scrollIntoView({ behavior: "smooth", block: "center" });
 
@@ -76,17 +99,23 @@ function scrollToElement(element: HTMLElement | null, sectionName: string) {
 
 function handleShortcut(shortcutName: ShortcutItem) {
   switch (shortcutName) {
+    case "Summary":
+      scrollToElement(summaryTabRef.value, shortcutName);
+      break;
     case "Me":
-      scrollToElement(meTabRef.value, "me");
+      scrollToElement(meTabRef.value, shortcutName);
       break;
     case "Consensus":
-      scrollToElement(consensusTabRef.value, "consensus");
+      scrollToElement(consensusTabRef.value, shortcutName);
       break;
-    case "Divisiveness":
-      scrollToElement(divisivenessTabRef.value, "divisiveness");
+    case "Majority":
+      scrollToElement(majorityTabRef.value, shortcutName);
+      break;
+    case "Divisive":
+      scrollToElement(divisiveTabRef.value, shortcutName);
       break;
     case "Opinion Groups":
-      scrollToElement(opinionGroupTabRef.value, "opinionGroup");
+      scrollToElement(opinionGroupTabRef.value, shortcutName);
       break;
     default:
       console.log("No matching component for shortcut:", shortcutName);
