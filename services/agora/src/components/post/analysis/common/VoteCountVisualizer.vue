@@ -75,7 +75,6 @@ function getPercentage(count: number): number {
 <style lang="scss" scoped>
 .vote-bar-container {
   display: flex;
-  min-width: 6.25rem;
   height: 1rem;
   overflow: hidden;
   position: relative;
