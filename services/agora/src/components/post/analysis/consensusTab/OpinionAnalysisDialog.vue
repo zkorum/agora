@@ -174,16 +174,16 @@ function viewOriginalComment() {
 
 .agree-header,
 .agree-cell {
-  color: #6750a4;
+  color: #6b4eff;
 }
 
 .disagree-header,
 .disagree-cell {
-  color: #c2410c;
+  color: #a05e03;
 }
 
 .view-original {
-  color: #6750a4;
+  color: #6d6a74;
   font-weight: 500;
   text-align: center;
   cursor: pointer;
