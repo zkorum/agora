@@ -4,14 +4,6 @@
       <ShortcutBar @clicked-shortcut="handleShortcut" />
 
       <div
-        ref="summaryTabRef"
-        class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'Summary' }"
-      >
-        Summary placeholder
-      </div>
-
-      <div
         ref="meTabRef"
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'Me' }"
@@ -24,7 +16,12 @@
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'Consensus' }"
       >
-        <ConsensusTab />
+        <AnalysisTabBase
+          title="Common ground: What do people across all groups agree on?"
+          :item-list="consensusItemList"
+          show-choice="viewMore"
+          :show-star-in-title="false"
+        />
       </div>
 
       <div
@@ -32,7 +29,12 @@
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'Majority' }"
       >
-        Majority placeholder
+        <AnalysisTabBase
+          title="What do most people agree on?"
+          :item-list="majorityItemList"
+          show-choice="viewMore"
+          :show-star-in-title="false"
+        />
       </div>
 
       <div
@@ -40,7 +42,12 @@
         class="tabComponent"
         :class="{ 'highlight-section': highlightedSection === 'Divisive' }"
       >
-        <DivisiveTab />
+        <AnalysisTabBase
+          title="What is most divisive?"
+          :item-list="divisiveItemList"
+          show-choice="viewMore"
+          :show-star-in-title="false"
+        />
       </div>
 
       <div
@@ -65,16 +72,82 @@ import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import MeTab from "./meTab/meTab.vue";
-import ConsensusTab from "./consensusTab/ConsensusTab.vue";
-import DivisiveTab from "./divisiveTab/DivisiveTab.vue";
+import AnalysisTabBase from "./common/AnalysisTabBase.vue";
 import { ref } from "vue";
+import { ConsensusItemData } from "src/utils/component/analysis/analysisTypes";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
   participantCount: number;
 }>();
 
-const summaryTabRef = ref<HTMLElement | null>(null);
+const dummyDescription =
+  "Bringing unlocked me an striking ye perceive. Mr by wound hours oh happy. Me in resolution pianoforte continuing we. Most my no spot felt by no. He he in forfeited furniture sweetness he arranging. Me tedious so to behaved written account ferrars moments.";
+
+const consensusItemList = ref<ConsensusItemData[]>([
+  {
+    id: 1,
+    description:
+      "Bringing unlocked me an striking ye perceive. Mr by wound hours oh happy. Me in resolution pianoforte continuing we. Most my no spot felt by no. He he",
+    numAgree: 100,
+    numDisagree: 20,
+  },
+  {
+    id: 2,
+    description: dummyDescription,
+    numAgree: 100,
+    numDisagree: 20,
+  },
+  {
+    id: 3,
+    description: dummyDescription,
+    numAgree: 100,
+    numDisagree: 20,
+  },
+]);
+
+const majorityItemList = ref<ConsensusItemData[]>([
+  {
+    id: 1,
+    description: "Most people agree that education is important",
+    numAgree: 85,
+    numDisagree: 5,
+  },
+  {
+    id: 2,
+    description: "Healthcare should be accessible to everyone",
+    numAgree: 80,
+    numDisagree: 10,
+  },
+  {
+    id: 3,
+    description: "Environmental protection is a priority",
+    numAgree: 75,
+    numDisagree: 15,
+  },
+]);
+
+const divisiveItemList = ref<ConsensusItemData[]>([
+  {
+    id: 1,
+    description: "Tax policy should prioritize economic growth",
+    numAgree: 50,
+    numDisagree: 50,
+  },
+  {
+    id: 2,
+    description: "Government regulation of businesses should be increased",
+    numAgree: 45,
+    numDisagree: 55,
+  },
+  {
+    id: 3,
+    description: "Social media has a positive impact on society",
+    numAgree: 48,
+    numDisagree: 52,
+  },
+]);
+
 const meTabRef = ref<HTMLElement | null>(null);
 const consensusTabRef = ref<HTMLElement | null>(null);
 const majorityTabRef = ref<HTMLElement | null>(null);
@@ -99,9 +172,6 @@ function scrollToElement(
 
 function handleShortcut(shortcutName: ShortcutItem) {
   switch (shortcutName) {
-    case "Summary":
-      scrollToElement(summaryTabRef.value, shortcutName);
-      break;
     case "Me":
       scrollToElement(meTabRef.value, shortcutName);
       break;

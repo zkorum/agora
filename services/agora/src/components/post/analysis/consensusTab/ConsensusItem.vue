@@ -24,12 +24,12 @@
         :show-legend="false"
       />
     </div>
-
-    <OpinionAnalysisDialog
-      v-model="showDialog"
-      :opinion-data="opinionAnalysisData"
-    />
   </div>
+
+  <OpinionAnalysisDialog
+    v-model="showDialog"
+    :opinion-data="opinionAnalysisData"
+  />
 </template>
 
 <script setup lang="ts">
@@ -79,10 +79,10 @@ function showOpinionAnalysis() {
 <style lang="scss" scoped>
 .consensusItemStyle {
   cursor: pointer;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 10rem;
   gap: 1rem;
   align-items: center;
-  justify-content: space-between;
   transition: background-color 0.2s ease;
   padding: 0.5rem;
   border-radius: 8px;
@@ -105,18 +105,15 @@ function showOpinionAnalysis() {
   color: #9a97a4;
   font-weight: 500;
   white-space: nowrap;
-  background: none;
-  border: none;
   border-radius: 4px;
-  padding: 0px 8px;
-  text-align: center;
+  padding: 0 8px;
+  text-align: right;
   font-size: 0.9rem;
 }
 
 .descriptionReadMoreContainer {
   display: flex;
   flex-direction: column;
-  align-items: end;
   gap: 0.2rem;
 }
 </style>
