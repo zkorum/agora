@@ -8,3 +8,13 @@ export interface ConsensusItemData {
   numAgree: number;
   numDisagree: number;
 }
+
+export interface OpinionAnalysisData {
+  username: string;
+  opinionText: string;
+  groups: Array<{
+    name: string;
+    agree: number;
+    disagree: number;
+  }>;
+}
