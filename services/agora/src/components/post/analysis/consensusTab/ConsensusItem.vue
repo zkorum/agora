@@ -1,5 +1,5 @@
 <template>
-  <div class="consensusItemStyle">
+  <div class="consensusItemStyle" @click="showOpinionAnalysis">
     <div class="descriptionReadMoreContainer">
       <div
         :ref="(el) => saveElementRef(consensusItem.id, el)"
@@ -24,14 +24,23 @@
         :show-legend="false"
       />
     </div>
+
+    <OpinionAnalysisDialog
+      v-model="showDialog"
+      :opinion-data="opinionAnalysisData"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps } from "vue";
+import { ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import { useElementOverflow } from "src/utils/ui/useElementOverflow";
-import { ConsensusItemData } from "src/utils/component/analysis/analysisTypes";
+import {
+  ConsensusItemData,
+  OpinionAnalysisData,
+} from "src/utils/component/analysis/analysisTypes";
+import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 
 defineProps<{
   consensusItem: ConsensusItemData;
@@ -39,14 +48,48 @@ defineProps<{
 
 // Use the element overflow composable
 const { saveElementRef, hasOverflow } = useElementOverflow();
+
+// Dialog control
+const showDialog = ref(false);
+
+// Sample opinion analysis data - in a real app, this would come from an API or props
+const opinionAnalysisData = ref<OpinionAnalysisData>({
+  username: "SamJ",
+  opinionText:
+    "Not necessarily Europe but the values it represents must live on. That means Human Rights, freedom of speech (not freedom of hate). Europe treats its own people well, not necessarily other countries. For the sake of humanity we must protect Europe with or without US support.",
+  groups: [
+    {
+      name: "Fiscal Reformists",
+      agree: 172,
+      disagree: 1,
+    },
+    {
+      name: "Geopolitical Realists",
+      agree: 1,
+      disagree: 82,
+    },
+  ],
+});
+
+function showOpinionAnalysis() {
+  showDialog.value = true;
+}
 </script>
 
 <style lang="scss" scoped>
 .consensusItemStyle {
+  cursor: pointer;
   display: flex;
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
+  transition: background-color 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 8px;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .consensusDescription {
