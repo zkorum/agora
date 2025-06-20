@@ -1,32 +1,28 @@
 <template>
   <div class="opinion-group-comments">
-    <OpinionGridLayout>
-      <template #content>
-        <h2 class="title">
-          Opinions <span class="count">{{ filteredComments.length }}</span>
-        </h2>
-      </template>
+    <div class="header-flex-style">
+      <h2 class="title">
+        Opinions <span class="count">{{ filteredComments.length }}</span>
+      </h2>
 
-      <template #visualizer>
-        <div class="group-selector">
-          <q-btn
-            flat
-            round
-            dense
-            icon="mdi-chevron-left"
-            @click="navigateToPreviousGroup"
-          />
-          <span class="group-name">{{ currentGroupName }}</span>
-          <q-btn
-            flat
-            round
-            dense
-            icon="mdi-chevron-right"
-            @click="navigateToNextGroup"
-          />
-        </div>
-      </template>
-    </OpinionGridLayout>
+      <div class="group-selector">
+        <q-btn
+          flat
+          round
+          dense
+          icon="mdi-chevron-left"
+          @click="navigateToPreviousGroup"
+        />
+        <span class="group-name">{{ currentGroupName }}</span>
+        <q-btn
+          flat
+          round
+          dense
+          icon="mdi-chevron-right"
+          @click="navigateToNextGroup"
+        />
+      </div>
+    </div>
 
     <div v-if="filteredComments.length === 0" class="no-comments">
       No comments available for this group.
@@ -51,7 +47,6 @@ import {
 } from "src/utils/component/analysis/analysisTypes";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 
 interface Comment extends ConsensusItemData {
   clusterKey: PolisKey;
@@ -179,14 +174,14 @@ const navigateToNextGroup = () => {
 }
 
 .title {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   margin: 0;
   color: #434149;
 }
 
 .count {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: #9a97a4;
   margin-left: 0.5rem;
 }
@@ -198,7 +193,7 @@ const navigateToNextGroup = () => {
 }
 
 .group-name {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
@@ -206,5 +201,12 @@ const navigateToNextGroup = () => {
   padding: 2rem;
   text-align: center;
   color: #666;
+}
+
+.header-flex-style {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
 }
 </style>
