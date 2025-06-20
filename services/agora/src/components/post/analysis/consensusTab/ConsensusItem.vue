@@ -1,17 +1,21 @@
 <template>
-  <div class="consensusItemStyle" @click="showOpinionAnalysis">
-    <div class="descriptionReadMoreContainer">
-      <div
-        :ref="(el) => saveElementRef(consensusItem.id, el)"
-        class="consensusDescription"
-      >
-        {{ consensusItem.description }}
+  <OpinionGridLayout @click="showOpinionAnalysis">
+    <template #content>
+      <div class="descriptionReadMoreContainer">
+        <div
+          :ref="(el) => saveElementRef(consensusItem.id, el)"
+          class="consensusDescription"
+        >
+          {{ consensusItem.description }}
+        </div>
+
+        <div v-if="hasOverflow(consensusItem.id)" class="readMore">
+          Read more
+        </div>
       </div>
+    </template>
 
-      <div v-if="hasOverflow(consensusItem.id)" class="readMore">Read more</div>
-    </div>
-
-    <div>
+    <template #visualizer>
       <VoteCountVisualizer
         :vote-count1="65"
         :vote-count2="20"
@@ -23,8 +27,8 @@
         label4="No Vote"
         :show-legend="false"
       />
-    </div>
-  </div>
+    </template>
+  </OpinionGridLayout>
 
   <OpinionAnalysisDialog
     v-model="showDialog"
@@ -41,6 +45,7 @@ import {
   OpinionAnalysisData,
 } from "src/utils/component/analysis/analysisTypes";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
+import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 
 defineProps<{
   consensusItem: ConsensusItemData;
@@ -77,24 +82,6 @@ function showOpinionAnalysis() {
 </script>
 
 <style lang="scss" scoped>
-.consensusItemStyle {
-  cursor: pointer;
-  display: grid;
-  grid-template-columns: 1fr 6rem;
-  gap: 1rem;
-  align-items: center;
-  transition: background-color 0.2s ease;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  border-radius: 8px;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-}
-
 .consensusDescription {
   display: -webkit-box;
   -webkit-line-clamp: 3;
