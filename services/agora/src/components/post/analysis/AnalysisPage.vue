@@ -203,7 +203,7 @@ function handleShortcut(shortcutName: ShortcutItem) {
   border-radius: 25px;
   border-color: #e9e9f1;
   border-width: 1px;
-  margin-bottom: 5rem;
+  margin-bottom: 10rem;
   color: #333238;
 }
 
@@ -213,7 +213,6 @@ function handleShortcut(shortcutName: ShortcutItem) {
   gap: 2rem;
 }
 
-/* Style for all tab components */
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
