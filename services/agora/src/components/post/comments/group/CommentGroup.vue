@@ -15,20 +15,9 @@
       class="commentListFlex"
     >
       <ZKCard
-        v-if="mode === 'analysis' && aiSummary !== undefined"
-        padding="1rem"
-        class="commentItemBackground"
-      >
-        <CommentConsensusSummary
-          :summary="aiSummary"
-          :selected-cluster-key="selectedClusterKey"
-        />
-      </ZKCard>
-
-      <ZKCard
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
-        :key="commentItem.opinionSlugId + '-' + selectedClusterKey"
+        :key="commentItem.opinionSlugId"
         padding="0rem"
         class="commentItemBackground"
         :class="{
@@ -36,9 +25,7 @@
             initialCommentSlugId == commentItem.opinionSlugId,
         }"
       >
-        <CommentSingle
-          :mode="mode"
-          :selected-cluster-key="selectedClusterKey"
+        <CommentItem
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
@@ -58,10 +45,9 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, PolisKey, VotingAction } from "src/shared/types/zod";
-import CommentSingle from "./CommentSingle.vue";
+import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import CommentConsensusSummary from "./CommentConsensusSummary.vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 
@@ -70,11 +56,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
 }
 
 defineProps<{
-  mode: "comment" | "analysis";
-  selectedClusterKey: PolisKey | undefined;
   commentItemList: OpinionItem[];
   postSlugId: string;
-  aiSummary?: string;
   initialCommentSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
@@ -102,7 +85,7 @@ function mutedComment() {
 .commentListFlex {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: $feed-flex-gap;
   padding-bottom: 10rem;
 }
 

@@ -23,7 +23,7 @@
       <div class="title">Moderate the opinion</div>
 
       <div class="userOpinion">
-        <UserHtmlBody :html-body="opinionItem.opinion" :compact-mode="false" />
+        <HtmlContent :html-body="opinionItem.opinion" :compact-mode="false" />
       </div>
 
       <q-select
@@ -67,6 +67,7 @@
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
+import HtmlContent from "src/components/post/display/HtmlContent.vue";
 import type {
   OpinionModerationAction,
   ModerationReason,
@@ -80,7 +81,6 @@ import {
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
-import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
 
 const {
   moderateComment,
@@ -135,8 +135,12 @@ function loadRouteParams() {
     route.name ==
     "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/"
   ) {
-    postSlugId = route.params.conversationSlugId;
-    commentSlugId = route.params.opinionSlugId;
+    postSlugId = Array.isArray(route.params.conversationSlugId)
+      ? route.params.conversationSlugId[0]
+      : route.params.conversationSlugId;
+    commentSlugId = Array.isArray(route.params.opinionSlugId)
+      ? route.params.opinionSlugId[0]
+      : route.params.opinionSlugId;
   }
 }
 

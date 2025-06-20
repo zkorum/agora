@@ -29,7 +29,7 @@
           {{ conversationItem.payload.title }}
         </b>
 
-        <UserHtmlBody
+        <HtmlContent
           v-if="conversationItem.payload.body"
           :html-body="conversationItem.payload.body"
           :compact-mode="false"
@@ -77,6 +77,7 @@
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
+import HtmlContent from "src/components/post/display/HtmlContent.vue";
 import type {
   ConversationModerationAction,
   ExtendedConversation,
@@ -129,7 +130,9 @@ onMounted(async () => {
 
 function loadRouteParams() {
   if (route.name == "/moderate/conversation/[conversationSlugId]/") {
-    postSlugId = route.params.conversationSlugId;
+    postSlugId = Array.isArray(route.params.conversationSlugId)
+      ? route.params.conversationSlugId[0]
+      : route.params.conversationSlugId;
   }
 }
 
