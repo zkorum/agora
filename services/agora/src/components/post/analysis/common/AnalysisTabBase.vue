@@ -11,7 +11,7 @@
 
       <template #body>
         <ConsensusItem
-          v-for="consensusItem in itemList"
+          v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
           :key="consensusItem.description"
           :consensus-item="consensusItem"
         />
@@ -31,6 +31,7 @@ defineProps<{
   itemList: ConsensusItemData[];
   showChoice: "infoButton" | "viewMore" | "whatIsThis";
   showStarInTitle: boolean;
+  compactMode: boolean;
 }>();
 </script>
 

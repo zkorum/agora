@@ -21,6 +21,7 @@
           :item-list="consensusItemList"
           show-choice="viewMore"
           :show-star-in-title="false"
+          :compact-mode="false"
         />
       </div>
 
@@ -34,6 +35,7 @@
           :item-list="majorityItemList"
           show-choice="viewMore"
           :show-star-in-title="false"
+          :compact-mode="false"
         />
       </div>
 
@@ -47,6 +49,7 @@
           :item-list="divisiveItemList"
           show-choice="viewMore"
           :show-star-in-title="false"
+          :compact-mode="false"
         />
       </div>
 
