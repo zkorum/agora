@@ -88,7 +88,7 @@
           </div>
         </div>
 
-        <ClusterTabs
+        <OpinionGroupSelector
           :cluster-metadata-list="props.polis.clusters"
           :selected-cluster-key="currentClusterTab"
           @changed-cluster-key="currentClusterTab = $event"
@@ -98,6 +98,12 @@
           v-if="currentAiSummary"
           :summary="currentAiSummary"
           :selected-cluster-key="currentClusterTab"
+        />
+
+        <OpinionGroupComments
+          :current-cluster-tab="currentClusterTab"
+          :polis="props.polis"
+          @update:current-cluster-tab="currentClusterTab = $event"
         />
       </template>
     </AnalysisSectionWrapper>
@@ -113,8 +119,9 @@ import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ClusterInformationDialog from "./ClusterInformationDialog.vue";
-import ClusterTabs from "./ClusterTabs.vue";
+import OpinionGroupSelector from "./OpinionGroupSelector.vue";
 import GroupConsensusSummary from "./GroupConsensusSummary.vue";
+import OpinionGroupComments from "./OpinionGroupComments.vue";
 import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
