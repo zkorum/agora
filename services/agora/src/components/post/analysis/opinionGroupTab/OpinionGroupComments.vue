@@ -1,34 +1,38 @@
 <template>
   <div class="opinion-group-comments">
-    <div class="header">
-      <h2 class="title">
-        Opinions <span class="count">{{ filteredComments.length }}</span>
-      </h2>
+    <OpinionGridLayout>
+      <template #content>
+        <h2 class="title">
+          Opinions <span class="count">{{ filteredComments.length }}</span>
+        </h2>
+      </template>
 
-      <div class="group-selector">
-        <q-btn
-          flat
-          round
-          dense
-          icon="mdi-chevron-left"
-          @click="navigateToPreviousGroup"
-        />
-        <span class="group-name">{{ currentGroupName }}</span>
-        <q-btn
-          flat
-          round
-          dense
-          icon="mdi-chevron-right"
-          @click="navigateToNextGroup"
-        />
-      </div>
-    </div>
+      <template #visualizer>
+        <div class="group-selector">
+          <q-btn
+            flat
+            round
+            dense
+            icon="mdi-chevron-left"
+            @click="navigateToPreviousGroup"
+          />
+          <span class="group-name">{{ currentGroupName }}</span>
+          <q-btn
+            flat
+            round
+            dense
+            icon="mdi-chevron-right"
+            @click="navigateToNextGroup"
+          />
+        </div>
+      </template>
+    </OpinionGridLayout>
 
     <div v-if="filteredComments.length === 0" class="no-comments">
       No comments available for this group.
     </div>
 
-    <div v-else class="comments-list">
+    <div v-else>
       <ConsensusItem
         v-for="comment in filteredComments"
         :key="comment.id"
@@ -47,6 +51,7 @@ import {
 } from "src/utils/component/analysis/analysisTypes";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
+import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 
 interface Comment extends ConsensusItemData {
   clusterKey: PolisKey;
@@ -173,13 +178,6 @@ const navigateToNextGroup = () => {
   padding: 1rem 0;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
 .title {
   font-size: 0.875rem;
   font-weight: 500;
@@ -200,13 +198,8 @@ const navigateToNextGroup = () => {
 }
 
 .group-name {
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 500;
-}
-
-.comments-list {
-  display: flex;
-  flex-direction: column;
 }
 
 .no-comments {

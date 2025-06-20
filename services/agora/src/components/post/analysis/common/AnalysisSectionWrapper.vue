@@ -21,6 +21,5 @@
 .bodyStyle {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
 }
 </style>
