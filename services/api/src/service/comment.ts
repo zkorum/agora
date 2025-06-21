@@ -18,18 +18,7 @@ import type {
     GetOpinionBySlugIdListResponse,
 } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import {
-    desc,
-    eq,
-    sql,
-    and,
-    isNull,
-    isNotNull,
-    ne,
-    SQL,
-    or,
-    gt,
-} from "drizzle-orm";
+import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type {
     ClusterStats,
     CommentFeedFilter,
@@ -62,7 +51,6 @@ import {
     isSqlWhereGroupAwareConsensusAgree,
 } from "@/utils/sqlLogic.js";
 import { createInterleavingMapFrom } from "@/utils/dataStructure.js";
-import { DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE } from "@/shared/conversationLogic.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
