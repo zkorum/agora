@@ -59,6 +59,7 @@ import {
     isSqlOrderByPolisPriority,
     isSqlWhereRepresentative,
     isSqlOrderByRepresentative,
+    isSqlWhereGroupAwareConsensusAgree,
 } from "@/utils/sqlLogic.js";
 import { createInterleavingMapFrom } from "@/utils/dataStructure.js";
 import { DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE } from "@/shared/conversationLogic.js";
@@ -257,79 +258,14 @@ export async function fetchOpinions({
             whereClause = and(
                 whereClause,
                 isNull(opinionModerationTable.id),
-                or(
-                    and(
-                        isNotNull(opinionTable.polisCluster5Id),
-                        isNotNull(opinionTable.polisCluster4Id),
-                        isNotNull(opinionTable.polisCluster3Id),
-                        isNotNull(opinionTable.polisCluster2Id),
-                        isNotNull(opinionTable.polisCluster1Id),
-                        isNotNull(opinionTable.polisCluster0Id),
-                        gt(
-                            opinionTable.polisGroupAwareConsensusProbabilityAgree,
-                            DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * 6,
-                        ),
-                    ),
-                    and(
-                        isNull(opinionTable.polisCluster5Id),
-                        isNotNull(opinionTable.polisCluster4Id),
-                        isNotNull(opinionTable.polisCluster3Id),
-                        isNotNull(opinionTable.polisCluster2Id),
-                        isNotNull(opinionTable.polisCluster1Id),
-                        isNotNull(opinionTable.polisCluster0Id),
-                        gt(
-                            opinionTable.polisGroupAwareConsensusProbabilityAgree,
-                            DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * 5,
-                        ),
-                    ),
-                    and(
-                        isNull(opinionTable.polisCluster5Id),
-                        isNull(opinionTable.polisCluster4Id),
-                        isNotNull(opinionTable.polisCluster3Id),
-                        isNotNull(opinionTable.polisCluster2Id),
-                        isNotNull(opinionTable.polisCluster1Id),
-                        isNotNull(opinionTable.polisCluster0Id),
-                        gt(
-                            opinionTable.polisGroupAwareConsensusProbabilityAgree,
-                            DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * 4,
-                        ),
-                    ),
-                    and(
-                        isNull(opinionTable.polisCluster5Id),
-                        isNull(opinionTable.polisCluster4Id),
-                        isNull(opinionTable.polisCluster3Id),
-                        isNotNull(opinionTable.polisCluster2Id),
-                        isNotNull(opinionTable.polisCluster1Id),
-                        isNotNull(opinionTable.polisCluster0Id),
-                        gt(
-                            opinionTable.polisGroupAwareConsensusProbabilityAgree,
-                            DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * 3,
-                        ),
-                    ),
-                    and(
-                        isNull(opinionTable.polisCluster5Id),
-                        isNull(opinionTable.polisCluster4Id),
-                        isNull(opinionTable.polisCluster3Id),
-                        isNull(opinionTable.polisCluster2Id),
-                        isNotNull(opinionTable.polisCluster1Id),
-                        isNotNull(opinionTable.polisCluster0Id),
-                        gt(
-                            opinionTable.polisGroupAwareConsensusProbabilityAgree,
-                            DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * 2,
-                        ),
-                    ),
-                    and(
-                        isNull(opinionTable.polisCluster5Id),
-                        isNull(opinionTable.polisCluster4Id),
-                        isNull(opinionTable.polisCluster3Id),
-                        isNull(opinionTable.polisCluster2Id),
-                        isNull(opinionTable.polisCluster1Id),
-                        gt(
-                            opinionTable.polisGroupAwareConsensusProbabilityAgree,
-                            DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * 1,
-                        ),
-                    ),
-                ),
+                isSqlWhereGroupAwareConsensusAgree({
+                    cluster0NumUsersColumn: polisClusterTableAlias0.numUsers,
+                    cluster1NumUsersColumn: polisClusterTableAlias1.numUsers,
+                    cluster2NumUsersColumn: polisClusterTableAlias2.numUsers,
+                    cluster3NumUsersColumn: polisClusterTableAlias3.numUsers,
+                    cluster4NumUsersColumn: polisClusterTableAlias4.numUsers,
+                    cluster5NumUsersColumn: polisClusterTableAlias5.numUsers,
+                }),
             );
             orderByClause = isSqlOrderByGroupAwareConsensusAgree();
             break;
