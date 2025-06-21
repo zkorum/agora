@@ -119,3 +119,4 @@ export const zodPolisMathAndMetadata = z.object({
 
 export type PolisMathAndMetadata = z.infer<typeof zodPolisMathAndMetadata>;
 export type CommentPriorities = z.infer<typeof zodCommentPriorities>;
+export type GroupAwareConsensus = z.infer<typeof zodGroupAwareConsensus>;
