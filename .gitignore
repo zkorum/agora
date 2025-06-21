@@ -69,6 +69,3 @@ lerna-debug.log*
 
 # Built Visual Studio Code Extensions
 *.vsix
-
-# temp
-services/api/src/service/migration.ts
