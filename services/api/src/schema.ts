@@ -1197,7 +1197,8 @@ export const opinionTable = pgTable(
         ), // null if opinion was deleted
         numAgrees: integer("num_agrees").notNull().default(0),
         numDisagrees: integer("num_disagrees").notNull().default(0),
-        polisPriority: real("polis_priority"), // will contain pol.is comment-priorities
+        polisGroupAwareConsensusProbabilityAgree: real("polis_ga_consensus_pa"), // will contain pol.is group-aware-consensus probabilities for "agree"
+        polisPriority: real("polis_priority"), // contains pol.is comment-priorities
         // cache polis values to optimize fetch queries
         polisCluster0Id: integer("cluster_0_id").references(
             () => polisClusterTable.id,
@@ -1655,6 +1656,9 @@ export const polisClusterOpinionTable = pgTable(
     "polis_cluster_opinion",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        polisContentId: integer("polis_content_id")
+            // .notNull() // TODO: add notNull after deployment
+            .references(() => polisContentTable.id),
         polisClusterId: integer("polis_cluster_id")
             .notNull()
             .references(() => polisClusterTable.id),
@@ -1662,7 +1666,7 @@ export const polisClusterOpinionTable = pgTable(
             .notNull()
             .references(() => opinionTable.slugId),
         agreementType: voteEnum("agreement_type").notNull(),
-        percentageAgreement: real("percentage_agreement").notNull(), // example: 0.257, 0.013, 0, 1, 0.876 -- in practice should be larger than 0.5
+        probabilityAgreement: real("probability_agreement").notNull(), // example: 0.257, 0.013, 0, 1, 0.876 -- in practice should be larger than 0.5
         numAgreement: integer("number_agreement").notNull(), // example: 0, 1, 2...etc (number or agrees or disagrees)
         rawRepness: jsonb("raw_repness").notNull(), // from external polis system
         createdAt: timestamp("created_at", {
@@ -1675,7 +1679,7 @@ export const polisClusterOpinionTable = pgTable(
     (table) => [
         check(
             "check_perc_btwn_0_and_1",
-            sql`${table.percentageAgreement} BETWEEN 0 and 1`,
+            sql`${table.probabilityAgreement} BETWEEN 0 and 1`,
         ),
     ],
 );

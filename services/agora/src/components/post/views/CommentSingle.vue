@@ -69,7 +69,6 @@ import type {
 } from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
-import { formatClusterLabel } from "src/utils/component/opinion";
 import UserIdentity from "./UserIdentity.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import UserHtmlBody from "./UserHtmlBody.vue";
@@ -103,7 +102,7 @@ function calculateTotalReasonLabel() {
       memberCount: props.participantCount,
     })
   ) {
-    return "Debated (Total)";
+    return "Debated";
   }
   if (
     isMajority({
@@ -112,16 +111,14 @@ function calculateTotalReasonLabel() {
       memberCount: props.participantCount,
     })
   ) {
-    return "Majority (Total)";
+    return "Majority";
   }
+  return "Consensus";
 }
 
 function doCalculateClusterReasonLabel(
   clusterStats: ClusterStats
 ): string | undefined {
-  const labelCluster =
-    clusterStats.aiLabel ??
-    formatClusterLabel(clusterStats.key, true, clusterStats.aiLabel);
   if (
     isControversial({
       numAgrees: clusterStats.numAgrees,
@@ -129,7 +126,7 @@ function doCalculateClusterReasonLabel(
       memberCount: clusterStats.numUsers,
     })
   ) {
-    return `Debated (${labelCluster})`;
+    return "Debated";
   }
   if (
     isMajority({
@@ -138,8 +135,9 @@ function doCalculateClusterReasonLabel(
       memberCount: clusterStats.numUsers,
     })
   ) {
-    return `Majority (${labelCluster})`;
+    return "Majority";
   }
+  return "Representative";
 }
 
 function calculateClusterReasonLabel(): string | undefined {
@@ -151,30 +149,16 @@ function calculateClusterReasonLabel(): string | undefined {
       const clusterStats =
         props.commentItem.clustersStats[props.selectedClusterKey];
       const reasonLabel = doCalculateClusterReasonLabel(clusterStats);
-      if (reasonLabel !== undefined) {
-        return reasonLabel;
-      }
-    }
-    for (const clusterStats of props.commentItem.clustersStats) {
-      if (clusterStats.key === props.selectedClusterKey) {
-        // already done
-        continue;
-      }
-      const reasonLabel = doCalculateClusterReasonLabel(clusterStats);
-      if (reasonLabel !== undefined) {
-        return reasonLabel;
-      }
+      return reasonLabel;
     }
   }
 }
 
 function calculateReasonLabel() {
-  const totalReasonLabel = calculateTotalReasonLabel();
-  const clusterReasonLabel = calculateClusterReasonLabel();
-  if (props.selectedClusterKey !== undefined) {
-    return clusterReasonLabel ?? totalReasonLabel;
+  if (props.selectedClusterKey === undefined) {
+    return calculateTotalReasonLabel();
   } else {
-    return totalReasonLabel ?? clusterReasonLabel;
+    return calculateClusterReasonLabel();
   }
 }
 

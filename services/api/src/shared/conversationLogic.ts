@@ -22,6 +22,12 @@ interface IsUnpopularProps {
 export const DEFAULT_MIN_VOTERS = 0.5;
 export const DEFAULT_DIFFERENCE_THRESHOLD = 0.2;
 export const DEFAULT_MAJORITY_THRESHOLD = 0.6;
+export const DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE = 0.6;
+// export const DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_2_CLUSTERS = 0.36; // 0.6 * 0.6
+// export const DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_3_CLUSTERS = 0.216; // 0.6 * 0.6 * 0.6
+// export const DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_4_CLUSTERS = 0.1296; // 0.6 * 0.6 * 0.6 * 0.6
+// export const DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_5_CLUSTERS = 0.07776; // 0.6 * 0.6 * 0.6 * 0.6 * 0.6
+// export const DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_6_CLUSTERS = 0.046656; // 0.6 * 0.6 * 0.6 * 0.6 * 0.6 * 0.6
 
 export function isControversial({
     numAgrees,
@@ -84,4 +90,59 @@ export function isMajority({
     } else {
         return false;
     }
+}
+
+export function isGroupAwareConsensusAgree({
+    probability,
+    numClusters,
+    threshold,
+}: {
+    probability: number | null;
+    numClusters: number;
+    threshold?: number;
+}): boolean {
+    if (probability === null) {
+        return false;
+    }
+    const actualThreshold: number =
+        threshold !== undefined
+            ? threshold * numClusters
+            : DEFAULT_GROUP_AWARE_CONSENSUS_THRESHOLD_BASE * numClusters;
+    if (probability > actualThreshold) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+export function isRepresentativeAgree({
+    clusterRepnessProbability,
+    clusterRepnessAgreementType,
+}: {
+    clusterRepnessProbability: number | undefined;
+    clusterRepnessAgreementType: "agree" | "disagree" | undefined;
+}): boolean {
+    if (
+        clusterRepnessProbability === undefined ||
+        clusterRepnessAgreementType === undefined
+    ) {
+        return false;
+    }
+    return clusterRepnessAgreementType === "agree";
+}
+
+export function isRepresentativeDisagree({
+    clusterRepnessProbability,
+    clusterRepnessAgreementType,
+}: {
+    clusterRepnessProbability: number | undefined;
+    clusterRepnessAgreementType: "agree" | "disagree" | undefined;
+}): boolean {
+    if (
+        clusterRepnessProbability === undefined ||
+        clusterRepnessAgreementType === undefined
+    ) {
+        return false;
+    }
+    return clusterRepnessAgreementType === "disagree";
 }

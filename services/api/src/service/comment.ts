@@ -11,13 +11,24 @@ import {
     polisContentTable,
     polisClusterTable,
     polisClusterUserTable,
+    polisClusterOpinionTable,
 } from "@/schema.js";
 import type {
     CreateCommentResponse,
     GetOpinionBySlugIdListResponse,
 } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
+import {
+    desc,
+    eq,
+    sql,
+    and,
+    isNull,
+    isNotNull,
+    ne,
+    SQL,
+    gte,
+} from "drizzle-orm";
 import type {
     ClusterStats,
     CommentFeedFilter,
@@ -43,6 +54,10 @@ import {
     isSqlWhereMajority,
     isSqlOrderByControversial,
     isSqlOrderByMajority,
+    isSqlOrderByGroupAwareConsensusAgree,
+    isSqlOrderByPolisPriority,
+    isSqlWhereRepresentative,
+    isSqlOrderByRepresentative,
 } from "@/utils/sqlLogic.js";
 import { createInterleavingMapFrom } from "@/utils/dataStructure.js";
 
@@ -76,7 +91,16 @@ interface FetchOpinionsProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
     personalizationUserId?: string;
-    filterTarget: "new" | "moderated" | "hidden" | "majority" | "controversial";
+    filterTarget:
+        | "new"
+        | "moderated"
+        | "hidden"
+        | "majority"
+        | "controversial"
+        | "group-aware-consensus"
+        | "group-aware-consensus-top" // TODO delete when analysis v2 happens
+        | "discover"
+        | "representative";
     clusterKey?: PolisKey;
     limit: number;
 }
@@ -97,6 +121,31 @@ export async function fetchOpinions({
     const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3 ");
     const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4 ");
     const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
+
+    const polisClusterOpinionTableAlias0 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_0 ",
+    );
+    const polisClusterOpinionTableAlias1 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_1 ",
+    );
+    const polisClusterOpinionTableAlias2 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_2 ",
+    );
+    const polisClusterOpinionTableAlias3 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_3 ",
+    );
+    const polisClusterOpinionTableAlias4 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_4 ",
+    );
+    const polisClusterOpinionTableAlias5 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_5 ",
+    );
 
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
     let orderByClause = [desc(opinionTable.createdAt)]; // default value, shouldn't be needed but ts doesn't understand how to terminate nested switch
@@ -189,6 +238,26 @@ export async function fetchOpinions({
         }
         case "new": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            break;
+        }
+        case "discover": {
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            orderByClause = isSqlOrderByPolisPriority();
+            break;
+        }
+        case "group-aware-consensus": {
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            orderByClause = isSqlOrderByGroupAwareConsensusAgree();
+            break;
+        }
+        case "group-aware-consensus-top": {
+            // TODO: delete when analysis v2 happens
+            whereClause = and(
+                whereClause,
+                isNull(opinionModerationTable.id),
+                gte(opinionTable.polisGroupAwareConsensusProbabilityAgree, 0.4),
+            );
+            orderByClause = isSqlOrderByGroupAwareConsensusAgree();
             break;
         }
         case "majority": {
@@ -460,6 +529,100 @@ export async function fetchOpinions({
             }
             break;
         }
+        case "representative": {
+            if (clusterKey === undefined) {
+                throw httpErrors.badRequest(
+                    "Representative opinions only make sense if a clusterKey is selected",
+                );
+            }
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            switch (clusterKey) {
+                case "0": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereRepresentative({
+                            polisClusterOpinionIdColumn:
+                                polisClusterOpinionTableAlias0.id,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByRepresentative({
+                        probabilityAgreementColumn:
+                            polisClusterOpinionTableAlias0.probabilityAgreement,
+                    });
+                    break;
+                }
+                case "1": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereRepresentative({
+                            polisClusterOpinionIdColumn:
+                                polisClusterOpinionTableAlias1.id,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByRepresentative({
+                        probabilityAgreementColumn:
+                            polisClusterOpinionTableAlias1.probabilityAgreement,
+                    });
+                    break;
+                }
+                case "2": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereRepresentative({
+                            polisClusterOpinionIdColumn:
+                                polisClusterOpinionTableAlias2.id,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByRepresentative({
+                        probabilityAgreementColumn:
+                            polisClusterOpinionTableAlias2.probabilityAgreement,
+                    });
+                    break;
+                }
+                case "3": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereRepresentative({
+                            polisClusterOpinionIdColumn:
+                                polisClusterOpinionTableAlias3.id,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByRepresentative({
+                        probabilityAgreementColumn:
+                            polisClusterOpinionTableAlias3.probabilityAgreement,
+                    });
+                    break;
+                }
+                case "4": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereRepresentative({
+                            polisClusterOpinionIdColumn:
+                                polisClusterOpinionTableAlias4.id,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByRepresentative({
+                        probabilityAgreementColumn:
+                            polisClusterOpinionTableAlias4.probabilityAgreement,
+                    });
+                    break;
+                }
+                case "5": {
+                    whereClause = and(
+                        whereClause,
+                        isSqlWhereRepresentative({
+                            polisClusterOpinionIdColumn:
+                                polisClusterOpinionTableAlias5.id,
+                        }),
+                    );
+                    orderByClause = isSqlOrderByRepresentative({
+                        probabilityAgreementColumn:
+                            polisClusterOpinionTableAlias5.probabilityAgreement,
+                    });
+                    break;
+                }
+            }
+        }
     }
     const results = await db
         .select({
@@ -560,6 +723,48 @@ export async function fetchOpinions({
             and(
                 eq(polisClusterUserTable.polisContentId, polisContentTable.id),
                 eq(polisClusterUserTable.userId, opinionTable.authorId),
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias0,
+            eq(
+                polisClusterOpinionTableAlias0.polisClusterId,
+                polisClusterTableAlias0.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias1,
+            eq(
+                polisClusterOpinionTableAlias1.polisClusterId,
+                polisClusterTableAlias1.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias2,
+            eq(
+                polisClusterOpinionTableAlias2.polisClusterId,
+                polisClusterTableAlias2.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias3,
+            eq(
+                polisClusterOpinionTableAlias3.polisClusterId,
+                polisClusterTableAlias3.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias4,
+            eq(
+                polisClusterOpinionTableAlias4.polisClusterId,
+                polisClusterTableAlias4.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias5,
+            eq(
+                polisClusterOpinionTableAlias5.polisClusterId,
+                polisClusterTableAlias5.id,
             ),
         )
         .orderBy(...orderByClause)
@@ -765,40 +970,27 @@ export async function fetchOpinionsByConversationSlugId({
                     "Missing cluster key input for the cluster filter algorithm",
                 );
             } else {
-                const opinionItemMapMajority: Map<string, OpinionItem> =
-                    await fetchOpinions({
-                        db,
-                        postSlugId,
-                        personalizationUserId,
-                        filterTarget: "majority",
-                        clusterKey,
-                        limit: limit,
-                    });
-                const opinionItemMapControversial: OpinionItemPerSlugId =
-                    await fetchOpinions({
-                        db,
-                        postSlugId,
-                        personalizationUserId,
-                        filterTarget: "controversial",
-                        clusterKey,
-                        limit: limit,
-                    });
-                // Create a new map that interleaves entries from map1 and map2
-                opinionItemMap = createInterleavingMapFrom(
-                    opinionItemMapMajority,
-                    opinionItemMapControversial,
-                );
+                opinionItemMap = await fetchOpinions({
+                    db,
+                    postSlugId,
+                    personalizationUserId,
+                    filterTarget: "representative",
+                    clusterKey: clusterKey,
+                    limit: limit,
+                });
             }
             break;
         }
         case "all": {
+            // TODO: delete "all" when analysis v2 comes in
+            const smallerLimit = 1000;
             const opinionItemMapMajority: Map<string, OpinionItem> =
                 await fetchOpinions({
                     db,
                     postSlugId,
                     personalizationUserId,
                     filterTarget: "majority",
-                    limit: limit,
+                    limit: smallerLimit,
                 });
             const opinionItemMapControversial: OpinionItemPerSlugId =
                 await fetchOpinions({
@@ -806,342 +998,36 @@ export async function fetchOpinionsByConversationSlugId({
                     postSlugId,
                     personalizationUserId,
                     filterTarget: "controversial",
-                    limit: limit,
+                    limit: smallerLimit,
+                });
+            const opinionItemMapGroupAwareConsensus: Map<string, OpinionItem> =
+                await fetchOpinions({
+                    db,
+                    postSlugId,
+                    personalizationUserId,
+                    filterTarget: "group-aware-consensus-top",
+                    limit: smallerLimit,
                 });
             // Create a new map that interleaves entries from map1 and map2
-            opinionItemMap = createInterleavingMapFrom(
+            const opinionItemMapTemp = createInterleavingMapFrom(
                 opinionItemMapMajority,
                 opinionItemMapControversial,
+            );
+
+            opinionItemMap = createInterleavingMapFrom(
+                opinionItemMapTemp,
+                opinionItemMapGroupAwareConsensus,
             );
             break;
         }
         case "discover": {
-            const smallerLimit = 500;
-            const opinionItemMapMajority: Map<string, OpinionItem> =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    limit: smallerLimit,
-                });
-            const opinionItemMajorityEntries = Array.from(
-                opinionItemMapMajority.entries(),
-            );
-            const opinionItemMapControversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    limit: smallerLimit,
-                });
-            const opinionItemControversialEntries = Array.from(
-                opinionItemMapControversial.entries(),
-            );
-            const opinionItemMapNew: OpinionItemPerSlugId = await fetchOpinions(
-                {
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "new",
-                    limit: smallerLimit,
-                },
-            );
-            const opinionItemNewEntries = Array.from(
-                opinionItemMapNew.entries(),
-            );
-            const opinionItemMapCluster0Majority: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    clusterKey: "0",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster0MajorityEntries = Array.from(
-                opinionItemMapCluster0Majority.entries(),
-            );
-            const opinionItemMapCluster0Controversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    clusterKey: "0",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster0ControversialEntries = Array.from(
-                opinionItemMapCluster0Controversial.entries(),
-            );
-            const opinionItemMapCluster1Majority: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    clusterKey: "1",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster1MajorityEntries = Array.from(
-                opinionItemMapCluster1Majority.entries(),
-            );
-            const opinionItemMapCluster1Controversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    clusterKey: "1",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster1ControversialEntries = Array.from(
-                opinionItemMapCluster1Controversial.entries(),
-            );
-            const opinionItemMapCluster2Majority: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    clusterKey: "2",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster2MajorityEntries = Array.from(
-                opinionItemMapCluster2Majority.entries(),
-            );
-            const opinionItemMapCluster2Controversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    clusterKey: "2",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster2ControversialEntries = Array.from(
-                opinionItemMapCluster2Controversial.entries(),
-            );
-            const opinionItemMapCluster3Majority: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    clusterKey: "3",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster3MajorityEntries = Array.from(
-                opinionItemMapCluster3Majority.entries(),
-            );
-            const opinionItemMapCluster3Controversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    clusterKey: "3",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster3ControversialEntries = Array.from(
-                opinionItemMapCluster3Controversial.entries(),
-            );
-            const opinionItemMapCluster4Majority: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    clusterKey: "4",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster4MajorityEntries = Array.from(
-                opinionItemMapCluster4Majority.entries(),
-            );
-            const opinionItemMapCluster4Controversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    clusterKey: "4",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster4ControversialEntries = Array.from(
-                opinionItemMapCluster4Controversial.entries(),
-            );
-            const opinionItemMapCluster5Majority: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    clusterKey: "5",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster5MajorityEntries = Array.from(
-                opinionItemMapCluster5Majority.entries(),
-            );
-            const opinionItemMapCluster5Controversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    clusterKey: "5",
-                    limit: smallerLimit,
-                });
-            const opinionItemCluster5ControversialEntries = Array.from(
-                opinionItemMapCluster5Controversial.entries(),
-            );
-
-            // Create a new map that interleaves entries from map1 and map2
-            opinionItemMap = new Map<string, OpinionItem>();
-            for (
-                let i = 0;
-                i <
-                Math.max(
-                    opinionItemMapMajority.size,
-                    opinionItemMapControversial.size,
-                    opinionItemMapNew.size,
-                    opinionItemMapCluster0Majority.size,
-                    opinionItemMapCluster0Controversial.size,
-                    opinionItemMapCluster1Majority.size,
-                    opinionItemMapCluster1Controversial.size,
-                    opinionItemMapCluster2Majority.size,
-                    opinionItemMapCluster2Controversial.size,
-                    opinionItemMapCluster3Majority.size,
-                    opinionItemMapCluster3Controversial.size,
-                    opinionItemMapCluster4Majority.size,
-                    opinionItemMapCluster4Controversial.size,
-                    opinionItemMapCluster5Majority.size,
-                    opinionItemMapCluster5Controversial.size,
-                );
-                i++
-            ) {
-                if (i < opinionItemMapMajority.size) {
-                    const key = opinionItemMajorityEntries[i][0];
-                    const value = opinionItemMajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapControversial.size) {
-                    const key = opinionItemControversialEntries[i][0];
-                    const value = opinionItemControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                // TODO: choose order at random between which cluster core opinion to show first! and add smarter algs
-                if (i < opinionItemMapCluster0Majority.size) {
-                    const key = opinionItemCluster0MajorityEntries[i][0];
-                    const value = opinionItemCluster0MajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster1Majority.size) {
-                    const key = opinionItemCluster1MajorityEntries[i][0];
-                    const value = opinionItemCluster1MajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster2Majority.size) {
-                    const key = opinionItemCluster2MajorityEntries[i][0];
-                    const value = opinionItemCluster2MajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster3Majority.size) {
-                    const key = opinionItemCluster3MajorityEntries[i][0];
-                    const value = opinionItemCluster3MajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster4Majority.size) {
-                    const key = opinionItemCluster4MajorityEntries[i][0];
-                    const value = opinionItemCluster4MajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster5Majority.size) {
-                    const key = opinionItemCluster5MajorityEntries[i][0];
-                    const value = opinionItemCluster5MajorityEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster5Controversial.size) {
-                    const key = opinionItemCluster5ControversialEntries[i][0];
-                    const value = opinionItemCluster5ControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster4Controversial.size) {
-                    const key = opinionItemCluster4ControversialEntries[i][0];
-                    const value = opinionItemCluster4ControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster3Controversial.size) {
-                    const key = opinionItemCluster3ControversialEntries[i][0];
-                    const value = opinionItemCluster3ControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster2Controversial.size) {
-                    const key = opinionItemCluster2ControversialEntries[i][0];
-                    const value = opinionItemCluster2ControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster1Controversial.size) {
-                    const key = opinionItemCluster1ControversialEntries[i][0];
-                    const value = opinionItemCluster1ControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapCluster0Controversial.size) {
-                    const key = opinionItemCluster0ControversialEntries[i][0];
-                    const value = opinionItemCluster0ControversialEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-                if (i < opinionItemMapNew.size) {
-                    const key = opinionItemNewEntries[i][0];
-                    const value = opinionItemNewEntries[i][1];
-                    // avoiding duplicates TODO: we actually don't need Map anymore... switch to a Set?
-                    if (!opinionItemMap.has(key)) {
-                        opinionItemMap.set(key, value);
-                    }
-                }
-            }
+            opinionItemMap = await fetchOpinions({
+                db,
+                postSlugId,
+                personalizationUserId,
+                filterTarget: "discover",
+                limit: limit,
+            });
             break;
         }
     }

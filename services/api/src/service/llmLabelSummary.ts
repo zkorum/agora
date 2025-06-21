@@ -4,13 +4,17 @@ import {
     conversationTable,
     opinionContentTable,
     opinionTable,
+    polisClusterOpinionTable,
     polisClusterTable,
     polisContentTable,
 } from "@/schema.js";
 import {
     isControversial,
+    isGroupAwareConsensusAgree,
     isMajorityAgree,
     isMajorityDisagree,
+    isRepresentativeAgree,
+    isRepresentativeDisagree,
 } from "@/shared/conversationLogic.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import {
@@ -24,7 +28,9 @@ import {
 import { parseLlmOutputJson } from "@/utils/llmParse.js";
 import {
     isSqlWhereControversial,
+    isSqlWhereGroupAwareConsensusAgree,
     isSqlWhereMajority,
+    isSqlWhereRepresentative,
 } from "@/utils/sqlLogic.js";
 import {
     BedrockRuntimeClient,
@@ -58,6 +64,8 @@ interface ClusterInsights {
     majorityAgreeOpinions: OpinionInsight[];
     majorityDisagreeOpinions: OpinionInsight[];
     controversialOpinions: OpinionInsight[];
+    representativeAgreeOpinions: OpinionInsight[];
+    representativeDisagreeOpinions: OpinionInsight[];
 }
 
 interface ConversationInsights {
@@ -67,6 +75,7 @@ interface ConversationInsights {
     majorityAgreeOpinions: OpinionInsight[];
     majorityDisagreeOpinions: OpinionInsight[];
     controversialOpinions: OpinionInsight[];
+    groupAwareConsensusAgreeOpinions: OpinionInsight[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -332,6 +341,7 @@ interface CoreOpinions {
     majorityAgreeOpinions: OpinionInsight[];
     majorityDisagreeOpinions: OpinionInsight[];
     controversialOpinions: OpinionInsight[];
+    groupAwareConsensusAgreeOpinions: OpinionInsight[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -351,30 +361,81 @@ async function getCoreOpinions({
     const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4 ");
     const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
 
+    const polisClusterOpinionTableAlias0 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_0 ",
+    );
+    const polisClusterOpinionTableAlias1 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_1 ",
+    );
+    const polisClusterOpinionTableAlias2 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_2 ",
+    );
+    const polisClusterOpinionTableAlias3 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_3 ",
+    );
+    const polisClusterOpinionTableAlias4 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_4 ",
+    );
+    const polisClusterOpinionTableAlias5 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_5 ",
+    );
+
     const conversationDataResults = await db
         .select({
             opinionContent: opinionContentTable.content,
             participantCount: conversationTable.participantCount,
             numAgrees: opinionTable.numAgrees,
             numDisagrees: opinionTable.numDisagrees,
+            groupAwareConsensusProbabilityAgree:
+                opinionTable.polisGroupAwareConsensusProbabilityAgree,
             cluster0NumUsers: polisClusterTableAlias0.numUsers,
             cluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
             cluster0NumDisagrees: opinionTable.polisCluster0NumDisagrees,
+            cluster0RepnessProbability:
+                polisClusterOpinionTableAlias0.probabilityAgreement,
+            cluster0RepnessAgreementType:
+                polisClusterOpinionTableAlias0.agreementType,
             cluster1NumUsers: polisClusterTableAlias1.numUsers,
             cluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
             cluster1NumDisagrees: opinionTable.polisCluster1NumDisagrees,
+            cluster1RepnessProbability:
+                polisClusterOpinionTableAlias1.probabilityAgreement,
+            cluster1RepnessAgreementType:
+                polisClusterOpinionTableAlias1.agreementType,
             cluster2NumUsers: polisClusterTableAlias2.numUsers,
             cluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
             cluster2NumDisagrees: opinionTable.polisCluster2NumDisagrees,
+            cluster2RepnessProbability:
+                polisClusterOpinionTableAlias2.probabilityAgreement,
+            cluster2RepnessAgreementType:
+                polisClusterOpinionTableAlias2.agreementType,
             cluster3NumUsers: polisClusterTableAlias3.numUsers,
             cluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
             cluster3NumDisagrees: opinionTable.polisCluster3NumDisagrees,
+            cluster3RepnessProbability:
+                polisClusterOpinionTableAlias3.probabilityAgreement,
+            cluster3RepnessAgreementType:
+                polisClusterOpinionTableAlias3.agreementType,
             cluster4NumUsers: polisClusterTableAlias4.numUsers,
             cluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
             cluster4NumDisagrees: opinionTable.polisCluster4NumDisagrees,
+            cluster4RepnessProbability:
+                polisClusterOpinionTableAlias4.probabilityAgreement,
+            cluster4RepnessAgreementType:
+                polisClusterOpinionTableAlias4.agreementType,
             cluster5NumUsers: polisClusterTableAlias5.numUsers,
             cluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
             cluster5NumDisagrees: opinionTable.polisCluster5NumDisagrees,
+            cluster5RepnessProbability:
+                polisClusterOpinionTableAlias5.probabilityAgreement,
+            cluster5RepnessAgreementType:
+                polisClusterOpinionTableAlias5.agreementType,
             conversationBody: conversationContentTable.body,
         })
         .from(opinionTable)
@@ -454,6 +515,48 @@ async function getCoreOpinions({
                 eq(polisClusterTableAlias5.key, "5"),
             ),
         )
+        .leftJoin(
+            polisClusterOpinionTableAlias0,
+            eq(
+                polisClusterOpinionTableAlias0.polisClusterId,
+                polisClusterTableAlias0.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias1,
+            eq(
+                polisClusterOpinionTableAlias1.polisClusterId,
+                polisClusterTableAlias1.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias2,
+            eq(
+                polisClusterOpinionTableAlias2.polisClusterId,
+                polisClusterTableAlias2.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias3,
+            eq(
+                polisClusterOpinionTableAlias3.polisClusterId,
+                polisClusterTableAlias3.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias4,
+            eq(
+                polisClusterOpinionTableAlias4.polisClusterId,
+                polisClusterTableAlias4.id,
+            ),
+        )
+        .leftJoin(
+            polisClusterOpinionTableAlias5,
+            eq(
+                polisClusterOpinionTableAlias5.polisClusterId,
+                polisClusterTableAlias5.id,
+            ),
+        )
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
@@ -470,6 +573,20 @@ async function getCoreOpinions({
                         memberCountColumn: conversationTable.participantCount,
                         numDisagreesColumn: opinionTable.numDisagrees,
                     }),
+                    isSqlWhereGroupAwareConsensusAgree({
+                        cluster0NumUsersColumn:
+                            polisClusterTableAlias0.numUsers,
+                        cluster1NumUsersColumn:
+                            polisClusterTableAlias1.numUsers,
+                        cluster2NumUsersColumn:
+                            polisClusterTableAlias2.numUsers,
+                        cluster3NumUsersColumn:
+                            polisClusterTableAlias3.numUsers,
+                        cluster4NumUsersColumn:
+                            polisClusterTableAlias4.numUsers,
+                        cluster5NumUsersColumn:
+                            polisClusterTableAlias5.numUsers,
+                    }),
                     // 0
                     isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster0NumAgrees,
@@ -482,6 +599,10 @@ async function getCoreOpinions({
                         numDisagreesColumn:
                             opinionTable.polisCluster0NumDisagrees,
                         memberCountColumn: polisClusterTableAlias0.numUsers,
+                    }),
+                    isSqlWhereRepresentative({
+                        polisClusterOpinionIdColumn:
+                            polisClusterOpinionTableAlias0.id,
                     }),
                     // 1
                     isSqlWhereMajority({
@@ -496,6 +617,10 @@ async function getCoreOpinions({
                             opinionTable.polisCluster1NumDisagrees,
                         memberCountColumn: polisClusterTableAlias1.numUsers,
                     }),
+                    isSqlWhereRepresentative({
+                        polisClusterOpinionIdColumn:
+                            polisClusterOpinionTableAlias1.id,
+                    }),
                     // 2
                     isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster2NumAgrees,
@@ -508,6 +633,10 @@ async function getCoreOpinions({
                         numDisagreesColumn:
                             opinionTable.polisCluster2NumDisagrees,
                         memberCountColumn: polisClusterTableAlias2.numUsers,
+                    }),
+                    isSqlWhereRepresentative({
+                        polisClusterOpinionIdColumn:
+                            polisClusterOpinionTableAlias2.id,
                     }),
                     // 3
                     isSqlWhereMajority({
@@ -522,6 +651,10 @@ async function getCoreOpinions({
                             opinionTable.polisCluster3NumDisagrees,
                         memberCountColumn: polisClusterTableAlias3.numUsers,
                     }),
+                    isSqlWhereRepresentative({
+                        polisClusterOpinionIdColumn:
+                            polisClusterOpinionTableAlias3.id,
+                    }),
                     // 4
                     isSqlWhereMajority({
                         numAgreesColumn: opinionTable.polisCluster4NumAgrees,
@@ -534,6 +667,10 @@ async function getCoreOpinions({
                         numDisagreesColumn:
                             opinionTable.polisCluster4NumDisagrees,
                         memberCountColumn: polisClusterTableAlias4.numUsers,
+                    }),
+                    isSqlWhereRepresentative({
+                        polisClusterOpinionIdColumn:
+                            polisClusterOpinionTableAlias4.id,
                     }),
                     // 5
                     isSqlWhereMajority({
@@ -548,6 +685,10 @@ async function getCoreOpinions({
                             opinionTable.polisCluster5NumDisagrees,
                         memberCountColumn: polisClusterTableAlias5.numUsers,
                     }),
+                    isSqlWhereRepresentative({
+                        polisClusterOpinionIdColumn:
+                            polisClusterOpinionTableAlias5.id,
+                    }),
                 ),
             ),
         );
@@ -555,6 +696,7 @@ async function getCoreOpinions({
     const majorityAgreeOpinions: OpinionInsight[] = [];
     const majorityDisagreeOpinions: OpinionInsight[] = [];
     const controversialOpinions: OpinionInsight[] = [];
+    const groupAwareConsensusAgreeOpinions: OpinionInsight[] = [];
     const clusters: Record<string, ClusterInsights> = {};
     for (const conversationData of conversationDataResults) {
         const newOpinionTotal = {
@@ -590,6 +732,28 @@ async function getCoreOpinions({
         ) {
             controversialOpinions.push(newOpinionTotal);
         }
+        if (
+            isGroupAwareConsensusAgree({
+                numClusters:
+                    conversationData.cluster5NumUsers !== null
+                        ? 6
+                        : conversationData.cluster4NumUsers !== null
+                          ? 5
+                          : conversationData.cluster3NumUsers !== null
+                            ? 4
+                            : conversationData.cluster2NumUsers !== null
+                              ? 3
+                              : conversationData.cluster1NumUsers !== null
+                                ? 2
+                                : conversationData.cluster0NumUsers !== null
+                                  ? 1
+                                  : 1, // no cluster is 1 cluster
+                probability:
+                    conversationData.groupAwareConsensusProbabilityAgree,
+            })
+        ) {
+            groupAwareConsensusAgreeOpinions.push(newOpinionTotal);
+        }
 
         if (
             conversationData.cluster0NumAgrees !== null &&
@@ -621,6 +785,8 @@ async function getCoreOpinions({
                         majorityAgreeOpinions: [newOpinionCluster0],
                         majorityDisagreeOpinions: [],
                         controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
                     };
                 }
             }
@@ -640,6 +806,8 @@ async function getCoreOpinions({
                         majorityDisagreeOpinions: [newOpinionCluster0],
                         majorityAgreeOpinions: [],
                         controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
                     };
                 }
             }
@@ -660,6 +828,58 @@ async function getCoreOpinions({
                         majorityAgreeOpinions: [],
                         majorityDisagreeOpinions: [],
                         controversialOpinions: [newOpinionCluster0],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeAgree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster0RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster0RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("0" in clusters) {
+                    clusters["0"].representativeAgreeOpinions.push(
+                        newOpinionCluster0,
+                    );
+                } else {
+                    clusters["0"] = {
+                        memberCount: conversationData.cluster0NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [newOpinionCluster0],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeDisagree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster0RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster0RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("0" in clusters) {
+                    clusters["0"].representativeDisagreeOpinions.push(
+                        newOpinionCluster0,
+                    );
+                } else {
+                    clusters["0"] = {
+                        memberCount: conversationData.cluster0NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [newOpinionCluster0],
                     };
                 }
             }
@@ -694,6 +914,8 @@ async function getCoreOpinions({
                         majorityAgreeOpinions: [newOpinionCluster1],
                         majorityDisagreeOpinions: [],
                         controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
                     };
                 }
             }
@@ -713,6 +935,8 @@ async function getCoreOpinions({
                         majorityDisagreeOpinions: [newOpinionCluster1],
                         majorityAgreeOpinions: [],
                         controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
                     };
                 }
             }
@@ -733,299 +957,575 @@ async function getCoreOpinions({
                         majorityAgreeOpinions: [],
                         majorityDisagreeOpinions: [],
                         controversialOpinions: [newOpinionCluster1],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
                     };
                 }
             }
             if (
-                conversationData.cluster2NumAgrees !== null &&
-                conversationData.cluster2NumDisagrees !== null &&
-                conversationData.cluster2NumUsers !== null
+                isRepresentativeAgree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster1RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster1RepnessAgreementType,
+                    ),
+                })
             ) {
-                const newOpinionCluster2 = {
-                    opinionContent: conversationData.opinionContent,
-                    percentageAgree:
-                        conversationData.cluster2NumAgrees /
-                        conversationData.cluster2NumUsers,
-                    percentageDisagree:
-                        conversationData.cluster2NumDisagrees /
-                        conversationData.cluster2NumUsers,
-                };
-                if (
-                    isMajorityAgree({
-                        numAgrees: conversationData.cluster2NumAgrees,
-                        memberCount: conversationData.cluster2NumUsers,
-                    })
-                ) {
-                    if ("2" in clusters) {
-                        clusters["2"].majorityAgreeOpinions.push(
-                            newOpinionCluster2,
-                        );
-                    } else {
-                        clusters["2"] = {
-                            memberCount: conversationData.cluster2NumUsers,
-                            majorityAgreeOpinions: [newOpinionCluster2],
-                            majorityDisagreeOpinions: [],
-                            controversialOpinions: [],
-                        };
-                    }
-                }
-                if (
-                    isMajorityDisagree({
-                        numDisagrees: conversationData.cluster2NumDisagrees,
-                        memberCount: conversationData.cluster2NumUsers,
-                    })
-                ) {
-                    if ("2" in clusters) {
-                        clusters["2"].majorityDisagreeOpinions.push(
-                            newOpinionCluster2,
-                        );
-                    } else {
-                        clusters["2"] = {
-                            memberCount: conversationData.cluster2NumUsers,
-                            majorityDisagreeOpinions: [newOpinionCluster2],
-                            majorityAgreeOpinions: [],
-                            controversialOpinions: [],
-                        };
-                    }
-                }
-                if (
-                    isControversial({
-                        numAgrees: conversationData.cluster2NumAgrees,
-                        numDisagrees: conversationData.cluster2NumDisagrees,
-                        memberCount: conversationData.cluster2NumUsers,
-                    })
-                ) {
-                    if ("2" in clusters) {
-                        clusters["2"].controversialOpinions.push(
-                            newOpinionCluster2,
-                        );
-                    } else {
-                        clusters["2"] = {
-                            memberCount: conversationData.cluster2NumUsers,
-                            majorityAgreeOpinions: [],
-                            majorityDisagreeOpinions: [],
-                            controversialOpinions: [newOpinionCluster2],
-                        };
-                    }
-                }
-                if (
-                    conversationData.cluster3NumAgrees !== null &&
-                    conversationData.cluster3NumDisagrees !== null &&
-                    conversationData.cluster3NumUsers !== null
-                ) {
-                    const newOpinionCluster3 = {
-                        opinionContent: conversationData.opinionContent,
-                        percentageAgree:
-                            conversationData.cluster3NumAgrees /
-                            conversationData.cluster3NumUsers,
-                        percentageDisagree:
-                            conversationData.cluster3NumDisagrees /
-                            conversationData.cluster3NumUsers,
+                if ("1" in clusters) {
+                    clusters["1"].representativeAgreeOpinions.push(
+                        newOpinionCluster1,
+                    );
+                } else {
+                    clusters["1"] = {
+                        memberCount: conversationData.cluster1NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [newOpinionCluster1],
+                        representativeDisagreeOpinions: [],
                     };
-                    if (
-                        isMajorityAgree({
-                            numAgrees: conversationData.cluster3NumAgrees,
-                            memberCount: conversationData.cluster3NumUsers,
-                        })
-                    ) {
-                        if ("3" in clusters) {
-                            clusters["3"].majorityAgreeOpinions.push(
-                                newOpinionCluster3,
-                            );
-                        } else {
-                            clusters["3"] = {
-                                memberCount: conversationData.cluster3NumUsers,
-                                majorityAgreeOpinions: [newOpinionCluster3],
-                                majorityDisagreeOpinions: [],
-                                controversialOpinions: [],
-                            };
-                        }
-                    }
-                    if (
-                        isMajorityDisagree({
-                            numDisagrees: conversationData.cluster3NumDisagrees,
-                            memberCount: conversationData.cluster3NumUsers,
-                        })
-                    ) {
-                        if ("3" in clusters) {
-                            clusters["3"].majorityDisagreeOpinions.push(
-                                newOpinionCluster3,
-                            );
-                        } else {
-                            clusters["3"] = {
-                                memberCount: conversationData.cluster3NumUsers,
-                                majorityDisagreeOpinions: [newOpinionCluster3],
-                                majorityAgreeOpinions: [],
-                                controversialOpinions: [],
-                            };
-                        }
-                    }
-                    if (
-                        isControversial({
-                            numAgrees: conversationData.cluster3NumAgrees,
-                            numDisagrees: conversationData.cluster3NumDisagrees,
-                            memberCount: conversationData.cluster3NumUsers,
-                        })
-                    ) {
-                        if ("3" in clusters) {
-                            clusters["3"].controversialOpinions.push(
-                                newOpinionCluster3,
-                            );
-                        } else {
-                            clusters["3"] = {
-                                memberCount: conversationData.cluster3NumUsers,
-                                majorityAgreeOpinions: [],
-                                majorityDisagreeOpinions: [],
-                                controversialOpinions: [newOpinionCluster3],
-                            };
-                        }
-                    }
                 }
-                if (
-                    conversationData.cluster4NumAgrees !== null &&
-                    conversationData.cluster4NumDisagrees !== null &&
-                    conversationData.cluster4NumUsers !== null
-                ) {
-                    const newOpinionCluster4 = {
-                        opinionContent: conversationData.opinionContent,
-                        percentageAgree:
-                            conversationData.cluster4NumAgrees /
-                            conversationData.cluster4NumUsers,
-                        percentageDisagree:
-                            conversationData.cluster4NumDisagrees /
-                            conversationData.cluster4NumUsers,
+            }
+            if (
+                isRepresentativeDisagree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster1RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster1RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("1" in clusters) {
+                    clusters["1"].representativeDisagreeOpinions.push(
+                        newOpinionCluster1,
+                    );
+                } else {
+                    clusters["1"] = {
+                        memberCount: conversationData.cluster1NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [newOpinionCluster1],
                     };
-                    if (
-                        isMajorityAgree({
-                            numAgrees: conversationData.cluster4NumAgrees,
-                            memberCount: conversationData.cluster4NumUsers,
-                        })
-                    ) {
-                        if ("4" in clusters) {
-                            clusters["4"].majorityAgreeOpinions.push(
-                                newOpinionCluster4,
-                            );
-                        } else {
-                            clusters["4"] = {
-                                memberCount: conversationData.cluster4NumUsers,
-                                majorityAgreeOpinions: [newOpinionCluster4],
-                                majorityDisagreeOpinions: [],
-                                controversialOpinions: [],
-                            };
-                        }
-                    }
-                    if (
-                        isMajorityDisagree({
-                            numDisagrees: conversationData.cluster4NumDisagrees,
-                            memberCount: conversationData.cluster4NumUsers,
-                        })
-                    ) {
-                        if ("4" in clusters) {
-                            clusters["4"].majorityDisagreeOpinions.push(
-                                newOpinionCluster4,
-                            );
-                        } else {
-                            clusters["4"] = {
-                                memberCount: conversationData.cluster4NumUsers,
-                                majorityDisagreeOpinions: [newOpinionCluster4],
-                                majorityAgreeOpinions: [],
-                                controversialOpinions: [],
-                            };
-                        }
-                    }
-                    if (
-                        isControversial({
-                            numAgrees: conversationData.cluster4NumAgrees,
-                            numDisagrees: conversationData.cluster4NumDisagrees,
-                            memberCount: conversationData.cluster4NumUsers,
-                        })
-                    ) {
-                        if ("4" in clusters) {
-                            clusters["4"].controversialOpinions.push(
-                                newOpinionCluster4,
-                            );
-                        } else {
-                            clusters["4"] = {
-                                memberCount: conversationData.cluster4NumUsers,
-                                majorityAgreeOpinions: [],
-                                majorityDisagreeOpinions: [],
-                                controversialOpinions: [newOpinionCluster4],
-                            };
-                        }
-                    }
                 }
-                if (
-                    conversationData.cluster5NumAgrees !== null &&
-                    conversationData.cluster5NumDisagrees !== null &&
-                    conversationData.cluster5NumUsers !== null
-                ) {
-                    const newOpinionCluster5 = {
-                        opinionContent: conversationData.opinionContent,
-                        percentageAgree:
-                            conversationData.cluster5NumAgrees /
-                            conversationData.cluster5NumUsers,
-                        percentageDisagree:
-                            conversationData.cluster5NumDisagrees /
-                            conversationData.cluster5NumUsers,
+            }
+        }
+        if (
+            conversationData.cluster2NumAgrees !== null &&
+            conversationData.cluster2NumDisagrees !== null &&
+            conversationData.cluster2NumUsers !== null
+        ) {
+            const newOpinionCluster2 = {
+                opinionContent: conversationData.opinionContent,
+                percentageAgree:
+                    conversationData.cluster2NumAgrees /
+                    conversationData.cluster2NumUsers,
+                percentageDisagree:
+                    conversationData.cluster2NumDisagrees /
+                    conversationData.cluster2NumUsers,
+            };
+            if (
+                isMajorityAgree({
+                    numAgrees: conversationData.cluster2NumAgrees,
+                    memberCount: conversationData.cluster2NumUsers,
+                })
+            ) {
+                if ("2" in clusters) {
+                    clusters["2"].majorityAgreeOpinions.push(
+                        newOpinionCluster2,
+                    );
+                } else {
+                    clusters["2"] = {
+                        memberCount: conversationData.cluster2NumUsers,
+                        majorityAgreeOpinions: [newOpinionCluster2],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
                     };
-                    if (
-                        isMajorityAgree({
-                            numAgrees: conversationData.cluster5NumAgrees,
-                            memberCount: conversationData.cluster5NumUsers,
-                        })
-                    ) {
-                        if ("5" in clusters) {
-                            clusters["5"].majorityAgreeOpinions.push(
-                                newOpinionCluster5,
-                            );
-                        } else {
-                            clusters["5"] = {
-                                memberCount: conversationData.cluster5NumUsers,
-                                majorityAgreeOpinions: [newOpinionCluster5],
-                                majorityDisagreeOpinions: [],
-                                controversialOpinions: [],
-                            };
-                        }
-                    }
-                    if (
-                        isMajorityDisagree({
-                            numDisagrees: conversationData.cluster5NumDisagrees,
-                            memberCount: conversationData.cluster5NumUsers,
-                        })
-                    ) {
-                        if ("5" in clusters) {
-                            clusters["5"].majorityDisagreeOpinions.push(
-                                newOpinionCluster5,
-                            );
-                        } else {
-                            clusters["5"] = {
-                                memberCount: conversationData.cluster5NumUsers,
-                                majorityDisagreeOpinions: [newOpinionCluster5],
-                                majorityAgreeOpinions: [],
-                                controversialOpinions: [],
-                            };
-                        }
-                    }
-                    if (
-                        isControversial({
-                            numAgrees: conversationData.cluster5NumAgrees,
-                            numDisagrees: conversationData.cluster5NumDisagrees,
-                            memberCount: conversationData.cluster5NumUsers,
-                        })
-                    ) {
-                        if ("5" in clusters) {
-                            clusters["5"].controversialOpinions.push(
-                                newOpinionCluster5,
-                            );
-                        } else {
-                            clusters["5"] = {
-                                memberCount: conversationData.cluster5NumUsers,
-                                majorityAgreeOpinions: [],
-                                majorityDisagreeOpinions: [],
-                                controversialOpinions: [newOpinionCluster5],
-                            };
-                        }
-                    }
+                }
+            }
+            if (
+                isMajorityDisagree({
+                    numDisagrees: conversationData.cluster2NumDisagrees,
+                    memberCount: conversationData.cluster2NumUsers,
+                })
+            ) {
+                if ("2" in clusters) {
+                    clusters["2"].majorityDisagreeOpinions.push(
+                        newOpinionCluster2,
+                    );
+                } else {
+                    clusters["2"] = {
+                        memberCount: conversationData.cluster2NumUsers,
+                        majorityDisagreeOpinions: [newOpinionCluster2],
+                        majorityAgreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isControversial({
+                    numAgrees: conversationData.cluster2NumAgrees,
+                    numDisagrees: conversationData.cluster2NumDisagrees,
+                    memberCount: conversationData.cluster2NumUsers,
+                })
+            ) {
+                if ("2" in clusters) {
+                    clusters["2"].controversialOpinions.push(
+                        newOpinionCluster2,
+                    );
+                } else {
+                    clusters["2"] = {
+                        memberCount: conversationData.cluster2NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [newOpinionCluster2],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeAgree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster2RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster2RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("2" in clusters) {
+                    clusters["2"].representativeAgreeOpinions.push(
+                        newOpinionCluster2,
+                    );
+                } else {
+                    clusters["2"] = {
+                        memberCount: conversationData.cluster2NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [newOpinionCluster2],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeDisagree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster2RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster2RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("2" in clusters) {
+                    clusters["2"].representativeDisagreeOpinions.push(
+                        newOpinionCluster2,
+                    );
+                } else {
+                    clusters["2"] = {
+                        memberCount: conversationData.cluster2NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [newOpinionCluster2],
+                    };
+                }
+            }
+        }
+        if (
+            conversationData.cluster3NumAgrees !== null &&
+            conversationData.cluster3NumDisagrees !== null &&
+            conversationData.cluster3NumUsers !== null
+        ) {
+            const newOpinionCluster3 = {
+                opinionContent: conversationData.opinionContent,
+                percentageAgree:
+                    conversationData.cluster3NumAgrees /
+                    conversationData.cluster3NumUsers,
+                percentageDisagree:
+                    conversationData.cluster3NumDisagrees /
+                    conversationData.cluster3NumUsers,
+            };
+            if (
+                isMajorityAgree({
+                    numAgrees: conversationData.cluster3NumAgrees,
+                    memberCount: conversationData.cluster3NumUsers,
+                })
+            ) {
+                if ("3" in clusters) {
+                    clusters["3"].majorityAgreeOpinions.push(
+                        newOpinionCluster3,
+                    );
+                } else {
+                    clusters["3"] = {
+                        memberCount: conversationData.cluster3NumUsers,
+                        majorityAgreeOpinions: [newOpinionCluster3],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isMajorityDisagree({
+                    numDisagrees: conversationData.cluster3NumDisagrees,
+                    memberCount: conversationData.cluster3NumUsers,
+                })
+            ) {
+                if ("3" in clusters) {
+                    clusters["3"].majorityDisagreeOpinions.push(
+                        newOpinionCluster3,
+                    );
+                } else {
+                    clusters["3"] = {
+                        memberCount: conversationData.cluster3NumUsers,
+                        majorityDisagreeOpinions: [newOpinionCluster3],
+                        majorityAgreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isControversial({
+                    numAgrees: conversationData.cluster3NumAgrees,
+                    numDisagrees: conversationData.cluster3NumDisagrees,
+                    memberCount: conversationData.cluster3NumUsers,
+                })
+            ) {
+                if ("3" in clusters) {
+                    clusters["3"].controversialOpinions.push(
+                        newOpinionCluster3,
+                    );
+                } else {
+                    clusters["3"] = {
+                        memberCount: conversationData.cluster3NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [newOpinionCluster3],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeAgree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster3RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster3RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("3" in clusters) {
+                    clusters["3"].representativeAgreeOpinions.push(
+                        newOpinionCluster3,
+                    );
+                } else {
+                    clusters["3"] = {
+                        memberCount: conversationData.cluster3NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [newOpinionCluster3],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeDisagree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster3RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster3RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("3" in clusters) {
+                    clusters["3"].representativeDisagreeOpinions.push(
+                        newOpinionCluster3,
+                    );
+                } else {
+                    clusters["3"] = {
+                        memberCount: conversationData.cluster3NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [newOpinionCluster3],
+                    };
+                }
+            }
+        }
+        if (
+            conversationData.cluster4NumAgrees !== null &&
+            conversationData.cluster4NumDisagrees !== null &&
+            conversationData.cluster4NumUsers !== null
+        ) {
+            const newOpinionCluster4 = {
+                opinionContent: conversationData.opinionContent,
+                percentageAgree:
+                    conversationData.cluster4NumAgrees /
+                    conversationData.cluster4NumUsers,
+                percentageDisagree:
+                    conversationData.cluster4NumDisagrees /
+                    conversationData.cluster4NumUsers,
+            };
+            if (
+                isMajorityAgree({
+                    numAgrees: conversationData.cluster4NumAgrees,
+                    memberCount: conversationData.cluster4NumUsers,
+                })
+            ) {
+                if ("4" in clusters) {
+                    clusters["4"].majorityAgreeOpinions.push(
+                        newOpinionCluster4,
+                    );
+                } else {
+                    clusters["4"] = {
+                        memberCount: conversationData.cluster4NumUsers,
+                        majorityAgreeOpinions: [newOpinionCluster4],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isMajorityDisagree({
+                    numDisagrees: conversationData.cluster4NumDisagrees,
+                    memberCount: conversationData.cluster4NumUsers,
+                })
+            ) {
+                if ("4" in clusters) {
+                    clusters["4"].majorityDisagreeOpinions.push(
+                        newOpinionCluster4,
+                    );
+                } else {
+                    clusters["4"] = {
+                        memberCount: conversationData.cluster4NumUsers,
+                        majorityDisagreeOpinions: [newOpinionCluster4],
+                        majorityAgreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isControversial({
+                    numAgrees: conversationData.cluster4NumAgrees,
+                    numDisagrees: conversationData.cluster4NumDisagrees,
+                    memberCount: conversationData.cluster4NumUsers,
+                })
+            ) {
+                if ("4" in clusters) {
+                    clusters["4"].controversialOpinions.push(
+                        newOpinionCluster4,
+                    );
+                } else {
+                    clusters["4"] = {
+                        memberCount: conversationData.cluster4NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [newOpinionCluster4],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeAgree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster4RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster4RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("4" in clusters) {
+                    clusters["4"].representativeAgreeOpinions.push(
+                        newOpinionCluster4,
+                    );
+                } else {
+                    clusters["4"] = {
+                        memberCount: conversationData.cluster4NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [newOpinionCluster4],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeDisagree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster4RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster4RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("4" in clusters) {
+                    clusters["4"].representativeDisagreeOpinions.push(
+                        newOpinionCluster4,
+                    );
+                } else {
+                    clusters["4"] = {
+                        memberCount: conversationData.cluster4NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [newOpinionCluster4],
+                    };
+                }
+            }
+        }
+        if (
+            conversationData.cluster5NumAgrees !== null &&
+            conversationData.cluster5NumDisagrees !== null &&
+            conversationData.cluster5NumUsers !== null
+        ) {
+            const newOpinionCluster5 = {
+                opinionContent: conversationData.opinionContent,
+                percentageAgree:
+                    conversationData.cluster5NumAgrees /
+                    conversationData.cluster5NumUsers,
+                percentageDisagree:
+                    conversationData.cluster5NumDisagrees /
+                    conversationData.cluster5NumUsers,
+            };
+            if (
+                isMajorityAgree({
+                    numAgrees: conversationData.cluster5NumAgrees,
+                    memberCount: conversationData.cluster5NumUsers,
+                })
+            ) {
+                if ("5" in clusters) {
+                    clusters["5"].majorityAgreeOpinions.push(
+                        newOpinionCluster5,
+                    );
+                } else {
+                    clusters["5"] = {
+                        memberCount: conversationData.cluster5NumUsers,
+                        majorityAgreeOpinions: [newOpinionCluster5],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isMajorityDisagree({
+                    numDisagrees: conversationData.cluster5NumDisagrees,
+                    memberCount: conversationData.cluster5NumUsers,
+                })
+            ) {
+                if ("5" in clusters) {
+                    clusters["5"].majorityDisagreeOpinions.push(
+                        newOpinionCluster5,
+                    );
+                } else {
+                    clusters["5"] = {
+                        memberCount: conversationData.cluster5NumUsers,
+                        majorityDisagreeOpinions: [newOpinionCluster5],
+                        majorityAgreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isControversial({
+                    numAgrees: conversationData.cluster5NumAgrees,
+                    numDisagrees: conversationData.cluster5NumDisagrees,
+                    memberCount: conversationData.cluster5NumUsers,
+                })
+            ) {
+                if ("5" in clusters) {
+                    clusters["5"].controversialOpinions.push(
+                        newOpinionCluster5,
+                    );
+                } else {
+                    clusters["5"] = {
+                        memberCount: conversationData.cluster5NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [newOpinionCluster5],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeAgree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster5RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster5RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("5" in clusters) {
+                    clusters["5"].representativeAgreeOpinions.push(
+                        newOpinionCluster5,
+                    );
+                } else {
+                    clusters["5"] = {
+                        memberCount: conversationData.cluster5NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [newOpinionCluster5],
+                        representativeDisagreeOpinions: [],
+                    };
+                }
+            }
+            if (
+                isRepresentativeDisagree({
+                    clusterRepnessProbability: toUnionUndefined(
+                        conversationData.cluster5RepnessProbability,
+                    ),
+                    clusterRepnessAgreementType: toUnionUndefined(
+                        conversationData.cluster5RepnessAgreementType,
+                    ),
+                })
+            ) {
+                if ("5" in clusters) {
+                    clusters["5"].representativeDisagreeOpinions.push(
+                        newOpinionCluster5,
+                    );
+                } else {
+                    clusters["5"] = {
+                        memberCount: conversationData.cluster5NumUsers,
+                        majorityAgreeOpinions: [],
+                        majorityDisagreeOpinions: [],
+                        controversialOpinions: [],
+                        representativeAgreeOpinions: [],
+                        representativeDisagreeOpinions: [newOpinionCluster5],
+                    };
                 }
             }
         }
@@ -1034,6 +1534,7 @@ async function getCoreOpinions({
         majorityAgreeOpinions,
         majorityDisagreeOpinions,
         controversialOpinions,
+        groupAwareConsensusAgreeOpinions,
         clusters,
     };
 }
