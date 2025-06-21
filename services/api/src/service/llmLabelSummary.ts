@@ -68,6 +68,13 @@ interface ClusterInsights {
     representativeDisagreeOpinions: OpinionInsight[];
 }
 
+interface ClusterInsightsWithoutRepresentatives {
+    memberCount: number;
+    majorityAgreeOpinions: OpinionInsight[];
+    majorityDisagreeOpinions: OpinionInsight[];
+    controversialOpinions: OpinionInsight[];
+}
+
 interface ConversationInsights {
     conversationTitle: string;
     conversationBody?: string;
@@ -77,6 +84,18 @@ interface ConversationInsights {
     controversialOpinions: OpinionInsight[];
     groupAwareConsensusAgreeOpinions: OpinionInsight[];
     clusters: Record<string, ClusterInsights>;
+}
+
+// temporary patch because otherwise the prompt is larget than max context
+interface ConversationInsightsWithoutRepresentatives {
+    conversationTitle: string;
+    conversationBody?: string;
+    participantCount: number;
+    majorityAgreeOpinions: OpinionInsight[];
+    majorityDisagreeOpinions: OpinionInsight[];
+    controversialOpinions: OpinionInsight[];
+    groupAwareConsensusAgreeOpinions: OpinionInsight[];
+    clusters: Record<string, ClusterInsightsWithoutRepresentatives>;
 }
 
 export async function updateAiLabelsAndSummaries({
@@ -230,7 +249,20 @@ async function invokeRemoteModel({
 }: InvokeRemoteModelProps): Promise<
     GenLabelSummaryOutputStrict | GenLabelSummaryOutputLoose
 > {
-    const userPrompt = JSON.stringify(conversationInsights);
+    const transformedConversationInsights: ConversationInsightsWithoutRepresentatives =
+        {
+            ...conversationInsights,
+            clusters: {
+                memberCount: conversationInsights.clusters.memberCount,
+                majorityAgreeOpinions:
+                    conversationInsights.clusters.majorityAgreeOpinions,
+                majorityDisagreeOpinions:
+                    conversationInsights.clusters.majorityDisagreeOpinions,
+                controversialOpinions:
+                    conversationInsights.clusters.controversialOpinions,
+            },
+        };
+    const userPrompt = JSON.stringify(transformedConversationInsights);
     const conversation: Message[] = [
         {
             role: "user",
