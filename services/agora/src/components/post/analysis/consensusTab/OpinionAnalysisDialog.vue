@@ -23,43 +23,47 @@
 
         <div class="opinion-stats">
           <table class="stats-table">
-            <tr>
-              <th></th>
-              <th class="agree-header">Agree</th>
-              <th class="disagree-header">Disagree</th>
-            </tr>
-            <tr class="total-row">
-              <td class="group-name">Total</td>
-              <td class="agree-cell">
-                {{ totalAgree }} •
-                {{ calculatePercentage(totalAgree, totalVotes) }}%
-              </td>
-              <td class="disagree-cell">
-                {{ totalDisagree }} •
-                {{ calculatePercentage(totalDisagree, totalVotes) }}%
-              </td>
-            </tr>
-            <tr v-for="(group, index) in opinionData.groups" :key="index">
-              <td class="group-name">{{ group.name }}</td>
-              <td class="agree-cell">
-                {{ group.agree }} •
-                {{
-                  calculatePercentage(
-                    group.agree,
-                    group.agree + group.disagree
-                  )
-                }}%
-              </td>
-              <td class="disagree-cell">
-                {{ group.disagree }} •
-                {{
-                  calculatePercentage(
-                    group.disagree,
-                    group.agree + group.disagree
-                  )
-                }}%
-              </td>
-            </tr>
+            <thead>
+              <tr>
+                <th></th>
+                <th class="agree-header">Agree</th>
+                <th class="disagree-header">Disagree</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="total-row">
+                <td class="group-name">Total</td>
+                <td class="agree-cell">
+                  {{ totalAgree }} •
+                  {{ calculatePercentage(totalAgree, totalVotes) }}%
+                </td>
+                <td class="disagree-cell">
+                  {{ totalDisagree }} •
+                  {{ calculatePercentage(totalDisagree, totalVotes) }}%
+                </td>
+              </tr>
+              <tr v-for="(group, index) in opinionData.groups" :key="index">
+                <td class="group-name">{{ group.name }}</td>
+                <td class="agree-cell">
+                  {{ group.agree }} •
+                  {{
+                    calculatePercentage(
+                      group.agree,
+                      group.agree + group.disagree
+                    )
+                  }}%
+                </td>
+                <td class="disagree-cell">
+                  {{ group.disagree }} •
+                  {{
+                    calculatePercentage(
+                      group.disagree,
+                      group.agree + group.disagree
+                    )
+                  }}%
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
 
@@ -162,8 +166,8 @@ function viewOriginalComment() {
   text-align: right;
 }
 
-/* Apply border to all rows except the header row, but only for the 2nd and 3rd columns */
-.stats-table tr:not(:first-child) td:not(:first-child) {
+/* Apply border to all rows in tbody, but only for the 2nd and 3rd columns */
+.stats-table tbody tr td:not(:first-child) {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
