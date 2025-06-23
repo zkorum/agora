@@ -5,7 +5,7 @@
         <AnalysisTitleHeader
           :show-star-in-title="true"
           title="Where do I stand"
-          :show-choice="'infoButton'"
+          :show-choice="'learnMore'"
         />
       </template>
 

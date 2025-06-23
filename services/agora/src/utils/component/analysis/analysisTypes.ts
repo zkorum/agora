@@ -1,4 +1,4 @@
-export type AnalysisTabActionButton = "infoButton" | "viewMore" | "whatIsThis";
+export type AnalysisTabActionButton = "learnMore" | "viewMore" | "none";
 
 export interface OpinionClusterVote {
   clusterKey: string;

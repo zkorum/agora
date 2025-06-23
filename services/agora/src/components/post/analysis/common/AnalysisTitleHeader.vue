@@ -11,11 +11,11 @@
       </div>
 
       <button
-        v-if="showChoice == 'infoButton'"
+        v-if="showChoice == 'learnMore'"
         class="choice-button"
         @click.stop
       >
-        <i class="pi pi-info-circle" :style="{ color: '#6D6A74' }"></i>
+        Learn more
       </button>
       <button v-if="showChoice == 'viewMore'" class="choice-button" @click.stop>
         View more
