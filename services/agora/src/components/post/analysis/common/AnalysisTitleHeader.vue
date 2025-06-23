@@ -20,23 +20,17 @@
       <button v-if="showChoice == 'viewMore'" class="choice-button" @click.stop>
         View more
       </button>
-      <button
-        v-if="showChoice == 'whatIsThis'"
-        class="choice-button"
-        @click.stop
-      >
-        What is this
-      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import StaticIcon from "src/components/features/ui/StaticIcon.vue";
+import { AnalysisTabActionButton } from "src/utils/component/analysis/analysisTypes";
 
 const props = defineProps<{
   title: string;
-  showChoice: "infoButton" | "viewMore" | "whatIsThis";
+  showChoice: AnalysisTabActionButton;
   showStarInTitle: boolean;
 }>();
 </script>
