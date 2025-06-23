@@ -19,7 +19,7 @@
           :item-list="consensusItemList"
           show-choice="viewMore"
           :show-star-in-title="false"
-          :compact-mode="false"
+          :compact-mode="currentTab === 'Summary'"
         />
       </div>
 
@@ -32,7 +32,7 @@
           :item-list="majorityItemList"
           show-choice="viewMore"
           :show-star-in-title="false"
-          :compact-mode="false"
+          :compact-mode="currentTab === 'Summary'"
         />
       </div>
 
@@ -45,7 +45,7 @@
           :item-list="divisiveItemList"
           show-choice="viewMore"
           :show-star-in-title="false"
-          :compact-mode="false"
+          :compact-mode="currentTab === 'Summary'"
         />
       </div>
 
@@ -153,6 +153,24 @@ const consensusItemList = ref<OpinionConsensusItem[]>([
       },
     ],
   },
+  {
+    id: 4,
+    description: "What is happening",
+    totalNumAgree: 95,
+    totalNumPass: 20,
+    totalNumDisagree: 12,
+    totalNumNoVote: 6,
+    belongsToClusters: ["0"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 95,
+        numPass: 20,
+        numDisagree: 12,
+        numNoVote: 6,
+      },
+    ],
+  },
 ]);
 
 const majorityItemList = ref<OpinionConsensusItem[]>([
@@ -224,6 +242,24 @@ const majorityItemList = ref<OpinionConsensusItem[]>([
       },
     ],
   },
+  {
+    id: 4,
+    description: "What is happening",
+    totalNumAgree: 95,
+    totalNumPass: 20,
+    totalNumDisagree: 12,
+    totalNumNoVote: 6,
+    belongsToClusters: ["0"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 95,
+        numPass: 20,
+        numDisagree: 12,
+        numNoVote: 6,
+      },
+    ],
+  },
 ]);
 
 const divisiveItemList = ref<OpinionConsensusItem[]>([
@@ -285,6 +321,24 @@ const divisiveItemList = ref<OpinionConsensusItem[]>([
         numPass: 20,
         numDisagree: 35,
         numNoVote: 13,
+      },
+    ],
+  },
+  {
+    id: 4,
+    description: "What is happening",
+    totalNumAgree: 95,
+    totalNumPass: 20,
+    totalNumDisagree: 12,
+    totalNumNoVote: 6,
+    belongsToClusters: ["0"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 95,
+        numPass: 20,
+        numDisagree: 12,
+        numNoVote: 6,
       },
     ],
   },
