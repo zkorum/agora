@@ -12,8 +12,13 @@
       <template #body>
         <ConsensusItem
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
+          :id="consensusItem.id"
           :key="consensusItem.description"
-          :consensus-item="consensusItem"
+          :description="consensusItem.description"
+          :num-agree="consensusItem.totalNumAgree"
+          :num-pass="consensusItem.totalNumPass"
+          :num-disagree="consensusItem.totalNumDisagree"
+          :num-no-vote="consensusItem.totalNumNoVote"
         />
       </template>
     </AnalysisSectionWrapper>
@@ -24,11 +29,11 @@
 import AnalysisSectionWrapper from "./AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "./AnalysisTitleHeader.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-import { ConsensusItemData } from "src/utils/component/analysis/analysisTypes";
+import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 
 defineProps<{
   title: string;
-  itemList: ConsensusItemData[];
+  itemList: OpinionConsensusItem[];
   showChoice: "infoButton" | "viewMore" | "whatIsThis";
   showStarInTitle: boolean;
   compactMode: boolean;
