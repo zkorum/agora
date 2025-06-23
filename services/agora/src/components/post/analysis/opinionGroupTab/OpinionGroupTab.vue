@@ -122,7 +122,6 @@ import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import OpinionGroupSelector from "./OpinionGroupSelector.vue";
 import GroupConsensusSummary from "./GroupConsensusSummary.vue";
 import OpinionGroupComments from "./OpinionGroupComments.vue";
-import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 
@@ -131,7 +130,7 @@ const props = defineProps<{
   totalParticipantCount: number;
 }>();
 
-const currentClusterTab = ref<SelectedClusterKeyType>("all");
+const currentClusterTab = ref<PolisKey>(props.polis.clusters[0]?.key || "0");
 
 const showClusterInformation = ref(false);
 
@@ -319,9 +318,7 @@ watch(currentClusterTab, () => {
 });
 
 const currentAiSummary = computed(() => {
-  if (currentClusterTab.value === "all") {
-    return props.polis.aiSummary;
-  } else if (
+  if (
     typeof currentClusterTab.value === "string" &&
     parseInt(currentClusterTab.value) in props.polis.clusters
   ) {
@@ -331,26 +328,18 @@ const currentAiSummary = computed(() => {
 });
 
 function toggleClusterSelection(clusterKey: PolisKey) {
-  if (currentClusterTab.value == clusterKey) {
-    currentClusterTab.value = "all";
-  } else {
-    currentClusterTab.value = clusterKey;
-  }
+  currentClusterTab.value = clusterKey;
 }
 
 function updateClusterTab() {
-  if (currentClusterTab.value == "all") {
-    clearAllSelection(true);
-  } else {
-    clearAllSelection(false);
-    const currentTabKey = Number(currentClusterTab.value);
-    activeCluster.value.imgList[currentTabKey].isSelected = true;
-  }
+  clearAllSelection();
+  const currentTabKey = Number(currentClusterTab.value);
+  activeCluster.value.imgList[currentTabKey].isSelected = true;
 }
 
-function clearAllSelection(useBlueColor: boolean) {
+function clearAllSelection() {
   activeCluster.value.imgList.forEach((imgItem) => {
-    imgItem.isSelected = useBlueColor;
+    imgItem.isSelected = false;
   });
 }
 
