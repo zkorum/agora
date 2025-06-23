@@ -17,10 +17,10 @@
 
     <template #visualizer>
       <VoteCountVisualizer
-        :vote-count1="65"
-        :vote-count2="20"
-        :vote-count3="10"
-        :vote-count4="10"
+        :vote-count1="consensusItem.numAgree"
+        :vote-count2="consensusItem.numNoVote"
+        :vote-count3="consensusItem.numDisagree"
+        :vote-count4="consensusItem.numNoVote"
         label1="Agree"
         label2="Pass"
         label3="Disagree"
