@@ -3,24 +3,22 @@
     <template #content>
       <div class="descriptionReadMoreContainer">
         <div
-          :ref="(el) => saveElementRef(consensusItem.id, el)"
+          :ref="(el) => saveElementRef(props.id, el)"
           class="consensusDescription"
         >
-          {{ consensusItem.description }}
+          {{ props.description }}
         </div>
 
-        <div v-if="hasOverflow(consensusItem.id)" class="readMore">
-          Read more
-        </div>
+        <div v-if="hasOverflow(props.id)" class="readMore">Read more</div>
       </div>
     </template>
 
     <template #visualizer>
       <VoteCountVisualizer
-        :vote-count1="consensusItem.numAgree"
-        :vote-count2="consensusItem.numNoVote"
-        :vote-count3="consensusItem.numDisagree"
-        :vote-count4="consensusItem.numNoVote"
+        :vote-count1="props.numAgree"
+        :vote-count2="props.numPass"
+        :vote-count3="props.numDisagree"
+        :vote-count4="props.numNoVote"
         label1="Agree"
         label2="Pass"
         label3="Disagree"
@@ -40,15 +38,17 @@
 import { ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import { useElementOverflow } from "src/utils/ui/useElementOverflow";
-import {
-  ConsensusItemData,
-  OpinionAnalysisData,
-} from "src/utils/component/analysis/analysisTypes";
+import { OpinionAnalysisData } from "src/utils/component/analysis/analysisTypes";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 
-defineProps<{
-  consensusItem: ConsensusItemData;
+const props = defineProps<{
+  id: number;
+  description: string;
+  numAgree: number;
+  numPass: number;
+  numDisagree: number;
+  numNoVote: number;
 }>();
 
 // Use the element overflow composable

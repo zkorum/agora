@@ -11,15 +11,15 @@
           round
           dense
           icon="mdi-chevron-left"
-          @click="navigateToPreviousGroup"
+          @click="navigateToPreviousMode"
         />
-        <span class="group-name">{{ currentGroupName }}</span>
+        <span class="group-name">{{ currentModeName }}</span>
         <q-btn
           flat
           round
           dense
           icon="mdi-chevron-right"
-          @click="navigateToNextGroup"
+          @click="navigateToNextMode"
         />
       </div>
     </div>
@@ -31,8 +31,13 @@
     <div v-else>
       <ConsensusItem
         v-for="comment in filteredComments"
+        :id="comment.id"
         :key="comment.id"
-        :consensus-item="comment"
+        :description="comment.description"
+        :num-agree="getActiveVotes(comment).numAgree"
+        :num-pass="getActiveVotes(comment).numPass"
+        :num-disagree="getActiveVotes(comment).numDisagree"
+        :num-no-vote="getActiveVotes(comment).numNoVote"
       />
     </div>
   </div>
@@ -41,114 +46,190 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
-import { ConsensusItemData } from "src/utils/component/analysis/analysisTypes";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-
-interface Comment extends ConsensusItemData {
-  clusterKey: PolisKey;
-}
-
-const emit = defineEmits<{
-  (e: "update:currentClusterTab", value: PolisKey): void;
-}>();
 
 const props = defineProps<{
   currentClusterTab: PolisKey;
   polis: ExtendedConversationPolis;
 }>();
 
-const mockComments = ref<Comment[]>([
+const displayMode = ref<"current" | "others">("current");
+
+const mockComments = ref<OpinionConsensusItem[]>([
   {
     id: 1,
     description: "Time to tax the super rich.",
-    numAgree: 15,
-    numPass: 15,
-    numDisagree: 10,
-    numNoVote: 4,
-    clusterKey: "1",
+    totalNumAgree: 40,
+    totalNumPass: 23,
+    totalNumDisagree: 22,
+    totalNumNoVote: 10,
+    belongsToClusters: ["0", "1"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 15,
+        numPass: 15,
+        numDisagree: 10,
+        numNoVote: 4,
+      },
+      {
+        clusterKey: "1",
+        numAgree: 25,
+        numPass: 8,
+        numDisagree: 12,
+        numNoVote: 6,
+      },
+    ],
   },
   {
     id: 2,
     description:
       "In response to the comment that we should tax the super rich, I think we should specify that we should tax wealth over income. This would be more effective at addressing inequality and ensuring that those with significant assets contribute their fair share to society.",
-    numAgree: 75,
-    numPass: 35,
-    numDisagree: 10,
-    numNoVote: 24,
-    clusterKey: "0",
+    totalNumAgree: 85,
+    totalNumPass: 45,
+    totalNumDisagree: 15,
+    totalNumNoVote: 30,
+    belongsToClusters: ["0"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 75,
+        numPass: 35,
+        numDisagree: 10,
+        numNoVote: 24,
+      },
+      {
+        clusterKey: "1",
+        numAgree: 10,
+        numPass: 10,
+        numDisagree: 5,
+        numNoVote: 6,
+      },
+    ],
   },
   {
     id: 3,
     description:
       "Europe should be prepared for a future without US support, being self-sufficient is a good thing. That said, Europe also needs to increase defense spending and coordinate better between member states to ensure collective security in an increasingly unstable world.",
-    numAgree: 35,
-    numPass: 25,
-    numDisagree: 104,
-    numNoVote: 45,
-    clusterKey: "1",
+    totalNumAgree: 55,
+    totalNumPass: 35,
+    totalNumDisagree: 124,
+    totalNumNoVote: 55,
+    belongsToClusters: ["1"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 20,
+        numPass: 10,
+        numDisagree: 20,
+        numNoVote: 10,
+      },
+      {
+        clusterKey: "1",
+        numAgree: 35,
+        numPass: 25,
+        numDisagree: 104,
+        numNoVote: 45,
+      },
+    ],
   },
   {
     id: 4,
     description: "Time to tax the super rich 1.",
-    numAgree: 225,
-    numPass: 115,
-    numDisagree: 20,
-    numNoVote: 54,
-    clusterKey: "0",
+    totalNumAgree: 245,
+    totalNumPass: 125,
+    totalNumDisagree: 30,
+    totalNumNoVote: 64,
+    belongsToClusters: ["0"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 225,
+        numPass: 115,
+        numDisagree: 20,
+        numNoVote: 54,
+      },
+      {
+        clusterKey: "1",
+        numAgree: 20,
+        numPass: 10,
+        numDisagree: 10,
+        numNoVote: 10,
+      },
+    ],
   },
   {
     id: 5,
     description: "Time to tax the super rich 2.",
-    numAgree: 75,
-    numPass: 15,
-    numDisagree: 10,
-    numNoVote: 4,
-    clusterKey: "0",
+    totalNumAgree: 85,
+    totalNumPass: 25,
+    totalNumDisagree: 15,
+    totalNumNoVote: 10,
+    belongsToClusters: ["0", "1"],
+    clusterVotes: [
+      {
+        clusterKey: "0",
+        numAgree: 75,
+        numPass: 15,
+        numDisagree: 10,
+        numNoVote: 4,
+      },
+      {
+        clusterKey: "1",
+        numAgree: 10,
+        numPass: 10,
+        numDisagree: 5,
+        numNoVote: 6,
+      },
+    ],
   },
 ]);
 
 const filteredComments = computed(() => {
-  return mockComments.value.filter(
-    (comment) => comment.clusterKey === props.currentClusterTab
+  return mockComments.value.filter((comment) =>
+    comment.belongsToClusters.includes(props.currentClusterTab)
   );
 });
 
-const currentGroupName = computed(() => {
-  const clusterIndex = parseInt(props.currentClusterTab);
-  return formatClusterLabel(
-    props.currentClusterTab as PolisKey,
-    true,
-    props.polis.clusters[clusterIndex]?.aiLabel
-  );
+const getActiveVotes = (comment: OpinionConsensusItem) => {
+  if (displayMode.value === "current") {
+    const currentClusterVotes = comment.clusterVotes.find(
+      (cv) => cv.clusterKey === props.currentClusterTab
+    );
+    return (
+      currentClusterVotes || {
+        numAgree: 0,
+        numPass: 0,
+        numDisagree: 0,
+        numNoVote: 0,
+      }
+    );
+  } else {
+    return comment.clusterVotes
+      .filter((cv) => cv.clusterKey !== props.currentClusterTab)
+      .reduce(
+        (acc, cv) => ({
+          numAgree: acc.numAgree + cv.numAgree,
+          numPass: acc.numPass + cv.numPass,
+          numDisagree: acc.numDisagree + cv.numDisagree,
+          numNoVote: acc.numNoVote + cv.numNoVote,
+        }),
+        { numAgree: 0, numPass: 0, numDisagree: 0, numNoVote: 0 }
+      );
+  }
+};
+
+const currentModeName = computed(() => {
+  return displayMode.value === "current" ? "This group" : "All other groups";
 });
 
-const navigateToPreviousGroup = () => {
-  const currentIndex = parseInt(props.currentClusterTab);
-
-  // If at the first cluster, go to the last cluster
-  if (currentIndex === 0) {
-    const lastClusterIndex = props.polis.clusters.length - 1;
-    if (lastClusterIndex >= 0) {
-      emit("update:currentClusterTab", lastClusterIndex.toString() as PolisKey);
-    }
-  } else {
-    // Otherwise go to the previous cluster
-    emit("update:currentClusterTab", (currentIndex - 1).toString() as PolisKey);
-  }
+const toggleMode = () => {
+  displayMode.value = displayMode.value === "current" ? "others" : "current";
 };
 
-const navigateToNextGroup = () => {
-  const currentIndex = parseInt(props.currentClusterTab);
-
-  // If at the last cluster, go to the first cluster
-  if (currentIndex === props.polis.clusters.length - 1) {
-    emit("update:currentClusterTab", "0");
-  } else {
-    // Otherwise go to the next cluster
-    emit("update:currentClusterTab", (currentIndex + 1).toString() as PolisKey);
-  }
-};
+const navigateToPreviousMode = toggleMode;
+const navigateToNextMode = toggleMode;
 </script>
 
 <style lang="scss" scoped>
