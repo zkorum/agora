@@ -4,7 +4,7 @@
       <ShortcutButton
         v-for="item in shortcutItemList"
         :key="item"
-        :is-selected="true"
+        :is-selected="item === currentTab"
         :label="item"
         @click="clickedShortcutButton(item)"
       />
@@ -16,7 +16,7 @@
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ShortcutButton from "./ShortcutButton.vue";
 
-const emit = defineEmits(["clicked-shortcut"]);
+const currentTab = defineModel<ShortcutItem>();
 
 const shortcutItemList: ShortcutItem[] = [
   "Summary",
@@ -28,7 +28,7 @@ const shortcutItemList: ShortcutItem[] = [
 ];
 
 function clickedShortcutButton(shortcutName: ShortcutItem) {
-  emit("clicked-shortcut", shortcutName);
+  currentTab.value = shortcutName;
 }
 </script>
 
