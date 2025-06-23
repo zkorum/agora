@@ -50,7 +50,11 @@
       </div>
 
       <div
-        v-if="currentTab === 'Summary' || currentTab === 'Opinion Groups'"
+        v-if="
+          currentTab === 'Summary' ||
+          currentTab === 'Opinion Groups' ||
+          currentTab === 'Me'
+        "
         class="tabComponent"
       >
         <OpinionGroupTab
