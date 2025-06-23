@@ -1,3 +1,5 @@
+export type AnalysisTabActionButton = "infoButton" | "viewMore" | "whatIsThis";
+
 export interface OpinionClusterVote {
   clusterKey: string;
   numAgree: number;

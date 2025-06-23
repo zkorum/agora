@@ -29,12 +29,15 @@
 import AnalysisSectionWrapper from "./AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "./AnalysisTitleHeader.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
+import {
+  OpinionConsensusItem,
+  AnalysisTabActionButton,
+} from "src/utils/component/analysis/analysisTypes";
 
 defineProps<{
   title: string;
   itemList: OpinionConsensusItem[];
-  showChoice: "infoButton" | "viewMore" | "whatIsThis";
+  showChoice: AnalysisTabActionButton;
   showStarInTitle: boolean;
   compactMode: boolean;
 }>();
