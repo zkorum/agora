@@ -37,16 +37,15 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { SelectedClusterKeyType } from "src/utils/component/analysis/analysisTypes";
+import { PolisKey } from "src/shared/types/zod";
 import { ref } from "vue";
 
-const props = defineProps<{
+defineProps<{
   summary: string;
-  selectedClusterKey: SelectedClusterKeyType;
+  selectedClusterKey: PolisKey;
 }>();
 
-const summaryTitle =
-  props.selectedClusterKey === "all" ? "Summary" : "Group summary";
+const summaryTitle = "Group summary";
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 

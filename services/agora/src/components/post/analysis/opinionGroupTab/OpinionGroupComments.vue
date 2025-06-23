@@ -41,10 +41,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
-import {
-  SelectedClusterKeyType,
-  ConsensusItemData,
-} from "src/utils/component/analysis/analysisTypes";
+import { ConsensusItemData } from "src/utils/component/analysis/analysisTypes";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 
@@ -53,11 +50,11 @@ interface Comment extends ConsensusItemData {
 }
 
 const emit = defineEmits<{
-  (e: "update:currentClusterTab", value: SelectedClusterKeyType): void;
+  (e: "update:currentClusterTab", value: PolisKey): void;
 }>();
 
 const props = defineProps<{
-  currentClusterTab: SelectedClusterKeyType;
+  currentClusterTab: PolisKey;
   polis: ExtendedConversationPolis;
 }>();
 
@@ -75,7 +72,7 @@ const mockComments = ref<Comment[]>([
       "In response to the comment that we should tax the super rich, I think we should specify that we should tax wealth over income. This would be more effective at addressing inequality and ensuring that those with significant assets contribute their fair share to society.",
     numAgree: 65,
     numDisagree: 15,
-    clusterKey: "1",
+    clusterKey: "0",
   },
   {
     id: 3,
@@ -90,80 +87,56 @@ const mockComments = ref<Comment[]>([
     description: "Time to tax the super rich 1.",
     numAgree: 80,
     numDisagree: 15,
-    clusterKey: "2",
+    clusterKey: "0",
   },
   {
     id: 5,
     description: "Time to tax the super rich 2.",
     numAgree: 70,
     numDisagree: 20,
-    clusterKey: "2",
+    clusterKey: "0",
   },
 ]);
 
 const filteredComments = computed(() => {
-  if (props.currentClusterTab === "all") {
-    return mockComments.value;
-  } else {
-    return mockComments.value.filter(
-      (comment) => comment.clusterKey === props.currentClusterTab
-    );
-  }
+  return mockComments.value.filter(
+    (comment) => comment.clusterKey === props.currentClusterTab
+  );
 });
 
 const currentGroupName = computed(() => {
-  if (props.currentClusterTab === "all") {
-    return "All groups";
-  } else {
-    const clusterIndex = parseInt(props.currentClusterTab);
-    return formatClusterLabel(
-      props.currentClusterTab as PolisKey,
-      true,
-      props.polis.clusters[clusterIndex]?.aiLabel
-    );
-  }
+  const clusterIndex = parseInt(props.currentClusterTab);
+  return formatClusterLabel(
+    props.currentClusterTab as PolisKey,
+    true,
+    props.polis.clusters[clusterIndex]?.aiLabel
+  );
 });
 
 const navigateToPreviousGroup = () => {
-  if (props.currentClusterTab === "all") {
+  const currentIndex = parseInt(props.currentClusterTab);
+
+  // If at the first cluster, go to the last cluster
+  if (currentIndex === 0) {
     const lastClusterIndex = props.polis.clusters.length - 1;
     if (lastClusterIndex >= 0) {
       emit("update:currentClusterTab", lastClusterIndex.toString() as PolisKey);
     }
   } else {
-    const currentIndex = parseInt(props.currentClusterTab);
-
-    // If at the first cluster, go to 'all'
-    if (currentIndex === 0) {
-      emit("update:currentClusterTab", "all");
-    } else {
-      // Otherwise go to the previous cluster
-      emit(
-        "update:currentClusterTab",
-        (currentIndex - 1).toString() as PolisKey
-      );
-    }
+    // Otherwise go to the previous cluster
+    emit("update:currentClusterTab", (currentIndex - 1).toString() as PolisKey);
   }
 };
 
 const navigateToNextGroup = () => {
-  if (props.currentClusterTab === "all") {
-    if (props.polis.clusters.length > 0) {
-      emit("update:currentClusterTab", "0");
-    }
-  } else {
-    const currentIndex = parseInt(props.currentClusterTab);
+  const currentIndex = parseInt(props.currentClusterTab);
 
-    // If at the last cluster, go to 'all'
-    if (currentIndex === props.polis.clusters.length - 1) {
-      emit("update:currentClusterTab", "all");
-    } else {
-      // Otherwise go to the next cluster
-      emit(
-        "update:currentClusterTab",
-        (currentIndex + 1).toString() as PolisKey
-      );
-    }
+  // If at the last cluster, go to the first cluster
+  if (currentIndex === props.polis.clusters.length - 1) {
+    emit("update:currentClusterTab", "0");
+  } else {
+    // Otherwise go to the next cluster
+    emit("update:currentClusterTab", (currentIndex + 1).toString() as PolisKey);
   }
 };
 </script>
