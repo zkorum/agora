@@ -1,20 +1,18 @@
 <template>
   <div>
     <div class="container flexStyle">
-      <ShortcutBar @clicked-shortcut="handleShortcut" />
+      <ShortcutBar v-model="currentTab" />
 
       <div
-        ref="meTabRef"
+        v-if="currentTab === 'Summary' || currentTab === 'Me'"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'Me' }"
       >
         <MeTab />
       </div>
 
       <div
-        ref="consensusTabRef"
+        v-if="currentTab === 'Summary' || currentTab === 'Consensus'"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'Consensus' }"
       >
         <AnalysisTabBase
           title="Common ground: What do people across all groups agree on?"
@@ -26,9 +24,8 @@
       </div>
 
       <div
-        ref="majorityTabRef"
+        v-if="currentTab === 'Summary' || currentTab === 'Majority'"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'Majority' }"
       >
         <AnalysisTabBase
           title="What do most people agree on?"
@@ -40,9 +37,8 @@
       </div>
 
       <div
-        ref="divisiveTabRef"
+        v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
         class="tabComponent"
-        :class="{ 'highlight-section': highlightedSection === 'Divisive' }"
       >
         <AnalysisTabBase
           title="What is most divisive?"
@@ -54,11 +50,8 @@
       </div>
 
       <div
-        ref="opinionGroupTabRef"
+        v-if="currentTab === 'Summary' || currentTab === 'Opinion Groups'"
         class="tabComponent"
-        :class="{
-          'highlight-section': highlightedSection === 'Opinion Groups',
-        }"
       >
         <OpinionGroupTab
           :polis="props.polis"
@@ -83,6 +76,8 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   participantCount: number;
 }>();
+
+const currentTab = ref<ShortcutItem>("Summary");
 
 const dummyDescription =
   "Bringing unlocked me an striking ye perceive. Mr by wound hours oh happy. Me in resolution pianoforte continuing we. Most my no spot felt by no. He he in forfeited furniture sweetness he arranging. Me tedious so to behaved written account ferrars moments.";
@@ -150,50 +145,6 @@ const divisiveItemList = ref<ConsensusItemData[]>([
     numDisagree: 52,
   },
 ]);
-
-const meTabRef = ref<HTMLElement | null>(null);
-const consensusTabRef = ref<HTMLElement | null>(null);
-const majorityTabRef = ref<HTMLElement | null>(null);
-const divisiveTabRef = ref<HTMLElement | null>(null);
-const opinionGroupTabRef = ref<HTMLElement | null>(null);
-const highlightedSection = ref<ShortcutItem | null>(null);
-
-function scrollToElement(
-  element: HTMLElement | null,
-  sectionName: ShortcutItem
-) {
-  if (element) {
-    element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    highlightedSection.value = sectionName;
-
-    setTimeout(() => {
-      highlightedSection.value = null;
-    }, 2000);
-  }
-}
-
-function handleShortcut(shortcutName: ShortcutItem) {
-  switch (shortcutName) {
-    case "Me":
-      scrollToElement(meTabRef.value, shortcutName);
-      break;
-    case "Consensus":
-      scrollToElement(consensusTabRef.value, shortcutName);
-      break;
-    case "Majority":
-      scrollToElement(majorityTabRef.value, shortcutName);
-      break;
-    case "Divisive":
-      scrollToElement(divisiveTabRef.value, shortcutName);
-      break;
-    case "Opinion Groups":
-      scrollToElement(opinionGroupTabRef.value, shortcutName);
-      break;
-    default:
-      console.log("No matching component for shortcut:", shortcutName);
-  }
-}
 </script>
 
 <style lang="scss" scoped>
@@ -216,9 +167,5 @@ function handleShortcut(shortcutName: ShortcutItem) {
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
-}
-
-.highlight-section {
-  background-color: rgba(237, 242, 247, 0.7);
 }
 </style>
