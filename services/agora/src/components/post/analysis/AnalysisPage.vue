@@ -7,7 +7,7 @@
         v-if="currentTab === 'Summary' || currentTab === 'Me'"
         class="tabComponent"
       >
-        <MeTab />
+        <MeTab v-model="currentTab" />
       </div>
 
       <div
@@ -15,6 +15,7 @@
         class="tabComponent"
       >
         <ConsensusTab
+          v-model="currentTab"
           :item-list="consensusItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -25,6 +26,7 @@
         class="tabComponent"
       >
         <MajorityTab
+          v-model="currentTab"
           :item-list="majorityItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -35,6 +37,7 @@
         class="tabComponent"
       >
         <DivisiveTab
+          v-model="currentTab"
           :item-list="divisiveItemList"
           :compact-mode="currentTab === 'Summary'"
         />

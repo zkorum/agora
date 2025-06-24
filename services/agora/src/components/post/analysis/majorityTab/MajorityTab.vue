@@ -7,7 +7,9 @@
           title="What do most people agree on?"
         >
           <template #action-button>
-            <AnalysisActionButton type="viewMore" />
+            <div @click="switchTab()">
+              <AnalysisActionButton type="viewMore" />
+            </div>
           </template>
         </AnalysisTitleHeader>
       </template>
@@ -34,11 +36,18 @@ import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
+import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 
 defineProps<{
   itemList: OpinionConsensusItem[];
   compactMode: boolean;
 }>();
+
+const currentTab = defineModel<ShortcutItem>();
+
+function switchTab() {
+  currentTab.value = "Majority";
+}
 </script>
 
 <style lang="scss" scoped></style>
