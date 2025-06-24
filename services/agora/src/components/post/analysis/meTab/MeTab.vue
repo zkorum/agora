@@ -7,7 +7,11 @@
           title="Where do I stand"
         >
           <template #action-button>
-            <AnalysisActionButton type="learnMore" />
+            <div @click="switchTab()">
+              <AnalysisActionButton
+                :type="currentTab == 'Summary' ? 'learnMore' : 'none'"
+              />
+            </div>
           </template>
         </AnalysisTitleHeader>
       </template>
@@ -27,6 +31,13 @@
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+
+const currentTab = defineModel<ShortcutItem>();
+
+function switchTab() {
+  currentTab.value = "Opinion Groups";
+}
 </script>
 
 <style lang="scss" scoped></style>

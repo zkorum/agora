@@ -1,5 +1,9 @@
 <template>
-  <button class="choice-button" @click="handleClick">
+  <button
+    v-if="props.type != 'none'"
+    class="choice-button"
+    @click="handleClick"
+  >
     {{ buttonText }}
   </button>
 </template>
@@ -8,7 +12,7 @@
 import { computed } from "vue";
 
 const props = defineProps<{
-  type: "learnMore" | "viewMore";
+  type: "learnMore" | "viewMore" | "none";
 }>();
 
 const emit = defineEmits<{
