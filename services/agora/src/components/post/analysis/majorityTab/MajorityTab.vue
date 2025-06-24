@@ -5,8 +5,11 @@
         <AnalysisTitleHeader
           :show-star-in-title="false"
           title="What do most people agree on?"
-          :show-choice="'viewMore'"
-        />
+        >
+          <template #action-button>
+            <AnalysisActionButton type="viewMore" />
+          </template>
+        </AnalysisTitleHeader>
       </template>
 
       <template #body>
@@ -28,6 +31,7 @@
 <script setup lang="ts">
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 

@@ -10,43 +10,18 @@
         </div>
       </div>
 
-      <button
-        v-if="showChoice == 'learnMore'"
-        class="choice-button"
-        @click.stop="handleActionClick"
-      >
-        Learn more
-      </button>
-      <button
-        v-if="showChoice == 'viewMore'"
-        class="choice-button"
-        @click.stop="handleActionClick"
-      >
-        View more
-      </button>
+      <slot name="action-button"></slot>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import StaticIcon from "src/components/features/ui/StaticIcon.vue";
-import {
-  AnalysisTabActionButton,
-  AnalysisTabActionCallback,
-} from "src/utils/component/analysis/analysisTypes";
 
 const props = defineProps<{
   title: string;
-  showChoice: AnalysisTabActionButton;
   showStarInTitle: boolean;
-  onActionClick?: AnalysisTabActionCallback;
 }>();
-
-const handleActionClick = () => {
-  if (props.onActionClick) {
-    props.onActionClick();
-  }
-};
 </script>
 
 <style lang="scss" scoped>
@@ -63,25 +38,5 @@ const handleActionClick = () => {
   display: flex;
   gap: 1rem;
   align-items: center;
-}
-
-.choice-button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6d6a74;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
 }
 </style>
