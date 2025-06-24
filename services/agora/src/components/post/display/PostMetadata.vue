@@ -2,7 +2,7 @@
   <div>
     <div class="container">
       <div>
-        <UserIdentity
+        <UserIdentityCard
           :author-verified="authorVerified"
           :created-at="createdAt"
           :user-identity="
@@ -51,7 +51,7 @@ import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import UserIdentity from "src/components/features/user/UserIdentityCard.vue";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";

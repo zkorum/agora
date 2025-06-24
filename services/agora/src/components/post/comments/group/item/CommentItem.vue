@@ -3,7 +3,7 @@
     <div class="container">
       <div class="topBar">
         <!-- TODO: Pass author verified flag here -->
-        <UserIdentity
+        <UserIdentityCard
           :author-verified="false"
           :created-at="commentItem.createdAt"
           :user-identity="commentItem.username"
@@ -52,7 +52,7 @@ import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import CommentActionBar from "./CommentActionBar.vue";
 import HtmlContent from "../../../display/HtmlContent.vue";
-import UserIdentity from "src/components/features/user/UserIdentityCard.vue";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 

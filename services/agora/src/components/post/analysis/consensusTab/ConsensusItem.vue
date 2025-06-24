@@ -51,14 +51,12 @@ const props = defineProps<{
   numNoVote: number;
 }>();
 
-// Use the element overflow composable
 const { saveElementRef, hasOverflow } = useElementOverflow();
 
-// Dialog control
 const showDialog = ref(false);
 
-// Sample opinion analysis data - in a real app, this would come from an API or props
 const opinionAnalysisData = ref<OpinionAnalysisData>({
+  createdAt: new Date(),
   username: "SamJ",
   opinionText:
     "Not necessarily Europe but the values it represents must live on. That means Human Rights, freedom of speech (not freedom of hate). Europe treats its own people well, not necessarily other countries. For the sake of humanity we must protect Europe with or without US support.",

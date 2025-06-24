@@ -22,6 +22,7 @@ export interface OpinionConsensusItem {
 }
 
 export interface OpinionAnalysisData {
+  createdAt: Date;
   username: string;
   opinionText: string;
   groups: Array<{

@@ -12,10 +12,13 @@
           />
         </div>
 
-        <div class="user-section">
-          <UserAvatar :user-identity="opinionData.username" :size="40" />
-          <div class="username">{{ opinionData.username }}</div>
-        </div>
+        <UserIdentityCard
+          :author-verified="false"
+          :created-at="opinionData.createdAt"
+          :user-identity="opinionData.username"
+          :show-verified-text="false"
+          :organization-image-url="''"
+        />
 
         <div class="opinion-text">
           {{ opinionData.opinionText }}
@@ -78,8 +81,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
 import { OpinionAnalysisData } from "src/utils/component/analysis/analysisTypes";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 
 const props = defineProps<{
   opinionData: OpinionAnalysisData;
@@ -133,17 +136,6 @@ function viewOriginalComment() {
 .dialog-title {
   font-size: 1.5rem;
   font-weight: 500;
-}
-
-.user-section {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.username {
-  font-weight: 500;
-  font-size: 1.1rem;
 }
 
 .opinion-text {
