@@ -62,12 +62,12 @@ import { ExtendedConversationPolis } from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import MeTab from "./meTab/meTab.vue";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import MajorityTab from "./majorityTab/MajorityTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import { ref } from "vue";
 import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
+import MeTab from "./meTab/MeTab.vue";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
