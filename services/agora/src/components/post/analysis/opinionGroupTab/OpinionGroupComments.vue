@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
@@ -55,6 +55,13 @@ const props = defineProps<{
 }>();
 
 const displayMode = ref<"current" | "others">("current");
+
+watch(
+  () => props.currentClusterTab,
+  () => {
+    displayMode.value = "current";
+  }
+);
 
 const mockComments = ref<OpinionConsensusItem[]>([
   {
