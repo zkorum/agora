@@ -1,5 +1,7 @@
 export type AnalysisTabActionButton = "learnMore" | "viewMore" | "none";
 
+export type AnalysisTabActionCallback = () => void;
+
 export interface OpinionClusterVote {
   clusterKey: string;
   numAgree: number;

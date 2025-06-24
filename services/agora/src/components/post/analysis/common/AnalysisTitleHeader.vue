@@ -13,11 +13,15 @@
       <button
         v-if="showChoice == 'learnMore'"
         class="choice-button"
-        @click.stop
+        @click.stop="handleActionClick"
       >
         Learn more
       </button>
-      <button v-if="showChoice == 'viewMore'" class="choice-button" @click.stop>
+      <button
+        v-if="showChoice == 'viewMore'"
+        class="choice-button"
+        @click.stop="handleActionClick"
+      >
         View more
       </button>
     </div>
@@ -26,13 +30,23 @@
 
 <script setup lang="ts">
 import StaticIcon from "src/components/features/ui/StaticIcon.vue";
-import { AnalysisTabActionButton } from "src/utils/component/analysis/analysisTypes";
+import {
+  AnalysisTabActionButton,
+  AnalysisTabActionCallback,
+} from "src/utils/component/analysis/analysisTypes";
 
 const props = defineProps<{
   title: string;
   showChoice: AnalysisTabActionButton;
   showStarInTitle: boolean;
+  onActionClick?: AnalysisTabActionCallback;
 }>();
+
+const handleActionClick = () => {
+  if (props.onActionClick) {
+    props.onActionClick();
+  }
+};
 </script>
 
 <style lang="scss" scoped>
