@@ -51,7 +51,7 @@ import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import UserIdentity from "./UserIdentity.vue";
+import UserIdentity from "../shared/UserIdentity.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";

@@ -45,7 +45,7 @@
                 "
                 class="bodyDiv"
               >
-                <UserHtmlBody
+                <HtmlContent
                   :html-body="extendedPostData.payload.body"
                   :compact-mode="compactMode"
                 />
@@ -171,23 +171,23 @@
 
 <script setup lang="ts">
 import ZKButton from "../ui-library/ZKButton.vue";
-import CommentSection from "./views/CommentSection.vue";
-import PostMetadata from "./views/PostMetadata.vue";
+import CommentSection from "./comments/CommentSection.vue";
+import PostMetadata from "./display/PostMetadata.vue";
 import PollWrapper from "../poll/PollWrapper.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
-import CommentComposer from "./views/CommentComposer.vue";
+import CommentComposer from "./comments/CommentComposer.vue";
 import { ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import ZKCard from "../ui-library/ZKCard.vue";
-import PostLockedMessage from "./views/PostLockedMessage.vue";
+import PostLockedMessage from "./display/PostLockedMessage.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import UserHtmlBody from "./views/UserHtmlBody.vue";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../ui-library/ZKIcon.vue";
-import CommentAnalysisTabs from "./views/CommentAnalysisTabs.vue";
+import CommentAnalysisTabs from "./comments/CommentAnalysisTabs.vue";
+import HtmlContent from "./display/HtmlContent.vue";
 
 const props = defineProps<{
   extendedPostData: ExtendedConversation;

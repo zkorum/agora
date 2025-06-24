@@ -41,7 +41,7 @@
               />
 
               <div>
-                <UserHtmlBody
+                <HtmlContent
                   :html-body="commentItem.opinionItem.opinion"
                   :compact-mode="false"
                 />
@@ -73,12 +73,11 @@
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import CommentActionOptions from "src/components/post/views/CommentActionOptions.vue";
-import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import UserIdentity from "src/components/post/views/UserIdentity.vue";
-import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
+import CommentActionOptions from "src/components/post/comments/item/CommentActionOptions.vue";
+import CommentModeration from "src/components/post/comments/item/CommentModeration.vue";
+import HtmlContent from "src/components/post/display/HtmlContent.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
