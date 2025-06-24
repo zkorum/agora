@@ -5,7 +5,6 @@
         <AnalysisTitleHeader
           :show-star-in-title="false"
           title="What are the opinion groups?"
-          :show-choice="'none'"
         />
       </template>
 

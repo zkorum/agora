@@ -5,8 +5,11 @@
         <AnalysisTitleHeader
           :show-star-in-title="true"
           title="Where do I stand"
-          :show-choice="'learnMore'"
-        />
+        >
+          <template #action-button>
+            <AnalysisActionButton type="learnMore" />
+          </template>
+        </AnalysisTitleHeader>
       </template>
 
       <template #body>
@@ -23,6 +26,7 @@
 <script setup lang="ts">
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 </script>
 
 <style lang="scss" scoped></style>
