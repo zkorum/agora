@@ -14,11 +14,8 @@
         v-if="currentTab === 'Summary' || currentTab === 'Consensus'"
         class="tabComponent"
       >
-        <AnalysisTabBase
-          title="Common ground: What do people across all groups agree on?"
+        <ConsensusTab
           :item-list="consensusItemList"
-          show-choice="viewMore"
-          :show-star-in-title="false"
           :compact-mode="currentTab === 'Summary'"
         />
       </div>
@@ -27,11 +24,8 @@
         v-if="currentTab === 'Summary' || currentTab === 'Majority'"
         class="tabComponent"
       >
-        <AnalysisTabBase
-          title="What do most people agree on?"
+        <MajorityTab
           :item-list="majorityItemList"
-          show-choice="viewMore"
-          :show-star-in-title="false"
           :compact-mode="currentTab === 'Summary'"
         />
       </div>
@@ -40,11 +34,8 @@
         v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
         class="tabComponent"
       >
-        <AnalysisTabBase
-          title="What is most divisive?"
+        <DivisiveTab
           :item-list="divisiveItemList"
-          show-choice="viewMore"
-          :show-star-in-title="false"
           :compact-mode="currentTab === 'Summary'"
         />
       </div>
@@ -72,7 +63,9 @@ import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import MeTab from "./meTab/meTab.vue";
-import AnalysisTabBase from "./common/AnalysisTabBase.vue";
+import ConsensusTab from "./consensusTab/ConsensusTab.vue";
+import MajorityTab from "./majorityTab/MajorityTab.vue";
+import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import { ref } from "vue";
 import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 
