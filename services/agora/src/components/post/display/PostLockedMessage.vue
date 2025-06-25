@@ -44,10 +44,10 @@
 import type { ConversationModerationProperties } from "src/shared/types/zod";
 import { moderationReasonMapping } from "src/utils/component/moderations";
 import { ref, watch } from "vue";
-import ModerationTime from "./moderation/ModerationTime.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "src/stores/user";
+import ModerationTime from "../common/moderation/ModerationTime.vue";
 
 const props = defineProps<{
   moderationProperty: ConversationModerationProperties;

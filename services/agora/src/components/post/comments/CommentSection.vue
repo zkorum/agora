@@ -1,22 +1,8 @@
 <template>
   <div>
     <div class="container">
-      <CommentClusterGraph
-        v-if="showClusterMap && mode === 'analysis'"
-        :clusters="props.polis.clusters"
-        :total-participant-count="props.participantCount"
-        :current-cluster-tab="currentClusterTab"
-        @selected-cluster="(value: PolisKey) => toggleClusterSelection(value)"
-      />
-
       <div class="commentSectionToolbar">
-        <ClusterTabs
-          v-if="mode === 'analysis' && showClusterMap"
-          v-model="currentClusterTab"
-          :cluster-metadata-list="props.polis.clusters"
-        />
-
-        <div v-if="mode === 'comment'" class="commentSortingSelector">
+        <div class="commentSortingSelector">
           <CommentSortingSelector
             :filter-value="sortAlgorithm"
             @changed-algorithm="
@@ -27,120 +13,11 @@
       </div>
 
       <CommentGroup
-        v-if="mode === 'comment' && sortAlgorithm == 'discover'"
-        :mode="props.mode"
-        :selected-cluster-key="undefined"
         :comment-item-list="opinionItemListPartial"
-        :is-loading="isLoadingCommentItemsDiscover"
-        :post-slug-id="postSlugId"
-        :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
-        :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
-        :login-required-to-participate="props.loginRequiredToParticipate"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-      />
-
-      <CommentGroup
-        v-if="mode === 'comment' && sortAlgorithm == 'new'"
-        :mode="props.mode"
-        :selected-cluster-key="undefined"
-        :comment-item-list="opinionItemListPartial"
-        :is-loading="isLoadingCommentItemsNew"
+        :is-loading="isLoading"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
-        :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
-        :login-required-to-participate="false"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-      />
-
-      <CommentGroup
-        v-if="mode === 'comment' && sortAlgorithm == 'moderated'"
-        :mode="props.mode"
-        :selected-cluster-key="undefined"
-        :comment-item-list="opinionItemListPartial"
-        :is-loading="isLoadingCommentItemsModerated"
-        :post-slug-id="postSlugId"
-        :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
-        :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
-        :login-required-to-participate="false"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-      />
-
-      <CommentGroup
-        v-if="mode === 'comment' && sortAlgorithm == 'hidden'"
-        :mode="props.mode"
-        :selected-cluster-key="undefined"
-        :comment-item-list="opinionItemListPartial"
-        :is-loading="isLoadingCommentItemsHidden"
-        :post-slug-id="postSlugId"
-        :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
-        :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
-        :login-required-to-participate="false"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-      />
-
-      <CommentGroup
-        v-if="mode === 'analysis' && currentClusterTab != 'all'"
-        :mode="props.mode"
-        :selected-cluster-key="currentClusterTab"
-        :comment-item-list="opinionItemListPartial"
-        :is-loading="isLoadingCommentItemsCluster"
-        :post-slug-id="postSlugId"
-        :ai-summary="
-          parseInt(currentClusterTab) in polis.clusters
-            ? polis.clusters[parseInt(currentClusterTab)].aiSummary
-            : undefined
-        "
-        :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
-        :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
-        :login-required-to-participate="props.loginRequiredToParticipate"
-        @deleted="deletedComment()"
-        @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-      />
-
-      <CommentGroup
-        v-if="mode === 'analysis' && currentClusterTab === 'all'"
-        :mode="props.mode"
-        :selected-cluster-key="undefined"
-        :comment-item-list="opinionItemListPartial"
-        :is-loading="isLoadingCommentItemsDiscover"
-        :post-slug-id="postSlugId"
-        :ai-summary="polis.aiSummary"
-        :initial-comment-slug-id="requestedCommentSlugId"
-        :comment-slug-id-liked-map="props.commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
         :participant-count="props.participantCount"
         :login-required-to-participate="props.loginRequiredToParticipate"
@@ -168,15 +45,13 @@ import {
   type OpinionItem,
 } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
-import CommentGroup from "./CommentGroup.vue";
+import CommentGroup from "./group/CommentGroup.vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouteQuery } from "@vueuse/router";
-import CommentSortingSelector from "./CommentSortingSelector.vue";
+import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import CommentClusterGraph from "./CommentClusterGraph.vue";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import ClusterTabs from "./cluster/ClusterTabs.vue";
 
 defineExpose({
   openModerationHistory,
@@ -189,7 +64,6 @@ const emit = defineEmits([
 ]);
 
 const props = defineProps<{
-  mode: "comment" | "analysis";
   postSlugId: string;
   participantCount: number;
   polis: ExtendedConversationPolis;
@@ -201,8 +75,6 @@ const props = defineProps<{
 
 const sortAlgorithm = ref<CommentFilterOptions>("discover");
 const requestedCommentSlugId = ref("");
-
-const currentClusterTab = ref<PolisKey | "all">("all");
 
 const { profileData } = storeToRefs(useUserStore());
 
@@ -227,6 +99,23 @@ const isLoadingCommentItemsModerated = ref<boolean>(true);
 const isLoadingCommentItemsHidden = ref<boolean>(true);
 const isLoadingCommentItemsCluster = ref<boolean>(true);
 const isLoadingCommentItemsAll = ref<boolean>(true);
+
+// Computed properties for the unified CommentGroup component
+const isLoading = computed(() => {
+  switch (sortAlgorithm.value) {
+    case "discover":
+      return isLoadingCommentItemsDiscover.value;
+    case "new":
+      return isLoadingCommentItemsNew.value;
+    case "moderated":
+      return isLoadingCommentItemsModerated.value;
+    case "hidden":
+      return isLoadingCommentItemsHidden.value;
+    default:
+      return isLoadingCommentItemsDiscover.value;
+  }
+});
+
 let commentItemsNew: OpinionItem[] = [];
 let commentItemsDiscover: OpinionItem[] = [];
 let commentItemsModerated: OpinionItem[] = [];
@@ -241,24 +130,6 @@ const { setupOpinionlist, detectOpinionFilterBySlugId } =
 let isMounted = false;
 
 loadCommentFilterQuery();
-
-function loadAnalysisModeToOpinionList() {
-  if (currentClusterTab.value !== "all") {
-    const clusterKey = currentClusterTab.value;
-    const cachedCommentItems = clusterCommentItemsMap.value.get(clusterKey);
-    if (cachedCommentItems) {
-      setupOpinionlist(cachedCommentItems, requestedCommentSlugId.value);
-    } else {
-      setupOpinionlist([], requestedCommentSlugId.value);
-      console.error(
-        `Failed to locate comment items for cluster key: ${clusterKey}`
-      );
-    }
-  } else {
-    updateInfiniteScrollingList("all");
-  }
-  requestedCommentSlugId.value = "";
-}
 
 function loadCommentModeToOpinionList() {
   updateInfiniteScrollingList(sortAlgorithm.value);
@@ -277,30 +148,6 @@ watch(sortAlgorithm, () => {
   }
   loadCommentModeToOpinionList();
 });
-
-watch(currentClusterTab, async () => {
-  if (!isMounted) {
-    return;
-  }
-  loadAnalysisModeToOpinionList();
-});
-
-watch(
-  () => props.mode,
-  async () => {
-    if (!isMounted) {
-      return;
-    }
-    switch (props.mode) {
-      case "analysis":
-        loadAnalysisModeToOpinionList();
-        break;
-      case "comment":
-        loadCommentModeToOpinionList();
-        break;
-    }
-  }
-);
 
 const showClusterMap = computed(() => {
   return props.polis.clusters.length >= 2;
@@ -519,14 +366,6 @@ async function changeFilter(filterValue: CommentFilterOptions) {
   sortAlgorithm.value = filterValue;
 }
 
-function toggleClusterSelection(clusterKey: PolisKey) {
-  if (currentClusterTab.value == clusterKey) {
-    currentClusterTab.value = "all";
-  } else {
-    currentClusterTab.value = clusterKey;
-  }
-}
-
 function changeVote(vote: VotingAction, opinionSlugId: string) {
   emit("changeVote", vote, opinionSlugId);
 }
@@ -536,7 +375,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 
 .commentSectionToolbar {

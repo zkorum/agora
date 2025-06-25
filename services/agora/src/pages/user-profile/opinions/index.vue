@@ -32,7 +32,7 @@
               </div>
 
               <!-- TODO: Map author verification status -->
-              <UserIdentity
+              <UserIdentityCard
                 :author-verified="false"
                 :created-at="commentItem.opinionItem.createdAt"
                 :user-identity="commentItem.opinionItem.username"
@@ -41,7 +41,7 @@
               />
 
               <div>
-                <UserHtmlBody
+                <HtmlContent
                   :html-body="commentItem.opinionItem.opinion"
                   :compact-mode="false"
                 />
@@ -73,12 +73,12 @@
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import CommentActionOptions from "src/components/post/views/CommentActionOptions.vue";
-import CommentModeration from "src/components/post/views/CommentModeration.vue";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import UserIdentity from "src/components/post/views/UserIdentity.vue";
-import UserHtmlBody from "src/components/post/views/UserHtmlBody.vue";
+import CommentActionOptions from "src/components/post/comments/group/item/CommentActionOptions.vue";
+import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
+import HtmlContent from "src/components/post/display/HtmlContent.vue";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
@@ -123,7 +123,7 @@ async function commentDeleted() {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $feed-flex-gap;
 }
 
 .commentItemStyle {
@@ -143,6 +143,10 @@ async function commentDeleted() {
 .emptyMessage {
   padding: 2rem;
   text-align: center;
+}
+
+.hoverColor {
+  transition: $mouse-hover-transition;
 }
 
 .hoverColor:hover {

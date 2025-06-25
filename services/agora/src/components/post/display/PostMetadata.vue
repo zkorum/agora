@@ -2,8 +2,7 @@
   <div>
     <div class="container">
       <div>
-        <UserIdentity
-          v-if="!skeletonMode"
+        <UserIdentityCard
           :author-verified="authorVerified"
           :created-at="createdAt"
           :user-identity="
@@ -14,30 +13,17 @@
           :show-verified-text="false"
           :organization-image-url="props.organizationUrl"
         />
-
-        <div v-if="skeletonMode" class="identityFlex">
-          <Skeleton shape="circle" size="2rem" />
-          <Skeleton width="10rem" height="2rem" />
-        </div>
       </div>
 
       <div>
-        <div v-if="!skeletonMode">
-          <ZKButton
-            button-type="icon"
-            flat
-            text-color="color-text-weak"
-            icon="mdi-dots-vertical"
-            size="0.656rem"
-            @click.stop.prevent="clickedMoreIcon()"
-          />
-        </div>
-        <Skeleton
-          v-if="skeletonMode"
-          width="3rem"
-          height="2rem"
-          border-radius="16px"
-        ></Skeleton>
+        <ZKButton
+          button-type="icon"
+          flat
+          text-color="color-text-weak"
+          icon="mdi-dots-vertical"
+          size="0.656rem"
+          @click.stop.prevent="clickedMoreIcon()"
+        />
       </div>
     </div>
   </div>
@@ -60,13 +46,12 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBottomSheet } from "src/utils/ui/bottomSheet";
-import Skeleton from "primevue/skeleton";
 import { ref } from "vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import UserIdentity from "./UserIdentity.vue";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
@@ -78,7 +63,6 @@ const props = defineProps<{
   authorVerified: boolean;
   posterUserName: string;
   createdAt: Date;
-  skeletonMode: boolean;
   postSlugId: string;
   organizationUrl: string;
   organizationName: string;

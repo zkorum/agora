@@ -3,7 +3,9 @@
     class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
-      underlineTab: isHighlighted && shouldUnderlineOnHighlight,
+      underlineTab: shouldUnderlineOnHighlight,
+      activeTabUnderlineColor: isHighlighted && shouldUnderlineOnHighlight,
+      inactiveTabUnderlineColor: !isHighlighted && shouldUnderlineOnHighlight,
     }"
   >
     <!--  TODO: proper icon color -->
@@ -55,6 +57,13 @@ defineProps<{
 
 .underlineTab {
   border-bottom: 3px solid;
+}
+
+.activeTabUnderlineColor {
   border-color: $primary;
+}
+
+.inactiveTabUnderlineColor {
+  border-color: transparent;
 }
 </style>

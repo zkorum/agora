@@ -40,13 +40,12 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { PolisKey } from "src/shared/types/zod";
 import { ref } from "vue";
 
-const props = defineProps<{
+defineProps<{
   summary: string;
-  selectedClusterKey: PolisKey | undefined;
+  selectedClusterKey: PolisKey;
 }>();
 
-const summaryTitle =
-  props.selectedClusterKey === undefined ? "Summary" : "Group summary";
+const summaryTitle = "Group summary";
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 

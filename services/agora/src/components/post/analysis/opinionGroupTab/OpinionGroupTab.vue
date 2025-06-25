@@ -1,111 +1,135 @@
 <template>
   <div>
-    <div class="container">
-      <div class="infoIcon">
-        <ZKButton button-type="icon" @click="showClusterInformation = true">
-          <ZKIcon
-            color="#6d6a74"
-            name="mdi-information-outline"
-            size="1.2rem"
-          />
-        </ZKButton>
-      </div>
+    <AnalysisSectionWrapper>
+      <template #header>
+        <AnalysisTitleHeader
+          :show-star-in-title="false"
+          title="What are the opinion groups?"
+        />
+      </template>
 
-      <ClusterInformationDialog v-model="showClusterInformation" />
+      <template #body>
+        <div class="container">
+          <div class="infoIcon">
+            <ZKButton button-type="icon" @click="showClusterInformation = true">
+              <ZKIcon
+                color="#6d6a74"
+                name="mdi-information-outline"
+                size="1.2rem"
+              />
+            </ZKButton>
+          </div>
 
-      <div
-        v-for="(imgItem, imageIndex) in activeCluster.imgList"
-        :key="imageIndex"
-        class="imageStyle"
-        :style="{
-          width: imgItem.clusterWidthPercent + '%',
-          top: imgItem.top + '%',
-          left: imgItem.left + '%',
-        }"
-        @click="
-          emit(
-            'selectedCluster',
-            String(
-              imageIndex
-            ) as PolisKey /* this is enforce because of the zod type below */
-          )
-        "
-      >
-        <!-- TODO: Integration the show me label -->
-        <div
-          v-if="clusters[imageIndex].isUserInCluster"
-          class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
-        >
-          <q-icon name="mdi-account-outline" />
-          Me
-        </div>
+          <ClusterInformationDialog v-model="showClusterInformation" />
 
-        <div :style="{ position: 'relative' }">
-          <img
-            :src="
-              composeImagePath(
-                imgItem.isSelected,
-                imageIndex,
-                activeCluster.numNodes
-              )
-            "
-            :style="{ width: '100%' }"
-          />
           <div
-            class="clusterNameOverlay borderStyle dynamicFont"
+            v-for="(imgItem, imageIndex) in activeCluster.imgList"
+            :key="imageIndex"
+            class="imageStyle"
             :style="{
-              top: '30%',
-              left: '22%',
+              width: imgItem.clusterWidthPercent + '%',
+              top: imgItem.top + '%',
+              left: imgItem.left + '%',
             }"
+            @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
           >
-            <div class="clusterLabelFlex">
-              <div class="clusterOverlayFontBold">
-                {{
-                  formatClusterLabel(
-                    clusters[imageIndex].key,
-                    false,
-                    clusters[imageIndex].aiLabel
+            <!-- TODO: Integration the show me label -->
+            <div
+              v-if="props.polis.clusters[imageIndex].isUserInCluster"
+              class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
+            >
+              <q-icon name="mdi-account-outline" />
+              Me
+            </div>
+
+            <div :style="{ position: 'relative' }">
+              <img
+                :src="
+                  composeImagePath(
+                    imgItem.isSelected,
+                    imageIndex,
+                    activeCluster.numNodes
                   )
-                }}
-              </div>
-              <div class="clusterGroupSize">
-                <q-icon name="mdi-account-supervisor-outline" />
-                {{ clusters[imageIndex].numUsers }} ({{
-                  formatPercentage(
-                    calculatePercentage(
-                      clusters[imageIndex].numUsers,
-                      totalParticipantCount
-                    )
-                  )
-                }})
+                "
+                :style="{ width: '100%' }"
+              />
+              <div
+                class="clusterNameOverlay borderStyle dynamicFont"
+                :style="{
+                  top: '30%',
+                  left: '22%',
+                }"
+              >
+                <div class="clusterLabelFlex">
+                  <div class="clusterOverlayFontBold">
+                    {{
+                      formatClusterLabel(
+                        props.polis.clusters[imageIndex].key,
+                        false,
+                        props.polis.clusters[imageIndex].aiLabel
+                      )
+                    }}
+                  </div>
+                  <div class="clusterGroupSize">
+                    <q-icon name="mdi-account-supervisor-outline" />
+                    {{ props.polis.clusters[imageIndex].numUsers }} ({{
+                      formatPercentage(
+                        calculatePercentage(
+                          props.polis.clusters[imageIndex].numUsers,
+                          totalParticipantCount
+                        )
+                      )
+                    }})
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <OpinionGroupSelector
+          :cluster-metadata-list="props.polis.clusters"
+          :selected-cluster-key="currentClusterTab"
+          @changed-cluster-key="currentClusterTab = $event"
+        />
+
+        <GroupConsensusSummary
+          v-if="currentAiSummary"
+          :summary="currentAiSummary"
+          :selected-cluster-key="currentClusterTab"
+        />
+
+        <OpinionGroupComments
+          :current-cluster-tab="currentClusterTab"
+          :polis="props.polis"
+          @update:current-cluster-tab="currentClusterTab = $event"
+        />
+      </template>
+    </AnalysisSectionWrapper>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
+import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ClusterInformationDialog from "./cluster/ClusterInformationDialog.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-
-const emit = defineEmits<{
-  (e: "selectedCluster", clusterKey: PolisKey): void;
-}>();
+import ClusterInformationDialog from "./ClusterInformationDialog.vue";
+import OpinionGroupSelector from "./OpinionGroupSelector.vue";
+import GroupConsensusSummary from "./GroupConsensusSummary.vue";
+import OpinionGroupComments from "./OpinionGroupComments.vue";
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 
 const props = defineProps<{
-  clusters: ClusterMetadata[];
-  currentClusterTab: string;
+  polis: ExtendedConversationPolis;
   totalParticipantCount: number;
 }>();
+
+const currentClusterTab = ref<PolisKey>(props.polis.clusters[0]?.key || "0");
 
 const showClusterInformation = ref(false);
 
@@ -281,33 +305,40 @@ if (!result.success) {
 } // TODO: do this properly...
 
 let targetClusterIndex = 0;
-if (props.clusters.length >= 2 && props.clusters.length <= 6) {
-  targetClusterIndex = props.clusters.length - 2;
+if (props.polis.clusters.length >= 2 && props.polis.clusters.length <= 6) {
+  targetClusterIndex = props.polis.clusters.length - 2;
 }
 const activeCluster = ref<ClusterConfig>(clusterConfig[targetClusterIndex]);
 
 updateClusterTab();
 
-watch(
-  () => props.currentClusterTab,
-  () => {
-    updateClusterTab();
-  }
-);
+watch(currentClusterTab, () => {
+  updateClusterTab();
+});
 
-function updateClusterTab() {
-  if (props.currentClusterTab == "all") {
-    clearAllSelection(true);
-  } else {
-    clearAllSelection(false);
-    const currentTabKey = Number(props.currentClusterTab);
-    activeCluster.value.imgList[currentTabKey].isSelected = true;
+const currentAiSummary = computed(() => {
+  if (
+    typeof currentClusterTab.value === "string" &&
+    parseInt(currentClusterTab.value) in props.polis.clusters
+  ) {
+    return props.polis.clusters[parseInt(currentClusterTab.value)].aiSummary;
   }
+  return undefined;
+});
+
+function toggleClusterSelection(clusterKey: PolisKey) {
+  currentClusterTab.value = clusterKey;
 }
 
-function clearAllSelection(useBlueColor: boolean) {
+function updateClusterTab() {
+  clearAllSelection();
+  const currentTabKey = Number(currentClusterTab.value);
+  activeCluster.value.imgList[currentTabKey].isSelected = true;
+}
+
+function clearAllSelection() {
   activeCluster.value.imgList.forEach((imgItem) => {
-    imgItem.isSelected = useBlueColor;
+    imgItem.isSelected = false;
   });
 }
 
