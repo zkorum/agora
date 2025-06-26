@@ -1,239 +1,237 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableFooter: false,
-      enableHeader: false,
-      reducedWidth: true,
-    }"
-  >
-    <div class="container">
-      <q-form @submit="onSubmit()">
-        <TopMenuWrapper>
-          <div class="menuFlexGroup">
-            <CloseButton />
-          </div>
-
-          <div class="menuFlexGroup">
-            <div
-              :class="{ weakColor: postDraft.enablePolling }"
-              :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
-            >
-              <ZKButton
-                button-type="standardButton"
-                unelevated
-                rounded
-                :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
-                icon="mdi-poll"
-                color="grey-8"
-                text-color="white"
-                size="0.8rem"
-                @click="togglePolling()"
-              />
-            </div>
-
-            <ZKButton
-              button-type="standardButton"
-              color="primary"
-              label="Post"
-              type="submit"
-              size="0.8rem"
-              :loading="isSubmitButtonLoading"
-              :disable="exceededBodyWordCount || isSubmitButtonLoading"
-            />
-          </div>
-        </TopMenuWrapper>
-
-        <div class="contentFlexStyle">
-          <ZKCard
-            v-if="profileData.organizationList.length > 0"
-            padding="1rem"
-            class="cardBackground"
-          >
-            <div class="organizationSection">
-              <q-toggle
-                v-model="postAsOrganization"
-                label="Post as an organization"
-              />
-
-              <div v-if="postAsOrganization" class="organizationFlexList">
-                <div
-                  v-for="organization in profileData.organizationList"
-                  :key="organization"
-                >
-                  <q-radio
-                    v-model="selectedOrganization"
-                    :val="organization"
-                    :label="organization"
-                  />
-                </div>
-              </div>
-            </div>
-          </ZKCard>
-
-          <ZKCard padding="1rem" class="cardBackground">
-            <div class="organizationSection">
-              <q-toggle
-                v-model="isPrivatePost"
-                label="This is a private conversation"
-              />
-
-              <div v-if="isPrivatePost" class="organizationSection">
-                <q-checkbox
-                  v-model="isLoginRequiredToParticipate"
-                  label="Require user login to participate"
-                />
-
-                <q-checkbox
-                  v-if="isPrivatePost"
-                  v-model="autoConvertDate"
-                  label="Convert to public conversation on a scheduled date"
-                />
-
-                <DatePicker
-                  v-if="autoConvertDate"
-                  v-model="targetConvertDate"
-                  show-time
-                  hour-format="12"
-                  :min-date="new Date()"
-                  fluid
-                />
-              </div>
-            </div>
-          </ZKCard>
-
-          <q-input
-            v-model="postDraft.postTitle"
-            borderless
-            no-error-icon
-            type="textarea"
-            label="Title"
-            lazy-rules
-            :rules="[(val) => val && val.length > 0]"
-            class="titleStyle"
-            autogrow
-            :maxlength="MAX_LENGTH_TITLE"
-            required
-          >
-            <template #after>
-              <div class="wordCountDiv">
-                {{ postDraft.postTitle.length }} /
-                {{ MAX_LENGTH_TITLE }}
-              </div>
-            </template>
-          </q-input>
-
-          <div>
-            <div class="editorPadding">
-              <ZKEditor
-                v-model="postDraft.postBody"
-                placeholder="body text"
-                min-height="5rem"
-                :focus-editor="false"
-                :show-toolbar="true"
-                :add-background-color="false"
-                @update:model-value="checkWordCount()"
-              />
-
-              <div class="wordCountDiv">
-                <q-icon
-                  v-if="bodyWordCount > MAX_LENGTH_BODY"
-                  name="mdi-alert-circle"
-                  class="bodySizeWarningIcon"
-                />
-                <span
-                  :class="{
-                    wordCountWarning: bodyWordCount > MAX_LENGTH_BODY,
-                  }"
-                  >{{ bodyWordCount }}
-                </span>
-                &nbsp; / {{ MAX_LENGTH_BODY }}
-              </div>
-            </div>
-
-            <ZKCard
-              v-if="postDraft.enablePolling"
-              padding="1rem"
-              :style="{ marginTop: '1rem', backgroundColor: 'white' }"
-            >
-              <div>
-                <div class="pollTopBar">
-                  <div>Add a Poll</div>
-                  <ZKButton
-                    button-type="icon"
-                    flat
-                    text-color="black"
-                    icon="mdi-close"
-                    @click="togglePolling()"
-                  />
-                </div>
-                <div ref="pollRef" class="pollingFlexStyle">
-                  <div
-                    v-for="index in postDraft.pollingOptionList.length"
-                    :key="index"
-                    class="pollingItem"
-                  >
-                    <q-input
-                      v-model="postDraft.pollingOptionList[index - 1]"
-                      :rules="[(val) => val && val.length > 0]"
-                      type="text"
-                      :label="'Option ' + index"
-                      :style="{ width: '100%' }"
-                      :maxlength="MAX_LENGTH_OPTION"
-                      autogrow
-                      clearable
-                    />
-                    <div
-                      v-if="postDraft.pollingOptionList.length != 2"
-                      class="deletePollOptionDiv"
-                    >
-                      <ZKButton
-                        button-type="icon"
-                        flat
-                        round
-                        icon="mdi-delete"
-                        text-color="primary"
-                        @click="removePollOption(index - 1)"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <ZKButton
-                      button-type="standardButton"
-                      flat
-                      text-color="primary"
-                      icon="mdi-plus"
-                      label="Add Option"
-                      :disable="postDraft.pollingOptionList.length == 6"
-                      @click="addPollOption()"
-                    />
-                  </div>
-                </div>
-              </div>
-            </ZKCard>
-          </div>
+  <NewConversationLayout>
+    <q-form @submit="onSubmit()">
+      <TopMenuWrapper>
+        <div class="menuFlexGroup">
+          <CloseButton />
         </div>
 
-        <div ref="endOfForm"></div>
-      </q-form>
+        <div class="menuFlexGroup">
+          <div
+            :class="{ weakColor: postDraft.enablePolling }"
+            :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
+          >
+            <ZKButton
+              button-type="standardButton"
+              unelevated
+              rounded
+              :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
+              icon="mdi-poll"
+              color="grey-8"
+              text-color="white"
+              size="0.8rem"
+              @click="togglePolling()"
+            />
+          </div>
 
-      <ExitRoutePrompt
-        v-model="showExitDialog"
-        title="Save conversation as draft?"
-        description="Your drafted conversation will be here when you return."
-        :save-draft="saveDraft"
-        :no-save-draft="noSaveDraft"
-      />
-    </div>
+          <ZKButton
+            button-type="standardButton"
+            color="primary"
+            label="Post"
+            type="submit"
+            size="0.8rem"
+            :loading="isSubmitButtonLoading"
+            :disable="exceededBodyWordCount || isSubmitButtonLoading"
+          />
+
+          <ZKButton
+            button-type="standardButton"
+            color="primary"
+            label="Next"
+            size="0.8rem"
+            @click="goToPreview()"
+          />
+        </div>
+      </TopMenuWrapper>
+
+      <div class="contentFlexStyle">
+        <ZKCard
+          v-if="profileData.organizationList.length > 0"
+          padding="1rem"
+          class="cardBackground"
+        >
+          <div class="organizationSection">
+            <q-toggle
+              v-model="postAsOrganization"
+              label="Post as an organization"
+            />
+
+            <div v-if="postAsOrganization" class="organizationFlexList">
+              <div
+                v-for="organization in profileData.organizationList"
+                :key="organization"
+              >
+                <q-radio
+                  v-model="selectedOrganization"
+                  :val="organization"
+                  :label="organization"
+                />
+              </div>
+            </div>
+          </div>
+        </ZKCard>
+
+        <ZKCard padding="1rem" class="cardBackground">
+          <div class="organizationSection">
+            <q-toggle
+              v-model="isPrivatePost"
+              label="This is a private conversation"
+            />
+
+            <div v-if="isPrivatePost" class="organizationSection">
+              <q-checkbox
+                v-model="isLoginRequiredToParticipate"
+                label="Require user login to participate"
+              />
+
+              <q-checkbox
+                v-if="isPrivatePost"
+                v-model="autoConvertDate"
+                label="Convert to public conversation on a scheduled date"
+              />
+
+              <DatePicker
+                v-if="autoConvertDate"
+                v-model="targetConvertDate"
+                show-time
+                hour-format="12"
+                :min-date="new Date()"
+                fluid
+              />
+            </div>
+          </div>
+        </ZKCard>
+
+        <q-input
+          v-model="postDraft.postTitle"
+          borderless
+          no-error-icon
+          type="textarea"
+          label="Title"
+          lazy-rules
+          :rules="[(val) => val && val.length > 0]"
+          class="titleStyle"
+          autogrow
+          :maxlength="MAX_LENGTH_TITLE"
+          required
+        >
+          <template #after>
+            <div class="wordCountDiv">
+              {{ postDraft.postTitle.length }} /
+              {{ MAX_LENGTH_TITLE }}
+            </div>
+          </template>
+        </q-input>
+
+        <div>
+          <div class="editorPadding">
+            <ZKEditor
+              v-model="postDraft.postBody"
+              placeholder="body text"
+              min-height="5rem"
+              :focus-editor="false"
+              :show-toolbar="true"
+              :add-background-color="false"
+              @update:model-value="checkWordCount()"
+            />
+
+            <div class="wordCountDiv">
+              <q-icon
+                v-if="bodyWordCount > MAX_LENGTH_BODY"
+                name="mdi-alert-circle"
+                class="bodySizeWarningIcon"
+              />
+              <span
+                :class="{
+                  wordCountWarning: bodyWordCount > MAX_LENGTH_BODY,
+                }"
+                >{{ bodyWordCount }}
+              </span>
+              &nbsp; / {{ MAX_LENGTH_BODY }}
+            </div>
+          </div>
+
+          <ZKCard
+            v-if="postDraft.enablePolling"
+            padding="1rem"
+            :style="{ marginTop: '1rem', backgroundColor: 'white' }"
+          >
+            <div>
+              <div class="pollTopBar">
+                <div>Add a Poll</div>
+                <ZKButton
+                  button-type="icon"
+                  flat
+                  text-color="black"
+                  icon="mdi-close"
+                  @click="togglePolling()"
+                />
+              </div>
+              <div ref="pollRef" class="pollingFlexStyle">
+                <div
+                  v-for="index in postDraft.pollingOptionList.length"
+                  :key="index"
+                  class="pollingItem"
+                >
+                  <q-input
+                    v-model="postDraft.pollingOptionList[index - 1]"
+                    :rules="[(val) => val && val.length > 0]"
+                    type="text"
+                    :label="'Option ' + index"
+                    :style="{ width: '100%' }"
+                    :maxlength="MAX_LENGTH_OPTION"
+                    autogrow
+                    clearable
+                  />
+                  <div
+                    v-if="postDraft.pollingOptionList.length != 2"
+                    class="deletePollOptionDiv"
+                  >
+                    <ZKButton
+                      button-type="icon"
+                      flat
+                      round
+                      icon="mdi-delete"
+                      text-color="primary"
+                      @click="removePollOption(index - 1)"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <ZKButton
+                    button-type="standardButton"
+                    flat
+                    text-color="primary"
+                    icon="mdi-plus"
+                    label="Add Option"
+                    :disable="postDraft.pollingOptionList.length == 6"
+                    @click="addPollOption()"
+                  />
+                </div>
+              </div>
+            </div>
+          </ZKCard>
+        </div>
+      </div>
+
+      <div ref="endOfForm"></div>
+    </q-form>
+
+    <ExitRoutePrompt
+      v-model="showExitDialog"
+      title="Save conversation as draft?"
+      description="Your drafted conversation will be here when you return."
+      :save-draft="saveDraft"
+      :no-save-draft="noSaveDraft"
+    />
 
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'newConversation'"
     />
-  </DrawerLayout>
+  </NewConversationLayout>
 </template>
 
 <script setup lang="ts">
@@ -253,7 +251,6 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -264,6 +261,7 @@ import CloseButton from "src/components/navigation/buttons/CloseButton.vue";
 import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
 import { useCommonApi } from "src/utils/api/common";
+import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -392,6 +390,10 @@ function removePollOption(index: number) {
   postDraft.value.pollingOptionList.splice(index, 1);
 }
 
+async function goToPreview() {
+  await router.push({ name: "/conversation/new/preview/" });
+}
+
 async function onSubmit() {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
@@ -509,12 +511,6 @@ async function onSubmit() {
   justify-content: space-between;
   font-size: 1rem;
   font-weight: bold;
-}
-
-.container {
-  padding-bottom: 0.5rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
 }
 
 .cardBackground {

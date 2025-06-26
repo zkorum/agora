@@ -134,7 +134,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         });
         break;
       case "newConversation":
-        await router.push({ name: "/conversation/create/" });
+        await router.push({ name: "/conversation/new/compose/" });
         break;
       case "newOpinion":
         await router.push({
