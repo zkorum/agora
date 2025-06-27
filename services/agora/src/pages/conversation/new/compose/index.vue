@@ -16,34 +16,10 @@
       </TopMenuWrapper>
 
       <div class="container">
-        <div class="control-bar">
-          <UserAvatar
-            :key="profileData.userName"
-            :user-identity="profileData.userName"
-            :size="35"
-          />
-
-          <FollowButton
-            :label="'As ABC'"
-            :variant="''"
-            :is-following="true"
-            :icon="'pi pi-chevron-down'"
-          />
-
-          <FollowButton
-            :label="'Public'"
-            :variant="''"
-            :is-following="true"
-            :icon="'pi pi-chevron-down'"
-          />
-
-          <FollowButton
-            :label="'Add poll'"
-            :variant="''"
-            :is-following="true"
-            :icon="'pi pi-plus'"
-          />
-        </div>
+        <NewConversationControlBar
+          @show-as-dialog="showAsDialog = true"
+          @show-public-dialog="showPublicDialog = true"
+        />
 
         <div>
           <div
@@ -261,6 +237,18 @@
       :ok-callback="onLoginCallback"
       :active-intention="'newConversation'"
     />
+
+    <q-dialog v-model="showAsDialog" position="bottom">
+      <ZKBottomDialogContainer>
+        <div class="titleStyle">Post As:</div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
+
+    <q-dialog v-model="showPublicDialog" position="bottom">
+      <ZKBottomDialogContainer>
+        <div class="titleStyle">Visibility:</div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
   </NewConversationLayout>
 </template>
 
@@ -291,9 +279,9 @@ import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
 import { useCommonApi } from "src/utils/api/common";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
+import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
-import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -329,6 +317,8 @@ const { createNewPost } = useBackendPostApi();
 const { loadPostData } = useHomeFeedStore();
 const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
+const showAsDialog = ref(false);
+const showPublicDialog = ref(false);
 
 const isSubmitButtonLoading = ref(false);
 
@@ -561,12 +551,6 @@ async function onSubmit() {
   flex-direction: column;
   gap: 1rem;
   padding-top: 1rem;
-}
-
-.control-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
 }
 
 .container {
