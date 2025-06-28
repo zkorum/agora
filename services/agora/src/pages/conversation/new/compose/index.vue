@@ -350,6 +350,7 @@ function removePollOption(index: number) {
 }
 
 async function goToPreview() {
+  unlockRoute();
   await router.push({ name: "/conversation/new/preview/" });
 }
 </script>
