@@ -6,17 +6,33 @@ export interface NewConversationDraft {
   postBody: string;
   enablePolling: boolean;
   pollingOptionList: string[];
+  postAsOrganization: boolean;
+  selectedOrganization: string;
+  isLoginRequiredToParticipate: boolean;
+  isPrivatePost: boolean;
+  autoConvertDate: boolean;
+  targetConvertDate: Date;
 }
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   const postDraft = useStorage("postDraft", getEmptyConversationDraft());
 
   function getEmptyConversationDraft(): NewConversationDraft {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     return {
       enablePolling: false,
       pollingOptionList: ["", ""],
       postBody: "",
       postTitle: "",
+      postAsOrganization: false,
+      selectedOrganization: "",
+      isLoginRequiredToParticipate: false,
+      isPrivatePost: false,
+      autoConvertDate: false,
+      targetConvertDate: tomorrow,
     };
   }
 
