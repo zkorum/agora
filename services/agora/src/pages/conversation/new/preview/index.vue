@@ -18,6 +18,10 @@
       {{ postDraft }}
     </div>
 
+    <NewConversationRouteGuard
+      :allowed-routes="['/conversation/new/compose/']"
+    />
+
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
@@ -32,6 +36,7 @@ import { useRouter } from "vue-router";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
+import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendPostApi } from "src/utils/api/post";

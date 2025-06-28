@@ -198,12 +198,9 @@
 
     <div ref="endOfFormRef"></div>
 
-    <ExitRoutePrompt
-      v-model="showExitDialog"
-      title="Save conversation as draft?"
-      description="Your drafted conversation will be here when you return."
-      :save-draft="saveDraft"
-      :no-save-draft="noSaveDraft"
+    <NewConversationRouteGuard
+      ref="routeGuardRef"
+      :allowed-routes="['/conversation/new/preview/']"
     />
 
     <PreLoginIntentionDialog
@@ -227,8 +224,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { type RouteLocationNormalized, useRouter } from "vue-router";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -240,8 +237,6 @@ import {
   MAX_LENGTH_BODY,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
-import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
@@ -249,6 +244,7 @@ import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
+import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 
@@ -256,20 +252,15 @@ const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
 
 const router = useRouter();
+const routeGuardRef = ref<InstanceType<
+  typeof NewConversationRouteGuard
+> | null>(null);
 
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
 
-const { isPostEdited, getEmptyConversationDraft } = useNewPostDraftsStore();
+const { getEmptyConversationDraft } = useNewPostDraftsStore();
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
-
-const {
-  lockRoute,
-  unlockRoute,
-  showExitDialog,
-  proceedWithNavigation,
-  isRouteLockedCheck,
-} = useRouteGuard(() => isPostEdited(), onBeforeRouteLeaveCallback);
 
 const { profileData } = storeToRefs(useUserStore());
 const showLoginDialog = ref(false);
@@ -280,30 +271,9 @@ const { createNewConversationIntention, clearNewConversationIntention } =
   useLoginIntentionStore();
 clearNewConversationIntention();
 
-onMounted(async () => {
-  lockRoute();
-});
-
-async function saveDraft() {
-  await proceedWithNavigation(() => {});
-}
-
-async function noSaveDraft() {
-  postDraft.value = getEmptyConversationDraft();
-  await proceedWithNavigation(() => {});
-}
-
 function onLoginCallback() {
-  unlockRoute();
+  routeGuardRef.value?.unlockRoute();
   createNewConversationIntention();
-}
-
-function onBeforeRouteLeaveCallback(_to: RouteLocationNormalized): boolean {
-  if (isPostEdited() && isRouteLockedCheck()) {
-    return false;
-  } else {
-    return true;
-  }
 }
 
 function checkWordCount() {
@@ -350,7 +320,7 @@ function removePollOption(index: number) {
 }
 
 async function goToPreview() {
-  unlockRoute();
+  routeGuardRef.value?.unlockRoute();
   await router.push({ name: "/conversation/new/preview/" });
 }
 </script>
