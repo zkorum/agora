@@ -11,43 +11,18 @@
           color="primary"
           label="Next"
           size="0.8rem"
+          type="submit"
           @click="goToPreview()"
         />
       </TopMenuWrapper>
 
       <div class="container">
         <NewConversationControlBar
+          :enable-polling="postDraft.enablePolling"
           @show-as-dialog="showAsDialog = true"
           @show-public-dialog="showPublicDialog = true"
+          @toggle-polling="togglePolling()"
         />
-
-        <div>
-          <div
-            :class="{ weakColor: postDraft.enablePolling }"
-            :style="{ top: visualViewPortHeight - 120 + 'px', right: '2rem' }"
-          >
-            <ZKButton
-              button-type="largeButton"
-              unelevated
-              rounded
-              :label="postDraft.enablePolling ? 'Remove Poll' : 'Add Poll'"
-              color="grey-8"
-              text-color="white"
-              size="0.8rem"
-              @click="togglePolling()"
-            />
-          </div>
-
-          <ZKButton
-            button-type="largeButton"
-            color="primary"
-            label="Post"
-            type="submit"
-            size="0.8rem"
-            :loading="isSubmitButtonLoading"
-            :disable="exceededBodyWordCount || isSubmitButtonLoading"
-          />
-        </div>
 
         <div class="contentFlexStyle">
           <ZKCard
@@ -111,11 +86,10 @@
             v-model="postDraft.postTitle"
             borderless
             no-error-icon
-            type="textarea"
             label="What do you want to ask?"
+            type="textarea"
             lazy-rules
             :rules="[(val) => val && val.length > 0]"
-            class="titleStyle"
             autogrow
             :maxlength="MAX_LENGTH_TITLE"
             required
@@ -221,7 +195,7 @@
         </div>
       </div>
 
-      <div ref="endOfForm"></div>
+      <div ref="endOfFormRef"></div>
     </q-form>
 
     <ExitRoutePrompt
@@ -240,13 +214,13 @@
 
     <q-dialog v-model="showAsDialog" position="bottom">
       <ZKBottomDialogContainer>
-        <div class="titleStyle">Post As:</div>
+        <div class="title-style">Post As:</div>
       </ZKBottomDialogContainer>
     </q-dialog>
 
     <q-dialog v-model="showPublicDialog" position="bottom">
       <ZKBottomDialogContainer>
-        <div class="titleStyle">Visibility:</div>
+        <div class="title-style">Visibility:</div>
       </ZKBottomDialogContainer>
     </q-dialog>
   </NewConversationLayout>
@@ -260,7 +234,6 @@ import ZKCard from "src/components/ui-library/ZKCard.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useViewPorts } from "src/utils/html/viewPort";
 import { useBackendPostApi } from "src/utils/api/post";
 import {
   MAX_LENGTH_OPTION,
@@ -289,8 +262,6 @@ const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
 
 const router = useRouter();
-
-const { visualViewPortHeight } = useViewPorts();
 
 const pollRef = ref<HTMLElement | null>(null);
 const endOfFormRef = ref<HTMLElement | null>();
@@ -475,9 +446,9 @@ async function onSubmit() {
   padding-bottom: 6rem;
 }
 
-.titleStyle {
+.title-style {
   font-size: 1.1rem;
-  font-weight: bold;
+  font-weight: 600;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
@@ -491,6 +462,7 @@ async function onSubmit() {
 
 .editorPadding {
   padding-bottom: 8rem;
+  font-size: 1.1rem;
 }
 
 .wordCountDiv {
@@ -498,8 +470,7 @@ async function onSubmit() {
   justify-content: right;
   align-items: center;
   color: $color-text-weak;
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: 1rem;
 }
 
 .wordCountWarning {
@@ -516,10 +487,6 @@ async function onSubmit() {
   width: 3rem;
   padding-bottom: 1rem;
   padding-left: 0.5rem;
-}
-
-.weakColor {
-  color: $color-text-weak;
 }
 
 .pollTopBar {

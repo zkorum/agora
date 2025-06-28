@@ -24,12 +24,14 @@
       />
     </div>
 
-    <FollowButton
-      :label="'Add poll'"
-      :variant="''"
-      :is-following="true"
-      :icon="'pi pi-plus'"
-    />
+    <div @click="togglePolling()">
+      <FollowButton
+        :label="enablePolling ? 'Remove poll' : 'Add poll'"
+        :variant="''"
+        :is-following="true"
+        :icon="enablePolling ? 'pi pi-minus' : 'pi pi-plus'"
+      />
+    </div>
   </div>
 </template>
 
@@ -39,9 +41,14 @@ import { useUserStore } from "src/stores/user";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
 
+defineProps<{
+  enablePolling: boolean;
+}>();
+
 const emit = defineEmits<{
   showAsDialog: [];
   showPublicDialog: [];
+  togglePolling: [];
 }>();
 
 const { profileData } = storeToRefs(useUserStore());
@@ -52,6 +59,10 @@ const showAsDialog = () => {
 
 const showPublicDialog = () => {
   emit("showPublicDialog");
+};
+
+const togglePolling = () => {
+  emit("togglePolling");
 };
 </script>
 
