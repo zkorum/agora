@@ -83,25 +83,33 @@
           </div>
         </ZKCard>
 
-        <q-input
-          v-model="postDraft.postTitle"
-          borderless
-          no-error-icon
-          label="What do you want to ask?"
-          type="textarea"
-          lazy-rules
-          :rules="[(val) => val && val.length > 0]"
-          autogrow
-          :maxlength="MAX_LENGTH_TITLE"
-          required
-        >
-          <template #after>
-            <div class="wordCountDiv">
-              {{ postDraft.postTitle.length }} /
-              {{ MAX_LENGTH_TITLE }}
-            </div>
-          </template>
-        </q-input>
+        <div :style="{ paddingLeft: '0.5rem' }">
+          <q-input
+            v-model="postDraft.postTitle"
+            borderless
+            no-error-icon
+            placeholder="What do you want to ask?"
+            type="textarea"
+            autogrow
+            :maxlength="MAX_LENGTH_TITLE"
+            required
+            :error="titleError"
+            class="large-text-input"
+            @input="clearTitleError"
+          >
+            <template #after>
+              <div class="wordCountDiv">
+                {{ postDraft.postTitle.length }} /
+                {{ MAX_LENGTH_TITLE }}
+              </div>
+            </template>
+          </q-input>
+        </div>
+
+        <div v-if="titleError" class="titleErrorMessage">
+          <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
+          Title is required to continue
+        </div>
 
         <div>
           <div class="editorPadding">
@@ -250,6 +258,7 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
+const titleError = ref(false);
 
 const router = useRouter();
 const routeGuardRef = ref<InstanceType<
@@ -319,7 +328,19 @@ function removePollOption(index: number) {
   postDraft.value.pollingOptionList.splice(index, 1);
 }
 
+function clearTitleError() {
+  if (titleError.value && postDraft.value.postTitle.trim().length > 0) {
+    titleError.value = false;
+  }
+}
+
 async function goToPreview() {
+  if (postDraft.value.postTitle.trim().length === 0) {
+    titleError.value = true;
+    return;
+  }
+
+  titleError.value = false;
   routeGuardRef.value?.unlockRoute();
   await router.push({ name: "/conversation/new/preview/" });
 }
@@ -352,7 +373,7 @@ async function goToPreview() {
 
 .editorPadding {
   padding-bottom: 8rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .wordCountDiv {
@@ -415,5 +436,26 @@ async function goToPreview() {
   flex-direction: column;
   gap: 2rem;
   padding-top: 2rem;
+}
+
+.titleErrorMessage {
+  display: flex;
+  align-items: center;
+  color: $negative;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.titleErrorIcon {
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+
+.large-text-input :deep(.q-field__control) {
+  font-size: 1.2rem;
+}
+
+.large-text-input :deep(.q-field__native) {
+  font-weight: 500;
 }
 </style>
