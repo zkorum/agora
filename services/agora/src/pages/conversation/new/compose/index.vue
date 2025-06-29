@@ -15,11 +15,7 @@
     </TopMenuWrapper>
 
     <div class="container">
-      <NewConversationControlBar
-        v-model:enable-polling="postDraft.enablePolling"
-        v-model:is-private-post="postDraft.isPrivatePost"
-        @toggle-polling="togglePolling()"
-      />
+      <NewConversationControlBar @toggle-polling="togglePolling()" />
 
       <div class="contentFlexStyle">
         <ZKCard padding="1rem" class="cardBackground">

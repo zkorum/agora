@@ -4,7 +4,7 @@
       <div class="visibility-options">
         <div
           class="visibility-option"
-          :class="{ selected: isPrivatePost === true }"
+          :class="{ selected: postDraft.isPrivatePost === true }"
           @click="updatePrivatePost(true)"
         >
           <div class="option-header">Requires login</div>
@@ -16,7 +16,7 @@
 
         <div
           class="visibility-option"
-          :class="{ selected: isPrivatePost === false }"
+          :class="{ selected: postDraft.isPrivatePost === false }"
           @click="updatePrivatePost(false)"
         >
           <div class="option-header">Guest participation</div>
@@ -31,24 +31,17 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-
-interface Props {
-  isPrivatePost: boolean;
-}
-
-interface Emits {
-  (e: "update:isPrivatePost", value: boolean): void;
-}
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 
-defineProps<Props>();
-const emit = defineEmits<Emits>();
+const { postDraft } = storeToRefs(useNewPostDraftsStore());
 
 function updatePrivatePost(isPrivatePost: boolean) {
   showDialog.value = false;
-  emit("update:isPrivatePost", isPrivatePost);
+  postDraft.value.isPrivatePost = isPrivatePost;
 }
 </script>
 

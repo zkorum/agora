@@ -13,7 +13,7 @@
 
     <div @click="toggleVisibility()">
       <FollowButton
-        :label="isPrivatePost ? 'Private' : 'Public'"
+        :label="postDraft.isPrivatePost ? 'Private' : 'Public'"
         :variant="''"
         :is-following="true"
         :icon="showVisibilityDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
@@ -22,21 +22,17 @@
 
     <div @click="togglePolling()">
       <FollowButton
-        :label="enablePolling ? 'Remove poll' : 'Add poll'"
+        :label="postDraft.enablePolling ? 'Remove poll' : 'Add poll'"
         :variant="''"
         :is-following="true"
-        :icon="enablePolling ? 'pi pi-minus' : 'pi pi-plus'"
+        :icon="postDraft.enablePolling ? 'pi pi-minus' : 'pi pi-plus'"
       />
     </div>
   </div>
 
   <PostAsAccountDialog v-model="showAsDialogVisible" />
 
-  <VisibilityOptionsDialog
-    v-model:show-dialog="showVisibilityDialog"
-    :is-private-post="isPrivatePost"
-    @update:is-private-post="isPrivatePost = $event"
-  />
+  <VisibilityOptionsDialog v-model:show-dialog="showVisibilityDialog" />
 </template>
 
 <script setup lang="ts">
@@ -48,9 +44,6 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
-
-const enablePolling = defineModel<boolean>("enablePolling", { required: true });
-const isPrivatePost = defineModel<boolean>("isPrivatePost", { required: true });
 
 const emit = defineEmits<{
   togglePolling: [];
@@ -79,7 +72,7 @@ const showAsDialog = () => {
 };
 
 const togglePolling = () => {
-  enablePolling.value = !enablePolling.value;
+  postDraft.value.enablePolling = !postDraft.value.enablePolling;
   emit("togglePolling");
 };
 
