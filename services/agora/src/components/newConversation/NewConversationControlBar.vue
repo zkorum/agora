@@ -3,7 +3,7 @@
     <UserAvatar :user-identity="postAsDisplayName" :size="35" />
 
     <div
-      v-for="button in controlButtons"
+      v-for="button in visibleControlButtons"
       :key="button.id"
       :class="{ 'cursor-pointer': button.clickable }"
       @click="button.clickHandler"
@@ -31,6 +31,7 @@ interface ControlButton {
   id: string;
   label: string;
   icon: string;
+  isVisible: boolean;
   clickHandler: () => void;
   clickable: boolean;
 }
@@ -74,6 +75,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showPostAsDialogVisible.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
+    isVisible: true,
     clickHandler: showAsDialog,
     clickable: true,
   },
@@ -83,6 +85,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showVisibilityDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
+    isVisible: true,
     clickHandler: toggleVisibility,
     clickable: true,
   },
@@ -94,6 +97,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showRequireLoginDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
+    isVisible: postDraft.value.isPrivatePost,
     clickHandler: () => {
       // TODO: Implement login requirement dialog toggle
     },
@@ -107,6 +111,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showMakePublicDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
+    isVisible: postDraft.value.isPrivatePost,
     clickHandler: () => {
       // TODO: Implement make public dialog toggle
     },
@@ -116,10 +121,15 @@ const controlButtons = computed((): ControlButton[] => [
     id: "polling",
     label: postDraft.value.enablePolling ? "Remove poll" : "Add poll",
     icon: postDraft.value.enablePolling ? "pi pi-minus" : "pi pi-plus",
+    isVisible: true,
     clickHandler: togglePolling,
     clickable: true,
   },
 ]);
+
+const visibleControlButtons = computed(() =>
+  controlButtons.value.filter((button) => button.isVisible)
+);
 </script>
 
 <style scoped lang="scss">
