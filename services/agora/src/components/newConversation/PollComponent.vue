@@ -29,12 +29,13 @@
           :key="index"
           class="polling-option-item"
         >
-          <InputText
+          <Textarea
             :model-value="option"
-            type="text"
             :placeholder="`Enter option ${index + 1}`"
             :maxlength="MAX_LENGTH_OPTION"
             class="option-input"
+            auto-resize
+            rows="1"
             @update:model-value="updateOption(index, $event)"
           />
 
@@ -72,7 +73,7 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import InputText from "primevue/inputtext";
+import Textarea from "primevue/textarea";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";

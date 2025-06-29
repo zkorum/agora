@@ -78,7 +78,7 @@
         </div>
 
         <div>
-          <div class="editorPadding">
+          <div class="editor-style">
             <ZKEditor
               v-model="postDraft.postBody"
               placeholder="Body text. Provide context or relevant resources. Make sure it’s aligned with the main question!"
@@ -105,10 +105,7 @@
             </div>
           </div>
 
-          <div
-            v-if="postDraft.enablePolling"
-            :style="{ paddingBottom: '8rem' }"
-          >
+          <div v-if="postDraft.enablePolling">
             <PollComponent ref="pollComponentRef" />
           </div>
         </div>
@@ -237,8 +234,8 @@ watch(
   padding-right: 0.5rem;
 }
 
-.editorPadding {
-  padding-bottom: 8rem;
+.editor-style {
+  padding-bottom: 2rem;
   font-size: 1rem;
 }
 
@@ -288,6 +285,7 @@ watch(
   flex-direction: column;
   gap: 2rem;
   padding-top: 2rem;
+  padding-bottom: 8rem;
 }
 
 .titleErrorMessage {
