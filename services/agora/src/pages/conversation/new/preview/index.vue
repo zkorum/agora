@@ -116,44 +116,4 @@ async function onSubmit() {
 .container {
   padding: 2rem 1rem;
 }
-
-.previewContent {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.previewSection {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.previewSection h3 {
-  margin: 0 0 0.5rem 0;
-  font-weight: 600;
-  color: #333;
-}
-
-.previewSection p {
-  margin: 0;
-  color: #666;
-}
-
-.previewSection ul {
-  margin: 0;
-  padding-left: 1.5rem;
-}
-
-.previewSection li {
-  color: #666;
-  margin-bottom: 0.25rem;
-}
-
-h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-  color: #333;
-}
 </style>
