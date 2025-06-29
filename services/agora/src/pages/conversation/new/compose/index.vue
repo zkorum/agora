@@ -138,72 +138,22 @@
             </div>
           </div>
 
-          <ZKCard
+          <div
             v-if="postDraft.enablePolling"
-            padding="1rem"
-            :style="{ marginTop: '1rem', backgroundColor: 'white' }"
+            :style="{ paddingBottom: '8rem' }"
           >
-            <div>
-              <div class="pollTopBar">
-                <div>Add a Poll</div>
-                <ZKButton
-                  button-type="icon"
-                  flat
-                  text-color="black"
-                  icon="mdi-close"
-                  @click="togglePolling()"
-                />
-              </div>
-              <div ref="pollRef" class="pollingFlexStyle">
-                <div
-                  v-for="index in postDraft.pollingOptionList.length"
-                  :key="index"
-                  class="pollingItem"
-                >
-                  <q-input
-                    v-model="postDraft.pollingOptionList[index - 1]"
-                    :rules="[(val) => val && val.length > 0]"
-                    type="text"
-                    :label="'Option ' + index"
-                    :style="{ width: '100%' }"
-                    :maxlength="MAX_LENGTH_OPTION"
-                    autogrow
-                    clearable
-                  />
-                  <div
-                    v-if="postDraft.pollingOptionList.length != 2"
-                    class="deletePollOptionDiv"
-                  >
-                    <ZKButton
-                      button-type="icon"
-                      flat
-                      round
-                      icon="mdi-delete"
-                      text-color="primary"
-                      @click="removePollOption(index - 1)"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <ZKButton
-                    button-type="standardButton"
-                    flat
-                    text-color="primary"
-                    icon="mdi-plus"
-                    label="Add Option"
-                    :disable="postDraft.pollingOptionList.length == 6"
-                    @click="addPollOption()"
-                  />
-                </div>
-              </div>
-            </div>
-          </ZKCard>
+            <PollComponent
+              ref="pollComponentRef"
+              v-model:polling-options="postDraft.pollingOptionList"
+              :max-length-option="MAX_LENGTH_OPTION"
+              @close="togglePolling()"
+            />
+          </div>
         </div>
       </div>
     </div>
 
-    <div ref="endOfFormRef"></div>
+    <div></div>
 
     <NewConversationRouteGuard
       ref="routeGuardRef"
@@ -241,6 +191,7 @@ import NewConversationControlBar from "src/components/newConversation/NewConvers
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PollComponent from "src/components/newConversation/PollComponent.vue";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -251,8 +202,7 @@ const routeGuardRef = ref<InstanceType<
   typeof NewConversationRouteGuard
 > | null>(null);
 
-const pollRef = ref<HTMLElement | null>(null);
-const endOfFormRef = ref<HTMLElement | null>();
+const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 
 const { getEmptyConversationDraft } = useNewPostDraftsStore();
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
@@ -282,7 +232,7 @@ function checkWordCount() {
 async function togglePolling() {
   if (postDraft.value.enablePolling) {
     setTimeout(function () {
-      pollRef.value?.scrollIntoView({
+      pollComponentRef.value?.$el?.scrollIntoView({
         behavior: "smooth",
         inline: "start",
       });
@@ -290,21 +240,7 @@ async function togglePolling() {
   } else {
     postDraft.value.pollingOptionList =
       getEmptyConversationDraft().pollingOptionList;
-    setTimeout(function () {
-      endOfFormRef.value?.scrollIntoView({
-        behavior: "smooth",
-        inline: "start",
-      });
-    }, 100);
   }
-}
-
-function addPollOption() {
-  postDraft.value.pollingOptionList.push("");
-}
-
-function removePollOption(index: number) {
-  postDraft.value.pollingOptionList.splice(index, 1);
 }
 
 function clearTitleError() {
@@ -326,28 +262,11 @@ async function goToPreview() {
 </script>
 
 <style scoped lang="scss">
-.pollingFlexStyle {
-  display: flex;
-  flex-direction: column;
-}
-
-.pollingForm {
-  padding-top: 1rem;
-  padding-bottom: 6rem;
-}
-
 .title-style {
   font-size: 1.1rem;
   font-weight: 600;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-}
-
-.pollingItem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
 }
 
 .editorPadding {
@@ -371,20 +290,6 @@ async function goToPreview() {
 .bodySizeWarningIcon {
   font-size: 1rem;
   padding-right: 0.5rem;
-}
-
-.deletePollOptionDiv {
-  width: 3rem;
-  padding-bottom: 1rem;
-  padding-left: 0.5rem;
-}
-
-.pollTopBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 1rem;
-  font-weight: bold;
 }
 
 .cardBackground {
