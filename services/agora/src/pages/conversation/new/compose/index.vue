@@ -327,7 +327,7 @@ async function goToPreview() {
   align-items: center;
   color: $negative;
   font-size: 0.9rem;
-  margin-top: 0.5rem;
+  padding-left: 0.5rem;
 }
 
 .titleErrorIcon {
