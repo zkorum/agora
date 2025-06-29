@@ -3,34 +3,54 @@
     <UserAvatar :user-identity="postAsDisplayName" :size="35" />
 
     <div @click="showAsDialog()">
-      <FollowButton
+      <ControlBarButton
         :label="`As ${postAsDisplayName}`"
-        :variant="''"
-        :is-following="true"
-        :icon="'pi pi-chevron-down'"
+        :icon="
+          showPostAsDialogVisible ? 'pi pi-chevron-up' : 'pi pi-chevron-down'
+        "
       />
     </div>
 
     <div @click="toggleVisibility()">
-      <FollowButton
+      <ControlBarButton
         :label="postDraft.isPrivatePost ? 'Private' : 'Public'"
-        :variant="''"
-        :is-following="true"
         :icon="showVisibilityDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
       />
     </div>
 
+    <div>
+      <ControlBarButton
+        :label="
+          postDraft.isLoginRequiredToParticipate
+            ? 'Requires login'
+            : 'Guest participation'
+        "
+        :icon="
+          showRequireLoginDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'
+        "
+      />
+    </div>
+
+    <div>
+      <ControlBarButton
+        :label="
+          postDraft.autoConvertDate
+            ? 'Make public: after xxx'
+            : 'Make public: Never'
+        "
+        :icon="showMakePublicDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+      />
+    </div>
+
     <div @click="togglePolling()">
-      <FollowButton
+      <ControlBarButton
         :label="postDraft.enablePolling ? 'Remove poll' : 'Add poll'"
-        :variant="''"
-        :is-following="true"
         :icon="postDraft.enablePolling ? 'pi pi-minus' : 'pi pi-plus'"
       />
     </div>
   </div>
 
-  <PostAsAccountDialog v-model="showAsDialogVisible" />
+  <PostAsAccountDialog v-model="showPostAsDialogVisible" />
 
   <VisibilityOptionsDialog v-model:show-dialog="showVisibilityDialog" />
 </template>
@@ -41,7 +61,7 @@ import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import UserAvatar from "src/components/account/UserAvatar.vue";
-import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
+import ControlBarButton from "src/components/newConversation/dialog/ControlBarButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 
@@ -60,11 +80,13 @@ const postAsDisplayName = computed(() => {
   }
 });
 
-const showAsDialogVisible = ref(false);
+const showPostAsDialogVisible = ref(false);
 const showVisibilityDialog = ref(false);
+const showRequireLoginDialog = ref(false);
+const showMakePublicDialog = ref(false);
 
 const showAsDialog = () => {
-  showAsDialogVisible.value = true;
+  showPostAsDialogVisible.value = true;
 };
 
 const togglePolling = () => {

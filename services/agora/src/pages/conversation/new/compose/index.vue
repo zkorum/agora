@@ -112,8 +112,6 @@
       </div>
     </div>
 
-    <div></div>
-
     <NewConversationRouteGuard
       ref="routeGuardRef"
       :allowed-routes="['/conversation/new/preview/']"
