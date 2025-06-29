@@ -15,7 +15,7 @@
     </TopMenuWrapper>
 
     <div class="container">
-      <NewConversationControlBar @toggle-polling="togglePolling()" />
+      <NewConversationControlBar />
 
       <div class="contentFlexStyle">
         <ZKCard padding="1rem" class="cardBackground">
@@ -50,6 +50,11 @@
         </ZKCard>
 
         <div :style="{ paddingLeft: '0.5rem' }">
+          <div v-if="titleError" class="titleErrorMessage">
+            <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
+            Title is required to continue
+          </div>
+
           <q-input
             v-model="postDraft.postTitle"
             borderless
@@ -70,11 +75,6 @@
               </div>
             </template>
           </q-input>
-        </div>
-
-        <div v-if="titleError" class="titleErrorMessage">
-          <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
-          Title is required to continue
         </div>
 
         <div>
@@ -109,12 +109,7 @@
             v-if="postDraft.enablePolling"
             :style="{ paddingBottom: '8rem' }"
           >
-            <PollComponent
-              ref="pollComponentRef"
-              v-model:polling-options="postDraft.pollingOptionList"
-              :max-length-option="MAX_LENGTH_OPTION"
-              @close="togglePolling()"
-            />
+            <PollComponent ref="pollComponentRef" />
           </div>
         </div>
       </div>
@@ -136,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
@@ -144,7 +139,6 @@ import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue"
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import {
-  MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
   MAX_LENGTH_BODY,
   validateHtmlStringCharacterCount,
@@ -194,7 +188,7 @@ function checkWordCount() {
   }
 }
 
-async function togglePolling() {
+async function scrollToPollingRef() {
   if (postDraft.value.enablePolling) {
     setTimeout(function () {
       pollComponentRef.value?.$el?.scrollIntoView({
@@ -224,6 +218,15 @@ async function goToPreview() {
   routeGuardRef.value?.unlockRoute();
   await router.push({ name: "/conversation/new/preview/" });
 }
+
+watch(
+  () => postDraft.value.enablePolling,
+  async (enablePolling) => {
+    if (enablePolling === true) {
+      await scrollToPollingRef();
+    }
+  }
+);
 </script>
 
 <style scoped lang="scss">
@@ -292,7 +295,6 @@ async function goToPreview() {
   align-items: center;
   color: $negative;
   font-size: 0.9rem;
-  padding-left: 0.5rem;
 }
 
 .titleErrorIcon {

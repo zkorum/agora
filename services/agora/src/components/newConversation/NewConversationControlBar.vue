@@ -45,10 +45,6 @@ import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 
-const emit = defineEmits<{
-  togglePolling: [];
-}>();
-
 const { profileData } = storeToRefs(useUserStore());
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
 
@@ -73,7 +69,6 @@ const showAsDialog = () => {
 
 const togglePolling = () => {
   postDraft.value.enablePolling = !postDraft.value.enablePolling;
-  emit("togglePolling");
 };
 
 const toggleVisibility = () => {
