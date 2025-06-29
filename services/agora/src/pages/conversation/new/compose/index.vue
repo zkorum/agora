@@ -22,35 +22,6 @@
       />
 
       <div class="contentFlexStyle">
-        <ZKCard
-          v-if="profileData.organizationList.length > 0"
-          padding="1rem"
-          class="cardBackground"
-        >
-          <div class="organizationSection">
-            <q-toggle
-              v-model="postDraft.postAsOrganization"
-              label="Post as an organization"
-            />
-
-            <div
-              v-if="postDraft.postAsOrganization"
-              class="organizationFlexList"
-            >
-              <div
-                v-for="organization in profileData.organizationList"
-                :key="organization"
-              >
-                <q-radio
-                  v-model="postDraft.selectedOrganization"
-                  :val="organization"
-                  :label="organization"
-                />
-              </div>
-            </div>
-          </div>
-        </ZKCard>
-
         <ZKCard padding="1rem" class="cardBackground">
           <div class="organizationSection">
             <q-toggle
@@ -184,7 +155,6 @@ import {
 } from "src/shared/shared";
 import { storeToRefs } from "pinia";
 import DatePicker from "primevue/datepicker";
-import { useUserStore } from "src/stores/user";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
@@ -207,7 +177,6 @@ const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 const { getEmptyConversationDraft } = useNewPostDraftsStore();
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
 
-const { profileData } = storeToRefs(useUserStore());
 const { createNewConversationIntention } = useLoginIntentionStore();
 
 const showLoginDialog = ref(false);
