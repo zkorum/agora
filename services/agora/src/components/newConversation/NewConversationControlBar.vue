@@ -2,51 +2,13 @@
   <div class="control-bar">
     <UserAvatar :user-identity="postAsDisplayName" :size="35" />
 
-    <div @click="showAsDialog()">
-      <ControlBarButton
-        :label="`As ${postAsDisplayName}`"
-        :icon="
-          showPostAsDialogVisible ? 'pi pi-chevron-up' : 'pi pi-chevron-down'
-        "
-      />
-    </div>
-
-    <div @click="toggleVisibility()">
-      <ControlBarButton
-        :label="postDraft.isPrivatePost ? 'Private' : 'Public'"
-        :icon="showVisibilityDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-      />
-    </div>
-
-    <div>
-      <ControlBarButton
-        :label="
-          postDraft.isLoginRequiredToParticipate
-            ? 'Requires login'
-            : 'Guest participation'
-        "
-        :icon="
-          showRequireLoginDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'
-        "
-      />
-    </div>
-
-    <div>
-      <ControlBarButton
-        :label="
-          postDraft.autoConvertDate
-            ? 'Make public: after xxx'
-            : 'Make public: Never'
-        "
-        :icon="showMakePublicDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-      />
-    </div>
-
-    <div @click="togglePolling()">
-      <ControlBarButton
-        :label="postDraft.enablePolling ? 'Remove poll' : 'Add poll'"
-        :icon="postDraft.enablePolling ? 'pi pi-minus' : 'pi pi-plus'"
-      />
+    <div
+      v-for="button in controlButtons"
+      :key="button.id"
+      :class="{ 'cursor-pointer': button.clickable }"
+      @click="button.clickHandler"
+    >
+      <ControlBarButton :label="button.label" :icon="button.icon" />
     </div>
   </div>
 
@@ -64,6 +26,14 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import ControlBarButton from "src/components/newConversation/dialog/ControlBarButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
+
+interface ControlButton {
+  id: string;
+  label: string;
+  icon: string;
+  clickHandler: () => void;
+  clickable: boolean;
+}
 
 const { profileData } = storeToRefs(useUserStore());
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
@@ -96,6 +66,60 @@ const togglePolling = () => {
 const toggleVisibility = () => {
   showVisibilityDialog.value = true;
 };
+
+const controlButtons = computed((): ControlButton[] => [
+  {
+    id: "post-as",
+    label: `As ${postAsDisplayName.value}`,
+    icon: showPostAsDialogVisible.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    clickHandler: showAsDialog,
+    clickable: true,
+  },
+  {
+    id: "visibility",
+    label: postDraft.value.isPrivatePost ? "Private" : "Public",
+    icon: showVisibilityDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    clickHandler: toggleVisibility,
+    clickable: true,
+  },
+  {
+    id: "login-requirement",
+    label: postDraft.value.isLoginRequiredToParticipate
+      ? "Requires login"
+      : "Guest participation",
+    icon: showRequireLoginDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    clickHandler: () => {
+      // TODO: Implement login requirement dialog toggle
+    },
+    clickable: false,
+  },
+  {
+    id: "make-public",
+    label: postDraft.value.autoConvertDate
+      ? "Make public: after xxx"
+      : "Make public: Never",
+    icon: showMakePublicDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    clickHandler: () => {
+      // TODO: Implement make public dialog toggle
+    },
+    clickable: false,
+  },
+  {
+    id: "polling",
+    label: postDraft.value.enablePolling ? "Remove poll" : "Add poll",
+    icon: postDraft.value.enablePolling ? "pi pi-minus" : "pi pi-plus",
+    clickHandler: togglePolling,
+    clickable: true,
+  },
+]);
 </script>
 
 <style scoped lang="scss">
