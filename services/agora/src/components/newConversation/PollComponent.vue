@@ -24,7 +24,7 @@
             :model-value="pollingOptions[index - 1]"
             :rules="[(val) => val && val.length > 0]"
             type="text"
-            :label="'Option ' + index"
+            :placeholder="'Option ' + index"
             :style="{ width: '100%' }"
             :maxlength="maxLengthOption"
             autogrow
@@ -117,7 +117,6 @@ function removeOption(index: number) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 1rem;
-  font-weight: bold;
+  font-size: 1.2rem;
 }
 </style>
