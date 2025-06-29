@@ -1,33 +1,21 @@
 <template>
   <Button
-    :variant="variant"
     rounded
-    :pt="
-      isFollowing
-        ? {
-            root: {
-              class: 'generalStyle borderColorOn',
-            },
-          }
-        : {
-            root: {
-              class: 'generalStyle borderColorOff',
-            },
-          }
-    "
-    :class="{ followStyle: !isFollowing, followingStyle: isFollowing }"
+    :pt="{
+      root: {
+        class: 'generalStyle borderColorOn',
+      },
+    }"
+    class="followingStyle"
   >
-    <div
-      class="button-content"
-      :class="{ normalText: !isFollowing, gradientText: isFollowing }"
-    >
+    <div class="button-content gradientText">
       <span>{{ label }}</span>
       <i
         v-if="icon"
         :class="icon"
         :style="{
           fontSize: '1rem',
-          color: isFollowing ? '#6b4eff' : '#6d6a74',
+          color: '#6b4eff',
         }"
       />
     </div>
@@ -39,9 +27,7 @@ import Button from "primevue/button";
 
 defineProps<{
   label: string;
-  variant: string;
   icon?: string;
-  isFollowing: boolean;
 }>();
 </script>
 
@@ -64,10 +50,6 @@ defineProps<{
   -webkit-text-fill-color: transparent;
 }
 
-.normalText {
-  color: #6d6a74;
-}
-
 .generalStyle {
   font-weight: 500;
   font-size: 1rem;
@@ -80,19 +62,6 @@ defineProps<{
 
 .borderColorOn {
   border-color: #6b4eff;
-}
-
-.borderColorOff {
-  border-color: transparent;
-}
-
-.followStyle {
-  background-color: #f1eeff;
-}
-
-.followStyle:hover {
-  background-color: #e4e2f1 !important;
-  border-color: transparent !important;
 }
 
 .followingStyle {
