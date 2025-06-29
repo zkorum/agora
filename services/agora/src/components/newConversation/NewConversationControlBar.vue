@@ -34,11 +34,7 @@
     </div>
   </div>
 
-  <q-dialog v-model="showAsDialogVisible" position="bottom">
-    <ZKBottomDialogContainer>
-      <div class="title-style">Post As:</div>
-    </ZKBottomDialogContainer>
-  </q-dialog>
+  <PostAsAccountDialog v-model="showAsDialogVisible" />
 
   <VisibilityOptionsDialog
     v-model="showVisibilityDialog"
@@ -53,7 +49,7 @@ import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
-import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 
 const enablePolling = defineModel<boolean>("enablePolling", { required: true });
@@ -87,12 +83,5 @@ const toggleVisibility = () => {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-}
-
-.title-style {
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
 }
 </style>
