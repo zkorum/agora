@@ -70,17 +70,21 @@ function updatePrivatePost(isPrivatePost: boolean) {
 }
 
 .visibility-option.selected {
-  background-color: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.8);
+  background-color: rgba(25, 118, 210, 0.12);
+
+  &:hover {
+    background-color: rgba(25, 118, 210, 0.16);
+  }
 }
 
 .option-header {
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
 .option-description {
   color: $color-text-weak;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1.4;
 }
 </style>
