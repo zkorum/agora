@@ -9,7 +9,7 @@
         @click="clickedTab('comment')"
       />
       <ZKTab
-        v-if="!compactMode"
+        v-if="!compactMode && showAnalysisPage"
         icon-code="ph:chart-donut"
         text="Analysis"
         :is-highlighted="model === 'analysis'"
@@ -27,6 +27,7 @@ const model = defineModel<"comment" | "analysis">({ required: true });
 const props = defineProps<{
   opinionCount: number;
   compactMode: boolean;
+  showAnalysisPage: boolean;
 }>();
 
 function clickedTab(tabKey: "comment" | "analysis") {
