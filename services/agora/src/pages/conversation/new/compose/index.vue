@@ -16,9 +16,8 @@
 
     <div class="container">
       <NewConversationControlBar
-        :enable-polling="postDraft.enablePolling"
-        @show-as-dialog="showAsDialog = true"
-        @show-public-dialog="showPublicDialog = true"
+        v-model:enable-polling="postDraft.enablePolling"
+        v-model:is-private-post="postDraft.isPrivatePost"
         @toggle-polling="togglePolling()"
       />
 
@@ -216,18 +215,6 @@
       :ok-callback="onLoginCallback"
       :active-intention="'newConversation'"
     />
-
-    <q-dialog v-model="showAsDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="title-style">Post As:</div>
-      </ZKBottomDialogContainer>
-    </q-dialog>
-
-    <q-dialog v-model="showPublicDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="title-style">Visibility:</div>
-      </ZKBottomDialogContainer>
-    </q-dialog>
   </NewConversationLayout>
 </template>
 
@@ -246,15 +233,14 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { storeToRefs } from "pinia";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 import DatePicker from "primevue/datepicker";
 import { useUserStore } from "src/stores/user";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
-import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
@@ -272,16 +258,11 @@ const { getEmptyConversationDraft } = useNewPostDraftsStore();
 const { postDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { profileData } = storeToRefs(useUserStore());
-const showLoginDialog = ref(false);
-const showAsDialog = ref(false);
-const showPublicDialog = ref(false);
+const { createNewConversationIntention } = useLoginIntentionStore();
 
-const { createNewConversationIntention, clearNewConversationIntention } =
-  useLoginIntentionStore();
-clearNewConversationIntention();
+const showLoginDialog = ref(false);
 
 function onLoginCallback() {
-  routeGuardRef.value?.unlockRoute();
   createNewConversationIntention();
 }
 
@@ -299,8 +280,6 @@ function checkWordCount() {
 }
 
 async function togglePolling() {
-  postDraft.value.enablePolling = !postDraft.value.enablePolling;
-
   if (postDraft.value.enablePolling) {
     setTimeout(function () {
       pollRef.value?.scrollIntoView({

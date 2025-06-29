@@ -15,12 +15,12 @@
       />
     </div>
 
-    <div @click="showPublicDialog()">
+    <div @click="toggleVisibility()">
       <FollowButton
-        :label="'Public'"
+        :label="isPrivatePost ? 'Private' : 'Public'"
         :variant="''"
         :is-following="true"
-        :icon="'pi pi-chevron-down'"
+        :icon="showVisibilityDialog ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
       />
     </div>
 
@@ -33,36 +33,52 @@
       />
     </div>
   </div>
+
+  <q-dialog v-model="showAsDialogVisible" position="bottom">
+    <ZKBottomDialogContainer>
+      <div class="title-style">Post As:</div>
+    </ZKBottomDialogContainer>
+  </q-dialog>
+
+  <VisibilityOptionsDialog
+    v-model="showVisibilityDialog"
+    :is-private-post="isPrivatePost"
+    @update:is-private-post="isPrivatePost = $event"
+  />
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 
-defineProps<{
-  enablePolling: boolean;
-}>();
+const enablePolling = defineModel<boolean>("enablePolling", { required: true });
+const isPrivatePost = defineModel<boolean>("isPrivatePost", { required: true });
 
 const emit = defineEmits<{
-  showAsDialog: [];
-  showPublicDialog: [];
   togglePolling: [];
 }>();
 
 const { profileData } = storeToRefs(useUserStore());
 
-const showAsDialog = () => {
-  emit("showAsDialog");
-};
+const showAsDialogVisible = ref(false);
+const showVisibilityDialog = ref(false);
 
-const showPublicDialog = () => {
-  emit("showPublicDialog");
+const showAsDialog = () => {
+  showAsDialogVisible.value = true;
 };
 
 const togglePolling = () => {
+  enablePolling.value = !enablePolling.value;
   emit("togglePolling");
+};
+
+const toggleVisibility = () => {
+  showVisibilityDialog.value = true;
 };
 </script>
 
@@ -71,5 +87,12 @@ const togglePolling = () => {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.title-style {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 </style>
