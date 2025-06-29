@@ -1,14 +1,10 @@
 <template>
   <div class="control-bar">
-    <UserAvatar
-      :key="profileData.userName"
-      :user-identity="profileData.userName"
-      :size="35"
-    />
+    <UserAvatar :user-identity="postAsDisplayName" :size="35" />
 
     <div @click="showAsDialog()">
       <FollowButton
-        :label="'As ABC'"
+        :label="`As ${postAsDisplayName}`"
         :variant="''"
         :is-following="true"
         :icon="'pi pi-chevron-down'"
@@ -37,16 +33,17 @@
   <PostAsAccountDialog v-model="showAsDialogVisible" />
 
   <VisibilityOptionsDialog
-    v-model="showVisibilityDialog"
+    v-model:show-dialog="showVisibilityDialog"
     :is-private-post="isPrivatePost"
     @update:is-private-post="isPrivatePost = $event"
   />
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
@@ -60,6 +57,19 @@ const emit = defineEmits<{
 }>();
 
 const { profileData } = storeToRefs(useUserStore());
+const { postDraft } = storeToRefs(useNewPostDraftsStore());
+
+const postAsDisplayName = computed(() => {
+  if (postDraft.value.postAsOrganization) {
+    if (postDraft.value.selectedOrganization) {
+      return postDraft.value.selectedOrganization;
+    } else {
+      return "UNKNOWN ORGANIZATION";
+    }
+  } else {
+    return profileData.value.userName;
+  }
+});
 
 const showAsDialogVisible = ref(false);
 const showVisibilityDialog = ref(false);

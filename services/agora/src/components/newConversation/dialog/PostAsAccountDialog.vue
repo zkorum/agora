@@ -73,6 +73,7 @@ function setPostAs(isOrganization: boolean, name: string) {
   } else {
     postDraft.value.selectedOrganization = "";
   }
+  showDialog.value = false;
 }
 
 function isAccountSelected(isOrganization: boolean, name: string): boolean {

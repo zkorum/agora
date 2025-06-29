@@ -31,29 +31,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 
 interface Props {
-  modelValue: boolean;
   isPrivatePost: boolean;
 }
 
 interface Emits {
-  (e: "update:modelValue", value: boolean): void;
   (e: "update:isPrivatePost", value: boolean): void;
 }
 
-const props = defineProps<Props>();
+const showDialog = defineModel<boolean>("showDialog", { required: true });
+
+defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const showDialog = computed({
-  get: () => props.modelValue,
-  set: (value: boolean) => emit("update:modelValue", value),
-});
-
-function updatePrivatePost(value: boolean) {
-  emit("update:isPrivatePost", value);
+function updatePrivatePost(isPrivatePost: boolean) {
+  showDialog.value = false;
+  emit("update:isPrivatePost", isPrivatePost);
 }
 </script>
 
