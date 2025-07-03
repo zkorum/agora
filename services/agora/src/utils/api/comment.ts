@@ -250,7 +250,10 @@ export function useBackendCommentApi() {
       undefined,
       undefined,
       api
-    ).apiV1OpinionFetchBySlugIdListPost(params, {});
+    ).apiV1OpinionFetchBySlugIdListPost(
+      params,
+      createRawAxiosRequestConfig({})
+    );
 
     const opnionItemList: OpinionItem[] = [];
     for (const item of response.data) {
@@ -274,18 +277,20 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchConsensusByConversationPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1OpinionFetchConsensusByConversationPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
       data = response.data;
     } else {
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchConsensusByConversationPost(params, {});
+      ).apiV1OpinionFetchConsensusByConversationPost(
+        params,
+        createRawAxiosRequestConfig({})
+      );
       data = response.data;
     }
     const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
@@ -312,18 +317,20 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchMajorityByConversationPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1OpinionFetchMajorityByConversationPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
       data = response.data;
     } else {
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchMajorityByConversationPost(params, {});
+      ).apiV1OpinionFetchMajorityByConversationPost(
+        params,
+        createRawAxiosRequestConfig({})
+      );
       data = response.data;
     }
     const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
@@ -350,18 +357,20 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchControversialByConversationPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1OpinionFetchControversialByConversationPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
       data = response.data;
     } else {
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchControversialByConversationPost(params, {});
+      ).apiV1OpinionFetchControversialByConversationPost(
+        params,
+        createRawAxiosRequestConfig({})
+      );
       data = response.data;
     }
     const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
@@ -388,18 +397,20 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchRepresentativeByConversationPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1OpinionFetchRepresentativeByConversationPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
       data = response.data;
     } else {
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchRepresentativeByConversationPost(params, {});
+      ).apiV1OpinionFetchRepresentativeByConversationPost(
+        params,
+        createRawAxiosRequestConfig({})
+      );
       data = response.data;
     }
     const opinionAnalysisItems: Partial<Record<PolisKey, OpinionItem[]>> = {};
