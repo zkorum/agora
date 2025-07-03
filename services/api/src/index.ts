@@ -1526,20 +1526,31 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndDeviceStatus(
-                db,
-                request,
-                {
-                    expectedDeviceStatus: undefined,
-                },
-            );
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
             const opinionItemsPerSlugId =
                 await fetchOpinionsByConversationSlugId({
                     db: db,
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "group-aware-consensus",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             return Array.from(opinionItemsPerSlugId.values());
@@ -1556,20 +1567,31 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndDeviceStatus(
-                db,
-                request,
-                {
-                    expectedDeviceStatus: undefined,
-                },
-            );
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
             const opinionItemsPerSlugId =
                 await fetchOpinionsByConversationSlugId({
                     db: db,
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "majority",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             return Array.from(opinionItemsPerSlugId.values());
@@ -1586,20 +1608,31 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndDeviceStatus(
-                db,
-                request,
-                {
-                    expectedDeviceStatus: undefined,
-                },
-            );
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
             const opinionItemsPerSlugId =
                 await fetchOpinionsByConversationSlugId({
                     db: db,
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "controversial",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             return Array.from(opinionItemsPerSlugId.values());
@@ -1617,21 +1650,32 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndDeviceStatus(
-                db,
-                request,
-                {
-                    expectedDeviceStatus: undefined,
-                },
-            );
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
             const opinionItemsPerSlugIdKey0 =
                 await fetchOpinionsByConversationSlugId({
                     db: db,
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "cluster",
                     clusterKey: "0",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             const opinionItemsPerSlugIdKey1 =
@@ -1640,8 +1684,8 @@ server.after(() => {
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "cluster",
                     clusterKey: "1",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             const opinionItemsPerSlugIdKey2 =
@@ -1650,8 +1694,8 @@ server.after(() => {
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "cluster",
                     clusterKey: "2",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             const opinionItemsPerSlugIdKey3 =
@@ -1660,8 +1704,8 @@ server.after(() => {
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "cluster",
                     clusterKey: "3",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             const opinionItemsPerSlugIdKey4 =
@@ -1670,8 +1714,8 @@ server.after(() => {
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "cluster",
                     clusterKey: "4",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             const opinionItemsPerSlugIdKey5 =
@@ -1680,8 +1724,8 @@ server.after(() => {
                     postSlugId: request.body.conversationSlugId,
                     fetchTarget: "cluster",
                     clusterKey: "5",
-                    personalizationUserId: deviceStatus.isKnown
-                        ? deviceStatus.userId
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
                         : undefined,
                 });
             return {
