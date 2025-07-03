@@ -2378,7 +2378,6 @@
                                             "group-aware-consensus",
                                             "majority",
                                             "controversial",
-                                            "all",
                                             "cluster"
                                         ]
                                     },

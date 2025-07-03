@@ -89,7 +89,6 @@ interface FetchOpinionsProps {
         | "majority"
         | "controversial"
         | "group-aware-consensus"
-        | "group-aware-consensus-top" // TODO delete when analysis v2 happens
         | "discover"
         | "representative";
     clusterKey?: PolisKey;
@@ -238,23 +237,6 @@ export async function fetchOpinions({
         }
         case "group-aware-consensus": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = isSqlOrderByGroupAwareConsensusAgree();
-            break;
-        }
-        case "group-aware-consensus-top": {
-            // TODO: delete when analysis v2 happens
-            whereClause = and(
-                whereClause,
-                isNull(opinionModerationTable.id),
-                isSqlWhereGroupAwareConsensusAgree({
-                    cluster0NumUsersColumn: polisClusterTableAlias0.numUsers,
-                    cluster1NumUsersColumn: polisClusterTableAlias1.numUsers,
-                    cluster2NumUsersColumn: polisClusterTableAlias2.numUsers,
-                    cluster3NumUsersColumn: polisClusterTableAlias3.numUsers,
-                    cluster4NumUsersColumn: polisClusterTableAlias4.numUsers,
-                    cluster5NumUsersColumn: polisClusterTableAlias5.numUsers,
-                }),
-            );
             orderByClause = isSqlOrderByGroupAwareConsensusAgree();
             break;
         }
@@ -1006,45 +988,6 @@ export async function fetchOpinionsByConversationSlugId({
                 limit: limit,
             });
             break;
-        case "all": {
-            // TODO: delete "all" when analysis v2 comes in
-            const smallerLimit = 1000;
-            const opinionItemMapMajority: Map<string, OpinionItem> =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "majority",
-                    limit: smallerLimit,
-                });
-            const opinionItemMapControversial: OpinionItemPerSlugId =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "controversial",
-                    limit: smallerLimit,
-                });
-            const opinionItemMapGroupAwareConsensus: Map<string, OpinionItem> =
-                await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "group-aware-consensus-top",
-                    limit: smallerLimit,
-                });
-            // Create a new map that interleaves entries from map1 and map2
-            const opinionItemMapTemp = createInterleavingMapFrom(
-                opinionItemMapMajority,
-                opinionItemMapControversial,
-            );
-
-            opinionItemMap = createInterleavingMapFrom(
-                opinionItemMapTemp,
-                opinionItemMapGroupAwareConsensus,
-            );
-            break;
-        }
         case "discover": {
             opinionItemMap = await fetchOpinions({
                 db,

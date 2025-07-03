@@ -1949,7 +1949,6 @@ export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
     GroupAwareConsensus: 'group-aware-consensus',
     Majority: 'majority',
     Controversial: 'controversial',
-    All: 'all',
     Cluster: 'cluster'
 } as const;
 

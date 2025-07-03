@@ -132,8 +132,6 @@ export const zodCommentFeedFilter = z.enum([
     "group-aware-consensus",
     "majority",
     "controversial",
-    // TODO: move this elsewhere
-    "all",
     "cluster",
 ]);
 export const usernameRegex = new RegExp(
