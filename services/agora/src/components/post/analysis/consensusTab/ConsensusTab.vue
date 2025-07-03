@@ -8,7 +8,7 @@
         >
           <template #action-button>
             <div @click="switchTab()">
-              <AnalysisActionButton type="viewMore" />
+              <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
             </div>
           </template>
         </AnalysisTitleHeader>
