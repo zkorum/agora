@@ -101,15 +101,23 @@ import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue"
 import { OpinionItem } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage, formatPercentage } from "src/utils/common";
+import { useRouterNavigation } from "src/utils/router/navigation";
 
 const props = defineProps<{
+  conversationSlugId: string;
   opinionItem: OpinionItem;
 }>();
 
+const { forceOpenComment } = useRouterNavigation();
+
 const showDialog = defineModel<boolean>({ required: true });
 
-function viewOriginalComment() {
-  console.log("View original comment button clicked");
+async function viewOriginalComment() {
+  await forceOpenComment(
+    props.conversationSlugId,
+    props.opinionItem.opinionSlugId
+  );
+  showDialog.value = false;
   // Add the routing later
 }
 </script>

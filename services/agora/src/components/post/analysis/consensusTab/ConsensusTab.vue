@@ -18,6 +18,7 @@
         <ConsensusItem
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
           :key="consensusItem.opinion"
+          :conversation-slug-id="props.conversationSlugId"
           :opinion-slug-id="consensusItem.opinionSlugId"
           :description="consensusItem.opinion"
           :num-agree="consensusItem.numAgrees"
@@ -39,7 +40,8 @@ import ConsensusItem from "./ConsensusItem.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { OpinionItem } from "src/shared/types/zod";
 
-defineProps<{
+const props = defineProps<{
+  conversationSlugId: string;
   itemList: OpinionItem[];
   compactMode: boolean;
 }>();

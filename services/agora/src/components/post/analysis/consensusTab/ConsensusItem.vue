@@ -32,6 +32,7 @@
 
   <OpinionAnalysisDialog
     v-model="showDialog"
+    :conversation-slug-id="props.conversationSlugId"
     :opinion-item="props.opinionItem"
   />
 </template>
@@ -45,6 +46,7 @@ import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 import { OpinionItem } from "src/shared/types/zod";
 
 const props = defineProps<{
+  conversationSlugId: string;
   opinionSlugId: string;
   description: string;
   numAgree: number;

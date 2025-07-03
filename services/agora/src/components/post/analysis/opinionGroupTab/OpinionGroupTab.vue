@@ -100,6 +100,7 @@
         />
 
         <OpinionGroupComments
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="
             props.itemListPerClusterKey[currentClusterTab] ??
             ([] as OpinionItem[])
@@ -133,6 +134,7 @@ import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 
 const props = defineProps<{
+  conversationSlugId: string;
   itemListPerClusterKey: Partial<Record<PolisKey, OpinionItem[]>>;
   polis: ExtendedConversationPolis;
   totalParticipantCount: number;

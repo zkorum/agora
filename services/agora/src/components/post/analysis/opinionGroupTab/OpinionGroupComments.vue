@@ -32,6 +32,7 @@
       <ConsensusItem
         v-for="comment in itemList"
         :key="comment.opinionSlugId"
+        :conversation-slug-id="props.conversationSlugId"
         :opinion-slug-id="comment.opinionSlugId"
         :description="comment.opinion"
         :num-agree="getActiveVotes(comment).numAgrees"
@@ -51,6 +52,7 @@ import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 
 const props = defineProps<{
+  conversationSlugId: string;
   itemList: OpinionItem[];
   currentClusterTab: PolisKey;
   polis: ExtendedConversationPolis;

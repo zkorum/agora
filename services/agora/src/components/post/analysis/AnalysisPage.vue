@@ -21,6 +21,7 @@
       >
         <ConsensusTab
           v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="consensusItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -32,6 +33,7 @@
       >
         <MajorityTab
           v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="majorityItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -43,6 +45,7 @@
       >
         <DivisiveTab
           v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="divisiveItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -57,6 +60,7 @@
         class="tabComponent"
       >
         <OpinionGroupTab
+          :conversation-slug-id="props.conversationSlugId"
           :item-list-per-cluster-key="representativeItemListPerClusterKey"
           :polis="props.polis"
           :total-participant-count="props.participantCount"
