@@ -28,6 +28,9 @@
           <div v-if="!compactMode" class="commentSectionPadding">
             <AnalysisPage
               v-if="currentTab == 'analysis'"
+              :conversation-slug-id="
+                props.extendedPostData.metadata.conversationSlugId
+              "
               :participant-count="
                 props.extendedPostData.metadata.participantCount
               "

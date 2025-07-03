@@ -3,13 +3,15 @@
     <template #content>
       <div class="descriptionReadMoreContainer">
         <div
-          :ref="(el) => saveElementRef(props.id, el)"
+          :ref="(el) => saveElementRef(props.opinionSlugId, el)"
           class="consensusDescription"
         >
           {{ props.description }}
         </div>
 
-        <div v-if="hasOverflow(props.id)" class="readMore">Read more</div>
+        <div v-if="hasOverflow(props.opinionSlugId)" class="readMore">
+          Read more
+        </div>
       </div>
     </template>
 
@@ -18,7 +20,7 @@
         :vote-count1="props.numAgree"
         :vote-count2="props.numPass"
         :vote-count3="props.numDisagree"
-        :vote-count4="props.numNoVote"
+        :vote-count4="numNoVotes"
         label1="Agree"
         label2="Pass"
         label3="Disagree"
@@ -30,7 +32,8 @@
 
   <OpinionAnalysisDialog
     v-model="showDialog"
-    :opinion-data="opinionAnalysisData"
+    :conversation-slug-id="props.conversationSlugId"
+    :opinion-item="props.opinionItem"
   />
 </template>
 
@@ -38,41 +41,27 @@
 import { ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import { useElementOverflow } from "src/utils/ui/useElementOverflow";
-import { OpinionAnalysisData } from "src/utils/component/analysis/analysisTypes";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
+import { OpinionItem } from "src/shared/types/zod";
 
 const props = defineProps<{
-  id: number;
+  conversationSlugId: string;
+  opinionSlugId: string;
   description: string;
   numAgree: number;
   numPass: number;
   numDisagree: number;
-  numNoVote: number;
+  numParticipants: number;
+  opinionItem: OpinionItem;
 }>();
+
+const numNoVotes =
+  props.numParticipants - props.numAgree - props.numPass - props.numDisagree;
 
 const { saveElementRef, hasOverflow } = useElementOverflow();
 
 const showDialog = ref(false);
-
-const opinionAnalysisData = ref<OpinionAnalysisData>({
-  createdAt: new Date(),
-  username: "SamJ",
-  opinionText:
-    "Not necessarily Europe but the values it represents must live on. That means Human Rights, freedom of speech (not freedom of hate). Europe treats its own people well, not necessarily other countries. For the sake of humanity we must protect Europe with or without US support.",
-  groups: [
-    {
-      name: "Fiscal Reformists",
-      agree: 172,
-      disagree: 1,
-    },
-    {
-      name: "Geopolitical Realists",
-      agree: 1,
-      disagree: 82,
-    },
-  ],
-});
 
 function showOpinionAnalysis() {
   showDialog.value = true;

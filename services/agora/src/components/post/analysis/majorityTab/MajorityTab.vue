@@ -8,7 +8,7 @@
         >
           <template #action-button>
             <div @click="switchTab()">
-              <AnalysisActionButton type="viewMore" />
+              <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
             </div>
           </template>
         </AnalysisTitleHeader>
@@ -17,13 +17,15 @@
       <template #body>
         <ConsensusItem
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
-          :id="consensusItem.id"
-          :key="consensusItem.description"
-          :description="consensusItem.description"
-          :num-agree="consensusItem.totalNumAgree"
-          :num-pass="consensusItem.totalNumPass"
-          :num-disagree="consensusItem.totalNumDisagree"
-          :num-no-vote="consensusItem.totalNumNoVote"
+          :key="consensusItem.opinion"
+          :conversation-slug-id="props.conversationSlugId"
+          :opinion-slug-id="consensusItem.opinionSlugId"
+          :description="consensusItem.opinion"
+          :num-agree="consensusItem.numAgrees"
+          :num-pass="0"
+          :num-disagree="consensusItem.numDisagrees"
+          :num-participants="consensusItem.numParticipants"
+          :opinion-item="consensusItem"
         />
       </template>
     </AnalysisSectionWrapper>
@@ -35,11 +37,12 @@ import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { OpinionItem } from "src/shared/types/zod";
 
-defineProps<{
-  itemList: OpinionConsensusItem[];
+const props = defineProps<{
+  conversationSlugId: string;
+  itemList: OpinionItem[];
   compactMode: boolean;
 }>();
 

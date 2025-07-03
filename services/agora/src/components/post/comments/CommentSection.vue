@@ -98,7 +98,6 @@ const isLoadingCommentItemsDiscover = ref<boolean>(true);
 const isLoadingCommentItemsModerated = ref<boolean>(true);
 const isLoadingCommentItemsHidden = ref<boolean>(true);
 const isLoadingCommentItemsCluster = ref<boolean>(true);
-const isLoadingCommentItemsAll = ref<boolean>(true);
 
 // Computed properties for the unified CommentGroup component
 const isLoading = computed(() => {
@@ -121,7 +120,6 @@ let commentItemsDiscover: OpinionItem[] = [];
 let commentItemsModerated: OpinionItem[] = [];
 let commentItemsHidden: OpinionItem[] = [];
 
-let commentItemsAll: OpinionItem[] = [];
 const clusterCommentItemsMap = ref<Map<PolisKey, OpinionItem[]>>(new Map());
 
 const { setupOpinionlist, detectOpinionFilterBySlugId } =
@@ -157,9 +155,7 @@ function openModerationHistory() {
   sortAlgorithm.value = "moderated";
 }
 
-function updateInfiniteScrollingList(
-  optionValue: CommentFilterOptions | "all"
-) {
+function updateInfiniteScrollingList(optionValue: CommentFilterOptions) {
   switch (optionValue) {
     case "new":
       setupOpinionlist(commentItemsNew, requestedCommentSlugId.value);
@@ -172,9 +168,6 @@ function updateInfiniteScrollingList(
       break;
     case "moderated":
       setupOpinionlist(commentItemsModerated, requestedCommentSlugId.value);
-      break;
-    case "all":
-      setupOpinionlist(commentItemsAll, requestedCommentSlugId.value);
       break;
   }
 }
@@ -198,7 +191,6 @@ async function initializeData() {
   await Promise.all(
     showClusterMap.value
       ? [
-          fetchCommentList("all", undefined),
           getClusters(),
           initializeModeratorMenu(),
           fetchCommentList("new", undefined),
@@ -287,9 +279,6 @@ async function fetchCommentList(
           isLoadingCommentItemsCluster.value = true;
         }
         break;
-      case "all":
-        isLoadingCommentItemsAll.value = true;
-        break;
     }
     const response = await fetchCommentsForPost(
       props.postSlugId,
@@ -310,10 +299,6 @@ async function fetchCommentList(
         case "discover":
           commentItemsDiscover = response;
           isLoadingCommentItemsDiscover.value = false;
-          break;
-        case "all":
-          commentItemsAll = response;
-          isLoadingCommentItemsAll.value = false;
           break;
         case "cluster":
           if (clusterKey != undefined) {

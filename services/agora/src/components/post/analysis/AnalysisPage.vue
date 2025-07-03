@@ -7,7 +7,12 @@
         v-if="currentTab === 'Summary' || currentTab === 'Me'"
         class="tabComponent"
       >
-        <MeTab v-model="currentTab" />
+        <MeTab
+          v-model="currentTab"
+          :cluster-key="userCluster?.key"
+          :ai-label="userCluster?.aiLabel"
+          :ai-summary="userCluster?.aiSummary"
+        />
       </div>
 
       <div
@@ -16,6 +21,7 @@
       >
         <ConsensusTab
           v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="consensusItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -27,6 +33,7 @@
       >
         <MajorityTab
           v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="majorityItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -38,6 +45,7 @@
       >
         <DivisiveTab
           v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
           :item-list="divisiveItemList"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -52,6 +60,8 @@
         class="tabComponent"
       >
         <OpinionGroupTab
+          :conversation-slug-id="props.conversationSlugId"
+          :item-list-per-cluster-key="representativeItemListPerClusterKey"
           :polis="props.polis"
           :total-participant-count="props.participantCount"
         />
@@ -61,284 +71,69 @@
 </template>
 
 <script setup lang="ts">
-import { ExtendedConversationPolis } from "src/shared/types/zod";
+import {
+  ClusterMetadata,
+  ExtendedConversationPolis,
+  OpinionItem,
+  PolisKey,
+} from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import MajorityTab from "./majorityTab/MajorityTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
-import { ref } from "vue";
-import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
+import { ref, onMounted } from "vue";
 import MeTab from "./meTab/MeTab.vue";
+import { useBackendCommentApi } from "src/utils/api/comment";
 
 const props = defineProps<{
   polis: ExtendedConversationPolis;
   participantCount: number;
+  conversationSlugId: string;
 }>();
+
+const {
+  fetchConsensusItemList,
+  fetchMajorityItemList,
+  fetchControversialItemList,
+  fetchAllRepresentativeItemLists,
+} = useBackendCommentApi();
 
 const currentTab = ref<ShortcutItem>("Summary");
 
-const consensusItemList = ref<OpinionConsensusItem[]>([
-  {
-    id: 1,
-    description:
-      "Education is fundamental for personal and societal development",
-    totalNumAgree: 150,
-    totalNumPass: 25,
-    totalNumDisagree: 15,
-    totalNumNoVote: 10,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 85,
-        numPass: 15,
-        numDisagree: 8,
-        numNoVote: 5,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 65,
-        numPass: 10,
-        numDisagree: 7,
-        numNoVote: 5,
-      },
-    ],
-  },
-  {
-    id: 2,
-    description: "Healthcare access should be improved for everyone",
-    totalNumAgree: 120,
-    totalNumPass: 30,
-    totalNumDisagree: 20,
-    totalNumNoVote: 8,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 70,
-        numPass: 18,
-        numDisagree: 12,
-        numNoVote: 4,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 50,
-        numPass: 12,
-        numDisagree: 8,
-        numNoVote: 4,
-      },
-    ],
-  },
-  {
-    id: 3,
-    description: "Technology should be used responsibly",
-    totalNumAgree: 95,
-    totalNumPass: 20,
-    totalNumDisagree: 12,
-    totalNumNoVote: 6,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 95,
-        numPass: 20,
-        numDisagree: 12,
-        numNoVote: 6,
-      },
-    ],
-  },
-  {
-    id: 4,
-    description: "What is happening",
-    totalNumAgree: 95,
-    totalNumPass: 20,
-    totalNumDisagree: 12,
-    totalNumNoVote: 6,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 95,
-        numPass: 20,
-        numDisagree: 12,
-        numNoVote: 6,
-      },
-    ],
-  },
-]);
+const consensusItemList = ref<OpinionItem[]>([]);
+const majorityItemList = ref<OpinionItem[]>([]);
+const divisiveItemList = ref<OpinionItem[]>([]);
+const representativeItemListPerClusterKey = ref<
+  Partial<Record<PolisKey, OpinionItem[]>>
+>({});
 
-const majorityItemList = ref<OpinionConsensusItem[]>([
-  {
-    id: 1,
-    description: "Most people agree that education is important",
-    totalNumAgree: 180,
-    totalNumPass: 15,
-    totalNumDisagree: 10,
-    totalNumNoVote: 4,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 100,
-        numPass: 8,
-        numDisagree: 5,
-        numNoVote: 2,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 80,
-        numPass: 7,
-        numDisagree: 5,
-        numNoVote: 2,
-      },
-    ],
-  },
-  {
-    id: 2,
-    description: "Healthcare should be accessible to everyone",
-    totalNumAgree: 160,
-    totalNumPass: 20,
-    totalNumDisagree: 15,
-    totalNumNoVote: 8,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 90,
-        numPass: 12,
-        numDisagree: 8,
-        numNoVote: 4,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 70,
-        numPass: 8,
-        numDisagree: 7,
-        numNoVote: 4,
-      },
-    ],
-  },
-  {
-    id: 3,
-    description: "Environmental protection is a priority",
-    totalNumAgree: 140,
-    totalNumPass: 25,
-    totalNumDisagree: 20,
-    totalNumNoVote: 10,
-    belongsToClusters: ["1"],
-    clusterVotes: [
-      {
-        clusterKey: "1",
-        numAgree: 140,
-        numPass: 25,
-        numDisagree: 20,
-        numNoVote: 10,
-      },
-    ],
-  },
-  {
-    id: 4,
-    description: "What is happening",
-    totalNumAgree: 95,
-    totalNumPass: 20,
-    totalNumDisagree: 12,
-    totalNumNoVote: 6,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 95,
-        numPass: 20,
-        numDisagree: 12,
-        numNoVote: 6,
-      },
-    ],
-  },
-]);
+async function loadItemLists({
+  conversationSlugId,
+}: {
+  conversationSlugId: string;
+}): Promise<void> {
+  consensusItemList.value = await fetchConsensusItemList({
+    conversationSlugId,
+  });
+  majorityItemList.value = await fetchMajorityItemList({ conversationSlugId });
+  divisiveItemList.value = await fetchControversialItemList({
+    conversationSlugId,
+  });
+  representativeItemListPerClusterKey.value =
+    await fetchAllRepresentativeItemLists({
+      conversationSlugId,
+    });
+}
 
-const divisiveItemList = ref<OpinionConsensusItem[]>([
-  {
-    id: 1,
-    description: "Tax policy should prioritize economic growth",
-    totalNumAgree: 85,
-    totalNumPass: 30,
-    totalNumDisagree: 75,
-    totalNumNoVote: 15,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 85,
-        numPass: 30,
-        numDisagree: 75,
-        numNoVote: 15,
-      },
-    ],
-  },
-  {
-    id: 2,
-    description: "Government regulation of businesses should be increased",
-    totalNumAgree: 70,
-    totalNumPass: 25,
-    totalNumDisagree: 90,
-    totalNumNoVote: 20,
-    belongsToClusters: ["1"],
-    clusterVotes: [
-      {
-        clusterKey: "1",
-        numAgree: 70,
-        numPass: 25,
-        numDisagree: 90,
-        numNoVote: 20,
-      },
-    ],
-  },
-  {
-    id: 3,
-    description: "Social media has a positive impact on society",
-    totalNumAgree: 60,
-    totalNumPass: 40,
-    totalNumDisagree: 80,
-    totalNumNoVote: 25,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 35,
-        numPass: 20,
-        numDisagree: 45,
-        numNoVote: 12,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 25,
-        numPass: 20,
-        numDisagree: 35,
-        numNoVote: 13,
-      },
-    ],
-  },
-  {
-    id: 4,
-    description: "What is happening",
-    totalNumAgree: 95,
-    totalNumPass: 20,
-    totalNumDisagree: 12,
-    totalNumNoVote: 6,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 95,
-        numPass: 20,
-        numDisagree: 12,
-        numNoVote: 6,
-      },
-    ],
-  },
-]);
+const userCluster: ClusterMetadata | undefined = props.polis.clusters.find(
+  (c) => c.isUserInCluster
+);
+
+onMounted(async () => {
+  await loadItemLists({ conversationSlugId: props.conversationSlugId });
+});
 </script>
 
 <style lang="scss" scoped>

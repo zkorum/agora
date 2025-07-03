@@ -73,19 +73,19 @@
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import CommentActionOptions from "src/components/post/comments/group/item/CommentActionOptions.vue";
 import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
 import HtmlContent from "src/components/post/display/HtmlContent.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import { useRouterNavigation } from "src/utils/router/navigation";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
 
-const router = useRouter();
+const { openComment } = useRouterNavigation();
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
@@ -93,16 +93,6 @@ async function onLoad(index: number, done: () => void) {
     canLoadMore.value = !response.reachedEndOfFeed;
   }
   done();
-}
-
-async function openComment(postSlugId: string, commentSlugId: string) {
-  await router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: postSlugId },
-    query: {
-      opinion: commentSlugId,
-    },
-  });
 }
 
 async function commentDeleted() {

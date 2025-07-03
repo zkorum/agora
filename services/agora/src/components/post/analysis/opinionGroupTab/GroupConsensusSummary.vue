@@ -59,6 +59,9 @@ const showInformationDialog = ref(false);
   grid-template-rows: 1fr;
   gap: 0px 1rem;
   grid-template-areas: ". .";
+  margin-top: 12px;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 .iconStyle {
@@ -79,7 +82,7 @@ const showInformationDialog = ref(false);
 .messageBody {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .titleStyle {

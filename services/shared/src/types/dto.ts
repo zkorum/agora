@@ -137,6 +137,34 @@ export class Dto {
         })
         .strict();
     static fetchHiddenOpinionsResponse = z.array(zodOpinionItem);
+    static fetchConsensusResponse = z.array(zodOpinionItem);
+    static fetchConsensusRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static fetchMajorityResponse = z.array(zodOpinionItem);
+    static fetchMajorityRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static fetchControversialResponse = z.array(zodOpinionItem);
+    static fetchControversialRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static fetchRepresentativeResponse = z.record(
+        zodPolisKey,
+        z.array(zodOpinionItem),
+    );
+    static fetchRepresentativeRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+
     static createNewConversationRequest = z
         .object({
             conversationTitle: zodConversationTitle,

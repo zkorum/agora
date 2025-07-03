@@ -30,7 +30,6 @@ import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
-import * as migrationService from "@/service/migration.js";
 import WebSocket from "ws";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import { Relay, useWebSocketImplementation } from "nostr-tools/relay";
@@ -1519,6 +1518,229 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-consensus-by-conversation`,
+        schema: {
+            body: Dto.fetchConsensusRequest,
+            response: {
+                200: Dto.fetchConsensusResponse,
+            },
+        },
+        handler: async (request) => {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
+            const opinionItemsPerSlugId =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "group-aware-consensus",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            return Array.from(opinionItemsPerSlugId.values());
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-majority-by-conversation`,
+        schema: {
+            body: Dto.fetchMajorityRequest,
+            response: {
+                200: Dto.fetchMajorityResponse,
+            },
+        },
+        handler: async (request) => {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
+            const opinionItemsPerSlugId =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "majority",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            return Array.from(opinionItemsPerSlugId.values());
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-controversial-by-conversation`,
+        schema: {
+            body: Dto.fetchControversialRequest,
+            response: {
+                200: Dto.fetchControversialResponse,
+            },
+        },
+        handler: async (request) => {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
+            const opinionItemsPerSlugId =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "controversial",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            return Array.from(opinionItemsPerSlugId.values());
+        },
+    });
+
+    // TODO: this can be out of sync, since the polisKey and associate cluster data are fetched separately
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-representative-by-conversation`,
+        schema: {
+            body: Dto.fetchRepresentativeRequest,
+            response: {
+                200: Dto.fetchRepresentativeResponse,
+            },
+        },
+        handler: async (request) => {
+            let isAuthenticatedRequest = false;
+            const authHeader = request.headers.authorization;
+            if (authHeader !== undefined) {
+                isAuthenticatedRequest = true;
+            } else {
+                isAuthenticatedRequest = false;
+            }
+            let deviceStatusExtended: DeviceLoginStatusExtended | undefined;
+            if (isAuthenticatedRequest) {
+                const { deviceStatus } = await verifyUcanAndDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedDeviceStatus: undefined,
+                    },
+                );
+                deviceStatusExtended = deviceStatus;
+            }
+            const opinionItemsPerSlugIdKey0 =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "cluster",
+                    clusterKey: "0",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            const opinionItemsPerSlugIdKey1 =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "cluster",
+                    clusterKey: "1",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            const opinionItemsPerSlugIdKey2 =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "cluster",
+                    clusterKey: "2",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            const opinionItemsPerSlugIdKey3 =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "cluster",
+                    clusterKey: "3",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            const opinionItemsPerSlugIdKey4 =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "cluster",
+                    clusterKey: "4",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            const opinionItemsPerSlugIdKey5 =
+                await fetchOpinionsByConversationSlugId({
+                    db: db,
+                    postSlugId: request.body.conversationSlugId,
+                    fetchTarget: "cluster",
+                    clusterKey: "5",
+                    personalizationUserId: deviceStatusExtended?.isKnown
+                        ? deviceStatusExtended.userId
+                        : undefined,
+                });
+            return {
+                "0": Array.from(opinionItemsPerSlugIdKey0.values()),
+                "1": Array.from(opinionItemsPerSlugIdKey1.values()),
+                "2": Array.from(opinionItemsPerSlugIdKey2.values()),
+                "3": Array.from(opinionItemsPerSlugIdKey3.values()),
+                "4": Array.from(opinionItemsPerSlugIdKey4.values()),
+                "5": Array.from(opinionItemsPerSlugIdKey5.values()),
+            };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/conversation/delete`,
         schema: {
             body: Dto.deleteConversationRequest,
@@ -2274,7 +2496,6 @@ if (
         polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
     });
 } else {
-    await migrationService.fixEmptyPolisContentId({ db });
     server.ready((e) => {
         if (e) {
             log.error(e);

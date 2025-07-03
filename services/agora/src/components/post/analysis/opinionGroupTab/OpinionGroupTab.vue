@@ -100,6 +100,11 @@
         />
 
         <OpinionGroupComments
+          :conversation-slug-id="props.conversationSlugId"
+          :item-list="
+            props.itemListPerClusterKey[currentClusterTab] ??
+            ([] as OpinionItem[])
+          "
           :current-cluster-tab="currentClusterTab"
           :polis="props.polis"
           @update:current-cluster-tab="currentClusterTab = $event"
@@ -110,7 +115,11 @@
 </template>
 
 <script setup lang="ts">
-import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
+import {
+  ExtendedConversationPolis,
+  OpinionItem,
+  PolisKey,
+} from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { formatPercentage, calculatePercentage } from "src/utils/common";
 import { computed, ref, watch } from "vue";
@@ -125,6 +134,8 @@ import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 
 const props = defineProps<{
+  conversationSlugId: string;
+  itemListPerClusterKey: Partial<Record<PolisKey, OpinionItem[]>>;
   polis: ExtendedConversationPolis;
   totalParticipantCount: number;
 }>();
@@ -317,11 +328,8 @@ watch(currentClusterTab, () => {
 });
 
 const currentAiSummary = computed(() => {
-  if (
-    typeof currentClusterTab.value === "string" &&
-    parseInt(currentClusterTab.value) in props.polis.clusters
-  ) {
-    return props.polis.clusters[parseInt(currentClusterTab.value)].aiSummary;
+  if (currentClusterTab.value in props.polis.clusters) {
+    return props.polis.clusters[currentClusterTab.value].aiSummary;
   }
   return undefined;
 });

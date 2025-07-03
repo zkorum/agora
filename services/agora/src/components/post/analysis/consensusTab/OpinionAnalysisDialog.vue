@@ -14,14 +14,14 @@
 
         <UserIdentityCard
           :author-verified="false"
-          :created-at="opinionData.createdAt"
-          :user-identity="opinionData.username"
+          :created-at="opinionItem.createdAt"
+          :user-identity="opinionItem.username"
           :show-verified-text="false"
           :organization-image-url="''"
         />
 
         <div class="opinion-text">
-          {{ opinionData.opinionText }}
+          {{ opinionItem.opinion }}
         </div>
 
         <div class="opinion-stats">
@@ -37,33 +37,50 @@
               <tr class="total-row">
                 <td class="group-name">Total</td>
                 <td class="agree-cell">
-                  {{ totalAgree }} •
-                  {{ calculatePercentage(totalAgree, totalVotes) }}%
+                  {{ props.opinionItem.numAgrees }} •
+                  {{
+                    formatPercentage(
+                      calculatePercentage(
+                        props.opinionItem.numAgrees,
+                        props.opinionItem.numParticipants
+                      )
+                    )
+                  }}
                 </td>
                 <td class="disagree-cell">
-                  {{ totalDisagree }} •
-                  {{ calculatePercentage(totalDisagree, totalVotes) }}%
+                  {{ props.opinionItem.numDisagrees }} •
+                  {{
+                    formatPercentage(
+                      calculatePercentage(
+                        props.opinionItem.numDisagrees,
+                        props.opinionItem.numParticipants
+                      )
+                    )
+                  }}
                 </td>
               </tr>
-              <tr v-for="(group, index) in opinionData.groups" :key="index">
-                <td class="group-name">{{ group.name }}</td>
+              <tr
+                v-for="(group, index) in opinionItem.clustersStats"
+                :key="index"
+              >
+                <td class="group-name">
+                  {{ formatClusterLabel(group.key, true, group.aiLabel) }}
+                </td>
                 <td class="agree-cell">
-                  {{ group.agree }} •
+                  {{ group.numAgrees }} •
                   {{
-                    calculatePercentage(
-                      group.agree,
-                      group.agree + group.disagree
+                    formatPercentage(
+                      calculatePercentage(group.numAgrees, group.numUsers)
                     )
-                  }}%
+                  }}
                 </td>
                 <td class="disagree-cell">
-                  {{ group.disagree }} •
+                  {{ group.numDisagrees }} •
                   {{
-                    calculatePercentage(
-                      group.disagree,
-                      group.agree + group.disagree
+                    formatPercentage(
+                      calculatePercentage(group.numDisagrees, group.numUsers)
                     )
-                  }}%
+                  }}
                 </td>
               </tr>
             </tbody>
@@ -71,7 +88,7 @@
         </div>
 
         <div class="view-original" @click="viewOriginalComment">
-          View original comment
+          View original opinion
         </div>
       </div>
     </q-dialog>
@@ -79,39 +96,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { OpinionAnalysisData } from "src/utils/component/analysis/analysisTypes";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import { OpinionItem } from "src/shared/types/zod";
+import { formatClusterLabel } from "src/utils/component/opinion";
+import { calculatePercentage, formatPercentage } from "src/utils/common";
+import { useRouterNavigation } from "src/utils/router/navigation";
 
 const props = defineProps<{
-  opinionData: OpinionAnalysisData;
+  conversationSlugId: string;
+  opinionItem: OpinionItem;
 }>();
+
+const { forceOpenComment } = useRouterNavigation();
 
 const showDialog = defineModel<boolean>({ required: true });
 
-const totalAgree = computed(() => {
-  return props.opinionData.groups.reduce((sum, group) => sum + group.agree, 0);
-});
-
-const totalDisagree = computed(() => {
-  return props.opinionData.groups.reduce(
-    (sum, group) => sum + group.disagree,
-    0
+async function viewOriginalComment() {
+  await forceOpenComment(
+    props.conversationSlugId,
+    props.opinionItem.opinionSlugId
   );
-});
-
-const totalVotes = computed(() => {
-  return totalAgree.value + totalDisagree.value;
-});
-
-function calculatePercentage(value: number, total: number): number {
-  if (total === 0) return 0;
-  return Math.round((value / total) * 100);
-}
-
-function viewOriginalComment() {
-  console.log("View original comment button clicked");
+  showDialog.value = false;
   // Add the routing later
 }
 </script>
