@@ -6,6 +6,7 @@ import {
   type ApiV1OpinionFetchByConversationPostRequest,
   ApiV1OpinionFetchBySlugIdListPostRequest,
   type ApiV1OpinionFetchHiddenByConversationPostRequest,
+  ApiV1OpinionFetchRepresentativeByConversationPost200Response,
   type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
@@ -259,11 +260,174 @@ export function useBackendCommentApi() {
     return opnionItemList;
   }
 
+  async function fetchConsensusItemList(params: {
+    conversationSlugId: string;
+  }): Promise<OpinionItem[]> {
+    let data: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>;
+    if (isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchConsensusByConversationPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchConsensusByConversationPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      data = response.data;
+    } else {
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchConsensusByConversationPost(params, {});
+      data = response.data;
+    }
+    const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
+      return {
+        ...val,
+        createdAt: new Date(val.createdAt),
+        updatedAt: new Date(val.updatedAt),
+      };
+    });
+    return opinionAnalysisItem;
+  }
+
+  async function fetchMajorityItemList(params: {
+    conversationSlugId: string;
+  }): Promise<OpinionItem[]> {
+    let data: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>;
+    if (isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchMajorityByConversationPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchMajorityByConversationPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      data = response.data;
+    } else {
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchMajorityByConversationPost(params, {});
+      data = response.data;
+    }
+    const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
+      return {
+        ...val,
+        createdAt: new Date(val.createdAt),
+        updatedAt: new Date(val.updatedAt),
+      };
+    });
+    return opinionAnalysisItem;
+  }
+
+  async function fetchControversialItemList(params: {
+    conversationSlugId: string;
+  }): Promise<OpinionItem[]> {
+    let data: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>;
+    if (isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchControversialByConversationPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchControversialByConversationPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      data = response.data;
+    } else {
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchControversialByConversationPost(params, {});
+      data = response.data;
+    }
+    const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
+      return {
+        ...val,
+        createdAt: new Date(val.createdAt),
+        updatedAt: new Date(val.updatedAt),
+      };
+    });
+    return opinionAnalysisItem;
+  }
+
+  async function fetchAllRepresentativeItemLists(params: {
+    conversationSlugId: string;
+  }): Promise<Partial<Record<PolisKey, OpinionItem[]>>> {
+    let data: ApiV1OpinionFetchRepresentativeByConversationPost200Response;
+    if (isGuestOrLoggedIn.value) {
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchRepresentativeByConversationPost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchRepresentativeByConversationPost(params, {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      data = response.data;
+    } else {
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchRepresentativeByConversationPost(params, {});
+      data = response.data;
+    }
+    const opinionAnalysisItems: Partial<Record<PolisKey, OpinionItem[]>> = {};
+
+    Object.entries(data).forEach(
+      ([key, val]: [
+        PolisKey,
+        Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>,
+      ]) => {
+        opinionAnalysisItems[key] = val.map((item) => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+        }));
+      }
+    );
+    return opinionAnalysisItems;
+  }
+
   return {
     createNewComment,
     fetchCommentsForPost,
     fetchHiddenCommentsForPost,
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,
+    fetchConsensusItemList,
+    fetchMajorityItemList,
+    fetchControversialItemList,
+    fetchAllRepresentativeItemLists,
   };
 }

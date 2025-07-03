@@ -128,7 +128,9 @@ export const zodCommentFeedFilter = z.enum([
     "moderated",
     "new",
     "discover",
-    // analysis:
+    "group-aware-consensus",
+    "majority",
+    "controversial",
     // TODO: move this elsewhere
     "all",
     "cluster",

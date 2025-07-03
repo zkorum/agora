@@ -979,6 +979,33 @@ export async function fetchOpinionsByConversationSlugId({
             }
             break;
         }
+        case "group-aware-consensus":
+            opinionItemMap = await fetchOpinions({
+                db,
+                postSlugId,
+                personalizationUserId,
+                filterTarget: "group-aware-consensus",
+                limit: limit,
+            });
+            break;
+        case "majority":
+            opinionItemMap = await fetchOpinions({
+                db,
+                postSlugId,
+                personalizationUserId,
+                filterTarget: "majority",
+                limit: limit,
+            });
+            break;
+        case "controversial":
+            opinionItemMap = await fetchOpinions({
+                db,
+                postSlugId,
+                personalizationUserId,
+                filterTarget: "controversial",
+                limit: limit,
+            });
+            break;
         case "all": {
             // TODO: delete "all" when analysis v2 comes in
             const smallerLimit = 1000;

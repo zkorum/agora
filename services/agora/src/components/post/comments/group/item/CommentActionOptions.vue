@@ -21,7 +21,7 @@
 
   <q-dialog v-model="showReportDialog">
     <ReportContentDialog
-      :slug-id="props.commentItem.opinionSlugId"
+      :opinion-slug-id="props.commentItem.opinionSlugId"
       report-type="opinion"
       @close="showReportDialog = false"
     />

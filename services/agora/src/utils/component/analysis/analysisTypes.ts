@@ -10,17 +10,6 @@ export interface OpinionClusterVote {
   numNoVote: number;
 }
 
-export interface OpinionConsensusItem {
-  id: number;
-  description: string;
-  totalNumAgree: number;
-  totalNumPass: number;
-  totalNumDisagree: number;
-  totalNumNoVote: number;
-  clusterVotes: OpinionClusterVote[];
-  belongsToClusters: string[];
-}
-
 export interface OpinionAnalysisData {
   createdAt: Date;
   username: string;

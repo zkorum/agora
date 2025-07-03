@@ -30,7 +30,7 @@
 
   <q-dialog v-model="showReportDialog">
     <ReportContentDialog
-      :slug-id="props.postSlugId"
+      :opinion-slug-id="props.postSlugId"
       report-type="conversation"
       @close="showReportDialog = false"
     />

@@ -2,7 +2,7 @@
   <div class="opinion-group-comments">
     <div class="header-flex-style">
       <h2 class="title">
-        Opinions <span class="count">{{ filteredComments.length }}</span>
+        Opinions <span class="count">{{ itemList.length }}</span>
       </h2>
 
       <div class="group-selector">
@@ -24,20 +24,21 @@
       </div>
     </div>
 
-    <div v-if="filteredComments.length === 0" class="no-comments">
-      No comments available for this group.
+    <div v-if="itemList.length === 0" class="no-comments">
+      No opinions available for this group.
     </div>
 
     <div v-else>
       <ConsensusItem
-        v-for="comment in filteredComments"
-        :id="comment.id"
-        :key="comment.id"
-        :description="comment.description"
-        :num-agree="getActiveVotes(comment).numAgree"
-        :num-pass="getActiveVotes(comment).numPass"
-        :num-disagree="getActiveVotes(comment).numDisagree"
-        :num-no-vote="getActiveVotes(comment).numNoVote"
+        v-for="comment in itemList"
+        :key="comment.opinionSlugId"
+        :opinion-slug-id="comment.opinionSlugId"
+        :description="comment.opinion"
+        :num-agree="getActiveVotes(comment).numAgrees"
+        :num-pass="0"
+        :num-disagree="getActiveVotes(comment).numDisagrees"
+        :num-participants="getActiveVotes(comment).numUsers"
+        :opinion-item="comment"
       />
     </div>
   </div>
@@ -45,11 +46,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { OpinionItem } from "src/shared/types/zod";
 import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
-import { OpinionConsensusItem } from "src/utils/component/analysis/analysisTypes";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 
 const props = defineProps<{
+  itemList: OpinionItem[];
   currentClusterTab: PolisKey;
   polis: ExtendedConversationPolis;
 }>();
@@ -63,169 +65,35 @@ watch(
   }
 );
 
-const mockComments = ref<OpinionConsensusItem[]>([
-  {
-    id: 1,
-    description: "Time to tax the super rich.",
-    totalNumAgree: 40,
-    totalNumPass: 23,
-    totalNumDisagree: 22,
-    totalNumNoVote: 10,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 15,
-        numPass: 15,
-        numDisagree: 10,
-        numNoVote: 4,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 25,
-        numPass: 8,
-        numDisagree: 12,
-        numNoVote: 6,
-      },
-    ],
-  },
-  {
-    id: 2,
-    description:
-      "In response to the comment that we should tax the super rich, I think we should specify that we should tax wealth over income. This would be more effective at addressing inequality and ensuring that those with significant assets contribute their fair share to society.",
-    totalNumAgree: 85,
-    totalNumPass: 45,
-    totalNumDisagree: 15,
-    totalNumNoVote: 30,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 75,
-        numPass: 35,
-        numDisagree: 10,
-        numNoVote: 24,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 10,
-        numPass: 10,
-        numDisagree: 5,
-        numNoVote: 6,
-      },
-    ],
-  },
-  {
-    id: 3,
-    description:
-      "Europe should be prepared for a future without US support, being self-sufficient is a good thing. That said, Europe also needs to increase defense spending and coordinate better between member states to ensure collective security in an increasingly unstable world.",
-    totalNumAgree: 55,
-    totalNumPass: 35,
-    totalNumDisagree: 124,
-    totalNumNoVote: 55,
-    belongsToClusters: ["1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 20,
-        numPass: 10,
-        numDisagree: 20,
-        numNoVote: 10,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 35,
-        numPass: 25,
-        numDisagree: 104,
-        numNoVote: 45,
-      },
-    ],
-  },
-  {
-    id: 4,
-    description: "Time to tax the super rich 1.",
-    totalNumAgree: 245,
-    totalNumPass: 125,
-    totalNumDisagree: 30,
-    totalNumNoVote: 64,
-    belongsToClusters: ["0"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 225,
-        numPass: 115,
-        numDisagree: 20,
-        numNoVote: 54,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 20,
-        numPass: 10,
-        numDisagree: 10,
-        numNoVote: 10,
-      },
-    ],
-  },
-  {
-    id: 5,
-    description: "Time to tax the super rich 2.",
-    totalNumAgree: 85,
-    totalNumPass: 25,
-    totalNumDisagree: 15,
-    totalNumNoVote: 10,
-    belongsToClusters: ["0", "1"],
-    clusterVotes: [
-      {
-        clusterKey: "0",
-        numAgree: 75,
-        numPass: 15,
-        numDisagree: 10,
-        numNoVote: 4,
-      },
-      {
-        clusterKey: "1",
-        numAgree: 10,
-        numPass: 10,
-        numDisagree: 5,
-        numNoVote: 6,
-      },
-    ],
-  },
-]);
-
-const filteredComments = computed(() => {
-  return mockComments.value.filter((comment) =>
-    comment.belongsToClusters.includes(props.currentClusterTab)
+function getActiveVotes(comment: OpinionItem) {
+  const currentClusterStats = comment.clustersStats.find(
+    (cv) => cv.key === props.currentClusterTab
   );
-});
-
-const getActiveVotes = (comment: OpinionConsensusItem) => {
   if (displayMode.value === "current") {
-    const currentClusterVotes = comment.clusterVotes.find(
-      (cv) => cv.clusterKey === props.currentClusterTab
-    );
     return (
-      currentClusterVotes || {
-        numAgree: 0,
-        numPass: 0,
-        numDisagree: 0,
-        numNoVote: 0,
+      currentClusterStats || {
+        numAgrees: 0,
+        numDisagrees: 0,
+        // numPass: 0,
+        numUsers: 0,
       }
     );
   } else {
-    return comment.clusterVotes
-      .filter((cv) => cv.clusterKey !== props.currentClusterTab)
-      .reduce(
-        (acc, cv) => ({
-          numAgree: acc.numAgree + cv.numAgree,
-          numPass: acc.numPass + cv.numPass,
-          numDisagree: acc.numDisagree + cv.numDisagree,
-          numNoVote: acc.numNoVote + cv.numNoVote,
-        }),
-        { numAgree: 0, numPass: 0, numDisagree: 0, numNoVote: 0 }
-      );
+    return {
+      numAgrees:
+        comment.numAgrees -
+        (currentClusterStats !== undefined ? currentClusterStats.numAgrees : 0),
+      numDisagrees:
+        comment.numDisagrees -
+        (currentClusterStats !== undefined
+          ? currentClusterStats.numDisagrees
+          : 0),
+      numUsers:
+        comment.numParticipants -
+        (currentClusterStats !== undefined ? currentClusterStats.numUsers : 0),
+    };
   }
-};
+}
 
 const currentModeName = computed(() => {
   return displayMode.value === "current" ? "This group" : "All other groups";

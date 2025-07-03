@@ -89,7 +89,7 @@ import { useBackendReportApi } from "src/utils/api/report";
 
 const props = defineProps<{
   reportType: "conversation" | "opinion";
-  slugId: string;
+  opinionSlugId: string;
 }>();
 
 const emit = defineEmits(["close"]);
@@ -111,7 +111,7 @@ async function clickedSubmitButton() {
   if (selectedReason.value) {
     if (props.reportType == "conversation") {
       const isSuccessful = await createUserReportByPostSlugId(
-        props.slugId,
+        props.opinionSlugId,
         selectedReason.value,
         explanation.value
       );
@@ -121,7 +121,7 @@ async function clickedSubmitButton() {
       }
     } else {
       const isSuccessful = await createUserReportByCommentSlugId(
-        props.slugId,
+        props.opinionSlugId,
         selectedReason.value,
         explanation.value
       );
