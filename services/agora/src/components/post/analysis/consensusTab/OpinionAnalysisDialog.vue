@@ -88,7 +88,7 @@
         </div>
 
         <div class="view-original" @click="viewOriginalComment">
-          View original comment
+          View original opinion
         </div>
       </div>
     </q-dialog>
