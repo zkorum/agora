@@ -74,3 +74,16 @@ export function calculatePercentage(numerator: number, denominator: number) {
   }
   return percentage;
 }
+
+// console.log(formatter.format(10000)); // "10K"
+// console.log(formatter.format(1000000)); // "1M"
+// console.log(formatter.format(1500000)); // "1.5M"
+const numberFormatter = new Intl.NumberFormat("en", {
+  notation: "compact",
+  compactDisplay: "short",
+});
+
+// for amount of likes, participants, views, etc
+export function formatAmount(amount: number) {
+  return numberFormatter.format(amount);
+}

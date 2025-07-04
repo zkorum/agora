@@ -35,7 +35,11 @@
             </thead>
             <tbody>
               <tr class="total-row">
-                <td class="group-name">Total</td>
+                <td class="group-name">
+                  {{
+                    `Total (${formatAmount(props.opinionItem.numParticipants)})`
+                  }}
+                </td>
                 <td class="agree-cell">
                   {{ props.opinionItem.numAgrees }} •
                   {{
@@ -64,7 +68,9 @@
                 :key="index"
               >
                 <td class="group-name">
-                  {{ formatClusterLabel(group.key, true, group.aiLabel) }}
+                  {{
+                    `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
+                  }}
                 </td>
                 <td class="agree-cell">
                   {{ group.numAgrees }} •
@@ -100,7 +106,11 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import { OpinionItem } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { calculatePercentage, formatPercentage } from "src/utils/common";
+import {
+  calculatePercentage,
+  formatAmount,
+  formatPercentage,
+} from "src/utils/common";
 import { useRouterNavigation } from "src/utils/router/navigation";
 
 const props = defineProps<{
