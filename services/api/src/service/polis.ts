@@ -530,9 +530,6 @@ export async function delayedPolisGetAndUpdateMath({
             const sqlChunksForNumDisagrees: SQL[] = [];
             sqlChunksForNumAgrees.push(sql`(CASE`);
             sqlChunksForNumDisagrees.push(sql`(CASE`);
-            const opinionSlugIds = Object.keys(groupVotes).map(
-                (tid) => opinionSlugIdByTid[tid],
-            );
             for (const [tid, numVotesByCategory] of Object.entries(
                 groupVotes,
             )) {
@@ -555,12 +552,8 @@ export async function delayedPolisGetAndUpdateMath({
             }
             switch (polisClusterKeyStr) {
                 case "0": {
-                    sqlChunksForNumAgrees.push(
-                        sql`ELSE ${opinionTable.polisCluster0NumAgrees}`,
-                    );
-                    sqlChunksForNumDisagrees.push(
-                        sql`ELSE ${opinionTable.polisCluster0NumDisagrees}`,
-                    );
+                    sqlChunksForNumAgrees.push(sql`ELSE ${0}`);
+                    sqlChunksForNumDisagrees.push(sql`ELSE ${0}`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
@@ -579,16 +572,14 @@ export async function delayedPolisGetAndUpdateMath({
                             polisCluster0NumDisagrees: finalSqlNumDisagrees,
                             updatedAt: nowZeroMs(),
                         })
-                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                        .where(eq(opinionTable.conversationId, conversationId));
+                    // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                    // .where(inArray(opinionTable.slugId, opinionSlugIds));
                     break;
                 }
                 case "1": {
-                    sqlChunksForNumAgrees.push(
-                        sql`ELSE ${opinionTable.polisCluster1NumAgrees}`,
-                    );
-                    sqlChunksForNumDisagrees.push(
-                        sql`ELSE ${opinionTable.polisCluster1NumDisagrees}`,
-                    );
+                    sqlChunksForNumAgrees.push(sql`ELSE ${0}`);
+                    sqlChunksForNumDisagrees.push(sql`ELSE ${0}`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
@@ -607,16 +598,14 @@ export async function delayedPolisGetAndUpdateMath({
                             polisCluster1NumDisagrees: finalSqlNumDisagrees,
                             updatedAt: nowZeroMs(),
                         })
-                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                        .where(eq(opinionTable.conversationId, conversationId));
+                    // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                    // .where(inArray(opinionTable.slugId, opinionSlugIds));
                     break;
                 }
                 case "2": {
-                    sqlChunksForNumAgrees.push(
-                        sql`ELSE ${opinionTable.polisCluster2NumAgrees}`,
-                    );
-                    sqlChunksForNumDisagrees.push(
-                        sql`ELSE ${opinionTable.polisCluster2NumDisagrees}`,
-                    );
+                    sqlChunksForNumAgrees.push(sql`ELSE ${0}`);
+                    sqlChunksForNumDisagrees.push(sql`ELSE ${0}`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
@@ -635,16 +624,14 @@ export async function delayedPolisGetAndUpdateMath({
                             polisCluster2NumDisagrees: finalSqlNumDisagrees,
                             updatedAt: nowZeroMs(),
                         })
-                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                        .where(eq(opinionTable.conversationId, conversationId));
+                    // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                    // .where(inArray(opinionTable.slugId, opinionSlugIds));
                     break;
                 }
                 case "3": {
-                    sqlChunksForNumAgrees.push(
-                        sql`ELSE ${opinionTable.polisCluster3NumAgrees}`,
-                    );
-                    sqlChunksForNumDisagrees.push(
-                        sql`ELSE ${opinionTable.polisCluster3NumDisagrees}`,
-                    );
+                    sqlChunksForNumAgrees.push(sql`ELSE ${0}`);
+                    sqlChunksForNumDisagrees.push(sql`ELSE ${0}`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
@@ -663,16 +650,14 @@ export async function delayedPolisGetAndUpdateMath({
                             polisCluster3NumDisagrees: finalSqlNumDisagrees,
                             updatedAt: nowZeroMs(),
                         })
-                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                        .where(eq(opinionTable.conversationId, conversationId));
+                    // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                    // .where(inArray(opinionTable.slugId, opinionSlugIds));
                     break;
                 }
                 case "4": {
-                    sqlChunksForNumAgrees.push(
-                        sql`ELSE ${opinionTable.polisCluster4NumAgrees}`,
-                    );
-                    sqlChunksForNumDisagrees.push(
-                        sql`ELSE ${opinionTable.polisCluster4NumDisagrees}`,
-                    );
+                    sqlChunksForNumAgrees.push(sql`ELSE ${0}`);
+                    sqlChunksForNumDisagrees.push(sql`ELSE ${0}`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
@@ -691,16 +676,14 @@ export async function delayedPolisGetAndUpdateMath({
                             polisCluster4NumDisagrees: finalSqlNumDisagrees,
                             updatedAt: nowZeroMs(),
                         })
-                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                        .where(eq(opinionTable.conversationId, conversationId));
+                    // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                    // .where(inArray(opinionTable.slugId, opinionSlugIds));
                     break;
                 }
                 case "5": {
-                    sqlChunksForNumAgrees.push(
-                        sql`ELSE ${opinionTable.polisCluster5NumAgrees}`,
-                    );
-                    sqlChunksForNumDisagrees.push(
-                        sql`ELSE ${opinionTable.polisCluster5NumDisagrees}`,
-                    );
+                    sqlChunksForNumAgrees.push(sql`ELSE ${0}`);
+                    sqlChunksForNumDisagrees.push(sql`ELSE ${0}`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
@@ -719,13 +702,14 @@ export async function delayedPolisGetAndUpdateMath({
                             polisCluster5NumDisagrees: finalSqlNumDisagrees,
                             updatedAt: nowZeroMs(),
                         })
-                        .where(inArray(opinionTable.slugId, opinionSlugIds));
+                        .where(eq(opinionTable.conversationId, conversationId));
+                    // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                    // .where(inArray(opinionTable.slugId, opinionSlugIds));
                     break;
                 }
             }
         }
         // remove outdated polisClusterCache from opinionTable
-        const opinionSlugIds = Object.values(opinionSlugIdByTid);
         switch (minNumberOfClusters) {
             case 0:
                 await tx
@@ -751,7 +735,9 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5NumDisagrees: null,
                         updatedAt: nowZeroMs(),
                     })
-                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    .where(eq(opinionTable.conversationId, conversationId));
+                // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                // .where(inArray(opinionTable.slugId, opinionSlugIds));
                 break;
             case 1:
                 await tx
@@ -774,7 +760,9 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5NumDisagrees: null,
                         updatedAt: nowZeroMs(),
                     })
-                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    .where(eq(opinionTable.conversationId, conversationId));
+                // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                // .where(inArray(opinionTable.slugId, opinionSlugIds));
                 break;
             case 2:
                 await tx
@@ -794,7 +782,9 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5NumDisagrees: null,
                         updatedAt: nowZeroMs(),
                     })
-                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    .where(eq(opinionTable.conversationId, conversationId));
+                // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                // .where(inArray(opinionTable.slugId, opinionSlugIds));
                 break;
             case 3:
                 await tx
@@ -811,7 +801,9 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5NumDisagrees: null,
                         updatedAt: nowZeroMs(),
                     })
-                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    .where(eq(opinionTable.conversationId, conversationId));
+                // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                // .where(inArray(opinionTable.slugId, opinionSlugIds));
                 break;
             case 4:
                 await tx
@@ -825,7 +817,9 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5NumDisagrees: null,
                         updatedAt: nowZeroMs(),
                     })
-                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    .where(eq(opinionTable.conversationId, conversationId));
+                // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                // .where(inArray(opinionTable.slugId, opinionSlugIds));
                 break;
             case 5:
                 await tx
@@ -836,7 +830,9 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5NumDisagrees: null,
                         updatedAt: nowZeroMs(),
                     })
-                    .where(inArray(opinionTable.slugId, opinionSlugIds));
+                    .where(eq(opinionTable.conversationId, conversationId));
+                // commenting out because we want every opinions to be shown the existing clusters, to simplify data presentation
+                // .where(inArray(opinionTable.slugId, opinionSlugIds));
                 break;
             case 6:
                 log.info("No cluster cache to empty");

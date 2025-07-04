@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import { useElementOverflow } from "src/utils/ui/useElementOverflow";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
@@ -56,8 +56,10 @@ const props = defineProps<{
   opinionItem: OpinionItem;
 }>();
 
-const numNoVotes =
-  props.numParticipants - props.numAgree - props.numPass - props.numDisagree;
+const numNoVotes = computed(
+  () =>
+    props.numParticipants - props.numAgree - props.numPass - props.numDisagree
+);
 
 const { saveElementRef, hasOverflow } = useElementOverflow();
 
