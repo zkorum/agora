@@ -3,23 +3,31 @@
     <div class="vote-bar-container">
       <div
         class="vote-bar vote-bar-1"
-        :style="{ width: `${getPercentage(props.voteCount1)}%` }"
-        :title="`${props.voteCount1} votes (${getPercentage(props.voteCount1).toFixed(1)}%)`"
+        :style="{
+          width: `${formatPercentage(calculatePercentage(props.voteCount1, totalVotes))}`,
+        }"
+        :title="`${props.voteCount1} votes (${formatPercentage(calculatePercentage(props.voteCount1, totalVotes))})`"
       ></div>
       <div
         class="vote-bar vote-bar-2"
-        :style="{ width: `${getPercentage(props.voteCount2)}%` }"
-        :title="`${props.voteCount2} votes (${getPercentage(props.voteCount2).toFixed(1)}%)`"
+        :style="{
+          width: `${formatPercentage(calculatePercentage(props.voteCount2, totalVotes))}`,
+        }"
+        :title="`${props.voteCount2} votes (${formatPercentage(calculatePercentage(props.voteCount2, totalVotes))})`"
       ></div>
       <div
         class="vote-bar vote-bar-3"
-        :style="{ width: `${getPercentage(props.voteCount3)}%` }"
-        :title="`${props.voteCount3} votes (${getPercentage(props.voteCount3).toFixed(1)}%)`"
+        :style="{
+          width: `${formatPercentage(calculatePercentage(props.voteCount3, totalVotes))}`,
+        }"
+        :title="`${props.voteCount3} votes (${formatPercentage(calculatePercentage(props.voteCount3, totalVotes))})`"
       ></div>
       <div
         class="vote-bar vote-bar-4"
-        :style="{ width: `${getPercentage(props.voteCount4)}%` }"
-        :title="`${props.voteCount4} votes (${getPercentage(props.voteCount4).toFixed(1)}%)`"
+        :style="{
+          width: `${formatPercentage(calculatePercentage(props.voteCount4, totalVotes))}`,
+        }"
+        :title="`${props.voteCount4} votes (${formatPercentage(calculatePercentage(props.voteCount4, totalVotes))})`"
       ></div>
     </div>
 
@@ -37,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import { calculatePercentage, formatPercentage } from "src/utils/common";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -65,11 +74,6 @@ const legendItems = computed(() => {
     { label: props.label4 || "Group 4", count: props.voteCount4 },
   ];
 });
-
-function getPercentage(count: number): number {
-  if (totalVotes.value === 0) return 0;
-  return (count / totalVotes.value) * 100;
-}
 </script>
 
 <style lang="scss" scoped>
