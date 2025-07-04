@@ -98,7 +98,7 @@ function getActiveVotes(comment: OpinionItem) {
 }
 
 const currentModeName = computed(() => {
-  return displayMode.value === "current" ? "This group" : "All other groups";
+  return displayMode.value === "current" ? "This group" : "All others";
 });
 
 const toggleMode = () => {
