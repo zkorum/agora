@@ -67,7 +67,7 @@
                 placeholder="Input text"
                 :show-toolbar="true"
                 min-height="1rem"
-                :add-background-color="false"
+                :add-background-color="true"
                 :class="{
                   'textarea-active-border': currentActiveOpinionIndex === index,
                   'textarea-error-border': opinionErrors[index],
@@ -421,7 +421,7 @@ async function onSubmit() {
   border-style: solid;
   border-color: #e2e1e7;
   padding: 1rem;
-  transition: background-color 0.3s ease;
+  background-color: white;
 
   &:hover {
     border-color: #6b4eff;
