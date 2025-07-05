@@ -29,8 +29,7 @@ import type {
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
-import { toUnionUndefined } from "@/shared/shared.js";
-import { processHtmlBody } from "@/utils/htmlSanitization.js";
+import { processHtmlBody, toUnionUndefined } from "@/shared/shared.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
@@ -614,6 +613,7 @@ export async function fetchOpinions({
             numAgrees: opinionTable.numAgrees,
             numDisagrees: opinionTable.numDisagrees,
             username: userTable.username,
+            isSeed: opinionTable.isSeed,
             moderationAction: opinionModerationTable.moderationAction,
             moderationExplanation: opinionModerationTable.moderationExplanation,
             moderationReason: opinionModerationTable.moderationReason,
@@ -873,6 +873,7 @@ export async function fetchOpinions({
             username: opinionResponse.username,
             moderation: moderationProperties,
             clustersStats: clustersStats,
+            isSeed: opinionResponse.isSeed,
         };
         opinionItemMap.set(opinionResponse.commentSlugId, item);
     });
@@ -1022,6 +1023,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
                 username: userTable.username,
+                isSeed: opinionTable.isSeed,
                 moderationAction: opinionModerationTable.moderationAction,
                 moderationExplanation:
                     opinionModerationTable.moderationExplanation,
@@ -1066,6 +1068,7 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 numAgrees: commentResponse.numAgrees,
                 username: commentResponse.username,
                 moderation: moderationProperties,
+                isSeed: commentResponse.isSeed,
                 clustersStats: [], //TODO: change this!
             };
             opinionItemList.push(item);
@@ -1116,6 +1119,7 @@ interface PostNewOpinionProps {
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
     now: Date;
+    isSeed: boolean;
 }
 
 interface ImportNewOpinionProps {
@@ -1155,6 +1159,7 @@ export async function importNewOpinion({
                 authorId: userId,
                 currentContentId: null,
                 conversationId: conversationId,
+                isSeed: false,
             })
             .returning({ opinionId: opinionTable.id });
 
@@ -1224,6 +1229,7 @@ export async function postNewOpinion({
     awsAiLabelSummaryTopP,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
+    isSeed,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     const { getPostMetadataFromSlugId, getOpinionCountBypassCache } =
         useCommonPost();
@@ -1255,7 +1261,7 @@ export async function postNewOpinion({
     }
 
     try {
-        commentBody = processHtmlBody(commentBody);
+        commentBody = processHtmlBody(commentBody, true);
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
@@ -1292,6 +1298,7 @@ export async function postNewOpinion({
                 authorId: userId,
                 currentContentId: null,
                 conversationId: conversationId,
+                isSeed: isSeed,
             })
             .returning({ opinionId: opinionTable.id });
 

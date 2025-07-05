@@ -56,7 +56,7 @@ export function useBackendAuthApi() {
   const { loadUserProfile, clearProfileData } = useUserStore();
   const { loadTopicsData, clearTopicsData } = useTopicStore();
   const { loadNotificationData } = useNotificationStore();
-  const { clearConversationDrafts } = useNewPostDraftsStore();
+  const { resetDraft } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
   const { clearNotificationData } = useNotificationStore();
 
@@ -247,7 +247,7 @@ export function useBackendAuthApi() {
     const platform: "mobile" | "web" = getPlatform($q.platform);
 
     await deleteDid(platform);
-    clearConversationDrafts();
+    resetDraft();
     clearOpinionDrafts();
 
     authStore.setLoginStatus({ isKnown: false });

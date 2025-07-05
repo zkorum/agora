@@ -810,6 +810,12 @@ export interface ApiV1ConversationCreatePostRequest {
      * @memberof ApiV1ConversationCreatePostRequest
      */
     'pollingOptionList'?: Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'seedOpinionList': Array<string>;
 }
 /**
  * 
@@ -2337,6 +2343,12 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
     'moderation': ApiV1ModerationOpinionGetPost200Response;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+     */
+    'isSeed': boolean;
 }
 /**
  * 

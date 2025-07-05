@@ -1,17 +1,8 @@
 <template>
   <OpinionGridLayout @click="showOpinionAnalysis">
     <template #content>
-      <div class="descriptionReadMoreContainer">
-        <div
-          :ref="(el) => saveElementRef(props.opinionSlugId, el)"
-          class="consensusDescription"
-        >
-          {{ props.description }}
-        </div>
-
-        <div v-if="hasOverflow(props.opinionSlugId)" class="readMore">
-          Read more
-        </div>
+      <div class="consensusDescription">
+        <ZKHtmlContent :html-body="props.description" :compact-mode="true" />
       </div>
     </template>
 
@@ -40,10 +31,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
-import { useElementOverflow } from "src/utils/ui/useElementOverflow";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 import { OpinionItem } from "src/shared/types/zod";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -61,8 +52,6 @@ const numNoVotes = computed(
     props.numParticipants - props.numAgree - props.numPass - props.numDisagree
 );
 
-const { saveElementRef, hasOverflow } = useElementOverflow();
-
 const showDialog = ref(false);
 
 function showOpinionAnalysis() {
@@ -78,21 +67,5 @@ function showOpinionAnalysis() {
   -webkit-box-orient: vertical;
   overflow: hidden;
   position: relative;
-}
-
-.readMore {
-  color: #9a97a4;
-  font-weight: 500;
-  white-space: nowrap;
-  border-radius: 4px;
-  padding: 0 8px;
-  text-align: right;
-  font-size: 0.9rem;
-}
-
-.descriptionReadMoreContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
 }
 </style>

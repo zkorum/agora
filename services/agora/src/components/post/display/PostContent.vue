@@ -24,7 +24,7 @@
         "
         class="bodyDiv"
       >
-        <HtmlContent
+        <ZKHtmlContent
           :html-body="extendedPostData.payload.body"
           :compact-mode="compactMode"
         />
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import PostMetadata from "./PostMetadata.vue";
-import HtmlContent from "./HtmlContent.vue";
+import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
 import PollWrapper from "./poll/PollWrapper.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";

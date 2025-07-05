@@ -56,7 +56,7 @@
       </div>
 
       <div>
-        <RouterLink :to="{ name: '/conversation/create/' }">
+        <RouterLink :to="{ name: '/conversation/new/create/' }">
           <div
             v-if="drawerBehavior == 'desktop'"
             class="bottomSection startConversationButton"

@@ -11,14 +11,16 @@ import {
 import { eq, sql, and } from "drizzle-orm";
 import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
 import { generateRandomSlugId } from "@/crypto.js";
-import { log } from "@/app.js";
+import { log, config } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import { processHtmlBody } from "@/utils/htmlSanitization.js";
 import type { ExtendedConversation } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
 import * as authUtilService from "@/service/authUtil.js";
+import { processHtmlBody } from "@/shared/shared.js";
+import { postNewOpinion } from "./comment.js";
+import { nowZeroMs } from "@/shared/common/util.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -33,6 +35,7 @@ interface CreateNewPostProps {
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    seedOpinionList: string[];
 }
 
 interface ImportNewPostProps {
@@ -132,6 +135,7 @@ export async function createNewPost({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    seedOpinionList,
 }: CreateNewPostProps): Promise<CreateNewConversationResponse> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
@@ -150,7 +154,7 @@ export async function createNewPost({
 
     if (conversationBody != null) {
         try {
-            conversationBody = processHtmlBody(conversationBody);
+            conversationBody = processHtmlBody(conversationBody, true);
         } catch (error) {
             if (error instanceof Error) {
                 throw httpErrors.badRequest(error.message);
@@ -255,6 +259,41 @@ export async function createNewPost({
             });
         }
     });
+
+    // Create seed opinions
+    if (seedOpinionList.length > 0) {
+        const now = nowZeroMs();
+        for (const seedOpinionText of seedOpinionList) {
+            await postNewOpinion({
+                db,
+                commentBody: seedOpinionText,
+                conversationSlugId,
+                didWrite,
+                proof,
+                userAgent: "Seed Opinion Creation",
+                axiosPolis,
+                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+                polisUserPassword: config.POLIS_USER_PASSWORD,
+                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
+                awsAiLabelSummaryEnable:
+                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                    (config.NODE_ENV === "production" ||
+                        config.NODE_ENV === "staging"),
+                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                awsAiLabelSummaryTemperature:
+                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                awsAiLabelSummaryMaxTokens:
+                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+                now,
+                isSeed: true,
+            });
+        }
+    }
 
     return {
         conversationSlugId: conversationSlugId,

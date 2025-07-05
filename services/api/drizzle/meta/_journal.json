@@ -71,6 +71,13 @@
       "when": 1750379214948,
       "tag": "0009_cold_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1751684596975,
+      "tag": "0010_wakeful_valkyrie",
+      "breakpoints": true
     }
   ]
 }

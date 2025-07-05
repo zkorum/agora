@@ -3,12 +3,13 @@
     <div class="container">
       <div class="topBar">
         <!-- TODO: Pass author verified flag here -->
-        <UserIdentityCard
+        <OpinionIdentityCard
           :author-verified="false"
           :created-at="commentItem.createdAt"
           :user-identity="commentItem.username"
           :show-verified-text="false"
           :organization-image-url="''"
+          :is-seed="commentItem.isSeed"
         />
 
         <CommentActionOptions
@@ -20,7 +21,7 @@
       </div>
 
       <div>
-        <HtmlContent :html-body="commentItem.opinion" :compact-mode="false" />
+        <ZKHtmlContent :html-body="commentItem.opinion" :compact-mode="false" />
       </div>
 
       <div class="commentAdditionalDetailsFlex">
@@ -51,8 +52,8 @@ import type { OpinionItem, VotingAction } from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import CommentActionBar from "./CommentActionBar.vue";
-import HtmlContent from "../../../display/HtmlContent.vue";
-import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
+import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 

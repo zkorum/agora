@@ -175,6 +175,7 @@ export class Dto {
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             pollingOptionList: zodPollOptionTitle.array().optional(),
+            seedOpinionList: z.array(z.string()),
         })
         .strict();
     static createNewConversationResponse = z

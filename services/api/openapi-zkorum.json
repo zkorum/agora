@@ -2037,6 +2037,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -2049,7 +2052,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -2557,6 +2561,9 @@
                                                         "additionalProperties": false
                                                     }
                                                 ]
+                                            },
+                                            "isSeed": {
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -2569,7 +2576,8 @@
                                             "numDisagrees",
                                             "username",
                                             "clustersStats",
-                                            "moderation"
+                                            "moderation",
+                                            "isSeed"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -2759,6 +2767,9 @@
                                                         "additionalProperties": false
                                                     }
                                                 ]
+                                            },
+                                            "isSeed": {
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -2771,7 +2782,8 @@
                                             "numDisagrees",
                                             "username",
                                             "clustersStats",
-                                            "moderation"
+                                            "moderation",
+                                            "isSeed"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -2962,6 +2974,9 @@
                                                         "additionalProperties": false
                                                     }
                                                 ]
+                                            },
+                                            "isSeed": {
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -2974,7 +2989,8 @@
                                             "numDisagrees",
                                             "username",
                                             "clustersStats",
-                                            "moderation"
+                                            "moderation",
+                                            "isSeed"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -3161,6 +3177,9 @@
                                                         "additionalProperties": false
                                                     }
                                                 ]
+                                            },
+                                            "isSeed": {
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -3173,7 +3192,8 @@
                                             "numDisagrees",
                                             "username",
                                             "clustersStats",
-                                            "moderation"
+                                            "moderation",
+                                            "isSeed"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -3360,6 +3380,9 @@
                                                         "additionalProperties": false
                                                     }
                                                 ]
+                                            },
+                                            "isSeed": {
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -3372,7 +3395,8 @@
                                             "numDisagrees",
                                             "username",
                                             "clustersStats",
-                                            "moderation"
+                                            "moderation",
+                                            "isSeed"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -3559,6 +3583,9 @@
                                                         "additionalProperties": false
                                                     }
                                                 ]
+                                            },
+                                            "isSeed": {
+                                                "type": "boolean"
                                             }
                                         },
                                         "required": [
@@ -3571,7 +3598,8 @@
                                             "numDisagrees",
                                             "username",
                                             "clustersStats",
-                                            "moderation"
+                                            "moderation",
+                                            "isSeed"
                                         ],
                                         "additionalProperties": false
                                     }
@@ -3769,6 +3797,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -3781,7 +3812,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -3935,6 +3967,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -3947,7 +3982,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -4101,6 +4137,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -4113,7 +4152,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -4267,6 +4307,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -4279,7 +4322,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -4433,6 +4477,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -4445,7 +4492,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -4599,6 +4647,9 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
@@ -4611,7 +4662,8 @@
                                                     "numDisagrees",
                                                     "username",
                                                     "clustersStats",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "isSeed"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -4690,12 +4742,19 @@
                                             "maxLength": 30,
                                             "minLength": 1
                                         }
+                                    },
+                                    "seedOpinionList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
                                     }
                                 },
                                 "required": [
                                     "conversationTitle",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "isLoginRequired",
+                                    "seedOpinionList"
                                 ],
                                 "additionalProperties": false
                             }

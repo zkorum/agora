@@ -66,6 +66,7 @@ export async function getUserComments({
                 numDisagrees: opinionTable.numDisagrees,
                 username: userTable.username,
                 postSlugId: conversationTable.slugId,
+                isSeed: opinionTable.isSeed,
                 moderationAction: opinionModerationTable.moderationAction,
                 moderationExplanation:
                     opinionModerationTable.moderationExplanation,
@@ -318,6 +319,7 @@ export async function getUserComments({
                 numAgrees: opinionResponse.numAgrees,
                 username: opinionResponse.username,
                 moderation: moderationProperties,
+                isSeed: opinionResponse.isSeed,
                 clustersStats: clustersStats,
             };
 

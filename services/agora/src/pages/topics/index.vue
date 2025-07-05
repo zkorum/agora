@@ -25,9 +25,7 @@
         <Chip
           :label="topic.name"
           :pt="{
-            root: {
-              class: 'topicChipStyle generalStyle',
-            },
+            root: 'topicChipStyle generalStyle',
           }"
         />
 

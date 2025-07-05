@@ -23,7 +23,7 @@
       <div class="title">Moderate the opinion</div>
 
       <div class="userOpinion">
-        <HtmlContent :html-body="opinionItem.opinion" :compact-mode="false" />
+        <ZKHtmlContent :html-body="opinionItem.opinion" :compact-mode="false" />
       </div>
 
       <q-select
@@ -67,7 +67,7 @@
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
-import HtmlContent from "src/components/post/display/HtmlContent.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import type {
   OpinionModerationAction,
   ModerationReason,
@@ -120,6 +120,7 @@ const opinionItem = ref<OpinionItem>({
   numAgrees: 0,
   updatedAt: new Date(),
   username: "",
+  isSeed: false,
   moderation: {
     status: "unmoderated",
   },

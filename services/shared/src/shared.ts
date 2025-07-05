@@ -5,6 +5,8 @@ import localforage from "localforage";
 import { toEncodedCID } from "./common/cid.js";
 import type { NumberType } from "libphonenumber-js/mobile";
 import sanitizeHtml from "sanitize-html";
+import type { Opts } from "linkifyjs";
+import linkifyHtml from "linkify-html";
 
 /**
  * Is this browser supported?
@@ -57,7 +59,6 @@ export function domainNameAndExtensionFromEmail(
 export function domainFromEmail(email: string): string | undefined {
     const nameAndDomain = email.split("@");
     if (nameAndDomain.length === 2) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_username, domain] = [nameAndDomain[0], nameAndDomain[1]];
         return domain;
     }
@@ -85,6 +86,32 @@ export function validateHtmlStringCharacterCount(
     } else {
         return { isValid: false, characterCount: rawTextWithoutTags.length };
     }
+}
+
+function sanitizeHtmlInput(htmlString: string): string {
+    const options: sanitizeHtml.IOptions = {
+        allowedTags: ["b", "br", "i", "strike", "u", "div"],
+    };
+    htmlString = sanitizeHtml(htmlString, options);
+
+    return htmlString;
+}
+
+function linkifyHtmlBody(htmlString: string) {
+    const opts: Opts = {
+        attributes: {
+            target: "_blank",
+        },
+    };
+    return linkifyHtml(htmlString, opts);
+}
+
+export function processHtmlBody(htmlString: string, enableLinks: boolean) {
+    htmlString = sanitizeHtmlInput(htmlString);
+    if (enableLinks) {
+        htmlString = linkifyHtmlBody(htmlString);
+    }
+    return htmlString;
 }
 
 // WARNING: this is also used in schema.ts and cannot be imported there so it was copy-pasted
