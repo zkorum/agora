@@ -2,6 +2,7 @@
   <ZKCard
     padding="1.5rem"
     :style="{ marginTop: '1rem', backgroundColor: 'white' }"
+    class="pollBorder"
   >
     <div class="poll-container">
       <div class="poll-header">
@@ -324,5 +325,11 @@ function removeOption(index: number) {
 .pollErrorIcon {
   font-size: 1rem;
   margin-right: 0.5rem;
+}
+
+.pollBorder {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #a391ff;
 }
 </style>
