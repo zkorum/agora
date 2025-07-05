@@ -1390,6 +1390,7 @@ server.after(() => {
                     config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
                 awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 now: now,
+                isSeed: false,
             });
             reply.send(newOpinionResponse);
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -1810,6 +1811,7 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
+                seedOpinionList: request.body.seedOpinionList,
             });
             reply.send(postResponse);
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;

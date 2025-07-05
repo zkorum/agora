@@ -5,7 +5,7 @@
       position="bottom-right"
       :offset="[15, 15]"
     >
-      <RouterLink :to="{ name: '/conversation/create/' }">
+      <RouterLink :to="{ name: '/conversation/new/create/' }">
         <div class="stickyButton">
           <img :src="newConversationButton" />
         </div>

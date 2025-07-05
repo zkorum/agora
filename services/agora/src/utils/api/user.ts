@@ -132,6 +132,7 @@ export function useBackendUserApi() {
             numAgrees: responseItem.opinionItem.numAgrees,
             updatedAt: new Date(responseItem.opinionItem.updatedAt),
             username: String(responseItem.opinionItem.username),
+            isSeed: responseItem.opinionItem.isSeed,
             moderation: {
               status: moderationStatus,
               action: responseItem.opinionItem.moderation.action,

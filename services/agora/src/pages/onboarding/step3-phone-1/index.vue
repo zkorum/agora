@@ -39,9 +39,7 @@
                 placeholder="Country Code"
                 :pt="{
                   overlay: {
-                    style: {
-                      'z-index': '2000',
-                    },
+                    style: 'z-index: 2000',
                   },
                 }"
               >

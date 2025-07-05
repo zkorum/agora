@@ -332,6 +332,7 @@ export const zodOpinionItem = z
         username: z.string(),
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,
+        isSeed: z.boolean(),
     })
     .strict();
 export const zodOpinionItemPerSlugId = z.map(zodSlugId, zodOpinionItem);

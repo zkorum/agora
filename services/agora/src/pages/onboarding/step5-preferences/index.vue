@@ -27,7 +27,7 @@
               :label="topic.name"
               :variant="''"
               :is-following="followedTopicCodeSet.has(topic.code)"
-              :icon="followedTopicCodeSet.has(topic.code) ? 'pi pi-check' : ''"
+              :icon="''"
               @click="
                 topicButtonClicked(
                   topic.code,

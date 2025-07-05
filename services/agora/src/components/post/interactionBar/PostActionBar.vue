@@ -5,6 +5,7 @@
         v-model="currentTab"
         :compact-mode="props.compactMode"
         :opinion-count="opinionCount"
+        :show-analysis-page="showAnalysisPage"
       />
     </div>
 
@@ -32,6 +33,7 @@ import InteractionTab from "./InteractionTab.vue";
 const props = defineProps<{
   compactMode: boolean;
   opinionCount: number;
+  showAnalysisPage: boolean;
 }>();
 
 const currentTab = defineModel<"comment" | "analysis">({

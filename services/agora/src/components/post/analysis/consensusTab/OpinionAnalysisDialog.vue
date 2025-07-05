@@ -12,16 +12,20 @@
           />
         </div>
 
-        <UserIdentityCard
+        <OpinionIdentityCard
           :author-verified="false"
           :created-at="opinionItem.createdAt"
           :user-identity="opinionItem.username"
           :show-verified-text="false"
           :organization-image-url="''"
+          :is-seed="opinionItem.isSeed"
         />
 
         <div class="opinion-text">
-          {{ opinionItem.opinion }}
+          <ZKHtmlContent
+            :html-body="opinionItem.opinion"
+            :compact-mode="false"
+          />
         </div>
 
         <div class="opinion-stats">
@@ -103,7 +107,8 @@
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 import { OpinionItem } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import {

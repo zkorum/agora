@@ -9,7 +9,7 @@ module.exports = {
   // `parser: 'vue-eslint-parser'` is already included with any 'plugin:vue/**' config and should be omitted
   parserOptions: {
     parser: require.resolve("@typescript-eslint/parser"),
-    extraFileExtensions: [".vue"],
+    extraFileExtensions: [".vue", ".json"],
     project: ["tsconfig.json"],
   },
 
@@ -123,10 +123,12 @@ module.exports = {
         project: false, // Disable type information for HTML files
       },
     },
-    // {
-    //   files: ["**/*.json"],
-    //   extends: ["plugin:@eslintjson/recommended"],
-    // },
+    {
+      files: ["**/*.json"],
+      parserOptions: {
+        project: false, // Disable TypeScript project parsing for JSON files
+      },
+    },
     // {
     //   files: ["**/*.jsonc"],
     //   extends: ["plugin:@eslint/json/recommended"],
