@@ -61,39 +61,24 @@
                 {{ opinionErrors[index] }}
               </div>
 
-              <Textarea
+              <ZKEditor
                 v-model="conversationDraft.seedOpinions[index]"
-                class="text-area-input"
-                :maxlength="MAX_LENGTH_OPINION"
-                :placeholder="`Add opinion ${index + 1}`"
-                auto-resize
-                inputmode="text"
-                :pt="{
-                  root: 'textarea-border-style',
-                }"
+                class="textarea-border-style"
+                placeholder="Input text"
+                :show-toolbar="true"
+                min-height="1rem"
+                :add-background-color="false"
                 :class="{
                   'textarea-active-border': currentActiveOpinionIndex === index,
                   'textarea-error-border': opinionErrors[index],
                 }"
-                :onfocus="
+                @update:model-value="checkOpinionWordCount(index)"
+                @manually-focused="
                   () => {
                     currentActiveOpinionIndex = index;
                     clearOpinionError(index);
                   }
                 "
-                :onblur="
-                  () => {
-                    currentActiveOpinionIndex = -1;
-                  }
-                "
-                @keydown="
-                  (event: KeyboardEvent) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                    }
-                  }
-                "
-                @input="clearOpinionError(index)"
               />
             </div>
 
@@ -137,8 +122,11 @@ import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useCommonApi } from "src/utils/api/common";
-import { MAX_LENGTH_OPINION } from "src/shared/shared";
-import Textarea from "primevue/textarea";
+import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import {
+  MAX_LENGTH_OPINION,
+  validateHtmlStringCharacterCount,
+} from "src/shared/shared";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
@@ -185,6 +173,21 @@ function clearOpinionError(index: number) {
   }
 }
 
+function checkOpinionWordCount(index: number) {
+  const opinion = conversationDraft.value.seedOpinions[index];
+  const validation = validateHtmlStringCharacterCount(opinion, "opinion");
+
+  if (!validation.isValid) {
+    opinionErrors.value[index] =
+      `Opinion exceeds ${MAX_LENGTH_OPINION} character limit (${validation.characterCount}/${MAX_LENGTH_OPINION})`;
+  } else {
+    // Clear word count error if it exists, but keep other errors
+    if (opinionErrors.value[index]?.includes("character limit")) {
+      clearOpinionError(index);
+    }
+  }
+}
+
 function addNewOpinion() {
   conversationDraft.value.seedOpinions.push("");
 }
@@ -204,6 +207,19 @@ function removeOpinion(index: number) {
     }
   });
   opinionErrors.value = newErrors;
+
+  // Clean up opinionRefs to prevent memory leaks
+  const newRefs: Record<number, HTMLElement> = {};
+  Object.keys(opinionRefs.value).forEach((key) => {
+    const idx = parseInt(key);
+    if (idx < index) {
+      newRefs[idx] = opinionRefs.value[idx];
+    } else if (idx > index) {
+      newRefs[idx - 1] = opinionRefs.value[idx];
+    }
+    // Skip the removed index (idx === index) to clean it up
+  });
+  opinionRefs.value = newRefs;
 }
 
 function validateSeedOpinions(): boolean {
@@ -221,6 +237,16 @@ function validateSeedOpinions(): boolean {
       // Check for empty opinions
       if (trimmedOpinion.length === 0) {
         opinionErrors.value[index] = "Opinion cannot be empty";
+        hasErrors = true;
+        if (firstErrorIndex === -1) firstErrorIndex = index;
+        return;
+      }
+
+      // Check word count limit
+      const validation = validateHtmlStringCharacterCount(opinion, "opinion");
+      if (!validation.isValid) {
+        opinionErrors.value[index] =
+          `Opinion exceeds ${MAX_LENGTH_OPINION} character limit (${validation.characterCount}/${MAX_LENGTH_OPINION})`;
         hasErrors = true;
         if (firstErrorIndex === -1) firstErrorIndex = index;
         return;
@@ -389,30 +415,25 @@ async function onSubmit() {
   color: #9a97a4;
 }
 
-.text-area-input {
-  width: 100%;
-}
-
 .textarea-border-style {
   border-radius: 12px;
   border-width: 1px;
   border-style: solid;
-  border-color: #e2e1e7 !important;
+  border-color: #e2e1e7;
   padding: 1rem;
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: rgba($primary, 0.1);
+    border-color: #6b4eff;
   }
 }
 
 .textarea-active-border {
-  border-color: #6b4eff !important;
-  background-color: rgba($primary, 0.1);
+  border-color: #6b4eff;
 }
 
 .textarea-error-border {
-  border-color: #f44336 !important;
+  border-color: #f44336;
 }
 
 .opinion-input-container {
