@@ -44,6 +44,7 @@
                 <ZKHtmlContent
                   :html-body="commentItem.opinionItem.opinion"
                   :compact-mode="false"
+                  :enable-links="false"
                 />
               </div>
 

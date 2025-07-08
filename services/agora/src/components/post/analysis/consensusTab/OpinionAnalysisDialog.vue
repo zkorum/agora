@@ -25,6 +25,7 @@
           <ZKHtmlContent
             :html-body="opinionItem.opinion"
             :compact-mode="false"
+            :enable-links="true"
           />
         </div>
 

@@ -33,6 +33,7 @@
           v-if="conversationItem.payload.body"
           :html-body="conversationItem.payload.body"
           :compact-mode="false"
+          :enable-links="false"
         />
       </div>
 

@@ -27,10 +27,10 @@
         <ZKHtmlContent
           :html-body="extendedPostData.payload.body"
           :compact-mode="compactMode"
+          :enable-links="compactMode ? false : true"
         />
       </div>
 
-      <!-- Poll is part of the post content -->
       <div v-if="extendedPostData.payload.poll" class="pollContainer">
         <PollWrapper
           :login-required-to-participate="

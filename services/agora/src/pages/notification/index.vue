@@ -60,6 +60,7 @@
                       <ZKHtmlContent
                         :html-body="notificationItem.message"
                         :compact-mode="false"
+                        :enable-links="false"
                       />
                     </div>
                   </div>

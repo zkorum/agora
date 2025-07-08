@@ -6,28 +6,28 @@
     role="user-content"
     :aria-label="compactMode ? 'Post content preview' : 'Post content'"
     @click="handleClick"
-    v-html="sanitizedHtmlBody"
+    v-html="sanitizedHtmlBody()"
   ></span>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { processHtmlBody } from "../../shared/shared";
 
 const props = defineProps<{
   htmlBody: string;
   compactMode: boolean;
+  enableLinks: boolean;
 }>();
 
-const sanitizedHtmlBody = computed(() => {
+const sanitizedHtmlBody = () => {
   try {
-    return processHtmlBody(props.htmlBody, true);
+    return processHtmlBody(props.htmlBody, props.enableLinks);
   } catch (error) {
     console.error("Error sanitizing HTML content:", error);
     // Fallback to plain text if sanitization fails
     return props.htmlBody.replace(/<[^>]*>/g, "");
   }
-});
+};
 
 const handleClick = (event: Event) => {
   const target = event.target as HTMLElement;

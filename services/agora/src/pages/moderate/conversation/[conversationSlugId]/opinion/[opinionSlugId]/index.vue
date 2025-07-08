@@ -23,7 +23,11 @@
       <div class="title">Moderate the opinion</div>
 
       <div class="userOpinion">
-        <ZKHtmlContent :html-body="opinionItem.opinion" :compact-mode="false" />
+        <ZKHtmlContent
+          :html-body="opinionItem.opinion"
+          :compact-mode="false"
+          :enable-links="false"
+        />
       </div>
 
       <q-select

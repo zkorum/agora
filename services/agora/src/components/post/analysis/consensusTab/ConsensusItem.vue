@@ -2,7 +2,11 @@
   <OpinionGridLayout @click="showOpinionAnalysis">
     <template #content>
       <div class="consensusDescription">
-        <ZKHtmlContent :html-body="props.description" :compact-mode="true" />
+        <ZKHtmlContent
+          :html-body="props.description"
+          :compact-mode="true"
+          :enable-links="false"
+        />
       </div>
     </template>
 

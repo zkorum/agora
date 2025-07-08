@@ -21,7 +21,11 @@
       </div>
 
       <div>
-        <ZKHtmlContent :html-body="commentItem.opinion" :compact-mode="false" />
+        <ZKHtmlContent
+          :html-body="commentItem.opinion"
+          :compact-mode="false"
+          :enable-links="true"
+        />
       </div>
 
       <div class="commentAdditionalDetailsFlex">
