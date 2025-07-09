@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 interface Props {
-  isPrivate: boolean;
+  isPrivate: boolean; // Meaning the conversation is not indexed
   title: string;
   size: "medium" | "large";
 }

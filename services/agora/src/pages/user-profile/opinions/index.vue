@@ -18,7 +18,13 @@
             >
               <div class="topRowFlex">
                 <div class="postTitle">
-                  {{ commentItem.conversationData.payload.title }}
+                  <ConversationTitleWithPrivacyLabel
+                    :is-private="
+                      !commentItem.conversationData.metadata.isIndexed
+                    "
+                    :title="commentItem.conversationData.payload.title"
+                    size="medium"
+                  />
                 </div>
                 <div>
                   <CommentActionOptions
@@ -79,6 +85,7 @@ import CommentActionOptions from "src/components/post/comments/group/item/Commen
 import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import { useRouterNavigation } from "src/utils/router/navigation";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();
