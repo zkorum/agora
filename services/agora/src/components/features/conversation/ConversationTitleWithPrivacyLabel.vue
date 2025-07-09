@@ -1,7 +1,15 @@
 <template>
   <div class="title-section">
-    <div v-if="isPrivate" class="privacy-label">Private</div>
-    <h1 class="conversation-title">{{ title }}</h1>
+    <div
+      v-if="isPrivate"
+      class="privacy-label"
+      :class="`privacy-label--${size}`"
+    >
+      Private
+    </div>
+    <h1 class="conversation-title" :class="`conversation-title--${size}`">
+      {{ title }}
+    </h1>
   </div>
 </template>
 
@@ -9,6 +17,7 @@
 interface Props {
   isPrivate: boolean;
   title: string;
+  size: "medium" | "large";
 }
 
 defineProps<Props>();
@@ -41,5 +50,21 @@ defineProps<Props>();
   font-weight: 500;
   color: #0a0714;
   line-height: 1.3;
+}
+
+.conversation-title--medium {
+  font-size: 1.2rem;
+}
+
+.conversation-title--large {
+  font-size: 1.4rem;
+}
+
+.privacy-label--medium {
+  font-size: 0.8rem;
+}
+
+.privacy-label--large {
+  font-size: 0.9rem;
 }
 </style>

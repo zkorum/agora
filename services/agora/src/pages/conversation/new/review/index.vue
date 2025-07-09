@@ -18,6 +18,7 @@
       <ConversationTitleWithPrivacyLabel
         :is-private="conversationDraft.isPrivate"
         :title="conversationDraft.title"
+        size="large"
       />
 
       <!-- Add Seed Opinions Section -->

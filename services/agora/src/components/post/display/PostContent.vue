@@ -15,6 +15,7 @@
         <ConversationTitleWithPrivacyLabel
           :is-private="!extendedPostData.metadata.isIndexed"
           :title="extendedPostData.payload.title"
+          size="medium"
         />
       </div>
 
