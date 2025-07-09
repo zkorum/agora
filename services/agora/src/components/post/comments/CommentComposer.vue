@@ -119,13 +119,12 @@ const opinionBody = ref(newOpinionIntention.opinionBody);
 const showLoginDialog = ref(false);
 
 const {
-  isLockedRoute,
   lockRoute,
   unlockRoute,
-  savedToRoute,
   showExitDialog,
-  leaveRoute,
-} = useRouteGuard(routeLeaveCallback, onBeforeRouteLeaveCallback);
+  proceedWithNavigation,
+  isRouteLockedCheck,
+} = useRouteGuard(() => characterCount.value > 0, onBeforeRouteLeaveCallback);
 
 const { handleAxiosErrorStatusCodes } = useCommonApi();
 
@@ -159,12 +158,12 @@ watch(yScroll, () => {
 
 async function saveDraft() {
   saveOpinionDraft(props.postSlugId, opinionBody.value);
-  await leaveRoute(() => {});
+  await proceedWithNavigation(() => {});
 }
 
 async function noSaveDraft() {
   deleteOpinionDraft(props.postSlugId);
-  await leaveRoute(() => {});
+  await proceedWithNavigation(() => {});
 }
 
 function onLoginCallback() {
@@ -172,18 +171,8 @@ function onLoginCallback() {
   createNewOpinionIntention(props.postSlugId, opinionBody.value);
 }
 
-function routeLeaveCallback() {
-  if (characterCount.value > 0) {
-    return "Changes that you made may not be saved.";
-  }
-}
-
-function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
-  if (characterCount.value > 0 && isLockedRoute()) {
-    showExitDialog.value = true;
-    if (props.loginRequiredToParticipate ? isLoggedIn.value : true) {
-      savedToRoute.value = to;
-    }
+function onBeforeRouteLeaveCallback(_to: RouteLocationNormalized): boolean {
+  if (characterCount.value > 0 && isRouteLockedCheck()) {
     return false;
   } else {
     return true;

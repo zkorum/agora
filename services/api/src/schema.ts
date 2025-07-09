@@ -1195,6 +1195,7 @@ export const opinionTable = pgTable(
         currentContentId: integer("current_content_id").references(
             (): AnyPgColumn => opinionContentTable.id,
         ), // null if opinion was deleted
+        isSeed: boolean("is_seed").notNull().default(false),
         numAgrees: integer("num_agrees").notNull().default(0),
         numDisagrees: integer("num_disagrees").notNull().default(0),
         polisGroupAwareConsensusProbabilityAgree: real("polis_ga_consensus_pa"), // will contain pol.is group-aware-consensus probabilities for "agree"

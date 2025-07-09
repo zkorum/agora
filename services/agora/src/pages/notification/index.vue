@@ -57,7 +57,11 @@
                     </div>
 
                     <div class="messageStyle">
-                      {{ notificationItem.message }}
+                      <ZKHtmlContent
+                        :html-body="notificationItem.message"
+                        :compact-mode="false"
+                        :enable-links="false"
+                      />
                     </div>
                   </div>
                 </div>
@@ -82,6 +86,7 @@
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import {
   NotificationItem,
   NotificationType,

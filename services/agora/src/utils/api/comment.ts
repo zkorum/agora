@@ -56,6 +56,7 @@ export function useBackendCommentApi() {
         numAgrees: item.numAgrees,
         updatedAt: new Date(item.updatedAt),
         username: String(item.username),
+        isSeed: item.isSeed,
         moderation: {
           status: moderationStatus,
           action: item.moderation.action,
@@ -107,6 +108,7 @@ export function useBackendCommentApi() {
           numAgrees: item.numAgrees,
           updatedAt: new Date(item.updatedAt),
           username: String(item.username),
+          isSeed: item.isSeed,
           moderation: {
             status: moderationStatus,
             action: item.moderation.action,

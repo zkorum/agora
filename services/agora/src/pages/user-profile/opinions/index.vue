@@ -18,7 +18,13 @@
             >
               <div class="topRowFlex">
                 <div class="postTitle">
-                  {{ commentItem.conversationData.payload.title }}
+                  <ConversationTitleWithPrivacyLabel
+                    :is-private="
+                      !commentItem.conversationData.metadata.isIndexed
+                    "
+                    :title="commentItem.conversationData.payload.title"
+                    size="medium"
+                  />
                 </div>
                 <div>
                   <CommentActionOptions
@@ -41,9 +47,10 @@
               />
 
               <div>
-                <HtmlContent
+                <ZKHtmlContent
                   :html-body="commentItem.opinionItem.opinion"
                   :compact-mode="false"
+                  :enable-links="false"
                 />
               </div>
 
@@ -76,8 +83,9 @@ import { storeToRefs } from "pinia";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import CommentActionOptions from "src/components/post/comments/group/item/CommentActionOptions.vue";
 import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
-import HtmlContent from "src/components/post/display/HtmlContent.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import { useRouterNavigation } from "src/utils/router/navigation";
 
 const { loadMoreUserComments, loadUserProfile } = useUserStore();

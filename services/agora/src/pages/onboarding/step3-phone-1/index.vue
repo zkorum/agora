@@ -29,19 +29,12 @@
               <Select
                 v-model="selectedCountryCode"
                 filter
-                :virtual-scroller-options="{
-                  lazy: true,
-                  itemSize: 40,
-                  numToleratedItems: 10,
-                }"
                 :options="countries"
                 option-label="name"
                 placeholder="Country Code"
                 :pt="{
                   overlay: {
-                    style: {
-                      'z-index': '2000',
-                    },
+                    style: 'z-index: 2000',
                   },
                 }"
               >

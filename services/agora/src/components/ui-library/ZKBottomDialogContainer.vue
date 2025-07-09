@@ -12,6 +12,6 @@
   padding: 2rem;
   background-color: white;
   border-radius: 25px 25px 0 0;
-  max-width: 30rem;
+  width: min(30rem, 100%);
 }
 </style>

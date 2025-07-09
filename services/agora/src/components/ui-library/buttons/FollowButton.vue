@@ -5,20 +5,27 @@
     :pt="
       isFollowing
         ? {
-            root: {
-              class: 'generalStyle borderColorOn',
-            },
+            root: 'generalStyle borderColorOn',
           }
         : {
-            root: {
-              class: 'generalStyle borderColorOff',
-            },
+            root: 'generalStyle borderColorOff',
           }
     "
     :class="{ followStyle: !isFollowing, followingStyle: isFollowing }"
   >
-    <div :class="{ normalText: !isFollowing, gradientText: isFollowing }">
-      {{ label }}
+    <div
+      class="button-content"
+      :class="{ normalText: !isFollowing, gradientText: isFollowing }"
+    >
+      <span>{{ label }}</span>
+      <i
+        v-if="icon"
+        :class="icon"
+        :style="{
+          fontSize: '1rem',
+          color: isFollowing ? '#6b4eff' : '#6d6a74',
+        }"
+      />
     </div>
   </Button>
 </template>
@@ -29,12 +36,18 @@ import Button from "primevue/button";
 defineProps<{
   label: string;
   variant: string;
-  icon: string;
+  icon?: string;
   isFollowing: boolean;
 }>();
 </script>
 
 <style lang="scss" scoped>
+.button-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .gradientText {
   background: linear-gradient(
     to bottom,

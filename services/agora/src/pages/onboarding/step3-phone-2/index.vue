@@ -30,7 +30,7 @@
             </div>
 
             <div class="otpDiv">
-              <div class="codeInput">
+              <div v-if="isMounted" class="codeInput">
                 <InputOtp v-model="verificationCode" :length="6" integer-only />
               </div>
 
@@ -123,8 +123,10 @@ const { showNotifyMessage } = useNotify();
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isSubmitButtonLoading = ref(false);
+const isMounted = ref(false);
 
 onMounted(async () => {
+  isMounted.value = true;
   if (verificationPhoneNumber.value.phoneNumber == "") {
     await changePhoneNumber();
   } else {

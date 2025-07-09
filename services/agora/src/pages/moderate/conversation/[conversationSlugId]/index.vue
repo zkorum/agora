@@ -29,10 +29,11 @@
           {{ conversationItem.payload.title }}
         </b>
 
-        <HtmlContent
+        <ZKHtmlContent
           v-if="conversationItem.payload.body"
           :html-body="conversationItem.payload.body"
           :compact-mode="false"
+          :enable-links="false"
         />
       </div>
 
@@ -77,7 +78,7 @@
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
-import HtmlContent from "src/components/post/display/HtmlContent.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import type {
   ConversationModerationAction,
   ExtendedConversation,

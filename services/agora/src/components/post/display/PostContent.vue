@@ -12,9 +12,11 @@
 
     <div class="postDiv">
       <div>
-        <div class="titleDiv titlePadding">
-          {{ extendedPostData.payload.title }}
-        </div>
+        <ConversationTitleWithPrivacyLabel
+          :is-private="!extendedPostData.metadata.isIndexed"
+          :title="extendedPostData.payload.title"
+          size="medium"
+        />
       </div>
 
       <div
@@ -24,13 +26,13 @@
         "
         class="bodyDiv"
       >
-        <HtmlContent
+        <ZKHtmlContent
           :html-body="extendedPostData.payload.body"
           :compact-mode="compactMode"
+          :enable-links="compactMode ? false : true"
         />
       </div>
 
-      <!-- Poll is part of the post content -->
       <div v-if="extendedPostData.payload.poll" class="pollContainer">
         <PollWrapper
           :login-required-to-participate="
@@ -59,10 +61,11 @@
 
 <script setup lang="ts">
 import PostMetadata from "./PostMetadata.vue";
-import HtmlContent from "./HtmlContent.vue";
+import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
 import PollWrapper from "./poll/PollWrapper.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
+import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 
 defineEmits(["openModerationHistory"]);
@@ -84,11 +87,6 @@ defineProps<{
   padding-bottom: 1rem;
 }
 
-.titleDiv {
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
 .bodyDiv {
   padding-bottom: 1rem;
 }
@@ -97,11 +95,6 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.titlePadding {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
 }
 
 .lockCardStyle {

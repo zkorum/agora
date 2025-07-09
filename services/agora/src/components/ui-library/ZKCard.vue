@@ -12,9 +12,6 @@ defineProps<{
 
 <style scoped lang="scss">
 .card-decoration {
-  border-radius: 25px;
-  border-style: solid;
-  border-width: 1px;
-  border-color: #e7e5e4;
+  border-radius: 16px;
 }
 </style>

@@ -2,11 +2,6 @@
   <Button
     variant="outlined"
     rounded
-    :pt="{
-      root: {
-        class: '',
-      },
-    }"
     :class="{
       rootStyleSelected: props.isSelected,
       rootStyleUnselected: !props.isSelected,

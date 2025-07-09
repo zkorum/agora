@@ -1,0 +1,1 @@
+ALTER TABLE "opinion" ADD COLUMN "is_seed" boolean DEFAULT false NOT NULL;
