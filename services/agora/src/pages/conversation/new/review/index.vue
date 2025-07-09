@@ -15,12 +15,10 @@
 
     <div class="container">
       <!-- Title with Privacy Label -->
-      <div class="title-section">
-        <div v-if="conversationDraft.isPrivate" class="privacy-label">
-          Private
-        </div>
-        <h1 class="conversation-title">{{ conversationDraft.title }}</h1>
-      </div>
+      <ConversationTitleWithPrivacyLabel
+        :is-private="conversationDraft.isPrivate"
+        :title="conversationDraft.title"
+      />
 
       <!-- Add Seed Opinions Section -->
       <div class="seed-opinions-section">
@@ -123,6 +121,7 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useCommonApi } from "src/utils/api/common";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
@@ -343,35 +342,6 @@ async function onSubmit() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-}
-
-.title-section {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.privacy-label {
-  background-color: #333;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 5px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 0.3rem;
-}
-
-.conversation-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-  color: #333;
-  line-height: 1.3;
 }
 
 .seed-opinions-section {
