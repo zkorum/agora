@@ -16,8 +16,8 @@
     <div class="container">
       <!-- Title with Privacy Label -->
       <div class="title-section">
-        <div class="privacy-label">
-          {{ conversationDraft.isPrivate ? "Private" : "Public" }}
+        <div v-if="conversationDraft.isPrivate" class="privacy-label">
+          Private
         </div>
         <h1 class="conversation-title">{{ conversationDraft.title }}</h1>
       </div>
