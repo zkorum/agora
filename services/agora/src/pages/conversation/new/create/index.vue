@@ -127,7 +127,7 @@ const routeGuardRef = ref<InstanceType<
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const { createEmptyDraft } = useNewPostDraftsStore();
+const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();
@@ -189,18 +189,20 @@ function clearTitleError() {
 }
 
 async function goToPreview() {
-  if (conversationDraft.value.title.trim().length === 0) {
-    titleError.value = true;
-    scrollToTitleInput();
-    return;
-  }
+  const validation = validateForReview();
 
-  // Validate poll if polling is enabled
-  if (conversationDraft.value.poll.enabled && pollComponentRef.value) {
-    if (!pollComponentRef.value.validatePoll()) {
+  if (!validation.isValid) {
+    // Handle errors based on validation result
+    if (validation.errors.title) {
+      titleError.value = true;
+      scrollToTitleInput();
+    } else if (validation.errors.poll) {
+      // Trigger poll component validation to show error UI
+      pollComponentRef.value?.triggerValidation();
       scrollToPollComponent();
-      return;
     }
+    // Note: body validation errors are handled by the editor component itself
+    return;
   }
 
   titleError.value = false;

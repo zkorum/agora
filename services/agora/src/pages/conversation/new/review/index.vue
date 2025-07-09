@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type ComponentPublicInstance } from "vue";
+import { ref, type ComponentPublicInstance, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -131,7 +131,7 @@ import {
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
 
-const { createEmptyDraft } = useNewPostDraftsStore();
+const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewPost } = useBackendPostApi();
@@ -147,6 +147,13 @@ const opinionErrors = ref<Record<number, string>>({});
 const opinionRefs = ref<Record<number, HTMLElement>>({});
 
 const { createNewConversationIntention } = useLoginIntentionStore();
+
+onMounted(async () => {
+  const validation = validateForReview();
+  if (!validation.isValid) {
+    await router.replace({ name: "/conversation/new/create/" });
+  }
+});
 
 function onLoginCallback() {
   createNewConversationIntention();

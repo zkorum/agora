@@ -18,9 +18,9 @@
         />
       </div>
 
-      <div v-if="pollError" class="pollErrorMessage">
+      <div v-if="showPollValidationError" class="pollErrorMessage">
         <q-icon name="mdi-alert-circle" class="pollErrorIcon" />
-        {{ pollErrorMessage }}
+        {{ pollValidationError }}
       </div>
 
       <div class="polling-options-container">
@@ -66,73 +66,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { watch } from "vue";
 import Button from "primevue/button";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
 
-defineExpose({
-  validatePoll,
-});
-
 const emit = defineEmits<{
   input: [];
   validationChange: [isValid: boolean, errorMessage: string];
 }>();
 
-const { resetPoll } = useNewPostDraftsStore();
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const { resetPoll, triggerPollValidation, clearPollValidationError } =
+  useNewPostDraftsStore();
+const { conversationDraft, pollValidationError, showPollValidationError } =
+  storeToRefs(useNewPostDraftsStore());
 
-const pollError = ref(false);
-const pollErrorMessage = ref("");
-
-function clearPollError() {
-  if (pollError.value) {
-    pollError.value = false;
-    pollErrorMessage.value = "";
-    emit("validationChange", true, "");
+// Watch for validation state changes and emit to parent
+watch(
+  [showPollValidationError, pollValidationError],
+  ([showError, errorMessage]) => {
+    emit("validationChange", !showError, errorMessage);
   }
-}
+);
 
-function validatePoll(): boolean {
-  const options = conversationDraft.value.poll.options;
-
-  // Check if there are at least 2 options
-  if (options.length < 2) {
-    pollError.value = true;
-    pollErrorMessage.value = "Poll must have at least 2 options";
-    emit("validationChange", false, pollErrorMessage.value);
-    return false;
-  }
-
-  // Check for empty options
-  const emptyOptions = options.filter(
-    (option: string) => option.trim().length === 0
-  );
-  if (emptyOptions.length > 0) {
-    pollError.value = true;
-    pollErrorMessage.value = "All poll options must be filled in";
-    emit("validationChange", false, pollErrorMessage.value);
-    return false;
-  }
-
-  // Check for duplicate options
-  const trimmedOptions = options.map((option: string) =>
-    option.trim().toLowerCase()
-  );
-  const uniqueOptions = new Set(trimmedOptions);
-  if (uniqueOptions.size !== trimmedOptions.length) {
-    pollError.value = true;
-    pollErrorMessage.value = "Poll options must be unique";
-    emit("validationChange", false, pollErrorMessage.value);
-    return false;
-  }
-
-  clearPollError();
-  return true;
-}
+// Expose validation trigger method for parent components
+defineExpose({
+  triggerValidation: triggerPollValidation,
+});
 
 function handleOptionInput(index: number, event: Event) {
   if (event.target && event.target instanceof HTMLInputElement) {
@@ -144,19 +106,19 @@ function handleOptionInput(index: number, event: Event) {
 function updateOption(index: number, value: string) {
   conversationDraft.value.poll.options[index] = value;
   emit("input");
-  clearPollError();
+  clearPollValidationError();
 }
 
 function addOption() {
   conversationDraft.value.poll.options.push("");
   emit("input");
-  clearPollError();
+  clearPollValidationError();
 }
 
 function removeOption(index: number) {
   conversationDraft.value.poll.options.splice(index, 1);
   emit("input");
-  clearPollError();
+  clearPollValidationError();
 }
 </script>
 

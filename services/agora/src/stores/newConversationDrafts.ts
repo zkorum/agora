@@ -1,5 +1,10 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
+import { computed, ref } from "vue";
+import {
+  validateHtmlStringCharacterCount,
+  MAX_LENGTH_BODY,
+} from "src/shared/shared";
 
 /**
  * Settings for posting as an organization
@@ -78,7 +83,26 @@ interface SerializableConversationDraft {
   privateConversationSettings: SerializablePrivateConversationSettings;
 }
 
+/**
+ * Result of validation checks for proceeding to review page
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  errors: {
+    title?: string;
+    poll?: string;
+    body?: string;
+  };
+  firstErrorField?: "title" | "poll" | "body";
+}
+
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
+  /**
+   * Reactive state for poll validation errors
+   */
+  const pollValidationError = ref<string>("");
+  const showPollValidationError = ref<boolean>(false);
+
   /**
    * Creates a new empty conversation draft with sensible defaults
    */
@@ -345,9 +369,130 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
+  /**
+   * Validates poll options when polling is enabled
+   */
+  function validatePoll(): { isValid: boolean; errorMessage?: string } {
+    if (!conversationDraft.value.poll.enabled) {
+      return { isValid: true };
+    }
+
+    const options = conversationDraft.value.poll.options;
+
+    // Check if there are at least 2 options
+    if (options.length < 2) {
+      return {
+        isValid: false,
+        errorMessage: "Poll must have at least 2 options",
+      };
+    }
+
+    // Check for empty options
+    const emptyOptions = options.filter(
+      (option: string) => option.trim().length === 0
+    );
+    if (emptyOptions.length > 0) {
+      return {
+        isValid: false,
+        errorMessage: "All poll options must be filled in",
+      };
+    }
+
+    // Check for duplicate options
+    const trimmedOptions = options.map((option: string) =>
+      option.trim().toLowerCase()
+    );
+    const uniqueOptions = new Set(trimmedOptions);
+    if (uniqueOptions.size !== trimmedOptions.length) {
+      return { isValid: false, errorMessage: "Poll options must be unique" };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Triggers poll validation and sets error state for UI components
+   */
+  function triggerPollValidation(): boolean {
+    const validation = validatePoll();
+
+    if (!validation.isValid) {
+      pollValidationError.value =
+        validation.errorMessage || "Poll validation failed";
+      showPollValidationError.value = true;
+      return false;
+    }
+
+    clearPollValidationError();
+    return true;
+  }
+
+  /**
+   * Clears poll validation error state
+   */
+  function clearPollValidationError(): void {
+    pollValidationError.value = "";
+    showPollValidationError.value = false;
+  }
+
+  /**
+   * Validates the draft for proceeding to review page
+   * This centralizes all validation logic used by both create page and review page entry guard
+   */
+  function validateForReview(): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: {},
+    };
+
+    const draft = conversationDraft.value;
+
+    // Validate title
+    if (!draft.title.trim()) {
+      result.isValid = false;
+      result.errors.title = "Title is required to continue";
+      if (!result.firstErrorField) result.firstErrorField = "title";
+    }
+
+    // Validate body content length
+    const bodyValidation = validateHtmlStringCharacterCount(
+      draft.content,
+      "conversation"
+    );
+    if (!bodyValidation.isValid) {
+      result.isValid = false;
+      result.errors.body = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+      if (!result.firstErrorField) result.firstErrorField = "body";
+    }
+
+    // Validate poll if enabled
+    if (draft.poll.enabled) {
+      const pollValidation = validatePoll();
+      if (!pollValidation.isValid) {
+        result.isValid = false;
+        result.errors.poll =
+          pollValidation.errorMessage || "Poll validation failed";
+        if (!result.firstErrorField) result.firstErrorField = "poll";
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Computed property to check if the draft is ready for review
+   */
+  const canAccessReview = computed(() => {
+    return validateForReview().isValid;
+  });
+
   return {
     // Main draft state
     conversationDraft,
+
+    // Poll validation state
+    pollValidationError,
+    showPollValidationError,
 
     // Factory functions
     createEmptyDraft,
@@ -355,6 +500,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // State checking functions
     hasUnsavedChanges,
     hasContent,
+    canAccessReview,
+
+    // Validation functions
+    validateForReview,
+    validatePoll,
+    triggerPollValidation,
+    clearPollValidationError,
 
     // Action functions
     resetDraft,
