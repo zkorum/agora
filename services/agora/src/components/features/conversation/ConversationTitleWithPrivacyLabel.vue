@@ -57,7 +57,7 @@ defineProps<Props>();
 }
 
 .conversation-title--large {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 
 .privacy-label--medium {
