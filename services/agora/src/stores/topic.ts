@@ -22,7 +22,7 @@ export const useTopicStore = defineStore("topic", () => {
   const followedTopicCodeSet = ref(new Set<string>());
 
   function clearTopicsData() {
-    followedTopicCodeSet.value.clear;
+    followedTopicCodeSet.value.clear();
   }
 
   interface FollowTopicProps {
