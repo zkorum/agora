@@ -14,7 +14,7 @@ import {
     conversationTable,
 } from "@/schema.js";
 import { polisClusterTable } from "@/schema.js";
-import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/common/util.js";
 import {
     type PolisMathAndMetadata,
@@ -223,7 +223,7 @@ export async function delayedPolisGetAndUpdateMath({
             axiosPolis,
             conversationSlugId,
         });
-        log.debug(
+        log.info(
             `Math Results for conversation_slug_id ${conversationSlugId}: \n${JSON.stringify(polisMathResults)}`,
         );
     } catch (e) {
@@ -265,104 +265,112 @@ export async function delayedPolisGetAndUpdateMath({
             })
             .where(eq(conversationTable.id, conversationId));
 
-        //// add comment priorities and group-aware-consensus with a bulk-update
+        //// add comment priorities, comment-extremities (divisiveness) and group-aware-consensus with a bulk-update
         const commentPriorities: CommentPriorities | null | undefined =
             pca["comment-priorities"];
         const groupAwareConsensusAgree: GroupAwareConsensus | null | undefined =
             pca["group-aware-consensus"];
+        const commentExtremities: number[] | undefined =
+            pca.pca?.["comment-extremity"];
         let setClauseCommentPriority = {};
         let setClauseGroupAwareConsensusAgree = {};
-        let commentPrioritiesOpinionSlugIds: string[] = [];
-        let groupAwareConsensusOpinionSlugIds: string[] = [];
-        if (commentPriorities !== undefined && commentPriorities !== null) {
-            const tids = Object.keys(commentPriorities);
-            let finalSqlCommentPriorities: SQL | undefined;
-            if (tids.length === 0) {
-                log.warn(
-                    `No opinion priority to update for polisContentId=${String(
-                        polisContentId,
-                    )}`,
+        let setClauseCommentExtremities = {};
+        if (
+            commentPriorities === undefined ||
+            commentPriorities === null ||
+            Object.keys(commentPriorities).length === 0
+        ) {
+            log.warn(
+                `No opinion priority to update for polisContentId=${String(
+                    polisContentId,
+                )} and conversationSlugId=${conversationSlugId}`,
+            );
+        } else {
+            const sqlChunks: SQL[] = [];
+            sqlChunks.push(sql`(CASE`);
+            for (const [tid, priority] of Object.entries(commentPriorities)) {
+                const opinionSlugId = opinionSlugIdByTid[tid];
+                sqlChunks.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${priority}`,
                 );
-            } else {
-                commentPrioritiesOpinionSlugIds = tids.map(
-                    (tid) => opinionSlugIdByTid[tid],
-                );
-                const sqlChunks: SQL[] = [];
-                sqlChunks.push(sql`(CASE`);
-                for (const [tid, priority] of Object.entries(
-                    commentPriorities,
-                )) {
-                    const opinionSlugId = opinionSlugIdByTid[tid];
-                    sqlChunks.push(
-                        sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${priority}`,
-                    );
-                }
-                sqlChunks.push(sql`ELSE polis_priority`);
-                sqlChunks.push(sql`END)`);
-                finalSqlCommentPriorities = sql.join(sqlChunks, sql.raw(" "));
             }
-            setClauseCommentPriority =
-                finalSqlCommentPriorities !== undefined
-                    ? { polisPriority: finalSqlCommentPriorities }
-                    : {};
+            sqlChunks.push(sql`ELSE polis_priority`);
+            sqlChunks.push(sql`END)`);
+            const finalSqlCommentPriorities = sql.join(sqlChunks, sql.raw(" "));
+            setClauseCommentPriority = {
+                polisPriority: finalSqlCommentPriorities,
+            };
         }
         if (
-            groupAwareConsensusAgree !== undefined &&
-            groupAwareConsensusAgree !== null
+            groupAwareConsensusAgree === undefined ||
+            groupAwareConsensusAgree === null ||
+            Object.keys(groupAwareConsensusAgree).length === 0
         ) {
-            const tids = Object.keys(groupAwareConsensusAgree);
-            let finalSqlGroupAwareConsensusAgree: SQL | undefined;
-            if (tids.length === 0) {
-                log.warn(
-                    `No opinion priority to update for polisContentId=${String(
-                        polisContentId,
-                    )}`,
-                );
-            } else {
-                groupAwareConsensusOpinionSlugIds = tids.map(
-                    (tid) => opinionSlugIdByTid[tid],
-                );
-                const sqlChunks: SQL[] = [];
-                sqlChunks.push(sql`(CASE`);
-                for (const [tid, probability] of Object.entries(
-                    groupAwareConsensusAgree,
-                )) {
-                    const opinionSlugId = opinionSlugIdByTid[tid];
-                    sqlChunks.push(
-                        sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${probability}`,
-                    );
-                }
-                sqlChunks.push(sql`ELSE polis_ga_consensus_pa`);
-                sqlChunks.push(sql`END)`);
-                finalSqlGroupAwareConsensusAgree = sql.join(
-                    sqlChunks,
-                    sql.raw(" "),
+            log.warn(
+                `No opinion group-aware-consensus to update for polisContentId=${String(
+                    polisContentId,
+                )} and conversationSlugId=${conversationSlugId}`,
+            );
+        } else {
+            const sqlChunks: SQL[] = [];
+            sqlChunks.push(sql`(CASE`);
+            for (const [tid, probability] of Object.entries(
+                groupAwareConsensusAgree,
+            )) {
+                const opinionSlugId = opinionSlugIdByTid[tid];
+                sqlChunks.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${probability}`,
                 );
             }
-            setClauseGroupAwareConsensusAgree =
-                finalSqlGroupAwareConsensusAgree !== undefined
-                    ? {
-                          polisGroupAwareConsensusProbabilityAgree:
-                              finalSqlGroupAwareConsensusAgree,
-                      }
-                    : {};
+            sqlChunks.push(sql`ELSE polis_ga_consensus_pa`);
+            sqlChunks.push(sql`END)`);
+            const finalSqlGroupAwareConsensusAgree = sql.join(
+                sqlChunks,
+                sql.raw(" "),
+            );
+            setClauseGroupAwareConsensusAgree = {
+                polisGroupAwareConsensusProbabilityAgree:
+                    finalSqlGroupAwareConsensusAgree,
+            };
         }
-        const affectedOpinionSlugIds = Array.from(
-            new Set<string>(
-                groupAwareConsensusOpinionSlugIds.concat(
-                    commentPrioritiesOpinionSlugIds,
-                ),
-            ),
-        );
+        if (
+            commentExtremities === undefined ||
+            commentExtremities.length === 0
+        ) {
+            log.warn(
+                `No opinion comment-extremities to update for polisContentId=${String(
+                    polisContentId,
+                )} and conversationSlugId=${conversationSlugId}`,
+            );
+        } else {
+            const sqlChunks: SQL[] = [];
+            sqlChunks.push(sql`(CASE`);
+            for (const [tid, probability] of commentExtremities.entries()) {
+                const opinionSlugId = opinionSlugIdByTid[tid];
+                sqlChunks.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${probability}`,
+                );
+            }
+            sqlChunks.push(sql`ELSE polis_divisiveness`);
+            sqlChunks.push(sql`END)`);
+            const finalSqlCommentExtremities: SQL = sql.join(
+                sqlChunks,
+                sql.raw(" "),
+            );
+            setClauseCommentExtremities = {
+                polisDivisiveness: finalSqlCommentExtremities,
+            };
+        }
 
         await db
             .update(opinionTable)
             .set({
                 ...setClauseCommentPriority,
                 ...setClauseGroupAwareConsensusAgree,
+                ...setClauseCommentExtremities,
                 updatedAt: nowZeroMs(),
             })
-            .where(inArray(opinionTable.slugId, affectedOpinionSlugIds));
+            .where(eq(opinionTable.conversationId, conversationId));
         /////
 
         let minNumberOfClusters = Math.min(

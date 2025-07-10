@@ -39,9 +39,7 @@ import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
 import {
-    isSqlWhereControversial,
     isSqlWhereMajority,
-    isSqlOrderByControversial,
     isSqlOrderByMajority,
     isSqlOrderByGroupAwareConsensusAgree,
     isSqlOrderByPolisPriority,
@@ -380,130 +378,7 @@ export async function fetchOpinions({
         }
         case "controversial": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            if (clusterKey === undefined) {
-                whereClause = and(
-                    whereClause,
-                    isSqlWhereControversial({
-                        numAgreesColumn: opinionTable.numAgrees,
-                        memberCountColumn: conversationTable.participantCount,
-                        numDisagreesColumn: opinionTable.numDisagrees,
-                    }),
-                );
-                orderByClause = isSqlOrderByControversial({
-                    numAgreesColumn: opinionTable.numAgrees,
-                    numDisagreesColumn: opinionTable.numDisagrees,
-                });
-            }
-            switch (clusterKey) {
-                case "0": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereControversial({
-                            numAgreesColumn:
-                                opinionTable.polisCluster0NumAgrees,
-                            memberCountColumn: polisClusterTableAlias0.numUsers,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster0NumDisagrees,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByControversial({
-                        numAgreesColumn: opinionTable.polisCluster0NumAgrees,
-                        numDisagreesColumn:
-                            opinionTable.polisCluster0NumDisagrees,
-                    });
-                    break;
-                }
-                case "1": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereControversial({
-                            numAgreesColumn:
-                                opinionTable.polisCluster1NumAgrees,
-                            memberCountColumn: polisClusterTableAlias1.numUsers,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster1NumDisagrees,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByControversial({
-                        numAgreesColumn: opinionTable.polisCluster1NumAgrees,
-                        numDisagreesColumn:
-                            opinionTable.polisCluster1NumDisagrees,
-                    });
-                    break;
-                }
-                case "2": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereControversial({
-                            numAgreesColumn:
-                                opinionTable.polisCluster2NumAgrees,
-                            memberCountColumn: polisClusterTableAlias2.numUsers,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster2NumDisagrees,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByControversial({
-                        numAgreesColumn: opinionTable.polisCluster2NumAgrees,
-                        numDisagreesColumn:
-                            opinionTable.polisCluster2NumDisagrees,
-                    });
-                    break;
-                }
-                case "3": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereControversial({
-                            numAgreesColumn:
-                                opinionTable.polisCluster3NumAgrees,
-                            memberCountColumn: polisClusterTableAlias3.numUsers,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster3NumDisagrees,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByControversial({
-                        numAgreesColumn: opinionTable.polisCluster3NumAgrees,
-                        numDisagreesColumn:
-                            opinionTable.polisCluster3NumDisagrees,
-                    });
-                    break;
-                }
-                case "4": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereControversial({
-                            numAgreesColumn:
-                                opinionTable.polisCluster4NumAgrees,
-                            memberCountColumn: polisClusterTableAlias4.numUsers,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster4NumDisagrees,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByControversial({
-                        numAgreesColumn: opinionTable.polisCluster4NumAgrees,
-                        numDisagreesColumn:
-                            opinionTable.polisCluster4NumDisagrees,
-                    });
-                    break;
-                }
-                case "5": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereControversial({
-                            numAgreesColumn:
-                                opinionTable.polisCluster5NumAgrees,
-                            memberCountColumn: polisClusterTableAlias5.numUsers,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster5NumDisagrees,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByControversial({
-                        numAgreesColumn: opinionTable.polisCluster5NumAgrees,
-                        numDisagreesColumn:
-                            opinionTable.polisCluster5NumDisagrees,
-                    });
-                    break;
-                }
-            }
+            orderByClause = [desc(opinionTable.polisDivisiveness)];
             break;
         }
         case "representative": {
