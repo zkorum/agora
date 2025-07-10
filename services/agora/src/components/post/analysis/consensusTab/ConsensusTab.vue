@@ -2,10 +2,7 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader
-          :show-star-in-title="false"
-          title="Common ground: What do people across all groups agree on?"
-        >
+        <AnalysisTitleHeader :show-star-in-title="false" title="Common ground">
           <template #action-button>
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
@@ -49,7 +46,7 @@ const props = defineProps<{
 const currentTab = defineModel<ShortcutItem>();
 
 function switchTab() {
-  currentTab.value = "Consensus";
+  currentTab.value = "Common ground";
 }
 </script>
 

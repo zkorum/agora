@@ -1,7 +1,35 @@
 import { log } from "@/app.js";
-import { polisClusterOpinionTable, polisClusterTable } from "@/schema.js";
+import {
+    opinionTable,
+    polisClusterOpinionTable,
+    polisClusterTable,
+} from "@/schema.js";
 import { eq, inArray, isNull, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+
+export async function fixNullProbabilitiesInOpinionTable({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}) {
+    await db
+        .update(opinionTable)
+        .set({ polisGroupAwareConsensusProbabilityAgree: 0 })
+        .where(isNull(opinionTable.polisGroupAwareConsensusProbabilityAgree));
+    log.info(
+        `Updated all polisGroupAwareConsensusProbabilityAgree in opinionTable to 0 if null`,
+    );
+    await db
+        .update(opinionTable)
+        .set({ polisPriority: 0 })
+        .where(isNull(opinionTable.polisPriority));
+    log.info(`Updated all polisPriority in opinionTable to 0 if null`);
+    await db
+        .update(opinionTable)
+        .set({ polisDivisiveness: 0 })
+        .where(isNull(opinionTable.polisDivisiveness));
+    log.info(`Updated all polisDivisiveness in opinionTable to 0 if null`);
+}
 
 export async function fixEmptyPolisContentId({
     db,

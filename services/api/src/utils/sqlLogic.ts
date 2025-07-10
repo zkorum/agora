@@ -10,6 +10,7 @@ import {
     and,
     asc,
     desc,
+    eq,
     gt,
     isNotNull,
     isNull,
@@ -269,11 +270,11 @@ export function isSqlOrderByPolisPriority(): SQL[] {
 }
 
 export function isSqlWhereRepresentative({
-    polisClusterOpinionIdColumn,
+    idColumn,
 }: {
-    polisClusterOpinionIdColumn: PgColumn;
+    idColumn: PgColumn;
 }): SQL | undefined {
-    return isNotNull(polisClusterOpinionIdColumn);
+    return isNotNull(idColumn);
 }
 
 export function isSqlOrderByRepresentative({

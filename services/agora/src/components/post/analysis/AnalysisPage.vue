@@ -16,7 +16,7 @@
       </div>
 
       <div
-        v-if="currentTab === 'Summary' || currentTab === 'Consensus'"
+        v-if="currentTab === 'Summary' || currentTab === 'Common ground'"
         class="tabComponent"
       >
         <ConsensusTab
@@ -54,7 +54,7 @@
       <div
         v-if="
           currentTab === 'Summary' ||
-          currentTab === 'Opinion Groups' ||
+          currentTab === 'Groups' ||
           currentTab === 'Me'
         "
         class="tabComponent"

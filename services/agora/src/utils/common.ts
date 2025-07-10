@@ -64,17 +64,6 @@ export function formatPercentage(percentage: number) {
   return `${formattedPercentage}%`;
 }
 
-export function calculatePercentage(numerator: number, denominator: number) {
-  if (denominator <= 0) {
-    return 0;
-  }
-  const percentage = (numerator / denominator) * 100;
-  if (percentage >= 1) {
-    return Math.round(percentage);
-  }
-  return percentage;
-}
-
 // console.log(formatter.format(10000)); // "10K"
 // console.log(formatter.format(1000000)); // "1M"
 // console.log(formatter.format(1500000)); // "1.5M"

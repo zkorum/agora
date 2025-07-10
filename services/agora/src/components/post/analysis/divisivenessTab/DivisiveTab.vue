@@ -2,10 +2,7 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader
-          :show-star-in-title="false"
-          title="What is most divisive?"
-        >
+        <AnalysisTitleHeader :show-star-in-title="false" title="Divisive">
           <template #action-button>
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />

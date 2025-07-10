@@ -2,10 +2,7 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader
-          :show-star-in-title="false"
-          title="What are the opinion groups?"
-        />
+        <AnalysisTitleHeader :show-star-in-title="false" title="Groups" />
       </template>
 
       <template #body>
@@ -121,7 +118,8 @@ import {
   PolisKey,
 } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { formatPercentage, calculatePercentage } from "src/utils/common";
+import { calculatePercentage } from "src/shared/common/util";
+import { formatPercentage } from "src/utils/common";
 import { computed, ref, watch } from "vue";
 import { z } from "zod";
 import ZKButton from "src/components/ui-library/ZKButton.vue";

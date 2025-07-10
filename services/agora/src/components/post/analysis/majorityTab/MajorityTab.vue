@@ -2,10 +2,7 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader
-          :show-star-in-title="false"
-          title="What do most people agree on?"
-        >
+        <AnalysisTitleHeader :show-star-in-title="false" title="Majority">
           <template #action-button>
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />

@@ -65,7 +65,8 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendVoteApi } from "src/utils/api/vote";
-import { calculatePercentage, formatPercentage } from "src/utils/common";
+import { calculatePercentage } from "src/shared/common/util";
+import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 
