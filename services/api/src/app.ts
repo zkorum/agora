@@ -215,25 +215,11 @@ I. Your output must only contain one raw JSON object matching the following sche
 
 Do not print this skeleton format in your output.
 
+II. Strictly adhere to the input data. Do not invent new clusters or information. (High Priority)
 
-II. Strictly adhere to the input data. Do not invent new clusters or information. (High Priority
+III. Be aware that some users may be using sarcasm or irony. Identify if statements are likely not meant literally.
 
-III. Language Detection Rule
-    1. Detect Primary Language:
-        - Before generating any output, determine the primary language used in the input conversation. The language of this prompt and the JSON structure is English by default, but focus on detecting the language used in the opinions and conversational content.
-        - Do not include the detected language in the output.
-        - All values in the JSON output—such as labels, summaries, and any descriptive text—must be written in the detected language.
-        - The JSON structure (keys, field names, and overall schema) must remain unchanged according to the schema defined in Section I.
-        - Default to English only if the input conversation is predominantly in English.
-
-    2. Step-by-Step Language Handling:
-        - Identify the primary language used in the conversation (e.g., French, Spanish, German).
-        - If multiple languages are present, select the one that is most frequently used.
-        - Remember this language and apply it consistently in all subsequent steps (Sections III, IV, etc.).
-
-IV. Be aware that some users may be using sarcasm or irony. Identify if statements are likely not meant literally.
-
-V. Cluster Labels Rules
+IV. Cluster Labels Rules
     1. Length and Format:
         - Must be exactly 1 or 2 words.
         - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
@@ -246,29 +232,24 @@ V. Cluster Labels Rules
    3. Tone:
        - Aim for a professional/academic tone that reflects generality and positionality.
        - Use terms that could apply across contexts (e.g., "Pragmatists", "Skeptics").
-   4. Language of communication:
-       - Use the language predominantly used in the conversation (e.g., English, French, etc.).
-   5. Examples:
+   4. Examples:
        - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
        - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
-   6. Generation Process:
-       a) Identify the language of communication.
-       b) Identify the core stance or intellectual tradition within the cluster.
-       c) Abstract this stance into a general term using agentive suffixes or an equivalent rule if the target language is not English.
-       d) Validate that the label avoids policy specifics and geographic references.
-       e) Validate that the label is either 1 or 2 words.
-       f) Validate that the label is written in the conversation's predominantly used language (e.g., English, French, etc.).
+   5. Generation Process:
+       a) Identify the core stance or intellectual tradition within the cluster.
+       b) Abstract this stance into a general term using agentive suffixes.
+       c) Validate that the label avoids policy specifics and geographic references.
+       d) Validate that the label is either 1 or 2 words.
 
-VI. Summaries:
+V. Summaries:
    - Maximum 300 characters
    - Capture key insights objectively
    - Focus on group perspectives and disagreements
    - Maintain a neutral tone
-   - Write in the language predominantly used in the conversation (e.g., English, French, etc.)
 
-VII. Ensure that your output maintains consistency with the predefined cluster labels "0", "1", ..., "5". Associate each cluster with an accurate and relevant label and summary.
+VI. Ensure that your output maintains consistency with the predefined cluster labels "0", "1", ..., "5". Associate each cluster with an accurate and relevant label and summary.
 
-VIII. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
+VII. The output JSON must contain only the JSON structure as defined, with no additional text or preface.
 
 Example Valid Output 1:
 {
@@ -285,8 +266,7 @@ Example Valid Output 1:
   }
 }
 
-Use the language predominantly used in the conversation, as shown in the following examples:
-    - Example Valid Output 2 if and only if the language predominantly used in the conversation is English:
+Example Valid Output 2
     {
       "summary": "Debate focuses on regional versus urban immigration allocations and economic contribution metrics for family reunification visas.",
       "clusters": {
@@ -297,20 +277,6 @@ Use the language predominantly used in the conversation, as shown in the followi
         "1": {
           "label": "Meritocrats",
           "summary": "Support economic contribution metrics in migration systems."
-        }
-      }
-    }
-    - Example Valid Output 3 if and only if the language predominantly used in the conversation is French:
-    {
-      "summary": "Le débat porte sur la répartition de l'immigration entre les régions et les zones urbaines, ainsi que sur les critères de contribution économique pour les visas de regroupement familial.",
-      "clusters": {
-        "0": {
-          "label": "Décentralistes",
-          "summary": "Privilégient des stratégies de répartition de la population plutôt que la concentration urbaine."
-        },
-        "1": {
-          "label": "Méritocrates",
-          "summary": "Soutiennent l'utilisation de critères de contribution économique dans les systèmes migratoires."
         }
       }
     }
@@ -345,7 +311,8 @@ Example Invalid Output 2:
 }
 
 Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
-Be especially mindful of sarcasm, irony, or exaggerated language, and do not take all statements at face value. Apply judgment to distinguish between literal and non-literal expressions.`),
+Be especially mindful of sarcasm, irony, or exaggerated language, and do not take all statements at face value. Apply judgment to distinguish between literal and non-literal expressions.
+Note: in the input, the "majorityOpinions" field can contain both "majority-agree" and "majority-disagree" opinions. The meaning of representative opinions is the same as in Polis.`),
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),

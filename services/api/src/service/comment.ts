@@ -90,16 +90,31 @@ interface FetchOpinionsProps {
     limit: number;
 }
 
-export async function fetchOpinions({
+interface FetchOpinionsByPostIdProps {
+    db: PostgresJsDatabase;
+    postId: number;
+    personalizationUserId?: string;
+    filterTarget:
+        | "new"
+        | "moderated"
+        | "hidden"
+        | "majority"
+        | "controversial"
+        | "group-aware-consensus"
+        | "discover"
+        | "representative";
+    clusterKey?: PolisKey;
+    limit: number;
+}
+
+export async function fetchOpinionsByPostId({
     db,
-    postSlugId,
+    postId,
     personalizationUserId,
     filterTarget,
     clusterKey,
     limit,
-}: FetchOpinionsProps): Promise<OpinionItemPerSlugId> {
-    const postId = await getPostIdFromPostSlugId(db, postSlugId);
-
+}: FetchOpinionsByPostIdProps): Promise<OpinionItemPerSlugId> {
     const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0 ");
     const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1 ");
     const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2 ");
@@ -393,8 +408,7 @@ export async function fetchOpinions({
                     whereClause = and(
                         whereClause,
                         isSqlWhereRepresentative({
-                            polisClusterOpinionIdColumn:
-                                polisClusterOpinionTableAlias0.id,
+                            idColumn: polisClusterOpinionTableAlias0.id,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -407,8 +421,7 @@ export async function fetchOpinions({
                     whereClause = and(
                         whereClause,
                         isSqlWhereRepresentative({
-                            polisClusterOpinionIdColumn:
-                                polisClusterOpinionTableAlias1.id,
+                            idColumn: polisClusterOpinionTableAlias1.id,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -421,8 +434,7 @@ export async function fetchOpinions({
                     whereClause = and(
                         whereClause,
                         isSqlWhereRepresentative({
-                            polisClusterOpinionIdColumn:
-                                polisClusterOpinionTableAlias2.id,
+                            idColumn: polisClusterOpinionTableAlias2.id,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -435,8 +447,7 @@ export async function fetchOpinions({
                     whereClause = and(
                         whereClause,
                         isSqlWhereRepresentative({
-                            polisClusterOpinionIdColumn:
-                                polisClusterOpinionTableAlias3.id,
+                            idColumn: polisClusterOpinionTableAlias3.id,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -449,8 +460,7 @@ export async function fetchOpinions({
                     whereClause = and(
                         whereClause,
                         isSqlWhereRepresentative({
-                            polisClusterOpinionIdColumn:
-                                polisClusterOpinionTableAlias4.id,
+                            idColumn: polisClusterOpinionTableAlias4.id,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -463,8 +473,7 @@ export async function fetchOpinions({
                     whereClause = and(
                         whereClause,
                         isSqlWhereRepresentative({
-                            polisClusterOpinionIdColumn:
-                                polisClusterOpinionTableAlias5.id,
+                            idColumn: polisClusterOpinionTableAlias5.id,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -580,44 +589,80 @@ export async function fetchOpinions({
         )
         .leftJoin(
             polisClusterOpinionTableAlias0,
-            eq(
-                polisClusterOpinionTableAlias0.polisClusterId,
-                polisClusterTableAlias0.id,
+            and(
+                eq(
+                    polisClusterOpinionTableAlias0.polisClusterId,
+                    polisClusterTableAlias0.id,
+                ),
+                eq(
+                    polisClusterOpinionTableAlias0.opinionSlugId,
+                    opinionTable.slugId,
+                ),
             ),
         )
         .leftJoin(
             polisClusterOpinionTableAlias1,
-            eq(
-                polisClusterOpinionTableAlias1.polisClusterId,
-                polisClusterTableAlias1.id,
+            and(
+                eq(
+                    polisClusterOpinionTableAlias1.polisClusterId,
+                    polisClusterTableAlias1.id,
+                ),
+                eq(
+                    polisClusterOpinionTableAlias1.opinionSlugId,
+                    opinionTable.slugId,
+                ),
             ),
         )
         .leftJoin(
             polisClusterOpinionTableAlias2,
-            eq(
-                polisClusterOpinionTableAlias2.polisClusterId,
-                polisClusterTableAlias2.id,
+            and(
+                eq(
+                    polisClusterOpinionTableAlias2.polisClusterId,
+                    polisClusterTableAlias2.id,
+                ),
+                eq(
+                    polisClusterOpinionTableAlias2.opinionSlugId,
+                    opinionTable.slugId,
+                ),
             ),
         )
         .leftJoin(
             polisClusterOpinionTableAlias3,
-            eq(
-                polisClusterOpinionTableAlias3.polisClusterId,
-                polisClusterTableAlias3.id,
+            and(
+                eq(
+                    polisClusterOpinionTableAlias3.polisClusterId,
+                    polisClusterTableAlias3.id,
+                ),
+                eq(
+                    polisClusterOpinionTableAlias3.opinionSlugId,
+                    opinionTable.slugId,
+                ),
             ),
         )
         .leftJoin(
             polisClusterOpinionTableAlias4,
-            eq(
-                polisClusterOpinionTableAlias4.polisClusterId,
-                polisClusterTableAlias4.id,
+            and(
+                eq(
+                    polisClusterOpinionTableAlias4.polisClusterId,
+                    polisClusterTableAlias4.id,
+                ),
+                eq(
+                    polisClusterOpinionTableAlias4.opinionSlugId,
+                    opinionTable.slugId,
+                ),
             ),
         )
         .leftJoin(
             polisClusterOpinionTableAlias5,
-            eq(
-                polisClusterOpinionTableAlias5.polisClusterId,
-                polisClusterTableAlias5.id,
+            and(
+                eq(
+                    polisClusterOpinionTableAlias5.polisClusterId,
+                    polisClusterTableAlias5.id,
+                ),
+                eq(
+                    polisClusterOpinionTableAlias5.opinionSlugId,
+                    opinionTable.slugId,
+                ),
             ),
         )
         .orderBy(...orderByClause)
@@ -771,6 +816,25 @@ export async function fetchOpinions({
     }
 
     return opinionItemMap;
+}
+
+export async function fetchOpinions({
+    db,
+    postSlugId,
+    personalizationUserId,
+    filterTarget,
+    clusterKey,
+    limit,
+}: FetchOpinionsProps): Promise<OpinionItemPerSlugId> {
+    const postId = await getPostIdFromPostSlugId(db, postSlugId);
+    return await fetchOpinionsByPostId({
+        db,
+        postId,
+        personalizationUserId,
+        filterTarget,
+        clusterKey,
+        limit,
+    });
 }
 
 interface FetchOpinionsByConversationSlugIdProps {

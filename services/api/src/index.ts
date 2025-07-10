@@ -30,6 +30,7 @@ import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
+import * as migrationService from "@/service/migration.js";
 import WebSocket from "ws";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import { Relay, useWebSocketImplementation } from "nostr-tools/relay";
@@ -2498,6 +2499,7 @@ if (
         polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
     });
 } else {
+    await migrationService.fixNullProbabilitiesInOpinionTable({ db });
     server.ready((e) => {
         if (e) {
             log.error(e);
