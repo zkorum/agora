@@ -1,0 +1,1 @@
+ALTER TABLE "opinion" ADD COLUMN "polis_divisiveness" real;
