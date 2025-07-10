@@ -22,3 +22,14 @@ export function nowZeroMs(): Date {
     now.setMilliseconds(0);
     return now;
 }
+
+export function calculatePercentage(numerator: number, denominator: number) {
+    if (denominator <= 0) {
+        return 0;
+    }
+    const percentage = (numerator / denominator) * 100;
+    if (percentage >= 1) {
+        return Math.round(percentage);
+    }
+    return percentage;
+}

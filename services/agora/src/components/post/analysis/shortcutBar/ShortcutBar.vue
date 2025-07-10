@@ -21,10 +21,10 @@ const currentTab = defineModel<ShortcutItem>();
 const shortcutItemList: ShortcutItem[] = [
   "Summary",
   "Me",
-  "Consensus",
+  "Common ground",
   "Majority",
   "Divisive",
-  "Opinion Groups",
+  "Groups",
 ];
 
 function clickedShortcutButton(shortcutName: ShortcutItem) {

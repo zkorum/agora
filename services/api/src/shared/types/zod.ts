@@ -321,6 +321,12 @@ export const zodClusterStats = z.object({
     numAgrees: z.number().int().nonnegative(),
     numDisagrees: z.number().int().nonnegative(),
 });
+export const zodClusterStatsForLlm = z.object({
+    key: zodPolisKey,
+    numMembers: z.number().int().nonnegative(),
+    numAgrees: z.number().int().nonnegative(),
+    numDisagrees: z.number().int().nonnegative(),
+});
 export const zodOpinionItem = z
     .object({
         opinionSlugId: zodSlugId,
@@ -334,6 +340,15 @@ export const zodOpinionItem = z
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,
         isSeed: z.boolean(),
+    })
+    .strict();
+export const zodOpinionItemForLlm = z
+    .object({
+        opinion: zodOpinionContent,
+        numParticipants: z.number().int().nonnegative(),
+        numAgrees: z.number().int().nonnegative(),
+        numDisagrees: z.number().int().nonnegative(),
+        clustersStats: z.array(zodClusterStatsForLlm),
     })
     .strict();
 export const zodOpinionItemPerSlugId = z.map(zodSlugId, zodOpinionItem);
@@ -804,6 +819,7 @@ export type ExtendedConversationPolis = z.infer<typeof zodConversationPolis>;
 export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
 export type CommentContent = z.infer<typeof zodOpinionContent>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
+export type OpinionItemForLlm = z.infer<typeof zodOpinionItemForLlm>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;

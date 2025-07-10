@@ -51,7 +51,7 @@ function getUserAnalysis() {
 }
 
 function switchTab() {
-  currentTab.value = "Opinion Groups";
+  currentTab.value = "Groups";
 }
 </script>
 

@@ -54,7 +54,7 @@
       <div
         v-if="
           currentTab === 'Summary' ||
-          currentTab === 'Opinion Groups' ||
+          currentTab === 'Groups' ||
           currentTab === 'Me'
         "
         class="tabComponent"
