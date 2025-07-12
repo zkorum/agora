@@ -2112,7 +2112,8 @@
                                                 "type": "string",
                                                 "enum": [
                                                     "agree",
-                                                    "disagree"
+                                                    "disagree",
+                                                    "pass"
                                                 ]
                                             }
                                         },
@@ -2145,6 +2146,7 @@
                                         "enum": [
                                             "agree",
                                             "disagree",
+                                            "pass",
                                             "cancel"
                                         ]
                                     }

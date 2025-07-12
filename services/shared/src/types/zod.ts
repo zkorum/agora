@@ -375,8 +375,8 @@ export const zodExtendedOpinionData = z
         opinionItem: zodOpinionItem,
     })
     .strict();
-export const zodVotingOption = z.enum(["agree", "disagree"]);
-export const zodVotingAction = z.enum(["agree", "disagree", "cancel"]);
+export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
+export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
 export interface LanguageObject {
     name: string;
