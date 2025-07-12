@@ -558,7 +558,7 @@ export const phoneCountryCodeEnum = pgEnum("phone_country_code", [
     "ZW",
 ]);
 
-export const voteEnum = pgEnum("vote_enum", ["agree", "disagree"]);
+export const voteEnum = pgEnum("vote_enum", ["agree", "disagree", "pass"]);
 
 export const polisKeyEnum = pgEnum("polis_key_enum", [
     "0",
