@@ -64,6 +64,7 @@ export async function getUserComments({
                 numParticipants: conversationTable.participantCount,
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
+                numPasses: opinionTable.numPasses,
                 username: userTable.username,
                 postSlugId: conversationTable.slugId,
                 isSeed: opinionTable.isSeed,
@@ -80,6 +81,7 @@ export async function getUserComments({
                 polisCluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
                 polisCluster0NumDisagrees:
                     opinionTable.polisCluster0NumDisagrees,
+                polisCluster0NumPasses: opinionTable.polisCluster0NumPasses,
                 polisCluster1Id: polisClusterTableAlias1.id,
                 polisCluster1Key: polisClusterTableAlias1.key,
                 polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
@@ -87,6 +89,7 @@ export async function getUserComments({
                 polisCluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
                 polisCluster1NumDisagrees:
                     opinionTable.polisCluster1NumDisagrees,
+                polisCluster1NumPasses: opinionTable.polisCluster1NumPasses,
                 polisCluster2Id: polisClusterTableAlias2.id,
                 polisCluster2Key: polisClusterTableAlias2.key,
                 polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
@@ -94,6 +97,7 @@ export async function getUserComments({
                 polisCluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
                 polisCluster2NumDisagrees:
                     opinionTable.polisCluster2NumDisagrees,
+                polisCluster2NumPasses: opinionTable.polisCluster2NumPasses,
                 polisCluster3Id: polisClusterTableAlias3.id,
                 polisCluster3Key: polisClusterTableAlias3.key,
                 polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
@@ -101,6 +105,7 @@ export async function getUserComments({
                 polisCluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
                 polisCluster3NumDisagrees:
                     opinionTable.polisCluster3NumDisagrees,
+                polisCluster3NumPasses: opinionTable.polisCluster3NumPasses,
                 polisCluster4Id: polisClusterTableAlias4.id,
                 polisCluster4Key: polisClusterTableAlias4.key,
                 polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
@@ -108,6 +113,7 @@ export async function getUserComments({
                 polisCluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
                 polisCluster4NumDisagrees:
                     opinionTable.polisCluster4NumDisagrees,
+                polisCluster4NumPasses: opinionTable.polisCluster4NumPasses,
                 polisCluster5Id: polisClusterTableAlias5.id,
                 polisCluster5Key: polisClusterTableAlias5.key,
                 polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
@@ -115,6 +121,7 @@ export async function getUserComments({
                 polisCluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
                 polisCluster5NumDisagrees:
                     opinionTable.polisCluster5NumDisagrees,
+                polisCluster5NumPasses: opinionTable.polisCluster5NumPasses,
                 opinionAuthorPolisClusterId:
                     polisClusterUserTable.polisClusterId,
             })
@@ -198,7 +205,8 @@ export async function getUserComments({
                 opinionResponse.polisCluster0Key !== null &&
                 opinionResponse.polisCluster0NumUsers !== null &&
                 opinionResponse.polisCluster0NumAgrees !== null &&
-                opinionResponse.polisCluster0NumDisagrees !== null
+                opinionResponse.polisCluster0NumDisagrees !== null &&
+                opinionResponse.polisCluster0NumPasses !== null
             ) {
                 clustersStats.push({
                     key: opinionResponse.polisCluster0Key,
@@ -211,13 +219,15 @@ export async function getUserComments({
                     numUsers: opinionResponse.polisCluster0NumUsers,
                     numAgrees: opinionResponse.polisCluster0NumAgrees,
                     numDisagrees: opinionResponse.polisCluster0NumDisagrees,
+                    numPasses: opinionResponse.polisCluster0NumPasses,
                 });
             }
             if (
                 opinionResponse.polisCluster1Key !== null &&
                 opinionResponse.polisCluster1NumUsers !== null &&
                 opinionResponse.polisCluster1NumAgrees !== null &&
-                opinionResponse.polisCluster1NumDisagrees !== null
+                opinionResponse.polisCluster1NumDisagrees !== null &&
+                opinionResponse.polisCluster1NumPasses !== null
             ) {
                 clustersStats.push({
                     key: opinionResponse.polisCluster1Key,
@@ -230,13 +240,15 @@ export async function getUserComments({
                     numUsers: opinionResponse.polisCluster1NumUsers,
                     numAgrees: opinionResponse.polisCluster1NumAgrees,
                     numDisagrees: opinionResponse.polisCluster1NumDisagrees,
+                    numPasses: opinionResponse.polisCluster1NumPasses,
                 });
             }
             if (
                 opinionResponse.polisCluster2Key !== null &&
                 opinionResponse.polisCluster2NumUsers !== null &&
                 opinionResponse.polisCluster2NumAgrees !== null &&
-                opinionResponse.polisCluster2NumDisagrees !== null
+                opinionResponse.polisCluster2NumDisagrees !== null &&
+                opinionResponse.polisCluster2NumPasses !== null
             ) {
                 clustersStats.push({
                     key: opinionResponse.polisCluster2Key,
@@ -249,13 +261,15 @@ export async function getUserComments({
                     numUsers: opinionResponse.polisCluster2NumUsers,
                     numAgrees: opinionResponse.polisCluster2NumAgrees,
                     numDisagrees: opinionResponse.polisCluster2NumDisagrees,
+                    numPasses: opinionResponse.polisCluster2NumPasses,
                 });
             }
             if (
                 opinionResponse.polisCluster3Key !== null &&
                 opinionResponse.polisCluster3NumUsers !== null &&
                 opinionResponse.polisCluster3NumAgrees !== null &&
-                opinionResponse.polisCluster3NumDisagrees !== null
+                opinionResponse.polisCluster3NumDisagrees !== null &&
+                opinionResponse.polisCluster3NumPasses !== null
             ) {
                 clustersStats.push({
                     key: opinionResponse.polisCluster3Key,
@@ -268,13 +282,15 @@ export async function getUserComments({
                     numUsers: opinionResponse.polisCluster3NumUsers,
                     numAgrees: opinionResponse.polisCluster3NumAgrees,
                     numDisagrees: opinionResponse.polisCluster3NumDisagrees,
+                    numPasses: opinionResponse.polisCluster3NumPasses,
                 });
             }
             if (
                 opinionResponse.polisCluster4Key !== null &&
                 opinionResponse.polisCluster4NumUsers !== null &&
                 opinionResponse.polisCluster4NumAgrees !== null &&
-                opinionResponse.polisCluster4NumDisagrees !== null
+                opinionResponse.polisCluster4NumDisagrees !== null &&
+                opinionResponse.polisCluster4NumPasses !== null
             ) {
                 clustersStats.push({
                     key: opinionResponse.polisCluster4Key,
@@ -287,13 +303,15 @@ export async function getUserComments({
                     numUsers: opinionResponse.polisCluster4NumUsers,
                     numAgrees: opinionResponse.polisCluster4NumAgrees,
                     numDisagrees: opinionResponse.polisCluster4NumDisagrees,
+                    numPasses: opinionResponse.polisCluster4NumPasses,
                 });
             }
             if (
                 opinionResponse.polisCluster5Key !== null &&
                 opinionResponse.polisCluster5NumUsers !== null &&
                 opinionResponse.polisCluster5NumAgrees !== null &&
-                opinionResponse.polisCluster5NumDisagrees !== null
+                opinionResponse.polisCluster5NumDisagrees !== null &&
+                opinionResponse.polisCluster5NumPasses !== null
             ) {
                 clustersStats.push({
                     key: opinionResponse.polisCluster5Key,
@@ -306,6 +324,7 @@ export async function getUserComments({
                     numUsers: opinionResponse.polisCluster5NumUsers,
                     numAgrees: opinionResponse.polisCluster5NumAgrees,
                     numDisagrees: opinionResponse.polisCluster5NumDisagrees,
+                    numPasses: opinionResponse.polisCluster5NumPasses,
                 });
             }
 
@@ -317,6 +336,7 @@ export async function getUserComments({
                 numParticipants: opinionResponse.numParticipants,
                 numDisagrees: opinionResponse.numDisagrees,
                 numAgrees: opinionResponse.numAgrees,
+                numPasses: opinionResponse.numPasses,
                 username: opinionResponse.username,
                 moderation: moderationProperties,
                 isSeed: opinionResponse.isSeed,

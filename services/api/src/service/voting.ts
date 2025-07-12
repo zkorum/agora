@@ -111,6 +111,7 @@ export async function importNewVote({
 
     let numAgreesDiff = 0;
     let numDisagreesDiff = 0;
+    let numPassesDiff = 0;
 
     if (existingVoteTableResponse.length == 0) {
         // No existing vote
@@ -121,8 +122,10 @@ export async function importNewVote({
         } else {
             if (votingAction == "agree") {
                 numAgreesDiff = 1;
-            } else {
+            } else if (votingAction == "disagree") {
                 numDisagreesDiff = 1;
+            } else {
+                numPassesDiff = 1;
             }
         }
     } else if (existingVoteTableResponse.length == 1) {
@@ -134,8 +137,11 @@ export async function importNewVote({
                 );
             } else if (votingAction == "cancel") {
                 numAgreesDiff = -1;
-            } else {
+            } else if (votingAction == "disagree") {
                 numDisagreesDiff = 1;
+                numAgreesDiff = -1;
+            } else {
+                numPassesDiff = 1;
                 numAgreesDiff = -1;
             }
         } else if (existingResponse == "disagree") {
@@ -145,16 +151,35 @@ export async function importNewVote({
                 );
             } else if (votingAction == "cancel") {
                 numDisagreesDiff = -1;
-            } else {
+            } else if (votingAction == "agree") {
                 numDisagreesDiff = -1;
                 numAgreesDiff = 1;
+            } else {
+                numDisagreesDiff = -1;
+                numPassesDiff = 1;
+            }
+        } else if (existingResponse == "pass") {
+            if (votingAction == "pass") {
+                throw httpErrors.badRequest(
+                    "User already passed on the target opinion",
+                );
+            } else if (votingAction == "cancel") {
+                numPassesDiff = -1;
+            } else if (votingAction == "agree") {
+                numPassesDiff = -1;
+                numAgreesDiff = 1;
+            } else {
+                numPassesDiff = -1;
+                numDisagreesDiff = 1;
             }
         } else {
             // null case meaning user cancelled
             if (votingAction == "agree") {
                 numAgreesDiff = 1;
-            } else {
+            } else if (votingAction == "disagree") {
                 numDisagreesDiff = 1;
+            } else if (votingAction == "pass") {
+                numPassesDiff = 1;
             }
         }
     } else {
@@ -215,6 +240,7 @@ export async function importNewVote({
         .set({
             numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
             numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
+            numPasses: sql`${opinionTable.numPasses} + ${numPassesDiff}`,
         })
         .where(eq(opinionTable.currentContentId, opinionContentId));
 
@@ -405,6 +431,7 @@ export async function castVoteForOpinionSlugId({
 
     let numAgreesDiff = 0;
     let numDisagreesDiff = 0;
+    let numPassesDiff = 0;
 
     if (existingVoteTableResponse.length == 0) {
         // No existing vote
@@ -415,8 +442,10 @@ export async function castVoteForOpinionSlugId({
         } else {
             if (votingAction == "agree") {
                 numAgreesDiff = 1;
-            } else {
+            } else if (votingAction == "disagree") {
                 numDisagreesDiff = 1;
+            } else {
+                numPassesDiff = 1;
             }
         }
     } else if (existingVoteTableResponse.length == 1) {
@@ -428,8 +457,11 @@ export async function castVoteForOpinionSlugId({
                 );
             } else if (votingAction == "cancel") {
                 numAgreesDiff = -1;
-            } else {
+            } else if (votingAction == "disagree") {
                 numDisagreesDiff = 1;
+                numAgreesDiff = -1;
+            } else {
+                numPassesDiff = 1;
                 numAgreesDiff = -1;
             }
         } else if (existingResponse == "disagree") {
@@ -439,16 +471,35 @@ export async function castVoteForOpinionSlugId({
                 );
             } else if (votingAction == "cancel") {
                 numDisagreesDiff = -1;
-            } else {
+            } else if (votingAction == "agree") {
                 numDisagreesDiff = -1;
                 numAgreesDiff = 1;
+            } else {
+                numDisagreesDiff = -1;
+                numPassesDiff = 1;
+            }
+        } else if (existingResponse == "pass") {
+            if (votingAction == "pass") {
+                throw httpErrors.badRequest(
+                    "User already passed on the target opinion",
+                );
+            } else if (votingAction == "cancel") {
+                numPassesDiff = -1;
+            } else if (votingAction == "agree") {
+                numPassesDiff = -1;
+                numAgreesDiff = 1;
+            } else {
+                numPassesDiff = -1;
+                numDisagreesDiff = 1;
             }
         } else {
             // null case meaning user cancelled
             if (votingAction == "agree") {
                 numAgreesDiff = 1;
-            } else {
+            } else if (votingAction == "disagree") {
                 numDisagreesDiff = 1;
+            } else if (votingAction == "pass") {
+                numPassesDiff = 1;
             }
         }
     } else {
@@ -562,11 +613,13 @@ export async function castVoteForOpinionSlugId({
             .set({
                 numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
                 numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
+                numPasses: sql`${opinionTable.numPasses} + ${numPassesDiff}`,
             })
             .where(eq(opinionTable.id, commentData.commentId))
             .returning({
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
+                numPasses: opinionTable.numPasses,
             });
 
         if (votingAction != "cancel") {

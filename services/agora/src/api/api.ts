@@ -2327,6 +2327,12 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     'numDisagrees': number;
     /**
      * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+     */
+    'numPasses': number;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
@@ -2392,6 +2398,12 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersSta
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
      */
     'numDisagrees': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'numPasses': number;
 }
 
 export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum = {
@@ -2509,7 +2521,8 @@ export interface ApiV1UserVoteGetByConversationsPost200ResponseInner {
 
 export const ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum = {
     Agree: 'agree',
-    Disagree: 'disagree'
+    Disagree: 'disagree',
+    Pass: 'pass'
 } as const;
 
 export type ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum = typeof ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum[keyof typeof ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum];
@@ -2550,6 +2563,7 @@ export interface ApiV1VoteCastPostRequest {
 export const ApiV1VoteCastPostRequestChosenOptionEnum = {
     Agree: 'agree',
     Disagree: 'disagree',
+    Pass: 'pass',
     Cancel: 'cancel'
 } as const;
 

@@ -122,6 +122,7 @@ const opinionItem = ref<OpinionItem>({
   numParticipants: 0,
   numDisagrees: 0,
   numAgrees: 0,
+  numPasses: 0,
   updatedAt: new Date(),
   username: "",
   isSeed: false,
