@@ -41,7 +41,7 @@
 
         <div v-if="userCastedVote" class="voteCountLabelAgree">
           <div>
-            {{ numAgreesLocal }} •
+            {{ props.commentItem.numAgrees }} •
             {{ formatPercentage(relativeTotalPercentageAgrees) }}
           </div>
         </div>
@@ -90,15 +90,8 @@ const { castVoteForComment } = useBackendVoteApi();
 const { updateAuthState } = useBackendAuthApi();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
-// we use computed to make the changes update immediately on-click, without waiting for this whole child component to re-render upon emit
-const numAgreesLocal = computed(() => props.commentItem.numAgrees);
-const numDisagreesLocal = computed(() => props.commentItem.numDisagrees);
-
 const userCastedVote = computed(() => {
-  const hasEntry = props.commentSlugIdLikedMap.has(
-    props.commentItem.opinionSlugId
-  );
-  return hasEntry ? true : false;
+  return props.commentSlugIdLikedMap.has(props.commentItem.opinionSlugId);
 });
 
 interface IconObject {
@@ -147,15 +140,15 @@ const upvoteIcon = computed<IconObject>(() => {
 
 const relativeTotalPercentageAgrees = computed(() => {
   return calculatePercentage(
-    numAgreesLocal.value,
-    numAgreesLocal.value + numDisagreesLocal.value
+    props.commentItem.numAgrees,
+    props.commentItem.numAgrees + props.commentItem.numDisagrees
   );
 });
 
 const relativeTotalPercentageDisagrees = computed(() => {
   return calculatePercentage(
-    numDisagreesLocal.value,
-    numAgreesLocal.value + numDisagreesLocal.value
+    props.commentItem.numDisagrees,
+    props.commentItem.numAgrees + props.commentItem.numDisagrees
   );
 });
 
@@ -241,7 +234,7 @@ async function castPersonalVote(
 }
 
 .voteCountLabelDisagree {
-  color: $button-disgree-text;
+  color: $button-disagree-text;
 }
 
 .voteCountLabelAgree {
