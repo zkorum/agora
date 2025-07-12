@@ -396,12 +396,14 @@ async function getCoreOpinions({
             numParticipants: opinion.numParticipants,
             numAgrees: opinion.numAgrees,
             numDisagrees: opinion.numDisagrees,
+            numPasses: opinion.numPasses,
             clustersStats: opinion.clustersStats.map((stat) => {
                 return {
                     key: stat.key,
                     numMembers: stat.numUsers,
                     numAgrees: stat.numAgrees,
                     numDisagrees: stat.numDisagrees,
+                    numPasses: stat.numPasses,
                 };
             }),
         };
@@ -414,12 +416,14 @@ async function getCoreOpinions({
             numParticipants: opinion.numParticipants,
             numAgrees: opinion.numAgrees,
             numDisagrees: opinion.numDisagrees,
+            numPasses: opinion.numPasses,
             clustersStats: opinion.clustersStats.map((stat) => {
                 return {
                     key: stat.key,
                     numMembers: stat.numUsers,
                     numAgrees: stat.numAgrees,
                     numDisagrees: stat.numDisagrees,
+                    numPasses: stat.numPasses,
                 };
             }),
         };
@@ -431,12 +435,14 @@ async function getCoreOpinions({
                 numParticipants: opinion.numParticipants,
                 numAgrees: opinion.numAgrees,
                 numDisagrees: opinion.numDisagrees,
+                numPasses: opinion.numPasses,
                 clustersStats: opinion.clustersStats.map((stat) => {
                     return {
                         key: stat.key,
                         numMembers: stat.numUsers,
                         numAgrees: stat.numAgrees,
                         numDisagrees: stat.numDisagrees,
+                        numPasses: stat.numPasses,
                     };
                 }),
             };
@@ -452,12 +458,14 @@ async function getCoreOpinions({
                     numParticipants: opinion.numParticipants,
                     numAgrees: opinion.numAgrees,
                     numDisagrees: opinion.numDisagrees,
+                    numPasses: opinion.numPasses,
                     clustersStats: opinion.clustersStats.map((stat) => {
                         return {
                             key: stat.key,
                             numMembers: stat.numUsers,
                             numAgrees: stat.numAgrees,
                             numDisagrees: stat.numDisagrees,
+                            numPasses: stat.numPasses,
                         };
                     }),
                 };
@@ -474,12 +482,14 @@ async function getCoreOpinions({
                     numParticipants: opinion.numParticipants,
                     numAgrees: opinion.numAgrees,
                     numDisagrees: opinion.numDisagrees,
+                    numPasses: opinion.numPasses,
                     clustersStats: opinion.clustersStats.map((stat) => {
                         return {
                             key: stat.key,
                             numMembers: stat.numUsers,
                             numAgrees: stat.numAgrees,
                             numDisagrees: stat.numDisagrees,
+                            numPasses: stat.numPasses,
                         };
                     }),
                 };
@@ -496,12 +506,14 @@ async function getCoreOpinions({
                     numParticipants: opinion.numParticipants,
                     numAgrees: opinion.numAgrees,
                     numDisagrees: opinion.numDisagrees,
+                    numPasses: opinion.numPasses,
                     clustersStats: opinion.clustersStats.map((stat) => {
                         return {
                             key: stat.key,
                             numMembers: stat.numUsers,
                             numAgrees: stat.numAgrees,
                             numDisagrees: stat.numDisagrees,
+                            numPasses: stat.numPasses,
                         };
                     }),
                 };
@@ -518,12 +530,14 @@ async function getCoreOpinions({
                     numParticipants: opinion.numParticipants,
                     numAgrees: opinion.numAgrees,
                     numDisagrees: opinion.numDisagrees,
+                    numPasses: opinion.numPasses,
                     clustersStats: opinion.clustersStats.map((stat) => {
                         return {
                             key: stat.key,
                             numMembers: stat.numUsers,
                             numAgrees: stat.numAgrees,
                             numDisagrees: stat.numDisagrees,
+                            numPasses: stat.numPasses,
                         };
                     }),
                 };
@@ -540,12 +554,14 @@ async function getCoreOpinions({
                     numParticipants: opinion.numParticipants,
                     numAgrees: opinion.numAgrees,
                     numDisagrees: opinion.numDisagrees,
+                    numPasses: opinion.numPasses,
                     clustersStats: opinion.clustersStats.map((stat) => {
                         return {
                             key: stat.key,
                             numMembers: stat.numUsers,
                             numAgrees: stat.numAgrees,
                             numDisagrees: stat.numDisagrees,
+                            numPasses: stat.numPasses,
                         };
                     }),
                 };
@@ -562,12 +578,14 @@ async function getCoreOpinions({
                     numParticipants: opinion.numParticipants,
                     numAgrees: opinion.numAgrees,
                     numDisagrees: opinion.numDisagrees,
+                    numPasses: opinion.numPasses,
                     clustersStats: opinion.clustersStats.map((stat) => {
                         return {
                             key: stat.key,
                             numMembers: stat.numUsers,
                             numAgrees: stat.numAgrees,
                             numDisagrees: stat.numDisagrees,
+                            numPasses: stat.numPasses,
                         };
                     }),
                 };

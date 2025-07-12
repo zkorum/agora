@@ -2376,6 +2376,12 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     'numDisagrees': number;
     /**
      * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
+     */
+    'numPasses': number;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem
      */
@@ -2441,6 +2447,12 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersSta
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
      */
     'numDisagrees': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'numPasses': number;
 }
 
 export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum = {

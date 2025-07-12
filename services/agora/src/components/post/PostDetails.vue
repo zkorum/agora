@@ -22,7 +22,7 @@
             :opinion-count="
               extendedPostData.metadata.opinionCount + commentCountOffset
             "
-            :show-analysis-page="extendedPostData.polis.clusters.length > 0"
+            :show-analysis-page="extendedPostData.polis.clusters.length > 1"
             @share="shareClicked()"
           />
 
