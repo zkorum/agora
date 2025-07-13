@@ -41,6 +41,7 @@ import {
   ExtendedConversationPolis,
   PolisKey,
   VotingAction,
+  VotingOption,
   type CommentFeedFilter,
   type OpinionItem,
 } from "src/shared/types/zod";
@@ -70,7 +71,7 @@ const props = defineProps<{
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
   opinionItemListPartial: OpinionItem[];
-  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
+  commentSlugIdLikedMap: Map<string, VotingOption>;
 }>();
 
 const sortAlgorithm = ref<CommentFilterOptions>("discover");

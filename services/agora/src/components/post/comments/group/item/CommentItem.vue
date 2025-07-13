@@ -52,7 +52,11 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+import type {
+  OpinionItem,
+  VotingAction,
+  VotingOption,
+} from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import CommentActionBar from "./CommentActionBar.vue";
@@ -64,7 +68,7 @@ const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
-  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
+  commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
   participantCount: number;
   loginRequiredToParticipate: boolean;
