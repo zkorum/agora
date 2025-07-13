@@ -97,7 +97,7 @@ const legendItems = computed(() => {
 }
 
 .vote-bar-2 {
-  background: #cdcbd3;
+  background: #6d6a74;
 }
 
 .vote-bar-3 {
@@ -132,7 +132,7 @@ const legendItems = computed(() => {
 }
 
 .legend-color-2 {
-  background: #cdcbd3;
+  background: #6d6a74;
 }
 
 .legend-color-3 {

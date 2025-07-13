@@ -36,6 +36,7 @@
                 <tr>
                   <th></th>
                   <th class="agree-header">Agree</th>
+                  <th class="pass-header">Pass</th>
                   <th class="disagree-header">Disagree</th>
                 </tr>
               </thead>
@@ -52,6 +53,17 @@
                       formatPercentage(
                         calculatePercentage(
                           props.opinionItem.numAgrees,
+                          props.opinionItem.numParticipants
+                        )
+                      )
+                    }}
+                  </td>
+                  <td class="pass-cell">
+                    {{ props.opinionItem.numPasses }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          props.opinionItem.numPasses,
                           props.opinionItem.numParticipants
                         )
                       )
@@ -83,6 +95,14 @@
                     {{
                       formatPercentage(
                         calculatePercentage(group.numAgrees, group.numUsers)
+                      )
+                    }}
+                  </td>
+                  <td class="pass-cell">
+                    {{ group.numPasses }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(group.numPasses, group.numUsers)
                       )
                     }}
                   </td>
@@ -207,6 +227,11 @@ async function viewOriginalComment() {
 .agree-header,
 .agree-cell {
   color: #6b4eff;
+}
+
+.pass-header,
+.pass-cell {
+  color: #6d6a74;
 }
 
 .disagree-header,

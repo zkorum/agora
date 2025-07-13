@@ -45,7 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+import type {
+  OpinionItem,
+  VotingAction,
+  VotingOption,
+} from "src/shared/types/zod";
 import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 
@@ -59,7 +63,7 @@ defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
   initialCommentSlugId: string;
-  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
+  commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
   isLoading: boolean;
   participantCount: number;
