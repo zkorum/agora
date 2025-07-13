@@ -9,7 +9,8 @@
           label="Disagree"
           :text-color="downvoteIcon.textColor"
           :color="downvoteIcon.backgroundColor"
-          size="0.8rem"
+          :size="BUTTON_SIZE"
+          :aria-label="`Disagree with comment. Current disagrees: ${props.commentItem.numDisagrees}`"
           @click.stop.prevent="
             castPersonalVote(props.commentItem.opinionSlugId, false)
           "
@@ -32,7 +33,8 @@
           label="Agree"
           :text-color="upvoteIcon.textColor"
           :color="upvoteIcon.backgroundColor"
-          size="0.8rem"
+          :size="BUTTON_SIZE"
+          :aria-label="`Agree with comment. Current agrees: ${props.commentItem.numAgrees}`"
           @click.stop.prevent="
             castPersonalVote(props.commentItem.opinionSlugId, true)
           "
@@ -70,12 +72,14 @@ import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 
+const BUTTON_SIZE = "0.8rem";
+
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
   isPostLocked: boolean;
-  participantCount: number;
+  participantCount: number; // Not used
   loginRequiredToParticipate: boolean;
 }>();
 
@@ -94,44 +98,39 @@ const userCastedVote = computed(() => {
   return props.commentSlugIdLikedMap.has(props.commentItem.opinionSlugId);
 });
 
-interface IconObject {
-  icon: string;
+interface ButtonStyle {
   textColor: string;
   backgroundColor: string;
 }
 
-const downvoteIcon = computed<IconObject>(() => {
+const downvoteIcon = computed<ButtonStyle>(() => {
   const userAction = props.commentSlugIdLikedMap.get(
     props.commentItem.opinionSlugId
   );
   if (userAction == "disagree") {
     return {
-      icon: "mdi-thumb-down",
       textColor: "white",
       backgroundColor: "button-disagree-background-selected",
     };
   } else {
     return {
-      icon: "mdi-thumb-down-outline",
       textColor: "button-disagree-text",
       backgroundColor: "button-disagree-background-unselected",
     };
   }
 });
 
-const upvoteIcon = computed<IconObject>(() => {
+const upvoteIcon = computed<ButtonStyle>(() => {
   const userAction = props.commentSlugIdLikedMap.get(
     props.commentItem.opinionSlugId
   );
   if (userAction == "agree") {
     return {
-      icon: "mdi-thumb-up",
       textColor: "white",
       backgroundColor: "button-agree-background-selected",
     };
   } else {
     return {
-      icon: "mdi-thumb-up-outline",
       textColor: "button-agree-text",
       backgroundColor: "button-agree-background-unselected",
     };
@@ -165,53 +164,51 @@ async function castPersonalVote(
 ) {
   if (props.loginRequiredToParticipate && !isLoggedIn.value) {
     showLoginDialog.value = true;
+    return;
+  }
+
+  let targetState: VotingAction = "cancel";
+  const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
+
+  if (originalSelection === undefined) {
+    targetState = isUpvoteButton ? "agree" : "disagree";
   } else {
-    let targetState: VotingAction = "cancel";
-    const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
-    if (originalSelection == undefined) {
-      targetState = isUpvoteButton ? "agree" : "disagree";
-    } else {
-      // temporarily disabling changing vote, until it is supported in external polis system
-      showNotifyMessage("Vote change temporarily disabled");
-      return;
-      //TODO: remove the above and uncomment what's below
-      // if (originalSelection == "agree") {
-      //   if (isUpvoteButton) {
-      //     targetState = "cancel";
-      //   } else {
-      //     targetState = "disagree";
-      //   }
-      // } else {
-      //   if (isUpvoteButton) {
-      //     targetState = "agree";
-      //   } else {
-      //     targetState = "cancel";
-      //   }
-      // }
-    }
+    // temporarily disabling changing vote, until it is supported in external polis system
+    showNotifyMessage("Vote change temporarily disabled");
+    return;
+    //TODO: remove the above and uncomment what's below
+    // if (originalSelection == "agree") {
+    //   if (isUpvoteButton) {
+    //     targetState = "cancel";
+    //   } else {
+    //     targetState = "disagree";
+    //   }
+    // } else {
+    //   if (isUpvoteButton) {
+    //     targetState = "agree";
+    //   } else {
+    //     targetState = "cancel";
+    //   }
+    // }
+  }
 
-    emit("changeVote", targetState);
+  emit("changeVote", targetState);
 
-    const response = await castVoteForComment(commentSlugId, targetState);
-    // TODO: refactor backend to return error and reason if any, and react appropriately
-    if (!response) {
-      // Revert
-      emit(
-        "changeVote",
-        originalSelection !== undefined ? originalSelection : "cancel"
-      );
-    } else {
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
-    }
+  const response = await castVoteForComment(commentSlugId, targetState);
+  // TODO: refactor backend to return error and reason if any, and react appropriately
+  if (!response) {
+    // Revert
+    emit(
+      "changeVote",
+      originalSelection !== undefined ? originalSelection : "cancel"
+    );
+  } else {
+    await updateAuthState({ partialLoginStatus: { isKnown: true } });
   }
 }
 </script>
 
 <style scoped lang="scss">
-.voteCountLabel {
-  padding-left: 0.5rem;
-}
-
 .agreementButtons {
   display: grid;
   grid-template-columns: calc(50% - 0.5rem) calc(50% - 0.5rem);
@@ -239,9 +236,5 @@ async function castPersonalVote(
 
 .voteCountLabelAgree {
   color: $button-agree-text;
-}
-
-.highlightStat {
-  font-weight: bold;
 }
 </style>
