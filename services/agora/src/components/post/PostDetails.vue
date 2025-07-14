@@ -90,7 +90,7 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref } from "vue";
+import { ref, triggerRef } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -168,9 +168,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       if (commentSlugIdLikedMap.value.size === 0) {
         participantCountLocal.value = participantCountLocal.value + 1;
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "agree");
-      commentSlugIdLikedMap.value = newMap;
+      commentSlugIdLikedMap.value.set(opinionSlugId, "agree");
+      triggerRef(commentSlugIdLikedMap);
       const newOpinionItemList = opinionItemListPartial.value.map(
         (opinionItem) => {
           if (opinionItem.opinionSlugId === opinionSlugId) {
@@ -186,9 +185,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       if (commentSlugIdLikedMap.value.size === 0) {
         participantCountLocal.value = participantCountLocal.value + 1;
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "disagree");
-      commentSlugIdLikedMap.value = newMap;
+      commentSlugIdLikedMap.value.set(opinionSlugId, "disagree");
+      triggerRef(commentSlugIdLikedMap);
       const newOpinionItemList = opinionItemListPartial.value.map(
         (opinionItem) => {
           if (opinionItem.opinionSlugId === opinionSlugId) {
@@ -204,9 +202,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       if (commentSlugIdLikedMap.value.size === 0) {
         participantCountLocal.value = participantCountLocal.value + 1;
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "pass");
-      commentSlugIdLikedMap.value = newMap;
+      commentSlugIdLikedMap.value.set(opinionSlugId, "pass");
+      triggerRef(commentSlugIdLikedMap);
       const newOpinionItemList = opinionItemListPartial.value.map(
         (opinionItem) => {
           if (opinionItem.opinionSlugId === opinionSlugId) {
@@ -244,9 +241,8 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
         );
         opinionItemListPartial.value = newOpinionItemList;
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.delete(opinionSlugId);
-      commentSlugIdLikedMap.value = newMap;
+      commentSlugIdLikedMap.value.delete(opinionSlugId);
+      triggerRef(commentSlugIdLikedMap);
       break;
     }
   }
