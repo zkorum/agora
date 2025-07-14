@@ -1,5 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
-import { OpinionItem } from "src/shared/types/zod";
+import { OpinionItem, VotingOption } from "src/shared/types/zod";
 import { CommentFilterOptions } from "src/utils/component/opinion";
 import { ref } from "vue";
 import { useAuthenticationStore } from "./authentication";
@@ -102,10 +102,59 @@ export const useOpinionScrollableStore = defineStore(
       return "not_found";
     }
 
+    function updateOpinionVote(opinionSlugId: string, voteType: VotingOption) {
+      const updateOpinionItem = (opinionItem: OpinionItem) => {
+        if (opinionItem.opinionSlugId === opinionSlugId) {
+          switch (voteType) {
+            case "agree":
+              opinionItem.numAgrees = opinionItem.numAgrees + 1;
+              break;
+            case "disagree":
+              opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
+              break;
+            case "pass":
+              opinionItem.numPasses = opinionItem.numPasses + 1;
+              break;
+          }
+        }
+        return opinionItem;
+      };
+
+      opinionItemListPartial.value =
+        opinionItemListPartial.value.map(updateOpinionItem);
+    }
+
+    function cancelOpinionVote(
+      opinionSlugId: string,
+      originalVote: VotingOption
+    ) {
+      const updateOpinionItem = (opinionItem: OpinionItem) => {
+        if (opinionItem.opinionSlugId === opinionSlugId) {
+          switch (originalVote) {
+            case "agree":
+              opinionItem.numAgrees = opinionItem.numAgrees - 1;
+              break;
+            case "disagree":
+              opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
+              break;
+            case "pass":
+              opinionItem.numPasses = opinionItem.numPasses - 1;
+              break;
+          }
+        }
+        return opinionItem;
+      };
+
+      opinionItemListPartial.value =
+        opinionItemListPartial.value.map(updateOpinionItem);
+    }
+
     return {
       setupOpinionlist,
       loadMore,
       detectOpinionFilterBySlugId,
+      updateOpinionVote,
+      cancelOpinionVote,
       opinionItemListPartial,
       hasMore,
     };
