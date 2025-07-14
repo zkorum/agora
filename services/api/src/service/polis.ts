@@ -155,8 +155,25 @@ export async function createOrUpdateVote({
 }: PolisCreateOrUpdateVoteProps) {
     log.info("Creating a new vote in Polis...");
     const postCreateOrUpdateVote = "/api/v3/votes";
-    const polisVote =
-        votingAction === "agree" ? -1 : votingAction === "disagree" ? 1 : 0; // Yes, -1 is agree in stock Polis...
+
+    // Note: In Polis, -1 = agree, 1 = disagree, 0 = pass
+    let polisVote: number;
+    switch (votingAction) {
+        case "agree":
+            polisVote = -1;
+            break;
+        case "disagree":
+            polisVote = 1;
+            break;
+        case "pass":
+            polisVote = 0;
+            break;
+        default:
+            // "cancel" ?
+            polisVote = 0;
+            break;
+    }
+
     const body = {
         lang: "en",
         weight: 0,
@@ -167,6 +184,7 @@ export async function createOrUpdateVote({
         conversation_id: conversationSlugId,
         agid: 1,
     };
+
     await axiosPolis.post(postCreateOrUpdateVote, body, {
         headers: {
             "Content-Type": "application/json",
