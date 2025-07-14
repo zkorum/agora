@@ -19,7 +19,6 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
         :login-required-to-participate="props.loginRequiredToParticipate"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -66,7 +65,6 @@ const emit = defineEmits([
 
 const props = defineProps<{
   postSlugId: string;
-  participantCount: number;
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;

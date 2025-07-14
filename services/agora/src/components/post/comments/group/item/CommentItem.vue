@@ -40,7 +40,6 @@
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
-            :participant-count="participantCount"
             :is-post-locked="isPostLocked"
             :login-required-to-participate="loginRequiredToParticipate"
             @change-vote="(vote: VotingAction) => changeVote(vote)"
@@ -70,7 +69,6 @@ const props = defineProps<{
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
-  participantCount: number;
   loginRequiredToParticipate: boolean;
 }>();
 

@@ -69,7 +69,6 @@ const props = defineProps<{
   postSlugId: string;
   commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
-  participantCount: number; // Not used
   loginRequiredToParticipate: boolean;
 }>();
 
@@ -163,24 +162,5 @@ async function castPersonalVote(
   gap: 0.5rem;
   padding-left: 0.2rem;
   padding-right: 0.2rem;
-}
-
-.maxWidth {
-  width: 100%;
-}
-
-.buttonContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.voteCountLabelDisagree {
-  color: $button-disagree-text;
-}
-
-.voteCountLabelAgree {
-  color: $button-agree-text;
 }
 </style>
