@@ -118,7 +118,8 @@ const router = useRouter();
 
 const webShare = useWebShare();
 
-const { loadMore } = useOpinionScrollableStore();
+const { loadMore, updateOpinionVote, cancelOpinionVote } =
+  useOpinionScrollableStore();
 const { hasMore, opinionItemListPartial } = storeToRefs(
   useOpinionScrollableStore()
 );
@@ -170,15 +171,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       }
       commentSlugIdLikedMap.value.set(opinionSlugId, "agree");
       triggerRef(commentSlugIdLikedMap);
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numAgrees = opinionItem.numAgrees + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
+      updateOpinionVote(opinionSlugId, "agree");
       break;
     }
     case "disagree": {
@@ -187,15 +180,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       }
       commentSlugIdLikedMap.value.set(opinionSlugId, "disagree");
       triggerRef(commentSlugIdLikedMap);
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
+      updateOpinionVote(opinionSlugId, "disagree");
       break;
     }
     case "pass": {
@@ -204,15 +189,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       }
       commentSlugIdLikedMap.value.set(opinionSlugId, "pass");
       triggerRef(commentSlugIdLikedMap);
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numPasses = opinionItem.numPasses + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
+      updateOpinionVote(opinionSlugId, "pass");
       break;
     }
     case "cancel": {
@@ -221,25 +198,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       }
       const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
       if (originalVote !== undefined) {
-        const newOpinionItemList = opinionItemListPartial.value.map(
-          (opinionItem) => {
-            if (opinionItem.opinionSlugId === opinionSlugId) {
-              switch (originalVote) {
-                case "agree":
-                  opinionItem.numAgrees = opinionItem.numAgrees - 1;
-                  break;
-                case "disagree":
-                  opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
-                  break;
-                case "pass":
-                  opinionItem.numPasses = opinionItem.numPasses - 1;
-                  break;
-              }
-            }
-            return opinionItem;
-          }
-        );
-        opinionItemListPartial.value = newOpinionItemList;
+        cancelOpinionVote(opinionSlugId, originalVote);
       }
       commentSlugIdLikedMap.value.delete(opinionSlugId);
       triggerRef(commentSlugIdLikedMap);
