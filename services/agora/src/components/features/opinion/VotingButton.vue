@@ -108,7 +108,7 @@ defineEmits<{
   font-weight: 500;
 
   &--agree {
-    color: #6547ff;
+    color: #6b4eff;
   }
 
   &--disagree {
@@ -116,7 +116,7 @@ defineEmits<{
   }
 
   &--pass {
-    color: #6d6a74;
+    color: #a05e03;
   }
 }
 </style>
