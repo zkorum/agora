@@ -133,7 +133,7 @@ export async function loadAndImportToAgora({
             // console.log("Result", result);
             conversationTitle = result[0][1];
             conversationBody = result[7][1];
-            if (result[1][1] !== undefined && result[1][1] !== "") {
+            if (result[1][1] !== "") {
                 conversationBody = `${conversationBody} <br />Imported from ${result[1][1]}`;
             }
 
@@ -373,30 +373,36 @@ async function importToAgora({
             for (const [userId, vote] of Object.entries(
                 voteForCommentByUserId,
             )) {
-                if (vote !== 0) {
-                    await votingService.importNewVote({
-                        db: tx,
-                        conversationId,
-                        conversationSlugId,
-                        userId: users[userId].id,
-                        externalUserId: userId,
-                        externalCommentId: commentId,
-                        opinionSlugId:
-                            opinionMetadataByCommentIds[commentId]
-                                .opinionSlugId,
-                        opinionId:
-                            opinionMetadataByCommentIds[commentId].opinionId,
-                        opinionContentId:
-                            opinionMetadataByCommentIds[commentId]
-                                .opinionContentId,
-                        votingAction: vote === -1 ? "agree" : "disagree", // in Polis, -1 = agree oO
-                        axiosPolis,
-                    });
+                // In Polis: -1 = agree, 1 = disagree, 0 = pass
+                let votingAction: "agree" | "disagree" | "pass";
+                if (vote === -1) {
+                    votingAction = "agree";
+                } else if (vote === 1) {
+                    votingAction = "disagree";
+                } else if (vote === 0) {
+                    votingAction = "pass";
                 } else {
-                    log.info(
-                        `Ignoring pass for user ${userId} and comment ${commentId}`,
+                    log.warn(
+                        `Unexpected vote value ${vote.toString()}, skipping`,
                     );
+                    continue;
                 }
+
+                await votingService.importNewVote({
+                    db: tx,
+                    conversationId,
+                    conversationSlugId,
+                    userId: users[userId].id,
+                    externalUserId: userId,
+                    externalCommentId: commentId,
+                    opinionSlugId:
+                        opinionMetadataByCommentIds[commentId].opinionSlugId,
+                    opinionId: opinionMetadataByCommentIds[commentId].opinionId,
+                    opinionContentId:
+                        opinionMetadataByCommentIds[commentId].opinionContentId,
+                    votingAction: votingAction,
+                    axiosPolis,
+                });
             }
         }
 
