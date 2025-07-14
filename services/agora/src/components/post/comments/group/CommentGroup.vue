@@ -30,7 +30,6 @@
           :post-slug-id="postSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
-          :participant-count="participantCount"
           :login-required-to-participate="loginRequiredToParticipate"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
@@ -66,7 +65,6 @@ defineProps<{
   commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
   isLoading: boolean;
-  participantCount: number;
   loginRequiredToParticipate: boolean;
 }>();
 
