@@ -71,33 +71,33 @@ defineEmits<{
 
   // Agree button styles
   &--agree {
-    background-color: #e7e7ff;
-    color: #6547ff;
+    background: linear-gradient(114.81deg, #f1eeff 46.45%, #e8f1ff 100.1%);
+    color: #6b4eff;
 
     &.voting-button--selected {
-      background-color: #6b4eff;
-      color: white;
+      background: linear-gradient(114.81deg, #6b4eff 46.45%, #4f92f6 100.1%);
+      color: #ffffff;
     }
   }
 
   // Disagree button styles
   &--disagree {
-    background-color: #ffefd7;
+    background: linear-gradient(93.21deg, #ffefd7 4.56%, #fff9d7 97.67%);
     color: #a05e03;
 
     &.voting-button--selected {
-      background-color: #ffb323;
-      color: white;
+      background: linear-gradient(107.6deg, #ffb323 31.49%, #ffdd1c 100.22%);
+      color: #ffffff;
     }
   }
 
   // Pass button styles
   &--pass {
-    background-color: #f6f5f8;
+    background: #f6f5f8;
     color: #6d6a74;
 
     &.voting-button--selected {
-      background-color: #434149;
+      background: #434149;
       color: #ffffff;
     }
   }
