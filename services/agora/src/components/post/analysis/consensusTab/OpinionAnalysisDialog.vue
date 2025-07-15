@@ -12,94 +12,116 @@
           />
         </div>
 
-        <OpinionIdentityCard
-          :author-verified="false"
-          :created-at="opinionItem.createdAt"
-          :user-identity="opinionItem.username"
-          :show-verified-text="false"
-          :organization-image-url="''"
-          :is-seed="opinionItem.isSeed"
-        />
-
-        <div class="opinion-text">
-          <ZKHtmlContent
-            :html-body="opinionItem.opinion"
-            :compact-mode="false"
-            :enable-links="true"
+        <div class="dialog-content">
+          <OpinionIdentityCard
+            :author-verified="false"
+            :created-at="opinionItem.createdAt"
+            :user-identity="opinionItem.username"
+            :show-verified-text="false"
+            :organization-image-url="''"
+            :is-seed="opinionItem.isSeed"
           />
-        </div>
 
-        <div class="opinion-stats">
-          <table class="stats-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th class="agree-header">Agree</th>
-                <th class="disagree-header">Disagree</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="total-row">
-                <td class="group-name">
-                  {{
-                    `Total (${formatAmount(props.opinionItem.numParticipants)})`
-                  }}
-                </td>
-                <td class="agree-cell">
-                  {{ props.opinionItem.numAgrees }} •
-                  {{
-                    formatPercentage(
-                      calculatePercentage(
-                        props.opinionItem.numAgrees,
-                        props.opinionItem.numParticipants
-                      )
-                    )
-                  }}
-                </td>
-                <td class="disagree-cell">
-                  {{ props.opinionItem.numDisagrees }} •
-                  {{
-                    formatPercentage(
-                      calculatePercentage(
-                        props.opinionItem.numDisagrees,
-                        props.opinionItem.numParticipants
-                      )
-                    )
-                  }}
-                </td>
-              </tr>
-              <tr
-                v-for="(group, index) in opinionItem.clustersStats"
-                :key="index"
-              >
-                <td class="group-name">
-                  {{
-                    `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
-                  }}
-                </td>
-                <td class="agree-cell">
-                  {{ group.numAgrees }} •
-                  {{
-                    formatPercentage(
-                      calculatePercentage(group.numAgrees, group.numUsers)
-                    )
-                  }}
-                </td>
-                <td class="disagree-cell">
-                  {{ group.numDisagrees }} •
-                  {{
-                    formatPercentage(
-                      calculatePercentage(group.numDisagrees, group.numUsers)
-                    )
-                  }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <div class="opinion-text">
+            <ZKHtmlContent
+              :html-body="opinionItem.opinion"
+              :compact-mode="false"
+              :enable-links="true"
+            />
+          </div>
 
-        <div class="view-original" @click="viewOriginalComment">
-          View original opinion
+          <div class="opinion-stats">
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th class="agree-header">Agree</th>
+                  <th class="pass-header">Pass</th>
+                  <th class="disagree-header">Disagree</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="total-row">
+                  <td class="group-name">
+                    {{
+                      `Total (${formatAmount(props.opinionItem.numParticipants)})`
+                    }}
+                  </td>
+                  <td class="agree-cell">
+                    {{ props.opinionItem.numAgrees }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          props.opinionItem.numAgrees,
+                          props.opinionItem.numParticipants
+                        )
+                      )
+                    }}
+                  </td>
+                  <td class="pass-cell">
+                    {{ props.opinionItem.numPasses }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          props.opinionItem.numPasses,
+                          props.opinionItem.numParticipants
+                        )
+                      )
+                    }}
+                  </td>
+                  <td class="disagree-cell">
+                    {{ props.opinionItem.numDisagrees }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          props.opinionItem.numDisagrees,
+                          props.opinionItem.numParticipants
+                        )
+                      )
+                    }}
+                  </td>
+                </tr>
+                <tr
+                  v-for="(group, index) in opinionItem.clustersStats"
+                  :key="index"
+                >
+                  <td class="group-name">
+                    {{
+                      `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
+                    }}
+                  </td>
+                  <td class="agree-cell">
+                    {{ group.numAgrees }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(group.numAgrees, group.numUsers)
+                      )
+                    }}
+                  </td>
+                  <td class="pass-cell">
+                    {{ group.numPasses }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(group.numPasses, group.numUsers)
+                      )
+                    }}
+                  </td>
+                  <td class="disagree-cell">
+                    {{ group.numDisagrees }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(group.numDisagrees, group.numUsers)
+                      )
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="view-original" @click="viewOriginalComment">
+            View original opinion
+          </div>
         </div>
       </div>
     </q-dialog>
@@ -139,22 +161,37 @@ async function viewOriginalComment() {
 .dialog-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   background-color: white;
   border-radius: 25px;
   width: min(100vw, 30rem);
-  padding: 1.5rem;
+  max-height: 80vh;
+  overflow: hidden;
 }
 
 .dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  padding: 1.5rem 1.5rem 0 1.5rem;
+  border-radius: 25px 25px 0 0;
 }
 
 .dialog-title {
   font-size: 1.5rem;
   font-weight: 500;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  padding-top: 1rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .opinion-text {
@@ -190,6 +227,11 @@ async function viewOriginalComment() {
 .agree-header,
 .agree-cell {
   color: #6b4eff;
+}
+
+.pass-header,
+.pass-cell {
+  color: #6d6a74;
 }
 
 .disagree-header,

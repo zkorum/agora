@@ -24,8 +24,6 @@ $negative: #d3180c;
 $info: #31ccec;
 $warning: #f79327;
 
-$navigation-bar-color: #f5f5f5;
-
 $color-text-strong: rgb(51, 61, 66);
 .text-color-text-strong {
   color: $color-text-strong !important;
@@ -33,15 +31,6 @@ $color-text-strong: rgb(51, 61, 66);
 
 .bg-color-text-strong {
   background: $color-text-strong !important;
-}
-
-$color-highlight: #3b82f6;
-.text-color-highlight {
-  color: $color-highlight !important;
-}
-
-.bg-color-highlight {
-  background: $color-highlight !important;
 }
 
 $color-text-weak: rgb(92, 108, 116);
@@ -61,8 +50,6 @@ $button-background-color: #e7e7ff;
 .bg-button-background-color {
   background: $button-background-color !important;
 }
-
-$lightweight-text-color: #6d6a74;
 
 $app-background-color: #f6f5f8;
 
@@ -98,24 +85,6 @@ $feed-flex-gap: 0.5rem;
 .bg-button-agree-background-selected {
   background: #6b4eff !important;
 }
-
-$button-disgree-text: #a05e03;
-.text-button-disagree-text {
-  color: $button-disgree-text !important;
-}
-.bg-button-disagree-text {
-  background: $button-disgree-text !important;
-}
-
-$button-agree-text: #6547ff;
-.text-button-agree-text {
-  color: $button-agree-text !important;
-}
-.bg-button-agree-text {
-  background: $button-agree-text !important;
-}
-
-$verified-icon-color: #5538ee;
 
 $gradient-hero: linear-gradient(#6b4eff, #4f92f6);
 $container-padding: 1.5rem;

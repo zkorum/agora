@@ -40,7 +40,6 @@
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :comment-slug-id-liked-map="commentSlugIdLikedMap"
-            :participant-count="participantCount"
             :is-post-locked="isPostLocked"
             :login-required-to-participate="loginRequiredToParticipate"
             @change-vote="(vote: VotingAction) => changeVote(vote)"
@@ -52,7 +51,11 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+import type {
+  OpinionItem,
+  VotingAction,
+  VotingOption,
+} from "src/shared/types/zod";
 import CommentModeration from "./CommentModeration.vue";
 import CommentActionOptions from "./CommentActionOptions.vue";
 import CommentActionBar from "./CommentActionBar.vue";
@@ -64,9 +67,8 @@ const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
-  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
+  commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
-  participantCount: number;
   loginRequiredToParticipate: boolean;
 }>();
 

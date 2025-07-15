@@ -1,3 +1,4 @@
+/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 import { validateDidKey, validateDidWeb } from "../did/util.js";
 import {
@@ -319,12 +320,14 @@ export const zodClusterStats = z.object({
     numUsers: z.number().int().nonnegative(),
     numAgrees: z.number().int().nonnegative(),
     numDisagrees: z.number().int().nonnegative(),
+    numPasses: z.number().int().nonnegative(),
 });
 export const zodClusterStatsForLlm = z.object({
     key: zodPolisKey,
     numMembers: z.number().int().nonnegative(),
     numAgrees: z.number().int().nonnegative(),
     numDisagrees: z.number().int().nonnegative(),
+    numPasses: z.number().int().nonnegative(),
 });
 export const zodOpinionItem = z
     .object({
@@ -335,6 +338,7 @@ export const zodOpinionItem = z
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
+        numPasses: z.number().int().nonnegative(),
         username: z.string(),
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,
@@ -347,6 +351,7 @@ export const zodOpinionItemForLlm = z
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
+        numPasses: z.number().int().nonnegative(),
         clustersStats: z.array(zodClusterStatsForLlm),
     })
     .strict();
@@ -375,8 +380,8 @@ export const zodExtendedOpinionData = z
         opinionItem: zodOpinionItem,
     })
     .strict();
-export const zodVotingOption = z.enum(["agree", "disagree"]);
-export const zodVotingAction = z.enum(["agree", "disagree", "cancel"]);
+export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
+export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
 export interface LanguageObject {
     name: string;

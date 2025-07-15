@@ -19,7 +19,6 @@
         :initial-comment-slug-id="requestedCommentSlugId"
         :comment-slug-id-liked-map="commentSlugIdLikedMap"
         :is-post-locked="isPostLocked"
-        :participant-count="props.participantCount"
         :login-required-to-participate="props.loginRequiredToParticipate"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
@@ -41,6 +40,7 @@ import {
   ExtendedConversationPolis,
   PolisKey,
   VotingAction,
+  VotingOption,
   type CommentFeedFilter,
   type OpinionItem,
 } from "src/shared/types/zod";
@@ -65,12 +65,11 @@ const emit = defineEmits([
 
 const props = defineProps<{
   postSlugId: string;
-  participantCount: number;
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
   opinionItemListPartial: OpinionItem[];
-  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
+  commentSlugIdLikedMap: Map<string, VotingOption>;
 }>();
 
 const sortAlgorithm = ref<CommentFilterOptions>("discover");

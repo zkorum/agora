@@ -558,7 +558,7 @@ export const phoneCountryCodeEnum = pgEnum("phone_country_code", [
     "ZW",
 ]);
 
-export const voteEnum = pgEnum("vote_enum", ["agree", "disagree"]);
+export const voteEnum = pgEnum("vote_enum", ["agree", "disagree", "pass"]);
 
 export const polisKeyEnum = pgEnum("polis_key_enum", [
     "0",
@@ -1198,6 +1198,7 @@ export const opinionTable = pgTable(
         isSeed: boolean("is_seed").notNull().default(false),
         numAgrees: integer("num_agrees").notNull().default(0),
         numDisagrees: integer("num_disagrees").notNull().default(0),
+        numPasses: integer("num_passes").notNull().default(0),
         polisGroupAwareConsensusProbabilityAgree: real("polis_ga_consensus_pa")
             .notNull()
             .default(0), // will contain pol.is group-aware-consensus probabilities for "agree"
@@ -1209,31 +1210,37 @@ export const opinionTable = pgTable(
         ),
         polisCluster0NumAgrees: integer("cluster_0_num_agrees"),
         polisCluster0NumDisagrees: integer("cluster_0_num_disagrees"),
+        polisCluster0NumPasses: integer("cluster_0_num_passes"),
         polisCluster1Id: integer("cluster_1_id").references(
             () => polisClusterTable.id,
         ),
         polisCluster1NumAgrees: integer("cluster_1_num_agrees"),
         polisCluster1NumDisagrees: integer("cluster_1_num_disagrees"),
+        polisCluster1NumPasses: integer("cluster_1_num_passes"),
         polisCluster2Id: integer("cluster_2_id").references(
             () => polisClusterTable.id,
         ),
         polisCluster2NumAgrees: integer("cluster_2_num_agrees"),
         polisCluster2NumDisagrees: integer("cluster_2_num_disagrees"),
+        polisCluster2NumPasses: integer("cluster_2_num_passes"),
         polisCluster3Id: integer("cluster_3_id").references(
             () => polisClusterTable.id,
         ),
         polisCluster3NumAgrees: integer("cluster_3_num_agrees"),
         polisCluster3NumDisagrees: integer("cluster_3_num_disagrees"),
+        polisCluster3NumPasses: integer("cluster_3_num_passes"),
         polisCluster4Id: integer("cluster_4_id").references(
             () => polisClusterTable.id,
         ),
         polisCluster4NumAgrees: integer("cluster_4_num_agrees"),
         polisCluster4NumDisagrees: integer("cluster_4_num_disagrees"),
+        polisCluster4NumPasses: integer("cluster_4_num_passes"),
         polisCluster5Id: integer("cluster_5_id").references(
             () => polisClusterTable.id,
         ),
         polisCluster5NumAgrees: integer("cluster_5_num_agrees"),
         polisCluster5NumDisagrees: integer("cluster_5_num_disagrees"),
+        polisCluster5NumPasses: integer("cluster_5_num_passes"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1259,17 +1266,17 @@ export const opinionTable = pgTable(
         index("opinion_slugId_idx").on(table.slugId),
         check(
             "check_polis_null",
-            sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL))
+            sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL AND ${table.polisCluster0NumPasses} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL AND ${table.polisCluster0NumPasses} IS NULL))
                 AND 
-                ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL)) 
+                ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL AND ${table.polisCluster1NumPasses} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL AND ${table.polisCluster1NumPasses} IS NULL)) 
                 AND 
-                ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL))
+                ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL AND ${table.polisCluster2NumPasses} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL AND ${table.polisCluster2NumPasses} IS NULL))
                 AND 
-                ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL)) 
+                ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL AND ${table.polisCluster3NumPasses} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL AND ${table.polisCluster3NumPasses} IS NULL)) 
                 AND 
-                ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL)) 
+                ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL AND ${table.polisCluster4NumPasses} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL AND ${table.polisCluster4NumPasses} IS NULL)) 
                 AND 
-                ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL))`,
+                ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL AND ${table.polisCluster5NumPasses} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL AND ${table.polisCluster5NumPasses} IS NULL))`,
         ),
     ],
 );

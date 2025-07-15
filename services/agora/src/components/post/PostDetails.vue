@@ -22,7 +22,7 @@
             :opinion-count="
               extendedPostData.metadata.opinionCount + commentCountOffset
             "
-            :show-analysis-page="extendedPostData.polis.clusters.length > 0"
+            :show-analysis-page="extendedPostData.polis.clusters.length > 1"
             @share="shareClicked()"
           />
 
@@ -60,7 +60,7 @@
                   changeVote(vote, opinionSlugId)
               "
               @update-comment-slug-id-liked-map="
-                (map: Map<string, 'agree' | 'disagree'>) =>
+                (map: Map<string, VotingOption>) =>
                   updateCommentSlugIdLikedMap(map)
               "
             />
@@ -90,11 +90,15 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref } from "vue";
+import { ref, triggerRef } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
+import type {
+  ExtendedConversation,
+  VotingAction,
+  VotingOption,
+} from "src/shared/types/zod";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 import { storeToRefs } from "pinia";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
@@ -114,11 +118,12 @@ const router = useRouter();
 
 const webShare = useWebShare();
 
-const { loadMore } = useOpinionScrollableStore();
+const { loadMore, updateOpinionVote, cancelOpinionVote } =
+  useOpinionScrollableStore();
 const { hasMore, opinionItemListPartial } = storeToRefs(
   useOpinionScrollableStore()
 );
-const commentSlugIdLikedMap = ref<Map<string, "agree" | "disagree">>(new Map());
+const commentSlugIdLikedMap = ref<Map<string, VotingOption>>(new Map());
 const participantCountLocal = ref(
   props.extendedPostData.metadata.participantCount
 );
@@ -164,36 +169,27 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       if (commentSlugIdLikedMap.value.size === 0) {
         participantCountLocal.value = participantCountLocal.value + 1;
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "agree");
-      commentSlugIdLikedMap.value = newMap;
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numAgrees = opinionItem.numAgrees + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
+      commentSlugIdLikedMap.value.set(opinionSlugId, "agree");
+      triggerRef(commentSlugIdLikedMap);
+      updateOpinionVote(opinionSlugId, "agree");
       break;
     }
     case "disagree": {
       if (commentSlugIdLikedMap.value.size === 0) {
         participantCountLocal.value = participantCountLocal.value + 1;
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.set(opinionSlugId, "disagree");
-      commentSlugIdLikedMap.value = newMap;
-      const newOpinionItemList = opinionItemListPartial.value.map(
-        (opinionItem) => {
-          if (opinionItem.opinionSlugId === opinionSlugId) {
-            opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
-          }
-          return opinionItem;
-        }
-      );
-      opinionItemListPartial.value = newOpinionItemList;
+      commentSlugIdLikedMap.value.set(opinionSlugId, "disagree");
+      triggerRef(commentSlugIdLikedMap);
+      updateOpinionVote(opinionSlugId, "disagree");
+      break;
+    }
+    case "pass": {
+      if (commentSlugIdLikedMap.value.size === 0) {
+        participantCountLocal.value = participantCountLocal.value + 1;
+      }
+      commentSlugIdLikedMap.value.set(opinionSlugId, "pass");
+      triggerRef(commentSlugIdLikedMap);
+      updateOpinionVote(opinionSlugId, "pass");
       break;
     }
     case "cancel": {
@@ -202,32 +198,16 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
       }
       const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
       if (originalVote !== undefined) {
-        const newOpinionItemList = opinionItemListPartial.value.map(
-          (opinionItem) => {
-            if (opinionItem.opinionSlugId === opinionSlugId) {
-              switch (originalVote) {
-                case "agree":
-                  opinionItem.numAgrees = opinionItem.numAgrees - 1;
-                  break;
-                case "disagree":
-                  opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
-                  break;
-              }
-            }
-            return opinionItem;
-          }
-        );
-        opinionItemListPartial.value = newOpinionItemList;
+        cancelOpinionVote(opinionSlugId, originalVote);
       }
-      const newMap = new Map(commentSlugIdLikedMap.value);
-      newMap.delete(opinionSlugId);
-      commentSlugIdLikedMap.value = newMap;
+      commentSlugIdLikedMap.value.delete(opinionSlugId);
+      triggerRef(commentSlugIdLikedMap);
       break;
     }
   }
 }
 
-function updateCommentSlugIdLikedMap(map: Map<string, "agree" | "disagree">) {
+function updateCommentSlugIdLikedMap(map: Map<string, VotingOption>) {
   commentSlugIdLikedMap.value = map;
 }
 

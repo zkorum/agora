@@ -30,7 +30,6 @@
           :post-slug-id="postSlugId"
           :comment-slug-id-liked-map="commentSlugIdLikedMap"
           :is-post-locked="isPostLocked"
-          :participant-count="participantCount"
           :login-required-to-participate="loginRequiredToParticipate"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
@@ -45,7 +44,11 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+import type {
+  OpinionItem,
+  VotingAction,
+  VotingOption,
+} from "src/shared/types/zod";
 import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 
@@ -59,10 +62,9 @@ defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
   initialCommentSlugId: string;
-  commentSlugIdLikedMap: Map<string, "agree" | "disagree">;
+  commentSlugIdLikedMap: Map<string, VotingOption>;
   isPostLocked: boolean;
   isLoading: boolean;
-  participantCount: number;
   loginRequiredToParticipate: boolean;
 }>();
 

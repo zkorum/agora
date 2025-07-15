@@ -155,8 +155,25 @@ export async function createOrUpdateVote({
 }: PolisCreateOrUpdateVoteProps) {
     log.info("Creating a new vote in Polis...");
     const postCreateOrUpdateVote = "/api/v3/votes";
-    const polisVote =
-        votingAction === "agree" ? -1 : votingAction === "disagree" ? 1 : 0; // Yes, -1 is agree in stock Polis...
+
+    // Note: In Polis, -1 = agree, 1 = disagree, 0 = pass
+    let polisVote: number;
+    switch (votingAction) {
+        case "agree":
+            polisVote = -1;
+            break;
+        case "disagree":
+            polisVote = 1;
+            break;
+        case "pass":
+            polisVote = 0;
+            break;
+        default:
+            // "cancel" ?
+            polisVote = 0;
+            break;
+    }
+
     const body = {
         lang: "en",
         weight: 0,
@@ -167,6 +184,7 @@ export async function createOrUpdateVote({
         conversation_id: conversationSlugId,
         agid: 1,
     };
+
     await axiosPolis.post(postCreateOrUpdateVote, body, {
         headers: {
             "Content-Type": "application/json",
@@ -538,20 +556,25 @@ export async function delayedPolisGetAndUpdateMath({
             }
 
             const groupVotes = groupVotesEntry[1].votes;
-            // building bulk updates for numAgrees & num Disagrees
+            // building bulk updates for numAgrees, numDisagrees & numPasses
             const sqlChunksForNumAgrees: SQL[] = [];
             const sqlChunksForNumDisagrees: SQL[] = [];
+            const sqlChunksForNumPasses: SQL[] = [];
             sqlChunksForNumAgrees.push(sql`(CASE`);
             sqlChunksForNumDisagrees.push(sql`(CASE`);
+            sqlChunksForNumPasses.push(sql`(CASE`);
             for (const [tid, numVotesByCategory] of Object.entries(
                 groupVotes,
             )) {
                 const opinionSlugId = opinionSlugIdByTid[tid];
-                const totalVotes = numVotesByCategory.A + numVotesByCategory.D;
+                const totalVotes =
+                    numVotesByCategory.A +
+                    numVotesByCategory.D +
+                    numVotesByCategory.S;
                 const numMembers = groupVotesEntry[1]["n-members"];
                 if (totalVotes > numMembers) {
                     log.warn(
-                        `Number of agrees and disagrees for opinion slug id "${opinionSlugId}" is above the number of members belonging to the cluster "${polisClusterKeyStr}" of conversation slug id "${conversationSlugId}": ${String(
+                        `Number of agrees, disagrees and passes for opinion slug id "${opinionSlugId}" is above the number of members belonging to the cluster "${polisClusterKeyStr}" of conversation slug id "${conversationSlugId}": ${String(
                             totalVotes,
                         )} > ${String(numMembers)}`,
                     );
@@ -562,13 +585,18 @@ export async function delayedPolisGetAndUpdateMath({
                 sqlChunksForNumDisagrees.push(
                     sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${numVotesByCategory.D}`,
                 );
+                sqlChunksForNumPasses.push(
+                    sql`WHEN ${opinionTable.slugId} = ${opinionSlugId} THEN ${numVotesByCategory.S}`,
+                );
             }
             switch (polisClusterKeyStr) {
                 case "0": {
                     sqlChunksForNumAgrees.push(sql`ELSE 0::int`);
                     sqlChunksForNumDisagrees.push(sql`ELSE 0::int`);
+                    sqlChunksForNumPasses.push(sql`ELSE 0::int`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
+                    sqlChunksForNumPasses.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
                         sqlChunksForNumAgrees,
                         sql.raw(" "),
@@ -577,12 +605,17 @@ export async function delayedPolisGetAndUpdateMath({
                         sqlChunksForNumDisagrees,
                         sql.raw(" "),
                     );
+                    const finalSqlNumPasses: SQL = sql.join(
+                        sqlChunksForNumPasses,
+                        sql.raw(" "),
+                    );
                     await db
                         .update(opinionTable)
                         .set({
                             polisCluster0Id: polisClusterId,
                             polisCluster0NumAgrees: finalSqlNumAgrees,
                             polisCluster0NumDisagrees: finalSqlNumDisagrees,
+                            polisCluster0NumPasses: finalSqlNumPasses,
                             updatedAt: nowZeroMs(),
                         })
                         .where(eq(opinionTable.conversationId, conversationId));
@@ -593,8 +626,10 @@ export async function delayedPolisGetAndUpdateMath({
                 case "1": {
                     sqlChunksForNumAgrees.push(sql`ELSE 0::int`);
                     sqlChunksForNumDisagrees.push(sql`ELSE 0::int`);
+                    sqlChunksForNumPasses.push(sql`ELSE 0::int`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
+                    sqlChunksForNumPasses.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
                         sqlChunksForNumAgrees,
                         sql.raw(" "),
@@ -603,12 +638,17 @@ export async function delayedPolisGetAndUpdateMath({
                         sqlChunksForNumDisagrees,
                         sql.raw(" "),
                     );
+                    const finalSqlNumPasses: SQL = sql.join(
+                        sqlChunksForNumPasses,
+                        sql.raw(" "),
+                    );
                     await db
                         .update(opinionTable)
                         .set({
                             polisCluster1Id: polisClusterId,
                             polisCluster1NumAgrees: finalSqlNumAgrees,
                             polisCluster1NumDisagrees: finalSqlNumDisagrees,
+                            polisCluster1NumPasses: finalSqlNumPasses,
                             updatedAt: nowZeroMs(),
                         })
                         .where(eq(opinionTable.conversationId, conversationId));
@@ -619,8 +659,10 @@ export async function delayedPolisGetAndUpdateMath({
                 case "2": {
                     sqlChunksForNumAgrees.push(sql`ELSE 0::int`);
                     sqlChunksForNumDisagrees.push(sql`ELSE 0::int`);
+                    sqlChunksForNumPasses.push(sql`ELSE 0::int`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
+                    sqlChunksForNumPasses.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
                         sqlChunksForNumAgrees,
                         sql.raw(" "),
@@ -629,12 +671,17 @@ export async function delayedPolisGetAndUpdateMath({
                         sqlChunksForNumDisagrees,
                         sql.raw(" "),
                     );
+                    const finalSqlNumPasses: SQL = sql.join(
+                        sqlChunksForNumPasses,
+                        sql.raw(" "),
+                    );
                     await db
                         .update(opinionTable)
                         .set({
                             polisCluster2Id: polisClusterId,
                             polisCluster2NumAgrees: finalSqlNumAgrees,
                             polisCluster2NumDisagrees: finalSqlNumDisagrees,
+                            polisCluster2NumPasses: finalSqlNumPasses,
                             updatedAt: nowZeroMs(),
                         })
                         .where(eq(opinionTable.conversationId, conversationId));
@@ -645,8 +692,10 @@ export async function delayedPolisGetAndUpdateMath({
                 case "3": {
                     sqlChunksForNumAgrees.push(sql`ELSE 0::int`);
                     sqlChunksForNumDisagrees.push(sql`ELSE 0::int`);
+                    sqlChunksForNumPasses.push(sql`ELSE 0::int`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
+                    sqlChunksForNumPasses.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
                         sqlChunksForNumAgrees,
                         sql.raw(" "),
@@ -655,12 +704,17 @@ export async function delayedPolisGetAndUpdateMath({
                         sqlChunksForNumDisagrees,
                         sql.raw(" "),
                     );
+                    const finalSqlNumPasses: SQL = sql.join(
+                        sqlChunksForNumPasses,
+                        sql.raw(" "),
+                    );
                     await db
                         .update(opinionTable)
                         .set({
                             polisCluster3Id: polisClusterId,
                             polisCluster3NumAgrees: finalSqlNumAgrees,
                             polisCluster3NumDisagrees: finalSqlNumDisagrees,
+                            polisCluster3NumPasses: finalSqlNumPasses,
                             updatedAt: nowZeroMs(),
                         })
                         .where(eq(opinionTable.conversationId, conversationId));
@@ -671,8 +725,10 @@ export async function delayedPolisGetAndUpdateMath({
                 case "4": {
                     sqlChunksForNumAgrees.push(sql`ELSE 0::int`);
                     sqlChunksForNumDisagrees.push(sql`ELSE 0::int`);
+                    sqlChunksForNumPasses.push(sql`ELSE 0::int`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
+                    sqlChunksForNumPasses.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
                         sqlChunksForNumAgrees,
                         sql.raw(" "),
@@ -681,12 +737,17 @@ export async function delayedPolisGetAndUpdateMath({
                         sqlChunksForNumDisagrees,
                         sql.raw(" "),
                     );
+                    const finalSqlNumPasses: SQL = sql.join(
+                        sqlChunksForNumPasses,
+                        sql.raw(" "),
+                    );
                     await db
                         .update(opinionTable)
                         .set({
                             polisCluster4Id: polisClusterId,
                             polisCluster4NumAgrees: finalSqlNumAgrees,
                             polisCluster4NumDisagrees: finalSqlNumDisagrees,
+                            polisCluster4NumPasses: finalSqlNumPasses,
                             updatedAt: nowZeroMs(),
                         })
                         .where(eq(opinionTable.conversationId, conversationId));
@@ -697,8 +758,10 @@ export async function delayedPolisGetAndUpdateMath({
                 case "5": {
                     sqlChunksForNumAgrees.push(sql`ELSE 0::int`);
                     sqlChunksForNumDisagrees.push(sql`ELSE 0::int`);
+                    sqlChunksForNumPasses.push(sql`ELSE 0::int`);
                     sqlChunksForNumAgrees.push(sql`END)`);
                     sqlChunksForNumDisagrees.push(sql`END)`);
+                    sqlChunksForNumPasses.push(sql`END)`);
                     const finalSqlNumAgrees: SQL = sql.join(
                         sqlChunksForNumAgrees,
                         sql.raw(" "),
@@ -707,12 +770,17 @@ export async function delayedPolisGetAndUpdateMath({
                         sqlChunksForNumDisagrees,
                         sql.raw(" "),
                     );
+                    const finalSqlNumPasses: SQL = sql.join(
+                        sqlChunksForNumPasses,
+                        sql.raw(" "),
+                    );
                     await db
                         .update(opinionTable)
                         .set({
                             polisCluster5Id: polisClusterId,
                             polisCluster5NumAgrees: finalSqlNumAgrees,
                             polisCluster5NumDisagrees: finalSqlNumDisagrees,
+                            polisCluster5NumPasses: finalSqlNumPasses,
                             updatedAt: nowZeroMs(),
                         })
                         .where(eq(opinionTable.conversationId, conversationId));
@@ -731,21 +799,27 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster0Id: null,
                         polisCluster0NumAgrees: null,
                         polisCluster0NumDisagrees: null,
+                        polisCluster0NumPasses: null,
                         polisCluster1Id: null,
                         polisCluster1NumAgrees: null,
                         polisCluster1NumDisagrees: null,
+                        polisCluster1NumPasses: null,
                         polisCluster2Id: null,
                         polisCluster2NumAgrees: null,
                         polisCluster2NumDisagrees: null,
+                        polisCluster2NumPasses: null,
                         polisCluster3Id: null,
                         polisCluster3NumAgrees: null,
                         polisCluster3NumDisagrees: null,
+                        polisCluster3NumPasses: null,
                         polisCluster4Id: null,
                         polisCluster4NumAgrees: null,
                         polisCluster4NumDisagrees: null,
+                        polisCluster4NumPasses: null,
                         polisCluster5Id: null,
                         polisCluster5NumAgrees: null,
                         polisCluster5NumDisagrees: null,
+                        polisCluster5NumPasses: null,
                         updatedAt: nowZeroMs(),
                     })
                     .where(eq(opinionTable.conversationId, conversationId));
@@ -759,18 +833,23 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster1Id: null,
                         polisCluster1NumAgrees: null,
                         polisCluster1NumDisagrees: null,
+                        polisCluster1NumPasses: null,
                         polisCluster2Id: null,
                         polisCluster2NumAgrees: null,
                         polisCluster2NumDisagrees: null,
+                        polisCluster2NumPasses: null,
                         polisCluster3Id: null,
                         polisCluster3NumAgrees: null,
                         polisCluster3NumDisagrees: null,
+                        polisCluster3NumPasses: null,
                         polisCluster4Id: null,
                         polisCluster4NumAgrees: null,
                         polisCluster4NumDisagrees: null,
+                        polisCluster4NumPasses: null,
                         polisCluster5Id: null,
                         polisCluster5NumAgrees: null,
                         polisCluster5NumDisagrees: null,
+                        polisCluster5NumPasses: null,
                         updatedAt: nowZeroMs(),
                     })
                     .where(eq(opinionTable.conversationId, conversationId));
@@ -784,15 +863,19 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster2Id: null,
                         polisCluster2NumAgrees: null,
                         polisCluster2NumDisagrees: null,
+                        polisCluster2NumPasses: null,
                         polisCluster3Id: null,
                         polisCluster3NumAgrees: null,
                         polisCluster3NumDisagrees: null,
+                        polisCluster3NumPasses: null,
                         polisCluster4Id: null,
                         polisCluster4NumAgrees: null,
                         polisCluster4NumDisagrees: null,
+                        polisCluster4NumPasses: null,
                         polisCluster5Id: null,
                         polisCluster5NumAgrees: null,
                         polisCluster5NumDisagrees: null,
+                        polisCluster5NumPasses: null,
                         updatedAt: nowZeroMs(),
                     })
                     .where(eq(opinionTable.conversationId, conversationId));
@@ -806,12 +889,15 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster3Id: null,
                         polisCluster3NumAgrees: null,
                         polisCluster3NumDisagrees: null,
+                        polisCluster3NumPasses: null,
                         polisCluster4Id: null,
                         polisCluster4NumAgrees: null,
                         polisCluster4NumDisagrees: null,
+                        polisCluster4NumPasses: null,
                         polisCluster5Id: null,
                         polisCluster5NumAgrees: null,
                         polisCluster5NumDisagrees: null,
+                        polisCluster5NumPasses: null,
                         updatedAt: nowZeroMs(),
                     })
                     .where(eq(opinionTable.conversationId, conversationId));
@@ -825,9 +911,11 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster4Id: null,
                         polisCluster4NumAgrees: null,
                         polisCluster4NumDisagrees: null,
+                        polisCluster4NumPasses: null,
                         polisCluster5Id: null,
                         polisCluster5NumAgrees: null,
                         polisCluster5NumDisagrees: null,
+                        polisCluster5NumPasses: null,
                         updatedAt: nowZeroMs(),
                     })
                     .where(eq(opinionTable.conversationId, conversationId));
@@ -841,6 +929,7 @@ export async function delayedPolisGetAndUpdateMath({
                         polisCluster5Id: null,
                         polisCluster5NumAgrees: null,
                         polisCluster5NumDisagrees: null,
+                        polisCluster5NumPasses: null,
                         updatedAt: nowZeroMs(),
                     })
                     .where(eq(opinionTable.conversationId, conversationId));

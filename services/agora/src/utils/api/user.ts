@@ -130,6 +130,7 @@ export function useBackendUserApi() {
             numParticipants: responseItem.opinionItem.numParticipants,
             numDisagrees: responseItem.opinionItem.numDisagrees,
             numAgrees: responseItem.opinionItem.numAgrees,
+            numPasses: responseItem.opinionItem.numPasses,
             updatedAt: new Date(responseItem.opinionItem.updatedAt),
             username: String(responseItem.opinionItem.username),
             isSeed: responseItem.opinionItem.isSeed,
