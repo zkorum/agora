@@ -19,7 +19,7 @@ export default defineConfig((ctx) => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot:
       ctx.modeName === "capacitor"
-        ? ["i18n", "axios", "capgo", "capacitor-storage", "primevue"]
+        ? ["i18n", "axios", "capacitor-storage", "primevue"]
         : ["i18n", "axios", "primevue"],
 
     bin: {

@@ -34,7 +34,6 @@
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^8.0.0",
     "@aparajita/capacitor-secure-storage": "^6.0.1",
-    "@capgo/capacitor-updater": "^5.9.4",
     "@dicebear/collection": "^9.2.2",
     "@dicebear/core": "^9.2.2",
     "@primeuix/themes": "^1.2.1",
