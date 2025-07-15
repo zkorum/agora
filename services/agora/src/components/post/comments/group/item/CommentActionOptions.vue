@@ -133,8 +133,8 @@ async function deleteCommentCallback() {
   }
 }
 
-async function optionButtonClicked() {
-  await showCommentOptionSelector(
+function optionButtonClicked() {
+  showCommentOptionSelector(
     props.commentItem.username,
     deleteCommentCallback,
     reportContentCallback,

@@ -48,7 +48,7 @@
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import { UserMuteItem } from "src/shared/types/zod";
+import type { UserMuteItem } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { ref, onMounted } from "vue";

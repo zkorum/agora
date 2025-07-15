@@ -27,8 +27,8 @@
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
-import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import { PolisKey } from "src/shared/types/zod";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import type { PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
 const props = defineProps<{

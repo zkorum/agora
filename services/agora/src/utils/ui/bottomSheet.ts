@@ -29,14 +29,14 @@ export const useBottomSheet = () => {
     id: string;
   }
 
-  async function showCommentOptionSelector(
+  function showCommentOptionSelector(
     posterUserName: string,
-    deleteCommentCallback: () => void,
+    deleteCommentCallback: () => void | Promise<void>,
     reportCommentCallback: () => void,
-    openUserReportsCallback: () => void,
-    muteUserCallback: () => void,
-    moderateCommentCallback: () => void,
-    shareOpinionCallback: () => void
+    openUserReportsCallback: () => void | Promise<void>,
+    muteUserCallback: () => void | Promise<void>,
+    moderateCommentCallback: () => void | Promise<void>,
+    shareOpinionCallback: () => void | Promise<void>
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -88,20 +88,20 @@ export const useBottomSheet = () => {
         grid: false,
         actions: actionList,
       })
-      .onOk(async (action: QuasarAction) => {
+      .onOk((action: QuasarAction) => {
         console.log("Selected action: " + action.id);
         if (action.id == "report") {
           reportCommentCallback();
         } else if (action.id == "delete") {
-          deleteCommentCallback();
+          void deleteCommentCallback();
         } else if (action.id == "moderate") {
-          moderateCommentCallback();
+          void moderateCommentCallback();
         } else if (action.id == "userReports") {
-          openUserReportsCallback();
+          void openUserReportsCallback();
         } else if (action.id == "muteUser") {
-          muteUserCallback();
+          void muteUserCallback();
         } else if (action.id == "share") {
-          shareOpinionCallback();
+          void shareOpinionCallback();
         }
       })
       .onCancel(() => {
@@ -116,10 +116,10 @@ export const useBottomSheet = () => {
     postSlugId: string,
     posterUserName: string,
     reportPostCallback: () => void,
-    openUserReportsCallback: () => void,
-    muteUserCallback: () => void,
-    moderatePostCallback: () => void,
-    moderationHistoryCallback: () => void
+    openUserReportsCallback: () => void | Promise<void>,
+    muteUserCallback: () => void | Promise<void>,
+    moderatePostCallback: () => void | Promise<void>,
+    moderationHistoryCallback: () => void | Promise<void>
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -171,27 +171,29 @@ export const useBottomSheet = () => {
         grid: false,
         actions: actionList,
       })
-      .onOk(async (action: QuasarAction) => {
+      .onOk((action: QuasarAction) => {
         if (action.id == "report") {
           reportPostCallback();
         } else if (action.id == "delete") {
-          const response = await deletePostBySlugId(postSlugId);
-          if (response) {
-            showNotifyMessage("Conversation deleted");
-            await loadPostData();
-            await loadUserProfile();
-            if (route.name == "/conversation/[postSlugId]") {
-              await router.push({ name: "/" });
+          void (async () => {
+            const response = await deletePostBySlugId(postSlugId);
+            if (response) {
+              showNotifyMessage("Conversation deleted");
+              await loadPostData();
+              await loadUserProfile();
+              if (route.name == "/conversation/[postSlugId]") {
+                await router.push({ name: "/" });
+              }
             }
-          }
+          })();
         } else if (action.id == "moderate") {
-          moderatePostCallback();
+          void moderatePostCallback();
         } else if (action.id == "userReports") {
-          openUserReportsCallback();
+          void openUserReportsCallback();
         } else if (action.id == "muteUser") {
-          muteUserCallback();
+          void muteUserCallback();
         } else if (action.id == "moderationHistory") {
-          moderationHistoryCallback();
+          void moderationHistoryCallback();
         }
       })
       .onCancel(() => {

@@ -45,7 +45,7 @@ import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
-import { CommentFilterOptions } from "src/utils/component/opinion";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -80,7 +80,7 @@ onMounted(() => {
   initializeOptionList();
 });
 
-watch(profileData, async () => {
+watch(profileData, () => {
   initializeOptionList();
 });
 

@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { OrganizationProperties } from "src/shared/types/zod";
+import type { OrganizationProperties } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { onMounted, ref } from "vue";
 import OrganizationView from "./OrganizationView.vue";

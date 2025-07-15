@@ -9,7 +9,7 @@ import {
   type ApiV1AuthPhoneVerifyOtpPost200Response,
   type ApiV1AuthPhoneVerifyOtpPostRequest,
 } from "src/api";
-import {
+import type {
   DeviceLoginStatus,
   SupportedCountryCallingCode,
 } from "src/shared/types/zod";
@@ -21,9 +21,10 @@ import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
-import {
+import type {
   AxiosErrorResponse,
-  AxiosSuccessResponse,
+  AxiosSuccessResponse} from "./common";
+import {
   useCommonApi,
   type KeyAction,
 } from "./common";

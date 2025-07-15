@@ -34,11 +34,11 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const topicCode = ref("");
 
-onMounted(async () => {
-  await loadData();
+onMounted(() => {
+  loadData();
 });
 
-async function loadData() {
+function loadData() {
   if (route.name == "/topic/[topicCode]") {
     topicCode.value = Array.isArray(route.params.topicCode)
       ? route.params.topicCode[0]

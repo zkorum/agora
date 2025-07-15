@@ -14,7 +14,7 @@ import type {
 } from "src/shared/types/zod";
 import { useBackendPostApi } from "./post";
 import { useNotify } from "../ui/notify";
-import { GetUserProfileResponse } from "src/shared/types/dto";
+import type { GetUserProfileResponse } from "src/shared/types/dto";
 
 export function useBackendUserApi() {
   const { buildEncodedUcan } = useCommonApi();

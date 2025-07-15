@@ -52,7 +52,7 @@ import { useUserStore } from "src/stores/user";
 import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthSetup } from "src/utils/auth/setup";
-import { SettingsInterface } from "src/utils/component/settings/settings";
+import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
@@ -77,15 +77,15 @@ const deleteAccountLabel = computed(() =>
 const accountSettings: SettingsInterface[] = [
   {
     label: "Profile",
-    action: async () => {
-      await router.push({ name: "/settings/account/profile/" });
+    action: () => {
+      void router.push({ name: "/settings/account/profile/" });
     },
     style: "none",
   },
   {
     label: "Content Preference",
-    action: async () => {
-      await router.push({ name: "/settings/account/content-preference/" });
+    action: () => {
+      void router.push({ name: "/settings/account/content-preference/" });
     },
     style: "none",
   },
@@ -94,15 +94,15 @@ const accountSettings: SettingsInterface[] = [
 const aboutSettings: SettingsInterface[] = [
   {
     label: "Privacy Policy",
-    action: async () => {
-      await router.push({ name: "/legal/privacy/" });
+    action: () => {
+      void router.push({ name: "/legal/privacy/" });
     },
     style: "none",
   },
   {
     label: "Terms of Service",
-    action: async () => {
-      await router.push({ name: "/legal/terms/" });
+    action: () => {
+      void router.push({ name: "/legal/terms/" });
     },
     style: "none",
   },
@@ -111,7 +111,9 @@ const aboutSettings: SettingsInterface[] = [
 const logoutSettings: SettingsInterface[] = [
   {
     label: "Log Out",
-    action: logoutRequested,
+    action: () => {
+      void logoutRequested();
+    },
     style: "warning",
   },
 ];
@@ -119,8 +121,8 @@ const logoutSettings: SettingsInterface[] = [
 const moderatorSettings: SettingsInterface[] = [
   {
     label: "Moderator - Organization",
-    action: async () => {
-      await router.push({
+    action: () => {
+      void router.push({
         name: "/settings/account/administrator/organization/",
       });
     },
@@ -137,15 +139,17 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(async () => {
-    try {
-      await deleteUserAccount();
-      await updateAuthState({ partialLoginStatus: { isKnown: false } });
-      showNotifyMessage("Account deleted");
-    } catch (e) {
-      console.error("Failed to delete user account", e);
-      showNotifyMessage("Oops! Account deletion failed. Please try again");
-    }
+  showDeleteAccountDialog(() => {
+    void (async () => {
+      try {
+        await deleteUserAccount();
+        await updateAuthState({ partialLoginStatus: { isKnown: false } });
+        showNotifyMessage("Account deleted");
+      } catch (e) {
+        console.error("Failed to delete user account", e);
+        showNotifyMessage("Oops! Account deletion failed. Please try again");
+      }
+    })();
   });
 }
 </script>

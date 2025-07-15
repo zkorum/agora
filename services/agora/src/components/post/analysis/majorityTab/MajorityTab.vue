@@ -34,8 +34,8 @@ import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import { OpinionItem } from "src/shared/types/zod";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import type { OpinionItem } from "src/shared/types/zod";
 
 const props = defineProps<{
   conversationSlugId: string;

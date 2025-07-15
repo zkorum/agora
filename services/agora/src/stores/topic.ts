@@ -1,5 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
-import { ZodTopicObject } from "src/shared/types/zod";
+import type { ZodTopicObject } from "src/shared/types/zod";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendTopicApi } from "src/utils/api/topic";
 import { ref } from "vue";

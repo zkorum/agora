@@ -47,8 +47,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { OpinionItem } from "src/shared/types/zod";
-import { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
+import type { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 
 const props = defineProps<{

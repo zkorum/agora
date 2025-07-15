@@ -1,13 +1,15 @@
 import { api } from "boot/axios";
+import type {
+  ApiV1UserUsernameUpdatePostRequest} from "src/api";
 import {
-  ApiV1UserUsernameUpdatePostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
 import { useNotify } from "../ui/notify";
-import {
+import type {
   AxiosErrorResponse,
-  AxiosSuccessResponse,
+  AxiosSuccessResponse} from "./common";
+import {
   useCommonApi,
 } from "./common";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";

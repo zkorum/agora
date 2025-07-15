@@ -36,20 +36,19 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
-import {
+import type {
   ExtendedConversationPolis,
   PolisKey,
   VotingAction,
   VotingOption,
-  type CommentFeedFilter,
-  type OpinionItem,
 } from "src/shared/types/zod";
+import { type CommentFeedFilter, type OpinionItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./group/CommentGroup.vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouteQuery } from "@vueuse/router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
-import { CommentFilterOptions } from "src/utils/component/opinion";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
 import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
 
@@ -204,7 +203,7 @@ async function initializeData() {
         ]
   );
 
-  await scrollToComment();
+  scrollToComment();
 }
 
 async function initializeModeratorMenu() {
@@ -310,7 +309,7 @@ async function fetchCommentList(
   }
 }
 
-async function scrollToComment() {
+function scrollToComment() {
   requestedCommentSlugId.value = commentSlugIdQuery.value;
   if (requestedCommentSlugId.value != "") {
     const detectedFilter = detectOpinionFilterBySlugId(
@@ -346,7 +345,7 @@ async function scrollToComment() {
   }
 }
 
-async function changeFilter(filterValue: CommentFilterOptions) {
+function changeFilter(filterValue: CommentFilterOptions) {
   sortAlgorithm.value = filterValue;
 }
 

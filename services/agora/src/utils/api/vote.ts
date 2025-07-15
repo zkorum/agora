@@ -9,7 +9,7 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import { type VotingAction } from "src/shared/types/zod";
 import { useNotify } from "../ui/notify";
-import { FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
+import type { FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
 
 export function useBackendVoteApi() {
   const { buildEncodedUcan } = useCommonApi();

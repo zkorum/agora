@@ -6,7 +6,8 @@ import tweetnacl from "tweetnacl";
 
 import * as keystoreAES from "@zkorum/keystore-idb/aes/index.js";
 import * as keystoreIDB from "@zkorum/keystore-idb/constants.js";
-import { HashAlg, SymmAlg, SymmKeyLength } from "@zkorum/keystore-idb/types.js";
+import type { SymmAlg} from "@zkorum/keystore-idb/types.js";
+import { HashAlg, SymmKeyLength } from "@zkorum/keystore-idb/types.js";
 import { RSAKeyStore } from "@zkorum/keystore-idb/rsa/index.js";
 import rsaOperations from "@zkorum/keystore-idb/rsa/index.js";
 

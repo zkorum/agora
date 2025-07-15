@@ -132,7 +132,7 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
-import { OpinionItem } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/shared/common/util";
 import { formatAmount, formatPercentage } from "src/utils/common";

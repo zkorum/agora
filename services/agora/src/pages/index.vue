@@ -63,7 +63,8 @@ import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { HomeFeedSortOption, useHomeFeedStore } from "src/stores/homeFeed";
+import type { HomeFeedSortOption} from "src/stores/homeFeed";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
 
 const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";

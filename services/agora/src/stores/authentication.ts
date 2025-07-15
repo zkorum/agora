@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { DeviceLoginStatus } from "src/shared/types/zod";
+import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { computed, ref } from "vue";
 
 export const useAuthenticationStore = defineStore("authentication", () => {

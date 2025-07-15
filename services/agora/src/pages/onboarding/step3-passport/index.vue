@@ -174,7 +174,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
+import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
 
 const description =
   "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
@@ -233,10 +233,16 @@ async function generateVerificationLink(keyAction?: KeyAction) {
     if (response.data.success) {
       verificationLink.value = response.data.verificationLink;
       if (isDeviceLoggedInIntervalId === undefined) {
-        isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
+        isDeviceLoggedInIntervalId = window.setInterval(
+          () => void isDeviceLoggedIn(),
+          2000
+        );
       } else {
         window.clearInterval(isDeviceLoggedInIntervalId);
-        isDeviceLoggedInIntervalId = window.setInterval(isDeviceLoggedIn, 2000);
+        isDeviceLoggedInIntervalId = window.setInterval(
+          () => void isDeviceLoggedIn(),
+          2000
+        );
       }
     } else {
       switch (response.data.reason) {
@@ -352,7 +358,7 @@ async function isDeviceLoggedIn() {
   }
 }
 
-async function clickedVerifyButton() {
+function clickedVerifyButton() {
   window.open(verificationLink.value, "_blank", "noopener, noreferrer");
 }
 

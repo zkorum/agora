@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ShortcutButton from "./ShortcutButton.vue";
 
 const currentTab = defineModel<ShortcutItem>();

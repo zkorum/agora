@@ -141,11 +141,13 @@ function onLoad(index: number, done: () => void) {
   done();
 }
 
-async function pullDownTriggered(done: () => void) {
-  setTimeout(async () => {
-    await loadPostData();
-    canLoadMore.value = true;
-    done();
+function pullDownTriggered(done: () => void) {
+  setTimeout(() => {
+    void (async () => {
+      await loadPostData();
+      canLoadMore.value = true;
+      done();
+    })();
   }, 500);
 }
 

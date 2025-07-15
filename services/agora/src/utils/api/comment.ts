@@ -1,23 +1,26 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import {
+import type {
   ApiV1OpinionCreatePost200Response,
+  ApiV1OpinionFetchBySlugIdListPostRequest,
+  ApiV1OpinionFetchRepresentativeByConversationPost200Response} from "src/api";
+import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchByConversationPostRequest,
-  ApiV1OpinionFetchBySlugIdListPostRequest,
   type ApiV1OpinionFetchHiddenByConversationPostRequest,
-  ApiV1OpinionFetchRepresentativeByConversationPost200Response,
   type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import {
+import type {
   AxiosErrorResponse,
-  AxiosSuccessResponse,
+  AxiosSuccessResponse} from "./common";
+import {
   useCommonApi,
 } from "./common";
+import type {
+  PolisKey} from "src/shared/types/zod";
 import {
-  PolisKey,
   type CommentFeedFilter,
   type OpinionItem,
   type moderationStatusOptionsType,

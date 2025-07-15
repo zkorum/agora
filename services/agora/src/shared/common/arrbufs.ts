@@ -21,7 +21,7 @@ export function anyToUint8Array(data: unknown): Uint8Array {
 }
 
 export function uint8ArrayToJSON(data: Uint8Array): object {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+     
     return JSON.parse(uint8arrays.toString(data));
 }
 

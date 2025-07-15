@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import {
+import type {
   ExtendedConversationPolis,
   OpinionItem,
   PolisKey,

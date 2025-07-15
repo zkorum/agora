@@ -1,14 +1,15 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import type {
+  ApiV1NotificationFetchPostRequest} from "src/api";
 import {
-  ApiV1NotificationFetchPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
-import { NotificationItem } from "src/shared/types/zod";
-import { FetchNotificationsResponse } from "src/shared/types/dto";
+import type { NotificationItem } from "src/shared/types/zod";
+import type { FetchNotificationsResponse } from "src/shared/types/dto";
 
 export function useBackendNotificationApi() {
   const { buildEncodedUcan } = useCommonApi();

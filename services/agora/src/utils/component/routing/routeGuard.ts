@@ -1,7 +1,9 @@
-import { onUnmounted, ref, Ref } from "vue";
+import type { Ref } from "vue";
+import { onUnmounted, ref } from "vue";
+import type {
+  RouteLocationNormalized} from "vue-router";
 import {
   onBeforeRouteLeave,
-  RouteLocationNormalized,
   useRouter,
 } from "vue-router";
 

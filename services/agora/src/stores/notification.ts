@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { NotificationItem } from "src/shared/types/zod";
+import type { NotificationItem } from "src/shared/types/zod";
 import { useBackendNotificationApi } from "src/utils/api/notification";
 import { ref } from "vue";
 

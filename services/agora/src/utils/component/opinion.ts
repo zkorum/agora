@@ -1,4 +1,4 @@
-import { PolisKey } from "src/shared/types/zod";
+import type { PolisKey } from "src/shared/types/zod";
 
 export type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover";
 

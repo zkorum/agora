@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
-import { ClusterMetadata, PolisKey } from "src/shared/types/zod";
+import type { ClusterMetadata, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
 defineProps<{

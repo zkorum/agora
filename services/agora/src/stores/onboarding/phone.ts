@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { SupportedCountryCallingCode } from "src/shared/types/zod";
+import type { SupportedCountryCallingCode } from "src/shared/types/zod";
 import { ref } from "vue";
 
 export const phoneVerificationStore = defineStore("phoneVerification", () => {

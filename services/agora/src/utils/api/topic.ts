@@ -1,16 +1,18 @@
-import {
+import type {
   ApiV1TopicFollowPostRequest,
-  ApiV1TopicGetFollowedPost200Response,
+  ApiV1TopicGetFollowedPost200Response} from "src/api";
+import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
 import { api } from "src/boot/axios";
-import {
+import type {
   AxiosErrorResponse,
-  AxiosSuccessResponse,
+  AxiosSuccessResponse} from "./common";
+import {
   useCommonApi,
 } from "./common";
-import { GetAllTopicsResponse } from "src/shared/types/dto";
+import type { GetAllTopicsResponse } from "src/shared/types/dto";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 
 export function useBackendTopicApi() {

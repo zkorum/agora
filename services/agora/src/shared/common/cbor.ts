@@ -9,7 +9,7 @@ export function encodeCbor(obj: unknown): string {
 
 export function decodeCbor(encodedData: string): unknown {
     const base64UrlDecoded = base64.decode(encodedData);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const decodedCbor = decode(base64UrlDecoded);
     return decodedCbor;
 }

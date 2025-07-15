@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import {
+import type {
   ClusterMetadata,
   ExtendedConversationPolis,
   OpinionItem,
@@ -79,7 +79,7 @@ import {
 } from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
-import { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import MajorityTab from "./majorityTab/MajorityTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";

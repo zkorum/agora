@@ -49,7 +49,8 @@ import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
-import { RouteRecordName, useRoute, useRouter } from "vue-router";
+import type { RouteRecordName } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -57,7 +58,7 @@ interface BottomIcon {
   name: string;
   standard: string;
   filled: string;
-  callback: () => void;
+  callback: () => Promise<void>;
   route: RouteRecordName;
 }
 
