@@ -180,6 +180,22 @@ export class Dto {
     static createNewConversationResponse = z
         .object({ conversationSlugId: z.string() })
         .strict();
+    static importConversationRequest = z
+        .object({
+            polisId: z.string().url(),
+            postAsOrganization: z.string(),
+            indexConversationAt: z.string().datetime().optional(),
+            isIndexed: z.boolean(),
+            isLoginRequired: z.boolean(),
+            pollingOptionList: zodPollOptionTitle.array().optional(),
+            seedOpinionList: z.array(z.string()),
+        })
+        .strict();
+    static importConversationResponse = z
+        .object({
+            conversationSlugId: z.string(),
+        })
+        .strict();
     static getConversationRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -506,6 +522,12 @@ export type CreateNewConversationRequest = z.infer<
 >;
 export type CreateNewConversationResponse = z.infer<
     typeof Dto.createNewConversationResponse
+>;
+export type ImportConversationRequest = z.infer<
+    typeof Dto.importConversationRequest
+>;
+export type ImportConversationResponse = z.infer<
+    typeof Dto.importConversationResponse
 >;
 export type GetConversationResponse = z.infer<
     typeof Dto.getConversationResponse

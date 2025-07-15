@@ -6,7 +6,7 @@ import {
 } from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
-import fastifySensible from "@fastify/sensible";
+import fastifySensible, { httpErrors } from "@fastify/sensible";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
 import {
@@ -1838,6 +1838,48 @@ server.after(() => {
             //     node: node,
             //     topic: WAKU_TOPIC_CREATE_POST,
             // });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/import`,
+        schema: {
+            body: Dto.importConversationRequest,
+            response: {
+                200: Dto.importConversationResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                });
+
+            if (axiosPolis === undefined) {
+                log.error(
+                    "Connection with Polis Python bridge must be operational to import conversations",
+                );
+                throw httpErrors.internalServerError(
+                    "Backend service is not equiped to process the import request",
+                );
+            }
+
+            return await postService.importPost({
+                db: db,
+                pollingOptionList: request.body.pollingOptionList ?? null,
+                authorId: deviceStatus.userId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                axiosPolis: axiosPolis,
+                indexConversationAt: request.body.indexConversationAt,
+                postAsOrganization: request.body.postAsOrganization,
+                isIndexed: request.body.isIndexed,
+                isLoginRequired: request.body.isLoginRequired,
+                seedOpinionList: request.body.seedOpinionList,
+            });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
