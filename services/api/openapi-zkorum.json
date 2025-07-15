@@ -4785,6 +4785,82 @@
                 }
             }
         },
+        "/api/v1/conversation/import": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "polisId": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    },
+                                    "postAsOrganization": {
+                                        "type": "string"
+                                    },
+                                    "indexConversationAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "isIndexed": {
+                                        "type": "boolean"
+                                    },
+                                    "isLoginRequired": {
+                                        "type": "boolean"
+                                    },
+                                    "pollingOptionList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 30,
+                                            "minLength": 1
+                                        }
+                                    },
+                                    "seedOpinionList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "polisId",
+                                    "postAsOrganization",
+                                    "isIndexed",
+                                    "isLoginRequired",
+                                    "seedOpinionList"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "conversationSlugId": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "conversationSlugId"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversation/get": {
             "post": {
                 "requestBody": {

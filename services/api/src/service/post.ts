@@ -9,7 +9,10 @@ import {
     userTable,
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
-import type { CreateNewConversationResponse } from "@/shared/types/dto.js";
+import type {
+    CreateNewConversationResponse,
+    ImportConversationResponse,
+} from "@/shared/types/dto.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log, config } from "@/app.js";
 import { useCommonPost } from "./common.js";
@@ -32,6 +35,20 @@ interface CreateNewPostProps {
     proof: string;
     axiosPolis?: AxiosInstance;
     postAsOrganization?: string;
+    indexConversationAt?: string;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+    seedOpinionList: string[];
+}
+
+interface ImportPostProps {
+    db: PostgresDatabase;
+    pollingOptionList: string[] | null;
+    authorId: string;
+    didWrite: string;
+    proof: string;
+    axiosPolis: AxiosInstance;
+    postAsOrganization: string;
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
@@ -120,6 +137,36 @@ export async function importNewPost({
             conversationContentId,
         };
     });
+}
+
+export async function importPost({
+    db,
+    authorId,
+    // didWrite,
+    // proof,
+    // pollingOptionList,
+    // axiosPolis,
+    postAsOrganization,
+    // indexConversationAt,
+    // isLoginRequired,
+    // isIndexed,
+    // seedOpinionList,
+}: ImportPostProps): Promise<ImportConversationResponse> {
+    let organizationId: number | undefined = undefined;
+    organizationId = await authUtilService.isUserPartOfOrganization({
+        db,
+        organizationName: postAsOrganization,
+        userId: authorId,
+    });
+    if (organizationId === undefined) {
+        throw httpErrors.forbidden(
+            `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
+        );
+    }
+    // TODO
+    return {
+        conversationSlugId: String(organizationId),
+    };
 }
 
 export async function createNewPost({
