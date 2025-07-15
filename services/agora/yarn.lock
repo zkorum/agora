@@ -58,12 +58,20 @@
   dependencies:
     "@babel/types" "^7.26.9"
 
-"@babel/parser@^7.27.2", "@babel/parser@^7.27.5", "@babel/parser@^7.27.7":
+"@babel/parser@^7.27.0", "@babel/parser@^7.27.5":
   version "7.28.0"
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.28.0.tgz#979829fbab51a29e13901e5a80713dbcb840825e"
   integrity sha512-jVZGvOxOuNSsuQuLRTh13nU0AogFlw32w/MT+LV6D3sP5WdbW61E77RnkbaO2dUvmPAYrBDJXGn5gGS6tH4j8g==
   dependencies:
     "@babel/types" "^7.28.0"
+
+"@babel/types@^7.26.8":
+  version "7.28.1"
+  resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.28.1.tgz#2aaf3c10b31ba03a77ac84f52b3912a0edef4cf9"
+  integrity sha512-x0LvFTekgSX+83TI28Y9wYPUfzrnl2aT5+5QLnO6v7mSJYtEEevuDRN0F0uSHRk1G1IWZC43o00Y0xDDrpBGPQ==
+  dependencies:
+    "@babel/helper-string-parser" "^7.27.1"
+    "@babel/helper-validator-identifier" "^7.27.1"
 
 "@babel/types@^7.26.9":
   version "7.26.9"
@@ -1405,16 +1413,17 @@
     path-browserify "^1.0.1"
     vscode-uri "^3.0.8"
 
-"@vue-macros/common@3.0.0-beta.15":
-  version "3.0.0-beta.15"
-  resolved "https://registry.yarnpkg.com/@vue-macros/common/-/common-3.0.0-beta.15.tgz#6c4404759e2c01429c93589ae4c282725d519175"
-  integrity sha512-DMgq/rIh1H20WYNWU7krIbEfJRYDDhy7ix64GlT4AVUJZZWCZ5pxiYVJR3A3GmWQPkn7Pg7i3oIiGqu4JGC65w==
+"@vue-macros/common@^1.16.1":
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/@vue-macros/common/-/common-1.16.1.tgz#dac7ebc57ded4d6fb19d7f9a83d2973971d9fa65"
+  integrity sha512-Pn/AWMTjoMYuquepLZP813BIcq8DTZiNCoaceuNlvaYuOTd8DqBZWc5u0uOMQZMInwME1mdSmmBAcTluiV9Jtg==
   dependencies:
-    "@vue/compiler-sfc" "^3.5.17"
-    ast-kit "^2.1.0"
-    local-pkg "^1.1.1"
-    magic-string-ast "^1.0.0"
-    unplugin-utils "^0.2.4"
+    "@vue/compiler-sfc" "^3.5.13"
+    ast-kit "^1.4.0"
+    local-pkg "^1.0.0"
+    magic-string-ast "^0.7.0"
+    pathe "^2.0.2"
+    picomatch "^4.0.2"
 
 "@vue/compiler-core@3.5.13":
   version "3.5.13"
@@ -1454,7 +1463,7 @@
     "@vue/compiler-core" "3.5.13"
     "@vue/shared" "3.5.13"
 
-"@vue/compiler-sfc@3.5.17", "@vue/compiler-sfc@^3.5.17":
+"@vue/compiler-sfc@3.5.17", "@vue/compiler-sfc@^3.5.13":
   version "3.5.17"
   resolved "https://registry.yarnpkg.com/@vue/compiler-sfc/-/compiler-sfc-3.5.17.tgz#c518871276e26593612bdab36f3f5bcd053b13bf"
   integrity sha512-rQQxbRJMgTqwRugtjw0cnyQv9cP4/4BxWfTdRBkqsTfLOHWykLzbOc3C4GGzAmdMDxhzU/1Ija5bTjMVrddqww==
@@ -1750,21 +1759,21 @@ array-union@^2.1.0:
   resolved "https://registry.yarnpkg.com/array-union/-/array-union-2.1.0.tgz#b798420adbeb1de828d84acd8a2e23d3efe85e8d"
   integrity sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==
 
-ast-kit@^2.0.0, ast-kit@^2.1.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/ast-kit/-/ast-kit-2.1.1.tgz#b6b44e160b8fcc3781cfe0f382713ecefb061ea5"
-  integrity sha512-mfh6a7gKXE8pDlxTvqIc/syH/P3RkzbOF6LeHdcKztLEzYe6IMsRCL7N8vI7hqTGWNxpkCuuRTpT21xNWqhRtQ==
+ast-kit@^1.0.1, ast-kit@^1.4.0:
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/ast-kit/-/ast-kit-1.4.3.tgz#030f1bfb55bd72d426dc1d0ba82a8de5c75acd7c"
+  integrity sha512-MdJqjpodkS5J149zN0Po+HPshkTdUyrvF7CKTafUgv69vBSPtncrj+3IiUgqdd7ElIEkbeXCsEouBUwLrw9Ilg==
   dependencies:
-    "@babel/parser" "^7.27.7"
+    "@babel/parser" "^7.27.0"
     pathe "^2.0.3"
 
-ast-walker-scope@^0.8.1:
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/ast-walker-scope/-/ast-walker-scope-0.8.1.tgz#2994ba9ed550fdfa57cee274e4fc34053a5495e5"
-  integrity sha512-72XOdbzQCMKERvFrxAykatn2pu7osPNq/sNUzwcHdWzwPvOsNpPqkawfDXVvQbA2RT+ivtsMNjYdojTUZitt1A==
+ast-walker-scope@^0.6.2:
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/ast-walker-scope/-/ast-walker-scope-0.6.2.tgz#b827e8949c129802f76fe0f142e95fd7efda57dc"
+  integrity sha512-1UWOyC50xI3QZkRuDj6PqDtpm1oHWtYs+NQGwqL/2R11eN3Q81PHAHPM0SWW3BNQm53UDwS//Jv8L4CCVLM1bQ==
   dependencies:
-    "@babel/parser" "^7.27.2"
-    ast-kit "^2.0.0"
+    "@babel/parser" "^7.25.3"
+    ast-kit "^1.0.1"
 
 async@^3.2.4:
   version "3.2.6"
@@ -3524,7 +3533,7 @@ linkifyjs@^4.3.1:
   resolved "https://registry.yarnpkg.com/linkifyjs/-/linkifyjs-4.3.1.tgz#1f246ebf4be040002accd1f4535b6af7c7e37898"
   integrity sha512-DRSlB9DKVW04c4SUdGvKK5FR6be45lTU9M76JnngqPeeGDqPwYc0zdUErtsNVMtxPXgUWV4HbXbnC4sNyBxkYg==
 
-local-pkg@^1.1.1:
+local-pkg@^1.0.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/local-pkg/-/local-pkg-1.1.1.tgz#f5fe74a97a3bd3c165788ee08ca9fbe998dc58dd"
   integrity sha512-WunYko2W1NcdfAFpuLUoucsgULmgDBRkdxHxWQ7mK0cQqwPiy8E1enjuRBrhLtZkB5iScJ1XIPdhVEFK8aOLSg==
@@ -3589,10 +3598,10 @@ lru-cache@^10.2.0:
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-10.4.3.tgz#410fc8a17b70e598013df257c2446b7f3383f119"
   integrity sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==
 
-magic-string-ast@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/magic-string-ast/-/magic-string-ast-1.0.0.tgz#a42baa26a30e3368dd0b6c7d66eda4f6577abb42"
-  integrity sha512-8rbuNizut2gW94kv7pqgt0dvk+AHLPVIm0iJtpSgQJ9dx21eWx5SBel8z3jp1xtC0j6/iyK3AWGhAR1H61s7LA==
+magic-string-ast@^0.7.0:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/magic-string-ast/-/magic-string-ast-0.7.1.tgz#07b044f98d061a71f1e38f08de2fa5fee4051563"
+  integrity sha512-ub9iytsEbT7Yw/Pd29mSo/cNQpaEu67zR1VVcXDiYjSFwzeBxNdTd0FMnSslLQXiRj8uGPzwsaoefrMD5XAmdw==
   dependencies:
     magic-string "^0.30.17"
 
@@ -5470,7 +5479,7 @@ unpipe@1.0.0, unpipe@~1.0.0:
   resolved "https://registry.yarnpkg.com/unpipe/-/unpipe-1.0.0.tgz#b2bf4ee8514aae6165b4817829d21b2ef49904ec"
   integrity sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==
 
-unplugin-utils@^0.2.4:
+unplugin-utils@^0.2.3:
   version "0.2.4"
   resolved "https://registry.yarnpkg.com/unplugin-utils/-/unplugin-utils-0.2.4.tgz#56e4029a6906645a10644f8befc404b06d5d24d0"
   integrity sha512-8U/MtpkPkkk3Atewj1+RcKIjb5WBimZ/WSLhhR3w6SsIj8XJuKTacSP8g+2JhfSGw0Cb125Y+2zA/IzJZDVbhA==
@@ -5478,27 +5487,28 @@ unplugin-utils@^0.2.4:
     pathe "^2.0.2"
     picomatch "^4.0.2"
 
-unplugin-vue-router@^0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/unplugin-vue-router/-/unplugin-vue-router-0.14.0.tgz#84de65620741b3b76a5a7b049e2491b873e1fc93"
-  integrity sha512-ipjunvS5e2aFHBAUFuLbHl2aHKbXXXBhTxGT9wZx66fNVPdEQzVVitF8nODr1plANhTTa3UZ+DQu9uyLngMzoQ==
+unplugin-vue-router@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/unplugin-vue-router/-/unplugin-vue-router-0.12.0.tgz#416a698871acd054d3479841ba97ea34473f3bfb"
+  integrity sha512-xjgheKU0MegvXQcy62GVea0LjyOdMxN0/QH+ijN29W62ZlMhG7o7K+0AYqfpprvPwpWtuRjiyC5jnV2SxWye2w==
   dependencies:
-    "@vue-macros/common" "3.0.0-beta.15"
-    ast-walker-scope "^0.8.1"
+    "@babel/types" "^7.26.8"
+    "@vue-macros/common" "^1.16.1"
+    ast-walker-scope "^0.6.2"
     chokidar "^4.0.3"
     fast-glob "^3.3.3"
     json5 "^2.2.3"
-    local-pkg "^1.1.1"
+    local-pkg "^1.0.0"
     magic-string "^0.30.17"
+    micromatch "^4.0.8"
     mlly "^1.7.4"
-    pathe "^2.0.3"
-    picomatch "^4.0.2"
+    pathe "^2.0.2"
     scule "^1.3.0"
-    unplugin "^2.3.5"
-    unplugin-utils "^0.2.4"
-    yaml "^2.8.0"
+    unplugin "^2.2.0"
+    unplugin-utils "^0.2.3"
+    yaml "^2.7.0"
 
-unplugin@^2.3.5:
+unplugin@^2.2.0:
   version "2.3.5"
   resolved "https://registry.yarnpkg.com/unplugin/-/unplugin-2.3.5.tgz#c689d806e2a15c95aeb794f285356c6bcdea4a2e"
   integrity sha512-RyWSb5AHmGtjjNQ6gIlA67sHOsWpsbWpwDokLwTcejVdOjEkJZh7QKu14J00gDDVSh8kGH4KYC/TNBceXFZhtw==
@@ -5746,7 +5756,7 @@ y18n@^5.0.5:
   resolved "https://registry.yarnpkg.com/y18n/-/y18n-5.0.8.tgz#7f4934d0f7ca8c56f95314939ddcd2dd91ce1d55"
   integrity sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==
 
-yaml@^2.8.0:
+yaml@^2.7.0:
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.8.0.tgz#15f8c9866211bdc2d3781a0890e44d4fa1a5fff6"
   integrity sha512-4lLa/EcQCB0cJkyts+FpIRx5G/llPxfP6VQU5KByHEhLxY3IJCH0f0Hy1MHI8sClTvsIb8qwRJ6R/ZdlDJ/leQ==
