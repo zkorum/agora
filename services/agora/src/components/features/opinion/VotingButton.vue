@@ -116,7 +116,7 @@ defineEmits<{
   }
 
   &--pass {
-    color: #a05e03;
+    color: #6d6a74;
   }
 }
 </style>
