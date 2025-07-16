@@ -1,16 +1,15 @@
 import { api } from "boot/axios";
-import {
+import type {
   ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest,
   ApiV1AdministratorOrganizationCreateOrganizationPostRequest,
   ApiV1AdministratorOrganizationDeleteOrganizationPostRequest,
   ApiV1UserUsernameUpdatePostRequest,
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
 } from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { useCommonApi } from "../common";
-import { OrganizationProperties } from "src/shared/types/zod";
+import type { OrganizationProperties } from "src/shared/types/zod";
 
 export function useBackendAdministratorOrganizationApi() {
   const { buildEncodedUcan } = useCommonApi();

@@ -39,7 +39,7 @@ defineExpose({
   unlockRoute,
 });
 
-onMounted(async () => {
+onMounted(() => {
   lockRoute();
 });
 

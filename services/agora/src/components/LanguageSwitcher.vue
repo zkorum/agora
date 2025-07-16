@@ -19,7 +19,7 @@ import { ref, watch } from "vue";
 import { onMounted } from "vue";
 
 const { locale } = useI18n({ useScope: "global" });
-let actualLocale = ref(locale.value);
+const actualLocale = ref(locale.value);
 onMounted(() => {
   if (actualLocale.value.includes("fr")) {
     actualLocale.value = "fr";

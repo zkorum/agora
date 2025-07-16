@@ -127,10 +127,11 @@ async function initialize() {
   }
 }
 
-async function pullDownTriggered(done: () => void) {
-  setTimeout(async () => {
-    await loadUserProfile();
-    done();
+function pullDownTriggered(done: () => void) {
+  setTimeout(() => {
+    void loadUserProfile().then(() => {
+      done();
+    });
   }, 500);
 }
 

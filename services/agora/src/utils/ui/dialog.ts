@@ -42,7 +42,7 @@ export const useDialog = () => {
         cancel: true,
         persistent: false,
       })
-      .onOk(async (data) => {
+      .onOk((data) => {
         if (data == "DELETE") {
           callbackSuccess();
         } else {

@@ -26,10 +26,8 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import {
-  PossibleIntentions,
-  useLoginIntentionStore,
-} from "src/stores/loginIntention";
+import type { PossibleIntentions } from "src/stores/loginIntention";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useRouter } from "vue-router";
 import DialogContainer from "./DialogContainer.vue";
 

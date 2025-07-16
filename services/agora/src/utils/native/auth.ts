@@ -5,7 +5,6 @@ import {
   BiometryErrorType,
 } from "@aparajita/capacitor-biometric-auth";
 import { Dialog } from "quasar";
-import { i18n } from "boot/i18n";
 import { App } from "@capacitor/app";
 
 export async function nativeAuthenticate() {
@@ -33,13 +32,11 @@ export async function nativeAuthenticate() {
             error
           );
           Dialog.create({
-            title: i18n.global.t("Fatal error"),
-            message: i18n.global.t(
-              `Biometrics authentication failed: ${error.code} - ${error.message}`
-            ),
-            ok: i18n.global.t("Exit app"),
-          }).onOk(async () => {
-            await App.exitApp();
+            title: "Fatal error",
+            message: `Biometrics authentication failed: ${error.code} - ${error.message}`,
+            ok: "Exit app",
+          }).onOk(() => {
+            void App.exitApp();
           });
         }
       } else {

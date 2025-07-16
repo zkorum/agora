@@ -1,17 +1,19 @@
 import { axios, api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import type {
+  ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
+  ApiV1ConversationCreatePost200Response} from "src/api";
 import {
   type ApiV1ConversationCreatePostRequest,
   type ApiV1ConversationFetchRecentPostRequest,
-  ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1ModerationConversationWithdrawPostRequest,
-  ApiV1ConversationCreatePost200Response,
+  type ApiV1ModerationConversationWithdrawPostRequest
 } from "src/api";
-import {
+import type {
   AxiosErrorResponse,
-  AxiosSuccessResponse,
+  AxiosSuccessResponse} from "./common";
+import {
   useCommonApi,
 } from "./common";
 import { useNotify } from "../ui/notify";
@@ -22,7 +24,7 @@ import type {
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import type { DummyPollOptionFormat } from "src/stores/homeFeed";
-import { FetchFeedResponse } from "src/shared/types/dto";
+import type { FetchFeedResponse } from "src/shared/types/dto";
 
 export function useBackendPostApi() {
   const {

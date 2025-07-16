@@ -1,5 +1,4 @@
-import { Platform } from "quasar";
-import { z } from "zod";
+import type { Platform } from "quasar";
 
 export function getDateString(dateObject: Date) {
   return dateObject.toLocaleDateString("en-US", {
@@ -38,8 +37,7 @@ export async function isDataPersisted(): Promise<boolean> {
   }
 }
 
-const suportedPlatforms = z.enum(["mobile", "web"]);
-export type SupportedPlatform = z.infer<typeof suportedPlatforms>;
+export type SupportedPlatform = "mobile" | "web";
 
 export function getPlatform(platform: Platform): SupportedPlatform {
   if (platform.is.nativeMobile) {

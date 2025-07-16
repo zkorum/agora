@@ -37,7 +37,7 @@ import { computed, ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
-import { OpinionItem } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 
 const props = defineProps<{

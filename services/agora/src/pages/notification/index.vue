@@ -87,7 +87,7 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import {
+import type {
   NotificationItem,
   NotificationType,
   RouteTarget,
@@ -152,11 +152,13 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
   return title;
 }
 
-async function pullDownTriggered(done: () => void) {
-  setTimeout(async () => {
-    await loadNotificationData(false);
-    hasMore.value = true;
-    done();
+function pullDownTriggered(done: () => void) {
+  setTimeout(() => {
+    void (async () => {
+      await loadNotificationData(false);
+      hasMore.value = true;
+      done();
+    })();
   }, 500);
 }
 

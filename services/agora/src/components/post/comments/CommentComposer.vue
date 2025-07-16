@@ -76,7 +76,7 @@ import { useCommonApi } from "src/utils/api/common";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
-import { RouteLocationNormalized } from "vue-router";
+import type { RouteLocationNormalized } from "vue-router";
 
 const emit = defineEmits<{
   (e: "submittedComment", conversationSlugId: string): void;

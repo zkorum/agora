@@ -1,24 +1,22 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import {
+import type {
   ApiV1OpinionCreatePost200Response,
+  ApiV1OpinionFetchBySlugIdListPostRequest,
+  ApiV1OpinionFetchRepresentativeByConversationPost200Response,
+} from "src/api";
+import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchByConversationPostRequest,
-  ApiV1OpinionFetchBySlugIdListPostRequest,
   type ApiV1OpinionFetchHiddenByConversationPostRequest,
-  ApiV1OpinionFetchRepresentativeByConversationPost200Response,
   type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
+import { useCommonApi } from "./common";
+import type { PolisKey } from "src/shared/types/zod";
 import {
-  AxiosErrorResponse,
-  AxiosSuccessResponse,
-  useCommonApi,
-} from "./common";
-import {
-  PolisKey,
-  type CommentFeedFilter,
   type OpinionItem,
   type moderationStatusOptionsType,
 } from "src/shared/types/zod";
@@ -26,6 +24,8 @@ import { useNotify } from "../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import { useBackendAuthApi } from "./auth";
+
+export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden";
 
 export function useBackendCommentApi() {
   const {
@@ -133,7 +133,7 @@ export function useBackendCommentApi() {
 
   async function fetchCommentsForPost(
     postSlugId: string,
-    filter: CommentFeedFilter,
+    filter: CommentTabFilters,
     clusterKey: PolisKey | undefined
   ) {
     try {

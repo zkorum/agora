@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from "pinia";
-import { OpinionItem, VotingOption } from "src/shared/types/zod";
-import { CommentFilterOptions } from "src/utils/component/opinion";
+import type { OpinionItem, VotingOption } from "src/shared/types/zod";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { ref } from "vue";
 import { useAuthenticationStore } from "./authentication";
 import { useNotify } from "src/utils/ui/notify";

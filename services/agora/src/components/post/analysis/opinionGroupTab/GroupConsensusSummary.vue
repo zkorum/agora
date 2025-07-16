@@ -37,7 +37,7 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { PolisKey } from "src/shared/types/zod";
+import type { PolisKey } from "src/shared/types/zod";
 import { ref } from "vue";
 
 defineProps<{

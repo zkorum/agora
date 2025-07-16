@@ -1,4 +1,5 @@
-import { RouteRecordName, useRouter } from "vue-router";
+import type { RouteRecordName} from "vue-router";
+import { useRouter } from "vue-router";
 
 export function useRouterGuard() {
   const router = useRouter();

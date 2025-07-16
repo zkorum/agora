@@ -120,10 +120,14 @@ const exceededBodyWordCount = ref(false);
 const titleError = ref(false);
 
 const router = useRouter();
+
+// Disable the warning since Vue template refs can be potentially null
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const routeGuardRef = ref<InstanceType<
   typeof NewConversationRouteGuard
 > | null>(null);
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
@@ -151,7 +155,7 @@ function checkWordCount() {
   }
 }
 
-async function scrollToPollingRef() {
+function scrollToPollingRef() {
   if (conversationDraft.value.poll.enabled) {
     setTimeout(function () {
       pollComponentRef.value?.$el?.scrollIntoView({
@@ -212,9 +216,9 @@ async function goToPreview() {
 
 watch(
   () => conversationDraft.value.poll.enabled,
-  async (enablePolling) => {
+  (enablePolling) => {
     if (enablePolling === true) {
-      await scrollToPollingRef();
+      scrollToPollingRef();
     }
   }
 );
