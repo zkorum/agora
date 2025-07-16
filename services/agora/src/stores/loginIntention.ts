@@ -164,6 +164,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     intention: PossibleIntentions
   ): string {
     switch (intention) {
+      case "none":
+        return "";
       case "newOpinion":
         return "Your written opinion draft will be restored when you return.";
       case "newConversation":

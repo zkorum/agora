@@ -33,16 +33,16 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import type { CommentTabFilters } from "src/utils/api/comment";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type {
   ExtendedConversationPolis,
-  PolisKey,
   VotingAction,
   VotingOption,
 } from "src/shared/types/zod";
-import { type CommentFeedFilter, type OpinionItem } from "src/shared/types/zod";
+import { type OpinionItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./group/CommentGroup.vue";
 import { useNotify } from "src/utils/ui/notify";
@@ -95,7 +95,6 @@ const isLoadingCommentItemsNew = ref<boolean>(true);
 const isLoadingCommentItemsDiscover = ref<boolean>(true);
 const isLoadingCommentItemsModerated = ref<boolean>(true);
 const isLoadingCommentItemsHidden = ref<boolean>(true);
-const isLoadingCommentItemsCluster = ref<boolean>(true);
 
 // Computed properties for the unified CommentGroup component
 const isLoading = computed(() => {
@@ -117,8 +116,6 @@ let commentItemsNew: OpinionItem[] = [];
 let commentItemsDiscover: OpinionItem[] = [];
 let commentItemsModerated: OpinionItem[] = [];
 let commentItemsHidden: OpinionItem[] = [];
-
-const clusterCommentItemsMap = ref<Map<PolisKey, OpinionItem[]>>(new Map());
 
 const { setupOpinionlist, detectOpinionFilterBySlugId } =
   useOpinionScrollableStore();
@@ -143,10 +140,6 @@ watch(sortAlgorithm, () => {
     return;
   }
   loadCommentModeToOpinionList();
-});
-
-const showClusterMap = computed(() => {
-  return props.polis.clusters.length >= 2;
 });
 
 function openModerationHistory() {
@@ -184,24 +177,12 @@ function loadCommentFilterQuery() {
 }
 
 async function initializeData() {
-  clusterCommentItemsMap.value.clear();
-
-  await Promise.all(
-    showClusterMap.value
-      ? [
-          getClusters(),
-          initializeModeratorMenu(),
-          fetchCommentList("new", undefined),
-          fetchCommentList("discover", undefined),
-          fetchCommentList("moderated", undefined),
-        ]
-      : [
-          initializeModeratorMenu(),
-          fetchCommentList("new", undefined),
-          fetchCommentList("discover", undefined),
-          fetchCommentList("moderated", undefined),
-        ]
-  );
+  await Promise.all([
+    initializeModeratorMenu(),
+    fetchCommentList("new"),
+    fetchCommentList("discover"),
+    fetchCommentList("moderated"),
+  ]);
 
   scrollToComment();
 }
@@ -249,18 +230,7 @@ async function fetchHiddenComments() {
   }
 }
 
-async function getClusters() {
-  await Promise.all(
-    props.polis.clusters.map(async (clusterItem) => {
-      await fetchCommentList("cluster", clusterItem.key);
-    })
-  );
-}
-
-async function fetchCommentList(
-  filter: CommentFeedFilter,
-  clusterKey: PolisKey | undefined
-) {
+async function fetchCommentList(filter: CommentTabFilters) {
   if (props.postSlugId.length > 0) {
     switch (filter) {
       case "moderated":
@@ -272,16 +242,14 @@ async function fetchCommentList(
       case "discover":
         isLoadingCommentItemsDiscover.value = true;
         break;
-      case "cluster":
-        if (clusterKey != undefined) {
-          isLoadingCommentItemsCluster.value = true;
-        }
+      case "hidden":
+        isLoadingCommentItemsHidden.value = true;
         break;
     }
     const response = await fetchCommentsForPost(
       props.postSlugId,
       filter,
-      clusterKey
+      undefined
     );
 
     if (response != null) {
@@ -298,11 +266,9 @@ async function fetchCommentList(
           commentItemsDiscover = response;
           isLoadingCommentItemsDiscover.value = false;
           break;
-        case "cluster":
-          if (clusterKey != undefined) {
-            clusterCommentItemsMap.value.set(clusterKey, response);
-            isLoadingCommentItemsCluster.value = false;
-          }
+        case "hidden":
+          commentItemsHidden = response;
+          isLoadingCommentItemsHidden.value = false;
           break;
       }
     }
@@ -371,15 +337,5 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
 
 .commentSortingSelector {
   margin-left: auto;
-}
-
-.clusterTabSelector {
-  padding-bottom: 0.5rem;
-}
-
-.clusterTabUnderline {
-  text-decoration-line: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.5rem;
 }
 </style>
