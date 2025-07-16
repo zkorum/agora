@@ -109,8 +109,6 @@ export default defineConfigWithVueTs(
       // useful to know, but too verbose https://stackoverflow.com/a/63488201/11046178
       "@typescript-eslint/no-floating-promises": ["error"],
 
-      "@typescript-eslint/no-redundant-type-constituents": "off",
-
       "@typescript-eslint/switch-exhaustiveness-check": "error",
     },
   },
