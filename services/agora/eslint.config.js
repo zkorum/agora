@@ -19,7 +19,7 @@ export default defineConfigWithVueTs(
      *
      * ESLint requires "ignores" key to be the only one in this object
      */
-    ignores: ["**/src/shared/**"],
+    ignores: ["**/src/shared/**", "**/src/api/**"],
   },
 
   pluginQuasar.configs.recommended(),
