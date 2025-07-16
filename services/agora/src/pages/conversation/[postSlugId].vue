@@ -104,9 +104,10 @@ async function loadData() {
 
 function pullDownTriggered(done: () => void) {
   setTimeout(() => {
-    void loadData().then(() => {
+    void (async () => {
+      await loadData();
       done();
-    });
+    })();
   }, 500);
 }
 </script>
