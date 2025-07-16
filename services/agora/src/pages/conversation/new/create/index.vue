@@ -120,6 +120,8 @@ const exceededBodyWordCount = ref(false);
 const titleError = ref(false);
 
 const router = useRouter();
+
+// Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const routeGuardRef = ref<InstanceType<
   typeof NewConversationRouteGuard
