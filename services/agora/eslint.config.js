@@ -7,6 +7,7 @@ import {
   vueTsConfigs,
 } from "@vue/eslint-config-typescript";
 import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
+import jsonPlugin from "@eslint/json";
 
 export default defineConfigWithVueTs(
   {
@@ -23,6 +24,8 @@ export default defineConfigWithVueTs(
 
   pluginQuasar.configs.recommended(),
   js.configs.recommended,
+
+  jsonPlugin.configs.recommended,
 
   /**
    * https://eslint.vuejs.org
@@ -105,6 +108,8 @@ export default defineConfigWithVueTs(
 
       // useful to know, but too verbose https://stackoverflow.com/a/63488201/11046178
       "@typescript-eslint/no-floating-promises": ["error"],
+
+      "@typescript-eslint/no-redundant-type-constituents": "off",
     },
   },
 

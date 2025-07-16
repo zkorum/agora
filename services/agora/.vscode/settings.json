@@ -13,9 +13,7 @@
     "json",
     "jsonc",
     "javascript",
-    "typescript",
-    "javascriptreact",
-    "typescriptreact"
+    "typescript"
   ],
   "files.watcherExclude": {
     "**/.git": true,
