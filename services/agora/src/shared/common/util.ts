@@ -8,7 +8,7 @@ export function range(startAt: number, endAt: number): readonly number[] {
 
 export function removeUndefinedFields(obj: Record<string, unknown>) {
     Object.keys(obj).forEach((key) =>
-         
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         obj[key] === undefined ? delete obj[key] : {},
     );
 }

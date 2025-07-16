@@ -60,8 +60,7 @@ export function domainNameAndExtensionFromEmail(
 export function domainFromEmail(email: string): string | undefined {
     const nameAndDomain = email.split("@");
     if (nameAndDomain.length === 2) {
-        const [, domain] = [nameAndDomain[0], nameAndDomain[1]];
-        return domain;
+        return nameAndDomain[1];
     }
 }
 
