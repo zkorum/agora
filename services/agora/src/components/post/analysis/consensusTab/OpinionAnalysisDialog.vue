@@ -82,7 +82,7 @@
                   </td>
                 </tr>
                 <template v-if="shouldShowGroupStats">
-                  <tr class="no-group-row">
+                  <tr v-if="noGroupStats.numUsers > 0" class="no-group-row">
                     <td class="group-name">
                       {{ `No group (${noGroupStats.numUsers})` }}
                     </td>
