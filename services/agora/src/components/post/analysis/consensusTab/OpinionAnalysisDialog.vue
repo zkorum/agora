@@ -2,7 +2,6 @@
   <div>
     <q-dialog v-model="showDialog">
       <div class="dialog-container">
-        {{ opinionItem }}
         <div class="dialog-header">
           <div class="dialog-title">Opinion analysis</div>
           <ZKButton
