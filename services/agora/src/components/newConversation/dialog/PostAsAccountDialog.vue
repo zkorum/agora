@@ -11,7 +11,7 @@
         }"
         @click="setPostAs(false, profileData.userName)"
       >
-        <UserAvatar
+        <DynamicProfileImage
           :user-identity="profileData.userName"
           :size="32"
           class="account-avatar"
@@ -31,9 +31,10 @@
         }"
         @click="setPostAs(true, organization.name)"
       >
-        <UserAvatar
+        <DynamicProfileImage
           :user-identity="organization.name"
           :size="32"
+          :organization-image-url="organization.imageUrl"
           class="account-avatar"
         />
         <span class="account-name">{{ organization.name }}</span>
@@ -45,7 +46,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
+import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -115,7 +116,6 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
 
 .account-avatar {
   margin-right: 12px;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 
