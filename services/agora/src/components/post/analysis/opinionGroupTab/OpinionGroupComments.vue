@@ -33,13 +33,7 @@
         v-for="comment in itemList"
         :key="comment.opinionSlugId"
         :conversation-slug-id="props.conversationSlugId"
-        :opinion-slug-id="comment.opinionSlugId"
-        :description="comment.opinion"
-        :num-agree="getActiveVotes(comment).numAgrees"
-        :num-pass="0"
-        :num-disagree="getActiveVotes(comment).numDisagrees"
-        :num-participants="getActiveVotes(comment).numUsers"
-        :opinion-item="comment"
+        :opinion-item="getModifiedOpinionItem(comment)"
       />
     </div>
   </div>
@@ -82,7 +76,7 @@ function getActiveVotes(comment: OpinionItem) {
         currentClusterStats || {
           numAgrees: 0,
           numDisagrees: 0,
-          // numPass: 0,
+          numPasses: 0,
           numUsers: 0,
         }
       );
@@ -94,6 +88,10 @@ function getActiveVotes(comment: OpinionItem) {
         ),
         numDisagrees: Object.values(allOthersClustersStats).reduce(
           (sum, clusterStats) => sum + clusterStats.numDisagrees,
+          0
+        ),
+        numPasses: Object.values(allOthersClustersStats).reduce(
+          (sum, clusterStats) => sum + clusterStats.numPasses,
           0
         ),
         numUsers: Object.values(allOthersClustersStats).reduce(
@@ -113,6 +111,11 @@ function getActiveVotes(comment: OpinionItem) {
           (currentClusterStats !== undefined
             ? currentClusterStats.numDisagrees
             : 0),
+        numPasses:
+          comment.numPasses -
+          (currentClusterStats !== undefined
+            ? currentClusterStats.numPasses
+            : 0),
         numUsers:
           comment.numParticipants -
           (currentClusterStats !== undefined
@@ -120,6 +123,17 @@ function getActiveVotes(comment: OpinionItem) {
             : 0),
       };
   }
+}
+
+function getModifiedOpinionItem(comment: OpinionItem): OpinionItem {
+  const activeVotes = getActiveVotes(comment);
+  return {
+    ...comment,
+    numAgrees: activeVotes.numAgrees,
+    numDisagrees: activeVotes.numDisagrees,
+    numPasses: activeVotes.numPasses,
+    numParticipants: activeVotes.numUsers,
+  };
 }
 
 const currentModeName = computed(() => {

@@ -16,12 +16,6 @@
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
           :key="consensusItem.opinion"
           :conversation-slug-id="props.conversationSlugId"
-          :opinion-slug-id="consensusItem.opinionSlugId"
-          :description="consensusItem.opinion"
-          :num-agree="consensusItem.numAgrees"
-          :num-pass="0"
-          :num-disagree="consensusItem.numDisagrees"
-          :num-participants="consensusItem.numParticipants"
           :opinion-item="consensusItem"
         />
       </template>
