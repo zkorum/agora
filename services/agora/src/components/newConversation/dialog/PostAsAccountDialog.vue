@@ -20,20 +20,23 @@
       </div>
 
       <div
-        v-for="organizationName in profileData.organizationList"
-        :key="organizationName"
+        v-for="organization in profileData.organizationList"
+        :key="organization.name"
         class="account-option"
         :class="{
-          'account-option--selected': isAccountSelected(true, organizationName),
+          'account-option--selected': isAccountSelected(
+            true,
+            organization.name
+          ),
         }"
-        @click="setPostAs(true, organizationName)"
+        @click="setPostAs(true, organization.name)"
       >
         <UserAvatar
-          :user-identity="organizationName"
+          :user-identity="organization.name"
           :size="32"
           class="account-avatar"
         />
-        <span class="account-name">{{ organizationName }}</span>
+        <span class="account-name">{{ organization.name }}</span>
       </div>
     </ZKBottomDialogContainer>
   </q-dialog>

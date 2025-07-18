@@ -95,28 +95,15 @@ export interface ApiV1AdministratorOrganizationDeleteOrganizationPostRequest {
 /**
  * 
  * @export
- * @interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response
- */
-export interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response {
-    /**
-     * 
-     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>}
-     * @memberof ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response
-     */
-    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
-}
-/**
- * 
- * @export
  * @interface ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response
  */
 export interface ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response {
     /**
      * 
-     * @type {Array<string>}
+     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>}
      * @memberof ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response
      */
-    'organizationNameList': Array<string>;
+    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
 }
 /**
  * 
@@ -2530,10 +2517,10 @@ export interface ApiV1UserProfileGetPost200Response {
     'isModerator': boolean;
     /**
      * 
-     * @type {Array<string>}
+     * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>}
      * @memberof ApiV1UserProfileGetPost200Response
      */
-    'organizationList': Array<string>;
+    'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
 }
 /**
  * 
@@ -4770,7 +4757,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response>> {
+        async apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationGetAllOrganizationsPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationGetAllOrganizationsPost']?.[localVarOperationServerIndex]?.url;
@@ -5414,7 +5401,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetAllOrganizationsPost200Response> {
+        apiV1AdministratorOrganizationGetAllOrganizationsPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response> {
             return localVarFp.apiV1AdministratorOrganizationGetAllOrganizationsPost(options).then((request) => request(axios, basePath));
         },
         /**

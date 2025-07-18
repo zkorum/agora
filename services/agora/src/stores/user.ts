@@ -2,6 +2,7 @@ import { useBackendUserApi } from "src/utils/api/user";
 import type {
   ExtendedOpinion,
   ExtendedConversation,
+  OrganizationProperties,
 } from "src/shared/types/zod";
 import { defineStore } from "pinia";
 import { ref } from "vue";
@@ -18,7 +19,7 @@ export const useUserStore = defineStore("user", () => {
     userCommentList: ExtendedOpinion[];
     isModerator: boolean;
     dataLoaded: boolean;
-    organizationList: string[];
+    organizationList: OrganizationProperties[];
   }
 
   const emptyProfile: UserProfile = {

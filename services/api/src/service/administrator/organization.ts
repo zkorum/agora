@@ -6,7 +6,7 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import type {
     GetAllOrganizationsResponse,
-    GetOrganizationNamesByUsernameResponse,
+    GetOrganizationsByUsernameResponse,
 } from "@/shared/types/dto.js";
 import type { OrganizationProperties } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
@@ -51,25 +51,31 @@ export async function getAllOrganizations({
     };
 }
 
-interface GetOrganizationNamesByUsernameProps {
+interface GetOrganizationsByUsernameProps {
     db: PostgresJsDatabase;
     username: string;
+    baseImageServiceUrl: string;
 }
 
-export async function getOrganizationNamesByUsername({
+export async function getOrganizationsByUsername({
     db,
     username,
-}: GetOrganizationNamesByUsernameProps): Promise<GetOrganizationNamesByUsernameResponse> {
+    baseImageServiceUrl,
+}: GetOrganizationsByUsernameProps): Promise<GetOrganizationsByUsernameResponse> {
     const { getUserIdFromUsername } = useCommonUser();
     const targetUserId = await getUserIdFromUsername({
         db: db,
         username: username,
     });
 
-    const organizationNameList: string[] = [];
+    const organizationList: OrganizationProperties[] = [];
     const organizationTableResponse = await db
         .select({
             name: organizationTable.name,
+            description: organizationTable.description,
+            imagePath: organizationTable.imagePath,
+            isFullImagePath: organizationTable.isFullImagePath,
+            websiteUrl: organizationTable.websiteUrl,
         })
         .from(userOrganizationMappingTable)
         .leftJoin(
@@ -81,13 +87,26 @@ export async function getOrganizationNamesByUsername({
         )
         .where(eq(userOrganizationMappingTable.userId, targetUserId));
     organizationTableResponse.forEach((response) => {
-        if (response.name) {
-            organizationNameList.push(response.name);
+        if (
+            response.name &&
+            response.imagePath !== null &&
+            response.isFullImagePath !== null
+        ) {
+            organizationList.push({
+                name: response.name,
+                description: response.description ?? "",
+                imageUrl: imagePathToUrl({
+                    imagePath: response.imagePath,
+                    isFullImagePath: response.isFullImagePath,
+                    baseImageServiceUrl,
+                }),
+                websiteUrl: response.websiteUrl ?? "",
+            });
         }
     });
 
     return {
-        organizationNameList: organizationNameList,
+        organizationList: organizationList,
     };
 }
 

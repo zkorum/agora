@@ -1265,7 +1265,29 @@
                                         "organizationList": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "imageUrl": {
+                                                        "type": "string"
+                                                    },
+                                                    "websiteUrl": {
+                                                        "type": "string",
+                                                        "format": "uri"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "imageUrl",
+                                                    "websiteUrl",
+                                                    "description"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         }
                                     },
@@ -5642,15 +5664,37 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "organizationNameList": {
+                                        "organizationList": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "imageUrl": {
+                                                        "type": "string"
+                                                    },
+                                                    "websiteUrl": {
+                                                        "type": "string",
+                                                        "format": "uri"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "imageUrl",
+                                                    "websiteUrl",
+                                                    "description"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         }
                                     },
                                     "required": [
-                                        "organizationNameList"
+                                        "organizationList"
                                     ],
                                     "additionalProperties": false
                                 }

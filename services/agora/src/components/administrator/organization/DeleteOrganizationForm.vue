@@ -5,7 +5,7 @@
     </div>
     <div v-for="organization in organizationList" :key="organization.name">
       <div>
-        {{ organization }}
+        {{ organization.name }}
       </div>
 
       <OrganizationView :organization-name="organization.name" />
