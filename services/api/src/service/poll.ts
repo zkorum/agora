@@ -8,10 +8,8 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { useCommonPost } from "./common.js";
 import type { HttpErrors } from "@fastify/sensible";
 import { eq, sql, and } from "drizzle-orm";
-import { log } from "@/app.js";
 import type { GetUserPollResponseByConversations200 } from "@/shared/types/dto.js";
 import * as authUtilService from "@/service/authUtil.js";
-import type { AxiosInstance } from "axios";
 
 interface GetUserPollResponseProps {
     db: PostgresDatabase;
@@ -80,10 +78,6 @@ interface SubmitPollResponseProps {
     didWrite: string;
     proof: string;
     userAgent: string;
-    axiosPolis: AxiosInstance | undefined;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
     now: Date;
 }
 
@@ -95,10 +89,6 @@ export async function submitPollResponse({
     didWrite,
     proof,
     userAgent,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
     now,
 }: SubmitPollResponseProps) {
     const {
@@ -123,10 +113,6 @@ export async function submitPollResponse({
         conversationIsIndexed,
         conversationIsLoginRequired,
         userAgent,
-        axiosPolis,
-        polisUserEmailDomain,
-        polisUserEmailLocalPart,
-        polisUserPassword,
         now,
     });
 

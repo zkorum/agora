@@ -19,7 +19,6 @@ import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type { ExtendedConversation } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
-import * as polisService from "@/service/polis.js";
 import * as authUtilService from "@/service/authUtil.js";
 import { processHtmlBody } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
@@ -33,7 +32,6 @@ interface CreateNewPostProps {
     authorId: string;
     didWrite: string;
     proof: string;
-    axiosPolis?: AxiosInstance;
     postAsOrganization?: string;
     indexConversationAt?: string;
     isIndexed: boolean;
@@ -53,90 +51,6 @@ interface ImportPostProps {
     isIndexed: boolean;
     isLoginRequired: boolean;
     seedOpinionList: string[];
-}
-
-interface ImportNewPostProps {
-    db: PostgresDatabase;
-    conversationTitle: string;
-    conversationBody: string | null;
-    authorId: string;
-    axiosPolis: AxiosInstance;
-}
-
-interface ImportNewPostResponse {
-    conversationSlugId: string;
-    conversationId: number;
-    conversationContentId: number;
-}
-
-export async function importNewPost({
-    db,
-    conversationTitle,
-    conversationBody,
-    authorId,
-    axiosPolis,
-}: ImportNewPostProps): Promise<ImportNewPostResponse> {
-    const conversationSlugId = generateRandomSlugId();
-    return await db.transaction(async (tx) => {
-        const insertPostResponse = await tx
-            .insert(conversationTable)
-            .values({
-                authorId: authorId,
-                slugId: conversationSlugId,
-                opinionCount: 0,
-                isIndexed: true,
-                isLoginRequired: true,
-                currentContentId: null,
-                currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
-                lastReactedAt: new Date(),
-            })
-            .returning({ conversationId: conversationTable.id });
-
-        const conversationId = insertPostResponse[0].conversationId;
-
-        const conversationContentTableResponse = await tx
-            .insert(conversationContentTable)
-            .values({
-                conversationId: conversationId,
-                title: conversationTitle,
-                body: conversationBody,
-                pollId: null,
-            })
-            .returning({
-                conversationContentId: conversationContentTable.id,
-            });
-
-        const conversationContentId =
-            conversationContentTableResponse[0].conversationContentId;
-
-        await tx
-            .update(conversationTable)
-            .set({
-                currentContentId: conversationContentId,
-            })
-            .where(eq(conversationTable.id, conversationId));
-
-        // Update the user profile's conversation count
-        await tx
-            .update(userTable)
-            .set({
-                activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
-                totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
-            })
-            .where(eq(userTable.id, authorId));
-
-        await polisService.createConversation({
-            userId: authorId,
-            conversationSlugId: conversationSlugId,
-            axiosPolis,
-        });
-
-        return {
-            conversationId,
-            conversationSlugId,
-            conversationContentId,
-        };
-    });
 }
 
 export async function importPost({
@@ -177,7 +91,6 @@ export async function createNewPost({
     didWrite,
     proof,
     pollingOptionList,
-    axiosPolis,
     postAsOrganization,
     indexConversationAt,
     isLoginRequired,
@@ -297,14 +210,6 @@ export async function createNewPost({
                 totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
             })
             .where(eq(userTable.id, authorId));
-
-        if (axiosPolis !== undefined) {
-            await polisService.createConversation({
-                userId: authorId,
-                conversationSlugId: conversationSlugId,
-                axiosPolis,
-            });
-        }
     });
 
     // Create seed opinions
@@ -318,11 +223,7 @@ export async function createNewPost({
                 didWrite,
                 proof,
                 userAgent: "Seed Opinion Creation",
-                axiosPolis,
-                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                polisUserPassword: config.POLIS_USER_PASSWORD,
-                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
+                axiosPolis: undefined, // no auto vote opinions for seed comments
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 awsAiLabelSummaryEnable:
                     config.AWS_AI_LABEL_SUMMARY_ENABLE &&

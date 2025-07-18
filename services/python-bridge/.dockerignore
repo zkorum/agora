@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+
+.venv/
+test_cache.sqlite
+
+build/
+dist/
+*.egg-info/
+
+.git/
+.gitignore
+
+tests/
+
+Makefile

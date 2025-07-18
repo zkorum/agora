@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agora-python-bridge"
+version = "1.0.0"
+description = "Used by Agora backend for integration for data science libraries written in Python"
+authors = [
+	{ name = "Nicolas Gimenez", email = "46368291+nicobao@users.noreply.github.com" },
+]
+readme = "README.md"
+license = { text = " MPL-2.0" }
+requires-python = ">=3.8"
+
+dependencies = [
+	# Paste converted dependencies here
+	# "requests==2.31.0",
+	# "numpy==1.24.0",
+	# pip freeze
+	"annotated-types==0.7.0",
+	"annoy==1.17.3",
+	"attrs==25.3.0",
+	"blinker==1.9.0",
+	"build==1.2.2.post1",
+	"cattrs==25.1.1",
+	"certifi==2025.7.9",
+	"charset-normalizer==3.4.2",
+	"click==8.2.1",
+	"concave_hull==0.0.9",
+	"contourpy==1.3.2",
+	"cycler==0.12.1",
+	"fake-useragent==1.5.1",
+	"Flask==3.1.1",
+	"fonttools==4.58.5",
+	"idna==3.10",
+	"itsdangerous==2.2.0",
+	"Jinja2==3.1.6",
+	"joblib==1.5.1",
+	"kiwisolver==1.4.8",
+	"llvmlite==0.44.0",
+	"MarkupSafe==3.0.2",
+	"matplotlib==3.7.5",
+	"numba==0.61.2",
+	"numpy==1.26.4",
+	"packaging==25.0",
+	"pacmap==0.8.0",
+	"pandas==2.3.1",
+	"pillow==11.3.0",
+	"platformdirs==4.3.8",
+	"pydantic==2.11.7",
+	"pydantic_core==2.33.2",
+	"pyparsing==3.2.3",
+	"pyproject_hooks==1.2.0",
+	"pyrate-limiter==2.10.0",
+	"python-dateutil==2.9.0.post0",
+	"pytz==2025.2",
+	"requests==2.32.4",
+	"requests-cache==1.2.1",
+	"requests-ratelimiter==0.7.0",
+	"scikit-learn==1.7.0",
+	"scipy==1.16.0",
+	"seaborn==0.13.2",
+	"six==1.17.0",
+	"threadpoolctl==3.6.0",
+	"typing-inspection==0.4.1",
+	"typing_extensions==4.14.1",
+	"tzdata==2025.2",
+	"url-normalize==2.2.1",
+	"urllib3==2.5.0",
+	"waitress==3.0.2",
+	"Werkzeug==3.1.3",
+	"red-dwarf @ git+https://github.com/polis-community/red-dwarf.git@36d0193cab38da94085cda50817002a28cac6014",
+]

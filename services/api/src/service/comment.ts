@@ -34,7 +34,6 @@ import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import type { AxiosInstance } from "axios";
-import * as polisService from "@/service/polis.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
@@ -115,36 +114,36 @@ export async function fetchOpinionsByPostId({
     clusterKey,
     limit,
 }: FetchOpinionsByPostIdProps): Promise<OpinionItemPerSlugId> {
-    const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0 ");
-    const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1 ");
-    const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2 ");
-    const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3 ");
-    const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4 ");
-    const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
+    const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0");
+    const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1");
+    const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2");
+    const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3");
+    const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4");
+    const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5");
 
     const polisClusterOpinionTableAlias0 = alias(
         polisClusterOpinionTable,
-        "cluster_opinion_0 ",
+        "cluster_opinion_0",
     );
     const polisClusterOpinionTableAlias1 = alias(
         polisClusterOpinionTable,
-        "cluster_opinion_1 ",
+        "cluster_opinion_1",
     );
     const polisClusterOpinionTableAlias2 = alias(
         polisClusterOpinionTable,
-        "cluster_opinion_2 ",
+        "cluster_opinion_2",
     );
     const polisClusterOpinionTableAlias3 = alias(
         polisClusterOpinionTable,
-        "cluster_opinion_3 ",
+        "cluster_opinion_3",
     );
     const polisClusterOpinionTableAlias4 = alias(
         polisClusterOpinionTable,
-        "cluster_opinion_4 ",
+        "cluster_opinion_4",
     );
     const polisClusterOpinionTableAlias5 = alias(
         polisClusterOpinionTable,
-        "cluster_opinion_5 ",
+        "cluster_opinion_5",
     );
 
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
@@ -607,10 +606,7 @@ export async function fetchOpinionsByPostId({
                     polisClusterOpinionTableAlias0.polisClusterId,
                     polisClusterTableAlias0.id,
                 ),
-                eq(
-                    polisClusterOpinionTableAlias0.opinionSlugId,
-                    opinionTable.slugId,
-                ),
+                eq(polisClusterOpinionTableAlias0.opinionId, opinionTable.id),
             ),
         )
         .leftJoin(
@@ -620,10 +616,7 @@ export async function fetchOpinionsByPostId({
                     polisClusterOpinionTableAlias1.polisClusterId,
                     polisClusterTableAlias1.id,
                 ),
-                eq(
-                    polisClusterOpinionTableAlias1.opinionSlugId,
-                    opinionTable.slugId,
-                ),
+                eq(polisClusterOpinionTableAlias1.opinionId, opinionTable.id),
             ),
         )
         .leftJoin(
@@ -633,10 +626,7 @@ export async function fetchOpinionsByPostId({
                     polisClusterOpinionTableAlias2.polisClusterId,
                     polisClusterTableAlias2.id,
                 ),
-                eq(
-                    polisClusterOpinionTableAlias2.opinionSlugId,
-                    opinionTable.slugId,
-                ),
+                eq(polisClusterOpinionTableAlias2.opinionId, opinionTable.id),
             ),
         )
         .leftJoin(
@@ -646,10 +636,7 @@ export async function fetchOpinionsByPostId({
                     polisClusterOpinionTableAlias3.polisClusterId,
                     polisClusterTableAlias3.id,
                 ),
-                eq(
-                    polisClusterOpinionTableAlias3.opinionSlugId,
-                    opinionTable.slugId,
-                ),
+                eq(polisClusterOpinionTableAlias3.opinionId, opinionTable.id),
             ),
         )
         .leftJoin(
@@ -659,10 +646,7 @@ export async function fetchOpinionsByPostId({
                     polisClusterOpinionTableAlias4.polisClusterId,
                     polisClusterTableAlias4.id,
                 ),
-                eq(
-                    polisClusterOpinionTableAlias4.opinionSlugId,
-                    opinionTable.slugId,
-                ),
+                eq(polisClusterOpinionTableAlias4.opinionId, opinionTable.id),
             ),
         )
         .leftJoin(
@@ -672,10 +656,7 @@ export async function fetchOpinionsByPostId({
                     polisClusterOpinionTableAlias5.polisClusterId,
                     polisClusterTableAlias5.id,
                 ),
-                eq(
-                    polisClusterOpinionTableAlias5.opinionSlugId,
-                    opinionTable.slugId,
-                ),
+                eq(polisClusterOpinionTableAlias5.opinionId, opinionTable.id),
             ),
         )
         .orderBy(...orderByClause)
@@ -1073,10 +1054,6 @@ interface PostNewOpinionProps {
     proof: string;
     userAgent: string;
     axiosPolis: AxiosInstance | undefined;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
-    polisDelayToFetch: number;
     voteNotifMilestones: number[];
     awsAiLabelSummaryEnable: boolean;
     awsAiLabelSummaryRegion: string;
@@ -1089,92 +1066,6 @@ interface PostNewOpinionProps {
     isSeed: boolean;
 }
 
-interface ImportNewOpinionProps {
-    db: PostgresJsDatabase;
-    commentBody: string;
-    commentId: string; // external imported Polis commentId
-    conversationSlugId: string;
-    conversationId: number;
-    conversationContentId: number;
-    userId: string;
-    axiosPolis: AxiosInstance;
-}
-
-interface ImportNewOpinionReturn {
-    commentId: string; // external imported Polis commentId
-    opinionId: number;
-    opinionSlugId: string;
-    opinionContentId: number;
-}
-
-export async function importNewOpinion({
-    db,
-    commentBody,
-    commentId, // external imported Polis commentId
-    conversationSlugId,
-    conversationId,
-    conversationContentId,
-    userId,
-    axiosPolis,
-}: ImportNewOpinionProps): Promise<ImportNewOpinionReturn> {
-    const opinionSlugId = generateRandomSlugId();
-    const result = await db.transaction(async (tx) => {
-        const insertCommentResponse = await tx
-            .insert(opinionTable)
-            .values({
-                slugId: opinionSlugId,
-                authorId: userId,
-                currentContentId: null,
-                conversationId: conversationId,
-                isSeed: false,
-            })
-            .returning({ opinionId: opinionTable.id });
-
-        const opinionId = insertCommentResponse[0].opinionId;
-        const commentContentTableResponse = await tx
-            .insert(opinionContentTable)
-            .values({
-                opinionId: opinionId,
-                conversationContentId: conversationContentId,
-                content: commentBody,
-            })
-            .returning({ commentContentTableId: opinionContentTable.id });
-
-        const commentContentTableId =
-            commentContentTableResponse[0].commentContentTableId;
-        await tx
-            .update(opinionTable)
-            .set({
-                currentContentId: commentContentTableId,
-            })
-            .where(eq(opinionTable.id, opinionId));
-
-        // Update the conversation's opinion count
-        await tx
-            .update(conversationTable)
-            .set({
-                opinionCount: sql`${conversationTable.opinionCount} + 1`,
-            })
-            .where(eq(conversationTable.slugId, conversationSlugId));
-
-        return {
-            commentId,
-            opinionId,
-            opinionSlugId,
-            opinionContentId: commentContentTableId,
-        };
-    });
-
-    await polisService.createOpinion({
-        axiosPolis,
-        userId,
-        opinionSlugId,
-        conversationSlugId,
-    });
-
-    return result;
-}
-
 export async function postNewOpinion({
     db,
     commentBody,
@@ -1184,10 +1075,6 @@ export async function postNewOpinion({
     userAgent,
     now,
     axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
-    polisDelayToFetch,
     voteNotifMilestones,
     awsAiLabelSummaryEnable,
     awsAiLabelSummaryRegion,
@@ -1243,10 +1130,6 @@ export async function postNewOpinion({
         conversationIsIndexed,
         conversationIsLoginRequired,
         userAgent,
-        axiosPolis,
-        polisUserEmailDomain,
-        polisUserEmailLocalPart,
-        polisUserPassword,
         now,
     });
 
@@ -1344,38 +1227,27 @@ export async function postNewOpinion({
             }
         }
 
-        if (axiosPolis !== undefined) {
-            await polisService.createOpinion({
-                axiosPolis,
-                userId,
-                opinionSlugId,
-                conversationSlugId,
+        if (!isSeed) {
+            // opinion author agrees automatically on its own opinion
+            await castVoteForOpinionSlugId({
+                db: tx,
+                opinionSlugId: opinionSlugId,
+                didWrite: didWrite,
+                proof: proof,
+                votingAction: "agree",
+                userAgent: userAgent,
+                axiosPolis: axiosPolis,
+                voteNotifMilestones,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+                now: now,
             });
         }
-
-        // opinion author agrees automatically on its own opinion
-        await castVoteForOpinionSlugId({
-            db: tx,
-            opinionSlugId: opinionSlugId,
-            didWrite: didWrite,
-            proof: proof,
-            votingAction: "agree",
-            userAgent: userAgent,
-            axiosPolis: axiosPolis,
-            polisUserEmailDomain,
-            polisUserEmailLocalPart,
-            polisUserPassword,
-            polisDelayToFetch,
-            voteNotifMilestones,
-            awsAiLabelSummaryEnable,
-            awsAiLabelSummaryRegion,
-            awsAiLabelSummaryModelId,
-            awsAiLabelSummaryTemperature,
-            awsAiLabelSummaryTopP,
-            awsAiLabelSummaryMaxTokens,
-            awsAiLabelSummaryPrompt,
-            now: now,
-        });
     });
 
     return {

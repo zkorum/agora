@@ -65,13 +65,6 @@ const configSchema = z.object({
     NOSTR_PROOF_CHANNEL_EVENT_ID: z.string().optional(), // if undefined, then nostr functionalities are disabled
     NOSTR_DEFAULT_RELAY_URL: z.string().url().default("wss://nos.lol"),
     POLIS_BASE_URL: z.string().url().optional(), // if undefined, then polis functionalities are disabled
-    POLIS_USER_EMAIL_DOMAIN: z.string().default("zkorum.com"),
-    POLIS_USER_EMAIL_LOCAL_PART: z.string().default("hackerman"),
-    POLIS_USER_PASSWORD: z.string().default("the_best_password_of_all_time"),
-    POLIS_DELAY_TO_FETCH: z
-        .literal(-1)
-        .or(z.coerce.number().int())
-        .default(3000), // milliseconds
     POLIS_CONV_TO_IMPORT_ON_RUN: z.undefined().or(
         z
             .string()

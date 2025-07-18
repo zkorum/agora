@@ -808,6 +808,15 @@ export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
 
 export const zodLinkType = z.enum(["http", "deep"]);
 
+export const zodPolisVoteRecord = z.object({
+    participant_id: z.number(), // TODO: support string too
+    statement_id: z.number(), // TODO: support string too
+    vote: z.number(),
+    conversation_id: z.union([z.string(), z.number()]).optional(),
+    datetime: z.string().optional(),
+    modified: z.number().optional(),
+    weight_x_32767: z.number().optional(),
+});
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
@@ -887,3 +896,4 @@ export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
 export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
 export type LinkType = z.infer<typeof zodLinkType>;
+export type PolisVoteRecord = z.infer<typeof zodPolisVoteRecord>;

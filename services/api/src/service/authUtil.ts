@@ -14,7 +14,6 @@ import type { IsLoggedInResponse } from "@/shared/types/dto.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 import { httpErrors } from "@fastify/sensible";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
-import type { AxiosInstance } from "axios";
 import * as authService from "@/service/auth.js";
 
 interface InfoDevice {
@@ -74,10 +73,6 @@ interface GetOrRegisterUserIdFromDeviceStatusProps {
     conversationIsIndexed: boolean;
     conversationIsLoginRequired: boolean;
     userAgent: string;
-    axiosPolis: AxiosInstance | undefined;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
     now: Date;
 }
 
@@ -87,10 +82,6 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     conversationIsIndexed,
     conversationIsLoginRequired,
     userAgent,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
     now,
 }: GetOrRegisterUserIdFromDeviceStatusProps): Promise<string> {
     const deviceStatus = await getDeviceStatus(db, didWrite);
@@ -121,10 +112,6 @@ export async function getOrRegisterUserIdFromDeviceStatus({
             didWrite,
             now,
             userAgent,
-            axiosPolis,
-            polisUserEmailDomain,
-            polisUserEmailLocalPart,
-            polisUserPassword,
         });
         return userId;
     });

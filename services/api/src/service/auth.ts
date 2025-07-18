@@ -31,19 +31,13 @@ import {
 } from "@/shared/shared.js";
 import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
-import * as polisService from "@/service/polis.js";
 import * as authUtilService from "@/service/authUtil.js";
-import type { AxiosInstance } from "axios";
 import twilio from "twilio";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
     maxAttempt: number;
     didWrite: string;
-    axiosPolis?: AxiosInstance;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
     code: number;
     phoneNumber: string;
     defaultCallingCode: string;
@@ -62,10 +56,6 @@ interface RegisterWithPhoneNumberProps {
     pepperVersion: number;
     userAgent: string;
     userId: string;
-    axiosPolis?: AxiosInstance;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
     now: Date;
     sessionExpiry: Date;
 }
@@ -75,10 +65,6 @@ interface RegisterWithoutVerificationProps {
     didWrite: string;
     now: Date;
     userAgent: string;
-    axiosPolis?: AxiosInstance;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
 }
 
 interface RegisterWithZKPProps {
@@ -90,10 +76,6 @@ interface RegisterWithZKPProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
-    axiosPolis?: AxiosInstance;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
 }
 
 interface LoginProps {
@@ -208,10 +190,6 @@ interface RegisterOrLoginWithPhoneNumberProps {
     pepperVersion: number;
     userAgent: string;
     userId: string;
-    axiosPolis?: AxiosInstance;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
     now: Date;
 }
 
@@ -230,10 +208,6 @@ async function registerOrLoginWithPhoneNumber({
     pepperVersion,
     userAgent,
     userId,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
     now,
 }: RegisterOrLoginWithPhoneNumberProps): Promise<RegisterOrLoginWithPhoneNumberReturn> {
     const loginSessionExpiry = new Date(now);
@@ -250,10 +224,6 @@ async function registerOrLoginWithPhoneNumber({
                 pepperVersion: pepperVersion,
                 userAgent: userAgent,
                 userId: userId,
-                axiosPolis: axiosPolis,
-                polisUserEmailDomain,
-                polisUserEmailLocalPart,
-                polisUserPassword,
                 now,
                 sessionExpiry: loginSessionExpiry,
             });
@@ -292,10 +262,6 @@ export async function verifyPhoneOtp({
     db,
     maxAttempt,
     didWrite,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
     code,
     phoneNumber,
     defaultCallingCode,
@@ -422,10 +388,6 @@ export async function verifyPhoneOtp({
                     pepperVersion: resultOtp[0].pepperVersion,
                     userAgent: resultOtp[0].userAgent,
                     userId: userId,
-                    axiosPolis: axiosPolis,
-                    polisUserEmailDomain,
-                    polisUserEmailLocalPart,
-                    polisUserPassword,
                     now,
                 });
             default:
@@ -452,10 +414,6 @@ export async function verifyPhoneOtp({
             pepperVersion: resultOtp[0].pepperVersion,
             userAgent: resultOtp[0].userAgent,
             userId: userId,
-            axiosPolis: axiosPolis,
-            polisUserEmailDomain,
-            polisUserEmailLocalPart,
-            polisUserPassword,
             now,
         });
     } else {
@@ -516,10 +474,6 @@ export async function registerWithPhoneNumber({
     pepperVersion,
     userAgent,
     userId,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
     now,
     sessionExpiry,
 }: RegisterWithPhoneNumberProps): Promise<void> {
@@ -552,15 +506,6 @@ export async function registerWithPhoneNumber({
             pepperVersion: pepperVersion,
             phoneHash: phoneHash,
         });
-        if (axiosPolis !== undefined) {
-            await polisService.createUser({
-                axiosPolis,
-                polisUserEmailDomain,
-                polisUserEmailLocalPart,
-                polisUserPassword,
-                userId,
-            });
-        }
     });
 }
 
@@ -574,10 +519,6 @@ export async function createGuestUser({
     didWrite,
     now,
     userAgent,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
 }: RegisterWithoutVerificationProps): Promise<{
     userId: string;
     wasUserJustCreated: boolean;
@@ -603,15 +544,6 @@ export async function createGuestUser({
             if (insertedDevice.length === 0) {
                 // might happen when a user clicks multiple times on votes for the first time
                 tx.rollback(); // will throw
-            }
-            if (axiosPolis !== undefined) {
-                await polisService.createUser({
-                    axiosPolis,
-                    polisUserEmailDomain,
-                    polisUserEmailLocalPart,
-                    polisUserPassword,
-                    userId,
-                });
             }
             return { userId: userId, wasUserJustCreated: true };
         });
@@ -641,10 +573,6 @@ export async function registerWithZKP({
     userAgent,
     userId,
     sessionExpiry,
-    axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
 }: RegisterWithZKPProps): Promise<void> {
     log.info("Register with ZKP");
     await db.transaction(async (tx) => {
@@ -664,15 +592,6 @@ export async function registerWithZKP({
             nullifier: nullifier,
             sex: sex,
         });
-        if (axiosPolis !== undefined) {
-            await polisService.createUser({
-                axiosPolis,
-                polisUserEmailDomain,
-                polisUserEmailLocalPart,
-                polisUserPassword,
-                userId,
-            });
-        }
     });
 }
 
@@ -1237,7 +1156,7 @@ export async function insertAuthAttemptCode({
         log.warn("Cannot infer phone country code from phone number");
     }
     const phoneCountryCode =
-        phoneNumber.country ?? phoneNumber.getPossibleCountries().length !== 0
+        (phoneNumber.country ?? phoneNumber.getPossibleCountries().length !== 0)
             ? phoneNumber.getPossibleCountries()[0]
             : undefined;
     const countryCallingCode = phoneNumber.countryCallingCode;
@@ -1334,7 +1253,7 @@ export async function updateAuthAttemptCode({
         log.warn("Cannot infer phone country code from phone number");
     }
     const phoneCountryCode =
-        phoneNumber.country ?? phoneNumber.getPossibleCountries().length !== 0
+        (phoneNumber.country ?? phoneNumber.getPossibleCountries().length !== 0)
             ? phoneNumber.getPossibleCountries()[0]
             : undefined;
     const countryCallingCode = phoneNumber.countryCallingCode;
