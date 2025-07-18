@@ -81,78 +81,83 @@
                     }}
                   </td>
                 </tr>
-                <tr class="no-group-row">
-                  <td class="group-name">
-                    {{ `No group (${noGroupStats.numUsers})` }}
-                  </td>
-                  <td class="agree-cell">
-                    {{ noGroupStats.numAgrees }} •
-                    {{
-                      formatPercentage(
-                        calculatePercentage(
-                          noGroupStats.numAgrees,
-                          noGroupStats.numUsers
+                <template v-if="shouldShowGroupStats">
+                  <tr class="no-group-row">
+                    <td class="group-name">
+                      {{ `No group (${noGroupStats.numUsers})` }}
+                    </td>
+                    <td class="agree-cell">
+                      {{ noGroupStats.numAgrees }} •
+                      {{
+                        formatPercentage(
+                          calculatePercentage(
+                            noGroupStats.numAgrees,
+                            noGroupStats.numUsers
+                          )
                         )
-                      )
-                    }}
-                  </td>
-                  <td class="pass-cell">
-                    {{ noGroupStats.numPasses }} •
-                    {{
-                      formatPercentage(
-                        calculatePercentage(
-                          noGroupStats.numPasses,
-                          noGroupStats.numUsers
+                      }}
+                    </td>
+                    <td class="pass-cell">
+                      {{ noGroupStats.numPasses }} •
+                      {{
+                        formatPercentage(
+                          calculatePercentage(
+                            noGroupStats.numPasses,
+                            noGroupStats.numUsers
+                          )
                         )
-                      )
-                    }}
-                  </td>
-                  <td class="disagree-cell">
-                    {{ noGroupStats.numDisagrees }} •
-                    {{
-                      formatPercentage(
-                        calculatePercentage(
-                          noGroupStats.numDisagrees,
-                          noGroupStats.numUsers
+                      }}
+                    </td>
+                    <td class="disagree-cell">
+                      {{ noGroupStats.numDisagrees }} •
+                      {{
+                        formatPercentage(
+                          calculatePercentage(
+                            noGroupStats.numDisagrees,
+                            noGroupStats.numUsers
+                          )
                         )
-                      )
-                    }}
-                  </td>
-                </tr>
-                <tr
-                  v-for="(group, index) in opinionItem.clustersStats"
-                  :key="index"
-                >
-                  <td class="group-name">
-                    {{
-                      `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
-                    }}
-                  </td>
-                  <td class="agree-cell">
-                    {{ group.numAgrees }} •
-                    {{
-                      formatPercentage(
-                        calculatePercentage(group.numAgrees, group.numUsers)
-                      )
-                    }}
-                  </td>
-                  <td class="pass-cell">
-                    {{ group.numPasses }} •
-                    {{
-                      formatPercentage(
-                        calculatePercentage(group.numPasses, group.numUsers)
-                      )
-                    }}
-                  </td>
-                  <td class="disagree-cell">
-                    {{ group.numDisagrees }} •
-                    {{
-                      formatPercentage(
-                        calculatePercentage(group.numDisagrees, group.numUsers)
-                      )
-                    }}
-                  </td>
-                </tr>
+                      }}
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(group, index) in opinionItem.clustersStats"
+                    :key="index"
+                  >
+                    <td class="group-name">
+                      {{
+                        `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
+                      }}
+                    </td>
+                    <td class="agree-cell">
+                      {{ group.numAgrees }} •
+                      {{
+                        formatPercentage(
+                          calculatePercentage(group.numAgrees, group.numUsers)
+                        )
+                      }}
+                    </td>
+                    <td class="pass-cell">
+                      {{ group.numPasses }} •
+                      {{
+                        formatPercentage(
+                          calculatePercentage(group.numPasses, group.numUsers)
+                        )
+                      }}
+                    </td>
+                    <td class="disagree-cell">
+                      {{ group.numDisagrees }} •
+                      {{
+                        formatPercentage(
+                          calculatePercentage(
+                            group.numDisagrees,
+                            group.numUsers
+                          )
+                        )
+                      }}
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -216,6 +221,10 @@ const noGroupStats = computed(() => {
     numPasses: noGroupPasses,
     numUsers: noGroupUsers,
   };
+});
+
+const shouldShowGroupStats = computed(() => {
+  return props.opinionItem.clustersStats.length > 1;
 });
 
 async function viewOriginalComment() {
