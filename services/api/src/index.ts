@@ -6,7 +6,7 @@ import {
 } from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
-import fastifySensible, { httpErrors } from "@fastify/sensible";
+import fastifySensible from "@fastify/sensible";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
 import {
@@ -30,6 +30,7 @@ import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
+import * as polisService from "@/service/polis.js";
 import * as migrationService from "@/service/migration.js";
 import WebSocket from "ws";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
@@ -89,7 +90,6 @@ import {
     getNotifications,
     markAllNotificationsAsRead,
 } from "./service/notification.js";
-import { loadAndImportToAgora } from "./commands/polis/import.js";
 import twilio from "twilio";
 import {
     GetSecretValueCommand,
@@ -722,10 +722,6 @@ server.after(() => {
                     maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
                     didWrite,
                     code: request.body.code,
-                    axiosPolis: axiosPolis,
-                    polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                    polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                    polisUserPassword: config.POLIS_USER_PASSWORD,
                     phoneNumber: request.body.phoneNumber,
                     defaultCallingCode: request.body.defaultCallingCode,
                     twilioClient: twilioClient,
@@ -1200,10 +1196,6 @@ server.after(() => {
                 votingAction: request.body.chosenOption,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 axiosPolis: axiosPolis,
-                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                polisUserPassword: config.POLIS_USER_PASSWORD,
-                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 awsAiLabelSummaryEnable:
                     config.AWS_AI_LABEL_SUMMARY_ENABLE &&
@@ -1258,10 +1250,6 @@ server.after(() => {
                 postSlugId: request.body.conversationSlugId,
                 voteOptionChoice: request.body.voteOptionChoice,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
-                axiosPolis: axiosPolis,
-                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                polisUserPassword: config.POLIS_USER_PASSWORD,
                 now: now,
             });
             reply.send();
@@ -1374,10 +1362,6 @@ server.after(() => {
                 proof: encodedUcan,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 axiosPolis: axiosPolis,
-                polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                polisUserPassword: config.POLIS_USER_PASSWORD,
-                polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 awsAiLabelSummaryEnable:
                     config.AWS_AI_LABEL_SUMMARY_ENABLE &&
@@ -1808,7 +1792,6 @@ server.after(() => {
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 proof: encodedUcan,
-                axiosPolis: axiosPolis,
                 indexConversationAt: request.body.indexConversationAt,
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
@@ -1863,7 +1846,7 @@ server.after(() => {
                 log.error(
                     "Connection with Polis Python bridge must be operational to import conversations",
                 );
-                throw httpErrors.internalServerError(
+                throw server.httpErrors.internalServerError(
                     "Backend service is not equiped to process the import request",
                 );
             }
@@ -1970,10 +1953,6 @@ server.after(() => {
                     db,
                     didWrite: didWrite,
                     axiosVerificatorSvc,
-                    axiosPolis: axiosPolis,
-                    polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-                    polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-                    polisUserPassword: config.POLIS_USER_PASSWORD,
                     userAgent,
                 });
             return verificationStatusAndNullifier;
@@ -2530,20 +2509,37 @@ if (
     config.POLIS_CONV_TO_IMPORT_ON_RUN !== undefined &&
     axiosPolis !== undefined
 ) {
-    const polisConv = config.POLIS_CONV_TO_IMPORT_ON_RUN;
-    await loadAndImportToAgora({
-        db,
-        axiosPolis,
-        polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-        polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-        polisUserPassword: config.POLIS_USER_PASSWORD,
-        summaryFilePath: polisConv[0],
-        commentFilePath: polisConv[1],
-        voteFilePath: polisConv[2],
-        polisDelayToFetch: config.POLIS_DELAY_TO_FETCH,
-    });
+    console.log("not implemented yet");
+    // const polisConv = config.POLIS_CONV_TO_IMPORT_ON_RUN;
+    // await loadAndImportToAgora({
+    //     db,
+    //     axiosPolis,
+    //     polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
+    //     polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
+    //     polisUserPassword: config.POLIS_USER_PASSWORD,
+    //     summaryFilePath: polisConv[0],
+    //     commentFilePath: polisConv[1],
+    //     voteFilePath: polisConv[2],
+    // });
 } else {
-    await migrationService.fixNullProbabilitiesInOpinionTable({ db });
+    await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
+    if (axiosPolis !== undefined) {
+        await polisService.updateMathAllConversations({
+            db,
+            axiosPolis: axiosPolis,
+            awsAiLabelSummaryEnable:
+                config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                (config.NODE_ENV === "production" ||
+                    config.NODE_ENV === "staging"),
+            awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+            awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+            awsAiLabelSummaryTemperature:
+                config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+            awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+            awsAiLabelSummaryMaxTokens: config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+            awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+        });
+    }
     server.ready((e) => {
         if (e) {
             log.error(e);

@@ -13,110 +13,102 @@ export const stringToJSONSchema = z
         }
     });
 
-export const zodPCA = z.object({
-    comps: z.array(z.array(z.number())),
-    center: z.array(z.number()),
-    "comment-extremity": z.array(z.number()),
-    "comment-projection": z.array(z.array(z.number())),
+export const zodStatement = z.object({
+    statement_id: z.union([z.string(), z.number()]),
+    x: z.number(),
+    y: z.number(),
+    to_zero: z.union([z.number(), z.boolean()]),
+    is_meta: z.boolean(),
+    mean: z.number(),
+    pc1: z.nullable(z.number()),
+    pc2: z.nullable(z.number()),
+    pc3: z.nullable(z.number()),
+    extremity: z.number(),
+    n_agree: z.number(),
+    n_disagree: z.number(),
+    n_total: z.number(),
+    priority: z.number(),
+    "group-aware-consensus": z.number(),
+    "group-aware-consensus-agree": z.number(),
+    "group-aware-consensus-disagree": z.number(),
 });
 
-export const zodRepnessEntry = z.object({
-    tid: z.number(),
+export const zodStatementsDf = z.array(zodStatement);
+
+export const zodParticipant = z.object({
+    participant_id: z.number(), // TODO: allow strings too!
+    x: z.number(),
+    y: z.number(),
+    to_cluster: z.boolean(),
+    cluster_id: z.nullable(z.number().or(z.string())),
+});
+
+export const zodParticipantsDf = z.array(zodParticipant);
+
+export const zodRepnessStatement = z.object({
+    tid: z.number(), // TODO: support string
+    "n-success": z.number(),
+    "n-trials": z.number(),
+    "p-success": z.number(),
     "p-test": z.number(),
     repness: z.number(),
-    "n-trials": z.number(),
-    "n-success": z.number(),
-    "p-success": z.number(),
-    "repful-for": z.enum(["agree", "disagree"]),
     "repness-test": z.number(),
+    "repful-for": z.union([z.literal("agree"), z.literal("disagree")]),
+    "best-agree": z.boolean().optional(),
+    "n-agree": z.number().optional(),
 });
 
-export const zodRepness = z.record(z.array(zodRepnessEntry));
+export const zodRepness = z.record(
+    z.union([z.string(), z.number()]),
+    z.array(zodRepnessStatement),
+);
 
-export const zodConsensusEntry = z.object({
-    tid: z.number(),
-    "p-test": z.number(),
-    "n-trials": z.number(),
+export const zodGroupCommentStat = z.object({
+    statement_id: z.number(), // TODO: support string
+    na: z.number(), // agree count in group
+    nd: z.number(), // disagree count in group
+    ns: z.number(), // seen (total votes) in group
+    pa: z.number(), // probability of agree
+    pd: z.number(), // probability of disagree
+    pat: z.number(), // z-score for agree prob
+    pdt: z.number(), // z-score for disagree prob
+    ra: z.number(), // representativeness of agree
+    rd: z.number(), // representativeness of disagree
+    rat: z.number(), // z-score for rep agree
+    rdt: z.number(), // z-score for rep disagree
+    repness_order: z.number().optional(), // repness order (int rank)
+});
+
+export const zodGroupCommentStats = z.record(
+    z.union([z.string(), z.number()]), // group_id as key
+    z.array(zodGroupCommentStat),
+);
+
+export const zodConsensusStatement = z.object({
+    tid: z.number(), // TODO: support string
     "n-success": z.number(),
+    "n-trials": z.number(),
     "p-success": z.number(),
+    "p-test": z.number(),
 });
 
 export const zodConsensus = z.object({
-    agree: z.array(zodConsensusEntry),
-    disagree: z.array(zodConsensusEntry),
+    agree: z.array(zodConsensusStatement),
+    disagree: z.array(zodConsensusStatement),
 });
-
-const zodVotesBase = z.object({
-    A: z.array(z.number()),
-    D: z.array(z.number()),
-    S: z.array(z.number()),
-});
-
-export const zodVotesBaseMap = z.record(zodVotesBase);
-
-export const zodGroupVotesMap = z.record(
-    z.object({
-        votes: z.record(
-            z.object({
-                A: z.number(),
-                D: z.number(),
-                S: z.number(),
-            }),
-        ),
-        "n-members": z.number(),
-        id: z.number(),
-    }),
-);
-
-export const zodBaseClusters = z.object({
-    x: z.array(z.number()),
-    y: z.array(z.number()),
-    id: z.array(z.number()),
-    count: z.array(z.number()),
-    members: z.array(z.array(z.number())),
-});
-
-export const zodGroupCluster = z.object({
-    id: z.number(),
-    center: z.array(z.number()),
-    members: z.array(z.number()),
-});
-
-export const zodUserVoteCounts = z.record(z.number());
-
-export const zodCommentPriorities = z.record(z.number());
-
-export const zodGroupAwareConsensus = z.record(z.number());
 
 export const zodMathResults = z.object({
-    n: z.number().nullish(),
-    pca: zodPCA.nullish(),
-    tids: z.array(z.number()).nullish(),
-    "mod-in": z.array(z.unknown()).nullish(),
-    "n-cmts": z.number().nullish(),
-    "in-conv": z.array(z.number()).nullish(),
-    "mod-out": z.array(z.unknown()).nullish(),
+    statements_df: zodStatementsDf,
+    participants_df: zodParticipantsDf,
     repness: zodRepness,
-    consensus: zodConsensus.nullish(),
-    "meta-tids": z.array(z.number()).nullish(),
-    "votes-base": zodVotesBaseMap.nullish(),
-    "group-votes": zodGroupVotesMap,
-    "base-clusters": zodBaseClusters,
-    "group-clusters": z.array(zodGroupCluster),
-    lastModTimestamp: z.union([z.number(), z.null()]),
-    "user-vote-counts": zodUserVoteCounts.nullish(),
-    lastVoteTimestamp: z.number(),
-    "comment-priorities": zodCommentPriorities.nullish(),
-    "group-aware-consensus": zodGroupAwareConsensus.nullish(),
-    math_tick: z.number(),
+    group_comment_stats: zodGroupCommentStats,
+    consensus: zodConsensus,
 });
 
-export const zodPolisMathAndMetadata = z.object({
-    pca: stringToJSONSchema.nullish().pipe(zodMathResults.nullish()), // see https://github.com/colinhacks/zod/discussions/2215#discussioncomment-5356286 and https://github.com/colinhacks/zod/discussions/2215#discussioncomment-7812655
-    pidToHnames: z.record(z.string()),
-    tidToTxts: z.record(z.string()),
-});
-
-export type PolisMathAndMetadata = z.infer<typeof zodPolisMathAndMetadata>;
-export type CommentPriorities = z.infer<typeof zodCommentPriorities>;
-export type GroupAwareConsensus = z.infer<typeof zodGroupAwareConsensus>;
+export type StatementsDf = z.infer<typeof zodStatementsDf>;
+export type ParticipantsDf = z.infer<typeof zodParticipantsDf>;
+export type Repness = z.infer<typeof zodRepness>;
+export type GroupCommentStats = z.infer<typeof zodGroupCommentStats>;
+// Polis consensus is actually "majority opinions", yeah, confusing. Real consensus is group-aware-consensus.
+export type Majority = z.infer<typeof zodConsensus>;
+export type MathResults = z.infer<typeof zodMathResults>;

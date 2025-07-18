@@ -35,6 +35,7 @@ import {
     zodTopicObject,
     zodFeedSortAlgorithm,
     zodLinkType,
+    zodPolisVoteRecord,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 
@@ -508,6 +509,11 @@ export class Dto {
             }),
         ],
     );
+    static zodGetMathRequest = z.object({
+        conversation_slug_id: z.string(),
+        conversation_id: z.number(),
+        votes: z.array(zodPolisVoteRecord),
+    });
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -587,3 +593,4 @@ export type UserFollowTopicCodeRequest = z.infer<
 export type UserUnfollowTopicCodeRequest = z.infer<
     typeof Dto.userUnfollowTopicCodeRequest
 >;
+export type GetMathRequest = z.infer<typeof Dto.zodGetMathRequest>;

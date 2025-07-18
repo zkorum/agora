@@ -15,6 +15,7 @@ import {
     check,
     smallint,
     real,
+    serial,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm/sql";
 // import { MAX_LENGTH_OPTION, MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
@@ -558,7 +559,11 @@ export const phoneCountryCodeEnum = pgEnum("phone_country_code", [
     "ZW",
 ]);
 
-export const voteEnum = pgEnum("vote_enum", ["agree", "disagree", "pass"]);
+export const voteEnum = pgEnum("vote_enum_all", ["agree", "disagree", "pass"]);
+export const voteEnumForRepness = pgEnum("vote_enum_simple", [
+    "agree",
+    "disagree",
+]);
 
 export const polisKeyEnum = pgEnum("polis_key_enum", [
     "0",
@@ -578,6 +583,7 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
 export const userTable = pgTable("user", {
     id: uuid("id").primaryKey(), // enforce the same key for the user in the frontend across email changes
+    polisParticipantId: serial("polis_participant_id"), // temporary work-around until reddwarf supports string ids
     username: varchar("username", { length: MAX_LENGTH_USERNAME })
         .notNull()
         .unique(),
@@ -1264,20 +1270,20 @@ export const opinionTable = pgTable(
     (table) => [
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
-        check(
-            "check_polis_null",
-            sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL AND ${table.polisCluster0NumPasses} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL AND ${table.polisCluster0NumPasses} IS NULL))
-                AND 
-                ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL AND ${table.polisCluster1NumPasses} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL AND ${table.polisCluster1NumPasses} IS NULL)) 
-                AND 
-                ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL AND ${table.polisCluster2NumPasses} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL AND ${table.polisCluster2NumPasses} IS NULL))
-                AND 
-                ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL AND ${table.polisCluster3NumPasses} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL AND ${table.polisCluster3NumPasses} IS NULL)) 
-                AND 
-                ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL AND ${table.polisCluster4NumPasses} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL AND ${table.polisCluster4NumPasses} IS NULL)) 
-                AND 
-                ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL AND ${table.polisCluster5NumPasses} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL AND ${table.polisCluster5NumPasses} IS NULL))`,
-        ),
+        // check( // TODO: add back after migration and re-run of the algorithm on all conversations
+        //     "check_polis_null",
+        //     sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL AND ${table.polisCluster0NumPasses} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL AND ${table.polisCluster0NumPasses} IS NULL))
+        //         AND
+        //         ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL AND ${table.polisCluster1NumPasses} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL AND ${table.polisCluster1NumPasses} IS NULL))
+        //         AND
+        //         ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL AND ${table.polisCluster2NumPasses} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL AND ${table.polisCluster2NumPasses} IS NULL))
+        //         AND
+        //         ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL AND ${table.polisCluster3NumPasses} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL AND ${table.polisCluster3NumPasses} IS NULL))
+        //         AND
+        //         ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL AND ${table.polisCluster4NumPasses} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL AND ${table.polisCluster4NumPasses} IS NULL))
+        //         AND
+        //         ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL AND ${table.polisCluster5NumPasses} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL AND ${table.polisCluster5NumPasses} IS NULL))`,
+        // ),
     ],
 );
 
@@ -1585,7 +1591,6 @@ export const polisContentTable = pgTable("polis_content", {
     conversationId: integer("conversation_id")
         .references(() => conversationTable.id)
         .notNull(), // not unique, there will be multiple rows over the life of the conversation
-    mathTick: integer("math_tick").notNull().default(0), // external polis-specific value
     rawData: jsonb("raw_data").notNull(), // from external polis system
     aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
     createdAt: timestamp("created_at", {
@@ -1614,7 +1619,6 @@ export const polisClusterTable = pgTable("polis_cluster", {
     numUsers: integer("num_users").notNull(),
     aiLabel: varchar("ai_label", { length: 100 }), // TODO: set max-length appropriately
     aiSummary: varchar("ai_summary", { length: 1000 }), // TODO: set max-length appropriately
-    mathCenter: real("math_center").array().notNull(), // extracted from external polis system
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1673,10 +1677,13 @@ export const polisClusterOpinionTable = pgTable(
         polisClusterId: integer("polis_cluster_id")
             .notNull()
             .references(() => polisClusterTable.id),
-        opinionSlugId: varchar("opinion_slug_id", { length: 8 })
-            .notNull()
-            .references(() => opinionTable.slugId),
-        agreementType: voteEnum("agreement_type").notNull(),
+        opinionSlugId: varchar("opinion_slug_id", { length: 8 }).references(
+            () => opinionTable.slugId,
+        ), // TODO: delete after migration to opinionId
+        opinionId: integer("opinion_id")
+            // .notNull() // TODO: add back later after migration
+            .references(() => opinionTable.id),
+        agreementType: voteEnumForRepness("agreement_type").notNull(),
         probabilityAgreement: real("probability_agreement").notNull(), // example: 0.257, 0.013, 0, 1, 0.876 -- in practice should be larger than 0.5
         numAgreement: integer("number_agreement").notNull(), // example: 0, 1, 2...etc (number or agrees or disagrees)
         rawRepness: jsonb("raw_repness").notNull(), // from external polis system

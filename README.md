@@ -85,6 +85,10 @@ A Quasar application (frontend)
 
 A Fastify application supported by a PostgreSQL database (backend).
 
+### Python bridge
+
+A Flask application to enable the Node backend to communicate with the data science libraries written in Python ([reddwarf](https://github.com/polis-community/red-dwarf) especially).
+
 ### OpenAPI
 
 We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding front.

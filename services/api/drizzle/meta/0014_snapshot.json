@@ -1,5 +1,5 @@
 {
-  "id": "5417e935-0133-40d5-9e14-cd4046d6b071",
+  "id": "e5cdc9b4-f705-4bdf-abe8-89b18b8d1732",
   "prevId": "7344f4fe-e308-4d02-b571-35df44cce9e9",
   "version": "7",
   "dialect": "postgresql",
@@ -2352,12 +2352,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "check_polis_null": {
-          "name": "check_polis_null",
-          "value": "((\"opinion\".\"cluster_0_id\" IS NOT NULL AND \"opinion\".\"cluster_0_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_0_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_0_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_0_id\" IS NULL AND \"opinion\".\"cluster_0_num_agrees\" IS NULL AND \"opinion\".\"cluster_0_num_disagrees\" IS NULL AND \"opinion\".\"cluster_0_num_passes\" IS NULL))\n                AND \n                ((\"opinion\".\"cluster_1_id\" IS NOT NULL AND \"opinion\".\"cluster_1_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_1_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_1_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_1_id\" IS NULL AND \"opinion\".\"cluster_1_num_agrees\" IS NULL AND \"opinion\".\"cluster_1_num_disagrees\" IS NULL AND \"opinion\".\"cluster_1_num_passes\" IS NULL)) \n                AND \n                ((\"opinion\".\"cluster_2_id\" IS NOT NULL AND \"opinion\".\"cluster_2_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_2_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_2_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_2_id\" IS NULL AND \"opinion\".\"cluster_2_num_agrees\" IS NULL AND \"opinion\".\"cluster_2_num_disagrees\" IS NULL AND \"opinion\".\"cluster_2_num_passes\" IS NULL))\n                AND \n                ((\"opinion\".\"cluster_3_id\" IS NOT NULL AND \"opinion\".\"cluster_3_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_3_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_3_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_3_id\" IS NULL AND \"opinion\".\"cluster_3_num_agrees\" IS NULL AND \"opinion\".\"cluster_3_num_disagrees\" IS NULL AND \"opinion\".\"cluster_3_num_passes\" IS NULL)) \n                AND \n                ((\"opinion\".\"cluster_4_id\" IS NOT NULL AND \"opinion\".\"cluster_4_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_4_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_4_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_4_id\" IS NULL AND \"opinion\".\"cluster_4_num_agrees\" IS NULL AND \"opinion\".\"cluster_4_num_disagrees\" IS NULL AND \"opinion\".\"cluster_4_num_passes\" IS NULL)) \n                AND \n                ((\"opinion\".\"cluster_5_id\" IS NOT NULL AND \"opinion\".\"cluster_5_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_5_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_5_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_5_id\" IS NULL AND \"opinion\".\"cluster_5_num_agrees\" IS NULL AND \"opinion\".\"cluster_5_num_disagrees\" IS NULL AND \"opinion\".\"cluster_5_num_passes\" IS NULL))"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.organization": {
@@ -2587,11 +2582,17 @@
           "name": "opinion_slug_id",
           "type": "varchar(8)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "opinion_id": {
+          "name": "opinion_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "agreement_type": {
           "name": "agreement_type",
-          "type": "vote_enum",
+          "type": "vote_enum_simple",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -2659,6 +2660,19 @@
           ],
           "columnsTo": [
             "slug_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "polis_cluster_opinion_opinion_id_opinion_id_fk": {
+          "name": "polis_cluster_opinion_opinion_id_opinion_id_fk",
+          "tableFrom": "polis_cluster_opinion",
+          "tableTo": "opinion",
+          "columnsFrom": [
+            "opinion_id"
+          ],
+          "columnsTo": [
+            "id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -2732,12 +2746,6 @@
           "type": "varchar(1000)",
           "primaryKey": false,
           "notNull": false
-        },
-        "math_center": {
-          "name": "math_center",
-          "type": "real[]",
-          "primaryKey": false,
-          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -2906,13 +2914,6 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
-        },
-        "math_tick": {
-          "name": "math_tick",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
         },
         "raw_data": {
           "name": "raw_data",
@@ -3876,6 +3877,12 @@
           "primaryKey": true,
           "notNull": true
         },
+        "polis_participant_id": {
+          "name": "polis_participant_id",
+          "type": "serial",
+          "primaryKey": false,
+          "notNull": true
+        },
         "username": {
           "name": "username",
           "type": "varchar(20)",
@@ -4010,7 +4017,7 @@
         },
         "vote": {
           "name": "vote",
-          "type": "vote_enum",
+          "type": "vote_enum_all",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -4716,13 +4723,21 @@
         "X"
       ]
     },
-    "public.vote_enum": {
-      "name": "vote_enum",
+    "public.vote_enum_all": {
+      "name": "vote_enum_all",
       "schema": "public",
       "values": [
         "agree",
         "disagree",
         "pass"
+      ]
+    },
+    "public.vote_enum_simple": {
+      "name": "vote_enum_simple",
+      "schema": "public",
+      "values": [
+        "agree",
+        "disagree"
       ]
     }
   },

@@ -4,7 +4,7 @@ import {
     polisClusterOpinionTable,
     polisClusterTable,
 } from "@/schema.js";
-import { eq, inArray, isNull, sql, SQL } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 export async function fixNullProbabilitiesInOpinionTable({
@@ -72,6 +72,26 @@ export async function fixEmptyPolisContentId({
     }
 }
 
+export async function fixEmptyOpinionIdInPolisClusterOpinionTable({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}): Promise<void> {
+    await db
+        .update(polisClusterOpinionTable)
+        .set({
+            opinionId: opinionTable.id,
+        })
+        .from(opinionTable)
+        .where(
+            and(
+                eq(opinionTable.slugId, polisClusterOpinionTable.opinionSlugId),
+                isNull(polisClusterOpinionTable.opinionId),
+                isNotNull(polisClusterOpinionTable.opinionSlugId),
+            ),
+        );
+}
+
 // import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 // import * as commentService from "./comment.js";
 // import * as votingService from "./voting.js";
@@ -83,7 +103,6 @@ export async function fixEmptyPolisContentId({
 //     polisUserEmailDomain: string;
 //     polisUserEmailLocalPart: string;
 //     polisUserPassword: string;
-//     polisDelayToFetch: number;
 //     voteNotifMilestones: number[];
 //     awsAiLabelSummaryEnable: boolean;
 //     awsAiLabelSummaryRegion: string;
@@ -102,7 +121,6 @@ export async function fixEmptyPolisContentId({
 //     polisUserEmailDomain,
 //     polisUserEmailLocalPart,
 //     polisUserPassword,
-//     polisDelayToFetch,
 //     voteNotifMilestones,
 //     awsAiLabelSummaryEnable,
 //     awsAiLabelSummaryRegion,
@@ -134,7 +152,6 @@ export async function fixEmptyPolisContentId({
 //             polisUserEmailDomain,
 //             polisUserEmailLocalPart,
 //             polisUserPassword,
-//             polisDelayToFetch,
 //             voteNotifMilestones,
 //             awsAiLabelSummaryEnable,
 //             awsAiLabelSummaryRegion,

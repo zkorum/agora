@@ -17,7 +17,7 @@ import type {
     ClusterStats,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, lt, desc } from "drizzle-orm";
+import { and, eq, lt, desc, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCreatedAt } from "./feed.js";
@@ -421,6 +421,11 @@ interface GetUserProfileProps {
     baseImageServiceUrl: string;
 }
 
+interface GetUserIdByPolisParticipantIdsProps {
+    db: PostgresJsDatabase;
+    polisParticipantIds: number[];
+}
+
 export async function getUserProfile({
     db,
     userId,
@@ -460,4 +465,25 @@ export async function getUserProfile({
             "Database error while fetching user profile",
         );
     }
+}
+
+export async function getUserIdByPolisParticipantIds({
+    db,
+    polisParticipantIds,
+}: GetUserIdByPolisParticipantIdsProps): Promise<Record<number, string>> {
+    // key == polisUid, value == userId
+    const results = await db
+        .select({
+            userId: userTable.id,
+            polisParticipantId: userTable.polisParticipantId,
+        })
+        .from(userTable)
+        .where(inArray(userTable.polisParticipantId, polisParticipantIds));
+
+    const userIdMap: Record<number, string> = {};
+    for (const row of results) {
+        userIdMap[row.polisParticipantId] = row.userId;
+    }
+
+    return userIdMap;
 }

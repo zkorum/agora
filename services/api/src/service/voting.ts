@@ -61,260 +61,6 @@ async function getCommentMetadataFromCommentSlugId({
     }
 }
 
-interface ImportNewVoteProps {
-    db: PostgresJsDatabase;
-    conversationId: number;
-    conversationSlugId: string;
-    opinionSlugId: string;
-    opinionId: number;
-    externalCommentId: string; // from imported polis system
-    externalUserId: string; // from imported polis system
-    opinionContentId: number;
-    userId: string;
-    votingAction: VotingAction;
-    axiosPolis: AxiosInstance;
-}
-
-export async function importNewVote({
-    db,
-    conversationId,
-    conversationSlugId,
-    userId,
-    opinionId,
-    externalCommentId,
-    externalUserId,
-    opinionContentId,
-    opinionSlugId,
-    votingAction,
-    axiosPolis,
-}: ImportNewVoteProps) {
-    log.info(
-        `Casting vote for user ${externalUserId} and comment ${externalCommentId}`,
-    );
-
-    const existingVoteTableResponse = await db
-        .select({
-            optionChosen: voteContentTable.vote,
-            voteTableId: voteTable.id,
-        })
-        .from(voteTable)
-        .leftJoin(
-            voteContentTable,
-            eq(voteContentTable.id, voteTable.currentContentId),
-        )
-        .where(
-            and(
-                eq(voteTable.authorId, userId),
-                eq(voteTable.opinionId, opinionId),
-            ),
-        );
-
-    let numAgreesDiff = 0;
-    let numDisagreesDiff = 0;
-    let numPassesDiff = 0;
-
-    if (existingVoteTableResponse.length == 0) {
-        // No existing vote
-        if (votingAction == "cancel") {
-            throw httpErrors.badRequest(
-                "Cannot cancel a vote that does not exist",
-            );
-        } else {
-            if (votingAction == "agree") {
-                numAgreesDiff = 1;
-            } else if (votingAction == "disagree") {
-                numDisagreesDiff = 1;
-            } else {
-                numPassesDiff = 1;
-            }
-        }
-    } else if (existingVoteTableResponse.length == 1) {
-        const existingResponse = existingVoteTableResponse[0].optionChosen;
-        if (existingResponse == "agree") {
-            if (votingAction == "agree") {
-                throw httpErrors.badRequest(
-                    "User already agreed the target opinion",
-                );
-            } else if (votingAction == "cancel") {
-                numAgreesDiff = -1;
-            } else if (votingAction == "disagree") {
-                numDisagreesDiff = 1;
-                numAgreesDiff = -1;
-            } else {
-                numPassesDiff = 1;
-                numAgreesDiff = -1;
-            }
-        } else if (existingResponse == "disagree") {
-            if (votingAction == "disagree") {
-                throw httpErrors.badRequest(
-                    "User already disagreed the target opinion",
-                );
-            } else if (votingAction == "cancel") {
-                numDisagreesDiff = -1;
-            } else if (votingAction == "agree") {
-                numDisagreesDiff = -1;
-                numAgreesDiff = 1;
-            } else {
-                numDisagreesDiff = -1;
-                numPassesDiff = 1;
-            }
-        } else if (existingResponse == "pass") {
-            if (votingAction == "pass") {
-                throw httpErrors.badRequest(
-                    "User already passed on the target opinion",
-                );
-            } else if (votingAction == "cancel") {
-                numPassesDiff = -1;
-            } else if (votingAction == "agree") {
-                numPassesDiff = -1;
-                numAgreesDiff = 1;
-            } else {
-                numPassesDiff = -1;
-                numDisagreesDiff = 1;
-            }
-        } else {
-            // null case meaning user cancelled
-            if (votingAction == "agree") {
-                numAgreesDiff = 1;
-            } else if (votingAction == "disagree") {
-                numDisagreesDiff = 1;
-            } else if (votingAction == "pass") {
-                numPassesDiff = 1;
-            }
-        }
-    } else {
-        throw httpErrors.internalServerError("Database relation error");
-    }
-
-    let voteTableId = 0;
-
-    if (existingVoteTableResponse.length == 0) {
-        // There are no votes yet
-        const voteTableResponse = await db
-            .insert(voteTable)
-            .values({
-                authorId: userId,
-                opinionId: opinionId,
-                currentContentId: null,
-            })
-            .returning({ voteTableId: voteTable.id });
-        voteTableId = voteTableResponse[0].voteTableId;
-    } else {
-        if (votingAction == "cancel") {
-            await db
-                .update(voteTable)
-                .set({
-                    currentContentId: null,
-                })
-                .where(
-                    eq(voteTable.id, existingVoteTableResponse[0].voteTableId),
-                );
-        }
-
-        voteTableId = existingVoteTableResponse[0].voteTableId;
-    }
-
-    if (votingAction != "cancel") {
-        const voteContentTableResponse = await db
-            .insert(voteContentTable)
-            .values({
-                voteId: voteTableId,
-                opinionContentId: opinionContentId,
-                vote: votingAction,
-            })
-            .returning({ voteContentTableId: voteContentTable.id });
-
-        const voteContentTableId =
-            voteContentTableResponse[0].voteContentTableId;
-
-        await db
-            .update(voteTable)
-            .set({
-                currentContentId: voteContentTableId,
-            })
-            .where(eq(voteTable.id, voteTableId));
-    }
-
-    await db
-        .update(opinionTable)
-        .set({
-            numAgrees: sql`${opinionTable.numAgrees} + ${numAgreesDiff}`,
-            numDisagrees: sql`${opinionTable.numDisagrees} + ${numDisagreesDiff}`,
-            numPasses: sql`${opinionTable.numPasses} + ${numPassesDiff}`,
-        })
-        .where(eq(opinionTable.currentContentId, opinionContentId));
-
-    const {
-        voteCount: participantVoteCountBeforeAction,
-        opinionCount: participantOpinionCountBeforeAction,
-    } = await useCommonComment().getCountsForParticipant({
-        db: db,
-        conversationId,
-        userId,
-    });
-
-    if (votingAction === "cancel") {
-        // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
-        const participantVoteCountAfterDeletion =
-            participantVoteCountBeforeAction - 1;
-        /* <= to account for potential sync errors though it should not happen with db transactions... */
-        const isParticipantDeleted =
-            participantVoteCountAfterDeletion <= 0 &&
-            participantOpinionCountBeforeAction <= 0;
-        if (isParticipantDeleted) {
-            await db
-                .update(conversationTable)
-                .set({
-                    voteCount: sql`${conversationTable.voteCount} - 1`,
-                    participantCount: sql`${conversationTable.participantCount} - 1`,
-                })
-                .where(eq(conversationTable.id, conversationId));
-        } else {
-            await db
-                .update(conversationTable)
-                .set({
-                    voteCount: sql`${conversationTable.voteCount} - 1`,
-                })
-                .where(eq(conversationTable.id, conversationId));
-        }
-    } else {
-        if (
-            participantVoteCountBeforeAction === 0 &&
-            participantOpinionCountBeforeAction === 0
-        ) {
-            // new participant!
-            await db
-                .update(conversationTable)
-                .set({
-                    voteCount: sql`${conversationTable.voteCount} + 1`,
-                    participantCount: sql`${conversationTable.participantCount} + 1`,
-                })
-                .where(eq(conversationTable.slugId, conversationSlugId));
-        } else {
-            // existing participant!
-            await db
-                .update(conversationTable)
-                .set({
-                    voteCount: sql`${conversationTable.voteCount} + 1`,
-                })
-                .where(eq(conversationTable.slugId, conversationSlugId));
-        }
-    }
-
-    try {
-        await polisService.createOrUpdateVote({
-            userId,
-            conversationSlugId,
-            opinionSlugId,
-            votingAction,
-            axiosPolis,
-        });
-    } catch (e) {
-        log.error(e);
-        log.warn("Error while importing vote to Polis--continuing");
-    }
-}
-
 interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
     opinionSlugId: string;
@@ -323,10 +69,6 @@ interface CastVoteForOpinionSlugIdProps {
     votingAction: VotingAction;
     userAgent: string;
     axiosPolis?: AxiosInstance;
-    polisUserEmailDomain: string;
-    polisUserEmailLocalPart: string;
-    polisUserPassword: string;
-    polisDelayToFetch: number;
     voteNotifMilestones: number[];
     awsAiLabelSummaryEnable: boolean;
     awsAiLabelSummaryRegion: string;
@@ -346,10 +88,6 @@ export async function castVoteForOpinionSlugId({
     votingAction,
     userAgent,
     axiosPolis,
-    polisUserEmailDomain,
-    polisUserEmailLocalPart,
-    polisUserPassword,
-    polisDelayToFetch,
     voteNotifMilestones,
     awsAiLabelSummaryEnable,
     awsAiLabelSummaryRegion,
@@ -400,10 +138,6 @@ export async function castVoteForOpinionSlugId({
         conversationIsIndexed,
         conversationIsLoginRequired,
         userAgent,
-        axiosPolis,
-        polisUserEmailDomain,
-        polisUserEmailLocalPart,
-        polisUserPassword,
         now,
     });
 
@@ -726,17 +460,6 @@ export async function castVoteForOpinionSlugId({
                 }
             }
         }
-
-        // TODO: delete vote from external Polis system on cancel!
-        if (axiosPolis !== undefined) {
-            await polisService.createOrUpdateVote({
-                userId,
-                conversationSlugId,
-                opinionSlugId,
-                votingAction,
-                axiosPolis,
-            });
-        }
     }
 
     let doTransaction = true;
@@ -752,13 +475,14 @@ export async function castVoteForOpinionSlugId({
     }
 
     if (axiosPolis !== undefined) {
+        const votes = await polisService.getPolisVotes({ db, conversationId });
         polisService
-            .delayedPolisGetAndUpdateMath({
+            .getAndUpdatePolisMath({
                 db: db,
                 conversationSlugId,
                 conversationId: conversationId,
                 axiosPolis,
-                polisDelayToFetch,
+                votes,
                 awsAiLabelSummaryEnable,
                 awsAiLabelSummaryRegion,
                 awsAiLabelSummaryModelId,

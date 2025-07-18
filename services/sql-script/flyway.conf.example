@@ -1,4 +1,0 @@
-flyway.url=jdbc:postgresql//localhost:5432/<db_name>
-flyway.user=<db_user>
-flyway.password=<password>
-flyway.defaultSchema=<schema>
