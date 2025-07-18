@@ -81,6 +81,44 @@
                     }}
                   </td>
                 </tr>
+                <tr class="no-group-row">
+                  <td class="group-name">
+                    {{ `No group (${noGroupStats.numUsers})` }}
+                  </td>
+                  <td class="agree-cell">
+                    {{ noGroupStats.numAgrees }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          noGroupStats.numAgrees,
+                          noGroupStats.numUsers
+                        )
+                      )
+                    }}
+                  </td>
+                  <td class="pass-cell">
+                    {{ noGroupStats.numPasses }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          noGroupStats.numPasses,
+                          noGroupStats.numUsers
+                        )
+                      )
+                    }}
+                  </td>
+                  <td class="disagree-cell">
+                    {{ noGroupStats.numDisagrees }} •
+                    {{
+                      formatPercentage(
+                        calculatePercentage(
+                          noGroupStats.numDisagrees,
+                          noGroupStats.numUsers
+                        )
+                      )
+                    }}
+                  </td>
+                </tr>
                 <tr
                   v-for="(group, index) in opinionItem.clustersStats"
                   :key="index"
@@ -137,6 +175,7 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/shared/common/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
 import { useRouterNavigation } from "src/utils/router/navigation";
+import { computed } from "vue";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -146,6 +185,38 @@ const props = defineProps<{
 const { forceOpenComment } = useRouterNavigation();
 
 const showDialog = defineModel<boolean>({ required: true });
+
+const noGroupStats = computed(() => {
+  const totalClusteredAgrees = props.opinionItem.clustersStats.reduce(
+    (sum, cluster) => sum + cluster.numAgrees,
+    0
+  );
+  const totalClusteredDisagrees = props.opinionItem.clustersStats.reduce(
+    (sum, cluster) => sum + cluster.numDisagrees,
+    0
+  );
+  const totalClusteredPasses = props.opinionItem.clustersStats.reduce(
+    (sum, cluster) => sum + cluster.numPasses,
+    0
+  );
+  const totalClusteredUsers = props.opinionItem.clustersStats.reduce(
+    (sum, cluster) => sum + cluster.numUsers,
+    0
+  );
+
+  const noGroupAgrees = props.opinionItem.numAgrees - totalClusteredAgrees;
+  const noGroupDisagrees =
+    props.opinionItem.numDisagrees - totalClusteredDisagrees;
+  const noGroupPasses = props.opinionItem.numPasses - totalClusteredPasses;
+  const noGroupUsers = props.opinionItem.numParticipants - totalClusteredUsers;
+
+  return {
+    numAgrees: noGroupAgrees,
+    numDisagrees: noGroupDisagrees,
+    numPasses: noGroupPasses,
+    numUsers: noGroupUsers,
+  };
+});
 
 async function viewOriginalComment() {
   await forceOpenComment(
