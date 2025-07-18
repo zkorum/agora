@@ -6,7 +6,11 @@
       </template>
 
       <template #body>
-        <div class="container">
+        <EmptyStateMessage
+          v-if="props.polis.clusters.length <= 1"
+          message="Not enough groups to display."
+        />
+        <div v-else class="container">
           <div class="infoIcon">
             <ZKButton button-type="icon" @click="showClusterInformation = true">
               <ZKIcon
@@ -84,28 +88,30 @@
           </div>
         </div>
 
-        <OpinionGroupSelector
-          :cluster-metadata-list="props.polis.clusters"
-          :selected-cluster-key="currentClusterTab"
-          @changed-cluster-key="currentClusterTab = $event"
-        />
+        <template v-if="props.polis.clusters.length > 1">
+          <OpinionGroupSelector
+            :cluster-metadata-list="props.polis.clusters"
+            :selected-cluster-key="currentClusterTab"
+            @changed-cluster-key="currentClusterTab = $event"
+          />
 
-        <GroupConsensusSummary
-          v-if="currentAiSummary"
-          :summary="currentAiSummary"
-          :selected-cluster-key="currentClusterTab"
-        />
+          <GroupConsensusSummary
+            v-if="currentAiSummary"
+            :summary="currentAiSummary"
+            :selected-cluster-key="currentClusterTab"
+          />
 
-        <OpinionGroupComments
-          :conversation-slug-id="props.conversationSlugId"
-          :item-list="
-            props.itemListPerClusterKey[currentClusterTab] ??
-            ([] as OpinionItem[])
-          "
-          :current-cluster-tab="currentClusterTab"
-          :polis="props.polis"
-          @update:current-cluster-tab="currentClusterTab = $event"
-        />
+          <OpinionGroupComments
+            :conversation-slug-id="props.conversationSlugId"
+            :item-list="
+              props.itemListPerClusterKey[currentClusterTab] ??
+              ([] as OpinionItem[])
+            "
+            :current-cluster-tab="currentClusterTab"
+            :polis="props.polis"
+            @update:current-cluster-tab="currentClusterTab = $event"
+          />
+        </template>
       </template>
     </AnalysisSectionWrapper>
   </div>
@@ -130,6 +136,7 @@ import GroupConsensusSummary from "./GroupConsensusSummary.vue";
 import OpinionGroupComments from "./OpinionGroupComments.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
+import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 
 const props = defineProps<{
   conversationSlugId: string;
