@@ -100,6 +100,7 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
   padding: 12px 16px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  min-height: 56px;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
@@ -122,5 +123,9 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
 .account-name {
   font-size: 16px;
   font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.4;
 }
 </style>
