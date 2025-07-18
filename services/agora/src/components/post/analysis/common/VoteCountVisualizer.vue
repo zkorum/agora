@@ -4,30 +4,30 @@
       <div
         class="vote-bar vote-bar-1"
         :style="{
-          width: `${formatPercentage(calculatePercentage(props.voteCount1, totalVotes))}`,
+          width: `${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))}`,
         }"
-        :title="`${props.voteCount1} votes (${formatPercentage(calculatePercentage(props.voteCount1, totalVotes))})`"
+        :title="`${props.voteCount1} votes (${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))})`"
       ></div>
       <div
         class="vote-bar vote-bar-2"
         :style="{
-          width: `${formatPercentage(calculatePercentage(props.voteCount2, totalVotes))}`,
+          width: `${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))}`,
         }"
-        :title="`${props.voteCount2} votes (${formatPercentage(calculatePercentage(props.voteCount2, totalVotes))})`"
+        :title="`${props.voteCount2} votes (${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))})`"
       ></div>
       <div
         class="vote-bar vote-bar-3"
         :style="{
-          width: `${formatPercentage(calculatePercentage(props.voteCount3, totalVotes))}`,
+          width: `${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))}`,
         }"
-        :title="`${props.voteCount3} votes (${formatPercentage(calculatePercentage(props.voteCount3, totalVotes))})`"
+        :title="`${props.voteCount3} votes (${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))})`"
       ></div>
       <div
         class="vote-bar vote-bar-4"
         :style="{
-          width: `${formatPercentage(calculatePercentage(props.voteCount4, totalVotes))}`,
+          width: `${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))}`,
         }"
-        :title="`${props.voteCount4} votes (${formatPercentage(calculatePercentage(props.voteCount4, totalVotes))})`"
+        :title="`${props.voteCount4} votes (${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))})`"
       ></div>
     </div>
 
@@ -54,18 +54,13 @@ const props = defineProps<{
   voteCount2: number;
   voteCount3: number;
   voteCount4: number;
+  numParticipants: number;
   label1?: string;
   label2?: string;
   label3?: string;
   label4?: string;
   showLegend?: boolean;
 }>();
-
-const totalVotes = computed(() => {
-  return (
-    props.voteCount1 + props.voteCount2 + props.voteCount3 + props.voteCount4
-  );
-});
 
 const legendItems = computed(() => {
   return [
@@ -97,7 +92,7 @@ const legendItems = computed(() => {
 }
 
 .vote-bar-2 {
-  background: #6d6a74;
+  background: #cdcbd3;
 }
 
 .vote-bar-3 {
@@ -132,7 +127,7 @@ const legendItems = computed(() => {
 }
 
 .legend-color-2 {
-  background: #6d6a74;
+  background: #cdcbd3;
 }
 
 .legend-color-3 {

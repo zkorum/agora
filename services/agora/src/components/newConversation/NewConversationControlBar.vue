@@ -1,15 +1,20 @@
 <template>
   <div class="control-bar">
-    <UserAvatar :user-identity="postAsDisplayName" :size="35" />
+    <DynamicProfileImage
+      :user-identity="postAsDisplayName"
+      :size="35"
+      :organization-image-url="selectedOrganizationImageUrl"
+    />
 
-    <div
+    <ZKButton2
       v-for="button in visibleControlButtons"
       :key="button.id"
+      :label="button.label"
+      :icon="button.icon"
       :class="{ 'cursor-pointer': button.clickable }"
+      :aria-label="button.label"
       @click="button.clickHandler"
-    >
-      <ZKButton2 :label="button.label" :icon="button.icon" />
-    </div>
+    />
   </div>
 
   <PostAsAccountDialog v-model="showPostAsDialogVisible" />
@@ -26,7 +31,7 @@ import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import UserAvatar from "src/components/account/UserAvatar.vue";
+import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ZKButton2 from "src/components/ui-library/ZKButton2.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
@@ -50,14 +55,20 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postAsDisplayName = computed(() => {
   if (conversationDraft.value.postAs.postAsOrganization) {
-    if (conversationDraft.value.postAs.organizationName) {
-      return conversationDraft.value.postAs.organizationName;
-    } else {
-      return "UNKNOWN ORGANIZATION";
-    }
+    return conversationDraft.value.postAs.organizationName;
   } else {
     return profileData.value.userName;
   }
+});
+
+const selectedOrganizationImageUrl = computed(() => {
+  if (conversationDraft.value.postAs.postAsOrganization) {
+    const selectedOrg = profileData.value.organizationList.find(
+      (org) => org.name === conversationDraft.value.postAs.organizationName
+    );
+    return selectedOrg?.imageUrl || "";
+  }
+  return "";
 });
 
 const showPostAsDialogVisible = ref(false);

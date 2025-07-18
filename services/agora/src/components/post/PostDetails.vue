@@ -22,11 +22,10 @@
             :opinion-count="
               extendedPostData.metadata.opinionCount + commentCountOffset
             "
-            :show-analysis-page="extendedPostData.polis.clusters.length > 1"
             @share="shareClicked()"
           />
 
-          <div v-if="!compactMode" class="commentSectionPadding">
+          <div v-if="!compactMode">
             <AnalysisPage
               v-if="currentTab == 'analysis'"
               :conversation-slug-id="

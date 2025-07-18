@@ -18,15 +18,15 @@
         User does not belong to any organizations
       </div>
 
-      <div v-for="organization in organizationList" :key="organization">
+      <div v-for="organization in organizationList" :key="organization.name">
         <div>
-          {{ organization }}
+          {{ organization.name }}
         </div>
 
         <ZKButton
           button-type="largeButton"
           label="Remove user organization mapping"
-          @click="deleteOrganizationButtonClicked(organization)"
+          @click="deleteOrganizationButtonClicked(organization.name)"
         />
       </div>
     </div>
@@ -37,17 +37,18 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
+import type { OrganizationProperties } from "src/shared/types/zod";
 
-const { getOrganizationNamesByUsername, removeUserOrganizationMapping } =
+const { getOrganizationsByUsername, removeUserOrganizationMapping } =
   useBackendAdministratorOrganizationApi();
 
-const organizationList = ref<string[]>([]);
+const organizationList = ref<OrganizationProperties[]>([]);
 
 const username = ref("");
 const dataLoaded = ref(false);
 
 async function fetchOrganizations() {
-  organizationList.value = await getOrganizationNamesByUsername(username.value);
+  organizationList.value = await getOrganizationsByUsername(username.value);
   dataLoaded.value = true;
 }
 

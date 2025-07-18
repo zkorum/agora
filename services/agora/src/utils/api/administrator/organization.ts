@@ -209,7 +209,9 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function getOrganizationNamesByUsername(username: string) {
+  async function getOrganizationsByUsername(
+    username: string
+  ): Promise<OrganizationProperties[]> {
     try {
       const params: ApiV1UserUsernameUpdatePostRequest = {
         username: username,
@@ -234,7 +236,7 @@ export function useBackendAdministratorOrganizationApi() {
       );
 
       if (response.status == 200) {
-        return response.data.organizationNameList;
+        return response.data.organizationList;
       } else {
         showNotifyMessage("Failed to get user's organizations");
         return [];
@@ -252,6 +254,6 @@ export function useBackendAdministratorOrganizationApi() {
     addUserOrganizationMapping,
     removeUserOrganizationMapping,
     getAllOrganizations,
-    getOrganizationNamesByUsername,
+    getOrganizationsByUsername,
   };
 }

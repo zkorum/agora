@@ -12,16 +12,15 @@
       </template>
 
       <template #body>
+        <EmptyStateMessage
+          v-if="itemList.length === 0"
+          message="No divisive opinions found yet."
+        />
         <ConsensusItem
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
+          v-else
           :key="consensusItem.opinion"
           :conversation-slug-id="props.conversationSlugId"
-          :opinion-slug-id="consensusItem.opinionSlugId"
-          :description="consensusItem.opinion"
-          :num-agree="consensusItem.numAgrees"
-          :num-pass="0"
-          :num-disagree="consensusItem.numDisagrees"
-          :num-participants="consensusItem.numParticipants"
           :opinion-item="consensusItem"
         />
       </template>
@@ -33,6 +32,7 @@
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { OpinionItem } from "src/shared/types/zod";

@@ -11,7 +11,7 @@
         }"
         @click="setPostAs(false, profileData.userName)"
       >
-        <UserAvatar
+        <DynamicProfileImage
           :user-identity="profileData.userName"
           :size="32"
           class="account-avatar"
@@ -20,20 +20,24 @@
       </div>
 
       <div
-        v-for="organizationName in profileData.organizationList"
-        :key="organizationName"
+        v-for="organization in profileData.organizationList"
+        :key="organization.name"
         class="account-option"
         :class="{
-          'account-option--selected': isAccountSelected(true, organizationName),
+          'account-option--selected': isAccountSelected(
+            true,
+            organization.name
+          ),
         }"
-        @click="setPostAs(true, organizationName)"
+        @click="setPostAs(true, organization.name)"
       >
-        <UserAvatar
-          :user-identity="organizationName"
+        <DynamicProfileImage
+          :user-identity="organization.name"
           :size="32"
+          :organization-image-url="organization.imageUrl"
           class="account-avatar"
         />
-        <span class="account-name">{{ organizationName }}</span>
+        <span class="account-name">{{ organization.name }}</span>
       </div>
     </ZKBottomDialogContainer>
   </q-dialog>
@@ -42,7 +46,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
+import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -96,6 +100,7 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
   padding: 12px 16px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  min-height: 56px;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
@@ -112,12 +117,15 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
 
 .account-avatar {
   margin-right: 12px;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 
 .account-name {
   font-size: 16px;
   font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.4;
 }
 </style>

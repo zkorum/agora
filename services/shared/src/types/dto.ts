@@ -1,3 +1,4 @@
+/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 import {
     zodExtendedConversationData,
@@ -261,7 +262,7 @@ export class Dto {
             createdAt: z.date(),
             username: zodUsername,
             isModerator: z.boolean(),
-            organizationList: z.array(z.string()),
+            organizationList: z.array(zodOrganization),
         })
         .strict();
     static fetchUserConversationsRequest = z
@@ -422,14 +423,14 @@ export class Dto {
             organizationName: z.string(),
         })
         .strict();
-    static getOrganizationNamesByUsernameRequest = z
+    static getOrganizationsByUsernameRequest = z
         .object({
             username: zodUsername,
         })
         .strict();
-    static getOrganizationNamesByUsernameResponse = z
+    static getOrganizationsByUsernameResponse = z
         .object({
-            organizationNameList: z.array(z.string()),
+            organizationList: z.array(zodOrganization),
         })
         .strict();
     static getAllOrganizationsResponse = z
@@ -570,8 +571,8 @@ export type GetOpinionBySlugIdListResponse = z.infer<
 export type FetchNotificationsResponse = z.infer<
     typeof Dto.fetchNotificationsResponse
 >;
-export type GetOrganizationNamesByUsernameResponse = z.infer<
-    typeof Dto.getOrganizationNamesByUsernameResponse
+export type GetOrganizationsByUsernameResponse = z.infer<
+    typeof Dto.getOrganizationsByUsernameResponse
 >;
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse

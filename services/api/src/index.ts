@@ -100,7 +100,7 @@ import {
     createOrganization,
     deleteOrganization,
     getAllOrganizations,
-    getOrganizationNamesByUsername,
+    getOrganizationsByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
 import type {
@@ -1096,6 +1096,7 @@ server.after(() => {
             return await getUserProfile({
                 db: db,
                 userId: deviceStatus.userId,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
         },
     });
@@ -2147,9 +2148,9 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/administrator/organization/get-organization-names-by-username`,
         schema: {
-            body: Dto.getOrganizationNamesByUsernameRequest,
+            body: Dto.getOrganizationsByUsernameRequest,
             response: {
-                200: Dto.getOrganizationNamesByUsernameResponse,
+                200: Dto.getOrganizationsByUsernameResponse,
             },
         },
         handler: async (request) => {
@@ -2172,9 +2173,10 @@ server.after(() => {
                 throw server.httpErrors.unauthorized("User is not a moderator");
             }
 
-            return await getOrganizationNamesByUsername({
+            return await getOrganizationsByUsername({
                 db: db,
                 username: request.body.username,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
         },
     });
