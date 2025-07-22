@@ -441,6 +441,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
+  function setImportMode(isImport: boolean): void {
+    conversationDraft.value.importSettings.isImportMode = isImport;
+    if (!isImport) {
+      conversationDraft.value.importSettings.polisUrl = "";
+    }
+  }
+
   /**
    * Validates Polis URL format
    */
@@ -597,6 +604,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     togglePostAsOrganization,
     validateSelectedOrganization,
     toggleImportMode,
+    setImportMode,
     validatePolisUrl,
   };
 });

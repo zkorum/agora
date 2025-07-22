@@ -19,6 +19,8 @@
 
   <PostAsAccountDialog v-model="showPostAsDialogVisible" />
 
+  <PostTypeDialog v-model="showPostTypeDialog" />
+
   <VisibilityOptionsDialog v-model:show-dialog="showVisibilityDialog" />
 
   <LoginRequirementDialog v-model:show-dialog="showLoginRequirementDialog" />
@@ -34,6 +36,7 @@ import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ZKButton2 from "src/components/ui-library/ZKButton2.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
+import PostTypeDialog from "src/components/newConversation/dialog/PostTypeDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
@@ -50,7 +53,7 @@ interface ControlButton {
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { resetPoll, toggleImportMode } = useNewPostDraftsStore();
+const { resetPoll } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postAsDisplayName = computed(() => {
@@ -72,12 +75,17 @@ const selectedOrganizationImageUrl = computed(() => {
 });
 
 const showPostAsDialogVisible = ref(false);
+const showPostTypeDialog = ref(false);
 const showVisibilityDialog = ref(false);
 const showMakePublicDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
 
 const showAsDialog = () => {
   showPostAsDialogVisible.value = true;
+};
+
+const togglePostTypeDialog = () => {
+  showPostTypeDialog.value = !showPostTypeDialog.value;
 };
 
 const togglePolling = () => {
@@ -136,6 +144,16 @@ const controlButtons = computed((): ControlButton[] => [
     clickable: true,
   },
   {
+    id: "post-type",
+    label: conversationDraft.value.importSettings.isImportMode
+      ? "Import from Polis"
+      : "Regular post",
+    icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
+    isVisible: conversationDraft.value.postAs.postAsOrganization,
+    clickHandler: togglePostTypeDialog,
+    clickable: true,
+  },
+  {
     id: "visibility",
     label: conversationDraft.value.isPrivate ? "Private" : "Public",
     icon: showVisibilityDialog.value
@@ -173,18 +191,6 @@ const controlButtons = computed((): ControlButton[] => [
     icon: conversationDraft.value.poll.enabled ? "pi pi-minus" : "pi pi-plus",
     isVisible: true,
     clickHandler: togglePolling,
-    clickable: true,
-  },
-  {
-    id: "import-polis",
-    label: conversationDraft.value.importSettings.isImportMode
-      ? "Import from Polis"
-      : "Regular post",
-    icon: conversationDraft.value.importSettings.isImportMode
-      ? "pi pi-pen-to-square"
-      : "pi pi-download",
-    isVisible: conversationDraft.value.postAs.postAsOrganization,
-    clickHandler: toggleImportMode,
     clickable: true,
   },
 ]);
