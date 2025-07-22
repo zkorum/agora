@@ -1,10 +1,12 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import type { OrganizationProperties } from "src/shared/types/zod";
 import {
   validateHtmlStringCharacterCount,
   MAX_LENGTH_BODY,
 } from "src/shared/shared";
+import { isValidPolisUrl } from "src/shared/utils/polis";
 
 /**
  * Settings for posting as an organization
@@ -27,6 +29,16 @@ export interface PrivateConversationSettings {
   hasScheduledConversion: boolean;
   /** The target date for automatic conversion */
   conversionDate: Date;
+}
+
+/**
+ * Settings for importing conversations from Polis
+ */
+export interface ImportConversationSettings {
+  /** Whether this conversation is being imported from Polis */
+  isImportMode: boolean;
+  /** The Polis conversation URL to import from */
+  polisUrl: string;
 }
 
 /**
@@ -62,6 +74,9 @@ export interface NewConversationDraft {
   isPrivate: boolean;
   /** Advanced settings for private conversations (only relevant when isPrivate is true) */
   privateConversationSettings: PrivateConversationSettings;
+
+  // Import Settings
+  importSettings: ImportConversationSettings;
 }
 
 /**
@@ -81,6 +96,7 @@ interface SerializableConversationDraft {
   postAs: PostAsSettings;
   isPrivate: boolean;
   privateConversationSettings: SerializablePrivateConversationSettings;
+  importSettings: ImportConversationSettings;
 }
 
 /**
@@ -134,6 +150,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         requiresLogin: true, // Default to requiring login when private
         hasScheduledConversion: false,
         conversionDate: tomorrow,
+      },
+
+      // Import Settings
+      importSettings: {
+        isImportMode: false,
+        polisUrl: "",
       },
     };
   }
@@ -197,11 +219,21 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       typeof privateSettingsData.hasScheduledConversion === "boolean" &&
       typeof privateSettingsData.conversionDate === "string";
 
+    // Validate import settings
+    if (!draft.importSettings || typeof draft.importSettings !== "object") {
+      return false;
+    }
+    const importSettingsData = draft.importSettings as Record<string, unknown>;
+    const hasValidImportSettings =
+      typeof importSettingsData.isImportMode === "boolean" &&
+      typeof importSettingsData.polisUrl === "string";
+
     return (
       hasValidContent &&
       hasValidPoll &&
       hasValidPostAs &&
-      hasValidPrivateSettings
+      hasValidPrivateSettings &&
+      hasValidImportSettings
     );
   }
 
@@ -370,6 +402,53 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
+   * Validates that the selected organization still exists in the user's organization list
+   * If the organization doesn't exist, resets the draft to prevent invalid state
+   */
+  function validateSelectedOrganization(
+    userOrganizationList: OrganizationProperties[]
+  ): void {
+    const draft = conversationDraft.value;
+
+    // Only validate if posting as organization
+    if (!draft.postAs.postAsOrganization || !draft.postAs.organizationName) {
+      return;
+    }
+
+    // Check if the selected organization still exists in user's organization list
+    const organizationExists = userOrganizationList.some(
+      (org) => org.name === draft.postAs.organizationName
+    );
+
+    if (!organizationExists) {
+      console.warn(
+        `Selected organization "${draft.postAs.organizationName}" no longer exists in user's organization list. Resetting draft.`
+      );
+      resetDraft();
+    }
+  }
+
+  /**
+   * Toggles import mode and clears URL when disabling
+   */
+  function toggleImportMode(): void {
+    conversationDraft.value.importSettings.isImportMode =
+      !conversationDraft.value.importSettings.isImportMode;
+
+    // Clear Polis URL when disabling import mode
+    if (!conversationDraft.value.importSettings.isImportMode) {
+      conversationDraft.value.importSettings.polisUrl = "";
+    }
+  }
+
+  /**
+   * Validates Polis URL format
+   */
+  function validatePolisUrl(): boolean {
+    return isValidPolisUrl(conversationDraft.value.importSettings.polisUrl);
+  }
+
+  /**
    * Validates poll options when polling is enabled
    */
   function validatePoll(): { isValid: boolean; errorMessage?: string } {
@@ -516,5 +595,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     addInitialOpinion,
     togglePrivacy,
     togglePostAsOrganization,
+    validateSelectedOrganization,
+    toggleImportMode,
+    validatePolisUrl,
   };
 });

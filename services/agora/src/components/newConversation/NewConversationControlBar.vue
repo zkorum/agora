@@ -50,7 +50,7 @@ interface ControlButton {
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { resetPoll } = useNewPostDraftsStore();
+const { resetPoll, toggleImportMode } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postAsDisplayName = computed(() => {
@@ -125,6 +125,18 @@ const getMakePublicLabel = () => {
 };
 
 const controlButtons = computed((): ControlButton[] => [
+  {
+    id: "import-polis",
+    label: conversationDraft.value.importSettings.isImportMode
+      ? "Regular post"
+      : "Import from Polis",
+    icon: conversationDraft.value.importSettings.isImportMode
+      ? "pi pi-times"
+      : "pi pi-download",
+    isVisible: conversationDraft.value.postAs.postAsOrganization,
+    clickHandler: toggleImportMode,
+    clickable: true,
+  },
   {
     id: "post-as",
     label: `As ${postAsDisplayName.value}`,

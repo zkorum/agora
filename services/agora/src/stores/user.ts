@@ -1,3 +1,4 @@
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendUserApi } from "src/utils/api/user";
 import type {
   ExtendedOpinion,
@@ -10,6 +11,7 @@ import { ref } from "vue";
 export const useUserStore = defineStore("user", () => {
   const { fetchUserProfile, fetchUserPosts, fetchUserComments } =
     useBackendUserApi();
+  const { validateSelectedOrganization } = useNewPostDraftsStore();
 
   interface UserProfile {
     activePostCount: number;
@@ -58,6 +60,8 @@ export const useUserStore = defineStore("user", () => {
         organizationList: userProfile.organizationList,
       };
     }
+
+    validateSelectedOrganization(profileData.value.organizationList);
   }
 
   async function loadMoreUserPosts() {

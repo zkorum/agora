@@ -8,9 +8,10 @@
       <ZKButton
         button-type="largeButton"
         color="primary"
-        label="Next"
+        :label="conversationDraft.importSettings.isImportMode ? 'Post' : 'Next'"
         size="0.8rem"
-        @click="goToPreview()"
+        :loading="isSubmitButtonLoading"
+        @click="onSubmit()"
       />
     </TopMenuWrapper>
 
@@ -18,7 +19,11 @@
       <NewConversationControlBar />
 
       <div class="contentFlexStyle">
-        <div ref="titleInputRef" :style="{ paddingLeft: '0.5rem' }">
+        <div
+          v-if="!conversationDraft.importSettings.isImportMode"
+          ref="titleInputRef"
+          :style="{ paddingLeft: '0.5rem' }"
+        >
           <div v-if="titleError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
             Title is required to continue
@@ -45,8 +50,11 @@
             </template>
           </q-input>
         </div>
+        <div v-else class="import-section">
+          <PolisUrlInput v-model="conversationDraft.importSettings.polisUrl" />
+        </div>
 
-        <div>
+        <div v-if="!conversationDraft.importSettings.isImportMode">
           <div class="editor-style">
             <ZKEditor
               v-model="conversationDraft.content"
@@ -100,7 +108,10 @@ import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import PolisUrlInput from "src/components/newConversation/PolisUrlInput.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useCommonApi } from "src/utils/api/common";
 import {
   MAX_LENGTH_TITLE,
   MAX_LENGTH_BODY,
@@ -114,12 +125,16 @@ import NewConversationRouteGuard from "src/components/newConversation/NewConvers
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import PollComponent from "src/components/newConversation/PollComponent.vue";
+import { useBackendPostApi } from "src/utils/api/post";
 
 const bodyWordCount = ref(0);
 const exceededBodyWordCount = ref(false);
 const titleError = ref(false);
+const isSubmitButtonLoading = ref(false);
 
 const router = useRouter();
+
+const { importConversation } = useBackendPostApi();
 
 // Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -131,10 +146,13 @@ const routeGuardRef = ref<InstanceType<
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
+const { createEmptyDraft, validateForReview, validatePolisUrl } =
+  useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const showLoginDialog = ref(false);
 
@@ -192,26 +210,71 @@ function clearTitleError() {
   }
 }
 
-async function goToPreview() {
-  const validation = validateForReview();
-
-  if (!validation.isValid) {
-    // Handle errors based on validation result
-    if (validation.errors.title) {
-      titleError.value = true;
-      scrollToTitleInput();
-    } else if (validation.errors.poll) {
-      // Trigger poll component validation to show error UI
-      pollComponentRef.value?.triggerValidation();
-      scrollToPollComponent();
-    }
-    // Note: body validation errors are handled by the editor component itself
+async function onSubmit() {
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true;
     return;
   }
 
-  titleError.value = false;
-  routeGuardRef.value?.unlockRoute();
-  await router.push({ name: "/conversation/new/review/" });
+  if (conversationDraft.value.importSettings.isImportMode) {
+    if (!validatePolisUrl()) {
+      // The PolisUrlInput component will show the error
+      return;
+    }
+  } else {
+    const validation = validateForReview();
+    if (!validation.isValid) {
+      if (validation.errors.title) {
+        titleError.value = true;
+        scrollToTitleInput();
+      } else if (validation.errors.poll) {
+        pollComponentRef.value?.triggerValidation();
+        scrollToPollComponent();
+      }
+      return;
+    }
+  }
+
+  isSubmitButtonLoading.value = true;
+
+  try {
+    if (conversationDraft.value.importSettings.isImportMode) {
+      const response = await importConversation({
+        polisId: conversationDraft.value.importSettings.polisUrl, // Full URL
+        postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+        targetIsoConvertDateString: conversationDraft.value
+          .privateConversationSettings.hasScheduledConversion
+          ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+          : undefined,
+        isIndexed: !conversationDraft.value.isPrivate,
+        isLoginRequired: conversationDraft.value.isPrivate
+          ? conversationDraft.value.privateConversationSettings.requiresLogin
+          : false,
+        pollingOptionList: conversationDraft.value.poll.enabled
+          ? conversationDraft.value.poll.options
+          : undefined,
+      });
+
+      if (response.status === "success") {
+        conversationDraft.value = createEmptyDraft();
+        await router.replace({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: response.data.conversationSlugId },
+        });
+      } else {
+        handleAxiosErrorStatusCodes({
+          axiosErrorCode: response.code,
+          defaultMessage:
+            "Error while trying to import conversation from Polis",
+        });
+      }
+    } else {
+      routeGuardRef.value?.unlockRoute();
+      await router.push({ name: "/conversation/new/review/" });
+    }
+  } finally {
+    isSubmitButtonLoading.value = false;
+  }
 }
 
 watch(
