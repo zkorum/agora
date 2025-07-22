@@ -4947,7 +4947,7 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "polisId": {
+                                    "polisUrl": {
                                         "type": "string",
                                         "format": "uri"
                                     },
@@ -4980,7 +4980,7 @@
                                     }
                                 },
                                 "required": [
-                                    "polisId",
+                                    "polisUrl",
                                     "postAsOrganization",
                                     "isIndexed",
                                     "isLoginRequired",

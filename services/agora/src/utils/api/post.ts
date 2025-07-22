@@ -192,7 +192,7 @@ export function useBackendPostApi() {
     | AxiosErrorResponse;
 
   interface ImportConversationProps {
-    polisId: string;
+    polisUrl: string;
     postAsOrganizationName: string;
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
@@ -207,7 +207,7 @@ export function useBackendPostApi() {
     | AxiosErrorResponse;
 
   async function importConversation({
-    polisId,
+    polisUrl,
     postAsOrganizationName,
     targetIsoConvertDateString,
     isIndexed,
@@ -216,7 +216,7 @@ export function useBackendPostApi() {
   }: ImportConversationProps): Promise<ImportConversationResponse> {
     try {
       const params: ApiV1ConversationImportPostRequest = {
-        polisId,
+        polisUrl,
         postAsOrganization: postAsOrganizationName,
         indexConversationAt: targetIsoConvertDateString,
         isIndexed,
