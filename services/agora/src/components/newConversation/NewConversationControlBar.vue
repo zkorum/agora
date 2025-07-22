@@ -126,18 +126,6 @@ const getMakePublicLabel = () => {
 
 const controlButtons = computed((): ControlButton[] => [
   {
-    id: "import-polis",
-    label: conversationDraft.value.importSettings.isImportMode
-      ? "Regular post"
-      : "Import from Polis",
-    icon: conversationDraft.value.importSettings.isImportMode
-      ? "pi pi-times"
-      : "pi pi-download",
-    isVisible: conversationDraft.value.postAs.postAsOrganization,
-    clickHandler: toggleImportMode,
-    clickable: true,
-  },
-  {
     id: "post-as",
     label: `As ${postAsDisplayName.value}`,
     icon: showPostAsDialogVisible.value
@@ -185,6 +173,18 @@ const controlButtons = computed((): ControlButton[] => [
     icon: conversationDraft.value.poll.enabled ? "pi pi-minus" : "pi pi-plus",
     isVisible: true,
     clickHandler: togglePolling,
+    clickable: true,
+  },
+  {
+    id: "import-polis",
+    label: conversationDraft.value.importSettings.isImportMode
+      ? "Import from Polis"
+      : "Regular post",
+    icon: conversationDraft.value.importSettings.isImportMode
+      ? "pi pi-pen-to-square"
+      : "pi pi-download",
+    isVisible: conversationDraft.value.postAs.postAsOrganization,
+    clickHandler: toggleImportMode,
     clickable: true,
   },
 ]);

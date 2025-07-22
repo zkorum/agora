@@ -1,17 +1,14 @@
 <template>
   <div class="polis-url-input">
-    <label class="input-label">Polis Conversation URL</label>
+    <label class="input-label">Import conversation from a Polis URL:</label>
     <q-input
       v-model="model"
-      placeholder="https://pol.is/conversation/..."
+      placeholder="https://pol.is/xxxx"
       outlined
       :error="!!errorMessage"
       :error-message="errorMessage"
       @update:model-value="validate"
     />
-    <div class="help-text">
-      Enter the URL of the Polis conversation you want to import
-    </div>
   </div>
 </template>
 
@@ -41,11 +38,5 @@ function validate(value: string) {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-}
-
-.help-text {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--q-color-grey-6);
 }
 </style>
