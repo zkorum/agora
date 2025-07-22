@@ -63,6 +63,8 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const { profileData } = storeToRefs(useUserStore());
+const { setPostAsOrganization, disablePostAsOrganization } =
+  useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const showDialog = computed({
@@ -71,11 +73,10 @@ const showDialog = computed({
 });
 
 function setPostAs(isOrganization: boolean, name: string) {
-  conversationDraft.value.postAs.postAsOrganization = isOrganization;
   if (isOrganization) {
-    conversationDraft.value.postAs.organizationName = name;
+    setPostAsOrganization(name);
   } else {
-    conversationDraft.value.postAs.organizationName = "";
+    disablePostAsOrganization();
   }
   showDialog.value = false;
 }

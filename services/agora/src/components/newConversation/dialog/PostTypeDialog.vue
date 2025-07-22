@@ -26,7 +26,7 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 const postTypeOptions = [
   {
     title: "Regular Post",
-    description: "Create a new conversation with a title and body.",
+    description: "Compose a new conversation.",
     value: "regular",
   },
   {

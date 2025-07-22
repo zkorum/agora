@@ -189,7 +189,7 @@ const controlButtons = computed((): ControlButton[] => [
     id: "polling",
     label: conversationDraft.value.poll.enabled ? "Remove poll" : "Add poll",
     icon: conversationDraft.value.poll.enabled ? "pi pi-minus" : "pi pi-plus",
-    isVisible: true,
+    isVisible: conversationDraft.value.importSettings.isImportMode == false,
     clickHandler: togglePolling,
     clickable: true,
   },

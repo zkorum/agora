@@ -78,8 +78,13 @@ const emit = defineEmits<{
   validationChange: [isValid: boolean, errorMessage: string];
 }>();
 
-const { resetPoll, triggerPollValidation, clearPollValidationError } =
-  useNewPostDraftsStore();
+const {
+  resetPoll,
+  triggerPollValidation,
+  clearPollValidationError,
+  addPollOption,
+  removePollOption,
+} = useNewPostDraftsStore();
 const { conversationDraft, pollValidationError, showPollValidationError } =
   storeToRefs(useNewPostDraftsStore());
 
@@ -110,13 +115,13 @@ function updateOption(index: number, value: string) {
 }
 
 function addOption() {
-  conversationDraft.value.poll.options.push("");
+  addPollOption();
   emit("input");
   clearPollValidationError();
 }
 
 function removeOption(index: number) {
-  conversationDraft.value.poll.options.splice(index, 1);
+  removePollOption(index);
   emit("input");
   clearPollValidationError();
 }

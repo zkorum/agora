@@ -1,6 +1,6 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import {
   validateHtmlStringCharacterCount,
@@ -391,14 +391,23 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Toggles organization posting and manages related settings
+   * Sets posting as an organization with the specified name
    */
-  function togglePostAsOrganization(postAsOrganization: boolean): void {
-    conversationDraft.value.postAs.postAsOrganization = postAsOrganization;
-    // Clear organization name when switching to personal posting
-    if (!postAsOrganization) {
-      conversationDraft.value.postAs.organizationName = "";
-    }
+  function setPostAsOrganization(organizationName: string): void {
+    conversationDraft.value.postAs.postAsOrganization = true;
+    conversationDraft.value.postAs.organizationName = organizationName;
+  }
+
+  /**
+   * Disables posting as an organization and switches to personal posting
+   */
+  function disablePostAsOrganization(): void {
+    conversationDraft.value.postAs.postAsOrganization = false;
+    conversationDraft.value.postAs.organizationName = "";
+    // Disable import mode when switching to non-organization account
+    // as import mode should only be available for organization accounts
+    conversationDraft.value.importSettings.isImportMode = false;
+    conversationDraft.value.importSettings.polisUrl = "";
   }
 
   /**
@@ -572,6 +581,22 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return validateForReview().isValid;
   });
 
+  /**
+   * Watcher to automatically disable import mode when switching to non-organization account
+   * Import mode should only be available for organization accounts
+   */
+  watch(
+    () => conversationDraft.value.postAs.postAsOrganization,
+    (newValue, oldValue) => {
+      // Only act when switching from true to false (organization to personal)
+      if (oldValue === true && newValue === false) {
+        // Disable import mode and clear related settings
+        conversationDraft.value.importSettings.isImportMode = false;
+        conversationDraft.value.importSettings.polisUrl = "";
+      }
+    }
+  );
+
   return {
     // Main draft state
     conversationDraft,
@@ -601,7 +626,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     removePollOption,
     addInitialOpinion,
     togglePrivacy,
-    togglePostAsOrganization,
+    setPostAsOrganization,
+    disablePostAsOrganization,
     validateSelectedOrganization,
     toggleImportMode,
     setImportMode,
