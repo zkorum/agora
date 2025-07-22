@@ -244,7 +244,7 @@ async function onSubmit() {
   try {
     if (conversationDraft.value.importSettings.isImportMode) {
       const response = await importConversation({
-        polisId: conversationDraft.value.importSettings.polisUrl, // Full URL
+        polisUrl: conversationDraft.value.importSettings.polisUrl,
         postAsOrganizationName: conversationDraft.value.postAs.organizationName,
         targetIsoConvertDateString: conversationDraft.value
           .privateConversationSettings.hasScheduledConversion
