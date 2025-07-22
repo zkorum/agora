@@ -51,7 +51,10 @@
           </q-input>
         </div>
         <div v-else class="import-section">
-          <PolisUrlInput v-model="conversationDraft.importSettings.polisUrl" />
+          <PolisUrlInput
+            ref="polisUrlInputRef"
+            v-model="conversationDraft.importSettings.polisUrl"
+          />
         </div>
 
         <div v-if="!conversationDraft.importSettings.isImportMode">
@@ -144,10 +147,11 @@ const routeGuardRef = ref<InstanceType<
 
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const { createEmptyDraft, validateForReview, validatePolisUrl } =
-  useNewPostDraftsStore();
+const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();
@@ -217,7 +221,7 @@ async function onSubmit() {
   }
 
   if (conversationDraft.value.importSettings.isImportMode) {
-    if (!validatePolisUrl()) {
+    if (!polisUrlInputRef.value?.validate()) {
       // The PolisUrlInput component will show the error
       return;
     }
