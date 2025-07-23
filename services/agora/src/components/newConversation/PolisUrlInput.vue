@@ -10,48 +10,45 @@
           <div class="description">
             Paste a Polis URL below to import a conversation.
           </div>
-          <q-input
-            v-model="model"
-            placeholder="e.g., https://pol.is/xxxxx"
-            outlined
-            dense
-            :error="showError"
-            :error-message="errorMessage"
-            @update:model-value="handleInput"
-          >
-          </q-input>
-        </div>
 
-        <div class="examples">
-          <p class="examples-title">Valid URL examples:</p>
-          <ul class="examples-list">
-            <li><code>https://pol.is/report/r32beaksmhwesyum6kaur</code></li>
-            <li><code>https://pol.is/384anuzye9</code></li>
-          </ul>
-        </div>
-        <div class="legal-disclaimer">
-          <div class="disclaimer-header">
-            <q-icon name="mdi-alert" class="disclaimer-icon" />
-            <span class="disclaimer-title">Legal Notice</span>
+          <div class="examples">
+            <p class="examples-title">Valid URL examples:</p>
+            <ul class="examples-list">
+              <li><code>https://pol.is/report/r32beaksmhwesyum6kaur</code></li>
+              <li><code>https://pol.is/384anuzye9</code></li>
+            </ul>
           </div>
-          <p class="disclaimer-text">
-            By clicking "Import", you confirm that imported content complies
-            with the
-            <a
-              href="https://pol.is/tos"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="terms-link"
+
+          <div>
+            <q-input
+              v-model="model"
+              placeholder="e.g., https://pol.is/xxxxx"
+              outlined
+              dense
+              :error="showError"
+              :error-message="errorMessage"
+              @update:model-value="handleInput"
             >
-              Pol.is Terms
-              <q-icon name="mdi-open-in-new" />
-            </a>
-            and our
-            <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
-              Terms of Use </RouterLink
-            >. Do not import illegal, abusive, or infringing material. Use the
-            import API responsibly. Abuse is prohibited.
-          </p>
+            </q-input>
+            <div class="legal-notice">
+              By clicking "Import", you confirm that imported content complies
+              with the
+              <a
+                href="https://pol.is/tos"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="terms-link"
+              >
+                Pol.is Terms
+                <q-icon name="mdi-open-in-new" />
+              </a>
+              and our
+              <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
+                Terms of Use </RouterLink
+              >. Do not import illegal, abusive, or infringing material. Use the
+              import API responsibly. Abuse is prohibited.
+            </div>
+          </div>
         </div>
       </div>
     </ZKCard>
@@ -165,40 +162,11 @@ defineExpose({
   }
 }
 
-.legal-disclaimer {
-  padding: 0.75rem;
-  background-color: #fff8e1;
-  border-radius: 4px;
-  border-left: 3px solid #ff9800;
-}
-
-.disclaimer-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.disclaimer-icon {
-  font-size: 1rem;
-  color: #ff9800;
-}
-
-.disclaimer-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: $color-text-strong;
-}
-
-.disclaimer-text {
-  font-size: 0.8rem;
-  color: $color-text-weak;
-  margin: 0 0 0.5rem 0;
-  line-height: 1.4;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+.legal-notice {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.3;
 }
 
 .terms-link {

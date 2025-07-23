@@ -8,7 +8,9 @@
       <ZKButton
         button-type="largeButton"
         color="primary"
-        :label="conversationDraft.importSettings.isImportMode ? 'Post' : 'Next'"
+        :label="
+          conversationDraft.importSettings.isImportMode ? 'Import' : 'Next'
+        "
         size="0.8rem"
         :loading="isSubmitButtonLoading"
         @click="onSubmit()"
