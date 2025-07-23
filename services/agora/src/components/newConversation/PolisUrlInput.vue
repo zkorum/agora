@@ -100,6 +100,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding-bottom: 1rem;
 }
 
 .header {
@@ -163,10 +164,10 @@ defineExpose({
 }
 
 .legal-notice {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: #6c757d;
-  margin: 0;
   line-height: 1.3;
+  padding-top: 0.5rem;
 }
 
 .terms-link {
