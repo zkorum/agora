@@ -588,11 +588,7 @@ export const userTable = pgTable("user", {
         .notNull()
         .unique(),
     isModerator: boolean("is_moderator").notNull().default(false),
-    isAnonymous: boolean("is_anonymous").notNull().default(true),
-    isSeed: boolean("is_seed").notNull().default(false),
-    showFlaggedContent: boolean("show_flagged_content")
-        .notNull()
-        .default(false),
+    isImported: boolean("is_imported").notNull().default(false),
     isDeleted: boolean("is_deleted").notNull().default(false),
     activeConversationCount: integer("active_conversation_count")
         .notNull()
@@ -1318,6 +1314,7 @@ export const voteTable = pgTable(
         opinionId: integer("opinion_id")
             .notNull()
             .references(() => opinionTable.id),
+        polisVoteId: integer("polis_vote_id"), // only used for importing
         currentContentId: integer("current_content_id").references(
             (): AnyPgColumn => voteContentTable.id,
         ), // not null if not deleted, else null
@@ -1488,9 +1485,7 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
         .references(() => opinionTable.id)
         .unique()
         .notNull(),
-    authorId: uuid("author_id")
-        .references(() => userTable.id)
-        .notNull(),
+    authorId: uuid("author_id").references(() => userTable.id), // null if imported data
     moderationAction:
         opinionModerationActionEnum("moderation_action").notNull(),
     moderationReason: moderationReasonsEnum("moderation_reason").notNull(),

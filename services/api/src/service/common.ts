@@ -9,6 +9,7 @@ import {
     polisClusterTable,
     organizationTable,
     voteTable,
+    opinionModerationTable,
 } from "@/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -21,7 +22,7 @@ import type {
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL, and, count, isNotNull } from "drizzle-orm";
+import { eq, desc, SQL, and, count, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { getUserPollResponse } from "./poll.js";
@@ -73,29 +74,25 @@ export function useCommonPost() {
         conversationId: number;
     }): Promise<number> {
         // TODO: optimize this
-        const voteResponse = await db
+        const results = await db
             .select({ authorId: voteTable.authorId })
             .from(voteTable)
             .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-            .where(eq(opinionTable.conversationId, conversationId));
-        // this is not necessary normally since every opinion author are necessarily voting "agree"
-        // and opinion author are not participants unless they vote...
-        // TODO: remove this once we move to external polis and update the old convos
-        const opinionResponse = await db
-            .select({ authorId: opinionTable.authorId })
-            .from(opinionTable)
-            .where(eq(opinionTable.conversationId, conversationId));
-        const participantCount = new Set(
-            voteResponse
-                .map((voteVal) => voteVal.authorId)
-                .concat(
-                    opinionResponse.map((opinionVal) => opinionVal.authorId),
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
+            .where(
+                and(
+                    eq(opinionTable.conversationId, conversationId),
+                    isNotNull(opinionTable.currentContentId), // we don't count deleted opinions
+                    isNotNull(voteTable.currentContentId), // we don't count deleted votes
+                    isNull(opinionModerationTable.id), // we don't count moderated opinions
                 ),
-        ).size;
-        // const participantResults = await db
-        //     .select({ count: count() })
-        //     .from(participantTable)
-        //     .where(eq(participantTable.conversationId, conversationId));
+            );
+        const participantUserIds = results.map((result) => result.authorId);
+        const uniqueParticipantUserIds = new Set(participantUserIds);
+        const participantCount = uniqueParticipantUserIds.size;
 
         return participantCount;
     }
@@ -114,18 +111,26 @@ export function useCommonPost() {
             whereClause = and(
                 eq(voteTable.authorId, userId),
                 eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId), // only votes on non-deleted opinions matter in theory, TODO: migrate to our own pol.is arg because pol.is fork does not support deleting opinion and it messes up with the # of participants
+                isNotNull(opinionTable.currentContentId), // only votes on undeleted opinions matters
+                isNotNull(voteTable.currentContentId), // we don't count deleted votes
+                // isNull(opinionModerationTable.id),  // for personal records, we don't remove votes on moderated content
             );
         } else {
             whereClause = and(
                 eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId), // only votes on non-deleted opinions matter in theory, TODO: migrate to our own pol.is arg because pol.is fork does not support deleting opinion and it messes up with the # of participants
+                isNotNull(opinionTable.currentContentId),
+                isNotNull(voteTable.currentContentId), // we don't count deleted votes
+                isNull(opinionModerationTable.id), // only votes on unmoderated opinions matters
             );
         }
         const voteResponse = await db
             .select({ count: count() })
             .from(voteTable)
             .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
             .where(whereClause);
 
         const voteCount = voteResponse.length === 0 ? 0 : voteResponse[0].count;
@@ -147,16 +152,22 @@ export function useCommonPost() {
                 eq(opinionTable.authorId, userId),
                 eq(opinionTable.conversationId, conversationId), // only non-deleted opinions count
                 isNotNull(opinionTable.currentContentId),
+                // isNull(opinionModerationTable.id), // moderated opinions matter for personal profile
             );
         } else {
             whereClause = and(
                 eq(opinionTable.conversationId, conversationId),
                 isNotNull(opinionTable.currentContentId), // only non-deleted opinions count
+                isNull(opinionModerationTable.id), // only unmoderated opinions matters
             );
         }
         const opinionResponse = await db
             .select({ count: count() })
             .from(opinionTable)
+            .leftJoin(
+                opinionModerationTable,
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+            )
             .where(whereClause);
         const opinionCount =
             opinionResponse.length === 0 ? 0 : opinionResponse[0].count;
@@ -817,6 +828,26 @@ export function useCommonPost() {
         }
     }
 
+    async function updateCountsBypassCache({
+        db,
+        conversationSlugId,
+    }: GetPostMetadataFromSlugIdProps): Promise<void> {
+        const { opinionCount, voteCount, participantCount } =
+            await getPostMetadataFromSlugId({
+                db,
+                conversationSlugId,
+                useCache: false,
+            });
+        await db
+            .update(conversationTable)
+            .set({
+                participantCount: participantCount,
+                opinionCount: opinionCount,
+                voteCount: voteCount,
+            })
+            .where(eq(conversationTable.slugId, conversationSlugId));
+    }
+
     return {
         fetchPostItems,
         getPostMetadataFromSlugId,
@@ -825,6 +856,7 @@ export function useCommonPost() {
         getParticipantCountBypassCache,
         getOpinionCountBypassCache,
         getVoteCountBypassCache,
+        updateCountsBypassCache,
     };
 }
 
@@ -899,6 +931,7 @@ export function useCommonComment() {
     }: GetOpinionMetadataFromOpinionSlugIdProps) {
         const opinionTableResponse = await db
             .select({
+                opinionId: opinionTable.id,
                 conversationSlugId: conversationTable.slugId,
                 conversationId: conversationTable.id,
                 opinionCurrentContentId: opinionTable.currentContentId,
@@ -918,6 +951,7 @@ export function useCommonComment() {
         }
 
         return {
+            opinionId: opinionTableResponse[0].opinionId,
             conversationSlugId: opinionTableResponse[0].conversationSlugId,
             conversationId: opinionTableResponse[0].conversationId,
             isOpinionDeleted:

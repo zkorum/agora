@@ -197,7 +197,6 @@ export function useBackendPostApi() {
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     isLoginRequired: boolean;
-    pollingOptionList: string[] | undefined;
   }
 
   type ImportConversationSuccessResponse =
@@ -212,7 +211,6 @@ export function useBackendPostApi() {
     targetIsoConvertDateString,
     isIndexed,
     isLoginRequired,
-    pollingOptionList,
   }: ImportConversationProps): Promise<ImportConversationResponse> {
     try {
       const params: ApiV1ConversationImportPostRequest = {
@@ -221,8 +219,6 @@ export function useBackendPostApi() {
         indexConversationAt: targetIsoConvertDateString,
         isIndexed,
         isLoginRequired,
-        pollingOptionList,
-        seedOpinionList: [],
       };
 
       const { url, options } =

@@ -16,6 +16,9 @@ import type {
 import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/common/util.js";
 import { httpErrors } from "@fastify/sensible";
+import type { AxiosInstance } from "axios";
+import * as polisService from "@/service/polis.js";
+import { log } from "@/app.js";
 
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
@@ -69,13 +72,21 @@ export async function moderateByPostSlugId({
     }
 }
 
-interface moderateByCommentSlugIdProps {
+interface ModerateByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
     moderationAction: OpinionModerationAction;
     moderationReason: ModerationReason;
     moderationExplanation: string;
     userId: string;
+    axiosPolis?: AxiosInstance;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function moderateByCommentSlugId({
@@ -85,18 +96,26 @@ export async function moderateByCommentSlugId({
     userId,
     moderationExplanation,
     moderationAction,
-}: moderateByCommentSlugIdProps) {
-    const { getCommentIdFromCommentSlugId } = useCommonComment();
-    const commentId = await getCommentIdFromCommentSlugId({
-        db: db,
-        commentSlugId: commentSlugId,
-    });
+    axiosPolis,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
+}: ModerateByCommentSlugIdProps) {
+    const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
+    const { opinionId, conversationSlugId } =
+        await getOpinionMetadataFromOpinionSlugId({
+            db: db,
+            opinionSlugId: commentSlugId,
+        });
 
     const moderationStatus = await fetchModerationReportByCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,
     });
-
     await db.transaction(async (tx) => {
         if (moderationStatus.status == "moderated") {
             await tx
@@ -108,10 +127,10 @@ export async function moderateByCommentSlugId({
                     moderationExplanation: moderationExplanation,
                     updatedAt: nowZeroMs(),
                 })
-                .where(eq(opinionModerationTable.opinionId, commentId));
+                .where(eq(opinionModerationTable.opinionId, opinionId));
         } else {
             await tx.insert(opinionModerationTable).values({
-                opinionId: commentId,
+                opinionId: opinionId,
                 authorId: userId,
                 moderationAction: moderationAction,
                 moderationReason: moderationReason,
@@ -119,6 +138,42 @@ export async function moderateByCommentSlugId({
             });
         }
     });
+
+    // recalculate and update counts, ignoring cache
+    // moderated opinions and votes on them will not be counted
+    const { updateCountsBypassCache } = useCommonPost();
+    await updateCountsBypassCache({ db, conversationSlugId });
+
+    // update math
+    const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
+        db,
+        opinionSlugId: commentSlugId,
+    });
+    if (axiosPolis !== undefined) {
+        const votes = await polisService.getPolisVotes({
+            db,
+            conversationId,
+            conversationSlugId,
+        });
+        polisService
+            .getAndUpdatePolisMath({
+                db: db,
+                conversationSlugId,
+                conversationId,
+                axiosPolis,
+                votes,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            })
+            .catch((e: unknown) => {
+                log.error(e);
+            });
+    }
 }
 
 interface FetchModerationReportByPostSlugIdProps {
@@ -237,11 +292,27 @@ export async function withdrawModerationReportByPostSlugId({
 interface WithdrawModerationReportByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
+    axiosPolis?: AxiosInstance;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function withdrawModerationReportByCommentSlugId({
     db,
     commentSlugId,
+    axiosPolis,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: WithdrawModerationReportByCommentSlugIdProps) {
     const { getCommentIdFromCommentSlugId } = useCommonComment();
     const commentId = await getCommentIdFromCommentSlugId({
@@ -256,8 +327,48 @@ export async function withdrawModerationReportByCommentSlugId({
 
     if (moderationCommentsTableResponse.length != 1) {
         throw httpErrors.notFound(
-            "Failed to delete report for comment slug ID: " + commentSlugId,
+            "Failed to delete moderation action for opinion slug ID: " +
+                commentSlugId,
         );
+    }
+
+    const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
+    const { conversationSlugId } = await getOpinionMetadataFromOpinionSlugId({
+        db: db,
+        opinionSlugId: commentSlugId,
+    });
+    const { updateCountsBypassCache } = useCommonPost();
+    await updateCountsBypassCache({ db, conversationSlugId });
+
+    // update math
+    const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
+        db,
+        opinionSlugId: commentSlugId,
+    });
+    if (axiosPolis !== undefined) {
+        const votes = await polisService.getPolisVotes({
+            db,
+            conversationId,
+            conversationSlugId,
+        });
+        polisService
+            .getAndUpdatePolisMath({
+                db: db,
+                conversationSlugId,
+                conversationId,
+                axiosPolis,
+                votes,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            })
+            .catch((e: unknown) => {
+                log.error(e);
+            });
     }
 }
 

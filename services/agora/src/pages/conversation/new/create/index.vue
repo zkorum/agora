@@ -261,7 +261,6 @@ async function handleImportSubmission(): Promise<void> {
     isLoginRequired: conversationDraft.value.isPrivate
       ? conversationDraft.value.privateConversationSettings.requiresLogin
       : false,
-    pollingOptionList: undefined, // intentionally left out since we don't support polling while in import mode
   });
 
   if (response.status === "success") {

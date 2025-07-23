@@ -4971,28 +4971,13 @@
                                     },
                                     "isLoginRequired": {
                                         "type": "boolean"
-                                    },
-                                    "pollingOptionList": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "maxLength": 30,
-                                            "minLength": 1
-                                        }
-                                    },
-                                    "seedOpinionList": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
                                     }
                                 },
                                 "required": [
                                     "polisUrl",
                                     "postAsOrganization",
                                     "isIndexed",
-                                    "isLoginRequired",
-                                    "seedOpinionList"
+                                    "isLoginRequired"
                                 ],
                                 "additionalProperties": false
                             }

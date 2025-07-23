@@ -27,6 +27,9 @@ import { createCommentModerationPropertyObject } from "./moderation.js";
 import { alias } from "drizzle-orm/pg-core";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { getOrganizationsByUsername } from "./administrator/organization.js";
+import type { ImportPolisResults } from "@/shared/types/polis.js";
+import { generateUUID } from "@/crypto.js";
+import type { UserIdPerParticipantId } from "@/utils/dataStructure.js";
 
 interface GetUserCommentsProps {
     db: PostgresJsDatabase;
@@ -486,4 +489,78 @@ export async function getUserIdByPolisParticipantIds({
     }
 
     return userIdMap;
+}
+
+interface ParticipantData {
+    userIdPerParticipantId: UserIdPerParticipantId;
+    participantCount: number;
+    voteCount: number;
+    opinionCount: number;
+}
+
+export async function bulkInsertUsersFromExternalPolisConvo({
+    db,
+    importedPolisConversation,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    importedPolisConversation: ImportPolisResults;
+    conversationSlugId: string;
+}): Promise<ParticipantData> {
+    const participantIdsFromComments =
+        importedPolisConversation.comments_data.map(
+            (comment) => comment.participant_id,
+        );
+    const participantIdsFromVotes = importedPolisConversation.votes_data.map(
+        (vote) => vote.participant_id,
+    );
+    const participantIds = Array.from(
+        new Set([...participantIdsFromComments, ...participantIdsFromVotes]),
+    );
+
+    const userIdPerParticipantId: Record<number, string> = {};
+
+    const users = participantIds.map((participantId) => {
+        const userId = generateUUID();
+        userIdPerParticipantId[participantId] = userId;
+        return {
+            id: userId,
+            username: `ext_${conversationSlugId}_${String(participantId)}`,
+            isImported: true,
+        };
+    });
+    await db.insert(userTable).values(users);
+
+    const moderatedStatementIds = importedPolisConversation.comments_data
+        .filter((comment) => comment.moderated === -1)
+        .map((comment) => comment.statement_id);
+    const participantIdsFromVotesToUnmoderatedComments =
+        importedPolisConversation.votes_data
+            .filter(
+                (vote) => !moderatedStatementIds.includes(vote.statement_id),
+            )
+            .map((vote) => vote.participant_id);
+
+    // we assume there are not duplicate votes (edits)
+    const voteCount = participantIdsFromVotesToUnmoderatedComments.length;
+    const opinionCount =
+        importedPolisConversation.comments_data.length -
+        moderatedStatementIds.length;
+    const participantCount = new Set(
+        participantIdsFromVotesToUnmoderatedComments,
+    ).size;
+    if (
+        participantCount !==
+        importedPolisConversation.conversation_data.participant_count
+    ) {
+        log.warn(
+            `[Import] Calculated participantCount=${String(participantCount)} but Polis returned ${String(importedPolisConversation.conversation_data.participant_count)}`,
+        );
+    }
+    return {
+        userIdPerParticipantId,
+        participantCount: participantCount,
+        voteCount: voteCount,
+        opinionCount: opinionCount,
+    };
 }

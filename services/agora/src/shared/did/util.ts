@@ -33,6 +33,27 @@ export const publicKeyToDid = (publicKey: Uint8Array): string => {
     return didFromKeyBytes(compressed, P256_DID_PREFIX);
 };
 
+// Allowed:
+// - https://pol.is/someid
+// - https://pol.is/report/someid
+export const validatePolisUrl = (polisUrl: string) => {
+    try {
+        const url = new URL(polisUrl);
+        const isCorrectOrigin = url.origin === "https://pol.is";
+
+        const segments = url.pathname
+            .split("/")
+            .filter((segment) => segment !== "");
+        const isValidPath =
+            segments.length === 1 ||
+            (segments.length === 2 && segments[0] === "report");
+
+        return isCorrectOrigin && isValidPath;
+    } catch {
+        return false;
+    }
+};
+
 /**
  * Determines if a Uint8Array has a given indeterminate length-prefix.
  */
