@@ -1,16 +1,19 @@
 <template>
   <NewConversationLayout>
     <TopMenuWrapper>
-      <div class="menuFlexGroup">
+      <div>
         <BackButton />
       </div>
 
       <ZKButton
         button-type="largeButton"
         color="primary"
-        label="Next"
+        :label="
+          conversationDraft.importSettings.isImportMode ? 'Import' : 'Next'
+        "
         size="0.8rem"
-        @click="goToPreview()"
+        :loading="isSubmitButtonLoading"
+        @click="onSubmit()"
       />
     </TopMenuWrapper>
 
@@ -18,10 +21,14 @@
       <NewConversationControlBar />
 
       <div class="contentFlexStyle">
-        <div ref="titleInputRef" :style="{ paddingLeft: '0.5rem' }">
-          <div v-if="titleError" class="titleErrorMessage">
+        <div
+          v-if="!conversationDraft.importSettings.isImportMode"
+          ref="titleInputRef"
+          :style="{ paddingLeft: '0.5rem' }"
+        >
+          <div v-if="validationState.title.showError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
-            Title is required to continue
+            {{ validationState.title.error }}
           </div>
 
           <q-input
@@ -33,9 +40,9 @@
             autogrow
             :maxlength="MAX_LENGTH_TITLE"
             required
-            :error="titleError"
+            :error="validationState.title.showError"
             class="large-text-input"
-            @update:model-value="clearTitleError"
+            @update:model-value="updateTitle"
           >
             <template #after>
               <div class="wordCountDiv">
@@ -45,8 +52,14 @@
             </template>
           </q-input>
         </div>
+        <div v-else class="import-section">
+          <PolisUrlInput
+            ref="polisUrlInputRef"
+            v-model="conversationDraft.importSettings.polisUrl"
+          />
+        </div>
 
-        <div>
+        <div v-if="!conversationDraft.importSettings.isImportMode">
           <div class="editor-style">
             <ZKEditor
               v-model="conversationDraft.content"
@@ -55,20 +68,25 @@
               :focus-editor="false"
               :show-toolbar="true"
               :add-background-color="false"
-              @update:model-value="checkWordCount()"
+              @update:model-value="updateContent"
             />
 
             <div class="wordCountDiv">
               <q-icon
-                v-if="bodyWordCount > MAX_LENGTH_BODY"
+                v-if="validationState.body.showError"
                 name="mdi-alert-circle"
                 class="bodySizeWarningIcon"
               />
               <span
                 :class="{
-                  wordCountWarning: bodyWordCount > MAX_LENGTH_BODY,
+                  wordCountWarning: validationState.body.showError,
                 }"
-                >{{ bodyWordCount }}
+                >{{
+                  validateHtmlStringCharacterCount(
+                    conversationDraft.content,
+                    "conversation"
+                  ).characterCount
+                }}
               </span>
               &nbsp; / {{ MAX_LENGTH_BODY }}
             </div>
@@ -100,7 +118,13 @@ import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import PolisUrlInput from "src/components/newConversation/PolisUrlInput.vue";
+import {
+  useNewPostDraftsStore,
+  type ValidationErrorField,
+} from "src/stores/newConversationDrafts";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useCommonApi } from "src/utils/api/common";
 import {
   MAX_LENGTH_TITLE,
   MAX_LENGTH_BODY,
@@ -114,12 +138,13 @@ import NewConversationRouteGuard from "src/components/newConversation/NewConvers
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import PollComponent from "src/components/newConversation/PollComponent.vue";
+import { useBackendPostApi } from "src/utils/api/post";
 
-const bodyWordCount = ref(0);
-const exceededBodyWordCount = ref(false);
-const titleError = ref(false);
+const isSubmitButtonLoading = ref(false);
 
 const router = useRouter();
+
+const { importConversation } = useBackendPostApi();
 
 // Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -129,30 +154,29 @@ const routeGuardRef = ref<InstanceType<
 
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
+const {
+  createEmptyDraft,
+  validatePolisUrlField,
+  validatePollField,
+  validateForReview,
+  updateTitle,
+  updateContent,
+  validationState,
+} = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const showLoginDialog = ref(false);
 
 function onLoginCallback() {
   createNewConversationIntention();
-}
-
-function checkWordCount() {
-  bodyWordCount.value = validateHtmlStringCharacterCount(
-    conversationDraft.value.content,
-    "conversation"
-  ).characterCount;
-
-  if (bodyWordCount.value > MAX_LENGTH_BODY) {
-    exceededBodyWordCount.value = true;
-  } else {
-    exceededBodyWordCount.value = false;
-  }
 }
 
 function scrollToPollingRef() {
@@ -186,32 +210,103 @@ function scrollToPollComponent() {
   }, 100);
 }
 
-function clearTitleError() {
-  if (titleError.value) {
-    titleError.value = false;
+function validateSubmission(): {
+  isValid: boolean;
+  errorField?: ValidationErrorField;
+} {
+  if (conversationDraft.value.importSettings.isImportMode) {
+    const polisValidation = validatePolisUrlField();
+    if (!polisValidation.success) {
+      return { isValid: false, errorField: "polisUrl" };
+    }
+  } else {
+    const validation = validateForReview();
+    if (!validation.isValid) {
+      return {
+        isValid: false,
+        errorField: validation.firstErrorField,
+      };
+    }
+  }
+  return { isValid: true };
+}
+
+function handleValidationError(errorField: ValidationErrorField): void {
+  switch (errorField) {
+    case "title":
+      scrollToTitleInput();
+      break;
+    case "poll":
+      validatePollField();
+      scrollToPollComponent();
+      break;
+    case "body":
+      // Body validation errors are handled inline in the editor
+      break;
+    case "polisUrl":
+      // Polis URL validation errors are handled in the PolisUrlInput component
+      break;
   }
 }
 
-async function goToPreview() {
-  const validation = validateForReview();
+async function handleImportSubmission(): Promise<void> {
+  const response = await importConversation({
+    polisUrl: conversationDraft.value.importSettings.polisUrl,
+    postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+    targetIsoConvertDateString: conversationDraft.value
+      .privateConversationSettings.hasScheduledConversion
+      ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+      : undefined,
+    isIndexed: !conversationDraft.value.isPrivate,
+    isLoginRequired: conversationDraft.value.isPrivate
+      ? conversationDraft.value.privateConversationSettings.requiresLogin
+      : false,
+    pollingOptionList: undefined, // intentionally left out since we don't support polling while in import mode
+  });
 
-  if (!validation.isValid) {
-    // Handle errors based on validation result
-    if (validation.errors.title) {
-      titleError.value = true;
-      scrollToTitleInput();
-    } else if (validation.errors.poll) {
-      // Trigger poll component validation to show error UI
-      pollComponentRef.value?.triggerValidation();
-      scrollToPollComponent();
-    }
-    // Note: body validation errors are handled by the editor component itself
+  if (response.status === "success") {
+    conversationDraft.value = createEmptyDraft();
+    await router.replace({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: response.data.conversationSlugId },
+    });
+  } else {
+    handleAxiosErrorStatusCodes({
+      axiosErrorCode: response.code,
+      defaultMessage: "Error while trying to import conversation from Polis",
+    });
+  }
+}
+
+async function handleRegularSubmission(): Promise<void> {
+  routeGuardRef.value?.unlockRoute();
+  await router.push({ name: "/conversation/new/review/" });
+}
+
+async function onSubmit(): Promise<void> {
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true;
     return;
   }
 
-  titleError.value = false;
-  routeGuardRef.value?.unlockRoute();
-  await router.push({ name: "/conversation/new/review/" });
+  const validation = validateSubmission();
+  if (!validation.isValid) {
+    if (validation.errorField) {
+      handleValidationError(validation.errorField);
+    }
+    return;
+  }
+
+  isSubmitButtonLoading.value = true;
+  try {
+    if (conversationDraft.value.importSettings.isImportMode) {
+      await handleImportSubmission();
+    } else {
+      await handleRegularSubmission();
+    }
+  } finally {
+    isSubmitButtonLoading.value = false;
+  }
 }
 
 watch(

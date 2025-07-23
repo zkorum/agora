@@ -1,10 +1,12 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
+import type { OrganizationProperties } from "src/shared/types/zod";
 import {
   validateHtmlStringCharacterCount,
   MAX_LENGTH_BODY,
 } from "src/shared/shared";
+import { isValidPolisUrl } from "src/shared/utils/polis";
 
 /**
  * Settings for posting as an organization
@@ -27,6 +29,16 @@ export interface PrivateConversationSettings {
   hasScheduledConversion: boolean;
   /** The target date for automatic conversion */
   conversionDate: Date;
+}
+
+/**
+ * Settings for importing conversations from Polis
+ */
+export interface ImportConversationSettings {
+  /** Whether this conversation is being imported from Polis */
+  isImportMode: boolean;
+  /** The Polis conversation URL to import from */
+  polisUrl: string;
 }
 
 /**
@@ -62,6 +74,9 @@ export interface NewConversationDraft {
   isPrivate: boolean;
   /** Advanced settings for private conversations (only relevant when isPrivate is true) */
   privateConversationSettings: PrivateConversationSettings;
+
+  // Import Settings
+  importSettings: ImportConversationSettings;
 }
 
 /**
@@ -81,7 +96,36 @@ interface SerializableConversationDraft {
   postAs: PostAsSettings;
   isPrivate: boolean;
   privateConversationSettings: SerializablePrivateConversationSettings;
+  importSettings: ImportConversationSettings;
 }
+
+/**
+ * Comprehensive validation state for all form fields
+ */
+export interface ValidationState {
+  title: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+  body: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+  poll: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+  polisUrl: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+}
+
+export type ValidationErrorField = "title" | "poll" | "body" | "polisUrl";
 
 /**
  * Result of validation checks for proceeding to review page
@@ -92,16 +136,45 @@ export interface ValidationResult {
     title?: string;
     poll?: string;
     body?: string;
+    polisUrl?: string;
   };
-  firstErrorField?: "title" | "poll" | "body";
+  firstErrorField?: ValidationErrorField;
+}
+
+/**
+ * Mutation result interface for consistent error handling
+ */
+export interface MutationResult {
+  success: boolean;
+  error?: string;
 }
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   /**
-   * Reactive state for poll validation errors
+   * Comprehensive validation state for all form fields
    */
-  const pollValidationError = ref<string>("");
-  const showPollValidationError = ref<boolean>(false);
+  const validationState = ref<ValidationState>({
+    title: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+    body: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+    poll: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+    polisUrl: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+  });
 
   /**
    * Creates a new empty conversation draft with sensible defaults
@@ -134,6 +207,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         requiresLogin: true, // Default to requiring login when private
         hasScheduledConversion: false,
         conversionDate: tomorrow,
+      },
+
+      // Import Settings
+      importSettings: {
+        isImportMode: false,
+        polisUrl: "",
       },
     };
   }
@@ -197,11 +276,21 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       typeof privateSettingsData.hasScheduledConversion === "boolean" &&
       typeof privateSettingsData.conversionDate === "string";
 
+    // Validate import settings
+    if (!draft.importSettings || typeof draft.importSettings !== "object") {
+      return false;
+    }
+    const importSettingsData = draft.importSettings as Record<string, unknown>;
+    const hasValidImportSettings =
+      typeof importSettingsData.isImportMode === "boolean" &&
+      typeof importSettingsData.polisUrl === "string";
+
     return (
       hasValidContent &&
       hasValidPoll &&
       hasValidPostAs &&
-      hasValidPrivateSettings
+      hasValidPrivateSettings &&
+      hasValidImportSettings
     );
   }
 
@@ -320,23 +409,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Adds a new empty poll option to the draft
-   */
-  function addPollOption(): void {
-    conversationDraft.value.poll.options.push("");
-  }
-
-  /**
-   * Removes a poll option at the specified index
-   */
-  function removePollOption(index: number): void {
-    const options = conversationDraft.value.poll.options;
-    if (index >= 0 && index < options.length) {
-      options.splice(index, 1);
-    }
-  }
-
-  /**
    * Adds a new initial opinion to seed the conversation
    */
   function addInitialOpinion(opinion: string): void {
@@ -359,14 +431,134 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Toggles organization posting and manages related settings
+   * Sets posting as an organization with the specified name
    */
-  function togglePostAsOrganization(postAsOrganization: boolean): void {
-    conversationDraft.value.postAs.postAsOrganization = postAsOrganization;
-    // Clear organization name when switching to personal posting
-    if (!postAsOrganization) {
-      conversationDraft.value.postAs.organizationName = "";
+  function setPostAsOrganization(organizationName: string): void {
+    conversationDraft.value.postAs.postAsOrganization = true;
+    conversationDraft.value.postAs.organizationName = organizationName;
+  }
+
+  /**
+   * Disables posting as an organization and switches to personal posting
+   */
+  function disablePostAsOrganization(): void {
+    conversationDraft.value.postAs.postAsOrganization = false;
+    conversationDraft.value.postAs.organizationName = "";
+    // Disable import mode when switching to non-organization account
+    // as import mode should only be available for organization accounts
+    conversationDraft.value.importSettings.isImportMode = false;
+    conversationDraft.value.importSettings.polisUrl = "";
+  }
+
+  /**
+   * Validates that the selected organization still exists in the user's organization list
+   * If the organization doesn't exist, resets the draft to prevent invalid state
+   */
+  function validateSelectedOrganization(
+    userOrganizationList: OrganizationProperties[]
+  ): void {
+    const draft = conversationDraft.value;
+
+    // Only validate if posting as organization
+    if (!draft.postAs.postAsOrganization || !draft.postAs.organizationName) {
+      return;
     }
+
+    // Check if the selected organization still exists in user's organization list
+    const organizationExists = userOrganizationList.some(
+      (org) => org.name === draft.postAs.organizationName
+    );
+
+    if (!organizationExists) {
+      console.warn(
+        `Selected organization "${draft.postAs.organizationName}" no longer exists in user's organization list. Resetting draft.`
+      );
+      resetDraft();
+    }
+  }
+
+  /**
+   * Checks if user has content that would be lost when switching to import mode
+   */
+  function hasContentThatWouldBeCleared(): boolean {
+    const draft = conversationDraft.value;
+    return (
+      draft.title.trim() !== "" ||
+      draft.content.trim() !== "" ||
+      (draft.poll.enabled &&
+        draft.poll.options.some((opt) => opt.trim() !== ""))
+    );
+  }
+
+  /**
+   * Clears content fields when switching to import mode
+   */
+  function clearContentFieldsForImport(): void {
+    conversationDraft.value.title = "";
+    conversationDraft.value.content = "";
+    conversationDraft.value.poll.enabled = false;
+    conversationDraft.value.poll.options = ["", ""];
+    // Clear any validation errors for cleared fields
+    clearValidationError("title");
+    clearValidationError("body");
+    clearValidationError("poll");
+  }
+
+  /**
+   * Toggles import mode and clears URL when disabling
+   */
+  function toggleImportMode(): void {
+    conversationDraft.value.importSettings.isImportMode =
+      !conversationDraft.value.importSettings.isImportMode;
+
+    // Clear Polis URL when disabling import mode
+    if (!conversationDraft.value.importSettings.isImportMode) {
+      conversationDraft.value.importSettings.polisUrl = "";
+    }
+  }
+
+  /**
+   * Sets import mode with optional content clearing
+   * Returns whether confirmation is needed before proceeding
+   */
+  function setImportMode(isImport: boolean): { needsConfirmation: boolean } {
+    // If switching to import mode and user has content, confirmation is needed
+    if (
+      isImport &&
+      !conversationDraft.value.importSettings.isImportMode &&
+      hasContentThatWouldBeCleared()
+    ) {
+      return { needsConfirmation: true };
+    }
+
+    // Proceed with mode change
+    setImportModeWithClearing(isImport);
+    return { needsConfirmation: false };
+  }
+
+  /**
+   * Sets import mode and performs necessary clearing without confirmation
+   */
+  function setImportModeWithClearing(isImport: boolean): void {
+    const wasImportMode = conversationDraft.value.importSettings.isImportMode;
+
+    conversationDraft.value.importSettings.isImportMode = isImport;
+
+    if (isImport && !wasImportMode) {
+      // Switching to import mode - clear content fields
+      clearContentFieldsForImport();
+    } else if (!isImport && wasImportMode) {
+      // Switching to regular mode - clear polis URL
+      conversationDraft.value.importSettings.polisUrl = "";
+      clearValidationError("polisUrl");
+    }
+  }
+
+  /**
+   * Validates Polis URL format
+   */
+  function validatePolisUrl(): boolean {
+    return isValidPolisUrl(conversationDraft.value.importSettings.polisUrl);
   }
 
   /**
@@ -411,28 +603,254 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Triggers poll validation and sets error state for UI components
+   * Centralized validation function for title field
    */
-  function triggerPollValidation(): boolean {
-    const validation = validatePoll();
+  function validateTitleField(): MutationResult {
+    const title = conversationDraft.value.title.trim();
 
-    if (!validation.isValid) {
-      pollValidationError.value =
-        validation.errorMessage || "Poll validation failed";
-      showPollValidationError.value = true;
-      return false;
+    if (!title) {
+      validationState.value.title = {
+        isValid: false,
+        error: "Title is required to continue",
+        showError: true,
+      };
+      return { success: false, error: "Title is required to continue" };
     }
 
-    clearPollValidationError();
-    return true;
+    validationState.value.title = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+    return { success: true };
   }
 
   /**
-   * Clears poll validation error state
+   * Centralized validation function for body content
    */
-  function clearPollValidationError(): void {
-    pollValidationError.value = "";
-    showPollValidationError.value = false;
+  function validateBodyField(): MutationResult {
+    const bodyValidation = validateHtmlStringCharacterCount(
+      conversationDraft.value.content,
+      "conversation"
+    );
+
+    if (!bodyValidation.isValid) {
+      const error = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+      validationState.value.body = {
+        isValid: false,
+        error,
+        showError: true,
+      };
+      return { success: false, error };
+    }
+
+    validationState.value.body = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+    return { success: true };
+  }
+
+  /**
+   * Centralized validation function for Polis URL
+   */
+  function validatePolisUrlField(): MutationResult {
+    const url = conversationDraft.value.importSettings.polisUrl;
+
+    if (!url || isValidPolisUrl(url)) {
+      validationState.value.polisUrl = {
+        isValid: true,
+        error: "",
+        showError: false,
+      };
+      return { success: true };
+    }
+
+    const error = "Please enter a valid Polis URL.";
+    validationState.value.polisUrl = {
+      isValid: false,
+      error,
+      showError: true,
+    };
+    return { success: false, error };
+  }
+
+  /**
+   * Centralized validation function for poll
+   */
+  function validatePollField(): MutationResult {
+    const validation = validatePoll();
+
+    if (!validation.isValid) {
+      const error = validation.errorMessage || "Poll validation failed";
+      validationState.value.poll = {
+        isValid: false,
+        error,
+        showError: true,
+      };
+      return { success: false, error };
+    }
+
+    validationState.value.poll = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+    return { success: true };
+  }
+
+  /**
+   * Clears validation error for a specific field
+   */
+  function clearValidationError(field: keyof ValidationState): void {
+    validationState.value[field] = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+  }
+
+  /**
+   * Clears all validation errors
+   */
+  function clearAllValidationErrors(): void {
+    Object.keys(validationState.value).forEach((field) => {
+      clearValidationError(field as keyof ValidationState);
+    });
+  }
+
+  /**
+   * Centralized mutation for updating title with validation
+   */
+  function updateTitle(newTitle: string): MutationResult {
+    conversationDraft.value.title = newTitle;
+
+    // Clear error when user starts typing
+    if (validationState.value.title.showError && newTitle.trim()) {
+      clearValidationError("title");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for updating body content with validation
+   */
+  function updateContent(newContent: string): MutationResult {
+    conversationDraft.value.content = newContent;
+
+    // Clear error when content becomes valid
+    if (validationState.value.body.showError) {
+      const bodyValidation = validateHtmlStringCharacterCount(
+        newContent,
+        "conversation"
+      );
+      if (bodyValidation.isValid) {
+        clearValidationError("body");
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for updating Polis URL with validation
+   */
+  function updatePolisUrl(newUrl: string): MutationResult {
+    conversationDraft.value.importSettings.polisUrl = newUrl;
+
+    // Clear error when URL becomes valid
+    if (validationState.value.polisUrl.showError) {
+      if (!newUrl || isValidPolisUrl(newUrl)) {
+        clearValidationError("polisUrl");
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for updating poll option with validation
+   */
+  function updatePollOption(index: number, value: string): MutationResult {
+    if (index < 0 || index >= conversationDraft.value.poll.options.length) {
+      return { success: false, error: "Invalid poll option index" };
+    }
+
+    conversationDraft.value.poll.options[index] = value;
+
+    // Clear poll validation error when user starts fixing issues
+    if (validationState.value.poll.showError) {
+      clearValidationError("poll");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for adding poll option with validation
+   */
+  function addPollOptionWithValidation(): MutationResult {
+    const maxOptions = 6;
+    if (conversationDraft.value.poll.options.length >= maxOptions) {
+      return {
+        success: false,
+        error: `Maximum ${maxOptions} poll options allowed`,
+      };
+    }
+
+    conversationDraft.value.poll.options.push("");
+
+    // Clear poll validation error
+    if (validationState.value.poll.showError) {
+      clearValidationError("poll");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for removing poll option with validation
+   */
+  function removePollOptionWithValidation(index: number): MutationResult {
+    const options = conversationDraft.value.poll.options;
+    const minOptions = 2;
+
+    if (options.length <= minOptions) {
+      return {
+        success: false,
+        error: `Minimum ${minOptions} poll options required`,
+      };
+    }
+
+    if (index < 0 || index >= options.length) {
+      return { success: false, error: "Invalid poll option index" };
+    }
+
+    options.splice(index, 1);
+
+    // Clear poll validation error
+    if (validationState.value.poll.showError) {
+      clearValidationError("poll");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for toggling poll with validation
+   */
+  function togglePollWithValidation(enabled: boolean): MutationResult {
+    conversationDraft.value.poll.enabled = enabled;
+
+    if (!enabled) {
+      // Reset poll options when disabling
+      conversationDraft.value.poll.options = ["", ""];
+      clearValidationError("poll");
+    }
+
+    return { success: true };
   }
 
   /**
@@ -486,13 +904,26 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return validateForReview().isValid;
   });
 
+  /**
+   * Watcher to automatically disable import mode when switching to non-organization account
+   * Import mode should only be available for organization accounts
+   */
+  watch(
+    () => conversationDraft.value.postAs.postAsOrganization,
+    (newValue, oldValue) => {
+      // Only act when switching from true to false (organization to personal)
+      if (oldValue === true && newValue === false) {
+        // Disable import mode and clear related settings
+        conversationDraft.value.importSettings.isImportMode = false;
+        conversationDraft.value.importSettings.polisUrl = "";
+      }
+    }
+  );
+
   return {
     // Main draft state
     conversationDraft,
-
-    // Poll validation state
-    pollValidationError,
-    showPollValidationError,
+    validationState,
 
     // Factory functions
     createEmptyDraft,
@@ -501,20 +932,46 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     hasUnsavedChanges,
     hasContent,
     canAccessReview,
+    hasContentThatWouldBeCleared,
 
-    // Validation functions
+    // Centralized validation functions
+    validateTitleField,
+    validateBodyField,
+    validatePolisUrlField,
+    validatePollField,
+    clearValidationError,
+    clearAllValidationErrors,
+
+    // Centralized mutation functions
+    updateTitle,
+    updateContent,
+    updatePolisUrl,
+    updatePollOption,
+    addPollOptionWithValidation,
+    removePollOptionWithValidation,
+    togglePollWithValidation,
+
+    // Comprehensive validation functions
     validateForReview,
     validatePoll,
-    triggerPollValidation,
-    clearPollValidationError,
 
     // Action functions
     resetDraft,
     resetPoll,
-    addPollOption,
-    removePollOption,
     addInitialOpinion,
     togglePrivacy,
-    togglePostAsOrganization,
+    setPostAsOrganization,
+    disablePostAsOrganization,
+    validateSelectedOrganization,
+    toggleImportMode,
+    setImportMode,
+    setImportModeWithClearing,
+    clearContentFieldsForImport,
+    validatePolisUrl,
+
+    // Poll management functions
+    addPollOption: addPollOptionWithValidation,
+    removePollOption: removePollOptionWithValidation,
+    togglePoll: togglePollWithValidation,
   };
 });

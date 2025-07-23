@@ -184,7 +184,7 @@ export class Dto {
         .strict();
     static importConversationRequest = z
         .object({
-            polisId: z.string().url(),
+            polisUrl: z.string().url(),
             postAsOrganization: z.string(),
             indexConversationAt: z.string().datetime().optional(),
             isIndexed: z.boolean(),

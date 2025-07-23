@@ -1304,7 +1304,7 @@ export interface ApiV1ConversationImportPostRequest {
      * @type {string}
      * @memberof ApiV1ConversationImportPostRequest
      */
-    'polisId': string;
+    'polisUrl': string;
     /**
      * 
      * @type {string}

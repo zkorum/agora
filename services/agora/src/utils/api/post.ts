@@ -2,20 +2,18 @@ import { axios, api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import type {
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
-  ApiV1ConversationCreatePost200Response} from "src/api";
+  ApiV1ConversationCreatePost200Response,
+  ApiV1ConversationImportPostRequest,
+} from "src/api";
 import {
   type ApiV1ConversationCreatePostRequest,
   type ApiV1ConversationFetchRecentPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1ModerationConversationWithdrawPostRequest
+  type ApiV1ModerationConversationWithdrawPostRequest,
 } from "src/api";
-import type {
-  AxiosErrorResponse,
-  AxiosSuccessResponse} from "./common";
-import {
-  useCommonApi,
-} from "./common";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
+import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import { useRouter } from "vue-router";
 import type {
@@ -192,6 +190,62 @@ export function useBackendPostApi() {
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
     | AxiosErrorResponse;
+
+  interface ImportConversationProps {
+    polisUrl: string;
+    postAsOrganizationName: string;
+    targetIsoConvertDateString: string | undefined;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+    pollingOptionList: string[] | undefined;
+  }
+
+  type ImportConversationSuccessResponse =
+    AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
+  type ImportConversationResponse =
+    | ImportConversationSuccessResponse
+    | AxiosErrorResponse;
+
+  async function importConversation({
+    polisUrl,
+    postAsOrganizationName,
+    targetIsoConvertDateString,
+    isIndexed,
+    isLoginRequired,
+    pollingOptionList,
+  }: ImportConversationProps): Promise<ImportConversationResponse> {
+    try {
+      const params: ApiV1ConversationImportPostRequest = {
+        polisUrl,
+        postAsOrganization: postAsOrganizationName,
+        indexConversationAt: targetIsoConvertDateString,
+        isIndexed,
+        isLoginRequired,
+        pollingOptionList,
+        seedOpinionList: [],
+      };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1ConversationImportPost(params);
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1ConversationImportPost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+      );
+
+      return {
+        data: response.data,
+        status: "success",
+      };
+    } catch (e) {
+      return createAxiosErrorResponse(e);
+    }
+  }
+
   async function createNewPost({
     postTitle,
     postBody,
@@ -320,5 +374,6 @@ export function useBackendPostApi() {
     fetchPostBySlugId,
     createInternalPostData,
     deletePostBySlugId,
+    importConversation,
   };
 }
