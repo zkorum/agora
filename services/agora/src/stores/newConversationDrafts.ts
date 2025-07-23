@@ -125,6 +125,8 @@ export interface ValidationState {
   };
 }
 
+export type ValidationErrorField = "title" | "poll" | "body" | "polisUrl";
+
 /**
  * Result of validation checks for proceeding to review page
  */
@@ -136,7 +138,7 @@ export interface ValidationResult {
     body?: string;
     polisUrl?: string;
   };
-  firstErrorField?: "title" | "poll" | "body" | "polisUrl";
+  firstErrorField?: ValidationErrorField;
 }
 
 /**

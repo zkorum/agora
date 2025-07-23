@@ -117,7 +117,10 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import PolisUrlInput from "src/components/newConversation/PolisUrlInput.vue";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import {
+  useNewPostDraftsStore,
+  type ValidationErrorField,
+} from "src/stores/newConversationDrafts";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useCommonApi } from "src/utils/api/common";
 import {
@@ -205,68 +208,99 @@ function scrollToPollComponent() {
   }, 100);
 }
 
-async function onSubmit() {
+function validateSubmission(): {
+  isValid: boolean;
+  errorField?: ValidationErrorField;
+} {
+  if (conversationDraft.value.importSettings.isImportMode) {
+    const polisValidation = validatePolisUrlField();
+    if (!polisValidation.success) {
+      return { isValid: false, errorField: "polisUrl" };
+    }
+  } else {
+    const validation = validateForReview();
+    if (!validation.isValid) {
+      return {
+        isValid: false,
+        errorField: validation.firstErrorField,
+      };
+    }
+  }
+  return { isValid: true };
+}
+
+function handleValidationError(errorField: ValidationErrorField): void {
+  switch (errorField) {
+    case "title":
+      scrollToTitleInput();
+      break;
+    case "poll":
+      validatePollField();
+      scrollToPollComponent();
+      break;
+    case "body":
+      // Body validation errors are handled inline in the editor
+      break;
+    case "polisUrl":
+      // Polis URL validation errors are handled in the PolisUrlInput component
+      break;
+  }
+}
+
+async function handleImportSubmission(): Promise<void> {
+  const response = await importConversation({
+    polisUrl: conversationDraft.value.importSettings.polisUrl,
+    postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+    targetIsoConvertDateString: conversationDraft.value
+      .privateConversationSettings.hasScheduledConversion
+      ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+      : undefined,
+    isIndexed: !conversationDraft.value.isPrivate,
+    isLoginRequired: conversationDraft.value.isPrivate
+      ? conversationDraft.value.privateConversationSettings.requiresLogin
+      : false,
+    pollingOptionList: undefined, // intentionally left out since we don't support polling while in import mode
+  });
+
+  if (response.status === "success") {
+    conversationDraft.value = createEmptyDraft();
+    await router.replace({
+      name: "/conversation/[postSlugId]",
+      params: { postSlugId: response.data.conversationSlugId },
+    });
+  } else {
+    handleAxiosErrorStatusCodes({
+      axiosErrorCode: response.code,
+      defaultMessage: "Error while trying to import conversation from Polis",
+    });
+  }
+}
+
+async function handleRegularSubmission(): Promise<void> {
+  routeGuardRef.value?.unlockRoute();
+  await router.push({ name: "/conversation/new/review/" });
+}
+
+async function onSubmit(): Promise<void> {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
     return;
   }
 
-  if (conversationDraft.value.importSettings.isImportMode) {
-    // Validate Polis URL using centralized validation
-    const polisValidation = validatePolisUrlField();
-    if (!polisValidation.success) {
-      return;
+  const validation = validateSubmission();
+  if (!validation.isValid) {
+    if (validation.errorField) {
+      handleValidationError(validation.errorField);
     }
-  } else {
-    // Use centralized validation function
-    const validation = validateForReview();
-    if (!validation.isValid) {
-      if (validation.errors.title) {
-        scrollToTitleInput();
-        return;
-      }
-      if (validation.errors.poll) {
-        validatePollField();
-        scrollToPollComponent();
-      }
-      return;
-    }
+    return;
   }
 
   isSubmitButtonLoading.value = true;
-
   try {
     if (conversationDraft.value.importSettings.isImportMode) {
-      const response = await importConversation({
-        polisUrl: conversationDraft.value.importSettings.polisUrl,
-        postAsOrganizationName: conversationDraft.value.postAs.organizationName,
-        targetIsoConvertDateString: conversationDraft.value
-          .privateConversationSettings.hasScheduledConversion
-          ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-          : undefined,
-        isIndexed: !conversationDraft.value.isPrivate,
-        isLoginRequired: conversationDraft.value.isPrivate
-          ? conversationDraft.value.privateConversationSettings.requiresLogin
-          : false,
-        pollingOptionList: undefined, // intentionally left out since we don't support polling while in import mode
-      });
-
-      if (response.status === "success") {
-        conversationDraft.value = createEmptyDraft();
-        await router.replace({
-          name: "/conversation/[postSlugId]",
-          params: { postSlugId: response.data.conversationSlugId },
-        });
-      } else {
-        handleAxiosErrorStatusCodes({
-          axiosErrorCode: response.code,
-          defaultMessage:
-            "Error while trying to import conversation from Polis",
-        });
-      }
+      await handleImportSubmission();
     } else {
-      routeGuardRef.value?.unlockRoute();
-      await router.push({ name: "/conversation/new/review/" });
+      await handleRegularSubmission();
     }
   } finally {
     isSubmitButtonLoading.value = false;
