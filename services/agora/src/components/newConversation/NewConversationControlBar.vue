@@ -234,6 +234,6 @@ const visibleControlButtons = computed(() =>
 .control-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 </style>
