@@ -72,23 +72,11 @@ import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
 
-const {
-  resetPoll,
-  validatePollField,
-  updatePollOption,
-  addPollOption,
-  removePollOption,
-} = useNewPostDraftsStore();
+const { resetPoll, updatePollOption, addPollOption, removePollOption } =
+  useNewPostDraftsStore();
 const { conversationDraft, validationState } = storeToRefs(
   useNewPostDraftsStore()
 );
-
-defineExpose({
-  triggerValidation: () => {
-    const result = validatePollField();
-    return result.success;
-  },
-});
 
 function handleOptionInput(index: number, event: Event) {
   if (event.target && event.target instanceof HTMLInputElement) {

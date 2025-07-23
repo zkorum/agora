@@ -155,8 +155,8 @@ const titleInputRef = ref<HTMLDivElement | null>(null);
 
 const {
   createEmptyDraft,
-  validateTitleField,
   validatePolisUrlField,
+  validatePollField,
   validateForReview,
   updateTitle,
   updateContent,
@@ -218,17 +218,15 @@ async function onSubmit() {
       return;
     }
   } else {
-    // Use centralized validation functions
-    const titleValidation = validateTitleField();
-    if (!titleValidation.success) {
-      scrollToTitleInput();
-      return;
-    }
-
+    // Use centralized validation function
     const validation = validateForReview();
     if (!validation.isValid) {
+      if (validation.errors.title) {
+        scrollToTitleInput();
+        return;
+      }
       if (validation.errors.poll) {
-        pollComponentRef.value?.triggerValidation();
+        validatePollField();
         scrollToPollComponent();
       }
       return;
