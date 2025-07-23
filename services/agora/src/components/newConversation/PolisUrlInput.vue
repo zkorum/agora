@@ -3,10 +3,10 @@
     <ZKCard :padding="'2rem'" class="cardStyle">
       <div class="header">
         <i class="pi pi-link icon" />
-        <h3 class="title">Import from Polis</h3>
+        <h3 class="title">Import Conversation from Polis</h3>
       </div>
       <p class="description">
-        Paste a Polis URL below to import the conversation.
+        Paste a Polis URL below to import a conversation.
       </p>
       <div class="examples">
         <p class="examples-title">Valid URL examples:</p>
