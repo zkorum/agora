@@ -16,7 +16,7 @@ RUN apt-get update && \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
-RUN pip install .
+RUN pip install --no-cache-dir .
 
 # Expose the port you want waitress to serve on
 EXPOSE 8004

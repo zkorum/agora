@@ -12,11 +12,11 @@
 
     <template #visualizer>
       <VoteCountVisualizer
-        :vote-count1="props.opinionItem.numAgrees"
-        :vote-count2="props.opinionItem.numPasses"
-        :vote-count3="props.opinionItem.numDisagrees"
-        :vote-count4="numNoVotes"
-        :num-participants="props.opinionItem.numParticipants"
+        :vote-count1="opinionItemForVisualizer.numAgrees"
+        :vote-count2="opinionItemForVisualizer.numPasses"
+        :vote-count3="opinionItemForVisualizer.numDisagrees"
+        :vote-count4="numNoVotesForVisualizer"
+        :num-participants="opinionItemForVisualizer.numParticipants"
         label1="Agree"
         label2="Pass"
         label3="Disagree"
@@ -44,14 +44,15 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 const props = defineProps<{
   conversationSlugId: string;
   opinionItem: OpinionItem;
+  opinionItemForVisualizer: OpinionItem;
 }>();
 
-const numNoVotes = computed(
+const numNoVotesForVisualizer = computed(
   () =>
-    props.opinionItem.numParticipants -
-    props.opinionItem.numAgrees -
-    props.opinionItem.numPasses -
-    props.opinionItem.numDisagrees
+    props.opinionItemForVisualizer.numParticipants -
+    props.opinionItemForVisualizer.numAgrees -
+    props.opinionItemForVisualizer.numPasses -
+    props.opinionItemForVisualizer.numDisagrees
 );
 
 const showDialog = ref(false);

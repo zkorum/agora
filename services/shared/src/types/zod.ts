@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 import { validateDidKey, validateDidWeb } from "../did/util.js";
 import {
@@ -736,6 +735,10 @@ export const zodSupportedCountryCallingCode = z.enum([
     "64",
     "971",
     "260",
+    "962",
+    "967",
+    "963",
+    "961",
 ]);
 
 const zodGenLabelSummaryOutputClusterValue = z.object({
