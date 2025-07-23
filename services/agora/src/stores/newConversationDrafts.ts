@@ -478,6 +478,33 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
+   * Checks if user has content that would be lost when switching to import mode
+   */
+  function hasContentThatWouldBeCleared(): boolean {
+    const draft = conversationDraft.value;
+    return (
+      draft.title.trim() !== "" ||
+      draft.content.trim() !== "" ||
+      (draft.poll.enabled &&
+        draft.poll.options.some((opt) => opt.trim() !== ""))
+    );
+  }
+
+  /**
+   * Clears content fields when switching to import mode
+   */
+  function clearContentFieldsForImport(): void {
+    conversationDraft.value.title = "";
+    conversationDraft.value.content = "";
+    conversationDraft.value.poll.enabled = false;
+    conversationDraft.value.poll.options = ["", ""];
+    // Clear any validation errors for cleared fields
+    clearValidationError("title");
+    clearValidationError("body");
+    clearValidationError("poll");
+  }
+
+  /**
    * Toggles import mode and clears URL when disabling
    */
   function toggleImportMode(): void {
@@ -490,10 +517,40 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
-  function setImportMode(isImport: boolean): void {
+  /**
+   * Sets import mode with optional content clearing
+   * Returns whether confirmation is needed before proceeding
+   */
+  function setImportMode(isImport: boolean): { needsConfirmation: boolean } {
+    // If switching to import mode and user has content, confirmation is needed
+    if (
+      isImport &&
+      !conversationDraft.value.importSettings.isImportMode &&
+      hasContentThatWouldBeCleared()
+    ) {
+      return { needsConfirmation: true };
+    }
+
+    // Proceed with mode change
+    setImportModeWithClearing(isImport);
+    return { needsConfirmation: false };
+  }
+
+  /**
+   * Sets import mode and performs necessary clearing without confirmation
+   */
+  function setImportModeWithClearing(isImport: boolean): void {
+    const wasImportMode = conversationDraft.value.importSettings.isImportMode;
+
     conversationDraft.value.importSettings.isImportMode = isImport;
-    if (!isImport) {
+
+    if (isImport && !wasImportMode) {
+      // Switching to import mode - clear content fields
+      clearContentFieldsForImport();
+    } else if (!isImport && wasImportMode) {
+      // Switching to regular mode - clear polis URL
       conversationDraft.value.importSettings.polisUrl = "";
+      clearValidationError("polisUrl");
     }
   }
 
@@ -875,6 +932,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     hasUnsavedChanges,
     hasContent,
     canAccessReview,
+    hasContentThatWouldBeCleared,
 
     // Centralized validation functions
     validateTitleField,
@@ -907,6 +965,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     validateSelectedOrganization,
     toggleImportMode,
     setImportMode,
+    setImportModeWithClearing,
+    clearContentFieldsForImport,
     validatePolisUrl,
 
     // Poll management functions

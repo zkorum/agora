@@ -20,18 +20,21 @@ import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.v
 
 const showDialog = defineModel<boolean>();
 
-const { setImportMode } = useNewPostDraftsStore();
+const emit = defineEmits<{
+  modeChangeRequested: [isImport: boolean];
+}>();
+
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postTypeOptions = [
   {
-    title: "Regular Post",
-    description: "Compose a new conversation.",
+    title: "New Conversation",
+    description: "Create a new conversation topic for discussion.",
     value: "regular",
   },
   {
     title: "Import from Polis",
-    description: "Import an existing conversation from a Polis URL.",
+    description: "Import and continue an existing Polis conversation.",
     value: "import",
   },
 ];
@@ -44,6 +47,8 @@ function handleOptionSelected(option: {
   if (showDialog.value) {
     showDialog.value = false;
   }
-  setImportMode(option.value === "import");
+
+  const isImport = option.value === "import";
+  emit("modeChangeRequested", isImport);
 }
 </script>

@@ -19,7 +19,16 @@
 
   <PostAsAccountDialog v-model="showPostAsDialogVisible" />
 
-  <PostTypeDialog v-model="showPostTypeDialog" />
+  <PostTypeDialog
+    v-model="showPostTypeDialog"
+    @mode-change-requested="handleImportModeChangeRequest"
+  />
+
+  <ModeChangeConfirmationDialog
+    v-model="showImportModeChangeConfirmation"
+    @confirm="handleModeChangeConfirm"
+    @cancel="handleModeChangeCancel"
+  />
 
   <VisibilityOptionsDialog v-model:show-dialog="showVisibilityDialog" />
 
@@ -37,6 +46,7 @@ import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue"
 import ZKButton2 from "src/components/ui-library/ZKButton2.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import PostTypeDialog from "src/components/newConversation/dialog/PostTypeDialog.vue";
+import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
@@ -53,7 +63,8 @@ interface ControlButton {
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { togglePoll } = useNewPostDraftsStore();
+const { togglePoll, setImportMode, setImportModeWithClearing } =
+  useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postAsDisplayName = computed(() => {
@@ -80,8 +91,31 @@ const showVisibilityDialog = ref(false);
 const showMakePublicDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
 
+const showImportModeChangeConfirmation = ref(false);
+const hasPendingImportModeChange = ref(false);
+
 const showAsDialog = () => {
   showPostAsDialogVisible.value = true;
+};
+
+const handleImportModeChangeRequest = (isImport: boolean) => {
+  const result = setImportMode(isImport);
+
+  if (result.needsConfirmation) {
+    // Store the pending change and show confirmation dialog
+    hasPendingImportModeChange.value = isImport;
+    showImportModeChangeConfirmation.value = true;
+  }
+  // If no confirmation needed, the mode change has already been applied
+};
+
+const handleModeChangeConfirm = () => {
+  setImportModeWithClearing(hasPendingImportModeChange.value);
+  showImportModeChangeConfirmation.value = false;
+};
+
+const handleModeChangeCancel = () => {
+  showImportModeChangeConfirmation.value = false;
 };
 
 const togglePostTypeDialog = () => {
@@ -143,7 +177,7 @@ const controlButtons = computed((): ControlButton[] => [
     id: "post-type",
     label: conversationDraft.value.importSettings.isImportMode
       ? "Import from Polis"
-      : "Regular post",
+      : "New Conversation",
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible: conversationDraft.value.postAs.postAsOrganization,
     clickHandler: togglePostTypeDialog,
