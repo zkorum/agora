@@ -18,9 +18,9 @@
         />
       </div>
 
-      <div v-if="showPollValidationError" class="pollErrorMessage">
+      <div v-if="validationState.poll.showError" class="pollErrorMessage">
         <q-icon name="mdi-alert-circle" class="pollErrorIcon" />
-        {{ pollValidationError }}
+        {{ validationState.poll.error }}
       </div>
 
       <div class="polling-options-container">
@@ -66,39 +66,28 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
 import Button from "primevue/button";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
 
-const emit = defineEmits<{
-  input: [];
-  validationChange: [isValid: boolean, errorMessage: string];
-}>();
-
 const {
   resetPoll,
-  triggerPollValidation,
-  clearPollValidationError,
+  validatePollField,
+  updatePollOption,
   addPollOption,
   removePollOption,
 } = useNewPostDraftsStore();
-const { conversationDraft, pollValidationError, showPollValidationError } =
-  storeToRefs(useNewPostDraftsStore());
-
-// Watch for validation state changes and emit to parent
-watch(
-  [showPollValidationError, pollValidationError],
-  ([showError, errorMessage]) => {
-    emit("validationChange", !showError, errorMessage);
-  }
+const { conversationDraft, validationState } = storeToRefs(
+  useNewPostDraftsStore()
 );
 
-// Expose validation trigger method for parent components
 defineExpose({
-  triggerValidation: triggerPollValidation,
+  triggerValidation: () => {
+    const result = validatePollField();
+    return result.success;
+  },
 });
 
 function handleOptionInput(index: number, event: Event) {
@@ -109,21 +98,15 @@ function handleOptionInput(index: number, event: Event) {
 }
 
 function updateOption(index: number, value: string) {
-  conversationDraft.value.poll.options[index] = value;
-  emit("input");
-  clearPollValidationError();
+  updatePollOption(index, value);
 }
 
 function addOption() {
   addPollOption();
-  emit("input");
-  clearPollValidationError();
 }
 
 function removeOption(index: number) {
   removePollOption(index);
-  emit("input");
-  clearPollValidationError();
 }
 </script>
 

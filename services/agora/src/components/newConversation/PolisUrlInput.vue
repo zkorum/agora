@@ -20,9 +20,9 @@
         placeholder="e.g., https://pol.is/xxxxx"
         outlined
         dense
-        :error="!!errorMessage"
+        :error="showError"
         :error-message="errorMessage"
-        @update:model-value="clearError"
+        @update:model-value="handleInput"
       >
       </q-input>
     </ZKCard>
@@ -30,27 +30,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { isValidPolisUrl } from "src/shared/utils/polis";
+import { computed } from "vue";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { storeToRefs } from "pinia";
 import ZKCard from "../ui-library/ZKCard.vue";
 
 const model = defineModel<string>({ required: true });
 
-const errorMessage = ref("");
+const { updatePolisUrl, validatePolisUrlField } = useNewPostDraftsStore();
+const { validationState } = storeToRefs(useNewPostDraftsStore());
+
+const errorMessage = computed(() => validationState.value.polisUrl.error);
+const showError = computed(() => validationState.value.polisUrl.showError);
 
 function validate(): boolean {
-  const value = model.value;
-  if (!value || isValidPolisUrl(value)) {
-    errorMessage.value = "";
-    return true;
-  } else {
-    errorMessage.value = "Please enter a valid Polis URL.";
-    return false;
-  }
+  const result = validatePolisUrlField();
+  return result.success;
 }
 
 function clearError() {
-  errorMessage.value = "";
+  // This will be handled automatically by the centralized mutation function
+}
+
+// Watch for model changes and update through centralized mutation
+function handleInput(value: string) {
+  updatePolisUrl(value);
 }
 
 // Expose methods to parent component

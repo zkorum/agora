@@ -100,6 +100,32 @@ interface SerializableConversationDraft {
 }
 
 /**
+ * Comprehensive validation state for all form fields
+ */
+export interface ValidationState {
+  title: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+  body: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+  poll: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+  polisUrl: {
+    isValid: boolean;
+    error: string;
+    showError: boolean;
+  };
+}
+
+/**
  * Result of validation checks for proceeding to review page
  */
 export interface ValidationResult {
@@ -108,16 +134,45 @@ export interface ValidationResult {
     title?: string;
     poll?: string;
     body?: string;
+    polisUrl?: string;
   };
-  firstErrorField?: "title" | "poll" | "body";
+  firstErrorField?: "title" | "poll" | "body" | "polisUrl";
+}
+
+/**
+ * Mutation result interface for consistent error handling
+ */
+export interface MutationResult {
+  success: boolean;
+  error?: string;
 }
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   /**
-   * Reactive state for poll validation errors
+   * Comprehensive validation state for all form fields
    */
-  const pollValidationError = ref<string>("");
-  const showPollValidationError = ref<boolean>(false);
+  const validationState = ref<ValidationState>({
+    title: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+    body: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+    poll: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+    polisUrl: {
+      isValid: true,
+      error: "",
+      showError: false,
+    },
+  });
 
   /**
    * Creates a new empty conversation draft with sensible defaults
@@ -352,23 +407,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Adds a new empty poll option to the draft
-   */
-  function addPollOption(): void {
-    conversationDraft.value.poll.options.push("");
-  }
-
-  /**
-   * Removes a poll option at the specified index
-   */
-  function removePollOption(index: number): void {
-    const options = conversationDraft.value.poll.options;
-    if (index >= 0 && index < options.length) {
-      options.splice(index, 1);
-    }
-  }
-
-  /**
    * Adds a new initial opinion to seed the conversation
    */
   function addInitialOpinion(opinion: string): void {
@@ -506,28 +544,254 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Triggers poll validation and sets error state for UI components
+   * Centralized validation function for title field
    */
-  function triggerPollValidation(): boolean {
-    const validation = validatePoll();
+  function validateTitleField(): MutationResult {
+    const title = conversationDraft.value.title.trim();
 
-    if (!validation.isValid) {
-      pollValidationError.value =
-        validation.errorMessage || "Poll validation failed";
-      showPollValidationError.value = true;
-      return false;
+    if (!title) {
+      validationState.value.title = {
+        isValid: false,
+        error: "Title is required to continue",
+        showError: true,
+      };
+      return { success: false, error: "Title is required to continue" };
     }
 
-    clearPollValidationError();
-    return true;
+    validationState.value.title = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+    return { success: true };
   }
 
   /**
-   * Clears poll validation error state
+   * Centralized validation function for body content
    */
-  function clearPollValidationError(): void {
-    pollValidationError.value = "";
-    showPollValidationError.value = false;
+  function validateBodyField(): MutationResult {
+    const bodyValidation = validateHtmlStringCharacterCount(
+      conversationDraft.value.content,
+      "conversation"
+    );
+
+    if (!bodyValidation.isValid) {
+      const error = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+      validationState.value.body = {
+        isValid: false,
+        error,
+        showError: true,
+      };
+      return { success: false, error };
+    }
+
+    validationState.value.body = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+    return { success: true };
+  }
+
+  /**
+   * Centralized validation function for Polis URL
+   */
+  function validatePolisUrlField(): MutationResult {
+    const url = conversationDraft.value.importSettings.polisUrl;
+
+    if (!url || isValidPolisUrl(url)) {
+      validationState.value.polisUrl = {
+        isValid: true,
+        error: "",
+        showError: false,
+      };
+      return { success: true };
+    }
+
+    const error = "Please enter a valid Polis URL.";
+    validationState.value.polisUrl = {
+      isValid: false,
+      error,
+      showError: true,
+    };
+    return { success: false, error };
+  }
+
+  /**
+   * Centralized validation function for poll
+   */
+  function validatePollField(): MutationResult {
+    const validation = validatePoll();
+
+    if (!validation.isValid) {
+      const error = validation.errorMessage || "Poll validation failed";
+      validationState.value.poll = {
+        isValid: false,
+        error,
+        showError: true,
+      };
+      return { success: false, error };
+    }
+
+    validationState.value.poll = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+    return { success: true };
+  }
+
+  /**
+   * Clears validation error for a specific field
+   */
+  function clearValidationError(field: keyof ValidationState): void {
+    validationState.value[field] = {
+      isValid: true,
+      error: "",
+      showError: false,
+    };
+  }
+
+  /**
+   * Clears all validation errors
+   */
+  function clearAllValidationErrors(): void {
+    Object.keys(validationState.value).forEach((field) => {
+      clearValidationError(field as keyof ValidationState);
+    });
+  }
+
+  /**
+   * Centralized mutation for updating title with validation
+   */
+  function updateTitle(newTitle: string): MutationResult {
+    conversationDraft.value.title = newTitle;
+
+    // Clear error when user starts typing
+    if (validationState.value.title.showError && newTitle.trim()) {
+      clearValidationError("title");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for updating body content with validation
+   */
+  function updateContent(newContent: string): MutationResult {
+    conversationDraft.value.content = newContent;
+
+    // Clear error when content becomes valid
+    if (validationState.value.body.showError) {
+      const bodyValidation = validateHtmlStringCharacterCount(
+        newContent,
+        "conversation"
+      );
+      if (bodyValidation.isValid) {
+        clearValidationError("body");
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for updating Polis URL with validation
+   */
+  function updatePolisUrl(newUrl: string): MutationResult {
+    conversationDraft.value.importSettings.polisUrl = newUrl;
+
+    // Clear error when URL becomes valid
+    if (validationState.value.polisUrl.showError) {
+      if (!newUrl || isValidPolisUrl(newUrl)) {
+        clearValidationError("polisUrl");
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for updating poll option with validation
+   */
+  function updatePollOption(index: number, value: string): MutationResult {
+    if (index < 0 || index >= conversationDraft.value.poll.options.length) {
+      return { success: false, error: "Invalid poll option index" };
+    }
+
+    conversationDraft.value.poll.options[index] = value;
+
+    // Clear poll validation error when user starts fixing issues
+    if (validationState.value.poll.showError) {
+      clearValidationError("poll");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for adding poll option with validation
+   */
+  function addPollOptionWithValidation(): MutationResult {
+    const maxOptions = 6;
+    if (conversationDraft.value.poll.options.length >= maxOptions) {
+      return {
+        success: false,
+        error: `Maximum ${maxOptions} poll options allowed`,
+      };
+    }
+
+    conversationDraft.value.poll.options.push("");
+
+    // Clear poll validation error
+    if (validationState.value.poll.showError) {
+      clearValidationError("poll");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for removing poll option with validation
+   */
+  function removePollOptionWithValidation(index: number): MutationResult {
+    const options = conversationDraft.value.poll.options;
+    const minOptions = 2;
+
+    if (options.length <= minOptions) {
+      return {
+        success: false,
+        error: `Minimum ${minOptions} poll options required`,
+      };
+    }
+
+    if (index < 0 || index >= options.length) {
+      return { success: false, error: "Invalid poll option index" };
+    }
+
+    options.splice(index, 1);
+
+    // Clear poll validation error
+    if (validationState.value.poll.showError) {
+      clearValidationError("poll");
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Centralized mutation for toggling poll with validation
+   */
+  function togglePollWithValidation(enabled: boolean): MutationResult {
+    conversationDraft.value.poll.enabled = enabled;
+
+    if (!enabled) {
+      // Reset poll options when disabling
+      conversationDraft.value.poll.options = ["", ""];
+      clearValidationError("poll");
+    }
+
+    return { success: true };
   }
 
   /**
@@ -600,10 +864,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   return {
     // Main draft state
     conversationDraft,
-
-    // Poll validation state
-    pollValidationError,
-    showPollValidationError,
+    validationState,
 
     // Factory functions
     createEmptyDraft,
@@ -613,17 +874,30 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     hasContent,
     canAccessReview,
 
-    // Validation functions
+    // Centralized validation functions
+    validateTitleField,
+    validateBodyField,
+    validatePolisUrlField,
+    validatePollField,
+    clearValidationError,
+    clearAllValidationErrors,
+
+    // Centralized mutation functions
+    updateTitle,
+    updateContent,
+    updatePolisUrl,
+    updatePollOption,
+    addPollOptionWithValidation,
+    removePollOptionWithValidation,
+    togglePollWithValidation,
+
+    // Comprehensive validation functions
     validateForReview,
     validatePoll,
-    triggerPollValidation,
-    clearPollValidationError,
 
     // Action functions
     resetDraft,
     resetPoll,
-    addPollOption,
-    removePollOption,
     addInitialOpinion,
     togglePrivacy,
     setPostAsOrganization,
@@ -632,5 +906,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     toggleImportMode,
     setImportMode,
     validatePolisUrl,
+
+    // Poll management functions
+    addPollOption: addPollOptionWithValidation,
+    removePollOption: removePollOptionWithValidation,
+    togglePoll: togglePollWithValidation,
   };
 });

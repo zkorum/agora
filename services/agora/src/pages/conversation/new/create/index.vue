@@ -24,9 +24,9 @@
           ref="titleInputRef"
           :style="{ paddingLeft: '0.5rem' }"
         >
-          <div v-if="titleError" class="titleErrorMessage">
+          <div v-if="validationState.title.showError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
-            Title is required to continue
+            {{ validationState.title.error }}
           </div>
 
           <q-input
@@ -38,9 +38,9 @@
             autogrow
             :maxlength="MAX_LENGTH_TITLE"
             required
-            :error="titleError"
+            :error="validationState.title.showError"
             class="large-text-input"
-            @update:model-value="clearTitleError"
+            @update:model-value="updateTitle"
           >
             <template #after>
               <div class="wordCountDiv">
@@ -66,20 +66,25 @@
               :focus-editor="false"
               :show-toolbar="true"
               :add-background-color="false"
-              @update:model-value="checkWordCount()"
+              @update:model-value="updateContent"
             />
 
             <div class="wordCountDiv">
               <q-icon
-                v-if="bodyWordCount > MAX_LENGTH_BODY"
+                v-if="validationState.body.showError"
                 name="mdi-alert-circle"
                 class="bodySizeWarningIcon"
               />
               <span
                 :class="{
-                  wordCountWarning: bodyWordCount > MAX_LENGTH_BODY,
+                  wordCountWarning: validationState.body.showError,
                 }"
-                >{{ bodyWordCount }}
+                >{{
+                  validateHtmlStringCharacterCount(
+                    conversationDraft.content,
+                    "conversation"
+                  ).characterCount
+                }}
               </span>
               &nbsp; / {{ MAX_LENGTH_BODY }}
             </div>
@@ -130,9 +135,6 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import PollComponent from "src/components/newConversation/PollComponent.vue";
 import { useBackendPostApi } from "src/utils/api/post";
 
-const bodyWordCount = ref(0);
-const exceededBodyWordCount = ref(false);
-const titleError = ref(false);
 const isSubmitButtonLoading = ref(false);
 
 const router = useRouter();
@@ -151,7 +153,15 @@ const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
+const {
+  createEmptyDraft,
+  validateTitleField,
+  validatePolisUrlField,
+  validateForReview,
+  updateTitle,
+  updateContent,
+  validationState,
+} = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();
@@ -162,19 +172,6 @@ const showLoginDialog = ref(false);
 
 function onLoginCallback() {
   createNewConversationIntention();
-}
-
-function checkWordCount() {
-  bodyWordCount.value = validateHtmlStringCharacterCount(
-    conversationDraft.value.content,
-    "conversation"
-  ).characterCount;
-
-  if (bodyWordCount.value > MAX_LENGTH_BODY) {
-    exceededBodyWordCount.value = true;
-  } else {
-    exceededBodyWordCount.value = false;
-  }
 }
 
 function scrollToPollingRef() {
@@ -208,12 +205,6 @@ function scrollToPollComponent() {
   }, 100);
 }
 
-function clearTitleError() {
-  if (titleError.value) {
-    titleError.value = false;
-  }
-}
-
 async function onSubmit() {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
@@ -221,17 +212,22 @@ async function onSubmit() {
   }
 
   if (conversationDraft.value.importSettings.isImportMode) {
-    if (!polisUrlInputRef.value?.validate()) {
-      // The PolisUrlInput component will show the error
+    // Validate Polis URL using centralized validation
+    const polisValidation = validatePolisUrlField();
+    if (!polisValidation.success) {
       return;
     }
   } else {
+    // Use centralized validation functions
+    const titleValidation = validateTitleField();
+    if (!titleValidation.success) {
+      scrollToTitleInput();
+      return;
+    }
+
     const validation = validateForReview();
     if (!validation.isValid) {
-      if (validation.errors.title) {
-        titleError.value = true;
-        scrollToTitleInput();
-      } else if (validation.errors.poll) {
+      if (validation.errors.poll) {
         pollComponentRef.value?.triggerValidation();
         scrollToPollComponent();
       }

@@ -53,7 +53,7 @@ interface ControlButton {
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { resetPoll } = useNewPostDraftsStore();
+const { togglePoll } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postAsDisplayName = computed(() => {
@@ -89,11 +89,7 @@ const togglePostTypeDialog = () => {
 };
 
 const togglePolling = () => {
-  if (conversationDraft.value.poll.enabled) {
-    resetPoll();
-  } else {
-    conversationDraft.value.poll.enabled = true;
-  }
+  togglePoll(!conversationDraft.value.poll.enabled);
 };
 
 const toggleVisibility = () => {
