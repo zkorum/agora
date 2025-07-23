@@ -4,7 +4,7 @@
       <div class="content-container">
         <div class="header">
           <i class="pi pi-link icon" />
-          <h3 class="title">Import Conversation from Polis</h3>
+          <div class="title">Import Conversation from Polis</div>
         </div>
         <div class="urlInputDiv">
           <div class="description">
@@ -118,7 +118,6 @@ defineExpose({
   font-size: 1.25rem;
   font-weight: 600;
   color: $color-text-strong;
-  margin: 0;
 }
 
 .description {
@@ -159,6 +158,9 @@ defineExpose({
       border-radius: 3px;
       font-size: 0.75rem;
       color: #495057;
+      word-break: break-all;
+      overflow-wrap: break-word;
+      max-width: 100%;
     }
   }
 }
