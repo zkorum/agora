@@ -1,30 +1,59 @@
 <template>
   <div>
     <ZKCard :padding="'2rem'" class="cardStyle">
-      <div class="header">
-        <i class="pi pi-link icon" />
-        <h3 class="title">Import Conversation from Polis</h3>
+      <div class="content-container">
+        <div class="header">
+          <i class="pi pi-link icon" />
+          <h3 class="title">Import Conversation from Polis</h3>
+        </div>
+        <div class="urlInputDiv">
+          <div class="description">
+            Paste a Polis URL below to import a conversation.
+          </div>
+          <q-input
+            v-model="model"
+            placeholder="e.g., https://pol.is/xxxxx"
+            outlined
+            dense
+            :error="showError"
+            :error-message="errorMessage"
+            @update:model-value="handleInput"
+          >
+          </q-input>
+        </div>
+
+        <div class="examples">
+          <p class="examples-title">Valid URL examples:</p>
+          <ul class="examples-list">
+            <li><code>https://pol.is/report/r32beaksmhwesyum6kaur</code></li>
+            <li><code>https://pol.is/384anuzye9</code></li>
+          </ul>
+        </div>
+        <div class="legal-disclaimer">
+          <div class="disclaimer-header">
+            <q-icon name="mdi-alert" class="disclaimer-icon" />
+            <span class="disclaimer-title">Legal Notice</span>
+          </div>
+          <p class="disclaimer-text">
+            By clicking "Import", you confirm that imported content complies
+            with the
+            <a
+              href="https://pol.is/tos"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="terms-link"
+            >
+              Pol.is Terms
+              <q-icon name="mdi-open-in-new" />
+            </a>
+            and our
+            <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
+              Terms of Use </RouterLink
+            >. Do not import illegal, abusive, or infringing material. Use the
+            import API responsibly. Abuse is prohibited.
+          </p>
+        </div>
       </div>
-      <p class="description">
-        Paste a Polis URL below to import a conversation.
-      </p>
-      <div class="examples">
-        <p class="examples-title">Valid URL examples:</p>
-        <ul class="examples-list">
-          <li><code>https://pol.is/report/r32beaksmhwesyum6kaur</code></li>
-          <li><code>https://pol.is/384anuzye9</code></li>
-        </ul>
-      </div>
-      <q-input
-        v-model="model"
-        placeholder="e.g., https://pol.is/xxxxx"
-        outlined
-        dense
-        :error="showError"
-        :error-message="errorMessage"
-        @update:model-value="handleInput"
-      >
-      </q-input>
     </ZKCard>
   </div>
 </template>
@@ -70,11 +99,16 @@ defineExpose({
   border: 1px solid #e0e0e0;
 }
 
+.content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.5rem;
 }
 
 .icon {
@@ -92,11 +126,9 @@ defineExpose({
 .description {
   font-size: 0.95rem;
   color: $color-text-weak;
-  margin-bottom: 1rem;
 }
 
 .examples {
-  margin-bottom: 1.5rem;
   padding: 0.75rem;
   background-color: #f8f9fa;
   border-radius: 4px;
@@ -131,5 +163,62 @@ defineExpose({
       color: #495057;
     }
   }
+}
+
+.legal-disclaimer {
+  padding: 0.75rem;
+  background-color: #fff8e1;
+  border-radius: 4px;
+  border-left: 3px solid #ff9800;
+}
+
+.disclaimer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.disclaimer-icon {
+  font-size: 1rem;
+  color: #ff9800;
+}
+
+.disclaimer-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $color-text-strong;
+}
+
+.disclaimer-text {
+  font-size: 0.8rem;
+  color: $color-text-weak;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.terms-link {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+    color: #1565c0;
+  }
+
+  &:visited {
+    color: #7b1fa2;
+  }
+}
+
+.urlInputDiv {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 </style>
