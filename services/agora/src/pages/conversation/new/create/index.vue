@@ -1,7 +1,7 @@
 <template>
   <NewConversationLayout>
     <TopMenuWrapper>
-      <div class="menuFlexGroup">
+      <div>
         <BackButton />
       </div>
 
@@ -248,9 +248,7 @@ async function onSubmit() {
         isLoginRequired: conversationDraft.value.isPrivate
           ? conversationDraft.value.privateConversationSettings.requiresLogin
           : false,
-        pollingOptionList: conversationDraft.value.poll.enabled
-          ? conversationDraft.value.poll.options
-          : undefined,
+        pollingOptionList: undefined, // intentionally left out since we don't support polling while in import mode
       });
 
       if (response.status === "success") {
