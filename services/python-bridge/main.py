@@ -98,7 +98,8 @@ def get_math_results():
     print("Votes", votes)
 
     try:
-        result = run_pipeline(votes=votes, min_user_vote_threshold=1)
+        # run_pipeline(votes=votes, min_user_vote_threshold=min(4, total_unmoderated_statements)) ? with total_unmoderated_statements sent via API, or better
+        result = run_pipeline(votes=votes, min_user_vote_threshold=4)
     except Exception as err:
         print(
             "Error while running pipeline. If TypeError, it's likely there aren't enough participants and votes yet"

@@ -92,6 +92,20 @@ export async function fixEmptyOpinionIdInPolisClusterOpinionTable({
         );
 }
 
+export async function fixNullPassInOpinionTable({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}) {
+    const records = await db
+        .update(opinionTable)
+        .set({ numPasses: 0 })
+        .where(isNull(opinionTable.numPasses));
+    log.info(
+        `Updated ${String(records.length)} records with numPasses in opinionTable to 0 if null`,
+    );
+}
+
 // import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 // import * as commentService from "./comment.js";
 // import * as votingService from "./voting.js";

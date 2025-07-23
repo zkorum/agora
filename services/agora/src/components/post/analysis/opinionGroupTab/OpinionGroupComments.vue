@@ -33,7 +33,8 @@
         v-for="comment in itemList"
         :key="comment.opinionSlugId"
         :conversation-slug-id="props.conversationSlugId"
-        :opinion-item="getModifiedOpinionItem(comment)"
+        :opinion-item="comment"
+        :opinion-item-for-visualizer="getModifiedOpinionItem(comment)"
       />
     </div>
   </div>
@@ -50,6 +51,7 @@ const props = defineProps<{
   itemList: OpinionItem[];
   currentClusterTab: PolisKey;
   polis: ExtendedConversationPolis;
+  hasUngroupedParticipants: boolean;
 }>();
 
 const displayMode = ref<"current" | "all_other_groups" | "all_others">(
@@ -145,21 +147,41 @@ const currentModeName = computed(() => {
 });
 
 const toggleNextMode = () => {
-  displayMode.value =
-    displayMode.value === "current"
-      ? "all_other_groups"
-      : displayMode.value === "all_other_groups"
+  if (props.hasUngroupedParticipants) {
+    displayMode.value =
+      displayMode.value === "current"
+        ? "all_other_groups"
+        : displayMode.value === "all_other_groups"
+          ? "all_others"
+          : "current";
+  } else {
+    // all_other_groups will never be displayed
+    displayMode.value =
+      displayMode.value === "current"
         ? "all_others"
-        : "current";
+        : displayMode.value === "all_other_groups"
+          ? "all_others"
+          : "current";
+  }
 };
 
 const togglePreviousMode = () => {
-  displayMode.value =
-    displayMode.value === "current"
-      ? "all_others"
-      : displayMode.value === "all_other_groups"
-        ? "current"
-        : "all_other_groups";
+  if (props.hasUngroupedParticipants) {
+    displayMode.value =
+      displayMode.value === "current"
+        ? "all_others"
+        : displayMode.value === "all_other_groups"
+          ? "current"
+          : "all_other_groups";
+  } else {
+    // all_other_groups will never be displayed
+    displayMode.value =
+      displayMode.value === "current"
+        ? "all_others"
+        : displayMode.value === "all_other_groups"
+          ? "all_others"
+          : "current";
+  }
 };
 
 const navigateToPreviousMode = togglePreviousMode;

@@ -1270,20 +1270,20 @@ export const opinionTable = pgTable(
     (table) => [
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
-        // check( // TODO: add back after migration and re-run of the algorithm on all conversations
-        //     "check_polis_null",
-        //     sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL AND ${table.polisCluster0NumPasses} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL AND ${table.polisCluster0NumPasses} IS NULL))
-        //         AND
-        //         ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL AND ${table.polisCluster1NumPasses} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL AND ${table.polisCluster1NumPasses} IS NULL))
-        //         AND
-        //         ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL AND ${table.polisCluster2NumPasses} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL AND ${table.polisCluster2NumPasses} IS NULL))
-        //         AND
-        //         ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL AND ${table.polisCluster3NumPasses} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL AND ${table.polisCluster3NumPasses} IS NULL))
-        //         AND
-        //         ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL AND ${table.polisCluster4NumPasses} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL AND ${table.polisCluster4NumPasses} IS NULL))
-        //         AND
-        //         ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL AND ${table.polisCluster5NumPasses} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL AND ${table.polisCluster5NumPasses} IS NULL))`,
-        // ),
+        check(
+            "check_polis_null",
+            sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL AND ${table.polisCluster0NumPasses} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL AND ${table.polisCluster0NumPasses} IS NULL))
+                AND
+                ((${table.polisCluster1Id} IS NOT NULL AND ${table.polisCluster1NumAgrees} IS NOT NULL AND ${table.polisCluster1NumDisagrees} IS NOT NULL AND ${table.polisCluster1NumPasses} IS NOT NULL) OR (${table.polisCluster1Id} IS NULL AND ${table.polisCluster1NumAgrees} IS NULL AND ${table.polisCluster1NumDisagrees} IS NULL AND ${table.polisCluster1NumPasses} IS NULL))
+                AND
+                ((${table.polisCluster2Id} IS NOT NULL AND ${table.polisCluster2NumAgrees} IS NOT NULL AND ${table.polisCluster2NumDisagrees} IS NOT NULL AND ${table.polisCluster2NumPasses} IS NOT NULL) OR (${table.polisCluster2Id} IS NULL AND ${table.polisCluster2NumAgrees} IS NULL AND ${table.polisCluster2NumDisagrees} IS NULL AND ${table.polisCluster2NumPasses} IS NULL))
+                AND
+                ((${table.polisCluster3Id} IS NOT NULL AND ${table.polisCluster3NumAgrees} IS NOT NULL AND ${table.polisCluster3NumDisagrees} IS NOT NULL AND ${table.polisCluster3NumPasses} IS NOT NULL) OR (${table.polisCluster3Id} IS NULL AND ${table.polisCluster3NumAgrees} IS NULL AND ${table.polisCluster3NumDisagrees} IS NULL AND ${table.polisCluster3NumPasses} IS NULL))
+                AND
+                ((${table.polisCluster4Id} IS NOT NULL AND ${table.polisCluster4NumAgrees} IS NOT NULL AND ${table.polisCluster4NumDisagrees} IS NOT NULL AND ${table.polisCluster4NumPasses} IS NOT NULL) OR (${table.polisCluster4Id} IS NULL AND ${table.polisCluster4NumAgrees} IS NULL AND ${table.polisCluster4NumDisagrees} IS NULL AND ${table.polisCluster4NumPasses} IS NULL))
+                AND
+                ((${table.polisCluster5Id} IS NOT NULL AND ${table.polisCluster5NumAgrees} IS NOT NULL AND ${table.polisCluster5NumDisagrees} IS NOT NULL AND ${table.polisCluster5NumPasses} IS NOT NULL) OR (${table.polisCluster5Id} IS NULL AND ${table.polisCluster5NumAgrees} IS NULL AND ${table.polisCluster5NumDisagrees} IS NULL AND ${table.polisCluster5NumPasses} IS NULL))`,
+        ),
     ],
 );
 
@@ -1677,11 +1677,8 @@ export const polisClusterOpinionTable = pgTable(
         polisClusterId: integer("polis_cluster_id")
             .notNull()
             .references(() => polisClusterTable.id),
-        opinionSlugId: varchar("opinion_slug_id", { length: 8 }).references(
-            () => opinionTable.slugId,
-        ), // TODO: delete after migration to opinionId
         opinionId: integer("opinion_id")
-            // .notNull() // TODO: add back later after migration
+            .notNull()
             .references(() => opinionTable.id),
         agreementType: voteEnumForRepness("agreement_type").notNull(),
         probabilityAgreement: real("probability_agreement").notNull(), // example: 0.257, 0.013, 0, 1, 0.876 -- in practice should be larger than 0.5

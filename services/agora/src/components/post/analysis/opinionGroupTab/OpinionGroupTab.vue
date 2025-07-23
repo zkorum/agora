@@ -102,13 +102,14 @@
           />
 
           <OpinionGroupComments
+            :polis="props.polis"
             :conversation-slug-id="props.conversationSlugId"
             :item-list="
               props.itemListPerClusterKey[currentClusterTab] ??
               ([] as OpinionItem[])
             "
             :current-cluster-tab="currentClusterTab"
-            :polis="props.polis"
+            :has-ungrouped-participants="hasUngroupedParticipants"
             @update:current-cluster-tab="currentClusterTab = $event"
           />
         </template>
@@ -144,6 +145,17 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   totalParticipantCount: number;
 }>();
+
+const hasUngroupedParticipants = computed(() => {
+  if (props.polis.clusters.length === 0) {
+    return false;
+  }
+  const totalGroupParticipants = Object.values(props.polis.clusters).reduce(
+    (sum, cluster) => sum + cluster.numUsers,
+    0
+  );
+  return props.totalParticipantCount > totalGroupParticipants;
+});
 
 const currentClusterTab = ref<PolisKey>(props.polis.clusters[0]?.key || "0");
 

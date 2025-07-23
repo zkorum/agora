@@ -22,6 +22,7 @@
           :key="consensusItem.opinion"
           :conversation-slug-id="props.conversationSlugId"
           :opinion-item="consensusItem"
+          :opinion-item-for-visualizer="consensusItem"
         />
       </template>
     </AnalysisSectionWrapper>
