@@ -234,7 +234,10 @@ export function useBackendPostApi() {
         api
       ).apiV1ConversationImportPost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+        createRawAxiosRequestConfig({
+          encodedUcan: encodedUcan,
+          timeoutMs: 30000,
+        })
       );
 
       return {

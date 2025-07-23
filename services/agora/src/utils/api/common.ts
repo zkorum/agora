@@ -45,6 +45,7 @@ export function useCommonApi() {
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
+    timeoutMs?: number;
   }
 
   interface HandleAxiosStatusCodesProps {
@@ -85,6 +86,7 @@ export function useCommonApi() {
 
   function createRawAxiosRequestConfig({
     encodedUcan,
+    timeoutMs,
   }: CreateRawAxiosRequestConfigProps): RawAxiosRequestConfig {
     return {
       headers: encodedUcan
@@ -92,7 +94,7 @@ export function useCommonApi() {
             ...buildAuthorizationHeader(encodedUcan),
           }
         : undefined,
-      timeout: API_TIMEOUT_LIMIT_MS,
+      timeout: timeoutMs ?? API_TIMEOUT_LIMIT_MS,
     };
   }
 

@@ -4,7 +4,7 @@ import {
     polisClusterOpinionTable,
     polisClusterTable,
 } from "@/schema.js";
-import { and, eq, inArray, isNotNull, isNull, sql, SQL } from "drizzle-orm";
+import { eq, inArray, isNull, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 export async function fixNullProbabilitiesInOpinionTable({
@@ -73,10 +73,11 @@ export async function fixEmptyPolisContentId({
 }
 
 export async function fixEmptyOpinionIdInPolisClusterOpinionTable({
-    db,
+    db: _db,
 }: {
     db: PostgresJsDatabase;
 }): Promise<void> {
+    /*
     await db
         .update(polisClusterOpinionTable)
         .set({
@@ -90,6 +91,7 @@ export async function fixEmptyOpinionIdInPolisClusterOpinionTable({
                 isNotNull(polisClusterOpinionTable.opinionSlugId),
             ),
         );
+    */
 }
 
 export async function fixNullPassInOpinionTable({
