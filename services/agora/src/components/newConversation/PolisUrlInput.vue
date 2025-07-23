@@ -164,7 +164,7 @@ defineExpose({
 }
 
 .legal-notice {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #6c757d;
   line-height: 1.3;
   padding-top: 0.5rem;
