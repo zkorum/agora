@@ -376,13 +376,50 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.title !== emptyDraft.title ||
       current.content !== emptyDraft.content;
 
+    // Check seed opinions changes
+    const hasSeedOpinionsChanges =
+      JSON.stringify(current.seedOpinions) !==
+      JSON.stringify(emptyDraft.seedOpinions);
+
     // Check polling changes
     const hasPollChanges =
       current.poll.enabled !== emptyDraft.poll.enabled ||
       JSON.stringify(current.poll.options) !==
         JSON.stringify(emptyDraft.poll.options);
 
-    return hasContentChanges || hasPollChanges;
+    // Check post-as settings changes
+    const hasPostAsChanges =
+      current.postAs.postAsOrganization !==
+        emptyDraft.postAs.postAsOrganization ||
+      current.postAs.organizationName !== emptyDraft.postAs.organizationName;
+
+    // Check privacy settings changes
+    const hasPrivacyChanges = current.isPrivate !== emptyDraft.isPrivate;
+
+    // Check private conversation settings changes (only relevant if isPrivate is true)
+    const hasPrivateSettingsChanges =
+      current.privateConversationSettings.requiresLogin !==
+        emptyDraft.privateConversationSettings.requiresLogin ||
+      current.privateConversationSettings.hasScheduledConversion !==
+        emptyDraft.privateConversationSettings.hasScheduledConversion ||
+      current.privateConversationSettings.conversionDate.getTime() !==
+        emptyDraft.privateConversationSettings.conversionDate.getTime();
+
+    // Check import settings changes
+    const hasImportSettingsChanges =
+      current.importSettings.isImportMode !==
+        emptyDraft.importSettings.isImportMode ||
+      current.importSettings.polisUrl !== emptyDraft.importSettings.polisUrl;
+
+    return (
+      hasContentChanges ||
+      hasSeedOpinionsChanges ||
+      hasPollChanges ||
+      hasPostAsChanges ||
+      hasPrivacyChanges ||
+      hasPrivateSettingsChanges ||
+      hasImportSettingsChanges
+    );
   }
 
   /**
