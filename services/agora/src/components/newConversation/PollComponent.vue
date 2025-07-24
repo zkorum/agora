@@ -9,13 +9,7 @@
         <div class="poll-title">
           <span class="poll-title-text">Add a poll</span>
         </div>
-        <Button
-          icon="pi pi-times"
-          text
-          severity="secondary"
-          class="close-button"
-          @click="resetPoll"
-        />
+        <q-btn icon="mdi-close" flat color="grey-7" @click="resetPoll" />
       </div>
 
       <div v-if="validationState.poll.showError" class="pollErrorMessage">
@@ -50,12 +44,13 @@
         </div>
 
         <div class="add-option-container">
-          <Button
+          <q-btn
             label="Add Option"
-            icon="pi pi-plus"
-            severity="secondary"
-            outlined
-            :disabled="conversationDraft.poll.options.length >= 6"
+            icon="mdi-plus"
+            color="primary"
+            outline
+            no-caps
+            :disable="conversationDraft.poll.options.length >= 6"
             class="add-option-button"
             @click="addOption()"
           />
@@ -66,7 +61,6 @@
 </template>
 
 <script setup lang="ts">
-import Button from "primevue/button";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
@@ -122,14 +116,6 @@ function removeOption(index: number) {
   font-size: 1.25rem;
   font-weight: 400;
   color: $color-text-strong;
-}
-
-.close-button {
-  transition: $mouse-hover-transition;
-
-  &:hover {
-    background-color: #e9ecef !important;
-  }
 }
 
 .poll-description {
@@ -225,32 +211,8 @@ function removeOption(index: number) {
 }
 
 .add-option-button {
-  border-radius: 16px !important;
-  padding: 0.875rem 1.75rem !important;
-  font-weight: 500 !important;
-  font-size: 1rem !important;
-
-  // Override PrimeVue default styles to match the screenshot
-  &.p-button.p-button-outlined.p-button-secondary {
-    border: 1px solid #6366f1 !important;
-    background-color: transparent !important;
-    color: #6366f1 !important;
-
-    &:hover {
-      background-color: #6366f1 !important;
-      color: white !important;
-      border-color: #6366f1 !important;
-    }
-
-    &:focus {
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
-    }
-
-    &:disabled {
-      opacity: 0.6 !important;
-      cursor: not-allowed !important;
-    }
-  }
+  border-radius: 16px;
+  padding: 0.875rem 1.5rem;
 }
 
 .pollErrorMessage {
