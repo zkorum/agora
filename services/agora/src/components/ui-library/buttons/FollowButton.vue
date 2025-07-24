@@ -1,17 +1,11 @@
 <template>
-  <Button
-    :variant="variant"
-    rounded
-    :pt="
-      isFollowing
-        ? {
-            root: 'generalStyle borderColorOn',
-          }
-        : {
-            root: 'generalStyle borderColorOff',
-          }
-    "
-    :class="{ followStyle: !isFollowing, followingStyle: isFollowing }"
+  <button
+    type="button"
+    class="follow-button"
+    :class="{
+      'follow-button--following': isFollowing,
+      'follow-button--not-following': !isFollowing,
+    }"
   >
     <div
       class="button-content"
@@ -27,12 +21,10 @@
         }"
       />
     </div>
-  </Button>
+  </button>
 </template>
 
 <script setup lang="ts">
-import Button from "primevue/button";
-
 defineProps<{
   label: string;
   variant: string;
@@ -42,6 +34,39 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+.follow-button {
+  /* Base button styles */
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid;
+  background-color: #f1eeff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* Remove default button styles */
+  outline: none;
+  font-family: inherit;
+}
+
+.follow-button--not-following {
+  border-color: transparent;
+}
+
+.follow-button--not-following:hover {
+  background-color: #e4e2f1;
+  border-color: transparent;
+}
+
+.follow-button--following {
+  border-color: #6b4eff;
+}
+
+.follow-button--following:hover {
+  background-color: #c6c4ff;
+  border-color: #6b4eff;
+}
+
 .button-content {
   display: flex;
   align-items: center;
@@ -62,41 +87,5 @@ defineProps<{
 
 .normalText {
   color: #6d6a74;
-}
-
-.generalStyle {
-  font-weight: 500;
-  font-size: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  border-radius: 10px;
-}
-
-.borderColorOn {
-  border-color: #6b4eff;
-}
-
-.borderColorOff {
-  border-color: transparent;
-}
-
-.followStyle {
-  background-color: #f1eeff;
-}
-
-.followStyle:hover {
-  background-color: #e4e2f1 !important;
-  border-color: transparent !important;
-}
-
-.followingStyle {
-  background-color: #f1eeff;
-}
-
-.followingStyle:hover {
-  background-color: #c6c4ff !important;
-  border-color: #6b4eff !important;
 }
 </style>
