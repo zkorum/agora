@@ -9,7 +9,7 @@
           :current-step="3"
           :total-steps="5"
           :enable-next-button="
-            selectedCountryCode.code.length > 0 && inputNumber.length > 0
+            phoneData.phoneNumber ? phoneData.phoneNumber.length > 0 : false
           "
           :show-next-button="true"
           :show-loading-button="false"
@@ -17,7 +17,7 @@
           <template #header>
             <InfoHeader
               title="Verify with phone number"
-              :description="description"
+              :description="''"
               icon-name="mdi-phone"
             />
           </template>
@@ -26,51 +26,19 @@
             <div class="container">
               <div>You will receive a 6-digit one-time code by SMS</div>
 
-              <Select
-                v-model="selectedCountryCode"
-                filter
-                :options="countries"
-                option-label="name"
-                placeholder="Country Code"
-                :pt="{
-                  overlay: {
-                    style: 'z-index: 2000',
-                  },
-                }"
-              >
-                <template #value="slotProps">
-                  <div
-                    v-if="slotProps.value.code != ''"
-                    class="flex items-center"
-                  >
-                    <img
-                      :alt="slotProps.value.label"
-                      :src="getFlagLink(slotProps.value.country)"
-                      class="flagImg"
-                    />
-                    <div>+ {{ slotProps.value.code }}</div>
-                  </div>
-                  <span v-else>
-                    {{ slotProps.placeholder }}
-                  </span>
-                </template>
-                <template #option="slotProps">
-                  <div class="innerOption">
-                    <img
-                      :src="getFlagLink(slotProps.option.country)"
-                      class="flagImg"
-                      loading="lazy"
-                    />
-                    <div>{{ slotProps.option.name }}</div>
-                  </div>
-                </template>
-              </Select>
-
-              <InputText
-                v-model="inputNumber"
-                type="tel"
+              <MazPhoneNumberInput
+                v-model="phoneData.phoneNumber"
+                v-model:country-code="phoneData.countryCode"
+                :success="phoneData.isValid"
+                :error="phoneData.hasError"
+                show-code-on-list
+                :preferred-countries="
+                  ['US', 'CA', 'GB', 'FR', 'DE'] as CountryCode[]
+                "
+                :only-countries="supportedCountries"
                 placeholder="Phone number"
-                required
+                @update="onPhoneUpdate"
+                @country-code="onCountryCodeUpdate"
               />
 
               <ZKButton
@@ -108,14 +76,13 @@
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
-import InputText from "primevue/inputtext";
-import { ref } from "vue";
+import { reactive } from "vue";
 import {
   parsePhoneNumberFromString,
   getCountries,
   getCountryCallingCode,
+  type CountryCode,
 } from "libphonenumber-js/mobile";
-import Select from "primevue/select";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
@@ -125,45 +92,34 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import { zodSupportedCountryCallingCode } from "src/shared/types/zod";
 import { isPhoneNumberTypeSupported } from "src/shared/shared";
-
-const inputNumber = ref("");
+import type { Results } from "maz-ui/components/MazPhoneNumberInput";
+import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
 
 const router = useRouter();
 
-const selectedCountryCode = ref<SelectItem>({
-  name: "",
-  country: "",
-  code: "",
+const phoneData = reactive({
+  phoneNumber: "" as string | null,
+  countryCode: null as CountryCode | null,
+  isValid: false,
+  hasError: false,
 });
-interface SelectItem {
-  name: string;
-  country: string;
-  code: string;
-}
-const countries = ref<SelectItem[]>([]);
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
 const { showNotifyMessage } = useNotify();
 
+// Generate supported countries list for maz-ui
+const supportedCountries: CountryCode[] = [];
 const countryList = getCountries();
 for (let i = 0; i < countryList.length; i++) {
   const country = countryList[i];
   const countryCode = getCountryCallingCode(country);
-  const isNotSupported =
-    !zodSupportedCountryCallingCode.safeParse(countryCode).success;
-  if (isNotSupported) {
-    continue;
+  const isSupported =
+    zodSupportedCountryCallingCode.safeParse(countryCode).success;
+  if (isSupported) {
+    supportedCountries.push(country);
   }
-  const countryItem: SelectItem = {
-    name: country + " +" + getCountryCallingCode(country),
-    country: country,
-    code: countryCode,
-  };
-  countries.value.push(countryItem);
-} // TODO: some phone numbers may not be associated with any country: https://gitlab.com/catamphetamine/libphonenumber-js/-/tree/master?ref_type=heads#non-geographic - probably add those manually in the future
-
-const description = "";
+}
 
 interface PhoneNumber {
   fullNumber: string;
@@ -171,27 +127,22 @@ interface PhoneNumber {
 }
 
 const devAuthorizedNumbers: PhoneNumber[] = [];
-checkDevAuthorizedNumbers();
+loadDevAuthorizedNumbers();
 
 async function goToPassportVerification() {
   await router.replace({ name: "/onboarding/step3-passport/" });
 }
 
-function getFlagLink(country: string) {
-  return (
-    process.env.VITE_PUBLIC_DIR +
-    "/images/communities/flags/" +
-    country +
-    ".svg"
-  );
-}
-
 async function injectDevelopmentNumber(phoneItem: PhoneNumber) {
-  inputNumber.value = phoneItem.fullNumber;
-  await validateNumber();
+  const parsedNumber = parsePhoneNumberFromString(phoneItem.fullNumber);
+  if (parsedNumber) {
+    phoneData.phoneNumber = parsedNumber.nationalNumber;
+    phoneData.countryCode = parsedNumber.country || null;
+    await validateNumber();
+  }
 }
 
-function checkDevAuthorizedNumbers() {
+function loadDevAuthorizedNumbers() {
   if (process.env.VITE_DEV_AUTHORIZED_PHONES) {
     const phoneList = process.env.VITE_DEV_AUTHORIZED_PHONES.split(",");
     phoneList.forEach((number) => {
@@ -211,28 +162,70 @@ function checkDevAuthorizedNumbers() {
   }
 }
 
+function onPhoneUpdate(results: Results) {
+  phoneData.phoneNumber = results.phoneNumber || "";
+  phoneData.countryCode = results.countryCode || null;
+  phoneData.isValid = results.isValid || false;
+  phoneData.hasError = false;
+}
+
+function onCountryCodeUpdate(countryCode: CountryCode | null | undefined) {
+  phoneData.countryCode = countryCode || null;
+  validatePhoneInRealTime();
+}
+
+function validatePhoneInRealTime() {
+  if (!phoneData.phoneNumber || !phoneData.countryCode) {
+    phoneData.isValid = false;
+    return;
+  }
+
+  try {
+    const phoneNumber = parsePhoneNumberFromString(
+      phoneData.phoneNumber,
+      phoneData.countryCode
+    );
+    phoneData.isValid = phoneNumber?.isValid() || false;
+  } catch {
+    phoneData.isValid = false;
+  }
+}
+
 async function validateNumber() {
   try {
-    const phoneNumber = parsePhoneNumberFromString(inputNumber.value, {
-      defaultCallingCode: selectedCountryCode.value.code,
-    });
+    phoneData.hasError = false;
+
+    if (!phoneData.phoneNumber) {
+      return false;
+    }
+
+    const phoneNumber = parsePhoneNumberFromString(
+      phoneData.phoneNumber,
+      phoneData.countryCode || undefined
+    );
+
     if (!phoneNumber?.isValid()) {
+      phoneData.hasError = true;
       showNotifyMessage(
         "Sorry, this phone number is invalid. Please check and try again."
       );
       return;
     }
+
     const callingCode = zodSupportedCountryCallingCode.safeParse(
       phoneNumber.countryCallingCode
     );
     if (!callingCode.success) {
+      phoneData.hasError = true;
       showNotifyMessage("Sorry, this country code is not supported.");
       return;
     }
+
     const isPhoneTypeNotSupported = !isPhoneNumberTypeSupported(
       phoneNumber.getType()
     );
     if (isPhoneTypeNotSupported) {
+      phoneData.hasError = true;
       showNotifyMessage(
         "Sorry, this phone number is not supported for security reasons. Please try another."
       );
@@ -246,7 +239,7 @@ async function validateNumber() {
     };
     await router.push({ name: "/onboarding/step3-phone-2/" });
   } catch (e) {
-    // TODO: make sure this never happen one the first place
+    phoneData.hasError = true;
     console.error("Failed to parse phone number", e);
     showNotifyMessage(
       "Sorry, this phone number is invalid. Please check and try again."
@@ -260,16 +253,6 @@ async function validateNumber() {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-.flagImg {
-  width: 3rem;
-  padding-right: 1rem;
-}
-
-.innerOption {
-  display: flex;
-  gap: 0rem;
 }
 
 .developmentSection {

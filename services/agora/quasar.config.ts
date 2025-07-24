@@ -19,8 +19,8 @@ export default defineConfig((ctx) => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot:
       ctx.modeName === "capacitor"
-        ? ["i18n", "axios", "capacitor-storage", "primevue"]
-        : ["i18n", "axios", "primevue"],
+        ? ["i18n", "axios", "capacitor-storage", "primevue", "maz-ui"]
+        : ["i18n", "axios", "primevue", "maz-ui"],
 
     bin: {
       windowsAndroidStudio:
