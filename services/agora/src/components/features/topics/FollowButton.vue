@@ -37,7 +37,7 @@ defineProps<{
 .follow-button {
   /* Base button styles */
   font-size: 1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   border-radius: 10px;
   border: 1px solid;
   background-color: #f1eeff;
