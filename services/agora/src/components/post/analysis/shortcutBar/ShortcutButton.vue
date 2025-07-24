@@ -1,28 +1,30 @@
 <template>
-  <Button
-    variant="outlined"
-    rounded
+  <button
     :class="{
       rootStyleSelected: props.isSelected,
       rootStyleUnselected: !props.isSelected,
     }"
     class="commonStyle"
+    @click="$emit('click')"
   >
     <div>{{ label }}</div>
-  </Button>
+  </button>
 </template>
 
 <script setup lang="ts">
-import Button from "primevue/button";
-
 const props = defineProps<{
   isSelected: boolean;
   label: string;
+}>();
+
+defineEmits<{
+  click: [];
 }>();
 </script>
 
 <style lang="postcss" scoped>
 .commonStyle {
+  cursor: pointer;
   border-radius: 10px;
   border-style: solid;
   border-width: 1px;
@@ -30,12 +32,17 @@ const props = defineProps<{
   padding-bottom: 0.4rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .commonStyle:hover {
-  background-color: #c6c4ff !important;
-  border-color: #6b4eff !important;
-  color: #6b4eff !important;
+  background-color: #c6c4ff;
+  border-color: #6b4eff;
+  color: #6b4eff;
 }
 
 .rootStyleSelected {

@@ -376,13 +376,51 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.title !== emptyDraft.title ||
       current.content !== emptyDraft.content;
 
+    // Check seed opinions changes
+    const hasSeedOpinionsChanges =
+      JSON.stringify(current.seedOpinions) !==
+      JSON.stringify(emptyDraft.seedOpinions);
+
     // Check polling changes
     const hasPollChanges =
       current.poll.enabled !== emptyDraft.poll.enabled ||
       JSON.stringify(current.poll.options) !==
         JSON.stringify(emptyDraft.poll.options);
 
-    return hasContentChanges || hasPollChanges;
+    // Check post-as settings changes
+    const hasPostAsChanges =
+      current.postAs.postAsOrganization !==
+        emptyDraft.postAs.postAsOrganization ||
+      current.postAs.organizationName !== emptyDraft.postAs.organizationName;
+
+    // Check privacy settings changes
+    const hasPrivacyChanges = current.isPrivate !== emptyDraft.isPrivate;
+
+    // Check private conversation settings changes (only relevant if isPrivate is true)
+    // Note: conversionDate is excluded from comparison because the empty draft's date
+    // changes constantly (set to "tomorrow"), causing false positives. Only checking
+    // hasScheduledConversion is sufficient to detect meaningful user changes.
+    const hasPrivateSettingsChanges =
+      current.privateConversationSettings.requiresLogin !==
+        emptyDraft.privateConversationSettings.requiresLogin ||
+      current.privateConversationSettings.hasScheduledConversion !==
+        emptyDraft.privateConversationSettings.hasScheduledConversion;
+
+    // Check import settings changes
+    const hasImportSettingsChanges =
+      current.importSettings.isImportMode !==
+        emptyDraft.importSettings.isImportMode ||
+      current.importSettings.polisUrl !== emptyDraft.importSettings.polisUrl;
+
+    return (
+      hasContentChanges ||
+      hasSeedOpinionsChanges ||
+      hasPollChanges ||
+      hasPostAsChanges ||
+      hasPrivacyChanges ||
+      hasPrivateSettingsChanges ||
+      hasImportSettingsChanges
+    );
   }
 
   /**
