@@ -397,13 +397,14 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     const hasPrivacyChanges = current.isPrivate !== emptyDraft.isPrivate;
 
     // Check private conversation settings changes (only relevant if isPrivate is true)
+    // Note: conversionDate is excluded from comparison because the empty draft's date
+    // changes constantly (set to "tomorrow"), causing false positives. Only checking
+    // hasScheduledConversion is sufficient to detect meaningful user changes.
     const hasPrivateSettingsChanges =
       current.privateConversationSettings.requiresLogin !==
         emptyDraft.privateConversationSettings.requiresLogin ||
       current.privateConversationSettings.hasScheduledConversion !==
-        emptyDraft.privateConversationSettings.hasScheduledConversion ||
-      current.privateConversationSettings.conversionDate.getTime() !==
-        emptyDraft.privateConversationSettings.conversionDate.getTime();
+        emptyDraft.privateConversationSettings.hasScheduledConversion;
 
     // Check import settings changes
     const hasImportSettingsChanges =
