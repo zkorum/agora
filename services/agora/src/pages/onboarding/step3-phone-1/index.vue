@@ -32,9 +32,6 @@
                 :success="phoneData.isValid"
                 :error="phoneData.hasError"
                 show-code-on-list
-                :preferred-countries="
-                  ['US', 'CA', 'GB', 'FR', 'DE'] as CountryCode[]
-                "
                 :only-countries="supportedCountries"
                 placeholder="Phone number"
                 @update="onPhoneUpdate"
