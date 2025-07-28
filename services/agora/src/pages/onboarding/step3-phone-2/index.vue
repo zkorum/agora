@@ -30,7 +30,7 @@
             </div>
 
             <div class="otpDiv">
-              <div v-if="isMounted" class="codeInput">
+              <div class="codeInput">
                 <InputOtp v-model="verificationCode" :length="6" integer-only />
               </div>
 
@@ -82,7 +82,6 @@ import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { onMounted, ref } from "vue";
-import InputOtp from "primevue/inputotp";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
@@ -123,10 +122,8 @@ const { showNotifyMessage } = useNotify();
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isSubmitButtonLoading = ref(false);
-const isMounted = ref(false);
 
 onMounted(async () => {
-  isMounted.value = true;
   if (verificationPhoneNumber.value.phoneNumber == "") {
     await changePhoneNumber();
   } else {

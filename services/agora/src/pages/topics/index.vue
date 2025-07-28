@@ -54,7 +54,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import Chip from "primevue/chip";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import FollowButton from "src/components/features/topics/FollowButton.vue";
