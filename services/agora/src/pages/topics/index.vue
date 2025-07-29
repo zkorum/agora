@@ -22,7 +22,7 @@
 
     <div class="topicContainer">
       <div v-for="topic in fullTopicList" :key="topic.code" class="topicItem">
-        <Chip
+        <PrimeChip
           :label="topic.name"
           :pt="{
             root: 'topicChipStyle generalStyle',

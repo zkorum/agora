@@ -31,7 +31,11 @@
 
             <div class="otpDiv">
               <div class="codeInput">
-                <InputOtp v-model="verificationCode" :length="6" integer-only />
+                <PrimeInputOtp
+                  v-model="verificationCode"
+                  :length="6"
+                  integer-only
+                />
               </div>
 
               <div

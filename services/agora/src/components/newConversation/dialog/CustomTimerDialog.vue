@@ -3,20 +3,22 @@
     <ZKBottomDialogContainer>
       <div class="custom-timer-dialog">
         <div class="dialog-header">
-          <h3>Select Custom Date</h3>
+          <h3>Select Custom Time</h3>
           <p>Choose when your conversation should become public</p>
         </div>
 
-        <q-date
-          v-model="customDateString"
-          :options="dateOptions"
-          color="primary"
-          flat
-          bordered
-          text-color="white"
-          class="date-picker"
-          @update:model-value="handleCustomDateChange"
-        />
+        <div class="date-picker-container">
+          <PrimeDatePicker
+            v-model="customDate"
+            show-time
+            show-icon
+            hour-format="12"
+            inline
+            class="date-picker"
+            :min-date="new Date()"
+            @update:model-value="handleCustomDateChange"
+          />
+        </div>
 
         <div class="dialog-actions">
           <button class="action-button secondary" @click="goBack">Back</button>
@@ -34,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
@@ -48,36 +50,6 @@ const emit = defineEmits<{
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const customDate = ref<Date>(new Date());
-
-// Convert Date to string format for q-date (YYYY/MM/DD)
-const customDateString = computed({
-  get: () => {
-    const date = customDate.value;
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}/${month}/${day}`;
-  },
-  set: (value: string) => {
-    if (value) {
-      const [year, month, day] = value.split("/").map(Number);
-      const newDate = new Date(year, month - 1, day);
-      // Set time to start of day (00:00:00) since we're only selecting date
-      newDate.setHours(0, 0, 0, 0);
-      customDate.value = newDate;
-    }
-  },
-});
-
-// Function to determine which dates are selectable (tomorrow and future dates only)
-const dateOptions = (date: string) => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  const [year, month, day] = date.split("/").map(Number);
-  const checkDate = new Date(year, month - 1, day);
-  return checkDate >= tomorrow;
-};
 
 const initializeDate = () => {
   // Use existing conversionDate from conversationDraft if available and hasScheduledConversion is enabled
@@ -93,7 +65,6 @@ const initializeDate = () => {
     // Set initial custom date to 1 day from now as fallback
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0); // Set to start of day
     customDate.value = tomorrow;
   }
 };
@@ -104,9 +75,10 @@ watch(showDialog, (isOpen) => {
   }
 });
 
-function handleCustomDateChange(dateString: string): void {
-  // The computed setter will handle the conversion from string to Date
-  customDateString.value = dateString;
+function handleCustomDateChange(date: Date | null): void {
+  if (date) {
+    customDate.value = date;
+  }
 }
 
 function goBack(): void {
@@ -147,8 +119,36 @@ function confirmSelection(): void {
   }
 }
 
-.date-picker {
-  width: 100%;
+.date-picker-container {
+  display: flex;
+  justify-content: center;
+
+  .date-picker {
+    width: 100%;
+
+    :deep(.p-datepicker-input) {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+    }
+
+    :deep(.p-datepicker-panel) {
+      z-index: 9999;
+    }
+
+    :deep(.p-datepicker-overlay) {
+      z-index: 9999;
+    }
+  }
 }
 
 .dialog-actions {
