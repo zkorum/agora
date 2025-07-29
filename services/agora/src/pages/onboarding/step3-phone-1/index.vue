@@ -3,13 +3,16 @@
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
-      <form @submit.prevent="">
+      <form @submit.prevent="validateNumber">
         <StepperLayout
           :submit-call-back="validateNumber"
           :current-step="3"
           :total-steps="5"
           :enable-next-button="
-            phoneData.phoneNumber ? phoneData.phoneNumber.length > 0 : false
+            phoneData.phoneNumber !== null &&
+            phoneData.phoneNumber.length > 0 &&
+            !phoneData.hasError &&
+            phoneData.isValid
           "
           :show-next-button="true"
           :show-loading-button="false"
@@ -34,9 +37,22 @@
                 show-code-on-list
                 :only-countries="supportedCountries"
                 placeholder="Phone number"
+                required
+                aria-describedby="phone-error"
                 @update="onPhoneUpdate"
                 @country-code="onCountryCodeUpdate"
               />
+
+              <div
+                v-if="phoneData.hasError && phoneData.errorMessage"
+                id="phone-error"
+                class="error-message"
+                role="alert"
+                aria-live="polite"
+              >
+                <q-icon name="mdi-alert-circle" class="error-icon" />
+                <span>{{ phoneData.errorMessage }}</span>
+              </div>
 
               <ZKButton
                 button-type="largeButton"
@@ -78,15 +94,18 @@ import {
   parsePhoneNumberFromString,
   getCountries,
   type CountryCode,
+  type PhoneNumber as LibPhoneNumber,
 } from "libphonenumber-js/mobile";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useNotify } from "src/utils/ui/notify";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
-import { zodSupportedCountryCallingCode } from "src/shared/types/zod";
+import {
+  zodSupportedCountryCallingCode,
+  type SupportedCountryCallingCode,
+} from "src/shared/types/zod";
 import { isPhoneNumberTypeSupported } from "src/shared/shared";
 import type { Results } from "maz-ui/components/MazPhoneNumberInput";
 import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
@@ -94,17 +113,15 @@ import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
 const router = useRouter();
 
 const phoneData = reactive({
-  phoneNumber: "" as string | null,
+  phoneNumber: null as string | null,
   countryCode: null as CountryCode | null,
   isValid: false,
   hasError: false,
+  errorMessage: "" as string,
 });
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
-const { showNotifyMessage } = useNotify();
-
-// Generate all countries list for maz-ui
 const supportedCountries: CountryCode[] = getCountries();
 
 interface PhoneNumber {
@@ -134,13 +151,12 @@ function loadDevAuthorizedNumbers() {
     phoneList.forEach((number) => {
       const parsedNumber = parsePhoneNumberFromString(number);
       if (parsedNumber) {
-        console.log(parsedNumber.number);
         devAuthorizedNumbers.push({
           fullNumber: parsedNumber.number,
           countryCallingCode: parsedNumber.countryCallingCode,
         });
       } else {
-        console.log(
+        console.warn(
           "Failed to parse development number from string: " + number
         );
       }
@@ -148,18 +164,79 @@ function loadDevAuthorizedNumbers() {
   }
 }
 
-async function onPhoneUpdate(results: Results) {
-  phoneData.phoneNumber = results.phoneNumber || "";
-  phoneData.countryCode = results.countryCode || null;
-  phoneData.isValid = results.isValid || false;
+function clearErrors() {
   phoneData.hasError = false;
+  phoneData.errorMessage = "";
+}
 
-  await validateNumber();
+function setError(message: string) {
+  phoneData.hasError = true;
+  phoneData.errorMessage = message;
+}
+
+function validatePhoneNumber(
+  phoneNumber: string,
+  countryCode: CountryCode
+):
+  | { isValid: false; error: string }
+  | {
+      isValid: true;
+      parsedNumber: LibPhoneNumber;
+      callingCode: SupportedCountryCallingCode;
+    } {
+  const parsedNumber = parsePhoneNumberFromString(phoneNumber, countryCode);
+
+  if (!parsedNumber) {
+    return { isValid: false, error: "Please enter a valid phone number" };
+  }
+
+  // First: Check if country code is supported
+  const callingCode = zodSupportedCountryCallingCode.safeParse(
+    parsedNumber.countryCallingCode
+  );
+  if (!callingCode.success) {
+    return { isValid: false, error: "This country is not supported yet" };
+  }
+
+  // Second: Check if phone number format is valid
+  if (!parsedNumber.isValid()) {
+    return { isValid: false, error: "Please enter a valid phone number" };
+  }
+
+  // Third: Check if phone type is supported
+  const isPhoneTypeNotSupported = !isPhoneNumberTypeSupported(
+    parsedNumber.getType()
+  );
+  if (isPhoneTypeNotSupported) {
+    return {
+      isValid: false,
+      error: "This phone number type is not supported for security reasons",
+    };
+  }
+
+  return { isValid: true, parsedNumber, callingCode: callingCode.data };
+}
+
+function onPhoneUpdate(results: Results) {
+  phoneData.phoneNumber = results.phoneNumber ?? "";
+  phoneData.countryCode = results.countryCode ?? null;
+
+  clearErrors();
+
+  // Validate in real-time
+  if (phoneData.countryCode && phoneData.phoneNumber) {
+    validatePhoneInRealTime();
+  }
 }
 
 function onCountryCodeUpdate(countryCode: CountryCode | null | undefined) {
   phoneData.countryCode = countryCode || null;
-  validatePhoneInRealTime();
+
+  clearErrors();
+
+  if (phoneData.phoneNumber) {
+    validatePhoneInRealTime();
+  }
 }
 
 function validatePhoneInRealTime() {
@@ -169,70 +246,55 @@ function validatePhoneInRealTime() {
   }
 
   try {
-    const phoneNumber = parsePhoneNumberFromString(
+    const result = validatePhoneNumber(
       phoneData.phoneNumber,
       phoneData.countryCode
     );
-    phoneData.isValid = phoneNumber?.isValid() || false;
+
+    if (!result.isValid) {
+      setError(result.error);
+      phoneData.isValid = false;
+      return;
+    }
+
+    phoneData.isValid = true;
   } catch {
+    setError("Please enter a valid phone number");
     phoneData.isValid = false;
   }
 }
 
-async function validateNumber() {
+async function validateNumber(): Promise<boolean> {
   try {
-    phoneData.hasError = false;
-
-    if (!phoneData.phoneNumber) {
+    if (
+      phoneData.hasError ||
+      !phoneData.phoneNumber ||
+      !phoneData.countryCode
+    ) {
       return false;
     }
 
-    const phoneNumber = parsePhoneNumberFromString(
+    const result = validatePhoneNumber(
       phoneData.phoneNumber,
-      phoneData.countryCode || undefined
+      phoneData.countryCode
     );
 
-    if (!phoneNumber?.isValid()) {
-      phoneData.hasError = true;
-      showNotifyMessage(
-        "Sorry, this phone number is invalid. Please check and try again."
-      );
-      return;
+    if (!result.isValid) {
+      console.error("Unexpected: phone number validation failed");
+      setError(result.error);
+      return false;
     }
 
-    const callingCode = zodSupportedCountryCallingCode.safeParse(
-      phoneNumber.countryCallingCode
-    );
-    if (!callingCode.success) {
-      phoneData.hasError = true;
-      showNotifyMessage("Sorry, this country code is not supported yet.");
-      return;
-    }
-
-    const isPhoneTypeNotSupported = !isPhoneNumberTypeSupported(
-      phoneNumber.getType()
-    );
-    if (isPhoneTypeNotSupported) {
-      phoneData.hasError = true;
-      showNotifyMessage(
-        "Sorry, this phone number is not supported for security reasons. Please try another."
-      );
-      return;
-    }
-
-    // success
     verificationPhoneNumber.value = {
-      defaultCallingCode: callingCode.data,
-      phoneNumber: phoneNumber.number,
+      defaultCallingCode: result.callingCode,
+      phoneNumber: result.parsedNumber.number,
     };
     await router.push({ name: "/onboarding/step3-phone-2/" });
+    return true;
   } catch (e) {
-    // TODO: make sure this never happen one the first place
-    phoneData.hasError = true;
-    console.error("Failed to parse phone number", e);
-    showNotifyMessage(
-      "Sorry, this phone number is invalid. Please check and try again."
-    );
+    console.error("Unexpected error during phone validation", e);
+    setError("Please enter a valid phone number");
+    return false;
   }
 }
 </script>
@@ -251,5 +313,20 @@ async function validateNumber() {
   padding: 1rem;
   background-color: #f3f4f6;
   border-radius: 15px;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-icon {
+  font-size: 1rem;
+  color: #dc2626;
 }
 </style>
