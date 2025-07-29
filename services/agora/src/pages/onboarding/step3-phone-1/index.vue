@@ -29,6 +29,12 @@
             <div class="container">
               <div>You will receive a 6-digit one-time code by SMS</div>
 
+              <!--
+                This component has some form of VNode bug that can cause Vite's dev server
+                to lose its rendering instance upon load. It only affects the development server.
+                There are no solution to fix the issue but since it doesn't affect production
+                it can be safely ignored.
+              -->
               <MazPhoneNumberInput
                 v-model="phoneData.phoneNumber"
                 v-model:country-code="phoneData.countryCode"
