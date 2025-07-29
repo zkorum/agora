@@ -10,7 +10,7 @@
           :total-steps="5"
           :enable-next-button="
             phoneData.phoneNumber !== null &&
-            phoneData.phoneNumber.length > 0 &&
+            phoneData.phoneNumber?.length > 0 &&
             !phoneData.hasError &&
             phoneData.isValid
           "
