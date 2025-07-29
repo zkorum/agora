@@ -127,6 +127,23 @@ const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isSubmitButtonLoading = ref(false);
 
+function validateAndParseOtpCode(code: string): number | null {
+  const trimmedCode = code.trim();
+
+  // Check if exactly 6 digits
+  if (!/^\d{6}$/.test(trimmedCode)) {
+    return null;
+  }
+
+  const numericCode = parseInt(trimmedCode, 10);
+
+  if (isNaN(numericCode)) {
+    return null;
+  }
+
+  return numericCode;
+}
+
 onMounted(async () => {
   if (verificationPhoneNumber.value.phoneNumber == "") {
     await changePhoneNumber();
@@ -143,8 +160,16 @@ async function clickedResendButton() {
 async function nextButtonClicked() {
   isSubmitButtonLoading.value = true;
 
+  const validatedCode = validateAndParseOtpCode(verificationCode.value);
+
+  if (validatedCode === null) {
+    isSubmitButtonLoading.value = false;
+    showNotifyMessage("Please enter a valid 6-digit code");
+    return;
+  }
+
   const response = await verifyPhoneOtp({
-    code: Number(verificationCode.value),
+    code: validatedCode,
     phoneNumber: verificationPhoneNumber.value.phoneNumber,
     defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
   });
