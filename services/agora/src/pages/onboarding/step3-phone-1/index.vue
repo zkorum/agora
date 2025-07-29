@@ -236,6 +236,7 @@ async function validateNumber() {
     };
     await router.push({ name: "/onboarding/step3-phone-2/" });
   } catch (e) {
+    // TODO: make sure this never happen one the first place
     phoneData.hasError = true;
     console.error("Failed to parse phone number", e);
     showNotifyMessage(
