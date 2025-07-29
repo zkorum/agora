@@ -77,7 +77,6 @@ import { reactive } from "vue";
 import {
   parsePhoneNumberFromString,
   getCountries,
-  getCountryCallingCode,
   type CountryCode,
 } from "libphonenumber-js/mobile";
 import { useRouter } from "vue-router";
@@ -105,18 +104,8 @@ const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
 const { showNotifyMessage } = useNotify();
 
-// Generate supported countries list for maz-ui
-const supportedCountries: CountryCode[] = [];
-const countryList = getCountries();
-for (let i = 0; i < countryList.length; i++) {
-  const country = countryList[i];
-  const countryCode = getCountryCallingCode(country);
-  const isSupported =
-    zodSupportedCountryCallingCode.safeParse(countryCode).success;
-  if (isSupported) {
-    supportedCountries.push(country);
-  }
-}
+// Generate all countries list for maz-ui
+const supportedCountries: CountryCode[] = getCountries();
 
 interface PhoneNumber {
   fullNumber: string;
@@ -159,11 +148,13 @@ function loadDevAuthorizedNumbers() {
   }
 }
 
-function onPhoneUpdate(results: Results) {
+async function onPhoneUpdate(results: Results) {
   phoneData.phoneNumber = results.phoneNumber || "";
   phoneData.countryCode = results.countryCode || null;
   phoneData.isValid = results.isValid || false;
   phoneData.hasError = false;
+
+  await validateNumber();
 }
 
 function onCountryCodeUpdate(countryCode: CountryCode | null | undefined) {
@@ -214,7 +205,7 @@ async function validateNumber() {
     );
     if (!callingCode.success) {
       phoneData.hasError = true;
-      showNotifyMessage("Sorry, this country code is not supported.");
+      showNotifyMessage("Sorry, this country code is not supported yet.");
       return;
     }
 
