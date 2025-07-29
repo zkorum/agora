@@ -3,7 +3,7 @@
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
-      <form class="formStyle" @submit.prevent="">
+      <form class="formStyle" @submit.prevent="nextButtonClicked">
         <StepperLayout
           :submit-call-back="nextButtonClicked"
           :current-step="3.5"
