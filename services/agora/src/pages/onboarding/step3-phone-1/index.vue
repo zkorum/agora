@@ -101,7 +101,7 @@ import {
   getCountries,
   type CountryCode,
   type PhoneNumber as LibPhoneNumber,
-} from "libphonenumber-js/mobile";
+} from "libphonenumber-js/max";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
@@ -216,7 +216,7 @@ function validatePhoneNumber(
   if (isPhoneTypeNotSupported) {
     return {
       isValid: false,
-      error: "This phone number type is not supported for security reasons",
+      error: "This phone number type is not supported",
     };
   }
 
