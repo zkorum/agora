@@ -9,6 +9,7 @@ import { nowZeroMs } from "@/shared/common/util.js";
 import { logout } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
+import type { AxiosInstance } from "axios";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -609,6 +610,14 @@ interface DeleteAccountProps {
     didWrite: string;
     userId: string;
     baseImageServiceUrl: string;
+    axiosPolis?: AxiosInstance;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function deleteUserAccount({
@@ -617,6 +626,14 @@ export async function deleteUserAccount({
     proof,
     didWrite,
     baseImageServiceUrl,
+    axiosPolis,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
     // 2. proof should be recorded once only
@@ -656,6 +673,14 @@ export async function deleteUserAccount({
                 db: tx,
                 didWrite: didWrite,
                 userId: userId,
+                axiosPolis,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
             });
         }
 
