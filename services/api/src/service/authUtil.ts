@@ -175,7 +175,7 @@ export async function getDeviceStatus(
         )
         .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
-    if (resultDevice.length === 0 || resultDevice[0].isDeleted) {
+    if (resultDevice.length === 0) {
         return { isKnown: false, isLoggedIn: false, isRegistered: false };
     } else {
         const sessionExpiry = resultDevice[0].sessionExpiry;

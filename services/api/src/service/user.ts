@@ -8,6 +8,7 @@ import {
     polisContentTable,
     polisClusterTable,
     polisClusterUserTable,
+    voteTable,
 } from "@/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type {
@@ -15,9 +16,10 @@ import type {
     ExtendedOpinion,
     ExtendedConversationPerSlugId,
     ClusterStats,
+    ExtendedOpinionWithConvId,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, lt, desc, inArray } from "drizzle-orm";
+import { and, eq, lt, desc, inArray, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCreatedAt } from "./feed.js";
@@ -31,11 +33,61 @@ import type { ImportPolisResults } from "@/shared/types/polis.js";
 import { generateUUID } from "@/crypto.js";
 import type { UserIdPerParticipantId } from "@/utils/dataStructure.js";
 
+interface GetAllUserCommentsProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    baseImageServiceUrl: string;
+}
+
 interface GetUserCommentsProps {
     db: PostgresJsDatabase;
     userId: string;
     lastCommentSlugId?: string;
     baseImageServiceUrl: string;
+    limit?: number;
+}
+
+export async function getAllUserComments({
+    db,
+    userId,
+    baseImageServiceUrl,
+}: GetAllUserCommentsProps): Promise<ExtendedOpinionWithConvId[]> {
+    const userComments = await getUserComments({
+        db,
+        userId,
+        baseImageServiceUrl,
+    });
+    return userComments;
+}
+
+export async function getFilteredUserComments({
+    db,
+    userId,
+    lastCommentSlugId,
+    baseImageServiceUrl,
+    limit,
+}: GetUserCommentsProps): Promise<ExtendedOpinion[]> {
+    const userComments = await getUserComments({
+        db,
+        userId,
+        lastCommentSlugId,
+        baseImageServiceUrl,
+        limit,
+    });
+    const newComments: ExtendedOpinion[] = userComments.map((userComment) => {
+        const { conversationData } = userComment;
+        const { metadata } = conversationData;
+        const { conversationId: _conversationId, ...restMetadata } = metadata;
+
+        return {
+            ...userComment,
+            conversationData: {
+                ...conversationData,
+                metadata: restMetadata,
+            },
+        };
+    });
+    return newComments;
 }
 
 export async function getUserComments({
@@ -43,7 +95,8 @@ export async function getUserComments({
     userId,
     lastCommentSlugId,
     baseImageServiceUrl,
-}: GetUserCommentsProps): Promise<ExtendedOpinion[]> {
+    limit,
+}: GetUserCommentsProps): Promise<ExtendedOpinionWithConvId[]> {
     try {
         const lastCreatedAt = await getCommentSlugIdLastCreatedAt({
             lastSlugId: lastCommentSlugId,
@@ -58,7 +111,7 @@ export async function getUserComments({
         const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
 
         // Fetch a list of comment IDs first
-        const commentResponseList = await db
+        const preparedQuery = db
             .select({
                 commentSlugId: opinionTable.slugId,
                 createdAt: opinionTable.createdAt,
@@ -69,6 +122,7 @@ export async function getUserComments({
                 numDisagrees: opinionTable.numDisagrees,
                 numPasses: opinionTable.numPasses,
                 username: userTable.username,
+                postId: conversationTable.id,
                 postSlugId: conversationTable.slugId,
                 isSeed: opinionTable.isSeed,
                 moderationAction: opinionModerationTable.moderationAction,
@@ -184,15 +238,21 @@ export async function getUserComments({
                 eq(opinionModerationTable.opinionId, opinionTable.id),
             )
             .where(
-                and(
-                    eq(opinionTable.authorId, userId),
-                    lt(opinionTable.createdAt, lastCreatedAt),
-                ),
+                lastCreatedAt !== undefined
+                    ? and(
+                          eq(opinionTable.authorId, userId),
+                          lt(opinionTable.createdAt, lastCreatedAt),
+                      )
+                    : eq(opinionTable.authorId, userId),
             )
-            .orderBy(desc(opinionTable.createdAt))
-            .limit(10);
+            .orderBy(desc(opinionTable.createdAt));
 
-        const extendedCommentList: ExtendedOpinion[] = [];
+        const commentResponseList =
+            limit !== undefined
+                ? await preparedQuery.$dynamic().limit(limit)
+                : await preparedQuery;
+
+        const extendedCommentList: ExtendedOpinionWithConvId[] = [];
 
         for (const opinionResponse of commentResponseList) {
             const moderationProperties = createCommentModerationPropertyObject(
@@ -352,10 +412,15 @@ export async function getUserComments({
                 personalizedUserId: undefined,
                 baseImageServiceUrl,
             });
-
-            const extendedCommentItem: ExtendedOpinion = {
+            const extendedCommentItem: ExtendedOpinionWithConvId = {
                 opinionItem: commentItem,
-                conversationData: postItem,
+                conversationData: {
+                    ...postItem,
+                    metadata: {
+                        ...postItem.metadata,
+                        conversationId: opinionResponse.postId,
+                    },
+                },
             };
 
             extendedCommentList.push(extendedCommentItem);
@@ -375,6 +440,7 @@ interface GetUserPostProps {
     userId: string;
     lastPostSlugId?: string;
     baseImageServiceUrl: string;
+    limit?: number;
 }
 
 export async function getUserPosts({
@@ -382,6 +448,7 @@ export async function getUserPosts({
     userId,
     lastPostSlugId,
     baseImageServiceUrl,
+    limit,
 }: GetUserPostProps): Promise<ExtendedConversationPerSlugId> {
     try {
         const { fetchPostItems } = useCommonPost();
@@ -391,15 +458,18 @@ export async function getUserPosts({
             db: db,
         });
 
-        const whereClause = and(
-            eq(conversationTable.authorId, userId),
-            lt(conversationTable.createdAt, lastCreatedAt),
-        );
+        const whereClause =
+            lastCreatedAt !== undefined
+                ? and(
+                      eq(conversationTable.authorId, userId),
+                      lt(conversationTable.createdAt, lastCreatedAt),
+                  )
+                : eq(conversationTable.authorId, userId);
 
         const conversations: ExtendedConversationPerSlugId =
             await fetchPostItems({
                 db: db,
-                limit: 10,
+                limit: limit,
                 where: whereClause,
                 enableCompactBody: true,
                 personalizedUserId: userId,
@@ -416,6 +486,53 @@ export async function getUserPosts({
             "Database error while fetching user posts",
         );
     }
+}
+
+export async function getUserVotes({
+    db,
+    userId,
+    limit,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    limit?: number;
+}): Promise<
+    {
+        opinionSlugId: string;
+        voteId: number;
+        conversationId: number;
+        conversationSlugId: string;
+    }[]
+> {
+    // What's the point of deleting only an arbitrary subset of votes?
+    const preparedQuery = db
+        .select({
+            opinionSlugId: opinionTable.slugId,
+            voteId: voteTable.id,
+            conversationId: conversationTable.id,
+            conversationSlugId: conversationTable.slugId,
+        })
+        .from(voteTable)
+        .innerJoin(userTable, eq(userTable.id, voteTable.authorId))
+        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+        .innerJoin(
+            conversationTable,
+            eq(opinionTable.conversationId, conversationTable.id),
+        )
+        .where(
+            and(
+                eq(voteTable.authorId, userId),
+                isNotNull(voteTable.currentContentId), // already deleted votes don't need to be re-deleted, nor should they be displayed
+                // votes that were cast on deleted opinions will be deleted via cascade delete later
+                // and they are already ignored for counts, so we don't cancel them
+                isNotNull(opinionTable.currentContentId),
+            ),
+        );
+    const results =
+        limit !== undefined
+            ? await preparedQuery.$dynamic().limit(limit)
+            : await preparedQuery;
+    return results;
 }
 
 interface GetUserProfileProps {

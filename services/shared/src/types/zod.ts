@@ -288,6 +288,23 @@ export const zodConversationMetadata = z
         moderation: zodConversationModerationProperties,
     })
     .strict();
+export const zodConversationMetadataWithId = z
+    .object({
+        conversationId: z.number().int().nonnegative(),
+        conversationSlugId: zodSlugId,
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        lastReactedAt: z.date(),
+        opinionCount: zodCount,
+        voteCount: zodCount,
+        participantCount: zodCount,
+        authorUsername: z.string(),
+        isLoginRequired: z.boolean(),
+        isIndexed: z.boolean(),
+        organization: zodOrganization.optional(),
+        moderation: zodConversationModerationProperties,
+    })
+    .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
 export const zodOpinionContent = z
     .string()
@@ -370,6 +387,14 @@ export const zodExtendedConversationData = z
         polis: zodConversationPolis,
     })
     .strict();
+export const zodExtendedConversationDataWithId = z
+    .object({
+        metadata: zodConversationMetadataWithId,
+        payload: zodConversationDataWithResult,
+        interaction: zodUserInteraction,
+        polis: zodConversationPolis,
+    })
+    .strict();
 export const zodExtendedConversationPerSlugId = z.map(
     zodSlugId,
     zodExtendedConversationData,
@@ -377,6 +402,12 @@ export const zodExtendedConversationPerSlugId = z.map(
 export const zodExtendedOpinionData = z
     .object({
         conversationData: zodExtendedConversationData,
+        opinionItem: zodOpinionItem,
+    })
+    .strict();
+export const zodExtendedOpinionDataWithConvId = z
+    .object({
+        conversationData: zodExtendedConversationDataWithId,
         opinionItem: zodOpinionItem,
     })
     .strict();
@@ -843,6 +874,9 @@ export type OpinionItemForLlm = z.infer<typeof zodOpinionItemForLlm>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;
+export type ExtendedOpinionWithConvId = z.infer<
+    typeof zodExtendedOpinionDataWithConvId
+>;
 export type SlugId = z.infer<typeof zodSlugId>;
 export type VotingOption = z.infer<typeof zodVotingOption>;
 export type VotingAction = z.infer<typeof zodVotingAction>;

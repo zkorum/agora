@@ -696,7 +696,13 @@ export async function isPhoneNumberAvailable(
     const result = await db
         .select()
         .from(phoneTable)
-        .where(eq(phoneTable.phoneHash, phoneHash));
+        .innerJoin(userTable, eq(phoneTable.userId, userTable.id))
+        .where(
+            and(
+                eq(phoneTable.phoneHash, phoneHash),
+                eq(userTable.isDeleted, false),
+            ),
+        );
     if (result.length === 0) {
         return true;
     } else {
@@ -806,20 +812,39 @@ export async function getOrGenerateUserIdFromPhoneHash(
         .select({ userId: userTable.id })
         .from(userTable)
         .leftJoin(phoneTable, eq(phoneTable.userId, userTable.id))
-        .where(eq(phoneTable.phoneHash, phoneHash));
+        .where(
+            and(
+                eq(phoneTable.phoneHash, phoneHash),
+                eq(userTable.isDeleted, false),
+            ),
+        );
     if (result.length === 0) {
-        // The phone number is not associated with any existing user
+        // The phone number is not associated with any existing non-deleted user
         // But maybe it was already used to attempt a register
         const resultAttempt = await db
-            .select({ userId: authAttemptPhoneTable.userId })
+            .select({
+                userId: authAttemptPhoneTable.userId,
+                isDeleted: userTable.isDeleted,
+            })
             .from(authAttemptPhoneTable)
+            .leftJoin(userTable, eq(userTable.id, authAttemptPhoneTable.userId))
             .where(eq(authAttemptPhoneTable.phoneHash, phoneHash));
         if (resultAttempt.length === 0) {
-            // this email has never been used to attempt a register
+            // this phone number has never been used to attempt a register
             return generateUUID();
         } else {
-            // at this point every userId in attempts should be identical, by design
-            return resultAttempt[0].userId;
+            const didLoginAttemptsWithoutUsers = resultAttempt.filter(
+                (user) => user.isDeleted === null,
+            );
+            if (didLoginAttemptsWithoutUsers.length > 0) {
+                // there are attempts that aren't associated with any user
+                // at this point every userId being attempted should be identical, by design
+                return didLoginAttemptsWithoutUsers[0].userId;
+            } else {
+                // there are only attempts from pending deleted users
+                // so we will create a new user for this phone number
+                return generateUUID();
+            }
         }
     } else {
         return result[0].userId;

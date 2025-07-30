@@ -16,8 +16,8 @@ interface GetPostSlugIdLastCreatedAtProps {
 export async function getPostSlugIdLastCreatedAt({
     lastSlugId,
     db,
-}: GetPostSlugIdLastCreatedAtProps) {
-    let lastCreatedAt = new Date();
+}: GetPostSlugIdLastCreatedAtProps): Promise<Date | undefined> {
+    let lastCreatedAt;
 
     if (lastSlugId) {
         const selectResponse = await db

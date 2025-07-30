@@ -51,7 +51,7 @@ import {
     getUserVotesForPostSlugIds as getUserVotesByConversations,
 } from "./service/voting.js";
 import {
-    getUserComments,
+    getFilteredUserComments,
     getUserPosts,
     getUserProfile,
 } from "./service/user.js";
@@ -1145,6 +1145,7 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 lastPostSlugId: request.body.lastConversationSlugId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                limit: 10,
             });
             return Array.from(conversationsMap.values());
         },
@@ -1167,11 +1168,12 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
-            return await getUserComments({
+            return await getFilteredUserComments({
                 db: db,
                 userId: deviceStatus.userId,
                 lastCommentSlugId: request.body.lastOpinionSlugId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                limit: 10,
             });
         },
     });
@@ -2038,6 +2040,7 @@ server.after(() => {
                 awsAiLabelSummaryMaxTokens:
                     config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
                 awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
             });
             reply.send();
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;

@@ -2,7 +2,7 @@ import { log } from "@/app.js";
 import { userTable } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
-import { getUserComments, getUserPosts } from "./user.js";
+import { getAllUserComments, getUserPosts, getUserVotes } from "./user.js";
 import { deleteOpinionBySlugId } from "./comment.js";
 import { deletePostBySlugId } from "./post.js";
 import { nowZeroMs } from "@/shared/common/util.js";
@@ -10,6 +10,8 @@ import { logout } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import type { AxiosInstance } from "axios";
+import { castVoteForOpinionSlugIdFromUserId } from "./voting.js";
+import * as polisService from "@/service/polis.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -618,6 +620,7 @@ interface DeleteAccountProps {
     awsAiLabelSummaryTopP: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
+    voteNotifMilestones: number[];
 }
 
 export async function deleteUserAccount({
@@ -634,6 +637,7 @@ export async function deleteUserAccount({
     awsAiLabelSummaryTopP,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
+    voteNotifMilestones,
 }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
     // 2. proof should be recorded once only
@@ -641,12 +645,10 @@ export async function deleteUserAccount({
     // 3. old proofs should be set to be deleted as well, except the deletion proof and the proofs binding the devices together
     // 4. conversation deletion should not necessarily delete other people's opinion
     // 5. opinion deletion should not necessarily delete other people's replies
-    const userComments = await getUserComments({
-        db: db,
-        userId: userId,
-        lastCommentSlugId: undefined,
-        baseImageServiceUrl,
-    });
+    const affectedConversations: {
+        conversationId: number;
+        conversationSlugId: string;
+    }[] = [];
     await db.transaction(async (tx) => {
         const updatedUserTableResponse = await tx
             .update(userTable)
@@ -666,6 +668,11 @@ export async function deleteUserAccount({
         }
 
         // Delete user comments
+        const userComments = await getAllUserComments({
+            db: tx,
+            userId: userId,
+            baseImageServiceUrl,
+        });
         for (const comment of userComments) {
             await deleteOpinionBySlugId({
                 proof: proof,
@@ -673,7 +680,31 @@ export async function deleteUserAccount({
                 db: tx,
                 didWrite: didWrite,
                 userId: userId,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            });
+        }
+
+        // Delete user votes
+        const userVotes = await getUserVotes({
+            db: tx,
+            userId: userId,
+        });
+        for (const vote of userVotes) {
+            await castVoteForOpinionSlugIdFromUserId({
+                db: tx,
+                opinionSlugId: vote.opinionSlugId,
+                didWrite,
+                proof,
+                userId,
+                votingAction: "cancel",
                 axiosPolis,
+                voteNotifMilestones,
                 awsAiLabelSummaryEnable,
                 awsAiLabelSummaryRegion,
                 awsAiLabelSummaryModelId,
@@ -688,7 +719,6 @@ export async function deleteUserAccount({
         const userPosts = await getUserPosts({
             db: tx,
             userId: userId,
-            lastPostSlugId: undefined,
             baseImageServiceUrl,
         });
         for (const post of userPosts.values()) {
@@ -701,6 +731,62 @@ export async function deleteUserAccount({
             });
         }
 
+        // calculate affectedConversations
+        const affectedConversationIds: number[] = [];
+        for (const comment of userComments) {
+            const conversationId =
+                comment.conversationData.metadata.conversationId;
+            const conversationSlugId =
+                comment.conversationData.metadata.conversationSlugId;
+            if (!affectedConversationIds.includes(conversationId)) {
+                affectedConversationIds.push(conversationId);
+                affectedConversations.push({
+                    conversationId,
+                    conversationSlugId,
+                });
+            }
+        }
+        for (const userVote of userVotes) {
+            const conversationId = userVote.conversationId;
+            const conversationSlugId = userVote.conversationSlugId;
+            if (!affectedConversationIds.includes(conversationId)) {
+                affectedConversationIds.push(conversationId);
+                affectedConversations.push({
+                    conversationId,
+                    conversationSlugId,
+                });
+            }
+        }
+
         await logout(tx, didWrite);
     });
+
+    // Recalculate math for affected conversations
+    if (axiosPolis !== undefined) {
+        for (const affectedConversation of affectedConversations) {
+            const votes = await polisService.getPolisVotes({
+                db,
+                conversationId: affectedConversation.conversationId,
+                conversationSlugId: affectedConversation.conversationSlugId,
+            });
+            polisService
+                .getAndUpdatePolisMath({
+                    db: db,
+                    conversationSlugId: affectedConversation.conversationSlugId,
+                    conversationId: affectedConversation.conversationId,
+                    axiosPolis,
+                    votes,
+                    awsAiLabelSummaryEnable,
+                    awsAiLabelSummaryRegion,
+                    awsAiLabelSummaryModelId,
+                    awsAiLabelSummaryTemperature,
+                    awsAiLabelSummaryTopP,
+                    awsAiLabelSummaryMaxTokens,
+                    awsAiLabelSummaryPrompt,
+                })
+                .catch((e: unknown) => {
+                    log.error(e);
+                });
+        }
+    }
 }
