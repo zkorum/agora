@@ -43,6 +43,7 @@
                 aria-describedby="phone-error"
                 @update="onPhoneUpdate"
                 @country-code="onCountryCodeUpdate"
+                @blur="onPhoneBlur"
               />
 
               <div
@@ -264,6 +265,25 @@ function validatePhoneInRealTime() {
     phoneData.errorMessage = "Please enter a valid phone number";
     phoneData.hasError = true;
     phoneData.isValid = false;
+  }
+}
+
+function onPhoneBlur() {
+  if (!phoneData.phoneNumber || !phoneData.countryCode || !phoneData.isValid) {
+    return;
+  }
+
+  try {
+    const parsedNumber = parsePhoneNumberFromString(
+      phoneData.phoneNumber,
+      phoneData.countryCode
+    );
+
+    if (parsedNumber && parsedNumber.isValid()) {
+      phoneData.phoneNumber = parsedNumber.formatNational();
+    }
+  } catch (error) {
+    console.warn("Failed to format phone number on blur:", error);
   }
 }
 
