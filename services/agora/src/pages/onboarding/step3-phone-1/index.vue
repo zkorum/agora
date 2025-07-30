@@ -8,12 +8,7 @@
           :submit-call-back="validateNumber"
           :current-step="3"
           :total-steps="5"
-          :enable-next-button="
-            phoneData.phoneNumber !== null &&
-            phoneData.phoneNumber?.length > 0 &&
-            !phoneData.hasError &&
-            phoneData.isValid
-          "
+          :enable-next-button="true"
           :show-next-button="true"
           :show-loading-button="false"
         >
@@ -41,16 +36,21 @@
                 :success="phoneData.isValid"
                 :error="phoneData.hasError"
                 show-code-on-list
-                :only-countries="supportedCountries"
                 placeholder="Phone number"
                 required
+                :auto-format="false"
+                no-validation-error
                 aria-describedby="phone-error"
                 @update="onPhoneUpdate"
                 @country-code="onCountryCodeUpdate"
               />
 
               <div
-                v-if="phoneData.hasError && phoneData.errorMessage"
+                v-if="
+                  phoneData.hasError &&
+                  phoneData.errorMessage &&
+                  phoneData.hasAttemptedSubmission
+                "
                 id="phone-error"
                 class="error-message"
                 role="alert"
@@ -98,7 +98,6 @@ import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import { reactive } from "vue";
 import {
   parsePhoneNumberFromString,
-  getCountries,
   type CountryCode,
   type PhoneNumber as LibPhoneNumber,
 } from "libphonenumber-js/max";
@@ -124,11 +123,10 @@ const phoneData = reactive({
   isValid: false,
   hasError: false,
   errorMessage: "" as string,
+  hasAttemptedSubmission: false,
 });
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
-
-const supportedCountries: CountryCode[] = getCountries();
 
 interface PhoneNumber {
   fullNumber: string;
@@ -223,21 +221,17 @@ function validatePhoneNumber(
   return { isValid: true, parsedNumber, callingCode: callingCode.data };
 }
 
-function onPhoneUpdate(results: Results) {
-  phoneData.phoneNumber = results.phoneNumber ?? "";
-  phoneData.countryCode = results.countryCode ?? null;
-
+function onPhoneUpdate(_results: Results) {
+  phoneData.hasAttemptedSubmission = false;
   clearErrors();
 
-  // Validate in real-time
   if (phoneData.countryCode && phoneData.phoneNumber) {
     validatePhoneInRealTime();
   }
 }
 
-function onCountryCodeUpdate(countryCode: CountryCode | null | undefined) {
-  phoneData.countryCode = countryCode || null;
-
+function onCountryCodeUpdate(_countryCode: CountryCode | null | undefined) {
+  phoneData.hasAttemptedSubmission = false;
   clearErrors();
 
   if (phoneData.phoneNumber) {
@@ -258,25 +252,27 @@ function validatePhoneInRealTime() {
     );
 
     if (!result.isValid) {
-      setError(result.error);
+      phoneData.errorMessage = result.error;
+      phoneData.hasError = true;
       phoneData.isValid = false;
       return;
     }
 
+    clearErrors();
     phoneData.isValid = true;
   } catch {
-    setError("Please enter a valid phone number");
+    phoneData.errorMessage = "Please enter a valid phone number";
+    phoneData.hasError = true;
     phoneData.isValid = false;
   }
 }
 
 async function validateNumber(): Promise<boolean> {
   try {
-    if (
-      phoneData.hasError ||
-      !phoneData.phoneNumber ||
-      !phoneData.countryCode
-    ) {
+    phoneData.hasAttemptedSubmission = true;
+
+    if (!phoneData.phoneNumber || !phoneData.countryCode) {
+      setError("Please enter a phone number");
       return false;
     }
 
@@ -286,7 +282,6 @@ async function validateNumber(): Promise<boolean> {
     );
 
     if (!result.isValid) {
-      console.error("Unexpected: phone number validation failed");
       setError(result.error);
       return false;
     }
