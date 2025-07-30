@@ -92,6 +92,7 @@ import CommentComposer from "./comments/CommentComposer.vue";
 import { ref, triggerRef } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useRouter } from "vue-router";
+import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type {
   ExtendedConversation,
@@ -116,6 +117,7 @@ const currentTab = ref<"comment" | "analysis">("comment");
 const router = useRouter();
 
 const webShare = useWebShare();
+const { getConversationUrl } = useConversationUrl();
 
 const { loadMore, updateOpinionVote, cancelOpinionVote } =
   useOpinionScrollableStore();
@@ -211,11 +213,9 @@ function updateCommentSlugIdLikedMap(map: Map<string, VotingOption>) {
 }
 
 async function shareClicked() {
-  const sharePostUrl =
-    window.location.origin +
-    process.env.VITE_PUBLIC_DIR +
-    "/conversation/" +
-    props.extendedPostData.metadata.conversationSlugId;
+  const sharePostUrl = getConversationUrl(
+    props.extendedPostData.metadata.conversationSlugId
+  );
   await webShare.share(
     "Agora - " + props.extendedPostData.payload.title,
     sharePostUrl

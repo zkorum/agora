@@ -119,7 +119,8 @@ export const useBottomSheet = () => {
     openUserReportsCallback: () => void | Promise<void>,
     muteUserCallback: () => void | Promise<void>,
     moderatePostCallback: () => void | Promise<void>,
-    moderationHistoryCallback: () => void | Promise<void>
+    moderationHistoryCallback: () => void | Promise<void>,
+    copyEmbedLinkCallback: () => void | Promise<void>
   ) {
     const actionList: QuasarAction[] = [];
 
@@ -149,6 +150,12 @@ export const useBottomSheet = () => {
       label: "Moderation History",
       icon: "mdi-book-open",
       id: "moderationHistory",
+    });
+
+    actionList.push({
+      label: "Embed Link",
+      icon: "mdi-content-copy",
+      id: "embed-link",
     });
 
     if (profileData.value.isModerator) {
@@ -194,6 +201,8 @@ export const useBottomSheet = () => {
           void muteUserCallback();
         } else if (action.id == "moderationHistory") {
           void moderationHistoryCallback();
+        } else if (action.id == "embed-link") {
+          void copyEmbedLinkCallback();
         }
       })
       .onCancel(() => {
