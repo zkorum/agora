@@ -1,3 +1,5 @@
+import type { SlugId } from "@/shared/types/zod.js";
+
 export function createInterleavingMapFrom<K, V>(
     map1: Map<K, V>,
     map2: Map<K, V>,
@@ -37,3 +39,15 @@ export function decimalToHex(decimalStr: string): string {
     const hexStr = BigInt(decimalStr).toString(16);
     return hexStr;
 }
+
+export interface ConversationIds {
+    conversationId: number;
+    conversationSlugId: SlugId;
+    conversationContentId: number;
+}
+
+export type UserIdPerParticipantId = Record<string | number, string>;
+
+export type StatementIdPerOpinionSlugId = Record<string, string | number>;
+export type OpinionIdPerStatementId = Record<string | number, number>;
+export type OpinionContentIdPerOpinionId = Record<number, number>;

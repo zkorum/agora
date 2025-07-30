@@ -8,9 +8,9 @@ import {
     notificationOpinionVoteTable,
 } from "@/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, sql, and, desc, isNotNull } from "drizzle-orm";
+import { eq, sql, and, desc, isNotNull, SQL, inArray } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
-import type { VotingAction } from "@/shared/types/zod.js";
+import type { VotingAction, VotingOption } from "@/shared/types/zod.js";
 import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import type { AxiosInstance } from "axios";
@@ -19,6 +19,13 @@ import { log } from "@/app.js";
 import { insertNewVoteNotification } from "./notification.js";
 import * as authUtilService from "@/service/authUtil.js";
 import { PgTransaction } from "drizzle-orm/pg-core";
+import type {
+    OpinionContentIdPerOpinionId,
+    OpinionIdPerStatementId,
+    UserIdPerParticipantId,
+} from "@/utils/dataStructure.js";
+import type { ImportPolisResults } from "@/shared/types/polis.js";
+import { nowZeroMs } from "@/shared/common/util.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -475,7 +482,11 @@ export async function castVoteForOpinionSlugId({
     }
 
     if (axiosPolis !== undefined) {
-        const votes = await polisService.getPolisVotes({ db, conversationId });
+        const votes = await polisService.getPolisVotes({
+            db,
+            conversationId,
+            conversationSlugId,
+        });
         polisService
             .getAndUpdatePolisMath({
                 db: db,
@@ -544,4 +555,134 @@ export async function getUserVotesForPostSlugIds({
     }
 
     return userVoteList;
+}
+
+export async function bulkInsertVotesFromExternalPolisConvo({
+    db,
+    importedPolisConversation,
+    opinionIdPerStatementId,
+    opinionContentIdPerOpinionId,
+    userIdPerParticipantId,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    importedPolisConversation: ImportPolisResults;
+    opinionIdPerStatementId: OpinionIdPerStatementId;
+    opinionContentIdPerOpinionId: OpinionContentIdPerOpinionId;
+    userIdPerParticipantId: UserIdPerParticipantId;
+    conversationSlugId: string;
+}): Promise<void> {
+    const votesToAdd: {
+        authorId: string;
+        opinionId: number;
+        currentContentId: number | null;
+        polisVoteId: number;
+    }[] = [];
+    const voteContentsToModifyBeforeAdd: {
+        opinionId: number;
+        opinionContentId: number;
+        vote: VotingOption;
+        polisVoteId: number;
+    }[] = [];
+    const voteContentsToAdd: {
+        voteId: number;
+        opinionContentId: number;
+        vote: VotingOption;
+    }[] = [];
+    for (let i = 0; i < importedPolisConversation.votes_data.length; i++) {
+        const voteData = importedPolisConversation.votes_data[i];
+        const userId = userIdPerParticipantId[voteData.participant_id];
+        const opinionId = opinionIdPerStatementId[voteData.statement_id];
+        const opinionContentId = opinionContentIdPerOpinionId[opinionId];
+        votesToAdd.push({
+            authorId: userId,
+            opinionId: opinionId,
+            currentContentId: null,
+            polisVoteId: i,
+        });
+        voteContentsToModifyBeforeAdd.push({
+            polisVoteId: i,
+            opinionId: opinionId,
+            opinionContentId: opinionContentId,
+            vote:
+                voteData.vote === 1
+                    ? "agree"
+                    : voteData.vote === -1
+                      ? "disagree"
+                      : "pass",
+        });
+    }
+    async function doImportVotes(db: PostgresJsDatabase): Promise<void> {
+        // We assume the aren't any duplicate votes
+        const insertVoteResponse = await db
+            .insert(voteTable)
+            .values(votesToAdd)
+            .returning({
+                voteId: voteTable.id,
+                polisVoteId: voteTable.polisVoteId,
+            });
+        const insertVoteIds = insertVoteResponse.map(
+            (insertedVote) => insertedVote.voteId,
+        );
+        // NOTE: Thanks to the introduction of polisVoteId, this does NOT assume that PostgreSQL and drizzle/returning preserve order
+        for (const insertedVote of insertVoteResponse) {
+            const voteContentToModify = voteContentsToModifyBeforeAdd.find(
+                (vote) => vote.polisVoteId === insertedVote.polisVoteId,
+            );
+            if (voteContentToModify === undefined) {
+                throw new Error(
+                    `[Import] Data is out of sync while importing voteId=${String(insertedVote.voteId)}, polisVoteId=${String(insertedVote.polisVoteId)} with conversationSlugId=${conversationSlugId}`,
+                );
+            }
+            voteContentsToAdd.push({
+                voteId: insertedVote.voteId,
+                opinionContentId: voteContentToModify.opinionContentId,
+                vote: voteContentToModify.vote,
+            });
+        }
+        const voteContentTableResponse = await db
+            .insert(voteContentTable)
+            .values(voteContentsToAdd)
+            .returning({
+                voteContentTableId: voteContentTable.id,
+                voteId: voteContentTable.voteId,
+            });
+
+        const sqlChunksVoteCurrentId: SQL[] = [];
+        sqlChunksVoteCurrentId.push(sql`(CASE`);
+        for (const voteContentResponse of voteContentTableResponse) {
+            sqlChunksVoteCurrentId.push(
+                sql`WHEN ${voteTable.id} = ${voteContentResponse.voteId}::int THEN ${voteContentResponse.voteContentTableId}::int`,
+            );
+        }
+        sqlChunksVoteCurrentId.push(sql`ELSE current_content_id`);
+        sqlChunksVoteCurrentId.push(sql`END)`);
+
+        const finalSqlVoteCurrentContentId = sql.join(
+            sqlChunksVoteCurrentId,
+            sql.raw(" "),
+        );
+        const setClauseVoteCurrentContentId = {
+            currentContentId: finalSqlVoteCurrentContentId,
+        };
+        await db
+            .update(voteTable)
+            .set({
+                ...setClauseVoteCurrentContentId,
+                updatedAt: nowZeroMs(),
+            })
+            .where(inArray(voteTable.id, insertVoteIds));
+    }
+
+    let doTransaction = true;
+    if (db instanceof PgTransaction) {
+        doTransaction = false;
+    }
+    if (doTransaction) {
+        await db.transaction(async (tx) => {
+            await doImportVotes(tx);
+        });
+    } else {
+        await doImportVotes(db);
+    }
 }

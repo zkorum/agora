@@ -9,20 +9,20 @@ import {
     userTable,
 } from "@/schema.js";
 import { eq, sql, and } from "drizzle-orm";
-import type {
-    CreateNewConversationResponse,
-    ImportConversationResponse,
-} from "@/shared/types/dto.js";
+import type { ImportConversationResponse } from "@/shared/types/dto.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log, config } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation } from "@/shared/types/zod.js";
+import type { ExtendedConversation, PolisUrl } from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as authUtilService from "@/service/authUtil.js";
+import * as polisService from "@/service/polis.js";
+import * as importService from "@/service/import.js";
 import { processHtmlBody } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/common/util.js";
+import type { ConversationIds } from "@/utils/dataStructure.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -41,30 +41,42 @@ interface CreateNewPostProps {
 
 interface ImportPostProps {
     db: PostgresDatabase;
-    pollingOptionList: string[] | null;
     authorId: string;
     didWrite: string;
     proof: string;
+    polisUrl: PolisUrl;
     axiosPolis: AxiosInstance;
     postAsOrganization: string;
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
-    seedOpinionList: string[];
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
-export async function importPost({
+export async function importConversation({
     db,
     authorId,
-    // didWrite,
-    // proof,
-    // pollingOptionList,
-    // axiosPolis,
+    didWrite,
+    proof,
+    polisUrl,
+    axiosPolis,
     postAsOrganization,
-    // indexConversationAt,
-    // isLoginRequired,
-    // isIndexed,
-    // seedOpinionList,
+    indexConversationAt,
+    isLoginRequired,
+    isIndexed,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: ImportPostProps): Promise<ImportConversationResponse> {
     let organizationId: number | undefined = undefined;
     organizationId = await authUtilService.isUserPartOfOrganization({
@@ -77,9 +89,47 @@ export async function importPost({
             `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
         );
     }
-    // TODO
+    const { importedPolisConversation, polisUrlType } =
+        await polisService.importExternalPolisConversation({
+            polisUrl: polisUrl,
+            axiosPolis: axiosPolis,
+        });
+    const { conversationId, conversationSlugId } =
+        await importService.loadImportedPolisConversation({
+            db,
+            importedPolisConversation,
+            polisUrlType,
+            polisUrl,
+            proof: proof,
+            didWrite: didWrite,
+            authorId: authorId,
+            postAsOrganization: postAsOrganization,
+            indexConversationAt,
+            isLoginRequired,
+            isIndexed,
+        });
+    const votes = await polisService.getPolisVotes({
+        db,
+        conversationId,
+        conversationSlugId,
+    });
+    await polisService.getAndUpdatePolisMath({
+        db: db,
+        conversationSlugId: conversationSlugId,
+        conversationId: conversationId,
+        axiosPolis,
+        votes: votes,
+        awsAiLabelSummaryEnable,
+        awsAiLabelSummaryRegion,
+        awsAiLabelSummaryModelId,
+        awsAiLabelSummaryTemperature,
+        awsAiLabelSummaryTopP,
+        awsAiLabelSummaryMaxTokens,
+        awsAiLabelSummaryPrompt,
+    });
+
     return {
-        conversationSlugId: String(organizationId),
+        conversationSlugId: conversationSlugId,
     };
 }
 
@@ -96,7 +146,7 @@ export async function createNewPost({
     isLoginRequired,
     isIndexed,
     seedOpinionList,
-}: CreateNewPostProps): Promise<CreateNewConversationResponse> {
+}: CreateNewPostProps): Promise<ConversationIds> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
         organizationId = await authUtilService.isUserPartOfOrganization({
@@ -126,91 +176,97 @@ export async function createNewPost({
         }
     }
 
-    await db.transaction(async (tx) => {
-        const insertPostResponse = await tx
-            .insert(conversationTable)
-            .values({
-                authorId: authorId,
-                slugId: conversationSlugId,
-                organizationId: organizationId,
-                isIndexed: isIndexed,
-                isLoginRequired: isIndexed ? true : isLoginRequired,
-                indexConversationAt:
-                    indexConversationAt !== undefined
-                        ? new Date(indexConversationAt)
-                        : undefined,
-                opinionCount: 0,
-                currentContentId: null,
-                currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
-                lastReactedAt: new Date(),
-            })
-            .returning({ conversationId: conversationTable.id });
+    const { conversationId, conversationContentId } = await db.transaction(
+        async (tx) => {
+            const insertPostResponse = await tx
+                .insert(conversationTable)
+                .values({
+                    authorId: authorId,
+                    slugId: conversationSlugId,
+                    organizationId: organizationId,
+                    isIndexed: isIndexed,
+                    isLoginRequired: isIndexed ? true : isLoginRequired,
+                    indexConversationAt:
+                        indexConversationAt !== undefined
+                            ? new Date(indexConversationAt)
+                            : undefined,
+                    opinionCount: 0,
+                    currentContentId: null,
+                    currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
+                    lastReactedAt: new Date(),
+                })
+                .returning({ conversationId: conversationTable.id });
 
-        const conversationId = insertPostResponse[0].conversationId;
+            const insertedConversationId = insertPostResponse[0].conversationId;
 
-        const masterProofTableResponse = await tx
-            .insert(conversationProofTable)
-            .values({
-                type: "creation",
-                conversationId: conversationId,
-                authorDid: didWrite,
-                proof: proof,
-                proofVersion: 1,
-            })
-            .returning({ proofId: conversationProofTable.id });
+            const masterProofTableResponse = await tx
+                .insert(conversationProofTable)
+                .values({
+                    type: "creation",
+                    conversationId: insertedConversationId,
+                    authorDid: didWrite,
+                    proof: proof,
+                    proofVersion: 1,
+                })
+                .returning({ proofId: conversationProofTable.id });
 
-        const proofId = masterProofTableResponse[0].proofId;
+            const proofId = masterProofTableResponse[0].proofId;
 
-        const conversationContentTableResponse = await tx
-            .insert(conversationContentTable)
-            .values({
-                conversationProofId: proofId,
-                conversationId: conversationId,
-                title: conversationTitle,
-                body: conversationBody,
-                pollId: null,
-            })
-            .returning({
-                conversationContentId: conversationContentTable.id,
-            });
+            const conversationContentTableResponse = await tx
+                .insert(conversationContentTable)
+                .values({
+                    conversationProofId: proofId,
+                    conversationId: insertedConversationId,
+                    title: conversationTitle,
+                    body: conversationBody,
+                    pollId: null,
+                })
+                .returning({
+                    conversationContentId: conversationContentTable.id,
+                });
 
-        const conversationContentId =
-            conversationContentTableResponse[0].conversationContentId;
+            const insertedConversationContentId =
+                conversationContentTableResponse[0].conversationContentId;
 
-        await tx
-            .update(conversationTable)
-            .set({
-                currentContentId: conversationContentId,
-            })
-            .where(eq(conversationTable.id, conversationId));
+            await tx
+                .update(conversationTable)
+                .set({
+                    currentContentId: insertedConversationContentId,
+                })
+                .where(eq(conversationTable.id, insertedConversationId));
 
-        if (pollingOptionList != null) {
-            await tx.insert(pollTable).values({
-                conversationContentId: conversationContentId,
-                option1: pollingOptionList[0],
-                option2: pollingOptionList[1],
-                option3: pollingOptionList[2] ?? null,
-                option4: pollingOptionList[3] ?? null,
-                option5: pollingOptionList[4] ?? null,
-                option6: pollingOptionList[5] ?? null,
-                option1Response: 0,
-                option2Response: 0,
-                option3Response: pollingOptionList[2] ? 0 : null,
-                option4Response: pollingOptionList[3] ? 0 : null,
-                option5Response: pollingOptionList[4] ? 0 : null,
-                option6Response: pollingOptionList[5] ? 0 : null,
-            });
-        }
+            if (pollingOptionList != null) {
+                await tx.insert(pollTable).values({
+                    conversationContentId: insertedConversationContentId,
+                    option1: pollingOptionList[0],
+                    option2: pollingOptionList[1],
+                    option3: pollingOptionList[2] ?? null,
+                    option4: pollingOptionList[3] ?? null,
+                    option5: pollingOptionList[4] ?? null,
+                    option6: pollingOptionList[5] ?? null,
+                    option1Response: 0,
+                    option2Response: 0,
+                    option3Response: pollingOptionList[2] ? 0 : null,
+                    option4Response: pollingOptionList[3] ? 0 : null,
+                    option5Response: pollingOptionList[4] ? 0 : null,
+                    option6Response: pollingOptionList[5] ? 0 : null,
+                });
+            }
 
-        // Update the user profile's conversation count
-        await tx
-            .update(userTable)
-            .set({
-                activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
-                totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
-            })
-            .where(eq(userTable.id, authorId));
-    });
+            // Update the user profile's conversation count
+            await tx
+                .update(userTable)
+                .set({
+                    activeConversationCount: sql`${userTable.activeConversationCount} + 1`,
+                    totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
+                })
+                .where(eq(userTable.id, authorId));
+            return {
+                conversationId: insertedConversationId,
+                conversationContentId: insertedConversationContentId,
+            };
+        },
+    );
 
     // Create seed opinions
     if (seedOpinionList.length > 0) {
@@ -244,7 +300,9 @@ export async function createNewPost({
     }
 
     return {
+        conversationId: conversationId,
         conversationSlugId: conversationSlugId,
+        conversationContentId: conversationContentId,
     };
 }
 
@@ -381,3 +439,34 @@ export async function deletePostBySlugId({
 //         });
 //     console.log(polisParticipationInit.pca["votes-base"]["0"].A.length);
 // }
+//
+
+export async function updateParticipantCount({
+    db,
+    conversationId,
+    participantCount,
+    voteCount,
+    opinionCount,
+}: {
+    db: PostgresDatabase;
+    conversationId: number;
+    participantCount: number;
+    voteCount?: number;
+    opinionCount?: number;
+}): Promise<void> {
+    const updateValues: {
+        participantCount: number;
+        voteCount?: number;
+        opinionCount?: number;
+    } = { participantCount: participantCount };
+    if (voteCount !== undefined) {
+        updateValues.voteCount = voteCount;
+    }
+    if (opinionCount !== undefined) {
+        updateValues.opinionCount = opinionCount;
+    }
+    await db
+        .update(conversationTable)
+        .set(updateValues)
+        .where(eq(conversationTable.id, conversationId));
+}

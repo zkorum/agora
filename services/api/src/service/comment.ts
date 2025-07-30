@@ -22,8 +22,10 @@ import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
 import type {
     ClusterStats,
     CommentFeedFilter,
+    ModerationReason,
     OpinionItem,
     OpinionItemPerSlugId,
+    OpinionModerationAction,
     PolisKey,
     SlugId,
 } from "@/shared/types/zod.js";
@@ -34,8 +36,9 @@ import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import type { AxiosInstance } from "axios";
-import { alias } from "drizzle-orm/pg-core";
+import { alias, PgTransaction } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
+import * as polisService from "@/service/polis.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
 import {
     isSqlWhereMajority,
@@ -45,6 +48,14 @@ import {
     isSqlWhereRepresentative,
     isSqlOrderByRepresentative,
 } from "@/utils/sqlLogic.js";
+import type { ImportPolisResults } from "@/shared/types/polis.js";
+import type {
+    OpinionContentIdPerOpinionId,
+    OpinionIdPerStatementId,
+    StatementIdPerOpinionSlugId,
+    UserIdPerParticipantId,
+} from "@/utils/dataStructure.js";
+import { nowZeroMs } from "@/shared/common/util.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -1262,6 +1273,14 @@ interface DeleteCommentBySlugIdProps {
     userId: string;
     proof: string;
     didWrite: string;
+    axiosPolis?: AxiosInstance;
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
 }
 
 export async function deleteOpinionBySlugId({
@@ -1270,6 +1289,14 @@ export async function deleteOpinionBySlugId({
     userId,
     proof,
     didWrite,
+    axiosPolis,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
 }: DeleteCommentBySlugIdProps): Promise<void> {
     const { isOpinionDeleted } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -1293,7 +1320,6 @@ export async function deleteOpinionBySlugId({
             )
             .returning({
                 updateCommentId: opinionTable.id,
-                postId: opinionTable.conversationId,
             });
 
         if (updatedCommentIdResponse.length != 1) {
@@ -1313,16 +1339,244 @@ export async function deleteOpinionBySlugId({
             proof: proof,
             proofVersion: 1,
         });
-
-        const postId = updatedCommentIdResponse[0].postId;
-
-        await tx
-            .update(conversationTable)
-            .set({
-                opinionCount: sql`${conversationTable.opinionCount} - 1`,
-            })
-            .where(eq(conversationTable.id, postId));
-        // TODO: delete from Polis as well!
-        // don't count votes on deleted opinions => recalculate polis clusters
     });
+    const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
+    const { conversationSlugId, conversationId } =
+        await getOpinionMetadataFromOpinionSlugId({
+            db,
+            opinionSlugId,
+        });
+    const { updateCountsBypassCache } = useCommonPost();
+    await updateCountsBypassCache({ db, conversationSlugId });
+    if (axiosPolis !== undefined) {
+        const votes = await polisService.getPolisVotes({
+            db,
+            conversationId,
+            conversationSlugId,
+        });
+        polisService
+            .getAndUpdatePolisMath({
+                db: db,
+                conversationSlugId,
+                conversationId: conversationId,
+                axiosPolis,
+                votes,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            })
+            .catch((e: unknown) => {
+                log.error(e);
+            });
+    }
+}
+
+export async function bulkInsertOpinionsFromExternalPolisConvo({
+    db,
+    importedPolisConversation,
+    conversationId,
+    conversationSlugId,
+    conversationContentId,
+    userIdPerParticipantId,
+}: {
+    db: PostgresJsDatabase;
+    importedPolisConversation: ImportPolisResults;
+    conversationId: number;
+    conversationSlugId: string;
+    conversationContentId: number;
+    userIdPerParticipantId: UserIdPerParticipantId;
+}): Promise<{
+    opinionIdPerStatementId: OpinionIdPerStatementId;
+    opinionContentIdPerOpinionId: OpinionContentIdPerOpinionId;
+}> {
+    const statementIdPerOpinionSlugId: StatementIdPerOpinionSlugId = {};
+    const opinionIdPerStatementId: OpinionIdPerStatementId = {};
+    const opinionContentIdPerOpinionId: OpinionContentIdPerOpinionId = {};
+    const opinionsToAdd = importedPolisConversation.comments_data.map(
+        (comment) => {
+            const opinionSlugId = generateRandomSlugId();
+
+            // !IMPORTANT: this considers there are no duplicates or edit/cancel votes
+            const calculatedNumAgrees =
+                importedPolisConversation.votes_data.filter(
+                    (vote) =>
+                        vote.statement_id == comment.statement_id &&
+                        vote.vote === 1,
+                ).length;
+            // just for logging
+            const polisNumAgrees = comment.agree_count;
+            if (polisNumAgrees === null) {
+                log.warn(
+                    `[Import] comment.agree_count is null while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
+                );
+            } else if (polisNumAgrees !== calculatedNumAgrees) {
+                log.warn(
+                    `[Import] comment.agree_count = ${String(polisNumAgrees)} !== calculated numAgrees = ${String(calculatedNumAgrees)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
+                );
+            }
+
+            const calculatedNumDisagrees =
+                importedPolisConversation.votes_data.filter(
+                    (vote) =>
+                        vote.statement_id == comment.statement_id &&
+                        vote.vote === -1,
+                ).length;
+            // just for logging
+            const polisNumDisagrees = comment.disagree_count;
+            if (polisNumDisagrees === null) {
+                log.warn(
+                    `[Import] comment.disagree_count is null while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
+                );
+            } else if (polisNumDisagrees !== calculatedNumDisagrees) {
+                log.warn(
+                    `[Import] comment.disagree_count = ${String(polisNumDisagrees)} !== calculated numDisagrees = ${String(calculatedNumDisagrees)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
+                );
+            }
+
+            const calculatedNumPasses =
+                importedPolisConversation.votes_data.filter(
+                    (vote) =>
+                        vote.statement_id == comment.statement_id &&
+                        vote.vote === 0,
+                ).length;
+            // just for logging
+            const polisNumPasses = comment.pass_count;
+            if (polisNumPasses === null) {
+                log.warn(
+                    `[Import] comment.pass_count is null while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
+                );
+            } else if (polisNumPasses !== calculatedNumPasses) {
+                log.warn(
+                    `[Import] comment.pass_count = ${String(polisNumPasses)} !== calculated numPasses = ${String(calculatedNumPasses)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
+                );
+            }
+
+            statementIdPerOpinionSlugId[opinionSlugId] = comment.statement_id;
+
+            return {
+                slugId: opinionSlugId,
+                authorId: userIdPerParticipantId[comment.participant_id],
+                currentContentId: null,
+                conversationId: conversationId,
+                isSeed: comment.is_seed ?? false,
+                numAgrees: calculatedNumAgrees,
+                numDisagrees: calculatedNumDisagrees,
+                numPasses: calculatedNumPasses,
+            };
+        },
+    );
+
+    async function doImportOpinions(db: PostgresJsDatabase): Promise<{
+        opinionIdPerStatementId: OpinionIdPerStatementId;
+        opinionContentIdPerOpinionId: OpinionContentIdPerOpinionId;
+    }> {
+        const insertOpinionResponses = await db
+            .insert(opinionTable)
+            .values(opinionsToAdd)
+            .returning({
+                opinionId: opinionTable.id,
+                opinionSlugId: opinionTable.slugId,
+            });
+        for (const insertedOpinion of insertOpinionResponses) {
+            const statementId =
+                statementIdPerOpinionSlugId[insertedOpinion.opinionSlugId];
+            opinionIdPerStatementId[statementId] = insertedOpinion.opinionId;
+        }
+
+        const opinionContentsToAdd =
+            importedPolisConversation.comments_data.map((comment) => {
+                const opinionId = opinionIdPerStatementId[comment.statement_id];
+                try {
+                    const commentBody = processHtmlBody(comment.txt, true);
+                    return {
+                        opinionId: opinionId,
+                        conversationContentId: conversationContentId,
+                        content: commentBody,
+                    };
+                } catch (error) {
+                    if (error instanceof Error) {
+                        throw httpErrors.badRequest(error.message);
+                    } else {
+                        throw httpErrors.badRequest(
+                            "Error while sanitizing request body",
+                        );
+                    }
+                }
+            });
+        const opinionContentTableResponses = await db
+            .insert(opinionContentTable)
+            .values(opinionContentsToAdd)
+            .returning({
+                opinionContentId: opinionContentTable.id,
+                opinionId: opinionContentTable.opinionId,
+            });
+        for (const opinionContent of opinionContentTableResponses) {
+            opinionContentIdPerOpinionId[opinionContent.opinionId] =
+                opinionContent.opinionContentId;
+        }
+        const sqlChunksOpinionCurrentId: SQL[] = [];
+        sqlChunksOpinionCurrentId.push(sql`(CASE`);
+        for (const opinionContentResponse of opinionContentTableResponses) {
+            sqlChunksOpinionCurrentId.push(
+                sql`WHEN ${opinionTable.id} = ${opinionContentResponse.opinionId}::int THEN ${opinionContentResponse.opinionContentId}::int`,
+            );
+        }
+        sqlChunksOpinionCurrentId.push(sql`ELSE current_content_id`);
+        sqlChunksOpinionCurrentId.push(sql`END)`);
+
+        const finalSqlOpinionCurrentContentId = sql.join(
+            sqlChunksOpinionCurrentId,
+            sql.raw(" "),
+        );
+        const setClauseOpinionCurrentContentId = {
+            currentContentId: finalSqlOpinionCurrentContentId,
+        };
+        await db
+            .update(opinionTable)
+            .set({
+                ...setClauseOpinionCurrentContentId,
+                updatedAt: nowZeroMs(),
+            })
+            .where(eq(opinionTable.conversationId, conversationId));
+
+        // add moderated decisions
+        const moderatedOpinions: {
+            opinionId: number;
+            moderationAction: OpinionModerationAction;
+            moderationReason: ModerationReason;
+        }[] = importedPolisConversation.comments_data
+            .filter((comment) => comment.moderated === -1)
+            .map((comment) => {
+                const opinionId = opinionIdPerStatementId[comment.statement_id];
+                return {
+                    opinionId: opinionId,
+                    moderationAction: "move",
+                    moderationReason: "spam", // this is not in polis, so we improvise something
+                };
+            });
+        if (moderatedOpinions.length > 0) {
+            await db.insert(opinionModerationTable).values(moderatedOpinions);
+        }
+        // TODO: Update the user profile's comment count
+        return {
+            opinionIdPerStatementId,
+            opinionContentIdPerOpinionId,
+        };
+    }
+
+    let doTransaction = true;
+    if (db instanceof PgTransaction) {
+        doTransaction = false;
+    }
+    if (doTransaction) {
+        return await db.transaction(async (tx) => {
+            return await doImportOpinions(tx);
+        });
+    } else {
+        return await doImportOpinions(db);
+    }
 }

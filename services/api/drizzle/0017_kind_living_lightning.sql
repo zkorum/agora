@@ -1,0 +1,1 @@
+ALTER TABLE "opinion_moderation" ALTER COLUMN "author_id" DROP NOT NULL;

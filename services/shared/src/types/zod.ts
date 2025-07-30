@@ -10,6 +10,7 @@ import {
     validateHtmlStringCharacterCount,
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js/max";
+import { isValidPolisUrl } from "../utils/polis.js";
 
 export const zodUserReportReason = z.enum([
     "misleading",
@@ -154,8 +155,8 @@ export const zodUsername = z
     .refine((val) => val.length <= MAX_LENGTH_USERNAME, {
         message: `Username must cannot exceed ${MAX_LENGTH_USERNAME.toString()} characters`,
     })
-    .refine((val) => !val.startsWith("seed"), {
-        message: "Username must not start with 'seed'",
+    .refine((val) => !val.startsWith("ext"), {
+        message: "Username must not start with 'ext'",
     })
     .refine((val) => val.toLowerCase() !== "agora", {
         message: "Username must not be 'agora'",
@@ -810,16 +811,19 @@ export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
 ]);
 
 export const zodLinkType = z.enum(["http", "deep"]);
-
-export const zodPolisVoteRecord = z.object({
-    participant_id: z.number(), // TODO: support string too
-    statement_id: z.number(), // TODO: support string too
-    vote: z.number(),
-    conversation_id: z.union([z.string(), z.number()]).optional(),
-    datetime: z.string().optional(),
-    modified: z.number().optional(),
-    weight_x_32767: z.number().optional(),
-});
+export const zodPolisUrl = z
+    .string()
+    .url({
+        message: "Invalid url",
+    })
+    .refine(
+        (val: string) => {
+            return isValidPolisUrl(val);
+        },
+        {
+            message: "Please use valid polis url",
+        },
+    );
 export type Device = z.infer<typeof zodDevice>;
 export type Devices = z.infer<typeof zodDevices>;
 export type ExtendedConversation = z.infer<typeof zodExtendedConversationData>;
@@ -899,4 +903,4 @@ export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
 export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
 export type LinkType = z.infer<typeof zodLinkType>;
-export type PolisVoteRecord = z.infer<typeof zodPolisVoteRecord>;
+export type PolisUrl = z.infer<typeof zodPolisUrl>;

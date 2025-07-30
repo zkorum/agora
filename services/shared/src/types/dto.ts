@@ -1,4 +1,3 @@
-/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 import {
     zodExtendedConversationData,
@@ -35,9 +34,10 @@ import {
     zodTopicObject,
     zodFeedSortAlgorithm,
     zodLinkType,
-    zodPolisVoteRecord,
+    zodPolisUrl,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
+import { zodPolisVoteRecord } from "./polis.js";
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -184,13 +184,11 @@ export class Dto {
         .strict();
     static importConversationRequest = z
         .object({
-            polisUrl: z.string().url(),
+            polisUrl: zodPolisUrl,
             postAsOrganization: z.string(),
             indexConversationAt: z.string().datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
-            pollingOptionList: zodPollOptionTitle.array().optional(),
-            seedOpinionList: z.array(z.string()),
         })
         .strict();
     static importConversationResponse = z

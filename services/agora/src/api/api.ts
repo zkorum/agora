@@ -1329,18 +1329,6 @@ export interface ApiV1ConversationImportPostRequest {
      * @memberof ApiV1ConversationImportPostRequest
      */
     'isLoginRequired': boolean;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof ApiV1ConversationImportPostRequest
-     */
-    'pollingOptionList'?: Array<string>;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof ApiV1ConversationImportPostRequest
-     */
-    'seedOpinionList': Array<string>;
 }
 /**
  * 

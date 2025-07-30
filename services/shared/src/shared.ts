@@ -80,7 +80,7 @@ export function validateHtmlStringCharacterCount(
     const rawTextWithoutTags = sanitizeHtml(htmlString, options);
 
     const characterLimit =
-        mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
+        mode == "conversation" ? MAX_LENGTH_BODY_HTML : MAX_LENGTH_OPINION_HTML;
     if (rawTextWithoutTags.length <= characterLimit) {
         return { isValid: true, characterCount: rawTextWithoutTags.length };
     } else {

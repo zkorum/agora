@@ -36,31 +36,42 @@ def print_summary(loader: Loader):
 
 @app.route("/import")
 def importConversation():
-    polis_id = request.args.get("report_id")
-    if polis_id is None:
-        polis_id = request.args.get("conversation_id")
-        if polis_id is None:
-            abort(
-                400,
-                description="Missing required query parameter. Expected either 'report_id' or 'conversation_id'.",
-            )
-        else:
-            print(f"Loading Polis conversation from conversation_id={polis_id}")
-    else:
-        print(f"Loading Polis conversation from report_id={polis_id}")
-    loader = Loader(polis_id=polis_id, data_source="csv_export")
-    loader.load_api_data_conversation()  # see https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/loading-data.ipynb "math_data and conversation_data only populate from the "api" data_source."
-    assert_fully_populated(loader, ignore=["math_data", "conversation_data"])
-    print_summary(loader)
-    return jsonify(
-        {
-            # "report_id": loader.report_id,
-            # "conversation_id": loader.conversation_id,
-            # "conversation_data": loader.conversation_data,
-            # "comments_data": loader.comments_data,
-            "votes_data": loader.votes_data,
-        }
-    )
+    report_id = request.args.get("report_id")
+    conversation_id = request.args.get("conversation_id")
+    if report_id is None and conversation_id is None:
+        abort(
+            400,
+            description="Missing required query parameter. Expected either 'report_id' or 'conversation_id'.",
+        )
+    if report_id is not None:
+        print(f"Loading Polis conversation from report_id={report_id}")
+        loader = Loader(polis_id=report_id, data_source="csv_export")
+        loader.load_api_data_conversation()  # see https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/loading-data.ipynb "math_data and conversation_data only populate from the "api" data_source."
+        assert_fully_populated(loader, ignore=["math_data"])
+        print_summary(loader)
+        return jsonify(
+            {
+                "report_id": loader.report_id,
+                "conversation_id": loader.conversation_id,
+                "conversation_data": loader.conversation_data,
+                "comments_data": loader.comments_data,
+                "votes_data": loader.votes_data,
+            }
+        )
+    if conversation_id is not None:
+        print(f"Loading Polis conversation from conversation_id={conversation_id}")
+        loader = Loader(polis_id=conversation_id)
+        assert_fully_populated(loader, ignore=["math_data"])
+        print_summary(loader)
+        return jsonify(
+            {
+                "report_id": loader.report_id,
+                "conversation_id": loader.conversation_id,
+                "conversation_data": loader.conversation_data,
+                "comments_data": loader.comments_data,
+                "votes_data": loader.votes_data,
+            }
+        )
 
 
 # --- Define TypedDicts ---
@@ -97,9 +108,16 @@ def get_math_results():
     votes = [vote.model_dump() for vote in payload.votes]
     print("Votes", votes)
 
+    # For fewer than 21 statements, gradually increase min_user_vote_threshold from 4 up to 7.
+    # At 14 statements and above (round(14/2) = 7), the threshold stays at 7.
+    total_statement_ids = {vote.statement_id for vote in payload.votes}
+    statement_count = len(total_statement_ids)
+    min_user_vote_threshold = max(4, min(round(statement_count / 2), 7))
+
     try:
-        # run_pipeline(votes=votes, min_user_vote_threshold=min(4, total_unmoderated_statements)) ? with total_unmoderated_statements sent via API, or better
-        result = run_pipeline(votes=votes, min_user_vote_threshold=4)
+        result = run_pipeline(
+            votes=votes, min_user_vote_threshold=min_user_vote_threshold
+        )
     except Exception as err:
         print(
             "Error while running pipeline. If TypeError, it's likely there aren't enough participants and votes yet"
