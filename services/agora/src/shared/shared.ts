@@ -4,7 +4,7 @@
 // Extracted from: https://github.com/oddsdk/ts-odd/tree/f90bde37416d9986d1c0afed406182a95ce7c1d7
 import localforage from "localforage";
 import { toEncodedCID } from "./common/cid.js";
-import type { NumberType } from "libphonenumber-js/mobile";
+import type { NumberType } from "libphonenumber-js/max";
 import sanitizeHtml from "sanitize-html";
 import type { Opts } from "linkifyjs";
 import linkifyHtml from "linkify-html";
@@ -451,10 +451,10 @@ export function isPhoneNumberTypeSupported(type: NumberType): boolean {
     switch (type) {
         case "PERSONAL_NUMBER":
         case "FIXED_LINE_OR_MOBILE":
-        case "FIXED_LINE":
         case "MOBILE":
         case undefined:
             return true;
+        case "FIXED_LINE":
         case "PREMIUM_RATE":
         case "TOLL_FREE":
         case "SHARED_COST":

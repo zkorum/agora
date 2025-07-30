@@ -9,7 +9,7 @@
         <div class="poll-title">
           <span class="poll-title-text">Add a poll</span>
         </div>
-        <Button
+        <PrimeButton
           icon="pi pi-times"
           text
           severity="secondary"
@@ -50,7 +50,7 @@
         </div>
 
         <div class="add-option-container">
-          <Button
+          <PrimeButton
             label="Add Option"
             icon="pi pi-plus"
             severity="secondary"
@@ -66,7 +66,6 @@
 </template>
 
 <script setup lang="ts">
-import Button from "primevue/button";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";

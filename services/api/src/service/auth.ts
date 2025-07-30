@@ -22,7 +22,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { base64 } from "@/shared/common/index.js";
 import parsePhoneNumberFromString, {
     type CountryCode,
-} from "libphonenumber-js/mobile";
+} from "libphonenumber-js/max";
 import { log } from "@/app.js";
 import {
     PEPPER_VERSION,

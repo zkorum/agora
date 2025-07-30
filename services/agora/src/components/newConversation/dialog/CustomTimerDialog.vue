@@ -8,7 +8,7 @@
         </div>
 
         <div class="date-picker-container">
-          <DatePicker
+          <PrimeDatePicker
             v-model="customDate"
             show-time
             show-icon
@@ -40,7 +40,6 @@ import { ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import DatePicker from "primevue/datepicker";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 
@@ -88,8 +87,7 @@ function goBack(): void {
 
 function confirmSelection(): void {
   if (customDate.value) {
-    conversationDraft.value.privateConversationSettings.hasScheduledConversion =
-      true;
+    conversationDraft.value.privateConversationSettings.hasScheduledConversion = true;
     conversationDraft.value.privateConversationSettings.conversionDate =
       customDate.value;
     showDialog.value = false;

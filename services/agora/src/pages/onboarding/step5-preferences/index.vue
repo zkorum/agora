@@ -59,7 +59,7 @@ import { onMounted } from "vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
-import FollowButton from "src/components/ui-library/buttons/FollowButton.vue";
+import FollowButton from "src/components/features/topics/FollowButton.vue";
 
 const { loadTopicsData, followTopic, unfollowTopic } = useTopicStore();
 const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());

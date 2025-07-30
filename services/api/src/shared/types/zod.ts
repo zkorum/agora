@@ -10,7 +10,7 @@ import {
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     validateHtmlStringCharacterCount,
 } from "../shared.js";
-import { isValidPhoneNumber } from "libphonenumber-js/mobile";
+import { isValidPhoneNumber } from "libphonenumber-js/max";
 
 export const zodUserReportReason = z.enum([
     "misleading",

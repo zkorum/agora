@@ -3,7 +3,7 @@
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
-      <form class="formStyle" @submit.prevent="">
+      <form class="formStyle" @submit.prevent="nextButtonClicked">
         <StepperLayout
           :submit-call-back="nextButtonClicked"
           :current-step="3.5"
@@ -23,15 +23,17 @@
           <template #body>
             <div class="instructions">
               Enter the 6-digit that we have sent via the phone number
-              <span class="phoneNumberStyle">{{
-                verificationPhoneNumber.phoneNumber
-              }}</span
+              <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
               >.
             </div>
 
             <div class="otpDiv">
-              <div v-if="isMounted" class="codeInput">
-                <InputOtp v-model="verificationCode" :length="6" integer-only />
+              <div class="codeInput">
+                <PrimeInputOtp
+                  v-model="verificationCode"
+                  :length="6"
+                  integer-only
+                />
               </div>
 
               <div
@@ -81,8 +83,8 @@ import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import { onMounted, ref } from "vue";
-import InputOtp from "primevue/inputotp";
+import { onMounted, ref, computed } from "vue";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
@@ -123,11 +125,38 @@ const { showNotifyMessage } = useNotify();
 const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isSubmitButtonLoading = ref(false);
-const isMounted = ref(false);
+
+const formattedPhoneNumber = computed(() => {
+  if (!verificationPhoneNumber.value.internationalPhoneNumber) return "";
+
+  const parsed = parsePhoneNumberFromString(
+    verificationPhoneNumber.value.internationalPhoneNumber
+  );
+  return (
+    parsed?.formatInternational() ||
+    verificationPhoneNumber.value.internationalPhoneNumber
+  );
+});
+
+function validateAndParseOtpCode(code: string): number | null {
+  const trimmedCode = code.trim();
+
+  // Check if exactly 6 digits
+  if (!/^\d{6}$/.test(trimmedCode)) {
+    return null;
+  }
+
+  const numericCode = parseInt(trimmedCode, 10);
+
+  if (isNaN(numericCode)) {
+    return null;
+  }
+
+  return numericCode;
+}
 
 onMounted(async () => {
-  isMounted.value = true;
-  if (verificationPhoneNumber.value.phoneNumber == "") {
+  if (verificationPhoneNumber.value.internationalPhoneNumber == "") {
     await changePhoneNumber();
   } else {
     await requestCodeClicked(false);
@@ -142,10 +171,18 @@ async function clickedResendButton() {
 async function nextButtonClicked() {
   isSubmitButtonLoading.value = true;
 
+  const validatedCode = validateAndParseOtpCode(verificationCode.value);
+
+  if (validatedCode === null) {
+    isSubmitButtonLoading.value = false;
+    showNotifyMessage("Please enter a valid 6-digit code");
+    return;
+  }
+
   const response = await verifyPhoneOtp({
-    code: Number(verificationCode.value),
-    phoneNumber: verificationPhoneNumber.value.phoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+    code: validatedCode,
+    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
+    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
   });
 
   isSubmitButtonLoading.value = false;
@@ -206,8 +243,8 @@ async function requestCodeClicked(
 ) {
   const response = await sendSmsCode({
     isRequestingNewCode: isRequestingNewCode,
-    phoneNumber: verificationPhoneNumber.value.phoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
+    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
     keyAction: keyAction,
   });
   if (response.status == "success") {

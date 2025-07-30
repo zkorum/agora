@@ -1,5 +1,5 @@
 <template>
-  <Button
+  <PrimeButton
     variant="outlined"
     rounded
     :class="{
@@ -9,12 +9,10 @@
     class="commonStyle"
   >
     <div>{{ label }}</div>
-  </Button>
+  </PrimeButton>
 </template>
 
 <script setup lang="ts">
-import Button from "primevue/button";
-
 const props = defineProps<{
   isSelected: boolean;
   label: string;
