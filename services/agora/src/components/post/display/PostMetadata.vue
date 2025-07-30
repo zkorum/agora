@@ -55,9 +55,9 @@ import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue"
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
+import { useConversationData } from "src/composables/useConversationData";
 
 const emit = defineEmits(["openModerationHistory"]);
 
@@ -84,13 +84,13 @@ const showReportDialog = ref(false);
 
 const showLoginDialog = ref(false);
 
-const { createReportUserContentIntention } = useLoginIntentionStore();
+const { createReportUserContentLoginIntention } = useConversationData();
 
 const webShare = useWebShare();
 const { getEmbedUrl } = useConversationUrl();
 
 function onLoginConfirmationOk() {
-  createReportUserContentIntention(props.postSlugId, "");
+  createReportUserContentLoginIntention("");
 }
 
 function reportContentCallback() {

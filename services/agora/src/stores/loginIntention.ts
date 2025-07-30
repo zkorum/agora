@@ -5,12 +5,14 @@ import { useRouter } from "vue-router";
 interface VotingIntention {
   enabled: boolean;
   conversationSlugId: string;
+  isEmbedView: boolean;
 }
 
 interface OpinionAgreementIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionSlugId: string;
+  isEmbedView: boolean;
 }
 
 interface NewConversationIntention {
@@ -27,6 +29,7 @@ interface ReportUserContentIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionSlugId: string;
+  isEmbedView: boolean;
 }
 
 export type PossibleIntentions =
@@ -48,12 +51,14 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   let votingIntention: VotingIntention = {
     enabled: false,
     conversationSlugId: "",
+    isEmbedView: false,
   };
 
   let opinionAgreementIntention: OpinionAgreementIntention = {
     enabled: false,
     conversationSlugId: "",
     opinionSlugId: "",
+    isEmbedView: false,
   };
 
   let newConversationIntention: NewConversationIntention = {
@@ -70,20 +75,30 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     enabled: false,
     conversationSlugId: "",
     opinionSlugId: "",
+    isEmbedView: false,
   };
 
-  function createVotingIntention(conversationSlugId: string) {
-    votingIntention = { enabled: true, conversationSlugId: conversationSlugId };
+  function createVotingIntention(
+    conversationSlugId: string,
+    isEmbedView: boolean
+  ) {
+    votingIntention = {
+      enabled: true,
+      conversationSlugId: conversationSlugId,
+      isEmbedView: isEmbedView,
+    };
   }
 
   function createOpinionAgreementIntention(
     conversationSlugId: string,
-    opinionSlugId: string
+    opinionSlugId: string,
+    isEmbedView: boolean
   ) {
     opinionAgreementIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
+      isEmbedView: isEmbedView,
     };
   }
 
@@ -106,12 +121,14 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function createReportUserContentIntention(
     conversationSlugId: string,
-    opinionSlugId: string
+    opinionSlugId: string,
+    isEmbedView: boolean
   ) {
     reportUserContentIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
+      isEmbedView: isEmbedView,
     };
   }
 
@@ -128,7 +145,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         break;
       case "agreement":
         await router.push({
-          name: "/conversation/[postSlugId]",
+          name: opinionAgreementIntention.isEmbedView
+            ? "/conversation/[postSlugId].embed"
+            : "/conversation/[postSlugId]",
           params: { postSlugId: opinionAgreementIntention.conversationSlugId },
           query: { opinion: opinionAgreementIntention.opinionSlugId },
         });
@@ -144,13 +163,17 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         break;
       case "voting":
         await router.push({
-          name: "/conversation/[postSlugId]",
+          name: votingIntention.isEmbedView
+            ? "/conversation/[postSlugId].embed"
+            : "/conversation/[postSlugId]",
           params: { postSlugId: votingIntention.conversationSlugId },
         });
         break;
       case "reportUserContent":
         await router.push({
-          name: "/conversation/[postSlugId]",
+          name: reportUserContentIntention.isEmbedView
+            ? "/conversation/[postSlugId].embed"
+            : "/conversation/[postSlugId]",
           params: { postSlugId: reportUserContentIntention.conversationSlugId },
           query: { opinion: reportUserContentIntention.opinionSlugId },
         });
@@ -231,6 +254,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         opinionSlugId: "",
+        isEmbedView: false,
       };
     }
   }
@@ -245,6 +269,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       return {
         enabled: false,
         conversationSlugId: "",
+        isEmbedView: false,
       };
     }
   }
@@ -262,6 +287,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         opinionSlugId: "",
+        isEmbedView: false,
       };
     }
   }

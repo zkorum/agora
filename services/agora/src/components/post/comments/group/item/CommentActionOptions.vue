@@ -36,7 +36,6 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useWebShare } from "src/utils/share/WebShare";
@@ -44,6 +43,7 @@ import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { useConversationData } from "src/composables/useConversationData";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -69,13 +69,10 @@ const { deleteCommentBySlugId } = useBackendCommentApi();
 
 const showLoginDialog = ref(false);
 
-const { createReportUserContentIntention } = useLoginIntentionStore();
+const { createReportUserContentLoginIntention } = useConversationData();
 
 function onLoginConfirmationOk() {
-  createReportUserContentIntention(
-    props.postSlugId,
-    props.commentItem.opinionSlugId
-  );
+  createReportUserContentLoginIntention(props.commentItem.opinionSlugId);
 }
 
 function reportContentCallback() {

@@ -23,6 +23,10 @@ export function useConversationData() {
     clearVotingIntention,
     clearOpinionAgreementIntention,
     clearReportUserContentIntention,
+    createVotingIntention,
+    createOpinionAgreementIntention,
+    createReportUserContentIntention,
+    setActiveUserIntention,
   } = useLoginIntentionStore();
 
   // Clear intentions on initialization
@@ -79,11 +83,50 @@ export function useConversationData() {
     }, 500);
   }
 
+  function createVotingLoginIntention() {
+    if (
+      route.name === "/conversation/[postSlugId]" ||
+      route.name === "/conversation/[postSlugId].embed"
+    ) {
+      const isEmbedView = route.name === "/conversation/[postSlugId].embed";
+      const postSlugId = route.params.postSlugId;
+      createVotingIntention(postSlugId, isEmbedView);
+      setActiveUserIntention("voting");
+    }
+  }
+
+  function createOpinionAgreementLoginIntention(opinionSlugId: string) {
+    if (
+      route.name === "/conversation/[postSlugId]" ||
+      route.name === "/conversation/[postSlugId].embed"
+    ) {
+      const isEmbedView = route.name === "/conversation/[postSlugId].embed";
+      const postSlugId = route.params.postSlugId;
+      createOpinionAgreementIntention(postSlugId, opinionSlugId, isEmbedView);
+      setActiveUserIntention("agreement");
+    }
+  }
+
+  function createReportUserContentLoginIntention(opinionSlugId: string) {
+    if (
+      route.name === "/conversation/[postSlugId]" ||
+      route.name === "/conversation/[postSlugId].embed"
+    ) {
+      const isEmbedView = route.name === "/conversation/[postSlugId].embed";
+      const postSlugId = route.params.postSlugId;
+      createReportUserContentIntention(postSlugId, opinionSlugId, isEmbedView);
+      setActiveUserIntention("reportUserContent");
+    }
+  }
+
   return {
     postData,
     dataLoaded,
     initialize,
     loadData,
     pullDownTriggered,
+    createVotingLoginIntention,
+    createOpinionAgreementLoginIntention,
+    createReportUserContentLoginIntention,
   };
 }
