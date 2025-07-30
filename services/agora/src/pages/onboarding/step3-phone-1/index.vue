@@ -307,8 +307,8 @@ async function validateNumber(): Promise<boolean> {
     }
 
     verificationPhoneNumber.value = {
-      defaultCallingCode: result.callingCode,
-      phoneNumber: result.parsedNumber.number,
+      countryCallingCode: result.callingCode,
+      internationalPhoneNumber: result.parsedNumber.number,
     };
     await router.push({ name: "/onboarding/step3-phone-2/" });
     return true;

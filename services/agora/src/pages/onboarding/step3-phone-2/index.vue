@@ -23,9 +23,7 @@
           <template #body>
             <div class="instructions">
               Enter the 6-digit that we have sent via the phone number
-              <span class="phoneNumberStyle">{{
-                verificationPhoneNumber.phoneNumber
-              }}</span
+              <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
               >.
             </div>
 
@@ -85,7 +83,8 @@ import StepperLayout from "src/components/onboarding/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/InfoHeader.vue";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
@@ -127,6 +126,18 @@ const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isSubmitButtonLoading = ref(false);
 
+const formattedPhoneNumber = computed(() => {
+  if (!verificationPhoneNumber.value.internationalPhoneNumber) return "";
+
+  const parsed = parsePhoneNumberFromString(
+    verificationPhoneNumber.value.internationalPhoneNumber
+  );
+  return (
+    parsed?.formatInternational() ||
+    verificationPhoneNumber.value.internationalPhoneNumber
+  );
+});
+
 function validateAndParseOtpCode(code: string): number | null {
   const trimmedCode = code.trim();
 
@@ -145,7 +156,7 @@ function validateAndParseOtpCode(code: string): number | null {
 }
 
 onMounted(async () => {
-  if (verificationPhoneNumber.value.phoneNumber == "") {
+  if (verificationPhoneNumber.value.internationalPhoneNumber == "") {
     await changePhoneNumber();
   } else {
     await requestCodeClicked(false);
@@ -170,8 +181,8 @@ async function nextButtonClicked() {
 
   const response = await verifyPhoneOtp({
     code: validatedCode,
-    phoneNumber: verificationPhoneNumber.value.phoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
+    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
   });
 
   isSubmitButtonLoading.value = false;
@@ -232,8 +243,8 @@ async function requestCodeClicked(
 ) {
   const response = await sendSmsCode({
     isRequestingNewCode: isRequestingNewCode,
-    phoneNumber: verificationPhoneNumber.value.phoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.defaultCallingCode,
+    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
+    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
     keyAction: keyAction,
   });
   if (response.status == "success") {
