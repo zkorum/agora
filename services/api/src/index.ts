@@ -2025,6 +2025,19 @@ server.after(() => {
                 didWrite: didWrite,
                 userId: deviceStatus.userId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                axiosPolis: axiosPolis,
+                awsAiLabelSummaryEnable:
+                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                    (config.NODE_ENV === "production" ||
+                        config.NODE_ENV === "staging"),
+                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                awsAiLabelSummaryTemperature:
+                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                awsAiLabelSummaryMaxTokens:
+                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
             });
             reply.send();
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
