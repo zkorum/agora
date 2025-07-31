@@ -91,23 +91,23 @@ export async function loadImportedPolisConversation({
         );
         trimmedTitle = `${trimmedTitle}${ellipsis}`;
     }
-    // TODO: add ownername and other info in DB for future use, and don't add the above info directly in the description, but do it in the UI
-    const { conversationSlugId, conversationId, conversationContentId } =
-        await postService.createNewPost({
-            db: db,
-            conversationTitle: trimmedTitle,
-            conversationBody: conversationBody,
-            pollingOptionList: null,
-            authorId: authorId,
-            didWrite: didWrite,
-            proof: proof,
-            indexConversationAt: indexConversationAt,
-            postAsOrganization: postAsOrganization,
-            isIndexed: isIndexed,
-            isLoginRequired: isLoginRequired,
-            seedOpinionList: [],
-        });
-    await db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
+        // TODO: add ownername and other info in DB for future use, and don't add the above info directly in the description, but do it in the UI
+        const { conversationSlugId, conversationId, conversationContentId } =
+            await postService.createNewPost({
+                db: tx,
+                conversationTitle: trimmedTitle,
+                conversationBody: conversationBody,
+                pollingOptionList: null,
+                authorId: authorId,
+                didWrite: didWrite,
+                proof: proof,
+                indexConversationAt: indexConversationAt,
+                postAsOrganization: postAsOrganization,
+                isIndexed: isIndexed,
+                isLoginRequired: isLoginRequired,
+                seedOpinionList: [],
+            });
         const {
             userIdPerParticipantId,
             participantCount,
@@ -159,6 +159,6 @@ export async function loadImportedPolisConversation({
             opinionCount: opinionCount,
             voteCount: voteCount,
         });
+        return { conversationSlugId, conversationId, conversationContentId };
     });
-    return { conversationSlugId, conversationId, conversationContentId };
 }
