@@ -12,6 +12,7 @@ import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import type { AxiosInstance } from "axios";
 import { castVoteForOpinionSlugIdFromUserId } from "./voting.js";
 import * as polisService from "@/service/polis.js";
+import { useCommonPost } from "./common.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -667,29 +668,6 @@ export async function deleteUserAccount({
             tx.rollback();
         }
 
-        // Delete user comments
-        const userComments = await getAllUserComments({
-            db: tx,
-            userId: userId,
-            baseImageServiceUrl,
-        });
-        for (const comment of userComments) {
-            await deleteOpinionBySlugId({
-                proof: proof,
-                opinionSlugId: comment.opinionItem.opinionSlugId,
-                db: tx,
-                didWrite: didWrite,
-                userId: userId,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
-            });
-        }
-
         // Delete user votes
         const userVotes = await getUserVotes({
             db: tx,
@@ -705,6 +683,29 @@ export async function deleteUserAccount({
                 votingAction: "cancel",
                 axiosPolis,
                 voteNotifMilestones,
+                awsAiLabelSummaryEnable,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            });
+        }
+
+        // Delete user comments
+        const userComments = await getAllUserComments({
+            db: tx,
+            userId: userId,
+            baseImageServiceUrl,
+        });
+        for (const comment of userComments) {
+            await deleteOpinionBySlugId({
+                db: tx,
+                proof: proof,
+                opinionSlugId: comment.opinionItem.opinionSlugId,
+                didWrite: didWrite,
+                userId: userId,
                 awsAiLabelSummaryEnable,
                 awsAiLabelSummaryRegion,
                 awsAiLabelSummaryModelId,
@@ -761,9 +762,15 @@ export async function deleteUserAccount({
         await logout(tx, didWrite);
     });
 
+    // Recalculate counts for affected conversations
     // Recalculate math for affected conversations
-    if (axiosPolis !== undefined) {
-        for (const affectedConversation of affectedConversations) {
+    for (const affectedConversation of affectedConversations) {
+        const { updateCountsBypassCache } = useCommonPost();
+        await updateCountsBypassCache({
+            db,
+            conversationSlugId: affectedConversation.conversationSlugId,
+        });
+        if (axiosPolis !== undefined) {
             const votes = await polisService.getPolisVotes({
                 db,
                 conversationId: affectedConversation.conversationId,
