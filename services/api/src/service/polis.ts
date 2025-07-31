@@ -151,10 +151,10 @@ async function loadPolisMathResults({
                 sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${priority}`,
             );
             sqlChunksGroupAwareConsensusAgree.push(
-                sql`WHEN ${opinionTable.slugId} = ${statement_id} THEN ${groupAwareConsensusAgree}`,
+                sql`WHEN ${opinionTable.id} = ${statement_id} THEN ${groupAwareConsensusAgree}`,
             );
             sqlChunksExtremities.push(
-                sql`WHEN ${opinionTable.slugId} = ${statement_id} THEN ${extremity}`,
+                sql`WHEN ${opinionTable.id} = ${statement_id} THEN ${extremity}`,
             );
         }
         sqlChunksPriorities.push(sql`ELSE polis_priority`);

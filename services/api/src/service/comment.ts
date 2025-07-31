@@ -425,6 +425,8 @@ export async function fetchOpinionsByPostId({
                         whereClause,
                         isSqlWhereRepresentative({
                             idColumn: polisClusterOpinionTableAlias0.id,
+                            repfulColumn:
+                                polisClusterOpinionTableAlias0.agreementType,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -438,6 +440,8 @@ export async function fetchOpinionsByPostId({
                         whereClause,
                         isSqlWhereRepresentative({
                             idColumn: polisClusterOpinionTableAlias1.id,
+                            repfulColumn:
+                                polisClusterOpinionTableAlias1.agreementType,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -451,6 +455,8 @@ export async function fetchOpinionsByPostId({
                         whereClause,
                         isSqlWhereRepresentative({
                             idColumn: polisClusterOpinionTableAlias2.id,
+                            repfulColumn:
+                                polisClusterOpinionTableAlias2.agreementType,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -464,6 +470,8 @@ export async function fetchOpinionsByPostId({
                         whereClause,
                         isSqlWhereRepresentative({
                             idColumn: polisClusterOpinionTableAlias3.id,
+                            repfulColumn:
+                                polisClusterOpinionTableAlias3.agreementType,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -477,6 +485,8 @@ export async function fetchOpinionsByPostId({
                         whereClause,
                         isSqlWhereRepresentative({
                             idColumn: polisClusterOpinionTableAlias4.id,
+                            repfulColumn:
+                                polisClusterOpinionTableAlias4.agreementType,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -490,6 +500,8 @@ export async function fetchOpinionsByPostId({
                         whereClause,
                         isSqlWhereRepresentative({
                             idColumn: polisClusterOpinionTableAlias5.id,
+                            repfulColumn:
+                                polisClusterOpinionTableAlias5.agreementType,
                         }),
                     );
                     orderByClause = isSqlOrderByRepresentative({
@@ -527,6 +539,8 @@ export async function fetchOpinionsByPostId({
             polisCluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
             polisCluster0NumDisagrees: opinionTable.polisCluster0NumDisagrees,
             polisCluster0NumPasses: opinionTable.polisCluster0NumPasses,
+            polisCluster0RepfulFor:
+                polisClusterOpinionTableAlias0.agreementType,
             polisCluster1Id: polisClusterTableAlias1.id,
             polisCluster1Key: polisClusterTableAlias1.key,
             polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
@@ -534,6 +548,8 @@ export async function fetchOpinionsByPostId({
             polisCluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
             polisCluster1NumDisagrees: opinionTable.polisCluster1NumDisagrees,
             polisCluster1NumPasses: opinionTable.polisCluster1NumPasses,
+            polisCluster1RepfulFor:
+                polisClusterOpinionTableAlias1.agreementType,
             polisCluster2Id: polisClusterTableAlias2.id,
             polisCluster2Key: polisClusterTableAlias2.key,
             polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
@@ -541,6 +557,8 @@ export async function fetchOpinionsByPostId({
             polisCluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
             polisCluster2NumDisagrees: opinionTable.polisCluster2NumDisagrees,
             polisCluster2NumPasses: opinionTable.polisCluster2NumPasses,
+            polisCluster2RepfulFor:
+                polisClusterOpinionTableAlias2.agreementType,
             polisCluster3Id: polisClusterTableAlias3.id,
             polisCluster3Key: polisClusterTableAlias3.key,
             polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
@@ -548,6 +566,8 @@ export async function fetchOpinionsByPostId({
             polisCluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
             polisCluster3NumDisagrees: opinionTable.polisCluster3NumDisagrees,
             polisCluster3NumPasses: opinionTable.polisCluster3NumPasses,
+            polisCluster3RepfulFor:
+                polisClusterOpinionTableAlias3.agreementType,
             polisCluster4Id: polisClusterTableAlias4.id,
             polisCluster4Key: polisClusterTableAlias4.key,
             polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
@@ -555,6 +575,8 @@ export async function fetchOpinionsByPostId({
             polisCluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
             polisCluster4NumDisagrees: opinionTable.polisCluster4NumDisagrees,
             polisCluster4NumPasses: opinionTable.polisCluster4NumPasses,
+            polisCluster4RepfulFor:
+                polisClusterOpinionTableAlias4.agreementType,
             polisCluster5Id: polisClusterTableAlias5.id,
             polisCluster5Key: polisClusterTableAlias5.key,
             polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
@@ -562,6 +584,8 @@ export async function fetchOpinionsByPostId({
             polisCluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
             polisCluster5NumDisagrees: opinionTable.polisCluster5NumDisagrees,
             polisCluster5NumPasses: opinionTable.polisCluster5NumPasses,
+            polisCluster5RepfulFor:
+                polisClusterOpinionTableAlias5.agreementType,
             opinionAuthorPolisClusterId: polisClusterUserTable.polisClusterId,
         })
         .from(opinionTable)
@@ -702,6 +726,9 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster0NumAgrees,
                 numDisagrees: opinionResponse.polisCluster0NumDisagrees,
                 numPasses: opinionResponse.polisCluster0NumPasses,
+                repfulFor: toUnionUndefined(
+                    opinionResponse.polisCluster0RepfulFor,
+                ),
             });
         }
         if (
@@ -721,6 +748,9 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster1NumAgrees,
                 numDisagrees: opinionResponse.polisCluster1NumDisagrees,
                 numPasses: opinionResponse.polisCluster1NumPasses,
+                repfulFor: toUnionUndefined(
+                    opinionResponse.polisCluster1RepfulFor,
+                ),
             });
         }
         if (
@@ -740,6 +770,9 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster2NumAgrees,
                 numDisagrees: opinionResponse.polisCluster2NumDisagrees,
                 numPasses: opinionResponse.polisCluster2NumPasses,
+                repfulFor: toUnionUndefined(
+                    opinionResponse.polisCluster2RepfulFor,
+                ),
             });
         }
         if (
@@ -759,6 +792,9 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster3NumAgrees,
                 numDisagrees: opinionResponse.polisCluster3NumDisagrees,
                 numPasses: opinionResponse.polisCluster3NumPasses,
+                repfulFor: toUnionUndefined(
+                    opinionResponse.polisCluster3RepfulFor,
+                ),
             });
         }
         if (
@@ -778,6 +814,9 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster4NumAgrees,
                 numDisagrees: opinionResponse.polisCluster4NumDisagrees,
                 numPasses: opinionResponse.polisCluster4NumPasses,
+                repfulFor: toUnionUndefined(
+                    opinionResponse.polisCluster4RepfulFor,
+                ),
             });
         }
         if (
@@ -797,6 +836,9 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster5NumAgrees,
                 numDisagrees: opinionResponse.polisCluster5NumDisagrees,
                 numPasses: opinionResponse.polisCluster5NumPasses,
+                repfulFor: toUnionUndefined(
+                    opinionResponse.polisCluster5RepfulFor,
+                ),
             });
         }
         const item: OpinionItem = {

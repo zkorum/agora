@@ -13,7 +13,6 @@ import {
     type GenLabelSummaryOutputClusterStrict,
     type GenLabelSummaryOutputLoose,
     type GenLabelSummaryOutputStrict,
-    type OpinionItemForLlm,
 } from "@/shared/types/zod.js";
 import { parseLlmOutputJson } from "@/utils/llmParse.js";
 import {
@@ -25,12 +24,6 @@ import { and, eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { type JSONObject } from "extract-first-json";
 import * as commentService from "./comment.js";
-import {
-    isControversial,
-    isMajority,
-    isMajorityAgree,
-    isMajorityDisagree,
-} from "@/shared/conversationLogic.js";
 
 interface UpdateAiLabelsAndSummariesProps {
     db: PostgresJsDatabase;
@@ -44,20 +37,16 @@ interface UpdateAiLabelsAndSummariesProps {
 }
 
 interface ClusterInsights {
-    numMembers: number;
-    representativeMajorityAgreeOpinions: OpinionItemForLlm[];
-    representativeMajorityDisagreeOpinions: OpinionItemForLlm[];
-    representativeControversialOpinions: OpinionItemForLlm[];
-    representativeOtherOpinions: OpinionItemForLlm[];
+    representativeAgreeOpinions: string[];
+    representativeDisagreeOpinions: string[];
 }
 
 interface ConversationInsights {
     conversationTitle: string;
     conversationBody?: string;
-    participantCount: number;
-    majorityOpinions: OpinionItemForLlm[];
-    controversialOpinions: OpinionItemForLlm[];
-    groupAwareConsensusAgreeOpinions: OpinionItemForLlm[];
+    majorityOpinions: string[];
+    controversialOpinions: string[];
+    groupAwareConsensusAgreeOpinions: string[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -305,8 +294,7 @@ async function getConversationInsights({
             "Conversation requested for creation of AI labels and summaries was not found",
         );
     }
-    const { conversationTitle, conversationBody, participantCount } =
-        conversationDataResults[0];
+    const { conversationTitle, conversationBody } = conversationDataResults[0];
     const coreOpinions = await getCoreOpinions({
         db,
         conversationId,
@@ -314,15 +302,14 @@ async function getConversationInsights({
     return {
         conversationTitle,
         conversationBody: toUnionUndefined(conversationBody),
-        participantCount,
         ...coreOpinions,
     };
 }
 
 interface CoreOpinions {
-    majorityOpinions: OpinionItemForLlm[];
-    controversialOpinions: OpinionItemForLlm[];
-    groupAwareConsensusAgreeOpinions: OpinionItemForLlm[];
+    majorityOpinions: string[];
+    controversialOpinions: string[];
+    groupAwareConsensusAgreeOpinions: string[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -339,20 +326,20 @@ async function getCoreOpinions({
         db,
         postId: conversationId,
         filterTarget: "majority",
-        limit: 3,
+        limit: 5,
     });
     const controversialOpinions = await commentService.fetchOpinionsByPostId({
         db,
         postId: conversationId,
         filterTarget: "controversial",
-        limit: 3,
+        limit: 5,
     });
     const groupAwareConsensusOpinions =
         await commentService.fetchOpinionsByPostId({
             db,
             postId: conversationId,
             filterTarget: "group-aware-consensus",
-            limit: 3,
+            limit: 5,
         });
     const cluster0Opinions = await commentService.fetchOpinionsByPostId({
         db,
@@ -397,760 +384,176 @@ async function getCoreOpinions({
         limit: 5,
     });
 
-    const majorityOpinionInsights: OpinionItemForLlm[] = Array.from(
+    const majorityOpinionInsights: string[] = Array.from(
         majorityOpinions.values(),
-    ).map((opinion) => {
-        return {
-            opinion: opinion.opinion,
-            numParticipants: opinion.numParticipants,
-            numAgrees: opinion.numAgrees,
-            numDisagrees: opinion.numDisagrees,
-            numPasses: opinion.numPasses,
-            clustersStats: opinion.clustersStats.map((stat) => {
-                return {
-                    key: stat.key,
-                    numMembers: stat.numUsers,
-                    numAgrees: stat.numAgrees,
-                    numDisagrees: stat.numDisagrees,
-                    numPasses: stat.numPasses,
-                };
-            }),
-        };
-    });
-    const controversialOpinionInsights: OpinionItemForLlm[] = Array.from(
+    ).map((opinion) => opinion.opinion);
+    const controversialOpinionInsights: string[] = Array.from(
         controversialOpinions.values(),
-    ).map((opinion) => {
-        return {
-            opinion: opinion.opinion,
-            numParticipants: opinion.numParticipants,
-            numAgrees: opinion.numAgrees,
-            numDisagrees: opinion.numDisagrees,
-            numPasses: opinion.numPasses,
-            clustersStats: opinion.clustersStats.map((stat) => {
-                return {
-                    key: stat.key,
-                    numMembers: stat.numUsers,
-                    numAgrees: stat.numAgrees,
-                    numDisagrees: stat.numDisagrees,
-                    numPasses: stat.numPasses,
-                };
-            }),
-        };
-    });
-    const groupAwareConsensusAgreeOpinionInsights: OpinionItemForLlm[] =
-        Array.from(groupAwareConsensusOpinions.values()).map((opinion) => {
-            return {
-                opinion: opinion.opinion,
-                numParticipants: opinion.numParticipants,
-                numAgrees: opinion.numAgrees,
-                numDisagrees: opinion.numDisagrees,
-                numPasses: opinion.numPasses,
-                clustersStats: opinion.clustersStats.map((stat) => {
-                    return {
-                        key: stat.key,
-                        numMembers: stat.numUsers,
-                        numAgrees: stat.numAgrees,
-                        numDisagrees: stat.numDisagrees,
-                        numPasses: stat.numPasses,
-                    };
-                }),
-            };
-        });
+    ).map((opinion) => opinion.opinion);
+    const groupAwareConsensusAgreeOpinionInsights: string[] = Array.from(
+        groupAwareConsensusOpinions.values(),
+    ).map((opinion) => opinion.opinion);
     const clusters: Record<string, ClusterInsights> = {};
     if (cluster0Opinions.size !== 0) {
         const cluster0ArrayOpinions = Array.from(cluster0Opinions.values());
+        const representativeOpinionsForCluster0 = cluster0ArrayOpinions.map(
+            (opinion) => {
+                const clusterStat = opinion.clustersStats.find(
+                    (stat) => stat.key === "0",
+                );
+                if (clusterStat?.repfulFor === undefined) {
+                    throw new Error(
+                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 0: clusterStat=${JSON.stringify(clusterStat)}`,
+                    );
+                }
+                return {
+                    opinion: opinion.opinion,
+                    repfulFor: clusterStat.repfulFor,
+                };
+            },
+        );
         clusters["0"] = {
-            numMembers: cluster0ArrayOpinions[0].clustersStats["0"].numUsers,
-            representativeMajorityAgreeOpinions: cluster0ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityAgree({
-                        numAgrees: opinion.clustersStats["0"].numAgrees,
-                        memberCount: opinion.clustersStats["0"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeMajorityDisagreeOpinions: cluster0ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityDisagree({
-                        numDisagrees: opinion.clustersStats["0"].numDisagrees,
-                        memberCount: opinion.clustersStats["0"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeControversialOpinions: cluster0ArrayOpinions
-                .filter((opinion) =>
-                    isControversial({
-                        numAgrees: opinion.clustersStats["0"].numAgrees,
-                        numDisagrees: opinion.clustersStats["0"].numDisagrees,
-                        memberCount: opinion.clustersStats["0"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeOtherOpinions: cluster0ArrayOpinions
-                .filter(
-                    (opinion) =>
-                        !isControversial({
-                            numAgrees: opinion.clustersStats["0"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["0"].numDisagrees,
-                            memberCount: opinion.clustersStats["0"].numUsers,
-                        }) &&
-                        !isMajority({
-                            numAgrees: opinion.clustersStats["0"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["0"].numDisagrees,
-                            memberCount: opinion.clustersStats["0"].numUsers,
-                        }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
+            representativeAgreeOpinions: representativeOpinionsForCluster0
+                .filter((opinion) => opinion.repfulFor === "agree")
+                .map((opinion) => opinion.opinion),
+            representativeDisagreeOpinions: representativeOpinionsForCluster0
+                .filter((opinion) => opinion.repfulFor === "disagree")
+                .map((opinion) => opinion.opinion),
         };
     }
     if (cluster1Opinions.size !== 0) {
         const cluster1ArrayOpinions = Array.from(cluster1Opinions.values());
+        const representativeOpinionsForCluster1 = cluster1ArrayOpinions.map(
+            (opinion) => {
+                const clusterStat = opinion.clustersStats.find(
+                    (stat) => stat.key === "1",
+                );
+                if (clusterStat?.repfulFor === undefined) {
+                    throw new Error(
+                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 1: clusterStat=${JSON.stringify(clusterStat)}`,
+                    );
+                }
+                return {
+                    opinion: opinion.opinion,
+                    repfulFor: clusterStat.repfulFor,
+                };
+            },
+        );
         clusters["1"] = {
-            numMembers: cluster1ArrayOpinions[0].clustersStats["1"].numUsers,
-            representativeMajorityAgreeOpinions: cluster1ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityAgree({
-                        numAgrees: opinion.clustersStats["1"].numAgrees,
-                        memberCount: opinion.clustersStats["1"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeMajorityDisagreeOpinions: cluster1ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityDisagree({
-                        numDisagrees: opinion.clustersStats["1"].numDisagrees,
-                        memberCount: opinion.clustersStats["1"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeControversialOpinions: cluster1ArrayOpinions
-                .filter((opinion) =>
-                    isControversial({
-                        numAgrees: opinion.clustersStats["1"].numAgrees,
-                        numDisagrees: opinion.clustersStats["1"].numDisagrees,
-                        memberCount: opinion.clustersStats["1"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeOtherOpinions: cluster1ArrayOpinions
-                .filter(
-                    (opinion) =>
-                        !isControversial({
-                            numAgrees: opinion.clustersStats["1"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["1"].numDisagrees,
-                            memberCount: opinion.clustersStats["1"].numUsers,
-                        }) &&
-                        !isMajority({
-                            numAgrees: opinion.clustersStats["1"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["1"].numDisagrees,
-                            memberCount: opinion.clustersStats["1"].numUsers,
-                        }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
+            representativeAgreeOpinions: representativeOpinionsForCluster1
+                .filter((opinion) => opinion.repfulFor === "agree")
+                .map((opinion) => opinion.opinion),
+            representativeDisagreeOpinions: representativeOpinionsForCluster1
+                .filter((opinion) => opinion.repfulFor === "disagree")
+                .map((opinion) => opinion.opinion),
         };
     }
     if (cluster2Opinions.size !== 0) {
         const cluster2ArrayOpinions = Array.from(cluster2Opinions.values());
+        const representativeOpinionsForCluster2 = cluster2ArrayOpinions.map(
+            (opinion) => {
+                const clusterStat = opinion.clustersStats.find(
+                    (stat) => stat.key === "2",
+                );
+                if (clusterStat?.repfulFor === undefined) {
+                    throw new Error(
+                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 2: clusterStat=${JSON.stringify(clusterStat)}`,
+                    );
+                }
+                return {
+                    opinion: opinion.opinion,
+                    repfulFor: clusterStat.repfulFor,
+                };
+            },
+        );
         clusters["2"] = {
-            numMembers: cluster2ArrayOpinions[0].clustersStats["2"].numUsers,
-            representativeMajorityAgreeOpinions: cluster2ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityAgree({
-                        numAgrees: opinion.clustersStats["2"].numAgrees,
-                        memberCount: opinion.clustersStats["2"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeMajorityDisagreeOpinions: cluster2ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityDisagree({
-                        numDisagrees: opinion.clustersStats["2"].numDisagrees,
-                        memberCount: opinion.clustersStats["2"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeControversialOpinions: cluster2ArrayOpinions
-                .filter((opinion) =>
-                    isControversial({
-                        numAgrees: opinion.clustersStats["2"].numAgrees,
-                        numDisagrees: opinion.clustersStats["2"].numDisagrees,
-                        memberCount: opinion.clustersStats["2"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeOtherOpinions: cluster2ArrayOpinions
-                .filter(
-                    (opinion) =>
-                        !isControversial({
-                            numAgrees: opinion.clustersStats["2"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["2"].numDisagrees,
-                            memberCount: opinion.clustersStats["2"].numUsers,
-                        }) &&
-                        !isMajority({
-                            numAgrees: opinion.clustersStats["2"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["2"].numDisagrees,
-                            memberCount: opinion.clustersStats["2"].numUsers,
-                        }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
+            representativeAgreeOpinions: representativeOpinionsForCluster2
+                .filter((opinion) => opinion.repfulFor === "agree")
+                .map((opinion) => opinion.opinion),
+            representativeDisagreeOpinions: representativeOpinionsForCluster2
+                .filter((opinion) => opinion.repfulFor === "disagree")
+                .map((opinion) => opinion.opinion),
         };
     }
     if (cluster3Opinions.size !== 0) {
         const cluster3ArrayOpinions = Array.from(cluster3Opinions.values());
+        const representativeOpinionsForCluster3 = cluster3ArrayOpinions.map(
+            (opinion) => {
+                const clusterStat = opinion.clustersStats.find(
+                    (stat) => stat.key === "3",
+                );
+                if (clusterStat?.repfulFor === undefined) {
+                    throw new Error(
+                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 3: clusterStat=${JSON.stringify(clusterStat)}`,
+                    );
+                }
+                return {
+                    opinion: opinion.opinion,
+                    repfulFor: clusterStat.repfulFor,
+                };
+            },
+        );
         clusters["3"] = {
-            numMembers: cluster3ArrayOpinions[0].clustersStats["3"].numUsers,
-            representativeMajorityAgreeOpinions: cluster3ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityAgree({
-                        numAgrees: opinion.clustersStats["3"].numAgrees,
-                        memberCount: opinion.clustersStats["3"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeMajorityDisagreeOpinions: cluster3ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityDisagree({
-                        numDisagrees: opinion.clustersStats["3"].numDisagrees,
-                        memberCount: opinion.clustersStats["3"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeControversialOpinions: cluster3ArrayOpinions
-                .filter((opinion) =>
-                    isControversial({
-                        numAgrees: opinion.clustersStats["3"].numAgrees,
-                        numDisagrees: opinion.clustersStats["3"].numDisagrees,
-                        memberCount: opinion.clustersStats["3"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeOtherOpinions: cluster3ArrayOpinions
-                .filter(
-                    (opinion) =>
-                        !isControversial({
-                            numAgrees: opinion.clustersStats["3"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["3"].numDisagrees,
-                            memberCount: opinion.clustersStats["3"].numUsers,
-                        }) &&
-                        !isMajority({
-                            numAgrees: opinion.clustersStats["3"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["3"].numDisagrees,
-                            memberCount: opinion.clustersStats["3"].numUsers,
-                        }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
+            representativeAgreeOpinions: representativeOpinionsForCluster3
+                .filter((opinion) => opinion.repfulFor === "agree")
+                .map((opinion) => opinion.opinion),
+            representativeDisagreeOpinions: representativeOpinionsForCluster3
+                .filter((opinion) => opinion.repfulFor === "disagree")
+                .map((opinion) => opinion.opinion),
         };
     }
     if (cluster4Opinions.size !== 0) {
         const cluster4ArrayOpinions = Array.from(cluster4Opinions.values());
+        const representativeOpinionsForCluster4 = cluster4ArrayOpinions.map(
+            (opinion) => {
+                const clusterStat = opinion.clustersStats.find(
+                    (stat) => stat.key === "4",
+                );
+                if (clusterStat?.repfulFor === undefined) {
+                    throw new Error(
+                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 4: clusterStat=${JSON.stringify(clusterStat)}`,
+                    );
+                }
+                return {
+                    opinion: opinion.opinion,
+                    repfulFor: clusterStat.repfulFor,
+                };
+            },
+        );
         clusters["4"] = {
-            numMembers: cluster4ArrayOpinions[0].clustersStats["4"].numUsers,
-            representativeMajorityAgreeOpinions: cluster4ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityAgree({
-                        numAgrees: opinion.clustersStats["4"].numAgrees,
-                        memberCount: opinion.clustersStats["4"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeMajorityDisagreeOpinions: cluster4ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityDisagree({
-                        numDisagrees: opinion.clustersStats["4"].numDisagrees,
-                        memberCount: opinion.clustersStats["4"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeControversialOpinions: cluster4ArrayOpinions
-                .filter((opinion) =>
-                    isControversial({
-                        numAgrees: opinion.clustersStats["4"].numAgrees,
-                        numDisagrees: opinion.clustersStats["4"].numDisagrees,
-                        memberCount: opinion.clustersStats["4"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeOtherOpinions: cluster4ArrayOpinions
-                .filter(
-                    (opinion) =>
-                        !isControversial({
-                            numAgrees: opinion.clustersStats["4"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["4"].numDisagrees,
-                            memberCount: opinion.clustersStats["4"].numUsers,
-                        }) &&
-                        !isMajority({
-                            numAgrees: opinion.clustersStats["4"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["4"].numDisagrees,
-                            memberCount: opinion.clustersStats["4"].numUsers,
-                        }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
+            representativeAgreeOpinions: representativeOpinionsForCluster4
+                .filter((opinion) => opinion.repfulFor === "agree")
+                .map((opinion) => opinion.opinion),
+            representativeDisagreeOpinions: representativeOpinionsForCluster4
+                .filter((opinion) => opinion.repfulFor === "disagree")
+                .map((opinion) => opinion.opinion),
         };
     }
     if (cluster5Opinions.size !== 0) {
         const cluster5ArrayOpinions = Array.from(cluster5Opinions.values());
+        const representativeOpinionsForCluster5 = cluster5ArrayOpinions.map(
+            (opinion) => {
+                const clusterStat = opinion.clustersStats.find(
+                    (stat) => stat.key === "5",
+                );
+                if (clusterStat?.repfulFor === undefined) {
+                    throw new Error(
+                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 5: clusterStat=${JSON.stringify(clusterStat)}`,
+                    );
+                }
+                return {
+                    opinion: opinion.opinion,
+                    repfulFor: clusterStat.repfulFor,
+                };
+            },
+        );
         clusters["5"] = {
-            numMembers: cluster5ArrayOpinions[0].clustersStats["5"].numUsers,
-            representativeMajorityAgreeOpinions: cluster5ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityAgree({
-                        numAgrees: opinion.clustersStats["5"].numAgrees,
-                        memberCount: opinion.clustersStats["5"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeMajorityDisagreeOpinions: cluster5ArrayOpinions
-                .filter((opinion) =>
-                    isMajorityDisagree({
-                        numDisagrees: opinion.clustersStats["5"].numDisagrees,
-                        memberCount: opinion.clustersStats["5"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeControversialOpinions: cluster5ArrayOpinions
-                .filter((opinion) =>
-                    isControversial({
-                        numAgrees: opinion.clustersStats["5"].numAgrees,
-                        numDisagrees: opinion.clustersStats["5"].numDisagrees,
-                        memberCount: opinion.clustersStats["5"].numUsers,
-                    }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
-            representativeOtherOpinions: cluster5ArrayOpinions
-                .filter(
-                    (opinion) =>
-                        !isControversial({
-                            numAgrees: opinion.clustersStats["5"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["5"].numDisagrees,
-                            memberCount: opinion.clustersStats["5"].numUsers,
-                        }) &&
-                        !isMajority({
-                            numAgrees: opinion.clustersStats["5"].numAgrees,
-                            numDisagrees:
-                                opinion.clustersStats["5"].numDisagrees,
-                            memberCount: opinion.clustersStats["5"].numUsers,
-                        }),
-                )
-                .map((opinion) => {
-                    return {
-                        opinion: opinion.opinion,
-                        numParticipants: opinion.numParticipants,
-                        numAgrees: opinion.numAgrees,
-                        numDisagrees: opinion.numDisagrees,
-                        numPasses: opinion.numPasses,
-                        clustersStats: opinion.clustersStats.map((stat) => {
-                            return {
-                                key: stat.key,
-                                numMembers: stat.numUsers,
-                                numAgrees: stat.numAgrees,
-                                numDisagrees: stat.numDisagrees,
-                                numPasses: stat.numPasses,
-                            };
-                        }),
-                    };
-                }),
+            representativeAgreeOpinions: representativeOpinionsForCluster5
+                .filter((opinion) => opinion.repfulFor === "agree")
+                .map((opinion) => opinion.opinion),
+            representativeDisagreeOpinions: representativeOpinionsForCluster5
+                .filter((opinion) => opinion.repfulFor === "disagree")
+                .map((opinion) => opinion.opinion),
         };
     }
     return {

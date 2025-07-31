@@ -2436,6 +2436,12 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersSta
      * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
      */
     'numPasses': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInner
+     */
+    'repfulFor'?: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerRepfulForEnum;
 }
 
 export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum = {
@@ -2448,6 +2454,12 @@ export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsIn
 } as const;
 
 export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum = typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum[keyof typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerKeyEnum];
+export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerRepfulForEnum = {
+    Agree: 'agree',
+    Disagree: 'disagree'
+} as const;
+
+export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerRepfulForEnum = typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerRepfulForEnum[keyof typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemClustersStatsInnerRepfulForEnum];
 
 /**
  * 
