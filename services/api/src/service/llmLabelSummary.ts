@@ -37,16 +37,17 @@ interface UpdateAiLabelsAndSummariesProps {
 }
 
 interface ClusterInsights {
-    representativeAgreeOpinions: string[];
-    representativeDisagreeOpinions: string[];
+    representativeAgree: string[];
+    representativeDisagree: string[];
 }
 
 interface ConversationInsights {
     conversationTitle: string;
     conversationBody?: string;
-    majorityOpinions: string[];
-    controversialOpinions: string[];
-    groupAwareConsensusAgreeOpinions: string[];
+    majorityAgree: string[];
+    majorityDisagree: string[];
+    controversial: string[];
+    groupAwareConsensusAgree: string[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -307,9 +308,10 @@ async function getConversationInsights({
 }
 
 interface CoreOpinions {
-    majorityOpinions: string[];
-    controversialOpinions: string[];
-    groupAwareConsensusAgreeOpinions: string[];
+    majorityAgree: string[];
+    majorityDisagree: string[];
+    controversial: string[];
+    groupAwareConsensusAgree: string[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -322,12 +324,20 @@ async function getCoreOpinions({
     db,
     conversationId,
 }: GetCoreOpinionsProps): Promise<CoreOpinions> {
-    const majorityOpinions = await commentService.fetchOpinionsByPostId({
+    const majorityAgreeOpinions = await commentService.fetchOpinionsByPostId({
         db,
         postId: conversationId,
-        filterTarget: "majority",
+        filterTarget: "majority-agree",
         limit: 5,
     });
+    const majorityDisagreeOpinions = await commentService.fetchOpinionsByPostId(
+        {
+            db,
+            postId: conversationId,
+            filterTarget: "majority-disagree",
+            limit: 5,
+        },
+    );
     const controversialOpinions = await commentService.fetchOpinionsByPostId({
         db,
         postId: conversationId,
@@ -384,8 +394,11 @@ async function getCoreOpinions({
         limit: 5,
     });
 
-    const majorityOpinionInsights: string[] = Array.from(
-        majorityOpinions.values(),
+    const majorityAgreeOpinionInsights: string[] = Array.from(
+        majorityAgreeOpinions.values(),
+    ).map((opinion) => opinion.opinion);
+    const majorityDisagreeOpinionInsights: string[] = Array.from(
+        majorityDisagreeOpinions.values(),
     ).map((opinion) => opinion.opinion);
     const controversialOpinionInsights: string[] = Array.from(
         controversialOpinions.values(),
@@ -393,6 +406,7 @@ async function getCoreOpinions({
     const groupAwareConsensusAgreeOpinionInsights: string[] = Array.from(
         groupAwareConsensusOpinions.values(),
     ).map((opinion) => opinion.opinion);
+
     const clusters: Record<string, ClusterInsights> = {};
     if (cluster0Opinions.size !== 0) {
         const cluster0ArrayOpinions = Array.from(cluster0Opinions.values());
@@ -413,10 +427,10 @@ async function getCoreOpinions({
             },
         );
         clusters["0"] = {
-            representativeAgreeOpinions: representativeOpinionsForCluster0
+            representativeAgree: representativeOpinionsForCluster0
                 .filter((opinion) => opinion.repfulFor === "agree")
                 .map((opinion) => opinion.opinion),
-            representativeDisagreeOpinions: representativeOpinionsForCluster0
+            representativeDisagree: representativeOpinionsForCluster0
                 .filter((opinion) => opinion.repfulFor === "disagree")
                 .map((opinion) => opinion.opinion),
         };
@@ -440,10 +454,10 @@ async function getCoreOpinions({
             },
         );
         clusters["1"] = {
-            representativeAgreeOpinions: representativeOpinionsForCluster1
+            representativeAgree: representativeOpinionsForCluster1
                 .filter((opinion) => opinion.repfulFor === "agree")
                 .map((opinion) => opinion.opinion),
-            representativeDisagreeOpinions: representativeOpinionsForCluster1
+            representativeDisagree: representativeOpinionsForCluster1
                 .filter((opinion) => opinion.repfulFor === "disagree")
                 .map((opinion) => opinion.opinion),
         };
@@ -467,10 +481,10 @@ async function getCoreOpinions({
             },
         );
         clusters["2"] = {
-            representativeAgreeOpinions: representativeOpinionsForCluster2
+            representativeAgree: representativeOpinionsForCluster2
                 .filter((opinion) => opinion.repfulFor === "agree")
                 .map((opinion) => opinion.opinion),
-            representativeDisagreeOpinions: representativeOpinionsForCluster2
+            representativeDisagree: representativeOpinionsForCluster2
                 .filter((opinion) => opinion.repfulFor === "disagree")
                 .map((opinion) => opinion.opinion),
         };
@@ -494,10 +508,10 @@ async function getCoreOpinions({
             },
         );
         clusters["3"] = {
-            representativeAgreeOpinions: representativeOpinionsForCluster3
+            representativeAgree: representativeOpinionsForCluster3
                 .filter((opinion) => opinion.repfulFor === "agree")
                 .map((opinion) => opinion.opinion),
-            representativeDisagreeOpinions: representativeOpinionsForCluster3
+            representativeDisagree: representativeOpinionsForCluster3
                 .filter((opinion) => opinion.repfulFor === "disagree")
                 .map((opinion) => opinion.opinion),
         };
@@ -521,10 +535,10 @@ async function getCoreOpinions({
             },
         );
         clusters["4"] = {
-            representativeAgreeOpinions: representativeOpinionsForCluster4
+            representativeAgree: representativeOpinionsForCluster4
                 .filter((opinion) => opinion.repfulFor === "agree")
                 .map((opinion) => opinion.opinion),
-            representativeDisagreeOpinions: representativeOpinionsForCluster4
+            representativeDisagree: representativeOpinionsForCluster4
                 .filter((opinion) => opinion.repfulFor === "disagree")
                 .map((opinion) => opinion.opinion),
         };
@@ -548,19 +562,19 @@ async function getCoreOpinions({
             },
         );
         clusters["5"] = {
-            representativeAgreeOpinions: representativeOpinionsForCluster5
+            representativeAgree: representativeOpinionsForCluster5
                 .filter((opinion) => opinion.repfulFor === "agree")
                 .map((opinion) => opinion.opinion),
-            representativeDisagreeOpinions: representativeOpinionsForCluster5
+            representativeDisagree: representativeOpinionsForCluster5
                 .filter((opinion) => opinion.repfulFor === "disagree")
                 .map((opinion) => opinion.opinion),
         };
     }
     return {
-        majorityOpinions: majorityOpinionInsights,
-        controversialOpinions: controversialOpinionInsights,
-        groupAwareConsensusAgreeOpinions:
-            groupAwareConsensusAgreeOpinionInsights,
+        majorityAgree: majorityAgreeOpinionInsights,
+        majorityDisagree: majorityDisagreeOpinionInsights,
+        controversial: controversialOpinionInsights,
+        groupAwareConsensusAgree: groupAwareConsensusAgreeOpinionInsights,
         clusters,
     };
 }

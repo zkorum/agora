@@ -51,7 +51,7 @@ function getUserAnalysis() {
 }
 
 function switchTab() {
-  currentTab.value = "Groups";
+  currentTab.value = "Me";
 }
 </script>
 
