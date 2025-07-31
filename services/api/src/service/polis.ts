@@ -32,6 +32,7 @@ import { PgTransaction } from "drizzle-orm/pg-core";
 import type { GetMathRequest } from "@/shared/types/dto.js";
 import { extractPolisIdFromUrl } from "@/shared/utils/polis.js";
 import { httpErrors } from "@fastify/sensible";
+import { useCommonPost } from "./common.js";
 
 interface PolisGetMathResultsProps {
     axiosPolis: AxiosInstance;
@@ -1014,6 +1015,7 @@ interface UpdateMathAllConversationsProps {
     awsAiLabelSummaryTopP: string;
     awsAiLabelSummaryMaxTokens: string;
     awsAiLabelSummaryPrompt: string;
+    doUpdateCounts: boolean;
 }
 
 export async function updateMathAllConversations({
@@ -1026,8 +1028,10 @@ export async function updateMathAllConversations({
     awsAiLabelSummaryTopP,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
+    doUpdateCounts,
 }: UpdateMathAllConversationsProps): Promise<void> {
     log.info("[Math] Updating polis math in all conversations...");
+    const { updateCountsBypassCache } = useCommonPost();
     const results = await db
         .select({
             conversationId: conversationTable.id,
@@ -1035,12 +1039,21 @@ export async function updateMathAllConversations({
         })
         .from(conversationTable);
     for (const result of results) {
+        if (doUpdateCounts) {
+            log.info(
+                "[Math] Updating conversation counts prior to recalculating math...",
+            );
+            await updateCountsBypassCache({
+                db,
+                conversationSlugId: result.conversationSlugId,
+            });
+        }
         const votes = await getPolisVotes({
             db,
             conversationId: result.conversationId,
             conversationSlugId: result.conversationSlugId,
         });
-        await getAndUpdatePolisMath({
+        getAndUpdatePolisMath({
             db: db,
             conversationSlugId: result.conversationSlugId,
             conversationId: result.conversationId,
@@ -1053,6 +1066,8 @@ export async function updateMathAllConversations({
             awsAiLabelSummaryTopP,
             awsAiLabelSummaryMaxTokens,
             awsAiLabelSummaryPrompt,
+        }).catch((e: unknown) => {
+            log.error(e);
         });
     }
     log.info(

@@ -30,7 +30,7 @@ import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
-// import * as polisService from "@/service/polis.js";
+import * as polisService from "@/service/polis.js";
 // import * as migrationService from "@/service/migration.js";
 import WebSocket from "ws";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
@@ -2588,25 +2588,6 @@ if (
     //     voteFilePath: polisConv[2],
     // });
 } else {
-    // await migrationService.fixNullPassInOpinionTable({ db });
-    // await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
-    // if (axiosPolis !== undefined) {
-    //     await polisService.updateMathAllConversations({
-    //         db,
-    //         axiosPolis: axiosPolis,
-    //         awsAiLabelSummaryEnable:
-    //             config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-    //             (config.NODE_ENV === "production" ||
-    //                 config.NODE_ENV === "staging"),
-    //         awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-    //         awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-    //         awsAiLabelSummaryTemperature:
-    //             config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-    //         awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-    //         awsAiLabelSummaryMaxTokens: config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-    //         awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
-    //     });
-    // }
     server.ready((e) => {
         if (e) {
             log.error(e);
@@ -2634,4 +2615,24 @@ if (
             process.exit(1);
         }
     });
+    // await migrationService.fixNullPassInOpinionTable({ db });
+    // await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
+    if (axiosPolis !== undefined) {
+        await polisService.updateMathAllConversations({
+            db,
+            axiosPolis: axiosPolis,
+            awsAiLabelSummaryEnable:
+                config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                (config.NODE_ENV === "production" ||
+                    config.NODE_ENV === "staging"),
+            awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+            awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+            awsAiLabelSummaryTemperature:
+                config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+            awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+            awsAiLabelSummaryMaxTokens: config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+            awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+            doUpdateCounts: true,
+        });
+    }
 }
