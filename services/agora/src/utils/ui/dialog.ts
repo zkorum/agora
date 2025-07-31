@@ -30,9 +30,9 @@ export const useDialog = () => {
   function showDeleteAccountDialog(callbackSuccess: () => void) {
     quasar
       .dialog({
-        title: "Are you sure?",
+        title: "Are you sure? This action cannot be undone",
         message:
-          "To delete your account. Please confirm by typing DELETE into the box.",
+          "To permanently delete your account, please confirm by typing DELETE into the box.",
         prompt: {
           model: "",
           isValid: (val) => val == "DELETE",
