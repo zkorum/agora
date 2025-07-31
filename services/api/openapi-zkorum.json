@@ -1995,6 +1995,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -2531,6 +2538,13 @@
                                                         "numPasses": {
                                                             "type": "integer",
                                                             "minimum": 0
+                                                        },
+                                                        "repfulFor": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -2747,6 +2761,13 @@
                                                         "numPasses": {
                                                             "type": "integer",
                                                             "minimum": 0
+                                                        },
+                                                        "repfulFor": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -2964,6 +2985,13 @@
                                                         "numPasses": {
                                                             "type": "integer",
                                                             "minimum": 0
+                                                        },
+                                                        "repfulFor": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -3177,6 +3205,13 @@
                                                         "numPasses": {
                                                             "type": "integer",
                                                             "minimum": 0
+                                                        },
+                                                        "repfulFor": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -3390,6 +3425,13 @@
                                                         "numPasses": {
                                                             "type": "integer",
                                                             "minimum": 0
+                                                        },
+                                                        "repfulFor": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -3603,6 +3645,13 @@
                                                         "numPasses": {
                                                             "type": "integer",
                                                             "minimum": 0
+                                                        },
+                                                        "repfulFor": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "agree",
+                                                                "disagree"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -3827,6 +3876,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -4007,6 +4063,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -4187,6 +4250,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -4367,6 +4437,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -4547,6 +4624,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
@@ -4727,6 +4811,13 @@
                                                                 "numPasses": {
                                                                     "type": "integer",
                                                                     "minimum": 0
+                                                                },
+                                                                "repfulFor": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "agree",
+                                                                        "disagree"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [

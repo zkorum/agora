@@ -331,6 +331,9 @@ export const zodConversationPolis = z
         clusters: zodClusterMetadata.array(),
     })
     .strict();
+export const zodAgreementType = z.enum(["agree", "disagree"]);
+export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
+export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
 export const zodClusterStats = z.object({
     key: zodPolisKey,
     aiLabel: z.string().optional(),
@@ -339,13 +342,7 @@ export const zodClusterStats = z.object({
     numAgrees: z.number().int().nonnegative(),
     numDisagrees: z.number().int().nonnegative(),
     numPasses: z.number().int().nonnegative(),
-});
-export const zodClusterStatsForLlm = z.object({
-    key: zodPolisKey,
-    numMembers: z.number().int().nonnegative(),
-    numAgrees: z.number().int().nonnegative(),
-    numDisagrees: z.number().int().nonnegative(),
-    numPasses: z.number().int().nonnegative(),
+    repfulFor: zodAgreementType.optional(), // if undefined, it's not a representative opinion for the given cluster
 });
 export const zodOpinionItem = z
     .object({
@@ -361,16 +358,6 @@ export const zodOpinionItem = z
         clustersStats: z.array(zodClusterStats),
         moderation: zodOpinionModerationProperties,
         isSeed: z.boolean(),
-    })
-    .strict();
-export const zodOpinionItemForLlm = z
-    .object({
-        opinion: zodOpinionContent,
-        numParticipants: z.number().int().nonnegative(),
-        numAgrees: z.number().int().nonnegative(),
-        numDisagrees: z.number().int().nonnegative(),
-        numPasses: z.number().int().nonnegative(),
-        clustersStats: z.array(zodClusterStatsForLlm),
     })
     .strict();
 export const zodOpinionItemPerSlugId = z.map(zodSlugId, zodOpinionItem);
@@ -412,8 +399,6 @@ export const zodExtendedOpinionDataWithConvId = z
         opinionItem: zodOpinionItem,
     })
     .strict();
-export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
-export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
 export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
 export interface LanguageObject {
     name: string;
@@ -871,7 +856,6 @@ export type ExtendedConversationPolis = z.infer<typeof zodConversationPolis>;
 export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
 export type CommentContent = z.infer<typeof zodOpinionContent>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
-export type OpinionItemForLlm = z.infer<typeof zodOpinionItemForLlm>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;
@@ -939,3 +923,4 @@ export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
 export type LinkType = z.infer<typeof zodLinkType>;
 export type PolisUrl = z.infer<typeof zodPolisUrl>;
+export type AgreementType = z.infer<typeof zodAgreementType>;
