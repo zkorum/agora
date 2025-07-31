@@ -886,9 +886,10 @@ export async function getPolisVotes({
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
-                isNull(opinionModerationTable.id),
-                isNotNull(voteTable.currentContentId),
-                isNotNull(opinionTable.currentContentId),
+                eq(userTable.isDeleted, false), // filtering out deleted users
+                isNull(opinionModerationTable.id), // filtering out moderated opinions
+                isNotNull(voteTable.currentContentId), // filtering out deleted votes
+                isNotNull(opinionTable.currentContentId), // filtering out delted opinions
             ),
         );
     const now = nowZeroMs();
