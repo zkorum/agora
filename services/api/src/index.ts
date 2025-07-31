@@ -2618,21 +2618,29 @@ if (
     // await migrationService.fixNullPassInOpinionTable({ db });
     // await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
     if (axiosPolis !== undefined) {
-        await polisService.updateMathAllConversations({
-            db,
-            axiosPolis: axiosPolis,
-            awsAiLabelSummaryEnable:
-                config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                (config.NODE_ENV === "production" ||
-                    config.NODE_ENV === "staging"),
-            awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-            awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-            awsAiLabelSummaryTemperature:
-                config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-            awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-            awsAiLabelSummaryMaxTokens: config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-            awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
-            doUpdateCounts: true,
-        });
+        const _backgroundTasks = (async () => {
+            try {
+                await polisService.updateMathAllConversations({
+                    db,
+                    axiosPolis: axiosPolis,
+                    awsAiLabelSummaryEnable:
+                        config.AWS_AI_LABEL_SUMMARY_ENABLE &&
+                        (config.NODE_ENV === "production" ||
+                            config.NODE_ENV === "staging"),
+                    awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
+                    awsAiLabelSummaryModelId:
+                        config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
+                    awsAiLabelSummaryTemperature:
+                        config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
+                    awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
+                    awsAiLabelSummaryMaxTokens:
+                        config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
+                    awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+                    doUpdateCounts: true,
+                });
+            } catch (updateErr) {
+                log.error("Error during background update:", updateErr);
+            }
+        })();
     }
 }
