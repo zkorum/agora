@@ -65,8 +65,8 @@ interface GetCommentSlugIdLastCreatedAtProps {
 export async function getCommentSlugIdLastCreatedAt({
     lastSlugId,
     db,
-}: GetCommentSlugIdLastCreatedAtProps) {
-    let lastCreatedAt = new Date();
+}: GetCommentSlugIdLastCreatedAtProps): Promise<Date | undefined> {
+    let lastCreatedAt;
 
     if (lastSlugId) {
         const selectResponse = await db

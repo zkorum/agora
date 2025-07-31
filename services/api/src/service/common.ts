@@ -78,6 +78,7 @@ export function useCommonPost() {
             .select({ authorId: voteTable.authorId })
             .from(voteTable)
             .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+            .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
             .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),
@@ -88,6 +89,7 @@ export function useCommonPost() {
                     isNotNull(opinionTable.currentContentId), // we don't count deleted opinions
                     isNotNull(voteTable.currentContentId), // we don't count deleted votes
                     isNull(opinionModerationTable.id), // we don't count moderated opinions
+                    eq(userTable.isDeleted, false), // we don't count votes from deleted users
                 ),
             );
         const participantUserIds = results.map((result) => result.authorId);
@@ -113,6 +115,7 @@ export function useCommonPost() {
                 eq(opinionTable.conversationId, conversationId),
                 isNotNull(opinionTable.currentContentId), // only votes on undeleted opinions matters
                 isNotNull(voteTable.currentContentId), // we don't count deleted votes
+                eq(userTable.isDeleted, false), // we don't count votes from deleted users
                 // isNull(opinionModerationTable.id),  // for personal records, we don't remove votes on moderated content
             );
         } else {
@@ -120,6 +123,7 @@ export function useCommonPost() {
                 eq(opinionTable.conversationId, conversationId),
                 isNotNull(opinionTable.currentContentId),
                 isNotNull(voteTable.currentContentId), // we don't count deleted votes
+                eq(userTable.isDeleted, false), // we don't count votes from deleted users
                 isNull(opinionModerationTable.id), // only votes on unmoderated opinions matters
             );
         }
@@ -127,6 +131,7 @@ export function useCommonPost() {
             .select({ count: count() })
             .from(voteTable)
             .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+            .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
             .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),
@@ -152,6 +157,7 @@ export function useCommonPost() {
                 eq(opinionTable.authorId, userId),
                 eq(opinionTable.conversationId, conversationId), // only non-deleted opinions count
                 isNotNull(opinionTable.currentContentId),
+                eq(userTable.isDeleted, false), // we don't count opinions from deleted users
                 // isNull(opinionModerationTable.id), // moderated opinions matter for personal profile
             );
         } else {
@@ -159,11 +165,13 @@ export function useCommonPost() {
                 eq(opinionTable.conversationId, conversationId),
                 isNotNull(opinionTable.currentContentId), // only non-deleted opinions count
                 isNull(opinionModerationTable.id), // only unmoderated opinions matters
+                eq(userTable.isDeleted, false), // we don't count opinions from deleted users
             );
         }
         const opinionResponse = await db
             .select({ count: count() })
             .from(opinionTable)
+            .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
             .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),

@@ -11,7 +11,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and, desc, isNotNull, SQL, inArray } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import type { VotingAction, VotingOption } from "@/shared/types/zod.js";
-import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import type { AxiosInstance } from "axios";
 import * as polisService from "@/service/polis.js";
@@ -19,12 +18,13 @@ import { log } from "@/app.js";
 import { insertNewVoteNotification } from "./notification.js";
 import * as authUtilService from "@/service/authUtil.js";
 import { PgTransaction } from "drizzle-orm/pg-core";
+import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
+import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
     OpinionContentIdPerOpinionId,
     OpinionIdPerStatementId,
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
-import type { ImportPolisResults } from "@/shared/types/polis.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
@@ -53,7 +53,9 @@ async function getCommentMetadataFromCommentSlugId({
     if (response.length == 1) {
         const commentData = response[0];
         if (commentData.contentId == null) {
-            throw httpErrors.notFound("Failed to locate comment content ID");
+            throw httpErrors.notFound(
+                "Failed to locate comment content ID while casting vote",
+            );
         } else {
             return {
                 commentId: commentData.opinionId,
@@ -87,13 +89,36 @@ interface CastVoteForOpinionSlugIdProps {
     now: Date;
 }
 
-export async function castVoteForOpinionSlugId({
+interface CastVoteForOpinionSlugIdFromUserIdProps {
+    db: PostgresJsDatabase;
+    opinionSlugId: string;
+    didWrite: string;
+    proof: string;
+    votingAction: VotingAction;
+    userId: string;
+    axiosPolis?: AxiosInstance;
+    voteNotifMilestones: number[];
+    awsAiLabelSummaryEnable: boolean;
+    awsAiLabelSummaryRegion: string;
+    awsAiLabelSummaryModelId: string;
+    awsAiLabelSummaryTemperature: string;
+    awsAiLabelSummaryTopP: string;
+    awsAiLabelSummaryMaxTokens: string;
+    awsAiLabelSummaryPrompt: string;
+    optionalConversationSlugId?: string;
+    optionalConversationId?: number;
+    optionalConversationContentId?: number | null;
+    optionalConversationParticipantCount?: number;
+    optionalConversationVoteCount?: number;
+}
+
+export async function castVoteForOpinionSlugIdFromUserId({
     db,
     opinionSlugId,
     didWrite,
     proof,
     votingAction,
-    userAgent,
+    userId,
     axiosPolis,
     voteNotifMilestones,
     awsAiLabelSummaryEnable,
@@ -103,27 +128,59 @@ export async function castVoteForOpinionSlugId({
     awsAiLabelSummaryTopP,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
-    now,
-}: CastVoteForOpinionSlugIdProps): Promise<boolean> {
-    const { conversationSlugId, conversationId } =
-        await useCommonComment().getOpinionMetadataFromOpinionSlugId({
+    optionalConversationId,
+    optionalConversationSlugId,
+    optionalConversationContentId,
+    optionalConversationParticipantCount,
+    optionalConversationVoteCount,
+}: CastVoteForOpinionSlugIdFromUserIdProps): Promise<boolean> {
+    let conversationId: number;
+    let conversationSlugId: string;
+    if (
+        optionalConversationId === undefined ||
+        optionalConversationSlugId === undefined
+    ) {
+        const {
+            conversationSlugId: fetchedConversationSlugId,
+            conversationId: fetchedConversationId,
+        } = await useCommonComment().getOpinionMetadataFromOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });
+        conversationId = fetchedConversationId;
+        conversationSlugId = fetchedConversationSlugId;
+    } else {
+        conversationId = optionalConversationId;
+        conversationSlugId = optionalConversationSlugId;
+    }
 
+    let conversationContentId: number | null;
+    let conversationParticipantCount: number;
+    let conversationVoteCount: number;
     // "update through cache" recalculate existing counts before taking into account new vote
-    const {
-        isIndexed: conversationIsIndexed,
-        isLoginRequired: conversationIsLoginRequired,
-        contentId: conversationContentId,
-        participantCount: conversationParticipantCount,
-        voteCount: conversationVoteCount,
-    } = await useCommonPost().getPostMetadataFromSlugId({
-        db: db,
-        conversationSlugId: conversationSlugId,
-        useCache: false,
-    });
-    if (conversationContentId == null) {
+    if (
+        optionalConversationContentId === undefined ||
+        optionalConversationParticipantCount === undefined ||
+        optionalConversationVoteCount === undefined
+    ) {
+        const {
+            contentId: fetchedConversationContentId,
+            participantCount: fetchedConversationParticipantCount,
+            voteCount: fetchedConversationVoteCount,
+        } = await useCommonPost().getPostMetadataFromSlugId({
+            db: db,
+            conversationSlugId: conversationSlugId,
+            useCache: false,
+        });
+        conversationContentId = fetchedConversationContentId;
+        conversationParticipantCount = fetchedConversationParticipantCount;
+        conversationVoteCount = fetchedConversationVoteCount;
+    } else {
+        conversationContentId = optionalConversationContentId;
+        conversationParticipantCount = optionalConversationParticipantCount;
+        conversationVoteCount = optionalConversationVoteCount;
+    }
+    if (conversationContentId === null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
 
@@ -138,15 +195,6 @@ export async function castVoteForOpinionSlugId({
             return false;
         }
     }
-
-    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-        db,
-        didWrite,
-        conversationIsIndexed,
-        conversationIsLoginRequired,
-        userAgent,
-        now,
-    });
 
     const commentData = await getCommentMetadataFromCommentSlugId({
         db: db,
@@ -685,4 +733,71 @@ export async function bulkInsertVotesFromExternalPolisConvo({
     } else {
         await doImportVotes(db);
     }
+}
+
+export async function castVoteForOpinionSlugId({
+    db,
+    opinionSlugId,
+    didWrite,
+    proof,
+    votingAction,
+    userAgent,
+    axiosPolis,
+    voteNotifMilestones,
+    awsAiLabelSummaryEnable,
+    awsAiLabelSummaryRegion,
+    awsAiLabelSummaryModelId,
+    awsAiLabelSummaryTemperature,
+    awsAiLabelSummaryTopP,
+    awsAiLabelSummaryMaxTokens,
+    awsAiLabelSummaryPrompt,
+    now,
+}: CastVoteForOpinionSlugIdProps): Promise<boolean> {
+    const { conversationSlugId, conversationId } =
+        await useCommonComment().getOpinionMetadataFromOpinionSlugId({
+            opinionSlugId: opinionSlugId,
+            db: db,
+        });
+    const {
+        isIndexed: conversationIsIndexed,
+        isLoginRequired: conversationIsLoginRequired,
+        contentId: conversationContentId,
+        participantCount: conversationParticipantCount,
+        voteCount: conversationVoteCount,
+    } = await useCommonPost().getPostMetadataFromSlugId({
+        db: db,
+        conversationSlugId: conversationSlugId,
+        useCache: false,
+    });
+    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+        db,
+        didWrite,
+        conversationIsIndexed,
+        conversationIsLoginRequired,
+        userAgent,
+        now,
+    });
+
+    return await castVoteForOpinionSlugIdFromUserId({
+        db,
+        opinionSlugId,
+        didWrite,
+        proof,
+        votingAction,
+        userId,
+        axiosPolis,
+        voteNotifMilestones,
+        awsAiLabelSummaryEnable,
+        awsAiLabelSummaryRegion,
+        awsAiLabelSummaryModelId,
+        awsAiLabelSummaryTemperature,
+        awsAiLabelSummaryTopP,
+        awsAiLabelSummaryMaxTokens,
+        awsAiLabelSummaryPrompt,
+        optionalConversationId: conversationId,
+        optionalConversationSlugId: conversationSlugId,
+        optionalConversationContentId: conversationContentId,
+        optionalConversationParticipantCount: conversationParticipantCount,
+        optionalConversationVoteCount: conversationVoteCount,
+    });
 }
