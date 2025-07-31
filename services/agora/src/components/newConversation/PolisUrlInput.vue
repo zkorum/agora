@@ -31,8 +31,8 @@
             >
             </q-input>
             <div class="legal-notice">
-              By clicking "Import", you confirm that imported content complies
-              with the
+              By clicking "Import", you confirm that importing the content
+              complies with the
               <a
                 href="https://pol.is/tos"
                 target="_blank"
@@ -45,6 +45,14 @@
               and our
               <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
                 Terms of Use </RouterLink
+              >. Note that the original Polis data are licensed under the
+              <a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="terms-link"
+                >Creative Commons Attribution 4.0 International license
+                <q-icon name="mdi-open-in-new" /> </a
               >. Do not import illegal, abusive, or infringing material. Use the
               import API responsibly. Abuse is prohibited.
             </div>
