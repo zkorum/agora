@@ -605,6 +605,15 @@ export async function getUserVotesForPostSlugIds({
     return userVoteList;
 }
 
+// TODO: remove when this is merged: https://github.com/drizzle-team/drizzle-orm/pull/3816
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+}
+
 export async function bulkInsertVotesFromExternalPolisConvo({
     db,
     importedPolisConversation,
@@ -662,16 +671,35 @@ export async function bulkInsertVotesFromExternalPolisConvo({
     }
     async function doImportVotes(db: PostgresJsDatabase): Promise<void> {
         // We assume the aren't any duplicate votes
-        const insertVoteResponse = await db
-            .insert(voteTable)
-            .values(votesToAdd)
-            .returning({
-                voteId: voteTable.id,
-                polisVoteId: voteTable.polisVoteId,
-            });
-        const insertVoteIds = insertVoteResponse.map(
-            (insertedVote) => insertedVote.voteId,
-        );
+        const CHUNK_SIZE = 10000;
+        let insertVoteResponse: {
+            voteId: number;
+            polisVoteId: number | null;
+        }[] = [];
+        // TODO: remove when this is merged: https://github.com/drizzle-team/drizzle-orm/pull/3816
+        if (votesToAdd.length > CHUNK_SIZE) {
+            const voteChunks = chunkArray(votesToAdd, CHUNK_SIZE);
+            for (const chunk of voteChunks) {
+                const result = await db
+                    .insert(voteTable)
+                    .values(chunk)
+                    .returning({
+                        voteId: voteTable.id,
+                        polisVoteId: voteTable.polisVoteId,
+                    });
+
+                insertVoteResponse.push(...result);
+            }
+        } else {
+            insertVoteResponse = await db
+                .insert(voteTable)
+                .values(votesToAdd)
+                .returning({
+                    voteId: voteTable.id,
+                    polisVoteId: voteTable.polisVoteId,
+                });
+        }
+
         // NOTE: Thanks to the introduction of polisVoteId, this does NOT assume that PostgreSQL and drizzle/returning preserve order
         for (const insertedVote of insertVoteResponse) {
             const voteContentToModify = voteContentsToModifyBeforeAdd.find(
@@ -688,38 +716,95 @@ export async function bulkInsertVotesFromExternalPolisConvo({
                 vote: voteContentToModify.vote,
             });
         }
-        const voteContentTableResponse = await db
-            .insert(voteContentTable)
-            .values(voteContentsToAdd)
-            .returning({
-                voteContentTableId: voteContentTable.id,
-                voteId: voteContentTable.voteId,
-            });
-
-        const sqlChunksVoteCurrentId: SQL[] = [];
-        sqlChunksVoteCurrentId.push(sql`(CASE`);
-        for (const voteContentResponse of voteContentTableResponse) {
-            sqlChunksVoteCurrentId.push(
-                sql`WHEN ${voteTable.id} = ${voteContentResponse.voteId}::int THEN ${voteContentResponse.voteContentTableId}::int`,
+        let voteContentTableResponse: {
+            voteContentTableId: number;
+            voteId: number;
+        }[] = [];
+        // TODO: remove when this is merged: https://github.com/drizzle-team/drizzle-orm/pull/3816
+        if (voteContentsToAdd.length > CHUNK_SIZE) {
+            const voteChunks = chunkArray(voteContentsToAdd, CHUNK_SIZE);
+            for (const chunk of voteChunks) {
+                const result = await db
+                    .insert(voteContentTable)
+                    .values(chunk)
+                    .returning({
+                        voteContentTableId: voteContentTable.id,
+                        voteId: voteContentTable.voteId,
+                    });
+                voteContentTableResponse.push(...result);
+            }
+            const voteContentChunks = chunkArray(
+                voteContentTableResponse,
+                CHUNK_SIZE,
             );
-        }
-        sqlChunksVoteCurrentId.push(sql`ELSE current_content_id`);
-        sqlChunksVoteCurrentId.push(sql`END)`);
 
-        const finalSqlVoteCurrentContentId = sql.join(
-            sqlChunksVoteCurrentId,
-            sql.raw(" "),
-        );
-        const setClauseVoteCurrentContentId = {
-            currentContentId: finalSqlVoteCurrentContentId,
-        };
-        await db
-            .update(voteTable)
-            .set({
-                ...setClauseVoteCurrentContentId,
-                updatedAt: nowZeroMs(),
-            })
-            .where(inArray(voteTable.id, insertVoteIds));
+            for (const chunk of voteContentChunks) {
+                const sqlChunksVoteCurrentId: SQL[] = [];
+                sqlChunksVoteCurrentId.push(sql`(CASE`);
+
+                for (const voteContentResponse of chunk) {
+                    sqlChunksVoteCurrentId.push(
+                        sql`WHEN ${voteTable.id} = ${voteContentResponse.voteId}::int THEN ${voteContentResponse.voteContentTableId}::int`,
+                    );
+                }
+
+                sqlChunksVoteCurrentId.push(sql`ELSE current_content_id`);
+                sqlChunksVoteCurrentId.push(sql`END)`);
+
+                const finalSqlVoteCurrentContentId = sql.join(
+                    sqlChunksVoteCurrentId,
+                    sql.raw(" "),
+                );
+                const setClauseVoteCurrentContentId = {
+                    currentContentId: finalSqlVoteCurrentContentId,
+                };
+
+                const voteIdsInChunk = chunk.map((v) => v.voteId);
+
+                await db
+                    .update(voteTable)
+                    .set({
+                        ...setClauseVoteCurrentContentId,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(voteTable.id, voteIdsInChunk));
+            }
+        } else {
+            voteContentTableResponse = await db
+                .insert(voteContentTable)
+                .values(voteContentsToAdd)
+                .returning({
+                    voteContentTableId: voteContentTable.id,
+                    voteId: voteContentTable.voteId,
+                });
+            const sqlChunksVoteCurrentId: SQL[] = [];
+            sqlChunksVoteCurrentId.push(sql`(CASE`);
+            for (const voteContentResponse of voteContentTableResponse) {
+                sqlChunksVoteCurrentId.push(
+                    sql`WHEN ${voteTable.id} = ${voteContentResponse.voteId}::int THEN ${voteContentResponse.voteContentTableId}::int`,
+                );
+            }
+            sqlChunksVoteCurrentId.push(sql`ELSE current_content_id`);
+            sqlChunksVoteCurrentId.push(sql`END)`);
+
+            const finalSqlVoteCurrentContentId = sql.join(
+                sqlChunksVoteCurrentId,
+                sql.raw(" "),
+            );
+            const setClauseVoteCurrentContentId = {
+                currentContentId: finalSqlVoteCurrentContentId,
+            };
+            const insertVoteIds = voteContentsToAdd.map(
+                (insertedVote) => insertedVote.voteId,
+            );
+            await db
+                .update(voteTable)
+                .set({
+                    ...setClauseVoteCurrentContentId,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(inArray(voteTable.id, insertVoteIds));
+        }
     }
 
     let doTransaction = true;

@@ -670,8 +670,15 @@ export async function bulkInsertUsersFromExternalPolisConvo({
         participantCount !==
         importedPolisConversation.conversation_data.participant_count
     ) {
+        const participantIdsFromAllVotes =
+            importedPolisConversation.votes_data.map(
+                (vote) => vote.participant_id,
+            );
+
+        const participantCountForAllVotes = new Set(participantIdsFromAllVotes)
+            .size;
         log.warn(
-            `[Import] Calculated participantCount=${String(participantCount)} but Polis returned ${String(importedPolisConversation.conversation_data.participant_count)}`,
+            `[Import] Calculated participantCount=${String(participantCount)} but Polis returned ${String(importedPolisConversation.conversation_data.participant_count)}. ParticipantCountIncludingModerated=${String(participantCountForAllVotes)}`,
         );
     }
     return {
