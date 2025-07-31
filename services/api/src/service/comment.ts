@@ -47,6 +47,8 @@ import {
     isSqlOrderByPolisPriority,
     isSqlWhereRepresentative,
     isSqlOrderByRepresentative,
+    isSqlWhereMajorityAgree,
+    isSqlWhereMajorityDisagree,
 } from "@/utils/sqlLogic.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
@@ -109,6 +111,8 @@ interface FetchOpinionsByPostIdProps {
         | "moderated"
         | "hidden"
         | "majority"
+        | "majority-agree"
+        | "majority-disagree"
         | "controversial"
         | "group-aware-consensus"
         | "discover"
@@ -158,6 +162,7 @@ export async function fetchOpinionsByPostId({
     );
 
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
+    // isNotNull(opinionTable.currentContentId), // filtering out deleted opinions, this is unecessary because of the use of innerJoin
     let orderByClause = [desc(opinionTable.createdAt)]; // default value, shouldn't be needed but ts doesn't understand how to terminate nested switch
     if (clusterKey != undefined) {
         switch (clusterKey) {
@@ -267,144 +272,30 @@ export async function fetchOpinionsByPostId({
             break;
         }
         case "majority": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            if (clusterKey === undefined) {
-                whereClause = and(
-                    whereClause,
-                    isSqlWhereMajority({
-                        numAgreesColumn: opinionTable.numAgrees,
-                        numDisagreesColumn: opinionTable.numDisagrees,
-                        memberCountColumn: conversationTable.participantCount,
-                    }),
-                );
-                orderByClause = isSqlOrderByMajority({
-                    numAgreesColumn: opinionTable.numAgrees,
-                    numDisagreesColumn: opinionTable.numDisagrees,
-                });
-            } else {
-                switch (clusterKey) {
-                    case "0": {
-                        whereClause = and(
-                            whereClause,
-                            isSqlWhereMajority({
-                                numAgreesColumn:
-                                    opinionTable.polisCluster0NumAgrees,
-                                numDisagreesColumn:
-                                    opinionTable.polisCluster0NumDisagrees,
-                                memberCountColumn:
-                                    polisClusterTableAlias0.numUsers,
-                            }),
-                        );
-                        orderByClause = isSqlOrderByMajority({
-                            numAgreesColumn:
-                                opinionTable.polisCluster0NumAgrees,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster0NumDisagrees,
-                        });
-                        break;
-                    }
-                    case "1": {
-                        whereClause = and(
-                            whereClause,
-                            isSqlWhereMajority({
-                                numAgreesColumn:
-                                    opinionTable.polisCluster1NumAgrees,
-                                numDisagreesColumn:
-                                    opinionTable.polisCluster1NumDisagrees,
-                                memberCountColumn:
-                                    polisClusterTableAlias1.numUsers,
-                            }),
-                        );
-                        orderByClause = isSqlOrderByMajority({
-                            numAgreesColumn:
-                                opinionTable.polisCluster1NumAgrees,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster1NumDisagrees,
-                        });
-                        break;
-                    }
-                    case "2": {
-                        whereClause = and(
-                            whereClause,
-                            isSqlWhereMajority({
-                                numAgreesColumn:
-                                    opinionTable.polisCluster2NumAgrees,
-                                numDisagreesColumn:
-                                    opinionTable.polisCluster2NumDisagrees,
-                                memberCountColumn:
-                                    polisClusterTableAlias2.numUsers,
-                            }),
-                        );
-                        orderByClause = isSqlOrderByMajority({
-                            numAgreesColumn:
-                                opinionTable.polisCluster2NumAgrees,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster2NumDisagrees,
-                        });
-                        break;
-                    }
-                    case "3": {
-                        whereClause = and(
-                            whereClause,
-                            isSqlWhereMajority({
-                                numAgreesColumn:
-                                    opinionTable.polisCluster3NumAgrees,
-                                numDisagreesColumn:
-                                    opinionTable.polisCluster3NumDisagrees,
-                                memberCountColumn:
-                                    polisClusterTableAlias3.numUsers,
-                            }),
-                        );
-                        orderByClause = isSqlOrderByMajority({
-                            numAgreesColumn:
-                                opinionTable.polisCluster3NumAgrees,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster3NumDisagrees,
-                        });
-                        break;
-                    }
-                    case "4": {
-                        whereClause = and(
-                            whereClause,
-                            isSqlWhereMajority({
-                                numAgreesColumn:
-                                    opinionTable.polisCluster4NumAgrees,
-                                numDisagreesColumn:
-                                    opinionTable.polisCluster4NumDisagrees,
-                                memberCountColumn:
-                                    polisClusterTableAlias4.numUsers,
-                            }),
-                        );
-                        orderByClause = isSqlOrderByMajority({
-                            numAgreesColumn:
-                                opinionTable.polisCluster4NumAgrees,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster4NumDisagrees,
-                        });
-                        break;
-                    }
-                    case "5": {
-                        whereClause = and(
-                            whereClause,
-                            isSqlWhereMajority({
-                                numAgreesColumn:
-                                    opinionTable.polisCluster5NumAgrees,
-                                numDisagreesColumn:
-                                    opinionTable.polisCluster5NumDisagrees,
-                                memberCountColumn:
-                                    polisClusterTableAlias5.numUsers,
-                            }),
-                        );
-                        orderByClause = isSqlOrderByMajority({
-                            numAgreesColumn:
-                                opinionTable.polisCluster5NumAgrees,
-                            numDisagreesColumn:
-                                opinionTable.polisCluster5NumDisagrees,
-                        });
-                        break;
-                    }
-                }
-            }
+            whereClause = and(
+                whereClause,
+                isNull(opinionModerationTable.id),
+                isSqlWhereMajority(),
+            );
+            orderByClause = isSqlOrderByMajority();
+            break;
+        }
+        case "majority-agree": {
+            whereClause = and(
+                whereClause,
+                isNull(opinionModerationTable.id),
+                isSqlWhereMajorityAgree(),
+            );
+            orderByClause = isSqlOrderByMajority();
+            break;
+        }
+        case "majority-disagree": {
+            whereClause = and(
+                whereClause,
+                isNull(opinionModerationTable.id),
+                isSqlWhereMajorityDisagree(),
+            );
+            orderByClause = isSqlOrderByMajority();
             break;
         }
         case "controversial": {

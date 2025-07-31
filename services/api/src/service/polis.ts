@@ -130,7 +130,7 @@ async function loadPolisMathResults({
     let setClauseCommentExtremities = {};
     if (Object.keys(polisMathResults.statements_df).length === 0) {
         log.warn(
-            `No opinion to update for polisContentId=${String(
+            `[Math] No opinion to update for polisContentId=${String(
                 polisContentId,
             )} and conversationSlugId=${conversationSlugId}`,
         );
@@ -151,13 +151,13 @@ async function loadPolisMathResults({
                 sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${priority}`,
             );
             sqlChunksGroupAwareConsensusAgree.push(
-                sql`WHEN ${opinionTable.id} = ${statement_id} THEN ${groupAwareConsensusAgree}`,
+                sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${groupAwareConsensusAgree}`,
             );
             sqlChunksExtremities.push(
-                sql`WHEN ${opinionTable.id} = ${statement_id} THEN ${extremity}`,
+                sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${extremity}`,
             );
         }
-        sqlChunksPriorities.push(sql`ELSE polis_priority`);
+        sqlChunksPriorities.push(sql`ELSE polis_priority`); // this should not happen
         sqlChunksPriorities.push(sql`END)`);
         const finalSqlCommentPriorities = sql.join(
             sqlChunksPriorities,
@@ -166,7 +166,7 @@ async function loadPolisMathResults({
         setClauseCommentPriority = {
             polisPriority: finalSqlCommentPriorities,
         };
-        sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa`);
+        sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa`); // this should not happen
         sqlChunksGroupAwareConsensusAgree.push(sql`END)`);
         const finalSqlGroupAwareConsensusAgree = sql.join(
             sqlChunksGroupAwareConsensusAgree,
@@ -176,7 +176,7 @@ async function loadPolisMathResults({
             polisGroupAwareConsensusProbabilityAgree:
                 finalSqlGroupAwareConsensusAgree,
         };
-        sqlChunksExtremities.push(sql`ELSE polis_divisiveness`);
+        sqlChunksExtremities.push(sql`ELSE polis_divisiveness`); // this should not happen
         sqlChunksExtremities.push(sql`END)`);
         const finalSqlCommentExtremities: SQL = sql.join(
             sqlChunksExtremities,
@@ -187,15 +187,107 @@ async function loadPolisMathResults({
         };
     }
 
-    await db
-        .update(opinionTable)
-        .set({
-            ...setClauseCommentPriority,
-            ...setClauseGroupAwareConsensusAgree,
-            ...setClauseCommentExtremities,
-            updatedAt: nowZeroMs(),
-        })
-        .where(eq(opinionTable.conversationId, conversationId));
+    let setClauseMajorityProbability = {};
+    const sqlChunksMajorityProbability: SQL[] = [];
+    let setClauseMajorityType = {};
+    const sqlChunksMajorityType: SQL[] = [];
+
+    if (polisMathResults.consensus.agree.length === 0) {
+        log.info(
+            `[Math] No majority agree opinions for polisContentId=${String(
+                polisContentId,
+            )} and conversationSlugId=${conversationSlugId}`,
+        );
+    } else {
+        sqlChunksMajorityProbability.push(sql`(CASE`);
+        sqlChunksMajorityType.push(sql`(CASE`);
+        for (const consensusOpinion of polisMathResults.consensus.agree) {
+            sqlChunksMajorityProbability.push(
+                sql`WHEN ${opinionTable.id} = ${consensusOpinion.tid}::int THEN ${consensusOpinion["p-success"]}::real`,
+            );
+            sqlChunksMajorityType.push(
+                sql`WHEN ${opinionTable.id} = ${consensusOpinion.tid}::int THEN 'agree'::vote_enum_simple`,
+            );
+        }
+    }
+    if (polisMathResults.consensus.disagree.length === 0) {
+        log.info(
+            `[Math] No majority disagree opinions for polisContentId=${String(
+                polisContentId,
+            )} and conversationSlugId=${conversationSlugId}`,
+        );
+    } else {
+        if (sqlChunksMajorityProbability.length === 0) {
+            sqlChunksMajorityProbability.push(sql`(CASE`);
+        }
+        if (sqlChunksMajorityType.length === 0) {
+            sqlChunksMajorityType.push(sql`(CASE`);
+        }
+        for (const consensusOpinion of polisMathResults.consensus.disagree) {
+            sqlChunksMajorityProbability.push(
+                sql`WHEN ${opinionTable.id} = ${consensusOpinion.tid}::int THEN ${consensusOpinion["p-success"]}::real`,
+            );
+            sqlChunksMajorityType.push(
+                sql`WHEN ${opinionTable.id} = ${consensusOpinion.tid}::int THEN 'disagree'::vote_enum_simple`,
+            );
+        }
+    }
+
+    if (sqlChunksMajorityProbability.length > 0) {
+        // no else clause, anything not part of the received data is not a majority opinion!
+        sqlChunksMajorityProbability.push(sql`END)`);
+    }
+    if (sqlChunksMajorityType.length > 0) {
+        // no else clause, anything not part of the received data is not a majority opinion!
+        sqlChunksMajorityType.push(sql`END)`);
+    }
+    const finalSqlMajorityProbability = sql.join(
+        sqlChunksMajorityProbability,
+        sql.raw(" "),
+    );
+    setClauseMajorityProbability = {
+        polisMajorityProbabilitySuccess: finalSqlMajorityProbability,
+    };
+    // no else clause, anything not part of the received data is not a majority opinion!
+    const finalSqlMajorityType = sql.join(sqlChunksMajorityType, sql.raw(" "));
+    setClauseMajorityType = {
+        polisMajorityType: finalSqlMajorityType,
+    };
+
+    if (sqlChunksMajorityProbability.length !== sqlChunksMajorityType.length) {
+        throw new Error(
+            `[Math] Some majority opinions are not assigned to their type for polisContentId=${String(
+                polisContentId,
+            )} and conversationSlugId=${conversationSlugId}`,
+        );
+    }
+
+    if (
+        sqlChunksMajorityProbability.length === 0 &&
+        sqlChunksMajorityType.length === 0
+    ) {
+        await db
+            .update(opinionTable)
+            .set({
+                ...setClauseCommentPriority,
+                ...setClauseGroupAwareConsensusAgree,
+                ...setClauseCommentExtremities,
+                updatedAt: nowZeroMs(),
+            })
+            .where(eq(opinionTable.conversationId, conversationId));
+    } else {
+        await db
+            .update(opinionTable)
+            .set({
+                ...setClauseCommentPriority,
+                ...setClauseGroupAwareConsensusAgree,
+                ...setClauseCommentExtremities,
+                ...setClauseMajorityProbability,
+                ...setClauseMajorityType,
+                updatedAt: nowZeroMs(),
+            })
+            .where(eq(opinionTable.conversationId, conversationId));
+    }
     /////
     /////
     // Step 1: Filter out nulls and undefined
@@ -214,13 +306,13 @@ async function loadPolisMathResults({
         groupsSeenInParticipantsDf.length,
     );
     log.info(
-        `Received ${String(
+        `[Math] Received ${String(
             minNumberOfClusters,
         )} clusters for conversationSlugId = ${conversationSlugId}`,
     );
     if (minNumberOfClusters > 6) {
         log.warn(
-            "Received unexpectedly large amount of clusters, ignoring those after 6",
+            "[Math] Received unexpectedly large amount of clusters, ignoring those after 6",
         );
         minNumberOfClusters = 6;
     }
@@ -231,7 +323,7 @@ async function loadPolisMathResults({
             groupsSeenInParticipantsDf.length
     ) {
         log.warn(
-            `Number of clusters is different for each object, taking the minimum number: polis math repness has ${String(
+            `[Math] Number of clusters is different for each object, taking the minimum number: polis math repness has ${String(
                 Object.keys(polisMathResults.repness).length,
             )} clusters while group_comment_stats has ${String(
                 Object.keys(polisMathResults.group_comment_stats).length,
@@ -291,7 +383,7 @@ async function loadPolisMathResults({
             }
             default: {
                 log.warn(
-                    `Ignoring the received ${String(
+                    `[Math] Ignoring the received ${String(
                         clusterKey,
                     )}th cluster of external id ${String(
                         polisClusterExternalId,
@@ -322,7 +414,7 @@ async function loadPolisMathResults({
             await db.insert(polisClusterUserTable).values(members);
         } else {
             log.warn(
-                `No members to insert in polisClusterUserTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
+                `[Math] No members to insert in polisClusterUserTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
             );
         }
         const repnesses = repnessEntry.map((repness) => {
@@ -340,7 +432,7 @@ async function loadPolisMathResults({
             await db.insert(polisClusterOpinionTable).values(repnesses);
         } else {
             log.warn(
-                `No repnesses to insert in polisClusterOpinionTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
+                `[Math] No repnesses to insert in polisClusterOpinionTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
             );
         }
 
@@ -715,11 +807,11 @@ async function loadPolisMathResults({
             // .where(inArray(opinionTable.slugId, opinionSlugIds));
             break;
         case 6:
-            log.info("No cluster cache to empty");
+            log.info("[Math] No cluster cache to empty");
             break;
         default:
             log.warn(
-                `There are an unexpectecly high minimum number of clusters: ${String(
+                `[Math] There are an unexpectecly high minimum number of clusters: ${String(
                     minNumberOfClusters,
                 )}`,
             );
@@ -770,10 +862,10 @@ export async function getAndUpdatePolisMath({
             votes,
         });
         log.info(
-            `Math Results for conversation_slug_id ${conversationSlugId}: \n${JSON.stringify(polisMathResults)}`,
+            `[Math] Math Results for conversation_slug_id ${conversationSlugId}: \n${JSON.stringify(polisMathResults)}`,
         );
     } catch (e) {
-        log.error("Error while parsing math results from Polis:");
+        log.error("[Math] Error while parsing math results from Polis:");
         log.error(e);
         return;
     }
@@ -846,7 +938,7 @@ export async function getClusterIdByUserAndConv({
         default:
             polisClusterId = results[0].polisClusterId;
             log.warn(
-                `User ${userId} in conversation polisContentId ${String(
+                `[Math] User ${userId} in conversation polisContentId ${String(
                     polisContentId,
                 )} belongs to ${String(
                     results.length,
@@ -935,7 +1027,7 @@ export async function updateMathAllConversations({
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: UpdateMathAllConversationsProps): Promise<void> {
-    log.info("Updating polis math in all conversations...");
+    log.info("[Math] Updating polis math in all conversations...");
     const results = await db
         .select({
             conversationId: conversationTable.id,
@@ -964,7 +1056,7 @@ export async function updateMathAllConversations({
         });
     }
     log.info(
-        `Successfully updated ${String(results.length)} conversations' polis math`,
+        `[Math] Successfully updated ${String(results.length)} conversations' polis math`,
     );
 }
 
@@ -1000,7 +1092,7 @@ export async function importExternalPolisConversation({
         };
     } catch (e) {
         log.info(
-            `[Import] Import Polis Data received:\n${JSON.stringify(response.data, null, 2)}`,
+            `[Import] Polis Data received:\n${JSON.stringify(response.data, null, 2)}`,
         );
         throw e;
     }

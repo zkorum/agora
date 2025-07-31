@@ -560,10 +560,7 @@ export const phoneCountryCodeEnum = pgEnum("phone_country_code", [
 ]);
 
 export const voteEnum = pgEnum("vote_enum_all", ["agree", "disagree", "pass"]);
-export const voteEnumForRepness = pgEnum("vote_enum_simple", [
-    "agree",
-    "disagree",
-]);
+export const voteEnumSimple = pgEnum("vote_enum_simple", ["agree", "disagree"]);
 
 export const polisKeyEnum = pgEnum("polis_key_enum", [
     "0",
@@ -1243,6 +1240,8 @@ export const opinionTable = pgTable(
         polisCluster5NumAgrees: integer("cluster_5_num_agrees"),
         polisCluster5NumDisagrees: integer("cluster_5_num_disagrees"),
         polisCluster5NumPasses: integer("cluster_5_num_passes"),
+        polisMajorityType: voteEnumSimple("polis_majority_type"),
+        polisMajorityProbabilitySuccess: real("polis_majority_ps"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1266,6 +1265,14 @@ export const opinionTable = pgTable(
     (table) => [
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
+        check(
+            "check_polis_majority",
+            sql`(
+            (${table.polisMajorityType} IS NOT NULL AND ${table.polisMajorityProbabilitySuccess} IS NOT NULL)
+            OR
+            (${table.polisMajorityType} IS NULL AND ${table.polisMajorityProbabilitySuccess} IS NULL)
+            )`,
+        ),
         check(
             "check_polis_null",
             sql`((${table.polisCluster0Id} IS NOT NULL AND ${table.polisCluster0NumAgrees} IS NOT NULL AND ${table.polisCluster0NumDisagrees} IS NOT NULL AND ${table.polisCluster0NumPasses} IS NOT NULL) OR (${table.polisCluster0Id} IS NULL AND ${table.polisCluster0NumAgrees} IS NULL AND ${table.polisCluster0NumDisagrees} IS NULL AND ${table.polisCluster0NumPasses} IS NULL))
@@ -1675,7 +1682,7 @@ export const polisClusterOpinionTable = pgTable(
         opinionId: integer("opinion_id")
             .notNull()
             .references(() => opinionTable.id),
-        agreementType: voteEnumForRepness("agreement_type").notNull(),
+        agreementType: voteEnumSimple("agreement_type").notNull(),
         probabilityAgreement: real("probability_agreement").notNull(), // example: 0.257, 0.013, 0, 1, 0.876 -- in practice should be larger than 0.5
         numAgreement: integer("number_agreement").notNull(), // example: 0, 1, 2...etc (number or agrees or disagrees)
         rawRepness: jsonb("raw_repness").notNull(), // from external polis system
