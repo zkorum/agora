@@ -80,11 +80,11 @@ import { useBackendPollApi } from "src/utils/api/poll";
 import type { UserInteraction, PollList } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../../../ui-library/ZKIcon.vue";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import PollOption from "./PollOption.vue";
+import { useConversationData } from "src/composables/useConversationData";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -103,7 +103,7 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { loadPostData } = useHomeFeedStore();
 const { updateAuthState } = useBackendAuthApi();
 
-const { createVotingIntention } = useLoginIntentionStore();
+const { createVotingLoginIntention } = useConversationData();
 
 enum DisplayModes {
   Vote,
@@ -222,7 +222,7 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
 }
 
 function onLoginCallback() {
-  createVotingIntention(props.postSlugId);
+  createVotingLoginIntention();
 }
 </script>
 

@@ -162,6 +162,8 @@ const {
   createEmptyDraft,
   validatePolisUrlField,
   validatePollField,
+  validateTitleField,
+  validateBodyField,
   validateForReview,
   updateTitle,
   updateContent,
@@ -234,6 +236,7 @@ function validateSubmission(): {
 function handleValidationError(errorField: ValidationErrorField): void {
   switch (errorField) {
     case "title":
+      validateTitleField();
       scrollToTitleInput();
       break;
     case "poll":
@@ -241,9 +244,11 @@ function handleValidationError(errorField: ValidationErrorField): void {
       scrollToPollComponent();
       break;
     case "body":
+      validateBodyField();
       // Body validation errors are handled inline in the editor
       break;
     case "polisUrl":
+      validatePolisUrlField();
       // Polis URL validation errors are handled in the PolisUrlInput component
       break;
   }

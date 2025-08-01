@@ -112,7 +112,7 @@ const logoutSettings: SettingsInterface[] = [
   {
     label: "Log Out",
     action: () => {
-      void logoutRequested();
+      void logoutRequested(true);
     },
     style: "warning",
   },

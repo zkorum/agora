@@ -43,7 +43,7 @@
         label="Log Out"
         color="secondary"
         text-color="black"
-        @click="logoutRequested()"
+        @click="logoutRequested(true)"
       />
     </div>
   </div>
@@ -54,6 +54,7 @@ import { storeToRefs } from "pinia";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { useRouter } from "vue-router";
 
@@ -71,8 +72,62 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const { logoutRequested } = useAuthSetup();
 
+const loginIntentionStore = useLoginIntentionStore();
+
 async function skipAuthentication() {
-  await router.push({ name: "/" });
+  // Check if user came from an embed view and should be returned there
+  const hasEmbedIntention = checkForActiveEmbedIntention();
+
+  if (hasEmbedIntention.hasIntention && hasEmbedIntention.conversationSlugId) {
+    await router.push({
+      name: "/conversation/[postSlugId].embed",
+      params: { postSlugId: hasEmbedIntention.conversationSlugId },
+      ...(hasEmbedIntention.opinionSlugId && {
+        query: { opinion: hasEmbedIntention.opinionSlugId },
+      }),
+    });
+  } else {
+    await router.push({ name: "/" });
+  }
+}
+
+function checkForActiveEmbedIntention(): {
+  hasIntention: boolean;
+  conversationSlugId?: string;
+  opinionSlugId?: string;
+} {
+  // Check voting intention
+  const votingIntention = loginIntentionStore.getCurrentVotingIntention();
+  if (votingIntention.enabled && votingIntention.isEmbedView) {
+    return {
+      hasIntention: true,
+      conversationSlugId: votingIntention.conversationSlugId,
+    };
+  }
+
+  // Check opinion agreement intention
+  const agreementIntention =
+    loginIntentionStore.getCurrentOpinionAgreementIntention();
+  if (agreementIntention.enabled && agreementIntention.isEmbedView) {
+    return {
+      hasIntention: true,
+      conversationSlugId: agreementIntention.conversationSlugId,
+      opinionSlugId: agreementIntention.opinionSlugId,
+    };
+  }
+
+  // Check report user content intention
+  const reportIntention =
+    loginIntentionStore.getCurrentReportUserContentIntention();
+  if (reportIntention.enabled && reportIntention.isEmbedView) {
+    return {
+      hasIntention: true,
+      conversationSlugId: reportIntention.conversationSlugId,
+      opinionSlugId: reportIntention.opinionSlugId,
+    };
+  }
+
+  return { hasIntention: false };
 }
 
 async function gotoNextRoute(isLogin: boolean) {

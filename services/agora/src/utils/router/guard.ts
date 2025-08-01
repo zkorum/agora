@@ -1,4 +1,4 @@
-import type { RouteRecordName} from "vue-router";
+import type { RouteRecordName } from "vue-router";
 import { useRouter } from "vue-router";
 
 export function useRouterGuard() {
@@ -22,6 +22,7 @@ export function useRouterGuard() {
       "/",
       "/welcome/",
       "/conversation/[postSlugId]",
+      "/conversation/[postSlugId].embed",
       "/conversation/new/create/",
       "/conversation/new/review/",
       "/legal/privacy/",
