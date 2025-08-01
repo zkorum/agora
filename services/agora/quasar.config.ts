@@ -81,6 +81,7 @@ export default defineConfig((ctx) => {
         VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
         VITE_BACK_DID: process.env.VITE_BACK_DID,
         VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,
+        VITE_IS_ORG_IMPORT_ONLY: process.env.VITE_IS_ORG_IMPORT_ONLY,
       },
       // rawDefine: {}
       // ignorePublicFolder: true,

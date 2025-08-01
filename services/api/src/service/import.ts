@@ -16,7 +16,7 @@ interface LoadImportedPolisConversationProps {
     proof: string;
     didWrite: string;
     authorId: string;
-    postAsOrganization: string;
+    postAsOrganization: string | undefined;
     indexConversationAt?: string;
     isLoginRequired: boolean;
     isIndexed: boolean;

@@ -186,7 +186,7 @@ export class Dto {
     static importConversationRequest = z
         .object({
             polisUrl: zodPolisUrl,
-            postAsOrganization: z.string(),
+            postAsOrganization: z.string().optional(),
             indexConversationAt: z.string().datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),

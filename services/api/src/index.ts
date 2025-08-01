@@ -1903,6 +1903,7 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
+                isOrgImportOnly: config.IS_ORG_IMPORT_ONLY,
                 awsAiLabelSummaryEnable:
                     config.AWS_AI_LABEL_SUMMARY_ENABLE &&
                     (config.NODE_ENV === "production" ||

@@ -46,10 +46,11 @@ interface ImportPostProps {
     proof: string;
     polisUrl: PolisUrl;
     axiosPolis: AxiosInstance;
-    postAsOrganization: string;
+    postAsOrganization: string | undefined;
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    isOrgImportOnly: boolean;
     awsAiLabelSummaryEnable: boolean;
     awsAiLabelSummaryRegion: string;
     awsAiLabelSummaryModelId: string;
@@ -70,6 +71,7 @@ export async function importConversation({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    isOrgImportOnly,
     awsAiLabelSummaryEnable,
     awsAiLabelSummaryRegion,
     awsAiLabelSummaryModelId,
@@ -78,16 +80,26 @@ export async function importConversation({
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: ImportPostProps): Promise<ImportConversationResponse> {
-    let organizationId: number | undefined = undefined;
-    organizationId = await authUtilService.isUserPartOfOrganization({
-        db,
-        organizationName: postAsOrganization,
-        userId: authorId,
-    });
-    if (organizationId === undefined) {
+    if (
+        (postAsOrganization === undefined || postAsOrganization === "") &&
+        isOrgImportOnly
+    ) {
         throw httpErrors.forbidden(
-            `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
+            "Import feature restricted to organizations",
         );
+    }
+    if (postAsOrganization !== undefined && postAsOrganization !== "") {
+        let organizationId: number | undefined = undefined;
+        organizationId = await authUtilService.isUserPartOfOrganization({
+            db,
+            organizationName: postAsOrganization,
+            userId: authorId,
+        });
+        if (organizationId === undefined) {
+            throw httpErrors.forbidden(
+                `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
+            );
+        }
     }
     const { importedPolisConversation, polisUrlType } =
         await polisService.importExternalPolisConversation({

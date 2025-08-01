@@ -305,10 +305,11 @@ Example Invalid Output 2:
 
 Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
 Be especially mindful of sarcasm, irony, or exaggerated language, and do not take all statements at face value. Apply judgment to distinguish between literal and non-literal expressions.
-Note: in the input, the "majorityOpinions" field can contain both "majority-agree" and "majority-disagree" opinions. The meaning of representative opinions is the same as in Polis.`),
+Note: the meaning of representative opinions is the same as in Polis.`),
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),
+    IS_ORG_IMPORT_ONLY: z.coerce.boolean().default(false),
 });
 
 export const config = configSchema.parse(process.env);

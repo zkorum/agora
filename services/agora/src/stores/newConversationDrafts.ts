@@ -482,10 +482,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function disablePostAsOrganization(): void {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
-    // Disable import mode when switching to non-organization account
-    // as import mode should only be available for organization accounts
-    conversationDraft.value.importSettings.isImportMode = false;
-    conversationDraft.value.importSettings.polisUrl = "";
+    if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+      // Disable import mode when switching to non-organization account
+      // as import mode should only be available for organization accounts
+      conversationDraft.value.importSettings.isImportMode = false;
+      conversationDraft.value.importSettings.polisUrl = "";
+    }
   }
 
   /**
@@ -942,21 +944,23 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return validateForReview().isValid;
   });
 
-  /**
-   * Watcher to automatically disable import mode when switching to non-organization account
-   * Import mode should only be available for organization accounts
-   */
-  watch(
-    () => conversationDraft.value.postAs.postAsOrganization,
-    (newValue, oldValue) => {
-      // Only act when switching from true to false (organization to personal)
-      if (oldValue === true && newValue === false) {
-        // Disable import mode and clear related settings
-        conversationDraft.value.importSettings.isImportMode = false;
-        conversationDraft.value.importSettings.polisUrl = "";
+  if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+    /**
+     * Watcher to automatically disable import mode when switching to non-organization account
+     * Import mode should only be available for organization accounts
+     */
+    watch(
+      () => conversationDraft.value.postAs.postAsOrganization,
+      (newValue, oldValue) => {
+        // Only act when switching from true to false (organization to personal)
+        if (oldValue === true && newValue === false) {
+          // Disable import mode and clear related settings
+          conversationDraft.value.importSettings.isImportMode = false;
+          conversationDraft.value.importSettings.polisUrl = "";
+        }
       }
-    }
-  );
+    );
+  }
 
   return {
     // Main draft state
