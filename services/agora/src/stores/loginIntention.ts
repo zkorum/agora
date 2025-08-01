@@ -292,6 +292,19 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     }
   }
 
+  // Getter methods to access current intentions without clearing them
+  function getCurrentVotingIntention(): VotingIntention {
+    return structuredClone(votingIntention);
+  }
+
+  function getCurrentOpinionAgreementIntention(): OpinionAgreementIntention {
+    return structuredClone(opinionAgreementIntention);
+  }
+
+  function getCurrentReportUserContentIntention(): ReportUserContentIntention {
+    return structuredClone(reportUserContentIntention);
+  }
+
   return {
     createVotingIntention,
     createOpinionAgreementIntention,
@@ -306,5 +319,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     clearVotingIntention,
     clearReportUserContentIntention,
     setActiveUserIntention,
+    getCurrentVotingIntention,
+    getCurrentOpinionAgreementIntention,
+    getCurrentReportUserContentIntention,
   };
 });

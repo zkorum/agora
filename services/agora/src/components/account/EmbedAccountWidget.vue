@@ -72,8 +72,6 @@ async function confirmLogout() {
   padding: 8px 12px;
   border-radius: 16px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(8px);
-  transition: all 0.3s ease;
 }
 
 .avatar {
