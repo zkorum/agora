@@ -15,10 +15,9 @@
       <div>
         <PrimeButton
           icon="pi pi-sign-out"
-          label="Logout"
+          label="Log Out"
           text
           rounded
-          :loading="isLoggingOut"
           class="logout-btn"
           size="small"
           title="Logout"
@@ -30,31 +29,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
-import { useBackendAuthApi } from "src/utils/api/auth";
+import { useAuthSetup } from "src/utils/auth/setup";
 import UserAvatar from "./UserAvatar.vue";
 
 const authStore = useAuthenticationStore();
 const userStore = useUserStore();
-const { logoutDataCleanup } = useBackendAuthApi();
+const { logoutRequested } = useAuthSetup();
 
 const { isLoggedIn } = storeToRefs(authStore);
 const { profileData } = storeToRefs(userStore);
 
-const isLoggingOut = ref(false);
-
-async function confirmLogout() {
-  try {
-    isLoggingOut.value = true;
-    await logoutDataCleanup();
-  } catch (error) {
-    console.error("Logout failed:", error);
-  } finally {
-    isLoggingOut.value = false;
-  }
+function confirmLogout() {
+  void logoutRequested(false);
 }
 </script>
 

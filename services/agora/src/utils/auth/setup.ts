@@ -8,12 +8,14 @@ export function useAuthSetup() {
 
   const router = useRouter();
 
-  async function logoutRequested() {
+  async function logoutRequested(shouldRedirect: boolean) {
     try {
       await logoutFromServer();
       await updateAuthState({ partialLoginStatus: { isLoggedIn: false } });
       showNotifyMessage("Logged out");
-      await router.push({ name: "/welcome/" });
+      if (shouldRedirect) {
+        await router.push({ name: "/welcome/" });
+      }
     } catch (e) {
       console.error("Unexpected error when logging out", e);
       showNotifyMessage("Oops! Logout failed. Please try again");

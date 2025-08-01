@@ -43,7 +43,7 @@
         label="Log Out"
         color="secondary"
         text-color="black"
-        @click="logoutRequested()"
+        @click="logoutRequested(true)"
       />
     </div>
   </div>
