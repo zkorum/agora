@@ -21,11 +21,11 @@ Modify `src` with the URL copied during the Step 1:
 ```
 
 Important note: if you're using WordPress.com Free plan, this will not work because WordPress.com removes all the custom iframes before publishing (except from established platforms such as YouTube) for security reasons (<https://wordpress.com/forums/topic/iframe-not-displaying/>).
-You should still be able to display Agora with "Preview" successfully when adding a `Custom HTML` element.
+You should still be able to display Agora with "Preview" successfully when adding a `Custom HTML` element. If you're using WordPress outside WordPress.com, it should work already.
 
 ### With the iframe wordpress plugin
 
-If you're using WordPress, and notably WordPress.com, you might have to purchase the Business Plan and eventualy use the [iframe](https://wordpress.org/plugins/iframe/) plugin to use iframes outside of the supported big platforms.
+If you're using WordPress, and notably WordPress.com, you might have to purchase the Business Plan and eventualy use the [iframe](https://wordpress.org/plugins/iframe/) plugin to use iframes outside of the supported big platforms. Note that this plugin is accessible for free, but WordPress.com forces their users to upgrade their plan to allow them to use external plugins.
 
 Here is an example iframe code using this plugin, modify `src` with the URL copied during the Step 1:
 
