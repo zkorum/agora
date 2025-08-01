@@ -1,4 +1,4 @@
-# Embedding Agora on your webiste
+# Embedding Agora on your website
 
 Quick guide on how to embed an Agora conversation into your website using an iframe.
 
@@ -17,7 +17,7 @@ Either directly within HTML or using some external plugin that does this job for
 Modify `src` with the URL copied during the Step 1:
 
 ```
-<iframe style="aspect-ratio: 1/1; width:100%"  src="https://agoracitizen.network/feed/conversation/ss_4Cg/embed" title="Agora Citizen Network" frameborder="0" allow="clipboard-write; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe style="aspect-ratio: 1/1; width:100%" scrolling="no" src="https://agoracitizen.network/feed/conversation/ss_4Cg/embed" title="Agora Citizen Network" frameborder="0" allow="clipboard-write; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
 
 Important note: if you're using WordPress.com Free plan, this will not work because WordPress.com removes all the custom iframes before publishing (except from established platforms such as YouTube) for security reasons (<https://wordpress.com/forums/topic/iframe-not-displaying/>).
@@ -30,10 +30,10 @@ If you're using WordPress, and notably WordPress.com, you might have to purchase
 Here is an example iframe code using this plugin, modify `src` with the URL copied during the Step 1:
 
 ```
-[iframe style="aspect-ratio: 1/1; width:100%" src="http://www.youtube.com/embed/7_nAZQt9qu0" title="Agora Citizen Network" frameborder="0" allow="clipboard-write; web-share" referrerpolicy="strict-origin-when-cross-origin"]
+[iframe style="aspect-ratio: 1/1; width:100%" scrolling="no" src="http://www.youtube.com/embed/7_nAZQt9qu0" title="Agora Citizen Network" frameborder="0" allow="clipboard-write; web-share" referrerpolicy="strict-origin-when-cross-origin"]
 ```
 
-Note: I wasn't able to test that part, so let me know if you run into any issues.
+Note: we weren't able to test this part, so let us know if you run into any issues.
 
 ## Helpful resources
 
