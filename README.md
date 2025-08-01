@@ -97,6 +97,10 @@ We generate an `openapi-zkorum.json` file from the backend, and then use [openap
 
 Some typescript source files are shared directly without using npm packages - by copy-pasting using rsync.
 
+## Embedding Agora on your website
+
+Refer to [the embed documentation](./doc/embed.md).
+
 ## Security disclosures
 
 If you discover any security issues, please send an email to <security@zkorum.com>. The email is automatically CCed to the entire team, and we'll respond promptly. See [SECURITY](./SECURITY.md) for more info.
