@@ -39,7 +39,6 @@
 
             <CommentSection
               v-if="currentTab == 'comment'"
-              :key="commentSectionKey"
               ref="commentSectionRef"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
               :participant-count="participantCountLocal"
@@ -91,7 +90,6 @@ import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import { ref, triggerRef } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
-import { useRouter } from "vue-router";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type {
@@ -111,10 +109,7 @@ const props = defineProps<{
 const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 
 const commentCountOffset = ref(0);
-const commentSectionKey = ref(Date.now());
 const currentTab = ref<"comment" | "analysis">("comment");
-
-const router = useRouter();
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
@@ -152,16 +147,13 @@ function decrementCommentCount() {
 
 async function submittedComment(opinionSlugId: string) {
   commentCountOffset.value += 1;
-  commentSectionKey.value += Date.now();
   // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
   // Change this if you change this behaviour.
   changeVote("agree", opinionSlugId);
 
-  await router.replace({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: props.extendedPostData.metadata.conversationSlugId },
-    query: { opinion: opinionSlugId },
-  });
+  if (commentSectionRef.value) {
+    await commentSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
+  }
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
