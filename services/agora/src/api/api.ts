@@ -1440,7 +1440,7 @@ export interface ApiV1ConversationImportPostRequest {
      * @type {string}
      * @memberof ApiV1ConversationImportPostRequest
      */
-    'postAsOrganization': string;
+    'postAsOrganization'?: string;
     /**
      * 
      * @type {string}

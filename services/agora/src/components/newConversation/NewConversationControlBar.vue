@@ -179,7 +179,10 @@ const controlButtons = computed((): ControlButton[] => [
       ? "Import from Polis"
       : "New Conversation",
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
-    isVisible: conversationDraft.value.postAs.postAsOrganization,
+    isVisible:
+      process.env.VITE_IS_ORG_IMPORT_ONLY === "true"
+        ? conversationDraft.value.postAs.postAsOrganization
+        : true,
     clickHandler: togglePostTypeDialog,
     clickable: true,
   },

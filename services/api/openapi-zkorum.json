@@ -5196,7 +5196,6 @@
                                 },
                                 "required": [
                                     "polisUrl",
-                                    "postAsOrganization",
                                     "isIndexed",
                                     "isLoginRequired"
                                 ],
