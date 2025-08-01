@@ -6,6 +6,7 @@ import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendPostApi } from "src/utils/api/post";
 import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useEmbedMode } from "src/utils/ui/embedMode";
 
 export function useConversationData() {
   const { fetchPostBySlugId } = useBackendPostApi();
@@ -18,6 +19,7 @@ export function useConversationData() {
   const dataLoaded = ref(false);
 
   const route = useRoute();
+  const { isEmbeddedMode } = useEmbedMode();
 
   const {
     clearVotingIntention,
@@ -88,7 +90,7 @@ export function useConversationData() {
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
-      const isEmbedView = route.name === "/conversation/[postSlugId].embed";
+      const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
       createVotingIntention(postSlugId, isEmbedView);
       setActiveUserIntention("voting");
@@ -100,7 +102,7 @@ export function useConversationData() {
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
-      const isEmbedView = route.name === "/conversation/[postSlugId].embed";
+      const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
       createOpinionAgreementIntention(postSlugId, opinionSlugId, isEmbedView);
       setActiveUserIntention("agreement");
@@ -112,7 +114,7 @@ export function useConversationData() {
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
-      const isEmbedView = route.name === "/conversation/[postSlugId].embed";
+      const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
       createReportUserContentIntention(postSlugId, opinionSlugId, isEmbedView);
       setActiveUserIntention("reportUserContent");

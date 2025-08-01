@@ -7,6 +7,7 @@ import { useNotify } from "./notify";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useEmbedMode } from "./embedMode";
 
 export const useBottomSheet = () => {
   const quasar = useQuasar();
@@ -15,6 +16,7 @@ export const useBottomSheet = () => {
 
   const router = useRouter();
   const route = useRoute();
+  const { isEmbeddedMode } = useEmbedMode();
 
   const { deletePostBySlugId } = useBackendPostApi();
 
@@ -38,6 +40,7 @@ export const useBottomSheet = () => {
     moderateCommentCallback: () => void | Promise<void>,
     shareOpinionCallback: () => void | Promise<void>
   ) {
+    const isEmbedded = isEmbeddedMode();
     const actionList: QuasarAction[] = [];
 
     actionList.push({
@@ -46,7 +49,12 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.value.userName != posterUserName && isLoggedIn.value) {
+    // Disable "Mute User" in embedded mode as it's more of a platform-level action
+    if (
+      profileData.value.userName != posterUserName &&
+      isLoggedIn.value &&
+      !isEmbedded
+    ) {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
@@ -54,6 +62,7 @@ export const useBottomSheet = () => {
       });
     }
 
+    // Keep "Delete" enabled for comments/opinions in embedded mode
     if (profileData.value.userName == posterUserName) {
       actionList.push({
         label: "Delete",
@@ -62,7 +71,8 @@ export const useBottomSheet = () => {
       });
     }
 
-    if (profileData.value.isModerator) {
+    // Disable moderator actions in embedded mode as they navigate to other pages
+    if (profileData.value.isModerator && !isEmbedded) {
       actionList.push({
         label: "Moderate",
         icon: "mdi-sword",
@@ -122,6 +132,7 @@ export const useBottomSheet = () => {
     moderationHistoryCallback: () => void | Promise<void>,
     copyEmbedLinkCallback: () => void | Promise<void>
   ) {
+    const isEmbedded = isEmbeddedMode();
     const actionList: QuasarAction[] = [];
 
     actionList.push({
@@ -130,7 +141,12 @@ export const useBottomSheet = () => {
       id: "report",
     });
 
-    if (profileData.value.userName != posterUserName && isLoggedIn.value) {
+    // Disable "Mute User" in embedded mode as it's more of a platform-level action
+    if (
+      profileData.value.userName != posterUserName &&
+      isLoggedIn.value &&
+      !isEmbedded
+    ) {
       actionList.push({
         label: "Mute User",
         icon: "mdi-account-off",
@@ -138,7 +154,8 @@ export const useBottomSheet = () => {
       });
     }
 
-    if (profileData.value.userName == posterUserName) {
+    // Disable "Delete" for conversations in embedded mode as it redirects to home page
+    if (profileData.value.userName == posterUserName && !isEmbedded) {
       actionList.push({
         label: "Delete",
         icon: "mdi-delete",
@@ -146,6 +163,7 @@ export const useBottomSheet = () => {
       });
     }
 
+    // Enable "Moderation History" in embedded mode as it navigates within the page
     actionList.push({
       label: "Moderation History",
       icon: "mdi-book-open",
@@ -158,7 +176,8 @@ export const useBottomSheet = () => {
       id: "embed-link",
     });
 
-    if (profileData.value.isModerator) {
+    // Disable moderator actions in embedded mode as they navigate to other pages
+    if (profileData.value.isModerator && !isEmbedded) {
       actionList.push({
         label: "Moderate",
         icon: "mdi-sword",

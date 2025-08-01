@@ -126,7 +126,10 @@ async function moderatePostCallback() {
 }
 
 async function moderationHistoryCallback() {
-  if (route.name == "/conversation/[postSlugId]") {
+  if (
+    route.name == "/conversation/[postSlugId]" ||
+    route.name == "/conversation/[postSlugId].embed"
+  ) {
     emit("openModerationHistory");
   } else {
     await router.push({
