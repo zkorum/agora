@@ -14,8 +14,18 @@
           <div class="examples">
             <p class="examples-title">Valid URL examples:</p>
             <ul class="examples-list">
-              <li><code>https://pol.is/report/r32beaksmhwesyum6kaur</code></li>
-              <li><code>https://pol.is/384anuzye9</code></li>
+              <li><code>{{ "https://pol.is/report/<report_id>" }}</code></li>
+              <li><code>{{ "https://pol.is/<conversation_id>"}}</code></li>
+              <li>
+                <code
+                >{{ "https://polis.deepgov.org/conversation/report/<report_id>"}}</code
+                >
+              </li>
+              <li>
+                <code
+                >{{"https://polis.deepgov.org/conversation/<conversation_id>"}}</code
+                >
+              </li>
             </ul>
           </div>
 

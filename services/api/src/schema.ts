@@ -1210,6 +1210,11 @@ export const opinionTable = pgTable(
         polisGroupAwareConsensusProbabilityAgree: real("polis_ga_consensus_pa")
             .notNull()
             .default(0), // will contain pol.is group-aware-consensus probabilities for "agree"
+        polisGroupAwareConsensusProbabilityDisagree: real(
+            "polis_ga_consensus_pd",
+        )
+            .notNull()
+            .default(0), // will contain pol.is group-aware-consensus probabilities for "agree"
         polisPriority: real("polis_priority").notNull().default(0), // contains pol.is comment-priorities
         polisDivisiveness: real("polis_divisiveness").notNull().default(0), // contains pol.is comment-extremities, the higher the most divisive
         // cache polis values to optimize fetch queries

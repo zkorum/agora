@@ -43,7 +43,7 @@ import { castVoteForOpinionSlugId } from "./voting.js";
 import {
     isSqlWhereMajority,
     isSqlOrderByMajority,
-    isSqlOrderByGroupAwareConsensusAgree,
+    isSqlOrderByGroupAwareConsensus,
     isSqlOrderByPolisPriority,
     isSqlWhereRepresentative,
     isSqlOrderByRepresentative,
@@ -268,7 +268,7 @@ export async function fetchOpinionsByPostId({
         }
         case "group-aware-consensus": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = isSqlOrderByGroupAwareConsensusAgree();
+            orderByClause = isSqlOrderByGroupAwareConsensus();
             break;
         }
         case "majority": {

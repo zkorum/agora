@@ -1,0 +1,1 @@
+ALTER TABLE "opinion" ADD COLUMN "polis_ga_consensus_pd" real DEFAULT 0 NOT NULL;

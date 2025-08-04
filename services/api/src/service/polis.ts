@@ -128,6 +128,7 @@ async function loadPolisMathResults({
 
     let setClauseCommentPriority = {};
     let setClauseGroupAwareConsensusAgree = {};
+    let setClauseGroupAwareConsensusDisagree = {};
     let setClauseCommentExtremities = {};
     if (Object.keys(polisMathResults.statements_df).length === 0) {
         log.warn(
@@ -140,12 +141,15 @@ async function loadPolisMathResults({
         sqlChunksPriorities.push(sql`(CASE`);
         const sqlChunksGroupAwareConsensusAgree: SQL[] = [];
         sqlChunksGroupAwareConsensusAgree.push(sql`(CASE`);
+        const sqlChunksGroupAwareConsensusDisagree: SQL[] = [];
+        sqlChunksGroupAwareConsensusDisagree.push(sql`(CASE`);
         const sqlChunksExtremities: SQL[] = [];
         sqlChunksExtremities.push(sql`(CASE`);
         for (const {
             statement_id,
             priority,
             "group-aware-consensus-agree": groupAwareConsensusAgree,
+            "group-aware-consensus-disagree": groupAwareConsensusDisagree,
             extremity,
         } of polisMathResults.statements_df) {
             sqlChunksPriorities.push(
@@ -154,10 +158,14 @@ async function loadPolisMathResults({
             sqlChunksGroupAwareConsensusAgree.push(
                 sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${groupAwareConsensusAgree}`,
             );
+            sqlChunksGroupAwareConsensusDisagree.push(
+                sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${groupAwareConsensusDisagree}`,
+            );
             sqlChunksExtremities.push(
                 sql`WHEN ${opinionTable.id} = ${statement_id}::int THEN ${extremity}`,
             );
         }
+
         sqlChunksPriorities.push(sql`ELSE polis_priority`); // this should not happen
         sqlChunksPriorities.push(sql`END)`);
         const finalSqlCommentPriorities = sql.join(
@@ -167,6 +175,7 @@ async function loadPolisMathResults({
         setClauseCommentPriority = {
             polisPriority: finalSqlCommentPriorities,
         };
+
         sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa`); // this should not happen
         sqlChunksGroupAwareConsensusAgree.push(sql`END)`);
         const finalSqlGroupAwareConsensusAgree = sql.join(
@@ -177,6 +186,20 @@ async function loadPolisMathResults({
             polisGroupAwareConsensusProbabilityAgree:
                 finalSqlGroupAwareConsensusAgree,
         };
+
+        sqlChunksGroupAwareConsensusDisagree.push(
+            sql`ELSE polis_ga_consensus_pd`,
+        ); // this should not happen
+        sqlChunksGroupAwareConsensusDisagree.push(sql`END)`);
+        const finalSqlGroupAwareConsensusDisagree = sql.join(
+            sqlChunksGroupAwareConsensusDisagree,
+            sql.raw(" "),
+        );
+        setClauseGroupAwareConsensusDisagree = {
+            polisGroupAwareConsensusProbabilityDisagree:
+                finalSqlGroupAwareConsensusDisagree,
+        };
+
         sqlChunksExtremities.push(sql`ELSE polis_divisiveness`); // this should not happen
         sqlChunksExtremities.push(sql`END)`);
         const finalSqlCommentExtremities: SQL = sql.join(
@@ -272,6 +295,7 @@ async function loadPolisMathResults({
             .set({
                 ...setClauseCommentPriority,
                 ...setClauseGroupAwareConsensusAgree,
+                ...setClauseGroupAwareConsensusDisagree,
                 ...setClauseCommentExtremities,
                 updatedAt: nowZeroMs(),
             })
@@ -282,6 +306,7 @@ async function loadPolisMathResults({
             .set({
                 ...setClauseCommentPriority,
                 ...setClauseGroupAwareConsensusAgree,
+                ...setClauseGroupAwareConsensusDisagree,
                 ...setClauseCommentExtremities,
                 ...setClauseMajorityProbability,
                 ...setClauseMajorityType,
