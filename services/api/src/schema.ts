@@ -1066,6 +1066,18 @@ export const conversationTable = pgTable(
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
         isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        opinionCount: integer("opinion_count").notNull().default(0),
+        voteCount: integer("vote_count").notNull().default(0),
+        participantCount: integer("participant_count").notNull().default(0),
+        importUrl: text("import_url"), // originally used for importing
+        importConversationUrl: text("import_conversation_url"),
+        importExportUrl: text("import_export_url"),
+        importCreatedAt: timestamp("import_created_at", {
+            // original creatoin date
+            mode: "date",
+            precision: 0,
+        }),
+        importAuthor: text("import_author"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1085,9 +1097,6 @@ export const conversationTable = pgTable(
         })
             .defaultNow()
             .notNull(),
-        opinionCount: integer("opinion_count").notNull().default(0),
-        voteCount: integer("vote_count").notNull().default(0),
-        participantCount: integer("participant_count").notNull().default(0),
     },
     (table) => [index("conversation_createdAt_idx").on(table.createdAt)],
 );

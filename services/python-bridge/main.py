@@ -32,6 +32,7 @@ def print_summary(loader: Loader):
     print(f"--- Math object keys: {list(loader.math_data.keys())}")
     # print("--------")
     print(f"--- Conversation object keys: {list(loader.conversation_data.keys())}")
+    print(f"--- Conversation created: {loader.conversation_data.get('created')}")
 
 
 @app.route("/import")
