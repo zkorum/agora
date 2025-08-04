@@ -6,7 +6,11 @@ import * as voteService from "./voting.js";
 import * as commentService from "./comment.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { log } from "@/app.js";
-import { MAX_LENGTH_BODY_HTML, MAX_LENGTH_TITLE } from "@/shared/shared.js";
+import {
+    MAX_LENGTH_BODY_HTML,
+    MAX_LENGTH_TITLE,
+    toUnionUndefined,
+} from "@/shared/shared.js";
 
 interface LoadImportedPolisConversationProps {
     db: PostgresDatabase;
@@ -37,6 +41,10 @@ export async function loadImportedPolisConversation({
 }: LoadImportedPolisConversationProps): Promise<ConversationIds> {
     // create conversation
     const ownername = importedPolisConversation.conversation_data.ownername;
+    const importCreatedAt =
+        importedPolisConversation.conversation_data.created !== null
+            ? new Date(importedPolisConversation.conversation_data.created)
+            : undefined;
     let conversationUrl: string | undefined;
     let reportUrl: string | undefined;
     let trimmedBody = importedPolisConversation.conversation_data.description;
@@ -78,6 +86,9 @@ export async function loadImportedPolisConversation({
     if (ownername !== null) {
         conversationBody = `${conversationBody}<br />The original author is "${ownername}".`;
     }
+    if (importCreatedAt !== undefined) {
+        conversationBody = `${conversationBody}<br />The original creation date is ${importCreatedAt.toDateString()}.`;
+    }
     conversationBody = `${conversationBody}<br />The data in the Analysis tab has been completely recalculated by Agora.`;
     let trimmedTitle = importedPolisConversation.conversation_data.topic;
     if (
@@ -107,6 +118,11 @@ export async function loadImportedPolisConversation({
                 isIndexed: isIndexed,
                 isLoginRequired: isLoginRequired,
                 seedOpinionList: [],
+                importUrl: polisUrl,
+                importConversationUrl: conversationUrl,
+                importExportUrl: reportUrl,
+                importCreatedAt: importCreatedAt,
+                importAuthor: toUnionUndefined(ownername),
             });
         const {
             userIdPerParticipantId,

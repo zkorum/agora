@@ -37,6 +37,11 @@ interface CreateNewPostProps {
     isIndexed: boolean;
     isLoginRequired: boolean;
     seedOpinionList: string[];
+    importUrl?: string;
+    importConversationUrl?: string;
+    importExportUrl?: string;
+    importCreatedAt?: Date;
+    importAuthor?: string;
 }
 
 interface ImportPostProps {
@@ -158,6 +163,11 @@ export async function createNewPost({
     isLoginRequired,
     isIndexed,
     seedOpinionList,
+    importUrl,
+    importConversationUrl,
+    importExportUrl,
+    importCreatedAt,
+    importAuthor,
 }: CreateNewPostProps): Promise<ConversationIds> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
@@ -206,6 +216,11 @@ export async function createNewPost({
                     currentContentId: null,
                     currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
                     lastReactedAt: new Date(),
+                    importUrl,
+                    importConversationUrl,
+                    importExportUrl,
+                    importCreatedAt,
+                    importAuthor,
                 })
                 .returning({ conversationId: conversationTable.id });
 

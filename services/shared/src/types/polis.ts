@@ -149,7 +149,7 @@ const zodPolisConversation = z.object({
     context: z.string().nullable(),
     conversation_id: z.string().or(z.number()).nullable(),
     course_id: z.union([z.string(), z.number()]).nullable(),
-    created: z.string().nullable(),
+    created: z.coerce.number().nullable(), // timestamp
     dataset_explanation: z.any().nullable(),
     description: z.string(), // "body" in agora
     email_domain: z.any().nullable(),
