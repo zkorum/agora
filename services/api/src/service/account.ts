@@ -609,6 +609,7 @@ export async function submitUsernameChange({
 
 interface DeleteAccountProps {
     db: PostgresJsDatabase;
+    now: Date;
     proof: string;
     didWrite: string;
     userId: string;
@@ -626,6 +627,7 @@ interface DeleteAccountProps {
 
 export async function deleteUserAccount({
     db,
+    now,
     userId,
     proof,
     didWrite,
@@ -676,6 +678,7 @@ export async function deleteUserAccount({
         for (const vote of userVotes) {
             await castVoteForOpinionSlugIdFromUserId({
                 db: tx,
+                now: now,
                 opinionSlugId: vote.opinionSlugId,
                 didWrite,
                 proof,
@@ -702,6 +705,7 @@ export async function deleteUserAccount({
         for (const comment of userComments) {
             await deleteOpinionBySlugId({
                 db: tx,
+                now: now,
                 proof: proof,
                 opinionSlugId: comment.opinionItem.opinionSlugId,
                 didWrite: didWrite,

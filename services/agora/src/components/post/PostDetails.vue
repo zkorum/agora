@@ -105,11 +105,13 @@ const props = defineProps<{
   extendedPostData: ExtendedConversation;
   compactMode: boolean;
 }>();
+const currentTab = defineModel<"comment" | "analysis">({
+  required: true,
+});
 
 const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
 
 const commentCountOffset = ref(0);
-const currentTab = ref<"comment" | "analysis">("comment");
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();

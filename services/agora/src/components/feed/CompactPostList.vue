@@ -33,6 +33,7 @@
                 :key="postData.metadata.conversationSlugId"
               >
                 <PostDetails
+                  v-model="currentTab"
                   :extended-post-data="postData"
                   :compact-mode="true"
                   class="showCursor"
@@ -50,6 +51,7 @@
                 :key="postData.metadata.conversationSlugId"
               >
                 <PostDetails
+                  v-model="currentTab"
                   :extended-post-data="postData"
                   :compact-mode="true"
                   @click="openPost(postData.metadata.conversationSlugId)"
@@ -99,7 +101,7 @@
 <script setup lang="ts">
 import PostDetails from "../post/PostDetails.vue";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import { onMounted, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useWindowFocus, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
@@ -123,6 +125,8 @@ const windowFocused = useWindowFocus();
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const { y: windowY } = useWindowScroll();
+
+const currentTab = ref<"comment" | "analysis">("comment");
 
 onMounted(async () => {
   await hasNewPostCheck();

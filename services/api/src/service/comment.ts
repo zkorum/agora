@@ -1134,6 +1134,7 @@ export async function postNewOpinion({
             .update(conversationTable)
             .set({
                 opinionCount: conversationOpinionCount + 1,
+                lastReactedAt: now,
             })
             .where(eq(conversationTable.slugId, conversationSlugId));
 
@@ -1202,6 +1203,7 @@ export async function postNewOpinion({
 
 interface DeleteCommentBySlugIdProps {
     db: PostgresJsDatabase;
+    now: Date;
     opinionSlugId: string;
     userId: string;
     proof: string;
@@ -1218,6 +1220,7 @@ interface DeleteCommentBySlugIdProps {
 
 export async function deleteOpinionBySlugId({
     db,
+    now,
     opinionSlugId,
     userId,
     proof,
@@ -1280,7 +1283,11 @@ export async function deleteOpinionBySlugId({
             opinionSlugId,
         });
     const { updateCountsBypassCache } = useCommonPost();
-    await updateCountsBypassCache({ db, conversationSlugId });
+    await updateCountsBypassCache({
+        db,
+        conversationSlugId,
+        lastReactedAt: now,
+    });
     if (axiosPolis !== undefined) {
         const votes = await polisService.getPolisVotes({
             db,

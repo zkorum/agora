@@ -91,6 +91,7 @@ interface CastVoteForOpinionSlugIdProps {
 
 interface CastVoteForOpinionSlugIdFromUserIdProps {
     db: PostgresJsDatabase;
+    now: Date;
     opinionSlugId: string;
     didWrite: string;
     proof: string;
@@ -114,6 +115,7 @@ interface CastVoteForOpinionSlugIdFromUserIdProps {
 
 export async function castVoteForOpinionSlugIdFromUserId({
     db,
+    now,
     opinionSlugId,
     didWrite,
     proof,
@@ -362,6 +364,7 @@ export async function castVoteForOpinionSlugIdFromUserId({
                     .set({
                         voteCount: conversationVoteCount - 1,
                         participantCount: conversationParticipantCount - 1,
+                        lastReactedAt: now,
                     })
                     .where(eq(conversationTable.id, conversationId));
             } else {
@@ -370,6 +373,7 @@ export async function castVoteForOpinionSlugIdFromUserId({
                     .set({
                         voteCount: conversationVoteCount - 1,
                         participantCount: conversationParticipantCount,
+                        lastReactedAt: now,
                     })
                     .where(eq(conversationTable.id, conversationId));
             }
@@ -381,6 +385,7 @@ export async function castVoteForOpinionSlugIdFromUserId({
                     .set({
                         voteCount: conversationVoteCount + 1,
                         participantCount: conversationParticipantCount + 1,
+                        lastReactedAt: now,
                     })
                     .where(eq(conversationTable.slugId, conversationSlugId));
             } else {
@@ -390,6 +395,7 @@ export async function castVoteForOpinionSlugIdFromUserId({
                     .set({
                         voteCount: conversationVoteCount + 1,
                         participantCount: conversationParticipantCount,
+                        lastReactedAt: now,
                     })
                     .where(eq(conversationTable.slugId, conversationSlugId));
             }
@@ -865,6 +871,7 @@ export async function castVoteForOpinionSlugId({
 
     return await castVoteForOpinionSlugIdFromUserId({
         db,
+        now,
         opinionSlugId,
         didWrite,
         proof,
