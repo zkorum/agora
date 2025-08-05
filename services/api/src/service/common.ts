@@ -776,6 +776,7 @@ export function useCommonPost() {
         db: PostgresJsDatabase;
         conversationSlugId: string;
         useCache?: boolean;
+        lastReactedAt?: Date;
     }
 
     async function getPostMetadataFromSlugId({
@@ -839,6 +840,7 @@ export function useCommonPost() {
     async function updateCountsBypassCache({
         db,
         conversationSlugId,
+        lastReactedAt,
     }: GetPostMetadataFromSlugIdProps): Promise<void> {
         const { opinionCount, voteCount, participantCount } =
             await getPostMetadataFromSlugId({
@@ -846,14 +848,26 @@ export function useCommonPost() {
                 conversationSlugId,
                 useCache: false,
             });
-        await db
-            .update(conversationTable)
-            .set({
-                participantCount: participantCount,
-                opinionCount: opinionCount,
-                voteCount: voteCount,
-            })
-            .where(eq(conversationTable.slugId, conversationSlugId));
+        if (lastReactedAt !== undefined) {
+            await db
+                .update(conversationTable)
+                .set({
+                    participantCount: participantCount,
+                    opinionCount: opinionCount,
+                    voteCount: voteCount,
+                    lastReactedAt: lastReactedAt,
+                })
+                .where(eq(conversationTable.slugId, conversationSlugId));
+        } else {
+            await db
+                .update(conversationTable)
+                .set({
+                    participantCount: participantCount,
+                    opinionCount: opinionCount,
+                    voteCount: voteCount,
+                })
+                .where(eq(conversationTable.slugId, conversationSlugId));
+        }
     }
 
     return {

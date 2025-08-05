@@ -1340,9 +1340,10 @@ server.after(() => {
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
-
+            const now = nowZeroMs();
             await deleteOpinionBySlugId({
                 db: db,
+                now: now,
                 opinionSlugId: request.body.opinionSlugId,
                 userId: deviceStatus.userId,
                 proof: encodedUcan,
@@ -2021,10 +2022,11 @@ server.after(() => {
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
-
+            const now = nowZeroMs();
             await deleteUserAccount({
                 proof: encodedUcan,
                 db: db,
+                now: now,
                 didWrite: didWrite,
                 userId: deviceStatus.userId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,

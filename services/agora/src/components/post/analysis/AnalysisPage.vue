@@ -1,5 +1,8 @@
 <template>
-  <div>
+  <div v-if="isLoading" class="analysisLoading">
+    <q-spinner-gears size="50px" color="primary" />
+  </div>
+  <div v-if="!isLoading">
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
@@ -93,6 +96,8 @@ const props = defineProps<{
   conversationSlugId: string;
 }>();
 
+const isLoading = ref<boolean>(true);
+
 const {
   fetchConsensusItemList,
   fetchMajorityItemList,
@@ -114,6 +119,7 @@ async function loadItemLists({
 }: {
   conversationSlugId: string;
 }): Promise<void> {
+  isLoading.value = true;
   consensusItemList.value = await fetchConsensusItemList({
     conversationSlugId,
   });
@@ -133,6 +139,7 @@ const userCluster: ClusterMetadata | undefined = props.polis.clusters.find(
 
 onMounted(async () => {
   await loadItemLists({ conversationSlugId: props.conversationSlugId });
+  isLoading.value = false;
 });
 </script>
 
@@ -156,5 +163,11 @@ onMounted(async () => {
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
+}
+
+.analysisLoading {
+  display: flex;
+  justify-content: center;
+  padding-top: 4rem;
 }
 </style>
