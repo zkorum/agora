@@ -62,7 +62,7 @@ import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 import VotingButton from "src/components/features/opinion/VotingButton.vue";
-import { useConversationData } from "src/composables/useConversationData";
+import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -75,7 +75,7 @@ const props = defineProps<{
 const emit = defineEmits(["changeVote"]);
 
 const showLoginDialog = ref(false);
-const { createOpinionAgreementLoginIntention } = useConversationData();
+const { setOpinionAgreementIntention } = useConversationLoginIntentions();
 
 const { showNotifyMessage } = useNotify();
 
@@ -112,7 +112,7 @@ const relativeTotalPercentagePasses = computed(() => {
 });
 
 function onLoginCallback() {
-  createOpinionAgreementLoginIntention(props.commentItem.opinionSlugId);
+  setOpinionAgreementIntention(props.commentItem.opinionSlugId);
 }
 
 async function castPersonalVote(

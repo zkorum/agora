@@ -84,7 +84,7 @@ import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginI
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import PollOption from "./PollOption.vue";
-import { useConversationData } from "src/composables/useConversationData";
+import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -103,7 +103,7 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { loadPostData } = useHomeFeedStore();
 const { updateAuthState } = useBackendAuthApi();
 
-const { createVotingLoginIntention } = useConversationData();
+const { setVotingIntention } = useConversationLoginIntentions();
 
 enum DisplayModes {
   Vote,
@@ -222,7 +222,7 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
 }
 
 function onLoginCallback() {
-  createVotingLoginIntention();
+  setVotingIntention();
 }
 </script>
 

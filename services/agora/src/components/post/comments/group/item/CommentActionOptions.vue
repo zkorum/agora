@@ -43,7 +43,7 @@ import { useBottomSheet } from "src/utils/ui/bottomSheet";
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useConversationData } from "src/composables/useConversationData";
+import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -69,10 +69,10 @@ const { deleteCommentBySlugId } = useBackendCommentApi();
 
 const showLoginDialog = ref(false);
 
-const { createReportUserContentLoginIntention } = useConversationData();
+const { setReportIntention } = useConversationLoginIntentions();
 
 function onLoginConfirmationOk() {
-  createReportUserContentLoginIntention(props.commentItem.opinionSlugId);
+  setReportIntention(props.commentItem.opinionSlugId);
 }
 
 function reportContentCallback() {
