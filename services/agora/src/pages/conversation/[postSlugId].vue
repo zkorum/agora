@@ -19,13 +19,13 @@
       </DefaultMenuBar>
     </template>
 
-    <q-pull-to-refresh @refresh="pullDownTriggered">
+    <q-pull-to-refresh @refresh="refreshConversation">
       <WidthWrapper :enable="true">
         <PostDetails
-          v-if="dataLoaded"
-          :key="postData.metadata.lastReactedAt.toISOString()"
+          v-if="conversationLoaded"
+          :key="conversationData.metadata.lastReactedAt.toISOString()"
           v-model="currentTab"
-          :extended-post-data="postData"
+          :extended-post-data="conversationData"
           :compact-mode="false"
         />
       </WidthWrapper>
@@ -42,7 +42,8 @@ import { useConversationData } from "src/composables/useConversationData";
 import { ref } from "vue";
 
 const currentTab = ref<"comment" | "analysis">("comment");
-const { postData, dataLoaded, pullDownTriggered } = useConversationData();
+const { conversationData, conversationLoaded, refreshConversation } =
+  useConversationData();
 </script>
 
 <style scoped lang="scss"></style>

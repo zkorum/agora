@@ -57,7 +57,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { useConversationData } from "src/composables/useConversationData";
+import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
 
 const emit = defineEmits(["openModerationHistory"]);
 
@@ -84,13 +84,13 @@ const showReportDialog = ref(false);
 
 const showLoginDialog = ref(false);
 
-const { createReportUserContentLoginIntention } = useConversationData();
+const { setReportIntention } = useConversationLoginIntentions();
 
 const webShare = useWebShare();
 const { getEmbedUrl } = useConversationUrl();
 
 function onLoginConfirmationOk() {
-  createReportUserContentLoginIntention("");
+  setReportIntention("");
 }
 
 function reportContentCallback() {
