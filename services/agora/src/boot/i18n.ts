@@ -21,9 +21,27 @@ declare module "vue-i18n" {
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
 
+// Detect browser language
+function detectBrowserLanguage(): MessageLanguages {
+  const browserLang = navigator.language.toLowerCase();
+
+  // Map browser language codes to our supported languages
+  if (browserLang.startsWith("es")) return "es";
+  if (browserLang.startsWith("fr")) return "fr";
+
+  // Default to English
+  return "en-US";
+}
+
 export default defineBoot(({ app }) => {
+  // Get stored language preference or detect from browser
+  const storedLocale = localStorage.getItem("displayLanguage");
+  const defaultLocale =
+    (storedLocale as MessageLanguages) || detectBrowserLanguage();
+
   const i18n = createI18n<{ message: MessageSchema }, MessageLanguages>({
-    locale: "en-US",
+    locale: defaultLocale,
+    fallbackLocale: "en-US",
     legacy: false,
     messages,
   });

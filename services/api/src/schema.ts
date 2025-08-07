@@ -717,16 +717,35 @@ export const userMutePreferenceTable = pgTable(
     ],
 );
 
-export const userLanguagePreferenceTable = pgTable(
-    "user_language_preference",
+// User display language preference (BCP 47 format)
+export const userDisplayLanguageTable = pgTable(
+    "user_display_language",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: serial("id").primaryKey(),
         userId: uuid("user_id")
-            .references(() => userTable.id)
+            .references(() => userTable.id, { onDelete: "cascade" })
+            .notNull()
+            .unique(),
+        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format (e.g., en, es, fr, en-US, zh-Hans)
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
             .notNull(),
-        langId: integer("lang_id")
-            .references(() => userLanguageTable.id)
+    },
+    (t) => [index("user_display_language_user_idx").on(t.userId)],
+);
+
+// User spoken languages (BCP 47 format) - can have multiple
+export const userSpokenLanguagesTable = pgTable(
+    "user_spoken_languages",
+    {
+        id: serial("id").primaryKey(),
+        userId: uuid("user_id")
+            .references(() => userTable.id, { onDelete: "cascade" })
             .notNull(),
+        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -735,22 +754,10 @@ export const userLanguagePreferenceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_idx_lang").on(t.userId),
-        unique("user_unique_language").on(t.userId, t.langId),
+        index("user_spoken_languages_user_idx").on(t.userId),
+        unique("user_spoken_languages_unique").on(t.userId, t.languageCode),
     ],
 );
-
-export const userLanguageTable = pgTable("user_language", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: text("name"),
-    code: text("code"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
 
 export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
