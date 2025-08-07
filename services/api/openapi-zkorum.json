@@ -6556,6 +6556,144 @@
                     }
                 }
             }
+        },
+        "/api/v1/user/language-preferences/get": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "displayLanguage": {
+                                            "type": "string",
+                                            "enum": [
+                                                "en",
+                                                "es",
+                                                "fr"
+                                            ]
+                                        },
+                                        "spokenLanguages": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "de",
+                                                    "it",
+                                                    "pt",
+                                                    "nl",
+                                                    "ru",
+                                                    "zh",
+                                                    "ja",
+                                                    "ko",
+                                                    "ar",
+                                                    "hi",
+                                                    "bn",
+                                                    "pa",
+                                                    "tr",
+                                                    "vi",
+                                                    "pl",
+                                                    "uk",
+                                                    "ro",
+                                                    "el",
+                                                    "he",
+                                                    "sv",
+                                                    "no",
+                                                    "da",
+                                                    "fi",
+                                                    "cs",
+                                                    "hu",
+                                                    "th",
+                                                    "id",
+                                                    "ms"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "displayLanguage",
+                                        "spokenLanguages"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/language-preferences/update": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "displayLanguage": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr"
+                                        ]
+                                    },
+                                    "spokenLanguages": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "en",
+                                                "es",
+                                                "fr",
+                                                "de",
+                                                "it",
+                                                "pt",
+                                                "nl",
+                                                "ru",
+                                                "zh",
+                                                "ja",
+                                                "ko",
+                                                "ar",
+                                                "hi",
+                                                "bn",
+                                                "pa",
+                                                "tr",
+                                                "vi",
+                                                "pl",
+                                                "uk",
+                                                "ro",
+                                                "el",
+                                                "he",
+                                                "sv",
+                                                "no",
+                                                "da",
+                                                "fi",
+                                                "cs",
+                                                "hu",
+                                                "th",
+                                                "id",
+                                                "ms"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
         }
     },
     "servers": [],
