@@ -28,7 +28,7 @@ export function useLanguagePreferences() {
   // Use VueUse's useLocalStorage for reactive localStorage
   const storedDisplayLanguage = useLocalStorage<MessageLanguages>(
     "displayLanguage",
-    "en-US"
+    "en"
   );
 
   // Map between i18n locale codes and SupportedDisplayLanguageCodes
@@ -36,7 +36,7 @@ export function useLanguagePreferences() {
     MessageLanguages,
     SupportedDisplayLanguageCodes
   > = {
-    "en-US": "en",
+    en: "en",
     es: "es",
     fr: "fr",
   };
@@ -45,7 +45,7 @@ export function useLanguagePreferences() {
     SupportedDisplayLanguageCodes,
     MessageLanguages
   > = {
-    en: "en-US",
+    en: "en",
     es: "es",
     fr: "fr",
   };

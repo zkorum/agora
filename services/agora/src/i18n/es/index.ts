@@ -1,6 +1,8 @@
 // Spanish translations
 
-export default {
+import type { TranslationSchema } from "../types";
+
+const translations: TranslationSchema = {
   navigation: {
     sideDrawer: {
       home: "Hogar",
@@ -19,3 +21,5 @@ export default {
     },
   },
 };
+
+export default translations;

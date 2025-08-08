@@ -1,6 +1,8 @@
 // French translations
 
-export default {
+import type { TranslationSchema } from "../types";
+
+const translations: TranslationSchema = {
   navigation: {
     sideDrawer: {
       home: "Maison",
@@ -19,3 +21,5 @@ export default {
     },
   },
 };
+
+export default translations;
