@@ -1,9 +1,13 @@
-import enUS from "./en-US";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import en from "./en";
 import es from "./es";
 import fr from "./fr";
+import type { TranslationSchema } from "./types";
 
-export default {
-  "en-US": enUS,
+const messages: Record<SupportedDisplayLanguageCodes, TranslationSchema> = {
+  en: en,
   es: es,
   fr: fr,
 };
+
+export default messages;
