@@ -51,6 +51,7 @@ export default {
       spokenLanguages: "Idiomas hablados",
       changeDisplayLanguage: "Cambiar idioma de visualización",
       manageSpokenLanguages: "Gestionar idiomas hablados",
+      updating: "Actualizando",
     },
   },
   languages: {

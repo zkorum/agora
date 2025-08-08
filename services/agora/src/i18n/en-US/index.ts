@@ -46,10 +46,11 @@ export default {
   settings: {
     language: {
       title: "Language",
-      displayLanguage: "Display language",
-      spokenLanguages: "Spoken languages",
-      changeDisplayLanguage: "Change display language",
-      manageSpokenLanguages: "Manage spoken languages",
+      displayLanguage: "Display Language",
+      spokenLanguages: "Spoken Languages",
+      changeDisplayLanguage: "Change Display Language",
+      manageSpokenLanguages: "Manage Spoken Languages",
+      updating: "Updating",
     },
   },
   languages: {
