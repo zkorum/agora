@@ -1,41 +1,31 @@
 <template>
-  <div>
-    <div class="container backgroundColor">
-      <div class="flexStyle innerBackground">
-        <div v-for="(item, index) in settingsItemList" :key="item.label">
-          <ZKHoverEffect :enable-hover="true">
-            <div
-              class="menuItem"
-              :class="{
-                isWarningStyle: item.style == 'warning',
-                isNegativeStyle: item.style == 'negative',
-              }"
-              @click="item.action"
-            >
-              <div>
-                {{ item.label }}
-              </div>
+  <SettingsContainer>
+    <div v-for="(item, index) in settingsItemList" :key="item.label">
+      <div
+        class="menuItem"
+        :class="{
+          isWarningStyle: item.style == 'warning',
+          isNegativeStyle: item.style == 'negative',
+        }"
+        @click="item.action"
+      >
+        <div>
+          {{ item.label }}
+        </div>
 
-              <div>
-                <ZKIcon
-                  color="#7D7A85"
-                  name="mdi-chevron-right"
-                  size="1.5rem"
-                />
-              </div>
-            </div>
-
-            <q-separator v-if="index != settingsItemList.length - 1" />
-          </ZKHoverEffect>
+        <div>
+          <ZKIcon color="#7D7A85" name="mdi-chevron-right" size="1.5rem" />
         </div>
       </div>
+
+      <q-separator v-if="index != settingsItemList.length - 1" />
     </div>
-  </div>
+  </SettingsContainer>
 </template>
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
+import SettingsContainer from "./SettingsContainer.vue";
 import ZKIcon from "../ui-library/ZKIcon.vue";
 
 defineProps<{
@@ -55,25 +45,11 @@ defineProps<{
   padding: 1rem;
 }
 
-.flexStyle {
-  display: flex;
-  flex-direction: column;
-}
-
-.container {
-  margin-bottom: 2rem;
-}
-
 .isWarningStyle {
   color: $warning;
 }
 
 .isNegativeStyle {
   color: $negative;
-}
-
-.backgroundColor {
-  background-color: white;
-  border-radius: 20px;
 }
 </style>

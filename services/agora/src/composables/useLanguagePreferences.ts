@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useLocalStorage } from "@vueuse/core";
 import { useBackendLanguageApi } from "src/utils/api/language";
+import { useAuthenticationStore } from "src/stores/authentication";
 import type { MessageLanguages } from "src/boot/i18n";
 import type {
   SupportedAllLanguageCodes,
@@ -11,6 +12,7 @@ import {
   ZodSupportedDisplayLanguageCodes,
   ZodSupportedAllLanguageCodes,
   parseBrowserLanguage,
+  getDisplayLanguages,
 } from "src/shared/languages";
 
 export function useLanguagePreferences() {
@@ -208,6 +210,42 @@ export function useLanguagePreferences() {
     }
   }
 
+  // Change display language (handles both authenticated and non-authenticated users)
+  function changeDisplayLanguage(newLanguage: SupportedDisplayLanguageCodes) {
+    const authStore = useAuthenticationStore();
+    error.value = null;
+
+    try {
+      // Update local state immediately for better UX
+      const localeCode = displayLanguageToLocaleMap[newLanguage];
+      if (localeCode) {
+        locale.value = localeCode;
+        storedDisplayLanguage.value = localeCode;
+        displayLanguage.value = newLanguage;
+      }
+
+      // If user is authenticated, save to API in the background
+      if (authStore.isLoggedIn) {
+        // Don't await this - let it happen in background
+        updateDisplayLanguage(newLanguage).catch((err) => {
+          console.error("Failed to save language preference to API:", err);
+        });
+      }
+      // If not authenticated, localStorage is already updated above
+
+      return true;
+    } catch (err) {
+      error.value = "Failed to change display language";
+      console.error("Error changing display language:", err);
+      throw err;
+    }
+  }
+
+  // Get available display languages
+  function getAvailableDisplayLanguages() {
+    return getDisplayLanguages();
+  }
+
   return {
     displayLanguage: computed(() => displayLanguage.value),
     spokenLanguages: computed(() => spokenLanguages.value),
@@ -219,8 +257,10 @@ export function useLanguagePreferences() {
     saveLanguagePreferences,
     updateDisplayLanguage,
     updateSpokenLanguages,
+    changeDisplayLanguage,
     getDetectedLanguage,
     initializeWithDetectedLanguage,
+    getAvailableDisplayLanguages,
 
     localeToDisplayLanguageMap,
     displayLanguageToLocaleMap,
