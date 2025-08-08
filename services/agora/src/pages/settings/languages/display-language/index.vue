@@ -23,30 +23,43 @@
     </template>
 
     <div class="container">
-      <SettingsContainer>
-        <div
-          v-for="(language, index) in availableLanguages"
-          :key="language.code"
-        >
-          <div class="language-item" @click="selectLanguage(language.code)">
-            <div class="language-content">
-              <div class="language-name">{{ language.name }}</div>
-              <div class="language-english">{{ language.englishName }}</div>
-            </div>
+      <div class="settings-section">
+        <div class="settings-background">
+          <SettingsMenuItem
+            v-for="(language, index) in availableLanguages"
+            :key="language.code"
+            :show-separator="index < availableLanguages.length - 1"
+            :border-radius="
+              availableLanguages.length === 1
+                ? 'both'
+                : index === 0
+                  ? 'top'
+                  : index === availableLanguages.length - 1
+                    ? 'bottom'
+                    : 'none'
+            "
+            @click="selectLanguage(language.code)"
+          >
+            <template #left>
+              <div class="language-content">
+                <div class="language-name">{{ language.name }}</div>
+                <div class="language-english">{{ language.englishName }}</div>
+              </div>
+            </template>
 
-            <div class="checkmark-container">
-              <ZKIcon
-                v-if="isCurrentLanguage(language.code)"
-                color="#007AFF"
-                name="mdi-check"
-                size="1.5rem"
-              />
-            </div>
-          </div>
-
-          <q-separator v-if="index != availableLanguages.length - 1" />
+            <template #right>
+              <div class="checkmark-container">
+                <ZKIcon
+                  v-if="isCurrentLanguage(language.code)"
+                  color="#007AFF"
+                  name="mdi-check"
+                  size="1.5rem"
+                />
+              </div>
+            </template>
+          </SettingsMenuItem>
         </div>
-      </SettingsContainer>
+      </div>
 
       <div v-if="error" class="error-message">
         {{ error }}
@@ -58,7 +71,7 @@
 <script setup lang="ts">
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import SettingsContainer from "src/components/settings/SettingsContainer.vue";
+import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useI18n } from "vue-i18n";
 import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
@@ -98,6 +111,17 @@ function selectLanguage(languageCode: string) {
   padding-right: 0.5rem;
 }
 
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-background {
+  background-color: white;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
 .error-message {
   color: #d32f2f;
   padding: 1rem;
@@ -105,16 +129,6 @@ function selectLanguage(languageCode: string) {
   background-color: #ffebee;
   border-radius: 4px;
   text-align: center;
-}
-
-.language-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 1rem;
 }
 
 .language-content {

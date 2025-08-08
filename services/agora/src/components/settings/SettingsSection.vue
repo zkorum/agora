@@ -1,32 +1,28 @@
 <template>
-  <SettingsContainer>
-    <div v-for="(item, index) in settingsItemList" :key="item.label">
-      <div
-        class="menuItem"
-        :class="{
-          isWarningStyle: item.style == 'warning',
-          isNegativeStyle: item.style == 'negative',
-        }"
-        @click="item.action"
-      >
-        <div>
-          {{ item.label }}
-        </div>
-
-        <div>
-          <ZKIcon color="#7D7A85" name="mdi-chevron-right" size="1.5rem" />
-        </div>
-      </div>
-
-      <q-separator v-if="index != settingsItemList.length - 1" />
+  <div class="settings-section">
+    <div class="settings-background">
+      <SettingsMenuItemWithChevron
+        v-for="(item, index) in settingsItemList"
+        :key="item.label"
+        :item="item"
+        :show-separator="index < settingsItemList.length - 1"
+        :border-radius="
+          settingsItemList.length === 1
+            ? 'both'
+            : index === 0
+              ? 'top'
+              : index === settingsItemList.length - 1
+                ? 'bottom'
+                : 'none'
+        "
+      />
     </div>
-  </SettingsContainer>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import SettingsContainer from "./SettingsContainer.vue";
-import ZKIcon from "../ui-library/ZKIcon.vue";
+import SettingsMenuItemWithChevron from "./SettingsMenuItemWithChevron.vue";
 
 defineProps<{
   settingsItemList: SettingsInterface[];
@@ -34,22 +30,14 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-.menuItem {
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-background {
+  background-color: white;
+  border-radius: 20px;
   display: flex;
-  gap: 2rem;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 1rem;
-}
-
-.isWarningStyle {
-  color: $warning;
-}
-
-.isNegativeStyle {
-  color: $negative;
+  flex-direction: column;
 }
 </style>
