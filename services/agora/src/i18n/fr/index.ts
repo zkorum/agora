@@ -1,6 +1,15 @@
 // French translations
 
 export default {
+  navigation: {
+    sideDrawer: {
+      home: "Maison",
+      explore: "Explorer",
+      dings: "Notifications",
+      profile: "Profil",
+      settings: "Paramètres",
+    },
+  },
   help: "Aide",
   welcome: {
     login: "Connexion",
