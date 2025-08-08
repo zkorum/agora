@@ -113,6 +113,10 @@ import {
     userFollowTopicByCode,
     userUnfollowTopicByCode,
 } from "./service/topic.js";
+import {
+    getLanguagePreferences,
+    updateLanguagePreferences,
+} from "./service/language.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -2569,6 +2573,51 @@ server.after(() => {
         handler: async () => {
             return await getAllTopics({
                 db: db,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/user/language-preferences/get`,
+        schema: {
+            response: {
+                200: Dto.getLanguagePreferencesResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await getLanguagePreferences({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/user/language-preferences/update`,
+        schema: {
+            body: Dto.updateLanguagePreferencesRequest,
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            await updateLanguagePreferences({
+                db: db,
+                userId: deviceStatus.userId,
+                preferences: request.body,
             });
         },
     });
