@@ -57,6 +57,7 @@ import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -67,6 +68,7 @@ const { deleteUserAccount } = useBackendAccountApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
+const { t } = useI18n();
 
 const { updateAuthState } = useBackendAuthApi();
 
@@ -92,6 +94,13 @@ const accountSettings: SettingsInterface[] = [
 ];
 
 const aboutSettings: SettingsInterface[] = [
+  {
+    label: t("settings.language.title"),
+    action: () => {
+      void router.push({ name: "/settings/languages/" });
+    },
+    style: "none",
+  },
   {
     label: "Privacy Policy",
     action: () => {

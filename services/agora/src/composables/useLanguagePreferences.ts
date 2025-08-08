@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useLocalStorage } from "@vueuse/core";
 import { useBackendLanguageApi } from "src/utils/api/language";
 import type { MessageLanguages } from "src/boot/i18n";
 import type {
@@ -21,6 +22,12 @@ export function useLanguagePreferences() {
   const spokenLanguages = ref<SupportedAllLanguageCodes[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+
+  // Use VueUse's useLocalStorage for reactive localStorage
+  const storedDisplayLanguage = useLocalStorage<MessageLanguages>(
+    "displayLanguage",
+    "en-US"
+  );
 
   // Map between i18n locale codes and SupportedDisplayLanguageCodes
   const localeToDisplayLanguageMap: Record<
@@ -70,7 +77,7 @@ export function useLanguagePreferences() {
         const localeCode = displayLanguageToLocaleMap[displayLanguage.value];
         if (localeCode) {
           locale.value = localeCode;
-          localStorage.setItem("displayLanguage", localeCode);
+          storedDisplayLanguage.value = localeCode;
         }
 
         // Validate and set spoken languages using zod
@@ -104,7 +111,7 @@ export function useLanguagePreferences() {
         displayLanguageToLocaleMap[browserDetection.displayLanguage];
       if (localeCode) {
         locale.value = localeCode;
-        localStorage.setItem("displayLanguage", localeCode);
+        storedDisplayLanguage.value = localeCode;
       }
 
       throw err;
@@ -136,7 +143,7 @@ export function useLanguagePreferences() {
         const localeCode = displayLanguageToLocaleMap[newDisplayLanguage];
         if (localeCode) {
           locale.value = localeCode;
-          localStorage.setItem("displayLanguage", localeCode);
+          storedDisplayLanguage.value = localeCode;
         }
 
         return response.data;
@@ -174,12 +181,11 @@ export function useLanguagePreferences() {
 
   // Initialize with detected language on first load
   function initializeWithDetectedLanguage() {
-    const storedLocale = localStorage.getItem("displayLanguage");
+    const storedLocale = storedDisplayLanguage.value;
 
     if (storedLocale && availableLocales.includes(storedLocale)) {
       locale.value = storedLocale;
-      const displayLang =
-        localeToDisplayLanguageMap[storedLocale as MessageLanguages];
+      const displayLang = localeToDisplayLanguageMap[storedLocale];
       if (displayLang) {
         displayLanguage.value = displayLang;
       }
@@ -192,7 +198,7 @@ export function useLanguagePreferences() {
         displayLanguageToLocaleMap[browserDetection.displayLanguage];
       if (localeCode) {
         locale.value = localeCode;
-        localStorage.setItem("displayLanguage", localeCode);
+        storedDisplayLanguage.value = localeCode;
       }
     }
 

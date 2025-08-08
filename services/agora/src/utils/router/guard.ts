@@ -28,6 +28,9 @@ export function useRouterGuard() {
       "/legal/privacy/",
       "/legal/terms/",
       "/settings/",
+      "/settings/languages/",
+      "/settings/languages/display-language/",
+      "/settings/languages/spoken-languages/",
       "/topic/[topicCode]",
       "/topics/",
     ];

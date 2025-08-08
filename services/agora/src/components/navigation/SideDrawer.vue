@@ -83,6 +83,7 @@ import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { RouteRecordName } from "vue-router";
+import { useI18n } from "vue-i18n";
 import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
@@ -104,6 +105,7 @@ const drawerIconLogo2 =
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 
 const showLoginDialog = ref(false);
 
@@ -124,9 +126,11 @@ watch(drawerBehavior, () => {
 });
 
 function initializeMenu() {
+  settingItemList.value = []; // Clear existing items
+
   if (drawerBehavior.value == "desktop") {
     settingItemList.value.push({
-      name: "Home",
+      name: t("navigation.sideDrawer.home"),
       route: "/",
       matchRouteList: ["/"],
       requireAuth: false,
@@ -137,7 +141,7 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
-      name: "Explore",
+      name: t("navigation.sideDrawer.explore"),
       route: "/topics/",
       matchRouteList: ["/topics/"],
       requireAuth: false,
@@ -148,7 +152,7 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
-      name: "Dings",
+      name: t("navigation.sideDrawer.dings"),
       route: "/notification/",
       matchRouteList: ["/notification/"],
       requireAuth: true,
@@ -160,7 +164,7 @@ function initializeMenu() {
   }
 
   settingItemList.value.push({
-    name: "Profile",
+    name: t("navigation.sideDrawer.profile"),
     route: "/user-profile/conversations/",
     matchRouteList: ["/user-profile/conversations/"],
     requireAuth: true,
@@ -171,7 +175,7 @@ function initializeMenu() {
   });
 
   settingItemList.value.push({
-    name: "Settings",
+    name: t("navigation.sideDrawer.settings"),
     route: "/settings/",
     matchRouteList: ["/settings/"],
     requireAuth: false,

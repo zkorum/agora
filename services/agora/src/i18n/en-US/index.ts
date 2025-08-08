@@ -1,6 +1,15 @@
 // English translations
 
 export default {
+  navigation: {
+    sideDrawer: {
+      home: "Home",
+      explore: "Explore",
+      dings: "Dings",
+      profile: "Profile",
+      settings: "Settings",
+    },
+  },
   help: "Help",
   welcome: {
     login: "Login",
