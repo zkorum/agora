@@ -726,6 +726,11 @@ export const userSpokenLanguagesTable = pgTable(
             .references(() => userTable.id, { onDelete: "cascade" })
             .notNull(),
         languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

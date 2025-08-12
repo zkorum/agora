@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { userSpokenLanguagesTable } from "../schema.js";
 import {
     isValidLanguageCode,
@@ -25,13 +25,18 @@ export async function getLanguagePreferences({
 }: GetLanguagePreferencesOptions): Promise<GetLanguagePreferencesResponse> {
     // Use a transaction to ensure consistency between read and potential write
     return await db.transaction(async (tx) => {
-        // Get spoken languages
+        // Get spoken languages (excluding soft-deleted ones)
         const spokenLangsResult = await tx
             .select({
                 languageCode: userSpokenLanguagesTable.languageCode,
             })
             .from(userSpokenLanguagesTable)
-            .where(eq(userSpokenLanguagesTable.userId, userId));
+            .where(
+                and(
+                    eq(userSpokenLanguagesTable.userId, userId),
+                    eq(userSpokenLanguagesTable.isDeleted, false),
+                ),
+            );
 
         let spokenLanguages: string[];
 
@@ -61,6 +66,7 @@ export async function getLanguagePreferences({
             spokenLanguages = [defaultLanguageCode];
         }
 
+        // Reparse to make sure the values from DB are correct
         const validSpokenLanguageList = spokenLanguages.map((value) => {
             const validLanguage = toSupportedSpokenLanguageCode(value);
             if (validLanguage === undefined) {
@@ -98,20 +104,58 @@ export async function updateLanguagePreferences({
             }
         }
 
-        // Delete existing spoken languages
+        // Soft delete existing active spoken languages
         await tx
-            .delete(userSpokenLanguagesTable)
-            .where(eq(userSpokenLanguagesTable.userId, userId));
+            .update(userSpokenLanguagesTable)
+            .set({
+                isDeleted: true,
+                deletedAt: new Date(),
+            })
+            .where(
+                and(
+                    eq(userSpokenLanguagesTable.userId, userId),
+                    eq(userSpokenLanguagesTable.isDeleted, false),
+                ),
+            );
 
-        // Insert new spoken languages
-        const spokenLanguageValues = preferences.spokenLanguages.map(
-            (languageCode) => ({
-                userId,
-                languageCode,
-                createdAt: new Date(),
-            }),
-        );
+        // For each new language, check if a soft-deleted record exists
+        for (const languageCode of preferences.spokenLanguages) {
+            // Check if a soft-deleted record exists for this language
+            const existingDeletedRecord = await tx
+                .select({ id: userSpokenLanguagesTable.id })
+                .from(userSpokenLanguagesTable)
+                .where(
+                    and(
+                        eq(userSpokenLanguagesTable.userId, userId),
+                        eq(userSpokenLanguagesTable.languageCode, languageCode),
+                        eq(userSpokenLanguagesTable.isDeleted, true),
+                    ),
+                )
+                .limit(1);
 
-        await tx.insert(userSpokenLanguagesTable).values(spokenLanguageValues);
+            if (existingDeletedRecord.length > 0) {
+                // Reactivate the soft-deleted record
+                await tx
+                    .update(userSpokenLanguagesTable)
+                    .set({
+                        isDeleted: false,
+                        deletedAt: null,
+                        createdAt: new Date(),
+                    })
+                    .where(
+                        eq(
+                            userSpokenLanguagesTable.id,
+                            existingDeletedRecord[0].id,
+                        ),
+                    );
+            } else {
+                // Insert new record
+                await tx.insert(userSpokenLanguagesTable).values({
+                    userId,
+                    languageCode,
+                    createdAt: new Date(),
+                });
+            }
+        }
     });
 }

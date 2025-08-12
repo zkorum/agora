@@ -2,6 +2,8 @@ CREATE TABLE "user_spoken_languages" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" uuid NOT NULL,
 	"language_code" varchar(35) NOT NULL,
+	"is_deleted" boolean DEFAULT false NOT NULL,
+	"deleted_at" timestamp (0),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "user_spoken_languages_unique" UNIQUE("user_id","language_code")
 );
