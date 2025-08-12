@@ -15,7 +15,6 @@ import {
   toSupportedDisplayLanguageCode,
   toSupportedSpokenLanguageCode,
 } from "src/shared/languages";
-import type { GetLanguagePreferencesResponse } from "src/shared/types/dto";
 import type { ApiV1UserLanguagePreferencesGetPost200Response } from "src/api";
 
 export const useLanguageStore = defineStore("language", () => {
@@ -48,10 +47,7 @@ export const useLanguageStore = defineStore("language", () => {
 
   function validateLanguageData(
     data: ApiV1UserLanguagePreferencesGetPost200Response
-  ): GetLanguagePreferencesResponse {
-    const validatedDisplayLanguage = toSupportedDisplayLanguageCode(
-      data.displayLanguage
-    );
+  ): { spokenLanguages: SupportedSpokenLanguageCodes[] } {
     const validatedSpokenLanguages = Array.isArray(data.spokenLanguages)
       ? data.spokenLanguages
           .map((lang: string) => toSupportedSpokenLanguageCode(lang))
@@ -62,22 +58,19 @@ export const useLanguageStore = defineStore("language", () => {
       : [];
 
     return {
-      displayLanguage: validatedDisplayLanguage || "en",
       spokenLanguages: validatedSpokenLanguages,
     };
   }
 
   async function loadLanguagePreferences() {
     try {
-      const response = await fetchLanguagePreferences();
+      const response = await fetchLanguagePreferences(displayLanguage.value);
 
       if (response.status === "success") {
         const validated = validateLanguageData(response.data);
 
-        displayLanguage.value = validated.displayLanguage;
+        // Only update spoken languages from backend, keep display language local
         spokenLanguages.value = validated.spokenLanguages;
-        updateLocale(validated.displayLanguage);
-
         storedSpokenLanguages.value = validated.spokenLanguages;
 
         return response.data;
@@ -91,21 +84,16 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  async function saveLanguagePreferences(
-    newDisplayLanguage: SupportedDisplayLanguageCodes,
+  async function saveSpokenLanguagesToBackend(
     newSpokenLanguages: SupportedSpokenLanguageCodes[]
   ) {
     try {
       const response = await updateLanguagePreferences({
-        displayLanguage: newDisplayLanguage,
         spokenLanguages: newSpokenLanguages,
       });
 
       if (response.status === "success") {
-        displayLanguage.value = newDisplayLanguage;
         spokenLanguages.value = newSpokenLanguages;
-        updateLocale(newDisplayLanguage);
-
         return response.data;
       } else {
         throw new Error("Failed to save language preferences");
@@ -115,12 +103,6 @@ export const useLanguageStore = defineStore("language", () => {
       console.error("Error saving language preferences:", err);
       throw err;
     }
-  }
-
-  async function updateDisplayLanguage(
-    newLanguage: SupportedDisplayLanguageCodes
-  ) {
-    return saveLanguagePreferences(newLanguage, spokenLanguages.value);
   }
 
   async function updateSpokenLanguages(
@@ -135,7 +117,7 @@ export const useLanguageStore = defineStore("language", () => {
 
       if (authStore.isLoggedIn) {
         try {
-          await saveLanguagePreferences(displayLanguage.value, newLanguages);
+          await saveSpokenLanguagesToBackend(newLanguages);
         } catch (err) {
           spokenLanguages.value = previousSpokenLanguages;
           storedSpokenLanguages.value = previousStoredSpokenLanguages;
@@ -162,11 +144,19 @@ export const useLanguageStore = defineStore("language", () => {
       if (displayLang) {
         displayLanguage.value = displayLang;
         locale.value = storedLocale;
+        console.log(
+          "Initialized display language from localStorage:",
+          displayLang
+        );
       }
     } else {
       const browserDetection = parseBrowserLanguage(navigator.language);
       displayLanguage.value = browserDetection.displayLanguage;
       updateLocale(browserDetection.displayLanguage);
+      console.log(
+        "Initialized display language from browser detection:",
+        browserDetection.displayLanguage
+      );
     }
 
     if (storedSpokenLanguages.value && storedSpokenLanguages.value.length > 0) {
@@ -177,32 +167,10 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  async function changeDisplayLanguage(
-    newLanguage: SupportedDisplayLanguageCodes
-  ) {
-    const previousDisplayLanguage = displayLanguage.value;
-    const previousStoredLanguage = storedDisplayLanguage.value;
-
+  function changeDisplayLanguage(newLanguage: SupportedDisplayLanguageCodes) {
     try {
       displayLanguage.value = newLanguage;
       updateLocale(newLanguage);
-
-      if (authStore.isLoggedIn) {
-        try {
-          await updateDisplayLanguage(newLanguage);
-        } catch (err) {
-          displayLanguage.value = previousDisplayLanguage;
-          storedDisplayLanguage.value = previousStoredLanguage;
-          if (availableLocales.includes(previousStoredLanguage)) {
-            locale.value = previousStoredLanguage;
-          }
-
-          showNotifyMessage("Failed to save language preference to API");
-          console.error("Failed to save language preference to API:", err);
-          throw err;
-        }
-      }
-
       return true;
     } catch (err) {
       showNotifyMessage("Failed to change display language");
@@ -212,14 +180,9 @@ export const useLanguageStore = defineStore("language", () => {
   }
 
   function clearLanguagePreferences() {
-    storedDisplayLanguage.value = null;
-    storedSpokenLanguages.value = [];
-
-    const browserDetection = parseBrowserLanguage(navigator.language);
-    displayLanguage.value = browserDetection.displayLanguage;
-    spokenLanguages.value = [browserDetection.displayLanguage];
-    storedSpokenLanguages.value = [browserDetection.displayLanguage];
-    updateLocale(browserDetection.displayLanguage);
+    // Only clear spoken languages, leave display language alone
+    spokenLanguages.value = [displayLanguage.value];
+    storedSpokenLanguages.value = [displayLanguage.value];
   }
 
   return {
@@ -227,8 +190,6 @@ export const useLanguageStore = defineStore("language", () => {
     spokenLanguages: computed(() => spokenLanguages.value),
     availableLocales,
     loadLanguagePreferences,
-    saveLanguagePreferences,
-    updateDisplayLanguage,
     updateSpokenLanguages,
     changeDisplayLanguage,
     initializeLanguage,

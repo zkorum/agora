@@ -39,8 +39,8 @@ import {
 import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
-    ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -518,19 +518,21 @@ export class Dto {
     });
 
     // Language preferences
+    static getLanguagePreferencesRequest = z
+        .object({
+            currentDisplayLanguage: ZodSupportedDisplayLanguageCodes,
+        })
+        .strict();
+
     static getLanguagePreferencesResponse = z
         .object({
-            displayLanguage: ZodSupportedDisplayLanguageCodes,
-            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes),
+            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
         })
         .strict();
 
     static updateLanguagePreferencesRequest = z
         .object({
-            displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
-            spokenLanguages: z
-                .array(ZodSupportedSpokenLanguageCodes)
-                .optional(),
+            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
         })
         .strict();
 }
@@ -613,6 +615,9 @@ export type UserUnfollowTopicCodeRequest = z.infer<
     typeof Dto.userUnfollowTopicCodeRequest
 >;
 export type GetMathRequest = z.infer<typeof Dto.zodGetMathRequest>;
+export type GetLanguagePreferencesRequest = z.infer<
+    typeof Dto.getLanguagePreferencesRequest
+>;
 export type GetLanguagePreferencesResponse = z.infer<
     typeof Dto.getLanguagePreferencesResponse
 >;

@@ -2581,6 +2581,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/user/language-preferences/get`,
         schema: {
+            body: Dto.getLanguagePreferencesRequest,
             response: {
                 200: Dto.getLanguagePreferencesResponse,
             },
@@ -2596,6 +2597,7 @@ server.after(() => {
             return await getLanguagePreferences({
                 db: db,
                 userId: deviceStatus.userId,
+                request: request.body,
             });
         },
     });

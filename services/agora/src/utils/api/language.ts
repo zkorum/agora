@@ -5,7 +5,7 @@ import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import type {
   ApiV1UserLanguagePreferencesGetPost200Response,
-  ApiV1UserLanguagePreferencesUpdatePostRequest,
+  ApiV1UserLanguagePreferencesGetPostRequest,
 } from "src/api";
 import type {
   SupportedSpokenLanguageCodes,
@@ -13,7 +13,6 @@ import type {
 } from "src/shared/languages";
 
 export interface LanguagePreferencesData {
-  displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
 }
 
@@ -32,16 +31,25 @@ export function useBackendLanguageApi() {
     | FetchLanguagePreferencesSuccessResponse
     | AxiosErrorResponse;
 
-  async function fetchLanguagePreferences(): Promise<FetchLanguagePreferencesResponse> {
+  async function fetchLanguagePreferences(
+    currentDisplayLanguage: SupportedDisplayLanguageCodes
+  ): Promise<FetchLanguagePreferencesResponse> {
     try {
+      const params: ApiV1UserLanguagePreferencesGetPostRequest = {
+        currentDisplayLanguage: currentDisplayLanguage,
+      };
+
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserLanguagePreferencesGetPost();
+        await DefaultApiAxiosParamCreator().apiV1UserLanguagePreferencesGetPost(
+          params
+        );
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
       ).apiV1UserLanguagePreferencesGetPost(
+        params,
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
@@ -63,17 +71,14 @@ export function useBackendLanguageApi() {
     | AxiosErrorResponse;
 
   interface UpdateLanguagePreferencesProps {
-    displayLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
   }
 
   async function updateLanguagePreferences({
-    displayLanguage,
     spokenLanguages,
   }: UpdateLanguagePreferencesProps): Promise<UpdateLanguagePreferencesResponse> {
     try {
-      const params: ApiV1UserLanguagePreferencesUpdatePostRequest = {
-        displayLanguage: displayLanguage,
+      const params: ApiV1UserLanguagePreferencesGetPost200Response = {
         spokenLanguages: spokenLanguages,
       };
 
