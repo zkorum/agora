@@ -105,7 +105,7 @@ const drawerIconLogo2 =
 
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const showLoginDialog = ref(false);
 
@@ -122,6 +122,10 @@ const settingItemList = ref<SettingItem[]>([]);
 initializeMenu();
 
 watch(drawerBehavior, () => {
+  initializeMenu();
+});
+
+watch(locale, () => {
   initializeMenu();
 });
 
