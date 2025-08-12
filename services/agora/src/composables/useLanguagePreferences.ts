@@ -9,10 +9,12 @@ import type {
   SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import {
-  ZodSupportedDisplayLanguageCodes,
-  ZodSupportedSpokenLanguageCodes,
   parseBrowserLanguage,
+  toSupportedDisplayLanguageCode,
+  toSupportedSpokenLanguageCode,
 } from "src/shared/languages";
+import type { GetLanguagePreferencesResponse } from "src/shared/types/dto";
+import type { ApiV1UserLanguagePreferencesGetPost200Response } from "src/api";
 
 export function useLanguagePreferences() {
   const { locale, availableLocales } = useI18n();
@@ -30,24 +32,36 @@ export function useLanguagePreferences() {
     "en"
   );
 
-  // Map between i18n locale codes and SupportedDisplayLanguageCodes
-  const localeToDisplayLanguageMap: Record<
-    MessageLanguages,
-    SupportedDisplayLanguageCodes
-  > = {
-    en: "en",
-    es: "es",
-    fr: "fr",
-  };
+  // Helper function to update locale consistently
+  function updateLocale(language: SupportedDisplayLanguageCodes) {
+    const localeCode = language;
+    if (availableLocales.includes(localeCode)) {
+      locale.value = localeCode;
+      storedDisplayLanguage.value = localeCode;
+    }
+  }
 
-  const displayLanguageToLocaleMap: Record<
-    SupportedDisplayLanguageCodes,
-    MessageLanguages
-  > = {
-    en: "en",
-    es: "es",
-    fr: "fr",
-  };
+  // Helper function to validate API response data
+  function validateLanguageData(
+    data: ApiV1UserLanguagePreferencesGetPost200Response
+  ): GetLanguagePreferencesResponse {
+    const validatedDisplayLanguage = toSupportedDisplayLanguageCode(
+      data.displayLanguage
+    );
+    const validatedSpokenLanguages = Array.isArray(data.spokenLanguages)
+      ? data.spokenLanguages
+          .map((lang: string) => toSupportedSpokenLanguageCode(lang))
+          .filter(
+            (mappedCode): mappedCode is SupportedSpokenLanguageCodes =>
+              mappedCode !== undefined
+          )
+      : [];
+
+    return {
+      displayLanguage: validatedDisplayLanguage || "en",
+      spokenLanguages: validatedSpokenLanguages,
+    };
+  }
 
   // Fetch user language preferences from API
   async function loadLanguagePreferences() {
@@ -58,45 +72,13 @@ export function useLanguagePreferences() {
       const response = await fetchLanguagePreferences();
 
       if (response.status === "success") {
-        const data = response.data;
+        const validated = validateLanguageData(response.data);
 
-        // Validate and set display language using zod
-        const displayLangResult = ZodSupportedDisplayLanguageCodes.safeParse(
-          data.displayLanguage
-        );
-        if (displayLangResult.success) {
-          displayLanguage.value = displayLangResult.data;
-        } else {
-          console.warn(
-            "Invalid display language from API:",
-            data.displayLanguage
-          );
-          displayLanguage.value = "en"; // fallback
-        }
+        displayLanguage.value = validated.displayLanguage;
+        spokenLanguages.value = validated.spokenLanguages;
+        updateLocale(validated.displayLanguage);
 
-        // Update i18n locale
-        const localeCode = displayLanguageToLocaleMap[displayLanguage.value];
-        if (localeCode) {
-          locale.value = localeCode;
-          storedDisplayLanguage.value = localeCode;
-        }
-
-        // Validate and set spoken languages using zod
-        const spokenLangsResult =
-          ZodSupportedSpokenLanguageCodes.array().safeParse(
-            data.spokenLanguages
-          );
-        if (spokenLangsResult.success) {
-          spokenLanguages.value = spokenLangsResult.data;
-        } else {
-          console.warn(
-            "Invalid spoken languages from API:",
-            data.spokenLanguages
-          );
-          spokenLanguages.value = [displayLanguage.value]; // fallback
-        }
-
-        return data;
+        return response.data;
       } else {
         throw new Error("Failed to fetch language preferences");
       }
@@ -104,18 +86,11 @@ export function useLanguagePreferences() {
       error.value = "Failed to fetch language preferences";
       console.error("Error fetching language preferences:", err);
 
-      // Fall back to browser detection if fetch fails
+      // Fall back to browser detection
       const browserDetection = parseBrowserLanguage(navigator.language);
       displayLanguage.value = browserDetection.displayLanguage;
       spokenLanguages.value = browserDetection.spokenLanguages;
-
-      // Update i18n locale for the detected language
-      const localeCode =
-        displayLanguageToLocaleMap[browserDetection.displayLanguage];
-      if (localeCode) {
-        locale.value = localeCode;
-        storedDisplayLanguage.value = localeCode;
-      }
+      updateLocale(browserDetection.displayLanguage);
 
       throw err;
     } finally {
@@ -138,16 +113,9 @@ export function useLanguagePreferences() {
       });
 
       if (response.status === "success") {
-        // Update local state
         displayLanguage.value = newDisplayLanguage;
         spokenLanguages.value = newSpokenLanguages;
-
-        // Update i18n locale
-        const localeCode = displayLanguageToLocaleMap[newDisplayLanguage];
-        if (localeCode) {
-          locale.value = localeCode;
-          storedDisplayLanguage.value = localeCode;
-        }
+        updateLocale(newDisplayLanguage);
 
         return response.data;
       } else {
@@ -176,33 +144,20 @@ export function useLanguagePreferences() {
     return saveLanguagePreferences(displayLanguage.value, newLanguages);
   }
 
-  // Get the detected browser language using shared helper
-  function getDetectedLanguage(): MessageLanguages {
-    const browserDetection = parseBrowserLanguage(navigator.language);
-    return displayLanguageToLocaleMap[browserDetection.displayLanguage];
-  }
-
-  // Initialize with detected language on first load
-  function initializeWithDetectedLanguage() {
+  // Initialize with stored or detected language
+  function initializeLanguage() {
     const storedLocale = storedDisplayLanguage.value;
 
     if (storedLocale && availableLocales.includes(storedLocale)) {
-      locale.value = storedLocale;
-      const displayLang = localeToDisplayLanguageMap[storedLocale];
+      const displayLang = toSupportedDisplayLanguageCode(storedLocale);
       if (displayLang) {
         displayLanguage.value = displayLang;
+        locale.value = storedLocale;
       }
     } else {
-      // Use shared browser detection helper
       const browserDetection = parseBrowserLanguage(navigator.language);
       displayLanguage.value = browserDetection.displayLanguage;
-
-      const localeCode =
-        displayLanguageToLocaleMap[browserDetection.displayLanguage];
-      if (localeCode) {
-        locale.value = localeCode;
-        storedDisplayLanguage.value = localeCode;
-      }
+      updateLocale(browserDetection.displayLanguage);
     }
 
     // Set default spoken languages to include display language
@@ -218,21 +173,15 @@ export function useLanguagePreferences() {
 
     try {
       // Update local state immediately for better UX
-      const localeCode = displayLanguageToLocaleMap[newLanguage];
-      if (localeCode) {
-        locale.value = localeCode;
-        storedDisplayLanguage.value = localeCode;
-        displayLanguage.value = newLanguage;
-      }
+      displayLanguage.value = newLanguage;
+      updateLocale(newLanguage);
 
       // If user is authenticated, save to API in the background
       if (authStore.isLoggedIn) {
-        // Don't await this - let it happen in background
         updateDisplayLanguage(newLanguage).catch((err) => {
           console.error("Failed to save language preference to API:", err);
         });
       }
-      // If not authenticated, localStorage is already updated above
 
       return true;
     } catch (err) {
@@ -243,21 +192,19 @@ export function useLanguagePreferences() {
   }
 
   return {
+    // Reactive state
     displayLanguage: computed(() => displayLanguage.value),
     spokenLanguages: computed(() => spokenLanguages.value),
-    availableLocales: computed(() => availableLocales),
+    availableLocales,
     isLoading: computed(() => isLoading.value),
     error: computed(() => error.value),
 
+    // Core functions
     loadLanguagePreferences,
     saveLanguagePreferences,
     updateDisplayLanguage,
     updateSpokenLanguages,
     changeDisplayLanguage,
-    getDetectedLanguage,
-    initializeWithDetectedLanguage,
-
-    localeToDisplayLanguageMap,
-    displayLanguageToLocaleMap,
+    initializeLanguage,
   };
 }
