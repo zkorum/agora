@@ -98,15 +98,15 @@ function isCurrentLanguage(
   return languageCode === displayLanguage.value;
 }
 
-async function selectDisplayLanguage(
+function selectDisplayLanguage(
   languageCode: SupportedDisplayLanguageCodes
-): Promise<void> {
+): void {
   if (languageCode === displayLanguage.value) {
     return; // Already selected
   }
 
   try {
-    await changeDisplayLanguage(languageCode);
+    changeDisplayLanguage(languageCode);
   } catch (err: unknown) {
     console.error("Failed to change language:", err);
     // Type guard for error handling

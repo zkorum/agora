@@ -399,17 +399,6 @@ export const zodExtendedOpinionDataWithConvId = z
         opinionItem: zodOpinionItem,
     })
     .strict();
-export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
-export interface LanguageObject {
-    name: string;
-    lang: string;
-}
-export const languageObjectList: LanguageObject[] = [
-    { lang: "en", name: "English" },
-    { lang: "es", name: "Spanish" },
-    { lang: "fr", name: "French" },
-    { lang: "zh", name: "Chinese" },
-];
 export const zodRarimoStatusAttributes = z.enum([
     "not_verified",
     "verified",

@@ -6559,6 +6559,30 @@
         },
         "/api/v1/user/language-preferences/get": {
             "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "currentDisplayLanguage": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "currentDisplayLanguage"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -6567,14 +6591,6 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "displayLanguage": {
-                                            "type": "string",
-                                            "enum": [
-                                                "en",
-                                                "es",
-                                                "fr"
-                                            ]
-                                        },
                                         "spokenLanguages": {
                                             "type": "array",
                                             "items": {
@@ -6629,11 +6645,11 @@
                                                     "ur",
                                                     "vi"
                                                 ]
-                                            }
+                                            },
+                                            "minItems": 1
                                         }
                                     },
                                     "required": [
-                                        "displayLanguage",
                                         "spokenLanguages"
                                     ],
                                     "additionalProperties": false
@@ -6652,14 +6668,6 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "displayLanguage": {
-                                        "type": "string",
-                                        "enum": [
-                                            "en",
-                                            "es",
-                                            "fr"
-                                        ]
-                                    },
                                     "spokenLanguages": {
                                         "type": "array",
                                         "items": {
@@ -6714,13 +6722,18 @@
                                                 "ur",
                                                 "vi"
                                             ]
-                                        }
+                                        },
+                                        "minItems": 1
                                     }
                                 },
+                                "required": [
+                                    "spokenLanguages"
+                                ],
                                 "additionalProperties": false
                             }
                         }
-                    }
+                    },
+                    "required": true
                 },
                 "responses": {
                     "200": {

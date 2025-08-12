@@ -717,26 +717,6 @@ export const userMutePreferenceTable = pgTable(
     ],
 );
 
-// User display language preference (BCP 47 format)
-export const userDisplayLanguageTable = pgTable(
-    "user_display_language",
-    {
-        id: serial("id").primaryKey(),
-        userId: uuid("user_id")
-            .references(() => userTable.id, { onDelete: "cascade" })
-            .notNull()
-            .unique(),
-        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format (e.g., en, es, fr, en-US, zh-Hans)
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [index("user_display_language_user_idx").on(t.userId)],
-);
-
 // User spoken languages (BCP 47 format) - can have multiple
 export const userSpokenLanguagesTable = pgTable(
     "user_spoken_languages",
