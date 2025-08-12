@@ -177,6 +177,18 @@ export function useLanguagePreferences() {
     }
   }
 
+  // Clear language preferences and reset to browser language (for logout cleanup)
+  function clearLanguagePreferences() {
+    // Clear localStorage
+    storedDisplayLanguage.value = null;
+
+    // Reset to browser-detected language (reuse existing logic)
+    const browserDetection = parseBrowserLanguage(navigator.language);
+    displayLanguage.value = browserDetection.displayLanguage;
+    spokenLanguages.value = [browserDetection.displayLanguage];
+    updateLocale(browserDetection.displayLanguage);
+  }
+
   return {
     // Reactive state
     displayLanguage: computed(() => displayLanguage.value),
@@ -190,5 +202,6 @@ export function useLanguagePreferences() {
     updateSpokenLanguages,
     changeDisplayLanguage,
     initializeLanguage,
+    clearLanguagePreferences,
   };
 }

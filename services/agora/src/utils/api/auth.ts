@@ -19,15 +19,11 @@ import { useNotificationStore } from "src/stores/notification";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
+import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
-import type {
-  AxiosErrorResponse,
-  AxiosSuccessResponse} from "./common";
-import {
-  useCommonApi,
-  type KeyAction,
-} from "./common";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
+import { useCommonApi, type KeyAction } from "./common";
 import { useRoute } from "vue-router";
 import { useRouterGuard } from "../router/guard";
 import { useTopicStore } from "src/stores/topic";
@@ -60,6 +56,7 @@ export function useBackendAuthApi() {
   const { resetDraft } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
   const { clearNotificationData } = useNotificationStore();
+  const { clearLanguagePreferences } = useLanguagePreferences();
 
   const route = useRoute();
 
@@ -259,6 +256,9 @@ export function useBackendAuthApi() {
     clearNotificationData();
 
     clearTopicsData();
+
+    // Clear language preferences and reset to browser language
+    clearLanguagePreferences();
   }
 
   return {
