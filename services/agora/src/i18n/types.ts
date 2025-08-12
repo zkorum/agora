@@ -16,7 +16,6 @@ export interface TranslationSchema {
       title: string;
       displayLanguage: string;
       spokenLanguages: string;
-      changeDisplayLanguage: string;
     };
   };
   // Index signature to satisfy vue-i18n's LocaleMessage requirements
