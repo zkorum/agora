@@ -33,6 +33,10 @@ export function useLanguagePreferences() {
     "displayLanguage",
     "en"
   );
+  const storedSpokenLanguages = useLocalStorage<SupportedSpokenLanguageCodes[]>(
+    "spokenLanguages",
+    []
+  );
 
   // Helper function to update locale consistently
   function updateLocale(localeCode: SupportedDisplayLanguageCodes) {
@@ -75,6 +79,9 @@ export function useLanguagePreferences() {
         displayLanguage.value = validated.displayLanguage;
         spokenLanguages.value = validated.spokenLanguages;
         updateLocale(validated.displayLanguage);
+
+        // Update localStorage with backend data
+        storedSpokenLanguages.value = validated.spokenLanguages;
 
         return response.data;
       } else {
@@ -121,11 +128,40 @@ export function useLanguagePreferences() {
     return saveLanguagePreferences(newLanguage, spokenLanguages.value);
   }
 
-  // Update only spoken languages
+  // Update only spoken languages (handles both authenticated and non-authenticated users)
   async function updateSpokenLanguages(
     newLanguages: SupportedSpokenLanguageCodes[]
   ) {
-    return saveLanguagePreferences(displayLanguage.value, newLanguages);
+    // Store previous state for potential rollback
+    const previousSpokenLanguages = [...spokenLanguages.value];
+    const previousStoredSpokenLanguages = [...storedSpokenLanguages.value];
+
+    try {
+      // Update local state and localStorage immediately for better UX
+      spokenLanguages.value = newLanguages;
+      storedSpokenLanguages.value = newLanguages;
+
+      // If user is authenticated, save to API and revert on failure
+      if (authStore.isLoggedIn) {
+        try {
+          await saveLanguagePreferences(displayLanguage.value, newLanguages);
+        } catch (err) {
+          // Revert local changes if API call fails
+          spokenLanguages.value = previousSpokenLanguages;
+          storedSpokenLanguages.value = previousStoredSpokenLanguages;
+
+          showNotifyMessage("Failed to save language preferences to API");
+          console.error("Failed to save language preferences to API:", err);
+          throw err;
+        }
+      }
+
+      return true;
+    } catch (err) {
+      showNotifyMessage("Failed to update spoken languages");
+      console.error("Error updating spoken languages:", err);
+      throw err;
+    }
   }
 
   // Initialize with stored or detected language
@@ -144,9 +180,13 @@ export function useLanguagePreferences() {
       updateLocale(browserDetection.displayLanguage);
     }
 
-    // Set default spoken languages to include display language
-    if (spokenLanguages.value.length === 0) {
+    // Load spoken languages from localStorage or set default
+    if (storedSpokenLanguages.value && storedSpokenLanguages.value.length > 0) {
+      spokenLanguages.value = storedSpokenLanguages.value;
+    } else {
+      // Set default spoken languages to include display language
       spokenLanguages.value = [displayLanguage.value];
+      storedSpokenLanguages.value = [displayLanguage.value];
     }
   }
 
@@ -154,18 +194,30 @@ export function useLanguagePreferences() {
   async function changeDisplayLanguage(
     newLanguage: SupportedDisplayLanguageCodes
   ) {
+    // Store previous state for potential rollback
+    const previousDisplayLanguage = displayLanguage.value;
+    const previousStoredLanguage = storedDisplayLanguage.value;
+
     try {
       // Update local state immediately for better UX
       displayLanguage.value = newLanguage;
       updateLocale(newLanguage);
 
-      // If user is authenticated, save to API in the background
+      // If user is authenticated, save to API and revert on failure
       if (authStore.isLoggedIn) {
         try {
           await updateDisplayLanguage(newLanguage);
         } catch (err) {
+          // Revert local changes if API call fails
+          displayLanguage.value = previousDisplayLanguage;
+          storedDisplayLanguage.value = previousStoredLanguage;
+          if (availableLocales.includes(previousStoredLanguage)) {
+            locale.value = previousStoredLanguage;
+          }
+
           showNotifyMessage("Failed to save language preference to API");
           console.error("Failed to save language preference to API:", err);
+          throw err;
         }
       }
 
@@ -181,11 +233,13 @@ export function useLanguagePreferences() {
   function clearLanguagePreferences() {
     // Clear localStorage
     storedDisplayLanguage.value = null;
+    storedSpokenLanguages.value = [];
 
     // Reset to browser-detected language (reuse existing logic)
     const browserDetection = parseBrowserLanguage(navigator.language);
     displayLanguage.value = browserDetection.displayLanguage;
     spokenLanguages.value = [browserDetection.displayLanguage];
+    storedSpokenLanguages.value = [browserDetection.displayLanguage];
     updateLocale(browserDetection.displayLanguage);
   }
 
