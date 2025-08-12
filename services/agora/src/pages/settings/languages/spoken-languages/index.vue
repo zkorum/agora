@@ -252,13 +252,9 @@ async function saveLanguageChanges(
     await updateSpokenLanguages(newLanguages);
   } catch (err: unknown) {
     console.error("Failed to update spoken languages:", err);
+    // Error handling is now managed by the composable
+    // Only show additional error message for critical failures
     if (err instanceof Error) {
-      showNotifyMessage(
-        t("settings.language.spokenLanguages.failedToSaveLanguages", {
-          error: err.message,
-        })
-      );
-    } else {
       showNotifyMessage(
         t("settings.language.spokenLanguages.failedToSaveLanguages")
       );
