@@ -3,6 +3,7 @@ import { useI18n } from "vue-i18n";
 import { useLocalStorage } from "@vueuse/core";
 import { useBackendLanguageApi } from "src/utils/api/language";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useNotify } from "src/utils/ui/notify";
 import type { MessageLanguages } from "src/boot/i18n";
 import type {
   SupportedSpokenLanguageCodes,
@@ -21,10 +22,11 @@ export function useLanguagePreferences() {
   const { fetchLanguagePreferences, updateLanguagePreferences } =
     useBackendLanguageApi();
 
+  const authStore = useAuthenticationStore();
+  const { showNotifyMessage } = useNotify();
+
   const displayLanguage = ref<SupportedDisplayLanguageCodes>("en");
   const spokenLanguages = ref<SupportedSpokenLanguageCodes[]>([]);
-  const isLoading = ref(false);
-  const error = ref<string | null>(null);
 
   // Use VueUse's useLocalStorage for reactive localStorage
   const storedDisplayLanguage = useLocalStorage<MessageLanguages>(
@@ -33,8 +35,7 @@ export function useLanguagePreferences() {
   );
 
   // Helper function to update locale consistently
-  function updateLocale(language: SupportedDisplayLanguageCodes) {
-    const localeCode = language;
+  function updateLocale(localeCode: SupportedDisplayLanguageCodes) {
     if (availableLocales.includes(localeCode)) {
       locale.value = localeCode;
       storedDisplayLanguage.value = localeCode;
@@ -65,9 +66,6 @@ export function useLanguagePreferences() {
 
   // Fetch user language preferences from API
   async function loadLanguagePreferences() {
-    isLoading.value = true;
-    error.value = null;
-
     try {
       const response = await fetchLanguagePreferences();
 
@@ -83,18 +81,9 @@ export function useLanguagePreferences() {
         throw new Error("Failed to fetch language preferences");
       }
     } catch (err) {
-      error.value = "Failed to fetch language preferences";
+      showNotifyMessage("Failed to fetch language preferences");
       console.error("Error fetching language preferences:", err);
-
-      // Fall back to browser detection
-      const browserDetection = parseBrowserLanguage(navigator.language);
-      displayLanguage.value = browserDetection.displayLanguage;
-      spokenLanguages.value = browserDetection.spokenLanguages;
-      updateLocale(browserDetection.displayLanguage);
-
       throw err;
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -103,9 +92,6 @@ export function useLanguagePreferences() {
     newDisplayLanguage: SupportedDisplayLanguageCodes,
     newSpokenLanguages: SupportedSpokenLanguageCodes[]
   ) {
-    isLoading.value = true;
-    error.value = null;
-
     try {
       const response = await updateLanguagePreferences({
         displayLanguage: newDisplayLanguage,
@@ -122,11 +108,9 @@ export function useLanguagePreferences() {
         throw new Error("Failed to save language preferences");
       }
     } catch (err) {
-      error.value = "Failed to save language preferences";
+      showNotifyMessage("Failed to save language preferences");
       console.error("Error saving language preferences:", err);
       throw err;
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -167,10 +151,9 @@ export function useLanguagePreferences() {
   }
 
   // Change display language (handles both authenticated and non-authenticated users)
-  function changeDisplayLanguage(newLanguage: SupportedDisplayLanguageCodes) {
-    const authStore = useAuthenticationStore();
-    error.value = null;
-
+  async function changeDisplayLanguage(
+    newLanguage: SupportedDisplayLanguageCodes
+  ) {
     try {
       // Update local state immediately for better UX
       displayLanguage.value = newLanguage;
@@ -178,14 +161,17 @@ export function useLanguagePreferences() {
 
       // If user is authenticated, save to API in the background
       if (authStore.isLoggedIn) {
-        updateDisplayLanguage(newLanguage).catch((err) => {
+        try {
+          await updateDisplayLanguage(newLanguage);
+        } catch (err) {
+          showNotifyMessage("Failed to save language preference to API");
           console.error("Failed to save language preference to API:", err);
-        });
+        }
       }
 
       return true;
     } catch (err) {
-      error.value = "Failed to change display language";
+      showNotifyMessage("Failed to change display language");
       console.error("Error changing display language:", err);
       throw err;
     }
@@ -196,8 +182,6 @@ export function useLanguagePreferences() {
     displayLanguage: computed(() => displayLanguage.value),
     spokenLanguages: computed(() => spokenLanguages.value),
     availableLocales,
-    isLoading: computed(() => isLoading.value),
-    error: computed(() => error.value),
 
     // Core functions
     loadLanguagePreferences,

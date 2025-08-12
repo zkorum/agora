@@ -60,10 +60,6 @@
           </SettingsMenuItem>
         </div>
       </div>
-
-      <div v-if="error" class="error-message">
-        {{ error }}
-      </div>
     </div>
   </DrawerLayout>
 </template>
@@ -76,16 +72,23 @@ import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useI18n } from "vue-i18n";
 import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
+import { useAuthenticationStore } from "src/stores/authentication";
 import type {
   SupportedDisplayLanguageCodes,
   DisplayLanguageMetadata,
 } from "src/shared/languages";
 import { getDisplayLanguages } from "src/shared/languages";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 
 const { t } = useI18n();
-const { changeDisplayLanguage, displayLanguage, error } =
-  useLanguagePreferences();
+const {
+  changeDisplayLanguage,
+  displayLanguage,
+  initializeLanguage,
+  loadLanguagePreferences,
+} = useLanguagePreferences();
+
+const authStore = useAuthenticationStore();
 
 const availableDisplayLanguages: ComputedRef<DisplayLanguageMetadata[]> =
   computed(() => getDisplayLanguages());
@@ -96,15 +99,15 @@ function isCurrentLanguage(
   return languageCode === displayLanguage.value;
 }
 
-function selectDisplayLanguage(
+async function selectDisplayLanguage(
   languageCode: SupportedDisplayLanguageCodes
-): void {
+): Promise<void> {
   if (languageCode === displayLanguage.value) {
     return; // Already selected
   }
 
   try {
-    changeDisplayLanguage(languageCode);
+    await changeDisplayLanguage(languageCode);
   } catch (err: unknown) {
     console.error("Failed to change language:", err);
     // Type guard for error handling
@@ -113,6 +116,17 @@ function selectDisplayLanguage(
     }
   }
 }
+
+// Load user's display preference on page mount
+onMounted(async () => {
+  // Always initialize immediately from local state for instant display
+  initializeLanguage();
+
+  // If authenticated, sync with backend in background
+  if (authStore.isLoggedIn) {
+    await loadLanguagePreferences();
+  }
+});
 </script>
 
 <style scoped lang="scss">
@@ -130,15 +144,6 @@ function selectDisplayLanguage(
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-}
-
-.error-message {
-  color: #d32f2f;
-  padding: 1rem;
-  margin-top: 1rem;
-  background-color: #ffebee;
-  border-radius: 4px;
-  text-align: center;
 }
 
 .language-content {
