@@ -71,7 +71,8 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useI18n } from "vue-i18n";
-import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
+import { storeToRefs } from "pinia";
+import { useLanguageStore } from "src/stores/language";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type {
   SupportedDisplayLanguageCodes,
@@ -81,12 +82,10 @@ import { getDisplayLanguages } from "src/shared/languages";
 import { computed, onMounted } from "vue";
 
 const { t } = useI18n();
-const {
-  changeDisplayLanguage,
-  displayLanguage,
-  initializeLanguage,
-  loadLanguagePreferences,
-} = useLanguagePreferences();
+const languageStore = useLanguageStore();
+const { displayLanguage } = storeToRefs(languageStore);
+const { changeDisplayLanguage, initializeLanguage, loadLanguagePreferences } =
+  languageStore;
 
 const authStore = useAuthenticationStore();
 

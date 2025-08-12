@@ -1,3 +1,4 @@
+import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useLocalStorage } from "@vueuse/core";
@@ -17,7 +18,7 @@ import {
 import type { GetLanguagePreferencesResponse } from "src/shared/types/dto";
 import type { ApiV1UserLanguagePreferencesGetPost200Response } from "src/api";
 
-export function useLanguagePreferences() {
+export const useLanguageStore = defineStore("language", () => {
   const { locale, availableLocales } = useI18n();
   const { fetchLanguagePreferences, updateLanguagePreferences } =
     useBackendLanguageApi();
@@ -38,7 +39,6 @@ export function useLanguagePreferences() {
     []
   );
 
-  // Helper function to update locale consistently
   function updateLocale(localeCode: SupportedDisplayLanguageCodes) {
     if (availableLocales.includes(localeCode)) {
       locale.value = localeCode;
@@ -46,7 +46,6 @@ export function useLanguagePreferences() {
     }
   }
 
-  // Helper function to validate API response data
   function validateLanguageData(
     data: ApiV1UserLanguagePreferencesGetPost200Response
   ): GetLanguagePreferencesResponse {
@@ -68,7 +67,6 @@ export function useLanguagePreferences() {
     };
   }
 
-  // Fetch user language preferences from API
   async function loadLanguagePreferences() {
     try {
       const response = await fetchLanguagePreferences();
@@ -80,7 +78,6 @@ export function useLanguagePreferences() {
         spokenLanguages.value = validated.spokenLanguages;
         updateLocale(validated.displayLanguage);
 
-        // Update localStorage with backend data
         storedSpokenLanguages.value = validated.spokenLanguages;
 
         return response.data;
@@ -94,7 +91,6 @@ export function useLanguagePreferences() {
     }
   }
 
-  // Save language preferences to API
   async function saveLanguagePreferences(
     newDisplayLanguage: SupportedDisplayLanguageCodes,
     newSpokenLanguages: SupportedSpokenLanguageCodes[]
@@ -121,32 +117,26 @@ export function useLanguagePreferences() {
     }
   }
 
-  // Update only display language
   async function updateDisplayLanguage(
     newLanguage: SupportedDisplayLanguageCodes
   ) {
     return saveLanguagePreferences(newLanguage, spokenLanguages.value);
   }
 
-  // Update only spoken languages (handles both authenticated and non-authenticated users)
   async function updateSpokenLanguages(
     newLanguages: SupportedSpokenLanguageCodes[]
   ) {
-    // Store previous state for potential rollback
     const previousSpokenLanguages = [...spokenLanguages.value];
     const previousStoredSpokenLanguages = [...storedSpokenLanguages.value];
 
     try {
-      // Update local state and localStorage immediately for better UX
       spokenLanguages.value = newLanguages;
       storedSpokenLanguages.value = newLanguages;
 
-      // If user is authenticated, save to API and revert on failure
       if (authStore.isLoggedIn) {
         try {
           await saveLanguagePreferences(displayLanguage.value, newLanguages);
         } catch (err) {
-          // Revert local changes if API call fails
           spokenLanguages.value = previousSpokenLanguages;
           storedSpokenLanguages.value = previousStoredSpokenLanguages;
 
@@ -164,7 +154,6 @@ export function useLanguagePreferences() {
     }
   }
 
-  // Initialize with stored or detected language
   function initializeLanguage() {
     const storedLocale = storedDisplayLanguage.value;
 
@@ -180,35 +169,28 @@ export function useLanguagePreferences() {
       updateLocale(browserDetection.displayLanguage);
     }
 
-    // Load spoken languages from localStorage or set default
     if (storedSpokenLanguages.value && storedSpokenLanguages.value.length > 0) {
       spokenLanguages.value = storedSpokenLanguages.value;
     } else {
-      // Set default spoken languages to include display language
       spokenLanguages.value = [displayLanguage.value];
       storedSpokenLanguages.value = [displayLanguage.value];
     }
   }
 
-  // Change display language (handles both authenticated and non-authenticated users)
   async function changeDisplayLanguage(
     newLanguage: SupportedDisplayLanguageCodes
   ) {
-    // Store previous state for potential rollback
     const previousDisplayLanguage = displayLanguage.value;
     const previousStoredLanguage = storedDisplayLanguage.value;
 
     try {
-      // Update local state immediately for better UX
       displayLanguage.value = newLanguage;
       updateLocale(newLanguage);
 
-      // If user is authenticated, save to API and revert on failure
       if (authStore.isLoggedIn) {
         try {
           await updateDisplayLanguage(newLanguage);
         } catch (err) {
-          // Revert local changes if API call fails
           displayLanguage.value = previousDisplayLanguage;
           storedDisplayLanguage.value = previousStoredLanguage;
           if (availableLocales.includes(previousStoredLanguage)) {
@@ -229,13 +211,10 @@ export function useLanguagePreferences() {
     }
   }
 
-  // Clear language preferences and reset to browser language (for logout cleanup)
   function clearLanguagePreferences() {
-    // Clear localStorage
     storedDisplayLanguage.value = null;
     storedSpokenLanguages.value = [];
 
-    // Reset to browser-detected language (reuse existing logic)
     const browserDetection = parseBrowserLanguage(navigator.language);
     displayLanguage.value = browserDetection.displayLanguage;
     spokenLanguages.value = [browserDetection.displayLanguage];
@@ -244,12 +223,9 @@ export function useLanguagePreferences() {
   }
 
   return {
-    // Reactive state
     displayLanguage: computed(() => displayLanguage.value),
     spokenLanguages: computed(() => spokenLanguages.value),
     availableLocales,
-
-    // Core functions
     loadLanguagePreferences,
     saveLanguagePreferences,
     updateDisplayLanguage,
@@ -258,4 +234,4 @@ export function useLanguagePreferences() {
     initializeLanguage,
     clearLanguagePreferences,
   };
-}
+});

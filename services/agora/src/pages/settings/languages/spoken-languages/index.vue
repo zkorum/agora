@@ -146,7 +146,8 @@ import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import SettingsSearchInput from "src/components/settings/SettingsSearchInput.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useI18n } from "vue-i18n";
-import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
+import { storeToRefs } from "pinia";
+import { useLanguageStore } from "src/stores/language";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotify } from "src/utils/ui/notify";
 import type {
@@ -162,12 +163,10 @@ import {
 import { computed, onMounted, ref } from "vue";
 
 const { t } = useI18n();
-const {
-  spokenLanguages,
-  updateSpokenLanguages,
-  initializeLanguage,
-  loadLanguagePreferences,
-} = useLanguagePreferences();
+const languageStore = useLanguageStore();
+const { spokenLanguages } = storeToRefs(languageStore);
+const { updateSpokenLanguages, initializeLanguage, loadLanguagePreferences } =
+  languageStore;
 
 const authStore = useAuthenticationStore();
 const { showNotifyMessage } = useNotify();

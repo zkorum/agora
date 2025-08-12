@@ -14,27 +14,22 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
-import { ref, watch } from "vue";
-import { onMounted } from "vue";
+import { computed } from "vue";
+import { useLanguageStore } from "src/stores/language";
 
-const { locale } = useI18n({ useScope: "global" });
-const actualLocale = ref(locale.value);
-onMounted(() => {
-  if (actualLocale.value.includes("fr")) {
-    actualLocale.value = "fr";
-  } else if (locale.value.includes("en")) {
-    actualLocale.value = "en-US";
-  } else {
-    actualLocale.value = "en-US";
-  }
+const languageStore = useLanguageStore();
+
+const actualLocale = computed({
+  get: () => languageStore.displayLanguage,
+  set: (value) => {
+    void languageStore.changeDisplayLanguage(value);
+  },
 });
-const localeOptions = [
-  { value: "en-US", label: "En" },
-  { value: "fr", label: "Fr" },
-];
-watch(actualLocale, (newValue) => {
-  // Update vue-i18n locale when actualLocale changes
-  locale.value = newValue;
-});
+
+const localeOptions = computed(() =>
+  languageStore.availableLocales.map((lang: string) => ({
+    value: lang,
+    label: lang.split("-")[0].toUpperCase(),
+  }))
+);
 </script>
