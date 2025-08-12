@@ -5,14 +5,13 @@ import { useBackendLanguageApi } from "src/utils/api/language";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { MessageLanguages } from "src/boot/i18n";
 import type {
-  SupportedAllLanguageCodes,
+  SupportedSpokenLanguageCodes,
   SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import {
   ZodSupportedDisplayLanguageCodes,
-  ZodSupportedAllLanguageCodes,
+  ZodSupportedSpokenLanguageCodes,
   parseBrowserLanguage,
-  getDisplayLanguages,
 } from "src/shared/languages";
 
 export function useLanguagePreferences() {
@@ -21,7 +20,7 @@ export function useLanguagePreferences() {
     useBackendLanguageApi();
 
   const displayLanguage = ref<SupportedDisplayLanguageCodes>("en");
-  const spokenLanguages = ref<SupportedAllLanguageCodes[]>([]);
+  const spokenLanguages = ref<SupportedSpokenLanguageCodes[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -84,7 +83,9 @@ export function useLanguagePreferences() {
 
         // Validate and set spoken languages using zod
         const spokenLangsResult =
-          ZodSupportedAllLanguageCodes.array().safeParse(data.spokenLanguages);
+          ZodSupportedSpokenLanguageCodes.array().safeParse(
+            data.spokenLanguages
+          );
         if (spokenLangsResult.success) {
           spokenLanguages.value = spokenLangsResult.data;
         } else {
@@ -125,7 +126,7 @@ export function useLanguagePreferences() {
   // Save language preferences to API
   async function saveLanguagePreferences(
     newDisplayLanguage: SupportedDisplayLanguageCodes,
-    newSpokenLanguages: SupportedAllLanguageCodes[]
+    newSpokenLanguages: SupportedSpokenLanguageCodes[]
   ) {
     isLoading.value = true;
     error.value = null;
@@ -170,7 +171,7 @@ export function useLanguagePreferences() {
 
   // Update only spoken languages
   async function updateSpokenLanguages(
-    newLanguages: SupportedAllLanguageCodes[]
+    newLanguages: SupportedSpokenLanguageCodes[]
   ) {
     return saveLanguagePreferences(displayLanguage.value, newLanguages);
   }
@@ -241,11 +242,6 @@ export function useLanguagePreferences() {
     }
   }
 
-  // Get available display languages
-  function getAvailableDisplayLanguages() {
-    return getDisplayLanguages();
-  }
-
   return {
     displayLanguage: computed(() => displayLanguage.value),
     spokenLanguages: computed(() => spokenLanguages.value),
@@ -260,7 +256,6 @@ export function useLanguagePreferences() {
     changeDisplayLanguage,
     getDetectedLanguage,
     initializeWithDetectedLanguage,
-    getAvailableDisplayLanguages,
 
     localeToDisplayLanguageMap,
     displayLanguageToLocaleMap,

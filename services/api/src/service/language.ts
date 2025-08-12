@@ -1,17 +1,16 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
-    userTable,
     userDisplayLanguageTable,
     userSpokenLanguagesTable,
 } from "../schema.js";
 import {
     isValidDisplayLanguageCode,
     isValidLanguageCode,
-    toSupportedAllLanguageCode,
+    toSupportedSpokenLanguageCode,
     toSupportedDisplayLanguageCode,
     type SupportedDisplayLanguageCodes,
-    type SupportedAllLanguageCodes,
+    type SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import type {
     GetLanguagePreferencesResponse,
@@ -60,7 +59,7 @@ export async function getLanguagePreferences({
     }
 
     const validSpokenLanguageList = spokenLanguages.map((value) => {
-        const validLanguage = toSupportedAllLanguageCode(value);
+        const validLanguage = toSupportedSpokenLanguageCode(value);
         if (validLanguage === undefined) {
             throw httpErrors.internalServerError(
                 `Invalid spoken language: ${value}`,
@@ -148,7 +147,7 @@ interface InitializeLanguagePreferencesOptions {
     db: PostgresDatabase;
     userId: string;
     displayLanguage?: SupportedDisplayLanguageCodes;
-    spokenLanguages?: SupportedAllLanguageCodes[];
+    spokenLanguages?: SupportedSpokenLanguageCodes[];
 }
 
 /**

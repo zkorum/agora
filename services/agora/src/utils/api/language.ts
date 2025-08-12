@@ -8,13 +8,13 @@ import type {
   ApiV1UserLanguagePreferencesUpdatePostRequest,
 } from "src/api";
 import type {
-  SupportedAllLanguageCodes,
+  SupportedSpokenLanguageCodes,
   SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 
 export interface LanguagePreferencesData {
   displayLanguage: SupportedDisplayLanguageCodes;
-  spokenLanguages: SupportedAllLanguageCodes[];
+  spokenLanguages: SupportedSpokenLanguageCodes[];
 }
 
 export function useBackendLanguageApi() {
@@ -64,7 +64,7 @@ export function useBackendLanguageApi() {
 
   interface UpdateLanguagePreferencesProps {
     displayLanguage: SupportedDisplayLanguageCodes;
-    spokenLanguages: SupportedAllLanguageCodes[];
+    spokenLanguages: SupportedSpokenLanguageCodes[];
   }
 
   async function updateLanguagePreferences({
