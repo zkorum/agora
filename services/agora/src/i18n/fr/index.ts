@@ -17,7 +17,6 @@ const translations: TranslationSchema = {
       title: "Langue",
       displayLanguage: "Langue d'affichage",
       spokenLanguages: "Langues parlées",
-      changeDisplayLanguage: "Changer la langue d'affichage",
     },
   },
 };

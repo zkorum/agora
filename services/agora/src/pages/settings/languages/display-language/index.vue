@@ -17,7 +17,7 @@
         :fixed-height="true"
       >
         <template #middle>{{
-          t("settings.language.changeDisplayLanguage")
+          t("settings.language.displayLanguage")
         }}</template>
       </DefaultMenuBar>
     </template>
