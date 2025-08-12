@@ -19,7 +19,7 @@ import { useNotificationStore } from "src/stores/notification";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
-import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
+import { useLanguageStore } from "src/stores/language";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
@@ -57,7 +57,7 @@ export function useBackendAuthApi() {
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
   const { clearNotificationData } = useNotificationStore();
   const { clearLanguagePreferences, loadLanguagePreferences } =
-    useLanguagePreferences();
+    useLanguageStore();
 
   const route = useRoute();
 
