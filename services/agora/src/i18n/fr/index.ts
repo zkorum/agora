@@ -15,8 +15,24 @@ const translations: TranslationSchema = {
   settings: {
     language: {
       title: "Langue",
-      displayLanguage: "Langue d'affichage",
-      spokenLanguages: "Langues parlées",
+      displayLanguage: {
+        title: "Langue d'affichage",
+      },
+      spokenLanguages: {
+        title: "Langues parlées",
+        selectedLanguages: "Langues sélectionnées",
+        addMoreLanguages: "Ajouter plus de langues",
+        selectLanguages: "Sélectionner des langues",
+        searchLanguages: "Rechercher des langues...",
+        noLanguagesFound: "Aucune langue trouvée",
+        allLanguagesSelected: "Toutes les langues sélectionnées",
+        cannotRemoveLastLanguage:
+          "Vous devez avoir au moins une langue sélectionnée",
+        failedToSaveLanguages:
+          "Échec de la sauvegarde des préférences linguistiques",
+        failedToLoadLanguages:
+          "Échec du chargement des préférences linguistiques",
+      },
     },
   },
 };
