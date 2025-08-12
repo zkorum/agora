@@ -26,19 +26,19 @@
       <div class="settings-section">
         <div class="settings-background">
           <SettingsMenuItem
-            v-for="(language, index) in availableLanguages"
+            v-for="(language, index) in availableDisplayLanguages"
             :key="language.code"
-            :show-separator="index < availableLanguages.length - 1"
+            :show-separator="index < availableDisplayLanguages.length - 1"
             :border-radius="
-              availableLanguages.length === 1
+              availableDisplayLanguages.length === 1
                 ? 'both'
                 : index === 0
                   ? 'top'
-                  : index === availableLanguages.length - 1
+                  : index === availableDisplayLanguages.length - 1
                     ? 'bottom'
                     : 'none'
             "
-            @click="selectLanguage(language.code)"
+            @click="selectDisplayLanguage(language.code)"
           >
             <template #left>
               <div class="language-content">
@@ -69,38 +69,48 @@
 </template>
 
 <script setup lang="ts">
+import type { ComputedRef } from "vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useI18n } from "vue-i18n";
 import { useLanguagePreferences } from "src/composables/useLanguagePreferences";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type {
+  SupportedDisplayLanguageCodes,
+  DisplayLanguageMetadata,
+} from "src/shared/languages";
+import { getDisplayLanguages } from "src/shared/languages";
 import { computed } from "vue";
 
 const { t } = useI18n();
-const {
-  changeDisplayLanguage,
-  getAvailableDisplayLanguages,
-  displayLanguage,
-  error,
-} = useLanguagePreferences();
+const { changeDisplayLanguage, displayLanguage, error } =
+  useLanguagePreferences();
 
-const availableLanguages = computed(() => getAvailableDisplayLanguages());
+const availableDisplayLanguages: ComputedRef<DisplayLanguageMetadata[]> =
+  computed(() => getDisplayLanguages());
 
-function isCurrentLanguage(languageCode: string): boolean {
+function isCurrentLanguage(
+  languageCode: SupportedDisplayLanguageCodes
+): boolean {
   return languageCode === displayLanguage.value;
 }
 
-function selectLanguage(languageCode: string) {
+function selectDisplayLanguage(
+  languageCode: SupportedDisplayLanguageCodes
+): void {
   if (languageCode === displayLanguage.value) {
     return; // Already selected
   }
 
   try {
-    changeDisplayLanguage(languageCode as SupportedDisplayLanguageCodes);
-  } catch (err) {
+    changeDisplayLanguage(languageCode);
+  } catch (err: unknown) {
     console.error("Failed to change language:", err);
+    // Type guard for error handling
+    if (err instanceof Error) {
+      console.error("Error message:", err.message);
+    }
   }
 }
 </script>

@@ -40,7 +40,7 @@ import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
     ZodSupportedDisplayLanguageCodes,
-    ZodSupportedAllLanguageCodes,
+    ZodSupportedSpokenLanguageCodes,
 } from "../languages.js";
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -521,14 +521,16 @@ export class Dto {
     static getLanguagePreferencesResponse = z
         .object({
             displayLanguage: ZodSupportedDisplayLanguageCodes,
-            spokenLanguages: z.array(ZodSupportedAllLanguageCodes),
+            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes),
         })
         .strict();
 
     static updateLanguagePreferencesRequest = z
         .object({
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
-            spokenLanguages: z.array(ZodSupportedAllLanguageCodes).optional(),
+            spokenLanguages: z
+                .array(ZodSupportedSpokenLanguageCodes)
+                .optional(),
         })
         .strict();
 }
