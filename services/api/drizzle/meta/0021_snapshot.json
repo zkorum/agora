@@ -1,5 +1,5 @@
 {
-  "id": "93da2915-1f7f-4cbe-8089-196f6ee9edcc",
+  "id": "390d2b28-e35f-4505-8f18-2ba930e25227",
   "prevId": "1aa2cda0-1838-4301-b8e6-db84fbb7ba28",
   "version": "7",
   "dialect": "postgresql",
@@ -3778,6 +3778,19 @@
           "type": "varchar(35)",
           "primaryKey": false,
           "notNull": true
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
