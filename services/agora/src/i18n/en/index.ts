@@ -15,8 +15,22 @@ const translations: TranslationSchema = {
   settings: {
     language: {
       title: "Language",
-      displayLanguage: "Display Language",
-      spokenLanguages: "Spoken Languages",
+      displayLanguage: {
+        title: "Display Language",
+      },
+      spokenLanguages: {
+        title: "Spoken Languages",
+        selectedLanguages: "Selected Languages",
+        addMoreLanguages: "Add More Languages",
+        selectLanguages: "Select Languages",
+        searchLanguages: "Search languages...",
+        noLanguagesFound: "No languages found",
+        allLanguagesSelected: "All languages selected",
+        cannotRemoveLastLanguage:
+          "You must have at least one language selected",
+        failedToSaveLanguages: "Failed to save language preferences",
+        failedToLoadLanguages: "Failed to load language preferences",
+      },
     },
   },
 };

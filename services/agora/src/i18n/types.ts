@@ -14,8 +14,21 @@ export interface TranslationSchema {
   settings: {
     language: {
       title: string;
-      displayLanguage: string;
-      spokenLanguages: string;
+      displayLanguage: {
+        title: string;
+      };
+      spokenLanguages: {
+        title: string;
+        selectedLanguages: string;
+        addMoreLanguages: string;
+        selectLanguages: string;
+        searchLanguages: string;
+        noLanguagesFound: string;
+        allLanguagesSelected: string;
+        cannotRemoveLastLanguage: string;
+        failedToSaveLanguages: string;
+        failedToLoadLanguages: string;
+      };
     };
   };
   // Index signature to satisfy vue-i18n's LocaleMessage requirements

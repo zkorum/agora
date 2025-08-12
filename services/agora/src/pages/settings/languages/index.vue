@@ -39,14 +39,14 @@ const router = useRouter();
 
 const languageSettings: SettingsInterface[] = [
   {
-    label: t("settings.language.displayLanguage"),
+    label: t("settings.language.displayLanguage.title"),
     action: () => {
       void router.push({ name: "/settings/languages/display-language/" });
     },
     style: "none",
   },
   {
-    label: t("settings.language.spokenLanguages"),
+    label: t("settings.language.spokenLanguages.title"),
     action: () => {
       void router.push({ name: "/settings/languages/spoken-languages/" });
     },
