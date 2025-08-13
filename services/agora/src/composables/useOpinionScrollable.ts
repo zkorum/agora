@@ -49,11 +49,6 @@ export function useOpinionScrollable() {
     loadMore();
   }
 
-  function resetPagination() {
-    visibleOpinions.value = [];
-    hasMore.value = true;
-  }
-
   return {
     // State
     allOpinions: allOpinions as Ref<OpinionItem[]>,
@@ -63,6 +58,5 @@ export function useOpinionScrollable() {
     // Actions
     loadMore,
     initializeOpinionList,
-    resetPagination,
   };
 }

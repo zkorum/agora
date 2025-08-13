@@ -45,6 +45,5 @@ export function useOpinionAgreements(opinionList: Ref<OpinionItem[]>) {
   return {
     addOpinionAgreement,
     removeOpinionAgreement,
-    updateOpinionAgreementCount,
   };
 }

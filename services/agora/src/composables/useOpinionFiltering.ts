@@ -49,41 +49,7 @@ export function useOpinionFiltering() {
     return "not_found";
   }
 
-  function findOpinionInLists(
-    opinionSlugId: string,
-    ...opinionLists: OpinionItem[][]
-  ): OpinionItem | undefined {
-    for (const list of opinionLists) {
-      const found = list.find(
-        (opinion) => opinion.opinionSlugId === opinionSlugId
-      );
-      if (found) {
-        return found;
-      }
-    }
-    return undefined;
-  }
-
-  function createOpinionIndexMap(
-    opinionLists: Record<string, OpinionItem[]>
-  ): Map<string, { category: string; opinion: OpinionItem }> {
-    const indexMap = new Map<
-      string,
-      { category: string; opinion: OpinionItem }
-    >();
-
-    Object.entries(opinionLists).forEach(([category, opinions]) => {
-      opinions.forEach((opinion) => {
-        indexMap.set(opinion.opinionSlugId, { category, opinion });
-      });
-    });
-
-    return indexMap;
-  }
-
   return {
     findOpinionFilter,
-    findOpinionInLists,
-    createOpinionIndexMap,
   };
 }
