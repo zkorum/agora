@@ -1,7 +1,7 @@
 <template>
   <EmbedLayout>
     <PostDetails
-      v-if="conversationLoaded"
+      v-if="hasConversationData"
       :key="String(isGuestOrLoggedIn)"
       v-model="currentTab"
       :extended-post-data="conversationData"
@@ -18,7 +18,7 @@ import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
 
-const { conversationData, conversationLoaded } = useConversationData();
+const { conversationData, hasConversationData } = useConversationData();
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 const currentTab = ref<"comment" | "analysis">("comment");
 </script>

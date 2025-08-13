@@ -22,7 +22,7 @@
     <q-pull-to-refresh @refresh="refreshConversation">
       <WidthWrapper :enable="true">
         <PostDetails
-          v-if="conversationLoaded"
+          v-if="hasConversationData"
           :key="conversationData.metadata.lastReactedAt.toISOString()"
           v-model="currentTab"
           :extended-post-data="conversationData"
@@ -42,7 +42,7 @@ import { useConversationData } from "src/composables/useConversationData";
 import { ref } from "vue";
 
 const currentTab = ref<"comment" | "analysis">("comment");
-const { conversationData, conversationLoaded, refreshConversation } =
+const { conversationData, hasConversationData, refreshConversation } =
   useConversationData();
 </script>
 
