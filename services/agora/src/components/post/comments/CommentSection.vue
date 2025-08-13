@@ -14,15 +14,15 @@
       </div>
 
       <CommentGroup
-        :comment-item-list="opinionItemListPartial"
+        :comment-item-list="visibleOpinions"
         :is-loading="isLoading"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="highlightedOpinionId"
-        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :comment-slug-id-liked-map="opinionVoteMap"
         :is-post-locked="isPostLocked"
         :login-required-to-participate="props.loginRequiredToParticipate"
-        @deleted="handleCommentDeleted()"
-        @muted-comment="handleCommentMuted()"
+        @deleted="handleOpinionDeleted()"
+        @muted-comment="handleOpinionMuted()"
         @change-vote="
           (vote: VotingAction, opinionSlugId: string) =>
             changeVote(vote, opinionSlugId)
@@ -78,7 +78,7 @@ const isHighlightingInProgress = ref(false);
 const { profileData } = storeToRefs(useUserStore());
 const router = useRouter();
 const route = useRoute();
-const commentSlugIdQuery = useRouteQuery("opinion", "", {
+const opinionSlugIdQuery = useRouteQuery("opinion", "", {
   transform: String,
 });
 const { showNotifyMessage } = useNotify();
@@ -88,19 +88,18 @@ const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 // Opinion scrolling functionality
-const { loadMore, hasMore, opinionItemListPartial, setupOpinionList } =
+const { loadMore, hasMore, visibleOpinions, initializeOpinionList } =
   useOpinionScrollable();
 
 // Opinion agreements functionality
-const { addOpinionAgreement, removeOpinionAgreement } = useOpinionAgreements(
-  opinionItemListPartial
-);
+const { addOpinionAgreement, removeOpinionAgreement } =
+  useOpinionAgreements(visibleOpinions);
 
 // Opinion filtering functionality
-const { detectOpinionFilterBySlugId } = useOpinionFiltering();
+const { findOpinionFilter } = useOpinionFiltering();
 
-// Internal liked map management
-const commentSlugIdLikedMap = ref<Map<string, VotingOption>>(new Map());
+// Internal vote map management
+const opinionVoteMap = ref<Map<string, VotingOption>>(new Map());
 
 const isLoadingNew = ref<boolean>(true);
 const isLoadingDiscover = ref<boolean>(true);
@@ -142,7 +141,7 @@ watch(currentFilter, (newFilter) => {
 
 function updateOpinionList(filter: CommentFilterOptions) {
   const opinionData = getOpinionDataForFilter(filter);
-  setupOpinionList(opinionData, highlightedOpinionId.value);
+  initializeOpinionList(opinionData, highlightedOpinionId.value);
 }
 
 function getOpinionDataForFilter(filter: CommentFilterOptions): OpinionItem[] {
@@ -206,9 +205,9 @@ async function fetchUserVotingData() {
       response.forEach((userVote) => {
         newMap.set(userVote.opinionSlugId, userVote.votingAction);
       });
-      commentSlugIdLikedMap.value = newMap;
+      opinionVoteMap.value = newMap;
     } else {
-      commentSlugIdLikedMap.value = new Map();
+      opinionVoteMap.value = new Map();
     }
   }
 }
@@ -276,7 +275,7 @@ function setLoadingStateForFilter(
 }
 
 async function setupHighlightFromRoute() {
-  const opinionSlugId = commentSlugIdQuery.value;
+  const opinionSlugId = opinionSlugIdQuery.value;
   if (opinionSlugId && opinionSlugId.trim() !== "") {
     await highlightOpinionAndScroll(opinionSlugId);
   }
@@ -289,7 +288,7 @@ async function highlightOpinionAndScroll(opinionSlugId: string) {
     return;
   }
 
-  const targetFilter = detectOpinionFilterBySlugId(
+  const targetFilter = findOpinionFilter(
     opinionSlugId,
     opinionsNew,
     opinionsDiscover,
@@ -357,46 +356,46 @@ function handleUserFilterChange(filterValue: CommentFilterOptions) {
   currentFilter.value = filterValue;
 }
 
-async function handleCommentMuted() {
+async function handleOpinionMuted() {
   await initializeOpinionData();
 }
 
-async function handleCommentDeleted() {
+async function handleOpinionDeleted() {
   emit("deleted");
   await initializeOpinionData();
   updateOpinionList(currentFilter.value);
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
-  const previousMapSize = commentSlugIdLikedMap.value.size;
+  const previousMapSize = opinionVoteMap.value.size;
 
   // Handle vote changes internally using the agreement composable
   switch (vote) {
     case "agree":
       addOpinionAgreement(opinionSlugId, "agree");
-      commentSlugIdLikedMap.value.set(opinionSlugId, "agree");
+      opinionVoteMap.value.set(opinionSlugId, "agree");
       break;
     case "disagree":
       addOpinionAgreement(opinionSlugId, "disagree");
-      commentSlugIdLikedMap.value.set(opinionSlugId, "disagree");
+      opinionVoteMap.value.set(opinionSlugId, "disagree");
       break;
     case "pass":
       addOpinionAgreement(opinionSlugId, "pass");
-      commentSlugIdLikedMap.value.set(opinionSlugId, "pass");
+      opinionVoteMap.value.set(opinionSlugId, "pass");
       break;
     case "cancel": {
-      // Find the original vote from the liked map to remove it
-      const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
+      // Find the original vote from the vote map to remove it
+      const originalVote = opinionVoteMap.value.get(opinionSlugId);
       if (originalVote !== undefined) {
         removeOpinionAgreement(opinionSlugId, originalVote);
       }
-      commentSlugIdLikedMap.value.delete(opinionSlugId);
+      opinionVoteMap.value.delete(opinionSlugId);
       break;
     }
   }
 
   // Calculate participant count delta
-  const currentMapSize = commentSlugIdLikedMap.value.size;
+  const currentMapSize = opinionVoteMap.value.size;
   const participantDelta = currentMapSize - previousMapSize;
 
   // Emit participant count changes to parent if any

@@ -25,7 +25,7 @@
           v-if="hasConversationData"
           :key="conversationData.metadata.lastReactedAt.toISOString()"
           v-model="currentTab"
-          :extended-post-data="conversationData"
+          :conversation-data="conversationData"
           :compact-mode="false"
         />
       </WidthWrapper>

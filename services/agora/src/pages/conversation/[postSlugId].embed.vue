@@ -4,7 +4,7 @@
       v-if="hasConversationData"
       :key="String(isGuestOrLoggedIn)"
       v-model="currentTab"
-      :extended-post-data="conversationData"
+      :conversation-data="conversationData"
       :compact-mode="false"
     />
   </EmbedLayout>

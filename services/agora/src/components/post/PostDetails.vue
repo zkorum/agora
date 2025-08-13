@@ -11,7 +11,7 @@
           :class="{ compactBackground: compactMode }"
         >
           <PostContent
-            :extended-post-data="extendedPostData"
+            :extended-post-data="conversationData"
             :compact-mode="compactMode"
             @open-moderation-history="openModerationHistory()"
           />
@@ -20,7 +20,7 @@
             v-model="currentTab"
             :compact-mode="compactMode"
             :opinion-count="
-              extendedPostData.metadata.opinionCount + commentCountOffset
+              conversationData.metadata.opinionCount + opinionCountOffset
             "
             @share="shareClicked()"
           />
@@ -29,27 +29,27 @@
             <AnalysisPage
               v-if="currentTab == 'analysis'"
               :conversation-slug-id="
-                props.extendedPostData.metadata.conversationSlugId
+                props.conversationData.metadata.conversationSlugId
               "
               :participant-count="
-                props.extendedPostData.metadata.participantCount
+                props.conversationData.metadata.participantCount
               "
-              :polis="props.extendedPostData.polis"
+              :polis="props.conversationData.polis"
             />
 
             <CommentSection
               v-if="currentTab == 'comment'"
-              ref="commentSectionRef"
-              :post-slug-id="extendedPostData.metadata.conversationSlugId"
-              :polis="extendedPostData.polis"
+              ref="opinionSectionRef"
+              :post-slug-id="conversationData.metadata.conversationSlugId"
+              :polis="conversationData.polis"
               :is-post-locked="
-                extendedPostData.metadata.moderation.status == 'moderated'
+                conversationData.metadata.moderation.status == 'moderated'
               "
               :login-required-to-participate="
-                extendedPostData.metadata.isIndexed ||
-                extendedPostData.metadata.isLoginRequired
+                conversationData.metadata.isIndexed ||
+                conversationData.metadata.isLoginRequired
               "
-              @deleted="decrementCommentCount()"
+              @deleted="decrementOpinionCount()"
               @participant-count-delta="
                 (delta: number) => (participantCountLocal += delta)
               "
@@ -63,10 +63,10 @@
 
       <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
         <CommentComposer
-          :post-slug-id="extendedPostData.metadata.conversationSlugId"
+          :post-slug-id="conversationData.metadata.conversationSlugId"
           :login-required-to-participate="
-            extendedPostData.metadata.isIndexed ||
-            extendedPostData.metadata.isLoginRequired
+            conversationData.metadata.isIndexed ||
+            conversationData.metadata.isLoginRequired
           "
           @submitted-comment="
             (opinionSlugId: string) => submittedComment(opinionSlugId)
@@ -91,72 +91,72 @@ import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = defineProps<{
-  extendedPostData: ExtendedConversation;
+  conversationData: ExtendedConversation;
   compactMode: boolean;
 }>();
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,
 });
 
-const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
+const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 
-const commentCountOffset = ref(0);
+const opinionCountOffset = ref(0);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
 
 const participantCountLocal = ref(
-  props.extendedPostData.metadata.participantCount
+  props.conversationData.metadata.participantCount
 );
 const hasMore = ref(true);
 
 const isPostLocked =
-  props.extendedPostData.metadata.moderation.status === "moderated" &&
-  props.extendedPostData.metadata.moderation.action === "lock";
+  props.conversationData.metadata.moderation.status === "moderated" &&
+  props.conversationData.metadata.moderation.action === "lock";
 
 function onLoad(index: number, done: () => void) {
-  if (commentSectionRef.value) {
-    commentSectionRef.value.triggerLoadMore();
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.triggerLoadMore();
   }
   done();
 }
 
 function openModerationHistory() {
-  if (commentSectionRef.value) {
-    commentSectionRef.value.openModerationHistory();
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.openModerationHistory();
   } else {
-    console.warn("Comment section reference is undefined");
+    console.warn("Opinion section reference is undefined");
   }
 }
 
-function decrementCommentCount() {
-  commentCountOffset.value -= 1;
+function decrementOpinionCount() {
+  opinionCountOffset.value -= 1;
 }
 
 async function submittedComment(opinionSlugId: string) {
-  commentCountOffset.value += 1;
+  opinionCountOffset.value += 1;
   // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
   // Change this if you change this behaviour.
   changeVote("agree", opinionSlugId);
 
-  if (commentSectionRef.value) {
-    await commentSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
+  if (opinionSectionRef.value) {
+    await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
   }
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
   // Delegate all vote logic to CommentSection
-  if (commentSectionRef.value) {
-    commentSectionRef.value.changeVote(vote, opinionSlugId);
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.changeVote(vote, opinionSlugId);
   }
 }
 
 async function shareClicked() {
   const sharePostUrl = getConversationUrl(
-    props.extendedPostData.metadata.conversationSlugId
+    props.conversationData.metadata.conversationSlugId
   );
   await webShare.share(
-    "Agora - " + props.extendedPostData.payload.title,
+    "Agora - " + props.conversationData.payload.title,
     sharePostUrl
   );
 }

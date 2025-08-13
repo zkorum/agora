@@ -2,40 +2,40 @@ import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 
 export function useOpinionFiltering() {
-  function detectOpinionFilterBySlugId(
-    commentSlugId: string,
-    commentItemsNew: OpinionItem[],
-    commentItemsDiscover: OpinionItem[],
-    commentItemsModerated: OpinionItem[],
-    commentItemsHidden: OpinionItem[],
+  function findOpinionFilter(
+    opinionSlugId: string,
+    newOpinions: OpinionItem[],
+    discoverOpinions: OpinionItem[],
+    moderatedOpinions: OpinionItem[],
+    hiddenOpinions: OpinionItem[],
     isLoggedIn: boolean,
     isModerator: boolean
   ): CommentFilterOptions | "not_found" | "removed_by_moderators" {
     // Check discover list first
-    for (const commentItem of commentItemsDiscover) {
-      if (commentItem.opinionSlugId === commentSlugId) {
+    for (const opinion of discoverOpinions) {
+      if (opinion.opinionSlugId === opinionSlugId) {
         return "discover";
       }
     }
 
     // Check new list
-    for (const commentItem of commentItemsNew) {
-      if (commentItem.opinionSlugId === commentSlugId) {
+    for (const opinion of newOpinions) {
+      if (opinion.opinionSlugId === opinionSlugId) {
         return "new";
       }
     }
 
     // Check moderated list
-    for (const commentItem of commentItemsModerated) {
-      if (commentItem.opinionSlugId === commentSlugId) {
+    for (const opinion of moderatedOpinions) {
+      if (opinion.opinionSlugId === opinionSlugId) {
         return "moderated";
       }
     }
 
     // Handle hidden opinions - only accessible to moderators
     if (isLoggedIn && isModerator) {
-      for (const commentItem of commentItemsHidden) {
-        if (commentItem.opinionSlugId === commentSlugId) {
+      for (const opinion of hiddenOpinions) {
+        if (opinion.opinionSlugId === opinionSlugId) {
           return "hidden";
         }
       }
@@ -82,7 +82,7 @@ export function useOpinionFiltering() {
   }
 
   return {
-    detectOpinionFilterBySlugId,
+    findOpinionFilter,
     findOpinionInLists,
     createOpinionIndexMap,
   };
