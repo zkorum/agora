@@ -49,15 +49,25 @@ import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLanguageStore } from "src/stores/language";
+import { getLanguageByCode } from "src/shared/languages";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 
 const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthenticationStore();
+const languageStore = useLanguageStore();
+
+onMounted(() => {
+  languageStore.initializeLanguage();
+});
 
 const displayLanguageSettings = computed((): SettingsInterface[] => {
+  const displayLang = getLanguageByCode(languageStore.displayLanguage);
+  const displayValue = displayLang ? displayLang.name : "English";
+
   return [
     {
       label: t("settings.language.displayLanguage.title"),
@@ -65,6 +75,7 @@ const displayLanguageSettings = computed((): SettingsInterface[] => {
         void router.push({ name: "/settings/languages/display-language/" });
       },
       style: "none",
+      value: displayValue,
     },
   ];
 });
@@ -74,12 +85,28 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
 
   // Only show spoken languages option for authenticated users
   if (authStore.isLoggedIn) {
+    const spokenLanguages = languageStore.spokenLanguages;
+    let spokenValue = "";
+
+    if (spokenLanguages.length === 0) {
+      spokenValue = "None selected";
+    } else if (spokenLanguages.length === 1) {
+      const firstLang = getLanguageByCode(spokenLanguages[0]);
+      spokenValue = firstLang ? firstLang.name : spokenLanguages[0];
+    } else {
+      const firstLang = getLanguageByCode(spokenLanguages[0]);
+      const firstName = firstLang ? firstLang.name : spokenLanguages[0];
+      const otherCount = spokenLanguages.length - 1;
+      spokenValue = `${firstName} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
+    }
+
     settings.push({
       label: t("settings.language.spokenLanguages.title"),
       action: () => {
         void router.push({ name: "/settings/languages/spoken-languages/" });
       },
       style: "none",
+      value: spokenValue,
     });
   }
 
@@ -109,7 +136,7 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
 }
 
 .section-description {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #6b7280;
   margin: 0;
   line-height: 1.4;

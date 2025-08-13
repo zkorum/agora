@@ -40,6 +40,7 @@ defineEmits<{
 <style scoped lang="scss">
 .menu-item {
   display: flex;
+  flex-wrap: wrap;
   gap: 2rem;
   align-items: center;
   justify-content: space-between;
