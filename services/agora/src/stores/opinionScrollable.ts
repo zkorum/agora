@@ -102,18 +102,23 @@ export const useOpinionScrollableStore = defineStore(
       return "not_found";
     }
 
-    function updateOpinionVote(opinionSlugId: string, voteType: VotingOption) {
+    function updateOpinionAgreementCount(
+      opinionSlugId: string,
+      agreementType: VotingOption,
+      increment: boolean
+    ) {
       const updateOpinionItem = (opinionItem: OpinionItem) => {
         if (opinionItem.opinionSlugId === opinionSlugId) {
-          switch (voteType) {
+          const delta = increment ? 1 : -1;
+          switch (agreementType) {
             case "agree":
-              opinionItem.numAgrees = opinionItem.numAgrees + 1;
+              opinionItem.numAgrees = opinionItem.numAgrees + delta;
               break;
             case "disagree":
-              opinionItem.numDisagrees = opinionItem.numDisagrees + 1;
+              opinionItem.numDisagrees = opinionItem.numDisagrees + delta;
               break;
             case "pass":
-              opinionItem.numPasses = opinionItem.numPasses + 1;
+              opinionItem.numPasses = opinionItem.numPasses + delta;
               break;
           }
         }
@@ -124,37 +129,26 @@ export const useOpinionScrollableStore = defineStore(
         opinionItemListPartial.value.map(updateOpinionItem);
     }
 
-    function cancelOpinionVote(
+    function addOpinionAgreement(
       opinionSlugId: string,
-      originalVote: VotingOption
+      agreementType: VotingOption
     ) {
-      const updateOpinionItem = (opinionItem: OpinionItem) => {
-        if (opinionItem.opinionSlugId === opinionSlugId) {
-          switch (originalVote) {
-            case "agree":
-              opinionItem.numAgrees = opinionItem.numAgrees - 1;
-              break;
-            case "disagree":
-              opinionItem.numDisagrees = opinionItem.numDisagrees - 1;
-              break;
-            case "pass":
-              opinionItem.numPasses = opinionItem.numPasses - 1;
-              break;
-          }
-        }
-        return opinionItem;
-      };
+      updateOpinionAgreementCount(opinionSlugId, agreementType, true);
+    }
 
-      opinionItemListPartial.value =
-        opinionItemListPartial.value.map(updateOpinionItem);
+    function removeOpinionAgreement(
+      opinionSlugId: string,
+      originalAgreement: VotingOption
+    ) {
+      updateOpinionAgreementCount(opinionSlugId, originalAgreement, false);
     }
 
     return {
       setupOpinionlist,
       loadMore,
       detectOpinionFilterBySlugId,
-      updateOpinionVote,
-      cancelOpinionVote,
+      addOpinionAgreement,
+      removeOpinionAgreement,
       opinionItemListPartial,
       hasMore,
     };
