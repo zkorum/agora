@@ -41,7 +41,6 @@
               v-if="currentTab == 'comment'"
               ref="commentSectionRef"
               :post-slug-id="extendedPostData.metadata.conversationSlugId"
-              :participant-count="participantCountLocal"
               :polis="extendedPostData.polis"
               :is-post-locked="
                 extendedPostData.metadata.moderation.status == 'moderated'
@@ -50,16 +49,12 @@
                 extendedPostData.metadata.isIndexed ||
                 extendedPostData.metadata.isLoginRequired
               "
-              :opinion-item-list-partial="opinionItemListPartial"
-              :comment-slug-id-liked-map="commentSlugIdLikedMap"
               @deleted="decrementCommentCount()"
-              @change-vote="
-                (vote: VotingAction, opinionSlugId: string) =>
-                  changeVote(vote, opinionSlugId)
+              @participant-count-delta="
+                (delta: number) => (participantCountLocal += delta)
               "
-              @update-comment-slug-id-liked-map="
-                (map: Map<string, VotingOption>) =>
-                  updateCommentSlugIdLikedMap(map)
+              @has-more-changed="
+                (newHasMore: boolean) => (hasMore = newHasMore)
               "
             />
           </div>
@@ -88,17 +83,11 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref, triggerRef } from "vue";
+import { ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import type {
-  ExtendedConversation,
-  VotingAction,
-  VotingOption,
-} from "src/shared/types/zod";
-import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import { storeToRefs } from "pinia";
+import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = defineProps<{
@@ -116,22 +105,19 @@ const commentCountOffset = ref(0);
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
 
-const { loadMore, updateOpinionVote, cancelOpinionVote } =
-  useOpinionScrollableStore();
-const { hasMore, opinionItemListPartial } = storeToRefs(
-  useOpinionScrollableStore()
-);
-const commentSlugIdLikedMap = ref<Map<string, VotingOption>>(new Map());
 const participantCountLocal = ref(
   props.extendedPostData.metadata.participantCount
 );
+const hasMore = ref(true);
 
 const isPostLocked =
   props.extendedPostData.metadata.moderation.status === "moderated" &&
   props.extendedPostData.metadata.moderation.action === "lock";
 
 function onLoad(index: number, done: () => void) {
-  loadMore();
+  if (commentSectionRef.value) {
+    commentSectionRef.value.triggerLoadMore();
+  }
   done();
 }
 
@@ -159,51 +145,10 @@ async function submittedComment(opinionSlugId: string) {
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
-  switch (vote) {
-    case "agree": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      commentSlugIdLikedMap.value.set(opinionSlugId, "agree");
-      triggerRef(commentSlugIdLikedMap);
-      updateOpinionVote(opinionSlugId, "agree");
-      break;
-    }
-    case "disagree": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      commentSlugIdLikedMap.value.set(opinionSlugId, "disagree");
-      triggerRef(commentSlugIdLikedMap);
-      updateOpinionVote(opinionSlugId, "disagree");
-      break;
-    }
-    case "pass": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      commentSlugIdLikedMap.value.set(opinionSlugId, "pass");
-      triggerRef(commentSlugIdLikedMap);
-      updateOpinionVote(opinionSlugId, "pass");
-      break;
-    }
-    case "cancel": {
-      if (commentSlugIdLikedMap.value.size === 1) {
-        participantCountLocal.value = participantCountLocal.value - 1;
-      }
-      const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
-      if (originalVote !== undefined) {
-        cancelOpinionVote(opinionSlugId, originalVote);
-      }
-      commentSlugIdLikedMap.value.delete(opinionSlugId);
-      triggerRef(commentSlugIdLikedMap);
-      break;
-    }
+  // Delegate all vote logic to CommentSection
+  if (commentSectionRef.value) {
+    commentSectionRef.value.changeVote(vote, opinionSlugId);
   }
-}
-
-function updateCommentSlugIdLikedMap(map: Map<string, VotingOption>) {
-  commentSlugIdLikedMap.value = map;
 }
 
 async function shareClicked() {
