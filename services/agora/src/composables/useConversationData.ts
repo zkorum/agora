@@ -23,7 +23,6 @@ export function useConversationData() {
 
   // Simple reactive state
   const conversationData = ref<ExtendedConversation>(emptyPost);
-  const isLoading = ref(false);
 
   const hasConversationData = computed(
     () => conversationData.value.metadata.conversationSlugId !== ""
@@ -69,7 +68,6 @@ export function useConversationData() {
 
     // Clear old data and start loading
     conversationData.value = emptyPost;
-    isLoading.value = true;
 
     try {
       const response = await fetchPostBySlugId(slugId, isGuestOrLoggedIn.value);
@@ -84,8 +82,6 @@ export function useConversationData() {
       console.error("Failed to load conversation data:", error);
       conversationData.value = emptyPost;
       return false;
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -116,13 +112,11 @@ export function useConversationData() {
   return {
     // State
     conversationData,
-    isLoading,
 
     // Computed
     hasConversationData,
 
     // Actions
-    loadConversationData,
     refreshConversation,
   };
 }
