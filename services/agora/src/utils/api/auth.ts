@@ -56,7 +56,7 @@ export function useBackendAuthApi() {
   const { resetDraft } = useNewPostDraftsStore();
   const { clearOpinionDrafts } = useNewOpinionDraftsStore();
   const { clearNotificationData } = useNotificationStore();
-  const { clearLanguagePreferences, loadLanguagePreferences } =
+  const { clearLanguagePreferences, loadSpokenLanguagesFromBackend } =
     useLanguageStore();
 
   const route = useRoute();
@@ -183,7 +183,7 @@ export function useBackendAuthApi() {
       loadPostData(),
       loadNotificationData(false),
       loadTopicsData(),
-      loadLanguagePreferences(),
+      loadSpokenLanguagesFromBackend(),
     ]);
   }
 

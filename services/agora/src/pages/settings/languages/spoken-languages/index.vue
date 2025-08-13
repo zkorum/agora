@@ -165,8 +165,7 @@ import { computed, onMounted, ref } from "vue";
 const { t } = useI18n();
 const languageStore = useLanguageStore();
 const { spokenLanguages } = storeToRefs(languageStore);
-const { updateSpokenLanguages, initializeLanguage, loadLanguagePreferences } =
-  languageStore;
+const { updateSpokenLanguages, loadSpokenLanguagesFromBackend } = languageStore;
 
 const authStore = useAuthenticationStore();
 const { showNotifyMessage } = useNotify();
@@ -265,15 +264,12 @@ async function saveLanguageChanges(
 
 // Load user's spoken language preferences on page mount
 onMounted(async () => {
-  // Always initialize immediately from local state for instant display
-  initializeLanguage();
-
   // If authenticated, sync with backend
   if (authStore.isLoggedIn) {
     try {
-      await loadLanguagePreferences();
+      await loadSpokenLanguagesFromBackend();
     } catch (err) {
-      console.error("Failed to load language preferences:", err);
+      console.error("Failed to load spoken languages from backend:", err);
       showNotifyMessage(
         t("settings.language.spokenLanguages.failedToLoadLanguages")
       );
