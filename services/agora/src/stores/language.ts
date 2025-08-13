@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useLocalStorage } from "@vueuse/core";
 import { useBackendLanguageApi } from "src/utils/api/language";
@@ -12,10 +12,21 @@ import type {
 } from "src/shared/languages";
 import {
   parseBrowserLanguage,
-  toSupportedDisplayLanguageCode,
   toSupportedSpokenLanguageCode,
 } from "src/shared/languages";
 import type { ApiV1UserLanguagePreferencesGetPost200Response } from "src/api";
+
+function getDefaultDisplayLanguage(): MessageLanguages {
+  // Use browser detection for smart default
+  const browserDetection = parseBrowserLanguage(navigator.language);
+  return browserDetection.displayLanguage;
+}
+
+function getDefaultSpokenLanguages(): SupportedSpokenLanguageCodes[] {
+  // Use browser detection for smart default
+  const browserDetection = parseBrowserLanguage(navigator.language);
+  return browserDetection.spokenLanguages;
+}
 
 export const useLanguageStore = defineStore("language", () => {
   const { locale, availableLocales } = useI18n();
@@ -25,23 +36,26 @@ export const useLanguageStore = defineStore("language", () => {
   const authStore = useAuthenticationStore();
   const { showNotifyMessage } = useNotify();
 
-  const displayLanguage = ref<SupportedDisplayLanguageCodes>("en");
-  const spokenLanguages = ref<SupportedSpokenLanguageCodes[]>([]);
-
-  // Use VueUse's useLocalStorage for reactive localStorage
-  const storedDisplayLanguage = useLocalStorage<MessageLanguages>(
+  // Single source of truth: localStorage-backed reactive refs with smart defaults
+  const displayLanguage = useLocalStorage<MessageLanguages>(
     "displayLanguage",
-    "en"
+    getDefaultDisplayLanguage()
   );
-  const storedSpokenLanguages = useLocalStorage<SupportedSpokenLanguageCodes[]>(
+
+  const spokenLanguages = useLocalStorage<SupportedSpokenLanguageCodes[]>(
     "spokenLanguages",
-    []
+    getDefaultSpokenLanguages()
   );
+
+  // Initialize i18n locale to match stored display language
+  if (availableLocales.includes(displayLanguage.value)) {
+    locale.value = displayLanguage.value;
+  }
 
   function updateLocale(localeCode: SupportedDisplayLanguageCodes) {
     if (availableLocales.includes(localeCode)) {
       locale.value = localeCode;
-      storedDisplayLanguage.value = localeCode;
+      displayLanguage.value = localeCode;
     }
   }
 
@@ -62,7 +76,7 @@ export const useLanguageStore = defineStore("language", () => {
     };
   }
 
-  async function loadLanguagePreferences() {
+  async function loadSpokenLanguagesFromBackend() {
     try {
       const response = await fetchLanguagePreferences(displayLanguage.value);
 
@@ -71,15 +85,14 @@ export const useLanguageStore = defineStore("language", () => {
 
         // Only update spoken languages from backend, keep display language local
         spokenLanguages.value = validated.spokenLanguages;
-        storedSpokenLanguages.value = validated.spokenLanguages;
 
         return response.data;
       } else {
-        throw new Error("Failed to fetch language preferences");
+        throw new Error("Failed to fetch spoken languages from backend");
       }
     } catch (err) {
-      showNotifyMessage("Failed to fetch language preferences");
-      console.error("Error fetching language preferences:", err);
+      showNotifyMessage("Failed to fetch spoken languages from backend");
+      console.error("Error fetching spoken languages from backend:", err);
       throw err;
     }
   }
@@ -109,18 +122,15 @@ export const useLanguageStore = defineStore("language", () => {
     newLanguages: SupportedSpokenLanguageCodes[]
   ) {
     const previousSpokenLanguages = [...spokenLanguages.value];
-    const previousStoredSpokenLanguages = [...storedSpokenLanguages.value];
 
     try {
       spokenLanguages.value = newLanguages;
-      storedSpokenLanguages.value = newLanguages;
 
       if (authStore.isLoggedIn) {
         try {
           await saveSpokenLanguagesToBackend(newLanguages);
         } catch (err) {
           spokenLanguages.value = previousSpokenLanguages;
-          storedSpokenLanguages.value = previousStoredSpokenLanguages;
 
           showNotifyMessage("Failed to save language preferences to API");
           console.error("Failed to save language preferences to API:", err);
@@ -136,40 +146,8 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  function initializeLanguage() {
-    const storedLocale = storedDisplayLanguage.value;
-
-    if (storedLocale && availableLocales.includes(storedLocale)) {
-      const displayLang = toSupportedDisplayLanguageCode(storedLocale);
-      if (displayLang) {
-        displayLanguage.value = displayLang;
-        locale.value = storedLocale;
-        console.log(
-          "Initialized display language from localStorage:",
-          displayLang
-        );
-      }
-    } else {
-      const browserDetection = parseBrowserLanguage(navigator.language);
-      displayLanguage.value = browserDetection.displayLanguage;
-      updateLocale(browserDetection.displayLanguage);
-      console.log(
-        "Initialized display language from browser detection:",
-        browserDetection.displayLanguage
-      );
-    }
-
-    if (storedSpokenLanguages.value && storedSpokenLanguages.value.length > 0) {
-      spokenLanguages.value = storedSpokenLanguages.value;
-    } else {
-      spokenLanguages.value = [displayLanguage.value];
-      storedSpokenLanguages.value = [displayLanguage.value];
-    }
-  }
-
   function changeDisplayLanguage(newLanguage: SupportedDisplayLanguageCodes) {
     try {
-      displayLanguage.value = newLanguage;
       updateLocale(newLanguage);
       return true;
     } catch (err) {
@@ -180,19 +158,17 @@ export const useLanguageStore = defineStore("language", () => {
   }
 
   function clearLanguagePreferences() {
-    // Only clear spoken languages, leave display language alone
+    // Reset spoken languages to include current display language
     spokenLanguages.value = [displayLanguage.value];
-    storedSpokenLanguages.value = [displayLanguage.value];
   }
 
   return {
     displayLanguage: computed(() => displayLanguage.value),
     spokenLanguages: computed(() => spokenLanguages.value),
     availableLocales,
-    loadLanguagePreferences,
+    loadSpokenLanguagesFromBackend,
     updateSpokenLanguages,
     changeDisplayLanguage,
-    initializeLanguage,
     clearLanguagePreferences,
   };
 });

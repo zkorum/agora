@@ -53,16 +53,12 @@ import { useLanguageStore } from "src/stores/language";
 import { getLanguageByCode } from "src/shared/languages";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 
 const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthenticationStore();
 const languageStore = useLanguageStore();
-
-onMounted(() => {
-  languageStore.initializeLanguage();
-});
 
 const displayLanguageSettings = computed((): SettingsInterface[] => {
   const displayLang = getLanguageByCode(languageStore.displayLanguage);
@@ -130,13 +126,13 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
 }
 
 .section-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1f2937;
 }
 
 .section-description {
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #6b7280;
   margin: 0;
   line-height: 1.4;
