@@ -14,15 +14,15 @@
       </div>
 
       <CommentGroup
-        :comment-item-list="opinionItemListPartial"
+        :comment-item-list="visibleOpinions"
         :is-loading="isLoading"
         :post-slug-id="postSlugId"
         :initial-comment-slug-id="highlightedOpinionId"
-        :comment-slug-id-liked-map="commentSlugIdLikedMap"
+        :comment-slug-id-liked-map="opinionVoteMap"
         :is-post-locked="isPostLocked"
         :login-required-to-participate="props.loginRequiredToParticipate"
-        @deleted="handleCommentDeleted()"
-        @muted-comment="handleCommentMuted()"
+        @deleted="handleOpinionDeleted()"
+        @muted-comment="handleOpinionMuted()"
         @change-vote="
           (vote: VotingAction, opinionSlugId: string) =>
             changeVote(vote, opinionSlugId)
@@ -52,12 +52,15 @@ import { useRouter, useRoute } from "vue-router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
+import { useOpinionScrollable } from "src/composables/useOpinionScrollable";
+import { useOpinionFiltering } from "src/composables/useOpinionFiltering";
+import { useOpinionAgreements } from "src/composables/useOpinionAgreements";
 
 const emit = defineEmits([
   "deleted",
-  "changeVote",
-  "updateCommentSlugIdLikedMap",
+  "hasMoreChanged",
+  "loadingStateChanged",
+  "participantCountDelta",
 ]);
 
 const props = defineProps<{
@@ -65,8 +68,6 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
-  opinionItemListPartial: OpinionItem[];
-  commentSlugIdLikedMap: Map<string, VotingOption>;
 }>();
 
 const currentFilter = ref<CommentFilterOptions>("discover");
@@ -77,16 +78,28 @@ const isHighlightingInProgress = ref(false);
 const { profileData } = storeToRefs(useUserStore());
 const router = useRouter();
 const route = useRoute();
-const commentSlugIdQuery = useRouteQuery("opinion", "", {
+const opinionSlugIdQuery = useRouteQuery("opinion", "", {
   transform: String,
 });
 const { showNotifyMessage } = useNotify();
 const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
-const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
-const { setupOpinionlist, detectOpinionFilterBySlugId } =
-  useOpinionScrollableStore();
+const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+// Opinion scrolling functionality
+const { loadMore, hasMore, visibleOpinions, initializeOpinionList } =
+  useOpinionScrollable();
+
+// Opinion agreements functionality
+const { addOpinionAgreement, removeOpinionAgreement } =
+  useOpinionAgreements(visibleOpinions);
+
+// Opinion filtering functionality
+const { findOpinionFilter } = useOpinionFiltering();
+
+// Internal vote map management
+const opinionVoteMap = ref<Map<string, VotingOption>>(new Map());
 
 const isLoadingNew = ref<boolean>(true);
 const isLoadingDiscover = ref<boolean>(true);
@@ -128,7 +141,7 @@ watch(currentFilter, (newFilter) => {
 
 function updateOpinionList(filter: CommentFilterOptions) {
   const opinionData = getOpinionDataForFilter(filter);
-  setupOpinionlist(opinionData, highlightedOpinionId.value);
+  initializeOpinionList(opinionData, highlightedOpinionId.value);
 }
 
 function getOpinionDataForFilter(filter: CommentFilterOptions): OpinionItem[] {
@@ -192,9 +205,9 @@ async function fetchUserVotingData() {
       response.forEach((userVote) => {
         newMap.set(userVote.opinionSlugId, userVote.votingAction);
       });
-      emit("updateCommentSlugIdLikedMap", newMap);
+      opinionVoteMap.value = newMap;
     } else {
-      emit("updateCommentSlugIdLikedMap", new Map());
+      opinionVoteMap.value = new Map();
     }
   }
 }
@@ -262,7 +275,7 @@ function setLoadingStateForFilter(
 }
 
 async function setupHighlightFromRoute() {
-  const opinionSlugId = commentSlugIdQuery.value;
+  const opinionSlugId = opinionSlugIdQuery.value;
   if (opinionSlugId && opinionSlugId.trim() !== "") {
     await highlightOpinionAndScroll(opinionSlugId);
   }
@@ -275,16 +288,23 @@ async function highlightOpinionAndScroll(opinionSlugId: string) {
     return;
   }
 
-  const targetFilter = detectOpinionFilterBySlugId(
+  const targetFilter = findOpinionFilter(
     opinionSlugId,
     opinionsNew,
     opinionsDiscover,
     opinionsModerated,
-    opinionsHidden
+    opinionsHidden,
+    isLoggedIn.value,
+    profileData.value.isModerator
   );
 
   if (targetFilter === "not_found") {
     showNotifyMessage("Opinion not found: " + opinionSlugId);
+    return;
+  }
+
+  if (targetFilter === "removed_by_moderators") {
+    showNotifyMessage("This opinion has been removed by the moderators");
     return;
   }
 
@@ -336,23 +356,74 @@ function handleUserFilterChange(filterValue: CommentFilterOptions) {
   currentFilter.value = filterValue;
 }
 
-async function handleCommentMuted() {
+async function handleOpinionMuted() {
   await initializeOpinionData();
 }
 
-async function handleCommentDeleted() {
+async function handleOpinionDeleted() {
   emit("deleted");
   await initializeOpinionData();
   updateOpinionList(currentFilter.value);
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
-  emit("changeVote", vote, opinionSlugId);
+  const previousMapSize = opinionVoteMap.value.size;
+
+  // Handle vote changes internally using the agreement composable
+  switch (vote) {
+    case "agree":
+      addOpinionAgreement(opinionSlugId, "agree");
+      opinionVoteMap.value.set(opinionSlugId, "agree");
+      break;
+    case "disagree":
+      addOpinionAgreement(opinionSlugId, "disagree");
+      opinionVoteMap.value.set(opinionSlugId, "disagree");
+      break;
+    case "pass":
+      addOpinionAgreement(opinionSlugId, "pass");
+      opinionVoteMap.value.set(opinionSlugId, "pass");
+      break;
+    case "cancel": {
+      // Find the original vote from the vote map to remove it
+      const originalVote = opinionVoteMap.value.get(opinionSlugId);
+      if (originalVote !== undefined) {
+        removeOpinionAgreement(opinionSlugId, originalVote);
+      }
+      opinionVoteMap.value.delete(opinionSlugId);
+      break;
+    }
+  }
+
+  // Calculate participant count delta
+  const currentMapSize = opinionVoteMap.value.size;
+  const participantDelta = currentMapSize - previousMapSize;
+
+  // Emit participant count changes to parent if any
+  if (participantDelta !== 0) {
+    emit("participantCountDelta", participantDelta);
+  }
 }
+
+// Expose load more functionality for parent component
+function triggerLoadMore() {
+  loadMore();
+}
+
+// Watch hasMore changes and emit to parent
+watch(hasMore, (newHasMore) => {
+  emit("hasMoreChanged", newHasMore);
+});
+
+// Watch loading state changes and emit to parent
+watch(isLoading, (newIsLoading) => {
+  emit("loadingStateChanged", newIsLoading);
+});
 
 defineExpose({
   openModerationHistory,
   refreshAndHighlightOpinion,
+  triggerLoadMore,
+  changeVote,
 });
 </script>
 

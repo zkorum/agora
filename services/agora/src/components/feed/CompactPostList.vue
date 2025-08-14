@@ -34,7 +34,7 @@
               >
                 <PostDetails
                   v-model="currentTab"
-                  :extended-post-data="postData"
+                  :conversation-data="postData"
                   :compact-mode="true"
                   class="showCursor"
                   @click="openPost(postData.metadata.conversationSlugId)"
@@ -52,7 +52,7 @@
               >
                 <PostDetails
                   v-model="currentTab"
-                  :extended-post-data="postData"
+                  :conversation-data="postData"
                   :compact-mode="true"
                   @click="openPost(postData.metadata.conversationSlugId)"
                 />
