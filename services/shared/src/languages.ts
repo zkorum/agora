@@ -492,22 +492,6 @@ export function searchLanguages(
 }
 
 /**
- * Validate if a language code exists in our supported list
- */
-export function isValidLanguageCode(code: string): boolean {
-    return SupportedSpokenLanguageMetadataList.some(
-        (lang) => lang.code === code,
-    );
-}
-
-/**
- * Validate if a language code is a valid display language
- */
-export function isValidDisplayLanguageCode(code: string): boolean {
-    return ZodSupportedDisplayLanguageCodes.safeParse(code).success;
-}
-
-/**
  * Validate and return a SupportedDisplayLanguageCodes if the code is valid, otherwise undefined
  */
 export function toSupportedDisplayLanguageCode(
