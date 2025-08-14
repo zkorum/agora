@@ -528,12 +528,14 @@ export class Dto {
     static getLanguagePreferencesResponse = z
         .object({
             spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
+            displayLanguage: ZodSupportedDisplayLanguageCodes,
         })
         .strict();
 
     static updateLanguagePreferencesRequest = z
         .object({
-            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
+            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1).optional(),
+            displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
         })
         .strict();
 }

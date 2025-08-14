@@ -1,5 +1,5 @@
 {
-  "id": "390d2b28-e35f-4505-8f18-2ba930e25227",
+  "id": "ba4d7e60-a03e-41dc-b402-4dfb67aad9e5",
   "prevId": "1aa2cda0-1838-4301-b8e6-db84fbb7ba28",
   "version": "7",
   "dialect": "postgresql",
@@ -3548,6 +3548,96 @@
           "nullsNotDistinct": false,
           "columns": [
             "description"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_display_language": {
+      "name": "user_display_language",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language_code": {
+          "name": "language_code",
+          "type": "varchar(35)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_display_language_user_idx": {
+          "name": "user_display_language_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_display_language_user_id_user_id_fk": {
+          "name": "user_display_language_user_id_user_id_fk",
+          "tableFrom": "user_display_language",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_display_language_unique": {
+          "name": "user_display_language_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "language_code"
           ]
         }
       },
