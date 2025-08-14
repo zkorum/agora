@@ -49,7 +49,7 @@ def importConversation():
         loader = Loader(polis_id=report_id, data_source="csv_export")
         loader.load_api_data_conversation()  # see https://github.com/polis-community/red-dwarf/blob/main/docs/notebooks/loading-data.ipynb "math_data and conversation_data only populate from the "api" data_source."
         assert_fully_populated(loader, ignore=["math_data"])
-        print_summary(loader)
+        # print_summary(loader)
         return jsonify(
             {
                 "report_id": loader.report_id,
@@ -63,7 +63,7 @@ def importConversation():
         print(f"Loading Polis conversation from conversation_id={conversation_id}")
         loader = Loader(polis_id=conversation_id)
         assert_fully_populated(loader, ignore=["math_data"])
-        print_summary(loader)
+        # print_summary(loader)
         return jsonify(
             {
                 "report_id": loader.report_id,
@@ -95,29 +95,17 @@ class MathRequest(BaseModel):
     votes: List[VoteRecord]
 
 
-@app.route("/math", methods=["POST"])
-def get_math_results():
-    try:
-        payload = MathRequest(**request.get_json())
-    except ValidationError as e:
-        abort(400, description=f"Validation error: {e}")
-    logging.info(
-        f"Processing math results for conversation '{payload.conversation_slug_id}' "
-        f"(ID: {payload.conversation_id}) with {len(payload.votes)} votes."
+def get_maths(votes, min_user_vote_threshold, max_group_count=6):
+    # print("Votes", votes)
+    print(
+        f"Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
     )
-    print("Payload", payload)
-    votes = [vote.model_dump() for vote in payload.votes]
-    print("Votes", votes)
-
-    # For fewer than 21 statements, gradually increase min_user_vote_threshold from 4 up to 7.
-    # At 14 statements and above (round(14/2) = 7), the threshold stays at 7.
-    total_statement_ids = {vote.statement_id for vote in payload.votes}
-    statement_count = len(total_statement_ids)
-    min_user_vote_threshold = max(4, min(round(statement_count / 2), 7))
 
     try:
         result = run_pipeline(
-            votes=votes, min_user_vote_threshold=min_user_vote_threshold
+            votes=votes,
+            min_user_vote_threshold=min_user_vote_threshold,
+            max_group_count=max_group_count,
         )
     except Exception as err:
         print(
@@ -149,24 +137,48 @@ def get_math_results():
             orient="records"
         )
 
-    print("\n\n")
-    print(
-        "statements_df",
-        result.statements_df.reset_index().to_dict(orient="records"),
-    )
-    print("\n\n")
-    print(
-        "participants_df",
-        result.participants_df.reset_index().to_dict(orient="records"),
-    )
-    print("\n\n")
-    print("group_comment_stats", group_comment_stats)
-    print("\n\n")
-    print("consensus", result.consensus)
-    print("\n\n")
-    print("repness", result.repness)
-    print("\n\n")
+    has_group_with_strictly_less_than_two_members = False
+    # Drop participants without a cluster_id (unclustered)
+    df = result.participants_df.dropna(subset=["cluster_id"]).copy()
+    # Loop through each unique cluster
+    for cluster_id in sorted(df["cluster_id"].unique()):
+        members = df[df["cluster_id"] == cluster_id].index.tolist()
+        num_members = len(members)
+        if num_members < 2:
+            has_group_with_strictly_less_than_two_members = True
+            if num_members != 1:
+                # 0 participant
+                print(f"Warning: a cluster has {num_members} participant!")
 
+    number_of_groups = len(group_comment_stats.keys())
+    if number_of_groups >= 3 and has_group_with_strictly_less_than_two_members:
+        new_max_group_count = number_of_groups - 1
+        print(
+            f"'{number_of_groups}' clusters found with at least one of them having 1 participant or less, recalculating maths by enforcing '{new_max_group_count}' groups maximum"
+        )
+        return get_maths(
+            votes=votes,
+            min_user_vote_threshold=min_user_vote_threshold,
+            max_group_count=new_max_group_count,
+        )
+
+    # print("\n\n")
+    # print(
+    #     "statements_df",
+    #     result.statements_df.reset_index().to_dict(orient="records"),
+    # )
+    # print("\n\n")
+    # print(
+    #     "participants_df",
+    #     result.participants_df.reset_index().to_dict(orient="records"),
+    # )
+    # print("\n\n")
+    # print("group_comment_stats", group_comment_stats)
+    # print("\n\n")
+    # print("consensus", result.consensus)
+    # print("\n\n")
+    # print("repness", result.repness)
+    # print("\n\n")
     return jsonify(
         {
             "statements_df": result.statements_df.reset_index().to_dict(
@@ -180,3 +192,25 @@ def get_math_results():
             "consensus": result.consensus,
         }
     ), 200
+
+
+@app.route("/math", methods=["POST"])
+def get_math_results():
+    try:
+        payload = MathRequest(**request.get_json())
+    except ValidationError as e:
+        abort(400, description=f"Validation error: {e}")
+    logging.info(
+        f"Processing math results for conversation '{payload.conversation_slug_id}' "
+        f"(ID: {payload.conversation_id}) with {len(payload.votes)} votes."
+    )
+    print("Payload", payload)
+    votes = [vote.model_dump() for vote in payload.votes]
+
+    # For fewer than 21 statements, gradually increase min_user_vote_threshold from 4 up to 7.
+    # At 14 statements and above (round(14/2) = 7), the threshold stays at 7.
+    total_statement_ids = {vote.statement_id for vote in payload.votes}
+    statement_count = len(total_statement_ids)
+    min_user_vote_threshold = max(4, min(round(statement_count / 2), 7))
+
+    return get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
