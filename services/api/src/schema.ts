@@ -744,6 +744,33 @@ export const userSpokenLanguagesTable = pgTable(
     ],
 );
 
+// User display language (UI language) - can have only one active
+export const userDisplayLanguageTable = pgTable(
+    "user_display_language",
+    {
+        id: serial("id").primaryKey(),
+        userId: uuid("user_id")
+            .references(() => userTable.id, { onDelete: "cascade" })
+            .notNull(),
+        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("user_display_language_user_idx").on(t.userId),
+        unique("user_display_language_unique").on(t.userId, t.languageCode),
+    ],
+);
+
 export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: varchar("name", { length: MAX_LENGTH_NAME_CREATOR })
