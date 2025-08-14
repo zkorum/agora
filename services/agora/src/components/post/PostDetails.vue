@@ -11,7 +11,7 @@
           :class="{ compactBackground: compactMode }"
         >
           <PostContent
-            :extended-post-data="extendedPostData"
+            :extended-post-data="conversationData"
             :compact-mode="compactMode"
             @open-moderation-history="openModerationHistory()"
           />
@@ -20,7 +20,7 @@
             v-model="currentTab"
             :compact-mode="compactMode"
             :opinion-count="
-              extendedPostData.metadata.opinionCount + commentCountOffset
+              conversationData.metadata.opinionCount + opinionCountOffset
             "
             @share="shareClicked()"
           />
@@ -29,37 +29,32 @@
             <AnalysisPage
               v-if="currentTab == 'analysis'"
               :conversation-slug-id="
-                props.extendedPostData.metadata.conversationSlugId
+                props.conversationData.metadata.conversationSlugId
               "
               :participant-count="
-                props.extendedPostData.metadata.participantCount
+                props.conversationData.metadata.participantCount
               "
-              :polis="props.extendedPostData.polis"
+              :polis="props.conversationData.polis"
             />
 
             <CommentSection
               v-if="currentTab == 'comment'"
-              ref="commentSectionRef"
-              :post-slug-id="extendedPostData.metadata.conversationSlugId"
-              :participant-count="participantCountLocal"
-              :polis="extendedPostData.polis"
+              ref="opinionSectionRef"
+              :post-slug-id="conversationData.metadata.conversationSlugId"
+              :polis="conversationData.polis"
               :is-post-locked="
-                extendedPostData.metadata.moderation.status == 'moderated'
+                conversationData.metadata.moderation.status == 'moderated'
               "
               :login-required-to-participate="
-                extendedPostData.metadata.isIndexed ||
-                extendedPostData.metadata.isLoginRequired
+                conversationData.metadata.isIndexed ||
+                conversationData.metadata.isLoginRequired
               "
-              :opinion-item-list-partial="opinionItemListPartial"
-              :comment-slug-id-liked-map="commentSlugIdLikedMap"
-              @deleted="decrementCommentCount()"
-              @change-vote="
-                (vote: VotingAction, opinionSlugId: string) =>
-                  changeVote(vote, opinionSlugId)
+              @deleted="decrementOpinionCount()"
+              @participant-count-delta="
+                (delta: number) => (participantCountLocal += delta)
               "
-              @update-comment-slug-id-liked-map="
-                (map: Map<string, VotingOption>) =>
-                  updateCommentSlugIdLikedMap(map)
+              @has-more-changed="
+                (newHasMore: boolean) => (hasMore = newHasMore)
               "
             />
           </div>
@@ -68,10 +63,10 @@
 
       <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
         <CommentComposer
-          :post-slug-id="extendedPostData.metadata.conversationSlugId"
+          :post-slug-id="conversationData.metadata.conversationSlugId"
           :login-required-to-participate="
-            extendedPostData.metadata.isIndexed ||
-            extendedPostData.metadata.isLoginRequired
+            conversationData.metadata.isIndexed ||
+            conversationData.metadata.isLoginRequired
           "
           @submitted-comment="
             (opinionSlugId: string) => submittedComment(opinionSlugId)
@@ -88,130 +83,80 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref, triggerRef } from "vue";
+import { ref } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import type {
-  ExtendedConversation,
-  VotingAction,
-  VotingOption,
-} from "src/shared/types/zod";
-import { useOpinionScrollableStore } from "src/stores/opinionScrollable";
-import { storeToRefs } from "pinia";
+import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = defineProps<{
-  extendedPostData: ExtendedConversation;
+  conversationData: ExtendedConversation;
   compactMode: boolean;
 }>();
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,
 });
 
-const commentSectionRef = ref<InstanceType<typeof CommentSection>>();
+const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 
-const commentCountOffset = ref(0);
+const opinionCountOffset = ref(0);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
 
-const { loadMore, updateOpinionVote, cancelOpinionVote } =
-  useOpinionScrollableStore();
-const { hasMore, opinionItemListPartial } = storeToRefs(
-  useOpinionScrollableStore()
-);
-const commentSlugIdLikedMap = ref<Map<string, VotingOption>>(new Map());
 const participantCountLocal = ref(
-  props.extendedPostData.metadata.participantCount
+  props.conversationData.metadata.participantCount
 );
+const hasMore = ref(true);
 
 const isPostLocked =
-  props.extendedPostData.metadata.moderation.status === "moderated" &&
-  props.extendedPostData.metadata.moderation.action === "lock";
+  props.conversationData.metadata.moderation.status === "moderated" &&
+  props.conversationData.metadata.moderation.action === "lock";
 
 function onLoad(index: number, done: () => void) {
-  loadMore();
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.triggerLoadMore();
+  }
   done();
 }
 
 function openModerationHistory() {
-  if (commentSectionRef.value) {
-    commentSectionRef.value.openModerationHistory();
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.openModerationHistory();
   } else {
-    console.warn("Comment section reference is undefined");
+    console.warn("Opinion section reference is undefined");
   }
 }
 
-function decrementCommentCount() {
-  commentCountOffset.value -= 1;
+function decrementOpinionCount() {
+  opinionCountOffset.value -= 1;
 }
 
 async function submittedComment(opinionSlugId: string) {
-  commentCountOffset.value += 1;
+  opinionCountOffset.value += 1;
   // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
   // Change this if you change this behaviour.
   changeVote("agree", opinionSlugId);
 
-  if (commentSectionRef.value) {
-    await commentSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
+  if (opinionSectionRef.value) {
+    await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
   }
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
-  switch (vote) {
-    case "agree": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      commentSlugIdLikedMap.value.set(opinionSlugId, "agree");
-      triggerRef(commentSlugIdLikedMap);
-      updateOpinionVote(opinionSlugId, "agree");
-      break;
-    }
-    case "disagree": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      commentSlugIdLikedMap.value.set(opinionSlugId, "disagree");
-      triggerRef(commentSlugIdLikedMap);
-      updateOpinionVote(opinionSlugId, "disagree");
-      break;
-    }
-    case "pass": {
-      if (commentSlugIdLikedMap.value.size === 0) {
-        participantCountLocal.value = participantCountLocal.value + 1;
-      }
-      commentSlugIdLikedMap.value.set(opinionSlugId, "pass");
-      triggerRef(commentSlugIdLikedMap);
-      updateOpinionVote(opinionSlugId, "pass");
-      break;
-    }
-    case "cancel": {
-      if (commentSlugIdLikedMap.value.size === 1) {
-        participantCountLocal.value = participantCountLocal.value - 1;
-      }
-      const originalVote = commentSlugIdLikedMap.value.get(opinionSlugId);
-      if (originalVote !== undefined) {
-        cancelOpinionVote(opinionSlugId, originalVote);
-      }
-      commentSlugIdLikedMap.value.delete(opinionSlugId);
-      triggerRef(commentSlugIdLikedMap);
-      break;
-    }
+  // Delegate all vote logic to CommentSection
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.changeVote(vote, opinionSlugId);
   }
-}
-
-function updateCommentSlugIdLikedMap(map: Map<string, VotingOption>) {
-  commentSlugIdLikedMap.value = map;
 }
 
 async function shareClicked() {
   const sharePostUrl = getConversationUrl(
-    props.extendedPostData.metadata.conversationSlugId
+    props.conversationData.metadata.conversationSlugId
   );
   await webShare.share(
-    "Agora - " + props.extendedPostData.payload.title,
+    "Agora - " + props.conversationData.payload.title,
     sharePostUrl
   );
 }
