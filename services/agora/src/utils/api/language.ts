@@ -6,6 +6,7 @@ import { useNotify } from "../ui/notify";
 import type {
   ApiV1UserLanguagePreferencesGetPost200Response,
   ApiV1UserLanguagePreferencesGetPostRequest,
+  ApiV1UserLanguagePreferencesUpdatePostRequest,
 } from "src/api";
 import type {
   SupportedSpokenLanguageCodes,
@@ -14,6 +15,7 @@ import type {
 
 export interface LanguagePreferencesData {
   spokenLanguages: SupportedSpokenLanguageCodes[];
+  displayLanguage: SupportedDisplayLanguageCodes;
 }
 
 export function useBackendLanguageApi() {
@@ -71,15 +73,18 @@ export function useBackendLanguageApi() {
     | AxiosErrorResponse;
 
   interface UpdateLanguagePreferencesProps {
-    spokenLanguages: SupportedSpokenLanguageCodes[];
+    spokenLanguages?: SupportedSpokenLanguageCodes[];
+    displayLanguage?: SupportedDisplayLanguageCodes;
   }
 
   async function updateLanguagePreferences({
     spokenLanguages,
+    displayLanguage,
   }: UpdateLanguagePreferencesProps): Promise<UpdateLanguagePreferencesResponse> {
     try {
-      const params: ApiV1UserLanguagePreferencesGetPost200Response = {
+      const params: ApiV1UserLanguagePreferencesUpdatePostRequest = {
         spokenLanguages: spokenLanguages,
+        displayLanguage: displayLanguage,
       };
 
       const { url, options } =

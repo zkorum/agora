@@ -84,7 +84,8 @@ import { computed, onMounted } from "vue";
 const { t } = useI18n();
 const languageStore = useLanguageStore();
 const { displayLanguage } = storeToRefs(languageStore);
-const { changeDisplayLanguage, loadSpokenLanguagesFromBackend } = languageStore;
+const { changeDisplayLanguage, loadLanguagePreferencesFromBackend } =
+  languageStore;
 
 const authStore = useAuthenticationStore();
 
@@ -115,11 +116,11 @@ function selectDisplayLanguage(
   }
 }
 
-// Load user's display preference on page mount
+// Load user's language preferences on page mount
 onMounted(async () => {
   // If authenticated, sync with backend in background
   if (authStore.isLoggedIn) {
-    await loadSpokenLanguagesFromBackend();
+    await loadLanguagePreferencesFromBackend();
   }
 });
 </script>

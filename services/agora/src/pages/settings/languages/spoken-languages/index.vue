@@ -165,7 +165,8 @@ import { computed, onMounted, ref } from "vue";
 const { t } = useI18n();
 const languageStore = useLanguageStore();
 const { spokenLanguages } = storeToRefs(languageStore);
-const { updateSpokenLanguages, loadSpokenLanguagesFromBackend } = languageStore;
+const { updateSpokenLanguages, loadLanguagePreferencesFromBackend } =
+  languageStore;
 
 const authStore = useAuthenticationStore();
 const { showNotifyMessage } = useNotify();
@@ -267,7 +268,7 @@ onMounted(async () => {
   // If authenticated, sync with backend
   if (authStore.isLoggedIn) {
     try {
-      await loadSpokenLanguagesFromBackend();
+      await loadLanguagePreferencesFromBackend();
     } catch (err) {
       console.error("Failed to load spoken languages from backend:", err);
       showNotifyMessage(
