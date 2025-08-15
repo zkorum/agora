@@ -50,7 +50,7 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
-import { getLanguageByCode } from "src/shared/languages";
+import { getLanguageByCode } from "src/utils/language";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { computed } from "vue";

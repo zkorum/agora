@@ -159,7 +159,7 @@ import {
   searchLanguages,
   sortLanguagesByEnglishName,
   getLanguageByCode,
-} from "src/shared/languages";
+} from "src/utils/language";
 import { computed, onMounted, ref } from "vue";
 
 const { t } = useI18n();
