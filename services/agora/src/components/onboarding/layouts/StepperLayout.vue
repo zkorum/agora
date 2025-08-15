@@ -24,8 +24,8 @@
 </template>
 
 <script setup lang="ts">
-import OnboardStepper from "src/components/onboarding/OnboardStepper.vue";
-import ZKButton from "../ui-library/ZKButton.vue";
+import OnboardStepper from "src/components/onboarding/layouts/OnboardStepper.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 defineProps<{
   submitCallBack: () => void;

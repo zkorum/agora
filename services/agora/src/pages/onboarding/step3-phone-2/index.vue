@@ -79,8 +79,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { onMounted, ref, computed } from "vue";
