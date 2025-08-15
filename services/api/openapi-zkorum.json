@@ -6647,10 +6647,19 @@
                                                 ]
                                             },
                                             "minItems": 1
+                                        },
+                                        "displayLanguage": {
+                                            "type": "string",
+                                            "enum": [
+                                                "en",
+                                                "es",
+                                                "fr"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "spokenLanguages"
+                                        "spokenLanguages",
+                                        "displayLanguage"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -6724,16 +6733,20 @@
                                             ]
                                         },
                                         "minItems": 1
+                                    },
+                                    "displayLanguage": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr"
+                                        ]
                                     }
                                 },
-                                "required": [
-                                    "spokenLanguages"
-                                ],
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {

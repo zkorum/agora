@@ -36,6 +36,7 @@ import {
     zodFeedSortAlgorithm,
     zodLinkType,
     zodPolisUrl,
+    zodLanguagePreferences,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -525,15 +526,15 @@ export class Dto {
         })
         .strict();
 
-    static getLanguagePreferencesResponse = z
-        .object({
-            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
-        })
-        .strict();
+    static getLanguagePreferencesResponse = zodLanguagePreferences;
 
     static updateLanguagePreferencesRequest = z
         .object({
-            spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
+            spokenLanguages: z
+                .array(ZodSupportedSpokenLanguageCodes)
+                .min(1)
+                .optional(),
+            displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
         })
         .strict();
 }
