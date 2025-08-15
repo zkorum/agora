@@ -4,21 +4,11 @@ import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import type { ApiV1UserLanguagePreferencesUpdatePostRequest } from "src/api";
-import {
-  ZodSupportedDisplayLanguageCodes,
-  ZodSupportedSpokenLanguageCodes,
-} from "src/shared/languages";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { z } from "zod";
-
-export const ZodLanguagePreferencesData = z.object({
-  spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes),
-  displayLanguage: ZodSupportedDisplayLanguageCodes,
-});
-
-export type LanguagePreferencesData = z.infer<
-  typeof ZodLanguagePreferencesData
->;
+import {
+  zodLanguagePreferences,
+  type LanguagePreferences as LanguagePreferencesData,
+} from "src/shared/types/zod";
 
 export function useBackendLanguageApi() {
   const {
@@ -35,7 +25,7 @@ export function useBackendLanguageApi() {
     | FetchLanguagePreferencesSuccessResponse
     | AxiosErrorResponse;
 
-  async function fetchLanguagePreferences({
+  async function getLanguagePreferences({
     currentDisplayLanguage,
   }: {
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
@@ -59,7 +49,7 @@ export function useBackendLanguageApi() {
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      const parsed = ZodLanguagePreferencesData.safeParse(response.data);
+      const parsed = zodLanguagePreferences.safeParse(response.data);
 
       if (!parsed.success) {
         throw new Error("Failed to parse language preferences");
@@ -97,7 +87,7 @@ export function useBackendLanguageApi() {
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
+      await DefaultApiFactory(
         undefined,
         undefined,
         api
@@ -108,7 +98,7 @@ export function useBackendLanguageApi() {
 
       return {
         status: "success",
-        data: response.data,
+        data: undefined,
       };
     } catch (e) {
       console.error("Failed to update language preferences:", e);
@@ -118,7 +108,7 @@ export function useBackendLanguageApi() {
   }
 
   return {
-    fetchLanguagePreferences,
+    getLanguagePreferences,
     updateLanguagePreferences,
   };
 }

@@ -106,7 +106,7 @@ function selectDisplayLanguage(
   }
 
   try {
-    changeDisplayLanguage(languageCode);
+    changeDisplayLanguage({ newLanguage: languageCode });
   } catch (err: unknown) {
     console.error("Failed to change language:", err);
     // Type guard for error handling
