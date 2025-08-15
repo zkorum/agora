@@ -60,8 +60,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
