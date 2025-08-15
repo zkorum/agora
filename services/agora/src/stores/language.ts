@@ -59,7 +59,9 @@ export const useLanguageStore = defineStore("language", () => {
 
   async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences> {
     try {
-      const response = await fetchLanguagePreferences(displayLanguage.value);
+      const response = await fetchLanguagePreferences({
+        currentDisplayLanguage: displayLanguage.value,
+      });
 
       if (response.status === "success") {
         const validationResult = zodLanguagePreferences.safeParse(
@@ -97,6 +99,7 @@ export const useLanguageStore = defineStore("language", () => {
     try {
       const response = await updateLanguagePreferences({
         spokenLanguages: newSpokenLanguages,
+        displayLanguage: displayLanguage.value,
       });
 
       if (response.status === "success") {
@@ -117,6 +120,7 @@ export const useLanguageStore = defineStore("language", () => {
   ) {
     try {
       const response = await updateLanguagePreferences({
+        spokenLanguages: spokenLanguages.value,
         displayLanguage: newDisplayLanguage,
       });
 

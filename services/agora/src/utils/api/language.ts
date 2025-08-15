@@ -3,20 +3,22 @@ import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
-import type {
-  ApiV1UserLanguagePreferencesGetPost200Response,
-  ApiV1UserLanguagePreferencesGetPostRequest,
-  ApiV1UserLanguagePreferencesUpdatePostRequest,
-} from "src/api";
-import type {
-  SupportedSpokenLanguageCodes,
-  SupportedDisplayLanguageCodes,
+import type { ApiV1UserLanguagePreferencesUpdatePostRequest } from "src/api";
+import {
+  ZodSupportedDisplayLanguageCodes,
+  ZodSupportedSpokenLanguageCodes,
 } from "src/shared/languages";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import { z } from "zod";
 
-export interface LanguagePreferencesData {
-  spokenLanguages: SupportedSpokenLanguageCodes[];
-  displayLanguage: SupportedDisplayLanguageCodes;
-}
+export const ZodLanguagePreferencesData = z.object({
+  spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes),
+  displayLanguage: ZodSupportedDisplayLanguageCodes,
+});
+
+export type LanguagePreferencesData = z.infer<
+  typeof ZodLanguagePreferencesData
+>;
 
 export function useBackendLanguageApi() {
   const {
@@ -28,22 +30,22 @@ export function useBackendLanguageApi() {
   const { showNotifyMessage } = useNotify();
 
   type FetchLanguagePreferencesSuccessResponse =
-    AxiosSuccessResponse<ApiV1UserLanguagePreferencesGetPost200Response>;
+    AxiosSuccessResponse<LanguagePreferencesData>;
   type FetchLanguagePreferencesResponse =
     | FetchLanguagePreferencesSuccessResponse
     | AxiosErrorResponse;
 
-  async function fetchLanguagePreferences(
-    currentDisplayLanguage: SupportedDisplayLanguageCodes
-  ): Promise<FetchLanguagePreferencesResponse> {
+  async function fetchLanguagePreferences({
+    currentDisplayLanguage,
+  }: {
+    currentDisplayLanguage: SupportedDisplayLanguageCodes;
+  }): Promise<FetchLanguagePreferencesResponse> {
     try {
-      const params: ApiV1UserLanguagePreferencesGetPostRequest = {
-        currentDisplayLanguage: currentDisplayLanguage,
-      };
-
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1UserLanguagePreferencesGetPost(
-          params
+          {
+            currentDisplayLanguage,
+          }
         );
       const encodedUcan = await buildEncodedUcan(url, options);
       const response = await DefaultApiFactory(
@@ -51,13 +53,21 @@ export function useBackendLanguageApi() {
         undefined,
         api
       ).apiV1UserLanguagePreferencesGetPost(
-        params,
+        {
+          currentDisplayLanguage,
+        },
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
+      const parsed = ZodLanguagePreferencesData.safeParse(response.data);
+
+      if (!parsed.success) {
+        throw new Error("Failed to parse language preferences");
+      }
+
       return {
         status: "success",
-        data: response.data,
+        data: parsed.data,
       };
     } catch (e) {
       console.error("Failed to fetch language preferences:", e);
@@ -72,15 +82,10 @@ export function useBackendLanguageApi() {
     | UpdateLanguagePreferencesSuccessResponse
     | AxiosErrorResponse;
 
-  interface UpdateLanguagePreferencesProps {
-    spokenLanguages?: SupportedSpokenLanguageCodes[];
-    displayLanguage?: SupportedDisplayLanguageCodes;
-  }
-
   async function updateLanguagePreferences({
     spokenLanguages,
     displayLanguage,
-  }: UpdateLanguagePreferencesProps): Promise<UpdateLanguagePreferencesResponse> {
+  }: LanguagePreferencesData): Promise<UpdateLanguagePreferencesResponse> {
     try {
       const params: ApiV1UserLanguagePreferencesUpdatePostRequest = {
         spokenLanguages: spokenLanguages,
