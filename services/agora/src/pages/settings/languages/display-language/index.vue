@@ -78,7 +78,7 @@ import type {
   SupportedDisplayLanguageCodes,
   DisplayLanguageMetadata,
 } from "src/shared/languages";
-import { getDisplayLanguages } from "src/shared/languages";
+import { getDisplayLanguages } from "src/utils/language";
 import { computed, onMounted } from "vue";
 
 const { t } = useI18n();

@@ -10,7 +10,7 @@ import type {
   SupportedSpokenLanguageCodes,
   SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import { parseBrowserLanguage } from "src/shared/languages";
+import { parseBrowserLanguage } from "src/utils/language";
 import type { LanguagePreferences } from "src/shared/types/zod";
 import { zodLanguagePreferences } from "src/shared/types/zod";
 

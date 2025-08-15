@@ -369,61 +369,26 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
     },
 ];
 
-// Helper functions
-export function getLanguageByCode(code: string): LanguageMetadata | undefined {
-    return SupportedSpokenLanguageMetadataList.find(
-        (lang) => lang.code === code,
-    );
-}
-
-export function getDisplayLanguages(): DisplayLanguageMetadata[] {
-    return SupportedSpokenLanguageMetadataList.filter(
-        (lang): lang is DisplayLanguageMetadata =>
-            lang.displaySupported &&
-            ZodSupportedDisplayLanguageCodes.options.includes(
-                lang.code as SupportedDisplayLanguageCodes,
-            ),
-    );
-}
-
-export function getSpokenLanguages(): LanguageMetadata[] {
-    return SupportedSpokenLanguageMetadataList; // All languages can be spoken languages
-}
-
 /**
- * Normalize language code to match our supported languages
+ * Normalize language code to match our supported languages with Zod transform
  * e.g., 'en-US' -> 'en' (for display languages)
  */
-export function normalizeLanguageCode(
-    code: string,
-    forDisplay: true,
-): SupportedDisplayLanguageCodes;
-export function normalizeLanguageCode(
-    code: string,
-    forDisplay?: false,
-): SupportedSpokenLanguageCodes;
-export function normalizeLanguageCode(
-    code: string,
-    forDisplay = false,
-): SupportedDisplayLanguageCodes | SupportedSpokenLanguageCodes {
+export const ZodNormalizeDisplayLanguageCode = z.string().transform((code) => {
+    if (!code) return "en";
+
+    const lowered = code.toLowerCase();
+    const primary = lowered.split("-")[0];
+
+    const result = ZodSupportedDisplayLanguageCodes.safeParse(primary);
+    return result.success ? result.data : "en";
+});
+
+export const ZodNormalizeSpokenLanguageCode = z.string().transform((code) => {
     if (!code) return "en";
 
     const lowered = code.toLowerCase();
 
-    // For display languages, simplify to primary language
-    if (forDisplay) {
-        const primary = lowered.split("-")[0];
-        if (
-            ZodSupportedDisplayLanguageCodes.options.includes(
-                primary as SupportedDisplayLanguageCodes,
-            )
-        ) {
-            return primary as SupportedDisplayLanguageCodes;
-        }
-        return "en"; // Default
-    }
-
-    // For spoken languages, try exact match first
+    // Try exact match first
     const exactMatch = SupportedSpokenLanguageMetadataList.find(
         (lang) => lang.code.toLowerCase() === lowered,
     );
@@ -436,114 +401,18 @@ export function normalizeLanguageCode(
     );
     if (primaryMatch) return primaryMatch.code;
 
-    return "en"; // Default
-}
+    return "en";
+});
 
 /**
- * Parse browser language to our supported format
+ * Parse browser language to our supported format with Zod
  */
-export function parseBrowserLanguage(browserLang: string): {
-    displayLanguage: SupportedDisplayLanguageCodes;
-    spokenLanguages: SupportedSpokenLanguageCodes[];
-} {
-    const normalized = normalizeLanguageCode(browserLang, true);
-    const spoken = normalizeLanguageCode(browserLang, false);
+export const ZodParseBrowserLanguage = z.string().transform((browserLang) => {
+    const displayLanguage = ZodNormalizeDisplayLanguageCode.parse(browserLang);
+    const spokenLanguage = ZodNormalizeSpokenLanguageCode.parse(browserLang);
 
     return {
-        displayLanguage: normalized,
-        spokenLanguages: [spoken],
+        displayLanguage,
+        spokenLanguages: [spokenLanguage] as SupportedSpokenLanguageCodes[],
     };
-}
-
-/**
- * Sort languages alphabetically by their English name
- */
-export function sortLanguagesByEnglishName(
-    langs: LanguageMetadata[],
-): LanguageMetadata[] {
-    return [...langs].sort((a, b) =>
-        a.englishName.localeCompare(b.englishName),
-    );
-}
-
-/**
- * Sort languages alphabetically by their native name
- */
-export function sortLanguagesByNativeName(
-    langs: LanguageMetadata[],
-): LanguageMetadata[] {
-    return [...langs].sort((a, b) => a.name.localeCompare(b.name));
-}
-
-/**
- * Search languages by name (native or English)
- */
-export function searchLanguages(
-    query: string,
-    langs: LanguageMetadata[] = SupportedSpokenLanguageMetadataList,
-): LanguageMetadata[] {
-    const lowerQuery = query.toLowerCase();
-    return langs.filter(
-        (lang) =>
-            lang.name.toLowerCase().includes(lowerQuery) ||
-            lang.englishName.toLowerCase().includes(lowerQuery) ||
-            lang.code.toLowerCase().includes(lowerQuery),
-    );
-}
-
-/**
- * Validate and return a SupportedDisplayLanguageCodes if the code is valid, otherwise undefined
- */
-export function toSupportedDisplayLanguageCode(
-    code: string,
-): SupportedDisplayLanguageCodes | undefined {
-    const result = ZodSupportedDisplayLanguageCodes.safeParse(code);
-    return result.success ? result.data : undefined;
-}
-
-/**
- * Validate and return a SupportedSpokenLanguageCodes if the code is valid, otherwise undefined
- */
-export function toSupportedSpokenLanguageCode(
-    code: string,
-): SupportedSpokenLanguageCodes | undefined {
-    const result = ZodSupportedSpokenLanguageCodes.safeParse(code);
-    return result.success ? result.data : undefined;
-}
-
-/**
- * Validate that display language metadata is consistent
- * Internal function to ensure data integrity
- */
-function validateDisplayLanguageConsistency(): void {
-    const displayLanguages = SupportedSpokenLanguageMetadataList.filter(
-        (lang) => lang.displaySupported,
-    );
-    const invalidDisplayLanguages = displayLanguages.filter(
-        (lang) =>
-            !ZodSupportedDisplayLanguageCodes.options.includes(
-                lang.code as SupportedDisplayLanguageCodes,
-            ),
-    );
-
-    if (invalidDisplayLanguages.length > 0) {
-        console.warn(
-            `Warning: Found languages marked as displaySupported but not in SupportedDisplayLanguageCodes:`,
-            invalidDisplayLanguages.map((lang) => lang.code),
-        );
-    }
-}
-
-/**
- * Get display language metadata by code (type-safe)
- */
-export function getDisplayLanguageByCode(
-    code: SupportedDisplayLanguageCodes,
-): DisplayLanguageMetadata | undefined {
-    return getDisplayLanguages().find((lang) => lang.code === code);
-}
-
-// Run validation in development
-if (process.env.NODE_ENV !== "production") {
-    validateDisplayLanguageConsistency();
-}
+});
