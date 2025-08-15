@@ -20,9 +20,7 @@ export function getDisplayLanguages(): DisplayLanguageMetadata[] {
   return SupportedSpokenLanguageMetadataList.filter(
     (lang): lang is DisplayLanguageMetadata =>
       lang.displaySupported &&
-      ZodSupportedDisplayLanguageCodes.options.includes(
-        lang.code as SupportedDisplayLanguageCodes
-      )
+      ZodSupportedDisplayLanguageCodes.safeParse(lang.code).success
   );
 }
 
@@ -34,18 +32,27 @@ export function getSpokenLanguages(): LanguageMetadata[] {
  * Normalize language code to match our supported languages
  * e.g., 'en-US' -> 'en' (for display languages)
  */
-export function normalizeLanguageCode(
-  code: string,
-  forDisplay: true
-): SupportedDisplayLanguageCodes;
-export function normalizeLanguageCode(
-  code: string,
-  forDisplay?: false
-): SupportedSpokenLanguageCodes;
-export function normalizeLanguageCode(
-  code: string,
-  forDisplay = false
-): SupportedDisplayLanguageCodes | SupportedSpokenLanguageCodes {
+export function normalizeLanguageCode({
+  code,
+  forDisplay,
+}: {
+  code: string;
+  forDisplay: true;
+}): SupportedDisplayLanguageCodes;
+export function normalizeLanguageCode({
+  code,
+  forDisplay,
+}: {
+  code: string;
+  forDisplay?: false;
+}): SupportedSpokenLanguageCodes;
+export function normalizeLanguageCode({
+  code,
+  forDisplay = false,
+}: {
+  code: string;
+  forDisplay?: boolean;
+}): SupportedDisplayLanguageCodes | SupportedSpokenLanguageCodes {
   if (forDisplay) {
     return ZodNormalizeDisplayLanguageCode.parse(code);
   }
@@ -55,7 +62,11 @@ export function normalizeLanguageCode(
 /**
  * Parse browser language to our supported format
  */
-export function parseBrowserLanguage(browserLang: string): {
+export function parseBrowserLanguage({
+  browserLang,
+}: {
+  browserLang: string;
+}): {
   displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
 } {
@@ -65,19 +76,24 @@ export function parseBrowserLanguage(browserLang: string): {
 /**
  * Sort languages alphabetically by their English name
  */
-export function sortLanguagesByEnglishName(
-  langs: LanguageMetadata[]
-): LanguageMetadata[] {
+export function sortLanguagesByEnglishName({
+  langs,
+}: {
+  langs: LanguageMetadata[];
+}): LanguageMetadata[] {
   return [...langs].sort((a, b) => a.englishName.localeCompare(b.englishName));
 }
 
 /**
  * Search languages by name (native or English)
  */
-export function searchLanguages(
-  query: string,
-  langs: LanguageMetadata[] = SupportedSpokenLanguageMetadataList
-): LanguageMetadata[] {
+export function searchLanguages({
+  query,
+  langs = SupportedSpokenLanguageMetadataList,
+}: {
+  query: string;
+  langs?: LanguageMetadata[];
+}): LanguageMetadata[] {
   const lowerQuery = query.toLowerCase();
   return langs.filter(
     (lang) =>

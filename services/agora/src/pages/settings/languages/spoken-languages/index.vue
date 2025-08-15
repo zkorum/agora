@@ -177,7 +177,7 @@ const isSaving = ref(false);
 
 // Get all available spoken languages, sorted by English name
 const allSpokenLanguages: ComputedRef<LanguageMetadata[]> = computed(() =>
-  sortLanguagesByEnglishName(getSpokenLanguages())
+  sortLanguagesByEnglishName({ langs: getSpokenLanguages() })
 );
 
 // Get currently selected languages with metadata
@@ -202,7 +202,10 @@ const filteredAvailableLanguages: ComputedRef<LanguageMetadata[]> = computed(
     if (!searchQuery.value.trim()) {
       return availableLanguages.value;
     }
-    return searchLanguages(searchQuery.value, availableLanguages.value);
+    return searchLanguages({
+      query: searchQuery.value,
+      langs: availableLanguages.value,
+    });
   }
 );
 
@@ -248,7 +251,7 @@ async function saveLanguageChanges(
 
   isSaving.value = true;
   try {
-    await updateSpokenLanguages(newLanguages);
+    await updateSpokenLanguages({ newLanguages });
   } catch (err: unknown) {
     console.error("Failed to update spoken languages:", err);
     // Error handling is now managed by the composable

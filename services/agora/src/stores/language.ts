@@ -5,7 +5,6 @@ import { useLocalStorage } from "@vueuse/core";
 import { useBackendLanguageApi } from "src/utils/api/language";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotify } from "src/utils/ui/notify";
-import type { MessageLanguages } from "src/boot/i18n";
 import type {
   SupportedSpokenLanguageCodes,
   SupportedDisplayLanguageCodes,
@@ -14,28 +13,32 @@ import { parseBrowserLanguage } from "src/utils/language";
 import type { LanguagePreferences } from "src/shared/types/zod";
 import { zodLanguagePreferences } from "src/shared/types/zod";
 
-function getDefaultDisplayLanguage(): MessageLanguages {
+function getDefaultDisplayLanguage(): SupportedDisplayLanguageCodes {
   // Use browser detection for smart default
-  const browserDetection = parseBrowserLanguage(navigator.language);
+  const browserDetection = parseBrowserLanguage({
+    browserLang: navigator.language,
+  });
   return browserDetection.displayLanguage;
 }
 
 function getDefaultSpokenLanguages(): SupportedSpokenLanguageCodes[] {
   // Use browser detection for smart default
-  const browserDetection = parseBrowserLanguage(navigator.language);
+  const browserDetection = parseBrowserLanguage({
+    browserLang: navigator.language,
+  });
   return browserDetection.spokenLanguages;
 }
 
 export const useLanguageStore = defineStore("language", () => {
   const { locale, availableLocales } = useI18n();
-  const { fetchLanguagePreferences, updateLanguagePreferences } =
+  const { getLanguagePreferences, updateLanguagePreferences } =
     useBackendLanguageApi();
 
   const authStore = useAuthenticationStore();
   const { showNotifyMessage } = useNotify();
 
   // Single source of truth: localStorage-backed reactive refs with smart defaults
-  const displayLanguage = useLocalStorage<MessageLanguages>(
+  const displayLanguage = useLocalStorage<SupportedDisplayLanguageCodes>(
     "displayLanguage",
     getDefaultDisplayLanguage()
   );
@@ -50,16 +53,16 @@ export const useLanguageStore = defineStore("language", () => {
     locale.value = displayLanguage.value;
   }
 
-  function updateLocale(localeCode: SupportedDisplayLanguageCodes) {
+  function updateLocale(localeCode: SupportedDisplayLanguageCodes): void {
     if (availableLocales.includes(localeCode)) {
       locale.value = localeCode;
       displayLanguage.value = localeCode;
     }
   }
 
-  async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences> {
+  async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences | null> {
     try {
-      const response = await fetchLanguagePreferences({
+      const response = await getLanguagePreferences({
         currentDisplayLanguage: displayLanguage.value,
       });
 
@@ -82,20 +85,22 @@ export const useLanguageStore = defineStore("language", () => {
         // Update display language from backend
         updateLocale(validated.displayLanguage);
 
-        return response.data;
+        return validated;
       } else {
         throw new Error("Failed to fetch language preferences from backend");
       }
     } catch (err) {
       showNotifyMessage("Failed to fetch language preferences from backend");
       console.error("Error fetching language preferences from backend:", err);
-      throw err;
+      return null;
     }
   }
 
-  async function saveSpokenLanguagesToBackend(
-    newSpokenLanguages: SupportedSpokenLanguageCodes[]
-  ) {
+  async function saveSpokenLanguagesToBackend({
+    newSpokenLanguages,
+  }: {
+    newSpokenLanguages: SupportedSpokenLanguageCodes[];
+  }): Promise<void> {
     try {
       const response = await updateLanguagePreferences({
         spokenLanguages: newSpokenLanguages,
@@ -104,7 +109,6 @@ export const useLanguageStore = defineStore("language", () => {
 
       if (response.status === "success") {
         spokenLanguages.value = newSpokenLanguages;
-        return response.data;
       } else {
         throw new Error("Failed to save language preferences");
       }
@@ -115,18 +119,18 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  async function saveDisplayLanguageToBackend(
-    newDisplayLanguage: SupportedDisplayLanguageCodes
-  ) {
+  async function saveDisplayLanguageToBackend({
+    newDisplayLanguage,
+  }: {
+    newDisplayLanguage: SupportedDisplayLanguageCodes;
+  }): Promise<void> {
     try {
       const response = await updateLanguagePreferences({
         spokenLanguages: spokenLanguages.value,
         displayLanguage: newDisplayLanguage,
       });
 
-      if (response.status === "success") {
-        return response.data;
-      } else {
+      if (response.status !== "success") {
         throw new Error("Failed to save display language preference");
       }
     } catch (err) {
@@ -136,55 +140,62 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  async function updateSpokenLanguages(
-    newLanguages: SupportedSpokenLanguageCodes[]
-  ) {
+  async function updateSpokenLanguages({
+    newLanguages,
+  }: {
+    newLanguages: SupportedSpokenLanguageCodes[];
+  }): Promise<boolean> {
     const previousSpokenLanguages = [...spokenLanguages.value];
 
     try {
       spokenLanguages.value = newLanguages;
 
       if (authStore.isLoggedIn) {
-        try {
-          await saveSpokenLanguagesToBackend(newLanguages);
-        } catch (err) {
-          spokenLanguages.value = previousSpokenLanguages;
-
-          showNotifyMessage("Failed to save language preferences to API");
-          console.error("Failed to save language preferences to API:", err);
-          throw err;
-        }
+        await saveSpokenLanguagesToBackend({
+          newSpokenLanguages: newLanguages,
+        });
       }
 
       return true;
     } catch (err) {
+      spokenLanguages.value = previousSpokenLanguages;
       showNotifyMessage("Failed to update spoken languages");
       console.error("Error updating spoken languages:", err);
-      throw err;
+      return false;
     }
   }
 
-  function changeDisplayLanguage(newLanguage: SupportedDisplayLanguageCodes) {
+  function changeDisplayLanguage({
+    newLanguage,
+  }: {
+    newLanguage: SupportedDisplayLanguageCodes;
+  }): boolean {
+    const originalLanguage = displayLanguage.value;
     try {
       updateLocale(newLanguage);
 
       // Save to backend if user is authenticated (in background)
       if (authStore.isLoggedIn) {
-        saveDisplayLanguageToBackend(newLanguage).catch((err) => {
-          console.error("Failed to save display language to backend:", err);
-          // Don't throw error - user experience should continue even if backend save fails
-        });
+        saveDisplayLanguageToBackend({ newDisplayLanguage: newLanguage }).catch(
+          (err) => {
+            // Revert on failure
+            updateLocale(originalLanguage);
+            console.error("Failed to save display language to backend:", err);
+          }
+        );
       }
 
       return true;
     } catch (err) {
       showNotifyMessage("Failed to change display language");
       console.error("Error changing display language:", err);
-      throw err;
+      // Revert on failure
+      updateLocale(originalLanguage);
+      return false;
     }
   }
 
-  function clearLanguagePreferences() {
+  function clearLanguagePreferences(): void {
     // Reset spoken languages to include current display language
     spokenLanguages.value = [displayLanguage.value];
   }

@@ -22,7 +22,7 @@ const languageStore = useLanguageStore();
 const actualLocale = computed({
   get: () => languageStore.displayLanguage,
   set: (value) => {
-    void languageStore.changeDisplayLanguage(value);
+    void languageStore.changeDisplayLanguage({ newLanguage: value });
   },
 });
 

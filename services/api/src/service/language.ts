@@ -29,7 +29,7 @@ export async function getLanguagePreferences({
     // Use a transaction to ensure consistency between read and potential write
     return await db.transaction(async (tx) => {
         // Get spoken languages (excluding soft-deleted ones)
-        const spokenLangsResult = await tx
+        const spokenLanguagesResult = await tx
             .select({
                 languageCode: userSpokenLanguagesTable.languageCode,
             })
@@ -43,19 +43,28 @@ export async function getLanguagePreferences({
 
         let spokenLanguages: string[];
 
-        if (spokenLangsResult.length > 0) {
+        if (spokenLanguagesResult.length > 0) {
             // User has existing preferences, use them
-            spokenLanguages = spokenLangsResult.map((row) => row.languageCode);
+            spokenLanguages = spokenLanguagesResult.map(
+                (row) => row.languageCode,
+            );
         } else {
             // No preferences exist, save the display language as default and use it
             const defaultLanguageCode = request.currentDisplayLanguage;
 
             // Validate the display language is a valid spoken language using zod
-            const spokenLangValidation =
+            const spokenLanguageValidation =
                 ZodSupportedSpokenLanguageCodes.safeParse(defaultLanguageCode);
-            if (!spokenLangValidation.success) {
+            if (!spokenLanguageValidation.success) {
                 throw httpErrors.internalServerError(
                     `Invalid display language: ${defaultLanguageCode}`,
+                );
+            }
+
+            // Validate length constraint to match database varchar(35)
+            if (defaultLanguageCode.length > 35) {
+                throw httpErrors.internalServerError(
+                    `Language code too long: ${defaultLanguageCode} (max 35 characters)`,
                 );
             }
 
@@ -70,7 +79,7 @@ export async function getLanguagePreferences({
         }
 
         // Get display language (excluding soft-deleted ones)
-        const displayLangResult = await tx
+        const displayLanguageResult = await tx
             .select({
                 languageCode: userDisplayLanguageTable.languageCode,
             })
@@ -85,21 +94,28 @@ export async function getLanguagePreferences({
 
         let displayLanguage: string;
 
-        if (displayLangResult.length > 0) {
+        if (displayLanguageResult.length > 0) {
             // User has existing display language preference, use it
-            displayLanguage = displayLangResult[0].languageCode;
+            displayLanguage = displayLanguageResult[0].languageCode;
         } else {
             // No display language preference exists, save the current display language as default
             const defaultDisplayLanguage = request.currentDisplayLanguage;
 
             // Validate the display language using zod
-            const displayLangValidation =
+            const displayLanguageValidation =
                 ZodSupportedDisplayLanguageCodes.safeParse(
                     defaultDisplayLanguage,
                 );
-            if (!displayLangValidation.success) {
+            if (!displayLanguageValidation.success) {
                 throw httpErrors.internalServerError(
                     `Invalid display language: ${defaultDisplayLanguage}`,
+                );
+            }
+
+            // Validate length constraint to match database varchar(35)
+            if (defaultDisplayLanguage.length > 35) {
+                throw httpErrors.internalServerError(
+                    `Language code too long: ${defaultDisplayLanguage} (max 35 characters)`,
                 );
             }
 
@@ -125,9 +141,9 @@ export async function getLanguagePreferences({
         });
 
         // Validate display language from DB using zod
-        const displayLangValidation =
+        const displayLanguageValidation =
             ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
-        if (!displayLangValidation.success) {
+        if (!displayLanguageValidation.success) {
             throw httpErrors.internalServerError(
                 `Invalid display language in database: ${displayLanguage}`,
             );
@@ -135,7 +151,7 @@ export async function getLanguagePreferences({
 
         return {
             spokenLanguages: validSpokenLanguageList,
-            displayLanguage: displayLangValidation.data,
+            displayLanguage: displayLanguageValidation.data,
         };
     });
 }
@@ -160,8 +176,15 @@ export async function updateLanguagePreferences({
                 const validation =
                     ZodSupportedSpokenLanguageCodes.safeParse(langCode);
                 if (!validation.success) {
-                    throw new Error(
+                    throw httpErrors.internalServerError(
                         `Invalid spoken language code: ${langCode}`,
+                    );
+                }
+
+                // Validate length constraint to match database varchar(35)
+                if (langCode.length > 35) {
+                    throw httpErrors.internalServerError(
+                        `Language code too long: ${langCode} (max 35 characters)`,
                     );
                 }
             }
@@ -231,8 +254,15 @@ export async function updateLanguagePreferences({
                 preferences.displayLanguage,
             );
             if (!validation.success) {
-                throw new Error(
+                throw httpErrors.internalServerError(
                     `Invalid display language code: ${preferences.displayLanguage}`,
+                );
+            }
+
+            // Validate length constraint to match database varchar(35)
+            if (preferences.displayLanguage.length > 35) {
+                throw httpErrors.internalServerError(
+                    `Language code too long: ${preferences.displayLanguage} (max 35 characters)`,
                 );
             }
 
