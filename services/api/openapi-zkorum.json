@@ -6556,6 +6556,204 @@
                     }
                 }
             }
+        },
+        "/api/v1/user/language-preferences/get": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "currentDisplayLanguage": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "currentDisplayLanguage"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "spokenLanguages": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "en-GB",
+                                                    "ar",
+                                                    "ar-fem",
+                                                    "bn",
+                                                    "eu",
+                                                    "bg",
+                                                    "ca",
+                                                    "hr",
+                                                    "cs",
+                                                    "da",
+                                                    "nl",
+                                                    "fil",
+                                                    "fi",
+                                                    "gl",
+                                                    "de",
+                                                    "el",
+                                                    "gu",
+                                                    "he",
+                                                    "hi",
+                                                    "hu",
+                                                    "id",
+                                                    "ga",
+                                                    "it",
+                                                    "ja",
+                                                    "kn",
+                                                    "ko",
+                                                    "ms",
+                                                    "mr",
+                                                    "no",
+                                                    "fa",
+                                                    "pl",
+                                                    "pt",
+                                                    "ro",
+                                                    "ru",
+                                                    "sr",
+                                                    "zh-Hans",
+                                                    "sk",
+                                                    "sv",
+                                                    "ta",
+                                                    "th",
+                                                    "zh-Hant",
+                                                    "tr",
+                                                    "uk",
+                                                    "ur",
+                                                    "vi"
+                                                ]
+                                            },
+                                            "minItems": 1
+                                        },
+                                        "displayLanguage": {
+                                            "type": "string",
+                                            "enum": [
+                                                "en",
+                                                "es",
+                                                "fr"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "spokenLanguages",
+                                        "displayLanguage"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/language-preferences/update": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "spokenLanguages": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "en",
+                                                "es",
+                                                "fr",
+                                                "en-GB",
+                                                "ar",
+                                                "ar-fem",
+                                                "bn",
+                                                "eu",
+                                                "bg",
+                                                "ca",
+                                                "hr",
+                                                "cs",
+                                                "da",
+                                                "nl",
+                                                "fil",
+                                                "fi",
+                                                "gl",
+                                                "de",
+                                                "el",
+                                                "gu",
+                                                "he",
+                                                "hi",
+                                                "hu",
+                                                "id",
+                                                "ga",
+                                                "it",
+                                                "ja",
+                                                "kn",
+                                                "ko",
+                                                "ms",
+                                                "mr",
+                                                "no",
+                                                "fa",
+                                                "pl",
+                                                "pt",
+                                                "ro",
+                                                "ru",
+                                                "sr",
+                                                "zh-Hans",
+                                                "sk",
+                                                "sv",
+                                                "ta",
+                                                "th",
+                                                "zh-Hant",
+                                                "tr",
+                                                "uk",
+                                                "ur",
+                                                "vi"
+                                            ]
+                                        },
+                                        "minItems": 1
+                                    },
+                                    "displayLanguage": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr"
+                                        ]
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
         }
     },
     "servers": [],

@@ -66,7 +66,7 @@
         v-if="hasExistingDecision"
         button-type="largeButton"
         label="Withdraw"
-        color="secondary"
+        color="cyan-2"
         text-color="primary"
         @click="clickedWithdraw()"
       />

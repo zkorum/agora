@@ -12,7 +12,7 @@
         <PrimeButton
           icon="pi pi-times"
           text
-          severity="secondary"
+          severity="cyan-2"
           class="close-button"
           @click="resetPoll"
         />
@@ -53,7 +53,7 @@
           <PrimeButton
             label="Add Option"
             icon="pi pi-plus"
-            severity="secondary"
+            severity="cyan-2"
             outlined
             :disabled="conversationDraft.poll.options.length >= 6"
             class="add-option-button"
@@ -229,7 +229,6 @@ function removeOption(index: number) {
   font-weight: 500 !important;
   font-size: 1rem !important;
 
-  // Override PrimeVue default styles to match the screenshot
   &.p-button.p-button-outlined.p-button-secondary {
     border: 1px solid #6366f1 !important;
     background-color: transparent !important;

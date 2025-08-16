@@ -151,8 +151,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useQuasar } from "quasar";
 import { useQRCode } from "@vueuse/integrations/useQRCode";

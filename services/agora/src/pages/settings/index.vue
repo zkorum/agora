@@ -38,6 +38,10 @@
       <div v-if="isLoggedIn && profileData.isModerator">
         <SettingsSection :settings-item-list="moderatorSettings" />
       </div>
+
+      <div v-if="isDevelopment">
+        <SettingsSection :settings-item-list="developmentSettings" />
+      </div>
     </div>
   </DrawerLayout>
 </template>
@@ -57,6 +61,7 @@ import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -67,12 +72,15 @@ const { deleteUserAccount } = useBackendAccountApi();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
+const { t } = useI18n();
 
 const { updateAuthState } = useBackendAuthApi();
 
 const deleteAccountLabel = computed(() =>
   isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
 );
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const accountSettings: SettingsInterface[] = [
   {
@@ -92,6 +100,13 @@ const accountSettings: SettingsInterface[] = [
 ];
 
 const aboutSettings: SettingsInterface[] = [
+  {
+    label: t("settings.language.title"),
+    action: () => {
+      void router.push({ name: "/settings/languages/" });
+    },
+    style: "none",
+  },
   {
     label: "Privacy Policy",
     action: () => {
@@ -125,6 +140,16 @@ const moderatorSettings: SettingsInterface[] = [
       void router.push({
         name: "/settings/account/administrator/organization/",
       });
+    },
+    style: "none",
+  },
+];
+
+const developmentSettings: SettingsInterface[] = [
+  {
+    label: "🔧 Component Testing",
+    action: () => {
+      void router.push("/dev/component-testing");
     },
     style: "none",
   },

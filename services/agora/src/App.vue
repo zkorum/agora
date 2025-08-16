@@ -1,8 +1,10 @@
 <template>
   <router-view />
+  <PostSignupPreferencesDialog />
 </template>
 
 <script setup lang="ts">
+import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
 import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";

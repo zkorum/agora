@@ -717,16 +717,20 @@ export const userMutePreferenceTable = pgTable(
     ],
 );
 
-export const userLanguagePreferenceTable = pgTable(
-    "user_language_preference",
+// User spoken languages (BCP 47 format) - can have multiple
+export const userSpokenLanguagesTable = pgTable(
+    "user_spoken_languages",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: serial("id").primaryKey(),
         userId: uuid("user_id")
-            .references(() => userTable.id)
+            .references(() => userTable.id, { onDelete: "cascade" })
             .notNull(),
-        langId: integer("lang_id")
-            .references(() => userLanguageTable.id)
-            .notNull(),
+        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -735,22 +739,37 @@ export const userLanguagePreferenceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("user_idx_lang").on(t.userId),
-        unique("user_unique_language").on(t.userId, t.langId),
+        index("user_spoken_languages_user_idx").on(t.userId),
+        unique("user_spoken_languages_unique").on(t.userId, t.languageCode),
     ],
 );
 
-export const userLanguageTable = pgTable("user_language", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: text("name"),
-    code: text("code"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+// User display language (UI language) - can have only one active
+export const userDisplayLanguageTable = pgTable(
+    "user_display_language",
+    {
+        id: serial("id").primaryKey(),
+        userId: uuid("user_id")
+            .references(() => userTable.id, { onDelete: "cascade" })
+            .notNull(),
+        languageCode: varchar("language_code", { length: 35 }).notNull(), // BCP 47 format
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("user_display_language_user_idx").on(t.userId),
+        unique("user_display_language_unique").on(t.userId, t.languageCode),
+    ],
+);
 
 export const organizationTable = pgTable("organization", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),

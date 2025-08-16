@@ -31,7 +31,7 @@
           <ZKButton
             button-type="largeButton"
             label="Login with my phone number"
-            color="secondary"
+            color="cyan-2"
             text-color="primary"
             @click="goToPhoneLogin()"
           />
@@ -44,13 +44,13 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
-import SignupAgreement from "src/components/onboarding/SignupAgreement.vue";
+import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 
 const description = "Please select a log in method.";
 

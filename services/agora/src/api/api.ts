@@ -2423,6 +2423,188 @@ export interface ApiV1UserConversationFetchPostRequest {
 /**
  * 
  * @export
+ * @interface ApiV1UserLanguagePreferencesGetPost200Response
+ */
+export interface ApiV1UserLanguagePreferencesGetPost200Response {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1UserLanguagePreferencesGetPost200Response
+     */
+    'spokenLanguages': Array<ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserLanguagePreferencesGetPost200Response
+     */
+    'displayLanguage': ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum;
+}
+
+export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    EnGb: 'en-GB',
+    Ar: 'ar',
+    ArFem: 'ar-fem',
+    Bn: 'bn',
+    Eu: 'eu',
+    Bg: 'bg',
+    Ca: 'ca',
+    Hr: 'hr',
+    Cs: 'cs',
+    Da: 'da',
+    Nl: 'nl',
+    Fil: 'fil',
+    Fi: 'fi',
+    Gl: 'gl',
+    De: 'de',
+    El: 'el',
+    Gu: 'gu',
+    He: 'he',
+    Hi: 'hi',
+    Hu: 'hu',
+    Id: 'id',
+    Ga: 'ga',
+    It: 'it',
+    Ja: 'ja',
+    Kn: 'kn',
+    Ko: 'ko',
+    Ms: 'ms',
+    Mr: 'mr',
+    No: 'no',
+    Fa: 'fa',
+    Pl: 'pl',
+    Pt: 'pt',
+    Ro: 'ro',
+    Ru: 'ru',
+    Sr: 'sr',
+    ZhHans: 'zh-Hans',
+    Sk: 'sk',
+    Sv: 'sv',
+    Ta: 'ta',
+    Th: 'th',
+    ZhHant: 'zh-Hant',
+    Tr: 'tr',
+    Uk: 'uk',
+    Ur: 'ur',
+    Vi: 'vi'
+} as const;
+
+export type ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum];
+export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr'
+} as const;
+
+export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1UserLanguagePreferencesGetPostRequest
+ */
+export interface ApiV1UserLanguagePreferencesGetPostRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserLanguagePreferencesGetPostRequest
+     */
+    'currentDisplayLanguage': ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum;
+}
+
+export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr'
+} as const;
+
+export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1UserLanguagePreferencesUpdatePostRequest
+ */
+export interface ApiV1UserLanguagePreferencesUpdatePostRequest {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1UserLanguagePreferencesUpdatePostRequest
+     */
+    'spokenLanguages'?: Array<ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1UserLanguagePreferencesUpdatePostRequest
+     */
+    'displayLanguage'?: ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum;
+}
+
+export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    EnGb: 'en-GB',
+    Ar: 'ar',
+    ArFem: 'ar-fem',
+    Bn: 'bn',
+    Eu: 'eu',
+    Bg: 'bg',
+    Ca: 'ca',
+    Hr: 'hr',
+    Cs: 'cs',
+    Da: 'da',
+    Nl: 'nl',
+    Fil: 'fil',
+    Fi: 'fi',
+    Gl: 'gl',
+    De: 'de',
+    El: 'el',
+    Gu: 'gu',
+    He: 'he',
+    Hi: 'hi',
+    Hu: 'hu',
+    Id: 'id',
+    Ga: 'ga',
+    It: 'it',
+    Ja: 'ja',
+    Kn: 'kn',
+    Ko: 'ko',
+    Ms: 'ms',
+    Mr: 'mr',
+    No: 'no',
+    Fa: 'fa',
+    Pl: 'pl',
+    Pt: 'pt',
+    Ro: 'ro',
+    Ru: 'ru',
+    Sr: 'sr',
+    ZhHans: 'zh-Hans',
+    Sk: 'sk',
+    Sv: 'sv',
+    Ta: 'ta',
+    Th: 'th',
+    ZhHant: 'zh-Hant',
+    Tr: 'tr',
+    Uk: 'uk',
+    Ur: 'ur',
+    Vi: 'vi'
+} as const;
+
+export type ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum];
+export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr'
+} as const;
+
+export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1UserOpinionFetchPost200ResponseInner
  */
 export interface ApiV1UserOpinionFetchPost200ResponseInner {
@@ -4599,6 +4781,82 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1UserLanguagePreferencesGetPostRequest} apiV1UserLanguagePreferencesGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserLanguagePreferencesGetPost: async (apiV1UserLanguagePreferencesGetPostRequest: ApiV1UserLanguagePreferencesGetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserLanguagePreferencesGetPostRequest' is not null or undefined
+            assertParamExists('apiV1UserLanguagePreferencesGetPost', 'apiV1UserLanguagePreferencesGetPostRequest', apiV1UserLanguagePreferencesGetPostRequest)
+            const localVarPath = `/api/v1/user/language-preferences/get`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserLanguagePreferencesGetPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserLanguagePreferencesUpdatePost: async (apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/user/language-preferences/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserLanguagePreferencesUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5411,6 +5669,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1UserLanguagePreferencesGetPostRequest} apiV1UserLanguagePreferencesGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1UserLanguagePreferencesGetPost(apiV1UserLanguagePreferencesGetPostRequest: ApiV1UserLanguagePreferencesGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1UserLanguagePreferencesGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserLanguagePreferencesGetPost(apiV1UserLanguagePreferencesGetPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserLanguagePreferencesGetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserLanguagePreferencesUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5920,6 +6202,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1UserDeletePost(options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.apiV1UserDeletePost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1UserLanguagePreferencesGetPostRequest} apiV1UserLanguagePreferencesGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserLanguagePreferencesGetPost(apiV1UserLanguagePreferencesGetPostRequest: ApiV1UserLanguagePreferencesGetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1UserLanguagePreferencesGetPost200Response> {
+            return localVarFp.apiV1UserLanguagePreferencesGetPost(apiV1UserLanguagePreferencesGetPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6511,6 +6811,28 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1UserDeletePost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1UserDeletePost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1UserLanguagePreferencesGetPostRequest} apiV1UserLanguagePreferencesGetPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1UserLanguagePreferencesGetPost(apiV1UserLanguagePreferencesGetPostRequest: ApiV1UserLanguagePreferencesGetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserLanguagePreferencesGetPost(apiV1UserLanguagePreferencesGetPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
