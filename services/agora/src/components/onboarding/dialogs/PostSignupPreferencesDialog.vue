@@ -9,10 +9,7 @@
         <SpokenLanguageStep @next="step = 'topics'" />
       </div>
       <div v-else-if="step === 'topics'">
-        <TopicSelectionStep
-          @close="closePreferencesDialog"
-          @back="step = 'language'"
-        />
+        <TopicSelectionStep @close="handleClose" @back="step = 'language'" />
       </div>
     </ZKBottomDialogContainer>
   </q-dialog>
@@ -31,9 +28,14 @@ const { closePreferencesDialog } = useOnboardingPreferencesStore();
 
 const step = ref<"language" | "topics">("language");
 
+const handleClose = (): void => {
+  step.value = "language";
+  closePreferencesDialog();
+};
+
 const handleDialogClose = (value: boolean): void => {
   if (!value) {
-    closePreferencesDialog();
+    handleClose();
   }
 };
 </script>
