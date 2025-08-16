@@ -1,8 +1,8 @@
 <template>
   <div class="dialog-step">
     <div class="header">
-      <h2 class="title">{{ title }}</h2>
-      <p class="description">{{ description }}</p>
+      <div class="title">{{ title }}</div>
+      <div class="description">{{ description }}</div>
     </div>
 
     <div class="content">
@@ -29,7 +29,7 @@ defineProps<Props>();
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 70vh;
+  max-height: 80vh;
   min-height: 400px;
 }
 
@@ -40,14 +40,16 @@ defineProps<Props>();
 }
 
 .title {
-  font-size: 20px;
+  font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: #1a1a1a;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .description {
-  font-size: 14px;
+  font-size: 0.9rem;
   color: #666;
   line-height: 1.4;
 }
@@ -63,7 +65,7 @@ defineProps<Props>();
   flex-shrink: 0;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgb(214, 214, 214);
 }
 
 // Mobile optimizations
