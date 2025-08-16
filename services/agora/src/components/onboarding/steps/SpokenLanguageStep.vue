@@ -9,7 +9,7 @@
     />
 
     <template #footer>
-      <button class="next-button" @click="emit('next')">Next</button>
+      <PrimeButton label="Next" class="next-button" @click="emit('next')" />
     </template>
   </DialogStepLayout>
 </template>
@@ -24,22 +24,5 @@ const emit = defineEmits<{ (e: "next"): void }>();
 <style scoped lang="scss">
 .next-button {
   width: 100%;
-  padding: 0.75rem;
-  background: #007aff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: #0056d3;
-  }
-
-  &:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-  }
 }
 </style>

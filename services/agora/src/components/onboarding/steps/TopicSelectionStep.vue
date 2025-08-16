@@ -45,12 +45,8 @@
 
     <template #footer>
       <div class="footer-buttons">
-        <button class="custom-button secondary-button" @click="emit('back')">
-          Back
-        </button>
-        <button class="custom-button primary-button" @click="emit('close')">
-          Save & Close
-        </button>
+        <PrimeButton label="Back" @click="emit('back')" />
+        <PrimeButton label="Save & Close" @click="emit('close')" />
       </div>
     </template>
   </DialogStepLayout>
@@ -160,63 +156,6 @@ async function topicButtonClicked(
 
   > * {
     flex: 1;
-  }
-}
-
-.custom-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.875rem 1.5rem;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 48px;
-  outline: none;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:focus-visible {
-    outline: 2px solid #007aff;
-    outline-offset: 2px;
-  }
-}
-
-.primary-button {
-  background-color: #007aff;
-  color: white;
-
-  &:hover {
-    background-color: #0056cc;
-  }
-
-  &:active {
-    background-color: #004bb3;
-  }
-}
-
-.secondary-button {
-  background-color: #f8f9fa;
-  color: #1a1a1a;
-  border: 1px solid #e9ecef;
-
-  &:hover {
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-  }
-
-  &:active {
-    background-color: #dee2e6;
   }
 }
 
