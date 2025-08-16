@@ -91,10 +91,5 @@ const { openPreferencesDialog } = preferencesStore;
 .button-container {
   display: flex;
   justify-content: center;
-
-  .test-button {
-    min-height: 48px;
-    min-width: 200px;
-  }
 }
 </style>
