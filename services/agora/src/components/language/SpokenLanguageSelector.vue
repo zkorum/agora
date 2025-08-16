@@ -1,9 +1,14 @@
 <template>
   <div class="spoken-language-selector">
     <!-- Selected Languages Section -->
-    <div v-if="selectedLanguages.length > 0" class="selector-section">
+    <div
+      v-if="selectedLanguages.length > 0"
+      ref="selectedLanguagesSection"
+      class="selector-section"
+    >
       <h3 class="section-title">
         {{ t("settings.language.spokenLanguages.selectedLanguages") }}
+        ({{ selectedLanguages.length }})
       </h3>
       <div class="settings-background">
         <SettingsMenuItem
@@ -114,7 +119,7 @@
 
 <script setup lang="ts">
 import type { ComputedRef } from "vue";
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
@@ -149,6 +154,9 @@ const { updateSpokenLanguages, loadLanguagePreferencesFromBackend } =
 
 const authStore = useAuthenticationStore();
 const { showNotifyMessage } = useNotify();
+
+// Template refs
+const selectedLanguagesSection = ref<HTMLElement>();
 
 // Local state
 const searchQuery = ref("");
@@ -188,6 +196,17 @@ const filteredAvailableLanguages: ComputedRef<LanguageMetadata[]> = computed(
   }
 );
 
+// Scroll to selected languages section
+async function scrollToSelectedLanguages(): Promise<void> {
+  await nextTick();
+  if (selectedLanguagesSection.value) {
+    selectedLanguagesSection.value.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+}
+
 // Add a language to the selection
 async function addLanguage(
   languageCode: SupportedSpokenLanguageCodes
@@ -199,6 +218,9 @@ async function addLanguage(
   const newLanguages = [...spokenLanguages.value, languageCode];
   await saveLanguageChanges(newLanguages);
   emit("language-added", languageCode);
+
+  // Scroll to the selected languages section after adding
+  await scrollToSelectedLanguages();
 }
 
 // Remove a language from the selection

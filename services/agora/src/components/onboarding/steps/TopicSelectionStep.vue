@@ -1,8 +1,5 @@
 <template>
-  <DialogStepLayout
-    title="Select Topics to Get Started"
-    description="Follow topics to personalize your feed. You can always change these later."
-  >
+  <DialogStepLayout title="Select topics you’re interested in to get started">
     <!-- Topics Grid -->
     <div class="topics-container">
       <PrimeChip
@@ -39,7 +36,7 @@
           @click="emit('back')"
         />
         <PrimeButton
-          label="Save & Continue"
+          label="Close"
           :disabled="selectedTopicsCount === 0"
           @click="emit('close')"
         />
@@ -118,20 +115,19 @@ const handleTopicToggle = async (topicCode: string): Promise<void> => {
 @media (max-height: 600px) {
   .topics-container {
     max-height: 240px;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.5rem;
   }
 }
 
 @media (max-width: 480px) {
   .topics-container {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
   }
 }
 
 @media (max-width: 320px) {
   .topics-container {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
 }
 </style>
