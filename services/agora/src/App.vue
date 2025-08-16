@@ -1,15 +1,10 @@
 <template>
   <router-view />
-  <PostSignupPreferencesDialog
-    v-if="showPreferencesDialog"
-    @close="closePreferencesDialog"
-  />
+  <PostSignupPreferencesDialog />
 </template>
 
 <script setup lang="ts">
 import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
-import { useOnboardingPreferencesStore } from "./stores/onboarding/preferences";
-import { storeToRefs } from "pinia";
 import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";
@@ -17,9 +12,6 @@ import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 import "primeicons/primeicons.css";
 
 swiperElement.register();
-
-const { showPreferencesDialog } = storeToRefs(useOnboardingPreferencesStore());
-const { closePreferencesDialog } = useOnboardingPreferencesStore();
 
 const authenticationStore = useBackendAuthApi();
 
