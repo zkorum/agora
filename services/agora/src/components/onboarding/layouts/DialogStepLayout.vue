@@ -1,8 +1,8 @@
 <template>
   <div class="dialog-step">
     <div class="header">
-      <div class="title">{{ title }}</div>
-      <div class="description">{{ description }}</div>
+      <div class="title">Welcome to Agora!</div>
+      <div class="subtitle">{{ title }}</div>
     </div>
 
     <div class="content">
@@ -18,7 +18,6 @@
 <script setup lang="ts">
 interface Props {
   title: string;
-  description: string;
 }
 
 defineProps<Props>();
@@ -28,8 +27,10 @@ defineProps<Props>();
 .dialog-step {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
   height: 100%;
-  max-height: 80vh;
+  min-height: 40vh;
+  max-height: 70vh;
 }
 
 .header {
@@ -39,18 +40,14 @@ defineProps<Props>();
 }
 
 .title {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
   color: #1a1a1a;
-  padding-top: 1rem;
   padding-bottom: 1rem;
 }
 
-.description {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.4;
+.subtitle {
+  font-size: 1rem;
 }
 
 .content {
@@ -76,10 +73,6 @@ defineProps<Props>();
 
   .title {
     font-size: 18px;
-  }
-
-  .description {
-    font-size: 13px;
   }
 }
 </style>

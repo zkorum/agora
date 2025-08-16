@@ -1,8 +1,5 @@
 <template>
-  <DialogStepLayout
-    title="Select Spoken Languages"
-    description="Choose one or more languages for a more personalized experience"
-  >
+  <DialogStepLayout title="What languages do you speak?">
     <SpokenLanguageSelector
       :show-selected-section="false"
       @next="emit('next')"
