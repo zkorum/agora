@@ -31,7 +31,7 @@
           <ZKButton
             button-type="largeButton"
             label="Login with my phone number"
-            color="secondary"
+            color="cyan-2"
             text-color="primary"
             @click="goToPhoneLogin()"
           />

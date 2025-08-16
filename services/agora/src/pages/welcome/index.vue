@@ -23,7 +23,7 @@
       <ZKButton
         button-type="largeButton"
         text-color="black"
-        color="secondary"
+        color="cyan-2"
         label="Skip Authentication"
         @click="skipAuthentication()"
       />
@@ -41,7 +41,7 @@
       <ZKButton
         button-type="largeButton"
         label="Log Out"
-        color="secondary"
+        color="cyan-2"
         text-color="black"
         @click="logoutRequested(true)"
       />
