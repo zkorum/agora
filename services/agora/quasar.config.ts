@@ -118,6 +118,7 @@ export default defineConfig((ctx) => {
           {
             // routesFolder: 'src/pages',
             dts: "./typed-router.d.ts",
+            exclude: ctx.dev ? [] : ["**/dev/**"], // Exclude dev folder in production
           },
         ],
       ],

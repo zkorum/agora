@@ -12,7 +12,7 @@
         <PrimeButton
           icon="pi pi-times"
           text
-          severity="secondary"
+          severity="cyan-2"
           class="close-button"
           @click="resetPoll"
         />
@@ -53,7 +53,7 @@
           <PrimeButton
             label="Add Option"
             icon="pi pi-plus"
-            severity="secondary"
+            severity="cyan-2"
             outlined
             :disabled="conversationDraft.poll.options.length >= 6"
             class="add-option-button"

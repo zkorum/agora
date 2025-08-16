@@ -38,6 +38,10 @@
       <div v-if="isLoggedIn && profileData.isModerator">
         <SettingsSection :settings-item-list="moderatorSettings" />
       </div>
+
+      <div v-if="isDevelopment">
+        <SettingsSection :settings-item-list="developmentSettings" />
+      </div>
     </div>
   </DrawerLayout>
 </template>
@@ -75,6 +79,8 @@ const { updateAuthState } = useBackendAuthApi();
 const deleteAccountLabel = computed(() =>
   isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
 );
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const accountSettings: SettingsInterface[] = [
   {
@@ -134,6 +140,16 @@ const moderatorSettings: SettingsInterface[] = [
       void router.push({
         name: "/settings/account/administrator/organization/",
       });
+    },
+    style: "none",
+  },
+];
+
+const developmentSettings: SettingsInterface[] = [
+  {
+    label: "🔧 Component Testing",
+    action: () => {
+      void router.push("/dev/component-testing");
     },
     style: "none",
   },
