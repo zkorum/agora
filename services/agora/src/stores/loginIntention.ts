@@ -141,13 +141,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   async function routeUserAfterLogin() {
     completedUserLogin = true;
     const onboardingStore = onboardingFlowStore();
-    if (
-      onboardingStore.onboardingMode === "SIGNUP" &&
-      activeUserIntention.value === "none"
-    ) {
-      const preferencesStore = useOnboardingPreferencesStore();
-      preferencesStore.openPreferencesDialog();
-    }
+    const shouldShowPreferencesDialog =
+      onboardingStore.onboardingMode === "SIGNUP";
 
     if (onboardingStore.onboardingMode === "SIGNUP") {
       onboardingStore.onboardingMode = "LOGIN"; // Reset mode
@@ -194,6 +189,12 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         break;
       default:
         console.error("Unknown intention");
+    }
+
+    // Open preferences dialog after routing is complete
+    if (shouldShowPreferencesDialog) {
+      const preferencesStore = useOnboardingPreferencesStore();
+      preferencesStore.openPreferencesDialog();
     }
   }
 
