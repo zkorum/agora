@@ -229,7 +229,6 @@ function removeOption(index: number) {
   font-weight: 500 !important;
   font-size: 1rem !important;
 
-  // Override PrimeVue default styles to match the screenshot
   &.p-button.p-button-outlined.p-button-secondary {
     border: 1px solid #6366f1 !important;
     background-color: transparent !important;

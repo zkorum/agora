@@ -21,7 +21,7 @@
     </template>
 
     <div class="container">
-      <Card class="test-section-card">
+      <PrimeCard class="test-section-card">
         <template #title>
           <div class="section-header">
             <i class="pi pi-cog section-icon"></i>
@@ -43,13 +43,12 @@
             />
           </div>
         </template>
-      </Card>
+      </PrimeCard>
     </div>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import Card from "primevue/card";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
