@@ -41,9 +41,12 @@
             @click="selectDisplayLanguage(language.code)"
           >
             <template #left>
-              <div class="language-content">
-                <div class="language-name">{{ language.name }}</div>
-                <div class="language-english">{{ language.englishName }}</div>
+              <div class="language-item">
+                <LanguageFlag :language-code="language.code" size="1.5rem" />
+                <div class="language-content">
+                  <div class="language-name">{{ language.name }}</div>
+                  <div class="language-english">{{ language.englishName }}</div>
+                </div>
               </div>
             </template>
 
@@ -70,6 +73,7 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import LanguageFlag from "src/components/ui-library/LanguageFlag.vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { useLanguageStore } from "src/stores/language";
@@ -140,6 +144,13 @@ onMounted(async () => {
   border-radius: 20px;
   display: flex;
   flex-direction: column;
+}
+
+.language-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
 }
 
 .language-content {
