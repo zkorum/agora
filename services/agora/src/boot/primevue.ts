@@ -4,6 +4,7 @@ import { definePreset } from "@primeuix/themes";
 import { defineBoot } from "#q-app/wrappers";
 
 import Button from "primevue/button";
+import Card from "primevue/card";
 import Chip from "primevue/chip";
 import DatePicker from "primevue/datepicker";
 import InputOtp from "primevue/inputotp";
@@ -53,6 +54,7 @@ export default defineBoot(({ app }) => {
   });
 
   app.component("PrimeButton", Button);
+  app.component("PrimeCard", Card);
   app.component("PrimeChip", Chip);
   app.component("PrimeDatePicker", DatePicker);
   app.component("PrimeInputOtp", InputOtp);
