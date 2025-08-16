@@ -1,7 +1,7 @@
 <template>
   <DialogStepLayout
     title="Select Spoken Languages"
-    description="Choose one or more languages you speak"
+    description="Choose one or more languages for a more personalized experience"
   >
     <SpokenLanguageSelector
       :show-selected-section="false"
@@ -9,7 +9,7 @@
     />
 
     <template #footer>
-      <button class="confirm-button" @click="emit('next')">Confirm</button>
+      <button class="next-button" @click="emit('next')">Next</button>
     </template>
   </DialogStepLayout>
 </template>
@@ -22,7 +22,7 @@ const emit = defineEmits<{ (e: "next"): void }>();
 </script>
 
 <style scoped lang="scss">
-.confirm-button {
+.next-button {
   width: 100%;
   padding: 0.75rem;
   background: #007aff;
