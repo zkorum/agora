@@ -45,19 +45,12 @@
 
     <template #footer>
       <div class="footer-buttons">
-        <ZKButton
-          button-type="largeButton"
-          label="Back"
-          color="secondary"
-          text-color="black"
-          @click="emit('back')"
-        />
-        <ZKButton
-          button-type="largeButton"
-          label="Save & Close"
-          color="primary"
-          @click="emit('close')"
-        />
+        <button class="custom-button secondary-button" @click="emit('back')">
+          Back
+        </button>
+        <button class="custom-button primary-button" @click="emit('close')">
+          Save & Close
+        </button>
       </div>
     </template>
   </DialogStepLayout>
@@ -65,7 +58,6 @@
 
 <script setup lang="ts">
 import DialogStepLayout from "src/components/onboarding/layouts/DialogStepLayout.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { storeToRefs } from "pinia";
 import { useTopicStore } from "src/stores/topic";
@@ -168,6 +160,63 @@ async function topicButtonClicked(
 
   > * {
     flex: 1;
+  }
+}
+
+.custom-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px;
+  outline: none;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+  }
+}
+
+.primary-button {
+  background-color: #007aff;
+  color: white;
+
+  &:hover {
+    background-color: #0056cc;
+  }
+
+  &:active {
+    background-color: #004bb3;
+  }
+}
+
+.secondary-button {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
+  border: 1px solid #e9ecef;
+
+  &:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+  }
+
+  &:active {
+    background-color: #dee2e6;
   }
 }
 
