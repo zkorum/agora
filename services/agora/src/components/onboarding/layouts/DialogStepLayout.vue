@@ -30,7 +30,6 @@ defineProps<Props>();
   flex-direction: column;
   height: 100%;
   max-height: 80vh;
-  min-height: 400px;
 }
 
 .header {
