@@ -5,44 +5,30 @@
   >
     <img :src="brandImagePath" class="welcomeImage" />
     <div v-if="!isLoggedIn" class="buttonFlex">
-      <ZKButton
-        button-type="largeButton"
-        label="Sign Up"
-        color="primary"
-        @click="gotoNextRoute(false)"
-      />
+      <ZKGradientButton label="Sign Up" @click="gotoNextRoute(false)" />
 
-      <ZKButton
-        button-type="largeButton"
+      <ZKGradientButton
         label="Log In"
-        color="white"
-        text-color="primary"
+        gradient-background="#ffffff"
+        label-color="#6b4eff"
         @click="gotoNextRoute(true)"
       />
 
-      <ZKButton
-        button-type="largeButton"
-        text-color="black"
-        color="cyan-2"
+      <ZKGradientButton
         label="Skip Authentication"
+        gradient-background="#f1eeff"
+        label-color="#000000"
         @click="skipAuthentication()"
       />
     </div>
 
     <div v-if="isLoggedIn" class="buttonFlex">
-      <ZKButton
-        button-type="largeButton"
-        text-color="white"
-        color="primary"
-        label="Launch App"
-        @click="skipAuthentication()"
-      />
+      <ZKGradientButton label="Launch App" @click="skipAuthentication()" />
 
-      <ZKButton
-        button-type="largeButton"
+      <ZKGradientButton
         label="Log Out"
-        color="cyan-2"
-        text-color="black"
+        gradient-background="#80cbc4"
+        label-color="#000000"
         @click="logoutRequested(true)"
       />
     </div>
@@ -51,7 +37,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useLoginIntentionStore } from "src/stores/loginIntention";

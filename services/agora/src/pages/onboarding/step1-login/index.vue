@@ -21,18 +21,15 @@
         </template>
 
         <template #body>
-          <ZKButton
-            button-type="largeButton"
+          <ZKGradientButton
             label="Log In with RariMe"
-            color="primary"
             @click="goToPassportLogin()"
           />
 
-          <ZKButton
-            button-type="largeButton"
+          <ZKGradientButton
             label="Login with my phone number"
-            color="cyan-2"
-            text-color="primary"
+            gradient-background="#E7E7FF"
+            label-color="#6b4eff"
             @click="goToPhoneLogin()"
           />
 
@@ -47,7 +44,7 @@
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useRouter } from "vue-router";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";

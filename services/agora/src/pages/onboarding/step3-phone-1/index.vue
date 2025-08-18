@@ -61,10 +61,10 @@
                 <span>{{ phoneData.errorMessage }}</span>
               </div>
 
-              <ZKButton
-                button-type="largeButton"
+              <ZKGradientButton
                 label="I'd prefer to login with complete privacy"
-                text-color="primary"
+                variant="text"
+                label-color="#6B4EFF"
                 @click="goToPassportVerification()"
               />
 
@@ -76,10 +76,10 @@
                     v-for="authorizedNumber in devAuthorizedNumbers"
                     :key="authorizedNumber.fullNumber"
                   >
-                    <ZKButton
-                      button-type="largeButton"
-                      color="blue"
+                    <ZKGradientButton
                       :label="authorizedNumber.fullNumber"
+                      label-color="#FFFFFF"
+                      :style="{ width: '100%' }"
                       @click="injectDevelopmentNumber(authorizedNumber)"
                     />
                   </div>
@@ -105,7 +105,7 @@ import {
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import {

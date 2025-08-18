@@ -12,7 +12,6 @@
         <PrimeButton
           icon="pi pi-times"
           text
-          severity="cyan-2"
           class="close-button"
           @click="resetPoll"
         />
@@ -53,7 +52,6 @@
           <PrimeButton
             label="Add Option"
             icon="pi pi-plus"
-            severity="cyan-2"
             outlined
             :disabled="conversationDraft.poll.options.length >= 6"
             class="add-option-button"
@@ -228,9 +226,10 @@ function removeOption(index: number) {
   padding: 0.875rem 1.75rem !important;
   font-weight: 500 !important;
   font-size: 1rem !important;
+  border-color: $primary !important;
 
   &.p-button.p-button-outlined.p-button-secondary {
-    border: 1px solid #6366f1 !important;
+    border: 1px solid $primary !important;
     background-color: transparent !important;
     color: #6366f1 !important;
 

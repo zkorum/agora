@@ -55,19 +55,16 @@
 
       <q-input v-model="moderationExplanation" label="Explanation (optional)" />
 
-      <ZKButton
-        button-type="largeButton"
+      <ZKGradientButton
         :label="hasExistingDecision ? 'Modify' : 'Moderate'"
-        color="primary"
         @click="clickedSubmit()"
       />
 
-      <ZKButton
+      <ZKGradientButton
         v-if="hasExistingDecision"
-        button-type="largeButton"
         label="Withdraw"
-        color="cyan-2"
-        text-color="primary"
+        gradient-background="#E7E7FF"
+        label-color="#6b4eff"
         @click="clickedWithdraw()"
       />
     </div>
@@ -84,7 +81,7 @@ import type {
   ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import {
   moderationActionPostsMapping,
   moderationReasonMapping,

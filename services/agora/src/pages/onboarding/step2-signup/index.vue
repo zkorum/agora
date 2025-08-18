@@ -20,18 +20,15 @@
         </template>
 
         <template #body>
-          <ZKButton
-            button-type="largeButton"
+          <ZKGradientButton
             label="Verify anonymously"
-            color="primary"
             @click="goToNextRoute()"
           />
 
-          <ZKButton
-            button-type="largeButton"
+          <ZKGradientButton
             label="Verify with my phone number"
-            color="button-background-color"
-            text-color="primary"
+            gradient-background="#E7E7FF"
+            label-color="#6B4EFF"
             @click="verifyPhone()"
           />
 
@@ -47,7 +44,7 @@
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useRouter } from "vue-router";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
