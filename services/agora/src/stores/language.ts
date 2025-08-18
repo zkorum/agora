@@ -195,9 +195,42 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  function clearLanguagePreferences(): void {
-    // Reset spoken languages to include current display language
-    spokenLanguages.value = [displayLanguage.value];
+  async function clearLanguagePreferences(): Promise<boolean> {
+    // Get browser defaults
+    const browserDefaultDisplayLanguage = getDefaultDisplayLanguage();
+    const browserDefaultSpokenLanguages = getDefaultSpokenLanguages();
+
+    // Store original values for rollback
+    const originalDisplayLanguage = displayLanguage.value;
+    const originalSpokenLanguages = [...spokenLanguages.value];
+
+    try {
+      // Reset to browser defaults
+      updateLocale(browserDefaultDisplayLanguage);
+      spokenLanguages.value = browserDefaultSpokenLanguages;
+
+      // Save to backend if user is authenticated (in background)
+      if (authStore.isLoggedIn) {
+        await Promise.all([
+          saveDisplayLanguageToBackend({
+            newDisplayLanguage: browserDefaultDisplayLanguage,
+          }),
+          saveSpokenLanguagesToBackend({
+            newSpokenLanguages: browserDefaultSpokenLanguages,
+          }),
+        ]);
+      }
+
+      return true;
+    } catch (err) {
+      // Revert on failure
+      updateLocale(originalDisplayLanguage);
+      spokenLanguages.value = originalSpokenLanguages;
+
+      showNotifyMessage("Failed to clear language preferences");
+      console.error("Error clearing language preferences:", err);
+      return false;
+    }
   }
 
   return {

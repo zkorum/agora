@@ -7,8 +7,6 @@ import type {
 import {
   SupportedSpokenLanguageMetadataList,
   ZodSupportedDisplayLanguageCodes,
-  ZodNormalizeDisplayLanguageCode,
-  ZodNormalizeSpokenLanguageCode,
   ZodParseBrowserLanguage,
 } from "src/shared/languages";
 
@@ -26,37 +24,6 @@ export function getDisplayLanguages(): DisplayLanguageMetadata[] {
 
 export function getSpokenLanguages(): LanguageMetadata[] {
   return SupportedSpokenLanguageMetadataList; // All languages can be spoken languages
-}
-
-/**
- * Normalize language code to match our supported languages
- * e.g., 'en-US' -> 'en' (for display languages)
- */
-export function normalizeLanguageCode({
-  code,
-  forDisplay,
-}: {
-  code: string;
-  forDisplay: true;
-}): SupportedDisplayLanguageCodes;
-export function normalizeLanguageCode({
-  code,
-  forDisplay,
-}: {
-  code: string;
-  forDisplay?: false;
-}): SupportedSpokenLanguageCodes;
-export function normalizeLanguageCode({
-  code,
-  forDisplay = false,
-}: {
-  code: string;
-  forDisplay?: boolean;
-}): SupportedDisplayLanguageCodes | SupportedSpokenLanguageCodes {
-  if (forDisplay) {
-    return ZodNormalizeDisplayLanguageCode.parse(code);
-  }
-  return ZodNormalizeSpokenLanguageCode.parse(code);
 }
 
 /**

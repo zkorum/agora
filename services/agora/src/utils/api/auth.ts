@@ -259,8 +259,7 @@ export function useBackendAuthApi() {
 
     clearTopicsData();
 
-    // Clear language preferences and reset to browser language
-    clearLanguagePreferences();
+    await clearLanguagePreferences();
   }
 
   return {
