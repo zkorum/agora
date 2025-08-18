@@ -44,8 +44,15 @@ defineEmits<{
     background: linear-gradient(180deg, #5a42d9 30.96%, #4282d6 99.99%);
   }
 
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(107, 78, 255, 0.3);
+  }
+
   &:focus-visible {
-    box-shadow: 0 0 0 3px rgba(107, 78, 255, 0.3);
+    box-shadow:
+      0 4px 12px rgba(107, 78, 255, 0.3),
+      0 0 0 3px rgba(107, 78, 255, 0.3);
   }
 }
 
