@@ -42,7 +42,6 @@
           >
             <template #left>
               <div class="language-item">
-                <LanguageFlag :language-code="language.code" size="1.5rem" />
                 <div class="language-content">
                   <div class="language-name">{{ language.name }}</div>
                   <div class="language-english">{{ language.englishName }}</div>
@@ -73,7 +72,6 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import LanguageFlag from "src/components/ui-library/LanguageFlag.vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { useLanguageStore } from "src/stores/language";

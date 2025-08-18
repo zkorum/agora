@@ -47,7 +47,6 @@
     "axios": "^1.11.0",
     "buffer": "^6.0.3",
     "cborg": "^4.2.12",
-    "flag-icons": "^7.5.0",
     "libphonenumber-js": "^1.12.7",
     "linkify-html": "^4.3.1",
     "linkifyjs": "^4.3.1",
