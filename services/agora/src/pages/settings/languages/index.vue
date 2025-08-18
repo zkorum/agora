@@ -32,13 +32,16 @@
       <SettingsSection :settings-item-list="displayLanguageSettings" />
 
       <!-- Additional languages section -->
-      <div class="section-header">
+      <div v-if="authStore.isLoggedIn" class="section-header">
         <p class="section-title">Additional languages</p>
         <p class="section-description">
           For content you would like to see on Agora
         </p>
       </div>
-      <SettingsSection :settings-item-list="additionalLanguageSettings" />
+      <SettingsSection
+        v-if="authStore.isLoggedIn"
+        :settings-item-list="additionalLanguageSettings"
+      />
     </div>
   </DrawerLayout>
 </template>
@@ -77,36 +80,31 @@ const displayLanguageSettings = computed((): SettingsInterface[] => {
 });
 
 const additionalLanguageSettings = computed((): SettingsInterface[] => {
-  const settings: SettingsInterface[] = [];
+  const spokenLanguages = languageStore.spokenLanguages;
+  let spokenValue = "";
 
-  // Only show spoken languages option for authenticated users
-  if (authStore.isLoggedIn) {
-    const spokenLanguages = languageStore.spokenLanguages;
-    let spokenValue = "";
+  if (spokenLanguages.length === 0) {
+    spokenValue = "None selected";
+  } else if (spokenLanguages.length === 1) {
+    const firstLang = getLanguageByCode(spokenLanguages[0]);
+    spokenValue = firstLang ? firstLang.name : spokenLanguages[0];
+  } else {
+    const firstLang = getLanguageByCode(spokenLanguages[0]);
+    const firstName = firstLang ? firstLang.name : spokenLanguages[0];
+    const otherCount = spokenLanguages.length - 1;
+    spokenValue = `${firstName} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
+  }
 
-    if (spokenLanguages.length === 0) {
-      spokenValue = "None selected";
-    } else if (spokenLanguages.length === 1) {
-      const firstLang = getLanguageByCode(spokenLanguages[0]);
-      spokenValue = firstLang ? firstLang.name : spokenLanguages[0];
-    } else {
-      const firstLang = getLanguageByCode(spokenLanguages[0]);
-      const firstName = firstLang ? firstLang.name : spokenLanguages[0];
-      const otherCount = spokenLanguages.length - 1;
-      spokenValue = `${firstName} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
-    }
-
-    settings.push({
+  return [
+    {
       label: t("settings.language.spokenLanguages.title"),
       action: () => {
         void router.push({ name: "/settings/languages/spoken-languages/" });
       },
       style: "none",
       value: spokenValue,
-    });
-  }
-
-  return settings;
+    },
+  ];
 });
 </script>
 
