@@ -89,7 +89,7 @@ import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntenti
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
-import StartConversationButtonLong from "../ui-library/StartConversationButtonLong.vue";
+import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
 import DisplayUsername from "../features/user/DisplayUsername.vue";
 
 const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
