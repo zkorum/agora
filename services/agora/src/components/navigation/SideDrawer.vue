@@ -56,14 +56,12 @@
       </div>
 
       <div>
-        <RouterLink :to="{ name: '/conversation/new/create/' }">
-          <div
-            v-if="drawerBehavior == 'desktop'"
-            class="bottomSection startConversationButton"
-          >
-            <img :src="newConversationButton" />
-          </div>
-        </RouterLink>
+        <div
+          v-if="drawerBehavior == 'desktop'"
+          class="bottomSection startConversationButton"
+        >
+          <StartConversationButton @click="startNewConversation" />
+        </div>
       </div>
     </div>
 
@@ -89,10 +87,8 @@ import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntenti
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
+import StartConversationButton from "../ui-library/StartConversationButton.vue";
 import DisplayUsername from "../features/user/DisplayUsername.vue";
-
-const newConversationButton =
-  process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
 
 const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -188,6 +184,10 @@ function initializeMenu() {
     svgStringFilled:
       '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M19.5 12C19.5 11.77 19.49 11.55 19.47 11.32L21.33 9.91C21.73 9.61 21.84 9.05 21.59 8.61L19.72 5.38C19.6001 5.16818 19.4062 5.00814 19.1755 4.93062C18.9447 4.8531 18.6935 4.86356 18.47 4.96L16.32 5.87C15.95 5.61 15.56 5.38 15.15 5.19L14.86 2.88C14.8 2.38 14.37 2 13.87 2H10.14C9.63003 2 9.20003 2.38 9.14003 2.88L8.85003 5.19C8.44003 5.38 8.05003 5.61 7.68003 5.87L5.53003 4.96C5.07003 4.76 4.53003 4.94 4.28003 5.38L2.41003 8.62C2.16003 9.06 2.27003 9.61 2.67003 9.92L4.53003 11.33C4.48833 11.779 4.48833 12.231 4.53003 12.68L2.67003 14.09C2.27003 14.39 2.16003 14.95 2.41003 15.39L4.28003 18.62C4.53003 19.06 5.07003 19.24 5.53003 19.04L7.68003 18.13C8.05003 18.39 8.44003 18.62 8.85003 18.81L9.14003 21.12C9.20003 21.62 9.63003 22 10.13 22H13.86C14.36 22 14.79 21.62 14.85 21.12L15.14 18.81C15.55 18.62 15.94 18.39 16.31 18.13L18.46 19.04C18.92 19.24 19.46 19.06 19.71 18.62L21.58 15.39C21.83 14.95 21.72 14.4 21.32 14.09L19.46 12.68C19.49 12.45 19.5 12.23 19.5 12ZM12.04 15.5C10.11 15.5 8.54003 13.93 8.54003 12C8.54003 10.07 10.11 8.5 12.04 8.5C13.97 8.5 15.54 10.07 15.54 12C15.54 13.93 13.97 15.5 12.04 15.5Z" fill="url(#paint0_linear_17538_63862)"/>\n<defs>\n<linearGradient id="paint0_linear_17538_63862" x1="10.3349" y1="13.4583" x2="23.0265" y2="19.1624" gradientUnits="userSpaceOnUse">\n<stop stop-color="#6B4EFF"/>\n<stop offset="1" stop-color="#4F92F6"/>\n</linearGradient>\n</defs>\n</svg>\n',
   });
+}
+
+async function startNewConversation(): Promise<void> {
+  await router.push({ name: "/conversation/new/create/" });
 }
 
 async function enterRoute(routeName: RouteRecordName, requireAuth: boolean) {
