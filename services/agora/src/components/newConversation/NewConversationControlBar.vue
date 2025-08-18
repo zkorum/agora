@@ -6,7 +6,7 @@
       :organization-image-url="selectedOrganizationImageUrl"
     />
 
-    <ZKButton2
+    <ConversationControlButton
       v-for="button in visibleControlButtons"
       :key="button.id"
       :label="button.label"
@@ -43,7 +43,7 @@ import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
-import ZKButton2 from "src/components/ui-library/ZKButton2.vue";
+import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";

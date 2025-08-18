@@ -31,7 +31,7 @@
 
         <!-- Add Opinion Button -->
         <div class="add-button-container">
-          <ZKButton2
+          <ConversationControlButton
             label="Add"
             icon="pi pi-plus"
             :show-border="false"
@@ -112,7 +112,7 @@ import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue"
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKButton2 from "src/components/ui-library/ZKButton2.vue";
+import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendPostApi } from "src/utils/api/post";
 import { useHomeFeedStore } from "src/stores/homeFeed";
