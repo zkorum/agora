@@ -60,7 +60,6 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
@@ -69,7 +68,6 @@ const { profileData } = storeToRefs(useUserStore());
 const { showDeleteAccountDialog } = useDialog();
 
 const { deleteUserAccount } = useBackendAccountApi();
-const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
 const { t } = useI18n();
@@ -84,47 +82,43 @@ const isDevelopment = process.env.NODE_ENV === "development";
 
 const accountSettings: SettingsInterface[] = [
   {
+    type: "navigation",
     label: "Profile",
-    action: () => {
-      void router.push({ name: "/settings/account/profile/" });
-    },
+    to: "/settings/account/profile/",
     style: "none",
   },
   {
+    type: "navigation",
     label: "Content Preference",
-    action: () => {
-      void router.push({ name: "/settings/account/content-preference/" });
-    },
+    to: "/settings/account/content-preference/",
     style: "none",
   },
 ];
 
 const aboutSettings: SettingsInterface[] = [
   {
+    type: "navigation",
     label: t("settings.language.title"),
-    action: () => {
-      void router.push({ name: "/settings/languages/" });
-    },
+    to: "/settings/languages/",
     style: "none",
   },
   {
+    type: "navigation",
     label: "Privacy Policy",
-    action: () => {
-      void router.push({ name: "/legal/privacy/" });
-    },
+    to: "/legal/privacy/",
     style: "none",
   },
   {
+    type: "navigation",
     label: "Terms of Service",
-    action: () => {
-      void router.push({ name: "/legal/terms/" });
-    },
+    to: "/legal/terms/",
     style: "none",
   },
 ];
 
 const logoutSettings: SettingsInterface[] = [
   {
+    type: "action",
     label: "Log Out",
     action: () => {
       void logoutRequested(true);
@@ -135,28 +129,25 @@ const logoutSettings: SettingsInterface[] = [
 
 const moderatorSettings: SettingsInterface[] = [
   {
+    type: "navigation",
     label: "Moderator - Organization",
-    action: () => {
-      void router.push({
-        name: "/settings/account/administrator/organization/",
-      });
-    },
+    to: "/settings/account/administrator/organization/",
     style: "none",
   },
 ];
 
 const developmentSettings: SettingsInterface[] = [
   {
+    type: "navigation",
     label: "🔧 Component Testing",
-    action: () => {
-      void router.push("/dev/component-testing");
-    },
+    to: "/dev/component-testing",
     style: "none",
   },
 ];
 
 const deleteAccountSettings: SettingsInterface[] = [
   {
+    type: "action",
     label: deleteAccountLabel.value,
     action: processDeleteAccount,
     style: "negative",

@@ -55,11 +55,9 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { getLanguageByCode } from "src/utils/language";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 import { computed } from "vue";
 
 const { t } = useI18n();
-const router = useRouter();
 const authStore = useAuthenticationStore();
 const languageStore = useLanguageStore();
 
@@ -69,10 +67,9 @@ const displayLanguageSettings = computed((): SettingsInterface[] => {
 
   return [
     {
+      type: "navigation",
       label: t("settings.language.displayLanguage.title"),
-      action: () => {
-        void router.push({ name: "/settings/languages/display-language/" });
-      },
+      to: "/settings/languages/display-language/",
       style: "none",
       value: displayValue,
     },
@@ -97,10 +94,9 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
 
   return [
     {
+      type: "navigation",
       label: t("settings.language.spokenLanguages.title"),
-      action: () => {
-        void router.push({ name: "/settings/languages/spoken-languages/" });
-      },
+      to: "/settings/languages/spoken-languages/",
       style: "none",
       value: spokenValue,
     },

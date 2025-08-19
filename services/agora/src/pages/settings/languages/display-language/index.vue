@@ -28,6 +28,8 @@
           <SettingsMenuItem
             v-for="(language, index) in availableDisplayLanguages"
             :key="language.code"
+            :label="language.name"
+            :value="language.englishName"
             :show-separator="index < availableDisplayLanguages.length - 1"
             :border-radius="
               availableDisplayLanguages.length === 1
@@ -40,24 +42,16 @@
             "
             @click="selectDisplayLanguage(language.code)"
           >
-            <template #left>
-              <div class="language-item">
-                <div class="language-content">
-                  <div class="language-name">{{ language.name }}</div>
-                  <div class="language-english">{{ language.englishName }}</div>
-                </div>
-              </div>
-            </template>
-
-            <template #right>
-              <div class="checkmark-container">
-                <ZKIcon
-                  v-if="isCurrentLanguage(language.code)"
-                  color="#007AFF"
-                  name="mdi-check"
-                  size="1.5rem"
-                />
-              </div>
+            <template #right-icon>
+              <ZKIcon
+                v-if="language.code === displayLanguage"
+                color="#007AFF"
+                name="mdi-check"
+                size="1.5rem"
+                class="checkmark-icon"
+              />
+              <!-- Explicity render nothing by providing an empty div to overwrite the slot -->
+              <span></span>
             </template>
           </SettingsMenuItem>
         </div>
@@ -93,12 +87,6 @@ const authStore = useAuthenticationStore();
 
 const availableDisplayLanguages: ComputedRef<DisplayLanguageMetadata[]> =
   computed(() => getDisplayLanguages());
-
-function isCurrentLanguage(
-  languageCode: SupportedDisplayLanguageCodes
-): boolean {
-  return languageCode === displayLanguage.value;
-}
 
 function selectDisplayLanguage(
   languageCode: SupportedDisplayLanguageCodes

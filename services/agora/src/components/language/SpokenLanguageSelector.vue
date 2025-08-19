@@ -14,6 +14,8 @@
         <SettingsMenuItem
           v-for="(language, index) in selectedLanguages"
           :key="language.code"
+          :label="language.name"
+          :value="language.englishName"
           :show-separator="index < selectedLanguages.length - 1"
           :border-radius="
             selectedLanguages.length === 1
@@ -26,19 +28,13 @@
           "
           @click="removeLanguage(language.code)"
         >
-          <template #left>
-            <div class="language-item">
-              <div class="language-content">
-                <div class="language-name">{{ language.name }}</div>
-                <div class="language-english">{{ language.englishName }}</div>
-              </div>
-            </div>
-          </template>
-
-          <template #right>
-            <div class="action-container">
-              <ZKIcon color="#FF3B30" name="mdi-minus-circle" size="1.5rem" />
-            </div>
+          <template #right-icon>
+            <ZKIcon
+              color="#DC2626"
+              name="mdi-minus-circle"
+              size="1.5rem"
+              class="action-icon"
+            />
           </template>
         </SettingsMenuItem>
       </div>
@@ -70,6 +66,8 @@
         <SettingsMenuItem
           v-for="(language, index) in filteredAvailableLanguages"
           :key="language.code"
+          :label="language.name"
+          :value="language.englishName"
           :show-separator="index < filteredAvailableLanguages.length - 1"
           :border-radius="
             filteredAvailableLanguages.length === 1
@@ -82,19 +80,13 @@
           "
           @click="addLanguage(language.code)"
         >
-          <template #left>
-            <div class="language-item">
-              <div class="language-content">
-                <div class="language-name">{{ language.name }}</div>
-                <div class="language-english">{{ language.englishName }}</div>
-              </div>
-            </div>
-          </template>
-
-          <template #right>
-            <div class="action-container">
-              <ZKIcon color="#007AFF" name="mdi-plus-circle" size="1.5rem" />
-            </div>
+          <template #right-icon>
+            <ZKIcon
+              color="#6b4eff"
+              name="mdi-plus-circle"
+              size="1.5rem"
+              class="action-icon"
+            />
           </template>
         </SettingsMenuItem>
       </div>
