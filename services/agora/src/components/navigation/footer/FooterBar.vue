@@ -1,36 +1,42 @@
 <template>
   <div>
     <div class="flexIcons container">
-      <div
+      <RouterLink
         v-for="iconItem in bottomIconList"
         :key="iconItem.name"
-        class="iconStyle"
-        @click="iconItem.callback"
+        v-slot="{ navigate }"
+        :to="iconItem.route"
+        custom
       >
-        <div class="iconDiv">
-          <NewNotificationIndicator
-            v-if="iconItem.route === '/notification/'"
-          />
-          <ZKStyledIcon
-            :svg-string="
-              route.name === iconItem.route
-                ? iconItem.filled
-                : iconItem.standard
-            "
-          />
-        </div>
-
         <div
-          :style="{
-            color: route.name === iconItem.route ? '#6B4EFF' : '#7D7A85',
-          }"
+          class="iconStyle navigation-link"
+          @click="handleNavigationClick($event, iconItem, navigate)"
         >
-          <ZKStyledText
-            :text="iconItem.name"
-            :add-gradient="route.name === iconItem.route"
-          />
+          <div class="iconDiv">
+            <NewNotificationIndicator
+              v-if="iconItem.route === '/notification/'"
+            />
+            <ZKStyledIcon
+              :svg-string="
+                route.name === iconItem.route
+                  ? iconItem.filled
+                  : iconItem.standard
+              "
+            />
+          </div>
+
+          <div
+            :style="{
+              color: route.name === iconItem.route ? '#6B4EFF' : '#7D7A85',
+            }"
+          >
+            <ZKStyledText
+              :text="iconItem.name"
+              :add-gradient="route.name === iconItem.route"
+            />
+          </div>
         </div>
-      </div>
+      </RouterLink>
     </div>
 
     <PreLoginIntentionDialog
@@ -49,8 +55,8 @@ import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
-import type { RouteRecordName } from "vue-router";
-import { useRoute, useRouter } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
+import { useRoute } from "vue-router";
 
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -58,8 +64,8 @@ interface BottomIcon {
   name: string;
   standard: string;
   filled: string;
-  callback: () => Promise<void>;
-  route: RouteRecordName;
+  route: keyof RouteNamedMap;
+  requireAuth: boolean;
 }
 
 const homeIconStandard =
@@ -80,51 +86,39 @@ const bottomIconList: BottomIcon[] = [
     name: "Home",
     standard: homeIconStandard,
     filled: homeIconFilled,
-    callback: accessHomeFeed,
     route: "/",
+    requireAuth: false,
   },
   {
     name: "Explore",
     standard: exploreIconStandard,
     filled: exploreIconFilled,
-    callback: accessTopics,
     route: "/topics/",
+    requireAuth: false,
   },
   {
     name: "Dings",
     standard: notificationIconStandard,
     filled: notificationIconFilled,
-    callback: accessNotifications,
     route: "/notification/",
+    requireAuth: true,
   },
 ];
 
 const route = useRoute();
-const router = useRouter();
-
 const showLoginDialog = ref(false);
 
-async function accessHomeFeed() {
-  if (route.name == "/") {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  } else {
-    await router.push({ name: "/" });
-  }
-}
-
-async function accessTopics() {
-  if (route.name == "/topics/") {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  } else {
-    await router.push({ name: "/topics/" });
-  }
-}
-
-async function accessNotifications() {
-  if (isGuestOrLoggedIn.value === false) {
+function handleNavigationClick(
+  event: Event,
+  iconItem: BottomIcon,
+  navigate: () => void
+) {
+  if (iconItem.requireAuth && isGuestOrLoggedIn.value === false) {
     showLoginDialog.value = true;
+  } else if (route.name === iconItem.route) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } else {
-    await router.push({ name: "/notification/" });
+    navigate();
   }
 }
 </script>
@@ -157,5 +151,11 @@ async function accessNotifications() {
   width: 2rem;
   display: flex;
   justify-content: center;
+}
+
+.navigation-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 </style>
