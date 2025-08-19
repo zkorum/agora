@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 const welcomeBackgroundImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
+  process.env.VITE_PUBLIC_DIR + "images/onboarding/background.webp";
 </script>
 
 <style scoped lang="scss">

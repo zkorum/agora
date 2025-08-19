@@ -47,10 +47,10 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const brandImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/brand.webp";
+  process.env.VITE_PUBLIC_DIR + "images/onboarding/brand.webp";
 
 const welcomeBackgroundImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
+  process.env.VITE_PUBLIC_DIR + "images/onboarding/background.webp";
 
 const { onboardingMode } = storeToRefs(onboardingFlowStore());
 

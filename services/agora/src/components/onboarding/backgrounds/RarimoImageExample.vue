@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 const rarimoExampleImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/rarimoExample.png";
+  process.env.VITE_PUBLIC_DIR + "images/onboarding/rarimoExample.png";
 </script>
 
 <style scoped lang="scss">

@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 const brandImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/brandButterflies.png";
+  process.env.VITE_PUBLIC_DIR + "images/onboarding/brandButterflies.png";
 </script>
 
 <style scoped lang="scss">

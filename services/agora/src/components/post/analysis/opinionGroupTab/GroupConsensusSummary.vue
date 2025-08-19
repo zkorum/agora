@@ -47,7 +47,7 @@ defineProps<{
 
 const summaryTitle = "Group summary";
 
-const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
+const starIcon = process.env.VITE_PUBLIC_DIR + "images/icons/stars.svg";
 
 const showInformationDialog = ref(false);
 </script>

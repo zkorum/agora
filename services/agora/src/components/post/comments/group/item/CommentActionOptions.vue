@@ -98,7 +98,7 @@ async function shareOpinionCallback() {
   const sharePostUrl =
     window.location.origin +
     process.env.VITE_PUBLIC_DIR +
-    "/conversation/" +
+    "conversation/" +
     props.postSlugId +
     "?opinion=" +
     props.commentItem.opinionSlugId;

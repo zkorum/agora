@@ -161,8 +161,6 @@ const currentClusterTab = ref<PolisKey>(props.polis.clusters[0]?.key || "0");
 
 const showClusterInformation = ref(false);
 
-const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
-
 const zodClusterImg = z.object({
   clusterWidthPercent: z.number(),
   top: z.number(),
@@ -376,8 +374,8 @@ function composeImagePath(
   const version = "-v2";
 
   return (
-    VITE_PUBLIC_DIR +
-    "/images/cluster/cluster" +
+    process.env.VITE_PUBLIC_DIR +
+    "images/cluster/cluster" +
     clusterNumber +
     "-" +
     (index + 1) +

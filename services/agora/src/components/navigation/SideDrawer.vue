@@ -97,9 +97,10 @@ const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
 
 const drawerIconLogo1 =
-  process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
+  process.env.VITE_PUBLIC_DIR + "images/icons/agora-wings.svg";
+console.log(drawerIconLogo1);
 const drawerIconLogo2 =
-  process.env.VITE_PUBLIC_DIR + "/images/icons/agora-text.svg";
+  process.env.VITE_PUBLIC_DIR + "images/icons/agora-text.svg";
 
 const router = useRouter();
 const route = useRoute();
