@@ -50,8 +50,11 @@ defineEmits<{
   padding: 1rem;
   transition: background-color 0.3s ease;
 
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.07);
+  // Only apply hover effects on devices that support hovering (not touch)
+  @media (hover: hover) {
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.07);
+    }
   }
 
   &--rounded-top {
