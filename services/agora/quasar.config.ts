@@ -5,9 +5,6 @@
 import { defineConfig } from "#q-app/wrappers";
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
-import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "url";
 import "dotenv/config";
 
 export default defineConfig((ctx) => {
