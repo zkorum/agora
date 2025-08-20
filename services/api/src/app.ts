@@ -303,9 +303,12 @@ Example Invalid Output 2:
   }
 }
 
-Now analyze the following JSON input carefully and provide insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
-Be especially mindful of sarcasm, irony, or exaggerated language, and do not take all statements at face value. Apply judgment to distinguish between literal and non-literal expressions.
-Note: the meaning of representative opinions is the same as in Polis.`),
+Now analyze the following JSON input carefully and generate insightful, concise labels and summaries that capture the core of the discussion while strictly adhering to above guidelines.
+When processing the JSON input:
+- Pay close attention to sarcasm, irony, or exaggeration. Do not take all statements at face value—use judgment to separate literal from non-literal expressions.
+- For each group, treat "representativeAgree" as the set of opinions that most members of that group agree with.
+- For each group, treat "representativeDisagree" as the set of opinions that most members of that group disagree with.
+- Always apply this distinction when interpreting meaning and creating labels or summaries.`),
     DB_HOST: z.string().optional(),
     DB_PORT: z.coerce.number().int().nonnegative().default(5432),
     DB_NAME: z.string().default("agora"),
