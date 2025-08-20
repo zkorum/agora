@@ -26,16 +26,16 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const loginRequirementOptions = [
   {
-    title: "Requires login",
-    description:
-      "Anyone with the link can view the conversation, but will need to login to vote and contribute opinions",
-    value: "requiresLogin",
-  },
-  {
     title: "Guest participation",
     description:
       "Anyone with the link can view the conversation, vote and contribute opinions",
     value: "guestParticipation",
+  },
+  {
+    title: "Requires login",
+    description:
+      "Anyone with the link can view the conversation, but will need to login to vote and contribute opinions",
+    value: "requiresLogin",
   },
 ];
 
