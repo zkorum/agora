@@ -30,19 +30,16 @@
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SpokenLanguageSelector from "src/components/language/SpokenLanguageSelector.vue";
-import { useI18n } from "vue-i18n";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  spokenLanguagesSettingsTranslations,
+  type SpokenLanguagesSettingsTranslations,
+} from "./SpokenLanguagesSettings.i18n";
 
-const { t } = useI18n();
+const { t } = useComponentI18n<SpokenLanguagesSettingsTranslations>(
+  spokenLanguagesSettingsTranslations
+);
 </script>
-
-<i18n lang="yaml">
-en:
-  pageTitle: "Spoken Languages"
-es:
-  pageTitle: "Idiomas hablados"
-fr:
-  pageTitle: "Langues parlées"
-</i18n>
 
 <style scoped lang="scss">
 .container {

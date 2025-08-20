@@ -64,7 +64,11 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { useI18n } from "vue-i18n";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  displayLanguageSettingsTranslations,
+  type DisplayLanguageSettingsTranslations,
+} from "./DisplayLanguageSettings.i18n";
 import { storeToRefs } from "pinia";
 import { useLanguageStore } from "src/stores/language";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -75,7 +79,9 @@ import type {
 import { getDisplayLanguages } from "src/utils/language";
 import { computed, onMounted } from "vue";
 
-const { t } = useI18n();
+const { t } = useComponentI18n<DisplayLanguageSettingsTranslations>(
+  displayLanguageSettingsTranslations
+);
 const languageStore = useLanguageStore();
 const { displayLanguage } = storeToRefs(languageStore);
 const { changeDisplayLanguage, loadLanguagePreferencesFromBackend } =
@@ -112,15 +118,6 @@ onMounted(async () => {
   }
 });
 </script>
-
-<i18n lang="yaml">
-en:
-  pageTitle: "Display Language"
-es:
-  pageTitle: "Idioma de visualización"
-fr:
-  pageTitle: "Langue d'affichage"
-</i18n>
 
 <style scoped lang="scss">
 .container {

@@ -92,25 +92,6 @@ export default defineConfig((ctx) => {
       // polyfillModulePreload: true,
       // distDir
 
-      extendViteConf(viteConf) {
-        viteConf.plugins?.push(
-          VueI18nPlugin({
-            // Only handle local i18n blocks, not global messages
-            include: resolve(
-              dirname(fileURLToPath(import.meta.url)),
-              "./src/**/*.vue"
-            ),
-            // Disable runtime-only to preserve availableLocales
-            runtimeOnly: false,
-            // Enable composition API
-            compositionOnly: true,
-            // Allow both global and local scopes
-            strictMessage: false,
-            // Enable global SFC scope for proper local block handling
-            globalSFCScope: true,
-          })
-        );
-      },
       viteVuePluginOptions: {
         template: {
           compilerOptions: {

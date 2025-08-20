@@ -54,10 +54,16 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { getLanguageByCode } from "src/utils/language";
-import { useI18n } from "vue-i18n";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  languagesSettingsTranslations,
+  type LanguagesSettingsTranslations,
+} from "./LanguagesSettings.i18n";
 import { computed } from "vue";
 
-const { t } = useI18n();
+const { t } = useComponentI18n<LanguagesSettingsTranslations>(
+  languagesSettingsTranslations
+);
 const authStore = useAuthenticationStore();
 const languageStore = useLanguageStore();
 
@@ -103,21 +109,6 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
   ];
 });
 </script>
-
-<i18n lang="yaml">
-en:
-  pageTitle: "Language"
-  displayLanguageLabel: "Display Language"
-  spokenLanguagesLabel: "Spoken Languages"
-es:
-  pageTitle: "Idioma"
-  displayLanguageLabel: "Idioma de visualización"
-  spokenLanguagesLabel: "Idiomas hablados"
-fr:
-  pageTitle: "Langue"
-  displayLanguageLabel: "Langue d'affichage"
-  spokenLanguagesLabel: "Langues parlées"
-</i18n>
 
 <style scoped lang="scss">
 .container {

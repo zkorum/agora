@@ -117,7 +117,11 @@
 import type { ComputedRef } from "vue";
 import { computed, ref, onMounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
-import { useI18n } from "vue-i18n";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  spokenLanguageSelectorTranslations,
+  type SpokenLanguageSelectorTranslations,
+} from "./SpokenLanguageSelector.i18n";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import SettingsSearchInput from "src/components/settings/SettingsSearchInput.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
@@ -135,7 +139,9 @@ import {
   getLanguageByCode,
 } from "src/utils/language";
 
-const { t } = useI18n();
+const { t } = useComponentI18n<SpokenLanguageSelectorTranslations>(
+  spokenLanguageSelectorTranslations
+);
 
 const emit = defineEmits<{
   "language-added": [languageCode: SupportedSpokenLanguageCodes];
@@ -279,39 +285,6 @@ defineExpose({
   handleNext,
 });
 </script>
-
-<i18n lang="yaml">
-en:
-  selectedLanguages: "Selected Languages"
-  addMoreLanguages: "Add More Languages"
-  selectLanguages: "Select Languages"
-  searchLanguages: "Search languages..."
-  noLanguagesFound: "No languages found"
-  allLanguagesSelected: "All languages selected"
-  cannotRemoveLastLanguage: "You must have at least one language selected"
-  failedToSaveLanguages: "Failed to save language preferences"
-  failedToLoadLanguages: "Failed to load language preferences"
-es:
-  selectedLanguages: "Idiomas seleccionados"
-  addMoreLanguages: "Agregar más idiomas"
-  selectLanguages: "Seleccionar idiomas"
-  searchLanguages: "Buscar idiomas..."
-  noLanguagesFound: "No se encontraron idiomas"
-  allLanguagesSelected: "Todos los idiomas seleccionados"
-  cannotRemoveLastLanguage: "Debe tener al menos un idioma seleccionado"
-  failedToSaveLanguages: "Error al guardar las preferencias de idioma"
-  failedToLoadLanguages: "Error al cargar las preferencias de idioma"
-fr:
-  selectedLanguages: "Langues sélectionnées"
-  addMoreLanguages: "Ajouter plus de langues"
-  selectLanguages: "Sélectionner des langues"
-  searchLanguages: "Rechercher des langues..."
-  noLanguagesFound: "Aucune langue trouvée"
-  allLanguagesSelected: "Toutes les langues sélectionnées"
-  cannotRemoveLastLanguage: "Vous devez avoir au moins une langue sélectionnée"
-  failedToSaveLanguages: "Échec de la sauvegarde des préférences linguistiques"
-  failedToLoadLanguages: "Échec du chargement des préférences linguistiques"
-</i18n>
 
 <style scoped lang="scss">
 .spoken-language-selector {

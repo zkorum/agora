@@ -60,7 +60,11 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  settingsTranslations,
+  type SettingsTranslations,
+} from "./Settings.i18n";
 
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -70,7 +74,7 @@ const { showDeleteAccountDialog } = useDialog();
 const { deleteUserAccount } = useBackendAccountApi();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
-const { t } = useI18n();
+const { t } = useComponentI18n<SettingsTranslations>(settingsTranslations);
 
 const { updateAuthState } = useBackendAuthApi();
 
@@ -169,51 +173,6 @@ function processDeleteAccount() {
   });
 }
 </script>
-
-<i18n lang="yaml">
-en:
-  pageTitle: "Settings"
-  deleteAccount: "Delete Account"
-  deleteGuestAccount: "Delete Guest Account"
-  profile: "Profile"
-  contentPreference: "Content Preference"
-  language: "Language"
-  privacyPolicy: "Privacy Policy"
-  termsOfService: "Terms of Service"
-  logOut: "Log Out"
-  moderatorOrganization: "Moderator - Organization"
-  componentTesting: "🔧 Component Testing"
-  accountDeleted: "Account deleted"
-  accountDeletionFailed: "Oops! Account deletion failed. Please try again"
-es:
-  pageTitle: "Configuración"
-  deleteAccount: "Eliminar cuenta"
-  deleteGuestAccount: "Eliminar cuenta de invitado"
-  profile: "Perfil"
-  contentPreference: "Preferencia de contenido"
-  language: "Idioma"
-  privacyPolicy: "Política de privacidad"
-  termsOfService: "Términos de servicio"
-  logOut: "Cerrar sesión"
-  moderatorOrganization: "Moderador - Organización"
-  componentTesting: "🔧 Pruebas de componentes"
-  accountDeleted: "Cuenta eliminada"
-  accountDeletionFailed: "¡Ups! Error al eliminar la cuenta. Inténtalo de nuevo"
-fr:
-  pageTitle: "Paramètres"
-  deleteAccount: "Supprimer le compte"
-  deleteGuestAccount: "Supprimer le compte invité"
-  profile: "Profil"
-  contentPreference: "Préférence de contenu"
-  language: "Langue"
-  privacyPolicy: "Politique de confidentialité"
-  termsOfService: "Conditions d'utilisation"
-  logOut: "Se déconnecter"
-  moderatorOrganization: "Modérateur - Organisation"
-  componentTesting: "🔧 Tests de composants"
-  accountDeleted: "Compte supprimé"
-  accountDeletionFailed: "Oups ! Échec de la suppression du compte. Veuillez réessayer"
-</i18n>
 
 <style scoped lang="scss">
 .container {

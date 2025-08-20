@@ -8,7 +8,6 @@ import {
 } from "@vue/eslint-config-typescript";
 import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
 import jsonPlugin from "@eslint/json";
-import vueI18nPlugin from "@intlify/eslint-plugin-vue-i18n";
 
 export default defineConfigWithVueTs(
   {
@@ -42,47 +41,16 @@ export default defineConfigWithVueTs(
    */
   pluginVue.configs["flat/recommended"],
 
-  // Vue i18n plugin configuration
-  ...vueI18nPlugin.configs["flat/recommended"],
-
   {
     files: ["**/*.ts", "**/*.vue"],
     languageOptions: {
       parser: pluginVue.parser,
-    },
-    settings: {
-      "vue-i18n": {
-        localeDir: "./src/i18n/**",
-        messageSyntaxVersion: "^9.0.0",
-      },
     },
     rules: {
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports" },
       ],
-      // Vue i18n specific rules - enhanced schema validation
-      "@intlify/vue-i18n/no-unused-keys": "warn",
-      "@intlify/vue-i18n/no-missing-keys": "error",
-      "@intlify/vue-i18n/no-raw-text": "off", // Disabled during gradual migration
-
-      // Message syntax and structure validation
-      "@intlify/vue-i18n/valid-message-syntax": "error",
-      "@intlify/vue-i18n/no-duplicate-keys-in-locale": "error",
-
-      // Key format and naming consistency
-      "@intlify/vue-i18n/key-format-style": [
-        "error",
-        "camelCase",
-        {
-          allowArray: false,
-          splitByDots: true,
-        },
-      ],
-
-      // Security and best practices
-      "@intlify/vue-i18n/no-html-messages": "warn",
-      "@intlify/vue-i18n/no-v-html": "warn",
     },
   },
   // https://github.com/vuejs/eslint-config-typescript

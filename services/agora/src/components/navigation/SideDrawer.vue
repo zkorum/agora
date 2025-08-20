@@ -98,7 +98,11 @@ import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
-import { useI18n } from "vue-i18n";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  sideDrawerTranslations,
+  type SideDrawerTranslations,
+} from "./SideDrawer.i18n";
 import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
@@ -117,7 +121,10 @@ const drawerIconLogo2 =
   process.env.VITE_PUBLIC_DIR + "images/icons/agora-text.svg";
 
 const route = useRoute();
-const { t, locale } = useI18n();
+
+const { t, locale } = useComponentI18n<SideDrawerTranslations>(
+  sideDrawerTranslations
+);
 
 const showLoginDialog = ref(false);
 
@@ -217,27 +224,6 @@ function handleAuthenticatedRouteClick(
   }
 }
 </script>
-
-<i18n lang="yaml">
-en:
-  home: "Home"
-  explore: "Explore"
-  dings: "Dings"
-  profile: "Profile"
-  settings: "Settings"
-es:
-  home: "Inicio"
-  explore: "Explorar"
-  dings: "Dings"
-  profile: "Perfil"
-  settings: "Configuración"
-fr:
-  home: "Accueil"
-  explore: "Explorer"
-  dings: "Dings"
-  profile: "Profil"
-  settings: "Paramètres"
-</i18n>
 
 <style lang="scss" scoped>
 .container {
