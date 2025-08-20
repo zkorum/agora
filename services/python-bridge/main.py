@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ValidationError
-from typing import Optional, Union, List
+from typing import Optional, Union, List, TypedDict
 from flask import Flask, jsonify, request, abort
 from reddwarf.data_loader import Loader
 from reddwarf.implementations.polis import run_pipeline
@@ -95,8 +95,21 @@ class MathRequest(BaseModel):
     votes: List[VoteRecord]
 
 
-def get_maths(votes, min_user_vote_threshold, max_group_count=6):
-    # print("Votes", votes)
+class Consensus(TypedDict):
+    agree: List
+    disagree: List
+
+
+class MathResult(TypedDict):
+    statements_df: List
+    participants_df: List
+    repness: dict
+    group_comment_stats: dict
+    consensus: Consensus
+
+
+def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
+    print("Votes", votes)
     print(
         f"Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
     )
@@ -115,15 +128,13 @@ def get_maths(votes, min_user_vote_threshold, max_group_count=6):
         print(err)
         print("\n")
         print("Returning an object with empty values")
-        return jsonify(
-            {
-                "statements_df": [],
-                "participants_df": [],
-                "repness": {},
-                "group_comment_stats": {},
-                "consensus": {"agree": [], "disagree": []},
-            }
-        ), 200
+        return {
+            "statements_df": [],
+            "participants_df": [],
+            "repness": {},
+            "group_comment_stats": {},
+            "consensus": {"agree": [], "disagree": []},
+        }
 
     group_stats_df = (
         result.group_comment_stats.reset_index()
@@ -179,19 +190,15 @@ def get_maths(votes, min_user_vote_threshold, max_group_count=6):
     # print("\n\n")
     # print("repness", result.repness)
     # print("\n\n")
-    return jsonify(
-        {
-            "statements_df": result.statements_df.reset_index().to_dict(
-                orient="records"
-            ),
-            "participants_df": result.participants_df.reset_index().to_dict(
-                orient="records"
-            ),
-            "repness": result.repness,
-            "group_comment_stats": group_comment_stats,
-            "consensus": result.consensus,
-        }
-    ), 200
+    return {
+        "statements_df": result.statements_df.reset_index().to_dict(orient="records"),
+        "participants_df": result.participants_df.reset_index().to_dict(
+            orient="records"
+        ),
+        "repness": result.repness,
+        "group_comment_stats": group_comment_stats,
+        "consensus": result.consensus,
+    }
 
 
 @app.route("/math", methods=["POST"])
@@ -204,13 +211,19 @@ def get_math_results():
         f"Processing math results for conversation '{payload.conversation_slug_id}' "
         f"(ID: {payload.conversation_id}) with {len(payload.votes)} votes."
     )
-    print("Payload", payload)
+    # print("Payload", payload)
     votes = [vote.model_dump() for vote in payload.votes]
 
-    # For fewer than 21 statements, gradually increase min_user_vote_threshold from 4 up to 7.
+    # For fewer than 14 statements, gradually increase min_user_vote_threshold from 4 up to 7.
     # At 14 statements and above (round(14/2) = 7), the threshold stays at 7.
     total_statement_ids = {vote.statement_id for vote in payload.votes}
     statement_count = len(total_statement_ids)
-    min_user_vote_threshold = max(4, min(round(statement_count / 2), 7))
+    potential_threshold = round(statement_count / 2)
+    if potential_threshold == 0:
+        min_user_vote_threshold = 1
+    else:
+        min_user_vote_threshold = max(4, min(potential_threshold, 7))
 
-    return get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
+    return jsonify(
+        get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
+    )
