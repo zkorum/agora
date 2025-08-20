@@ -29,7 +29,7 @@
         <div class="tabCluster">
           <div class="tabItem" @click="selectedTab('following')">
             <ZKTab
-              :text="isLoggedIn ? 'Following' : 'Popular'"
+              :text="isLoggedIn ? t('following') : t('popular')"
               :is-highlighted="currentHomeFeedTab === 'following'"
               :should-underline-on-highlight="false"
             />
@@ -37,7 +37,7 @@
 
           <div class="tabItem" @click="selectedTab('new')">
             <ZKTab
-              text="New"
+              :text="t('new')"
               :is-highlighted="currentHomeFeedTab === 'new'"
               :should-underline-on-highlight="false"
             />
@@ -66,6 +66,10 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import { homeTranslations, type HomeTranslations } from "./Home.i18n";
+
+const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 
 const agoraLogo = process.env.VITE_PUBLIC_DIR + "images/icons/agora-wings.svg";
 

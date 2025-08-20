@@ -13,20 +13,20 @@
       >
         <template #header>
           <InfoHeader
-            title="Agora aims to be exclusively human"
-            :description="description"
+            :title="t('pageTitle')"
+            :description="t('description')"
             icon-name="mdi-heart"
           />
         </template>
 
         <template #body>
           <ZKGradientButton
-            label="Verify anonymously"
+            :label="t('verifyAnonymously')"
             @click="goToNextRoute()"
           />
 
           <ZKGradientButton
-            label="Verify with my phone number"
+            :label="t('verifyWithPhone')"
             gradient-background="#E7E7FF"
             label-color="#6B4EFF"
             @click="verifyPhone()"
@@ -49,11 +49,17 @@ import { useRouter } from "vue-router";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  step2SignupOnboardingTranslations,
+  type Step2SignupOnboardingTranslations,
+} from "./Step2SignupOnboarding.i18n";
+
+const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
+  step2SignupOnboardingTranslations
+);
 
 const router = useRouter();
-
-const description =
-  "More than half of internet traffic comes from bots. That’s why we verify users, so you’re debating people, not robots plotting world domination!";
 
 async function goToNextRoute() {
   await router.push({ name: "/onboarding/step3-passport/" });

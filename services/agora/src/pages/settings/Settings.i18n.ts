@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface SettingsTranslations {
   pageTitle: string;
   deleteAccount: string;
@@ -12,10 +14,12 @@ export interface SettingsTranslations {
   componentTesting: string;
   accountDeleted: string;
   accountDeletionFailed: string;
-  [key: string]: string; // Index signature to satisfy Record<string, string> constraint
 }
 
-export const settingsTranslations: Record<string, SettingsTranslations> = {
+export const settingsTranslations: Record<
+  SupportedDisplayLanguageCodes,
+  SettingsTranslations
+> = {
   en: {
     pageTitle: "Settings",
     deleteAccount: "Delete Account",

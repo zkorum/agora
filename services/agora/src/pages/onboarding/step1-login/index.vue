@@ -14,20 +14,20 @@
       >
         <template #header>
           <InfoHeader
-            title="Log In"
-            :description="description"
+            :title="t('pageTitle')"
+            :description="t('description')"
             icon-name="mdi-login"
           />
         </template>
 
         <template #body>
           <ZKGradientButton
-            label="Log In with RariMe"
+            :label="t('loginWithRariMe')"
             @click="goToPassportLogin()"
           />
 
           <ZKGradientButton
-            label="Login with my phone number"
+            :label="t('loginWithPhone')"
             gradient-background="#E7E7FF"
             label-color="#6b4eff"
             @click="goToPhoneLogin()"
@@ -48,8 +48,15 @@ import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  loginOnboardingTranslations,
+  type LoginOnboardingTranslations,
+} from "./LoginOnboarding.i18n";
 
-const description = "Please select a log in method.";
+const { t } = useComponentI18n<LoginOnboardingTranslations>(
+  loginOnboardingTranslations
+);
 
 const router = useRouter();
 

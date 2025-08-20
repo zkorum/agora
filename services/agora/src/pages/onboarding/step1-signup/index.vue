@@ -13,8 +13,8 @@
       >
         <template #header>
           <InfoHeader
-            title="Why does Agora exist?"
-            :description="description"
+            :title="t('pageTitle')"
+            :description="t('description')"
             icon-name="mdi-robot"
           />
         </template>
@@ -29,9 +29,15 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useRouter } from "vue-router";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  signupOnboardingTranslations,
+  type SignupOnboardingTranslations,
+} from "./SignupOnboarding.i18n";
 
-const description =
-  "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.";
+const { t } = useComponentI18n<SignupOnboardingTranslations>(
+  signupOnboardingTranslations
+);
 
 const router = useRouter();
 

@@ -1,5 +1,6 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 /**
  * Typed composable for component-specific i18n with per-file translations
@@ -23,13 +24,13 @@ import { useI18n } from "vue-i18n";
  * const { t, locale } = useComponentI18n<MyComponentTranslations>(translations);
  * const title = t("title"); // TypeScript autocompletion and type safety
  */
-export function useComponentI18n<T extends Record<string, string>>(
-  translations: Record<string, T>
+export function useComponentI18n<T extends { [K in keyof T]: string }>(
+  translations: Record<SupportedDisplayLanguageCodes, T>
 ) {
   const { locale } = useI18n();
 
   const t = (key: keyof T): string => {
-    const currentLocale = locale.value;
+    const currentLocale = locale.value as SupportedDisplayLanguageCodes;
     const localeTranslations = translations[currentLocale];
 
     if (!localeTranslations) {

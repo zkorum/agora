@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface SpokenLanguageSelectorTranslations {
   selectedLanguages: string;
   addMoreLanguages: string;
@@ -8,11 +10,10 @@ export interface SpokenLanguageSelectorTranslations {
   cannotRemoveLastLanguage: string;
   failedToSaveLanguages: string;
   failedToLoadLanguages: string;
-  [key: string]: string; // Index signature to satisfy Record<string, string> constraint
 }
 
 export const spokenLanguageSelectorTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   SpokenLanguageSelectorTranslations
 > = {
   en: {

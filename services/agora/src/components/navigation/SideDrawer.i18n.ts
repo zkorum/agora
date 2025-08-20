@@ -1,13 +1,17 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface SideDrawerTranslations {
   home: string;
   explore: string;
   dings: string;
   profile: string;
   settings: string;
-  [key: string]: string; // Index signature to satisfy Record<string, string> constraint
 }
 
-export const sideDrawerTranslations: Record<string, SideDrawerTranslations> = {
+export const sideDrawerTranslations: Record<
+  SupportedDisplayLanguageCodes,
+  SideDrawerTranslations
+> = {
   en: {
     home: "Home",
     explore: "Explore",

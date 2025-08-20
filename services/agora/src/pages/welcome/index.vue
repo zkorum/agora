@@ -5,17 +5,17 @@
   >
     <img :src="brandImagePath" class="welcomeImage" />
     <div v-if="!isLoggedIn" class="buttonFlex">
-      <ZKGradientButton label="Sign Up" @click="gotoNextRoute(false)" />
+      <ZKGradientButton :label="t('signUp')" @click="gotoNextRoute(false)" />
 
       <ZKGradientButton
-        label="Log In"
+        :label="t('login')"
         gradient-background="#ffffff"
         label-color="#6b4eff"
         @click="gotoNextRoute(true)"
       />
 
       <ZKGradientButton
-        label="Skip Authentication"
+        :label="t('skipAuthentication')"
         gradient-background="#f1eeff"
         label-color="#000000"
         @click="skipAuthentication()"
@@ -23,10 +23,10 @@
     </div>
 
     <div v-if="isLoggedIn" class="buttonFlex">
-      <ZKGradientButton label="Launch App" @click="skipAuthentication()" />
+      <ZKGradientButton :label="t('launchApp')" @click="skipAuthentication()" />
 
       <ZKGradientButton
-        label="Log Out"
+        :label="t('logOut')"
         gradient-background="#80cbc4"
         label-color="#000000"
         @click="logoutRequested(true)"
@@ -43,6 +43,10 @@ import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { useRouter } from "vue-router";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import { welcomeTranslations, type WelcomeTranslations } from "./Welcome.i18n";
+
+const { t } = useComponentI18n<WelcomeTranslations>(welcomeTranslations);
 
 const router = useRouter();
 

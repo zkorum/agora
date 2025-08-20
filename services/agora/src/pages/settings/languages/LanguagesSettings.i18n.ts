@@ -1,12 +1,13 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface LanguagesSettingsTranslations {
   pageTitle: string;
   displayLanguageLabel: string;
   spokenLanguagesLabel: string;
-  [key: string]: string; // Index signature to satisfy Record<string, string> constraint
 }
 
 export const languagesSettingsTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   LanguagesSettingsTranslations
 > = {
   en: {
