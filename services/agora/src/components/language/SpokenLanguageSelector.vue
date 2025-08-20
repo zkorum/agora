@@ -7,7 +7,7 @@
       class="selector-section"
     >
       <h3 class="section-title">
-        {{ t("settings.language.spokenLanguages.selectedLanguages") }}
+        {{ t("selectedLanguages") }}
         ({{ selectedLanguages.length }})
       </h3>
       <div class="settings-background">
@@ -45,8 +45,8 @@
       <h3 class="section-title">
         {{
           selectedLanguages.length > 0
-            ? t("settings.language.spokenLanguages.addMoreLanguages")
-            : t("settings.language.spokenLanguages.selectLanguages")
+            ? t("addMoreLanguages")
+            : t("selectLanguages")
         }}
       </h3>
 
@@ -54,7 +54,7 @@
       <div class="search-container">
         <SettingsSearchInput
           v-model="searchQuery"
-          :placeholder="t('settings.language.spokenLanguages.searchLanguages')"
+          :placeholder="t('searchLanguages')"
         />
       </div>
 
@@ -98,7 +98,7 @@
       >
         <ZKIcon name="mdi-magnify" size="2rem" color="#999" />
         <div class="no-results-text">
-          {{ t("settings.language.spokenLanguages.noLanguagesFound") }}
+          {{ t("noLanguagesFound") }}
         </div>
       </div>
 
@@ -106,7 +106,7 @@
       <div v-else-if="availableLanguages.length === 0" class="no-results">
         <ZKIcon name="mdi-check-all" size="2rem" color="#007AFF" />
         <div class="no-results-text">
-          {{ t("settings.language.spokenLanguages.allLanguagesSelected") }}
+          {{ t("allLanguagesSelected") }}
         </div>
       </div>
     </div>
@@ -229,9 +229,7 @@ async function removeLanguage(
 
   // Prevent removing the last language
   if (spokenLanguages.value.length === 1) {
-    showNotifyMessage(
-      t("settings.language.spokenLanguages.cannotRemoveLastLanguage")
-    );
+    showNotifyMessage(t("cannotRemoveLastLanguage"));
     return;
   }
 
@@ -253,9 +251,7 @@ async function saveLanguageChanges(
     await updateSpokenLanguages({ newLanguages });
   } catch (err: unknown) {
     console.error("Failed to update spoken languages:", err);
-    showNotifyMessage(
-      t("settings.language.spokenLanguages.failedToSaveLanguages")
-    );
+    showNotifyMessage(t("failedToSaveLanguages"));
   } finally {
     isSaving.value = false;
   }
@@ -269,9 +265,7 @@ onMounted(async () => {
       await loadLanguagePreferencesFromBackend();
     } catch (err) {
       console.error("Failed to load spoken languages from backend:", err);
-      showNotifyMessage(
-        t("settings.language.spokenLanguages.failedToLoadLanguages")
-      );
+      showNotifyMessage(t("failedToLoadLanguages"));
     }
   }
 });
@@ -285,6 +279,39 @@ defineExpose({
   handleNext,
 });
 </script>
+
+<i18n lang="yaml">
+en:
+  selectedLanguages: "Selected Languages"
+  addMoreLanguages: "Add More Languages"
+  selectLanguages: "Select Languages"
+  searchLanguages: "Search languages..."
+  noLanguagesFound: "No languages found"
+  allLanguagesSelected: "All languages selected"
+  cannotRemoveLastLanguage: "You must have at least one language selected"
+  failedToSaveLanguages: "Failed to save language preferences"
+  failedToLoadLanguages: "Failed to load language preferences"
+es:
+  selectedLanguages: "Idiomas seleccionados"
+  addMoreLanguages: "Agregar más idiomas"
+  selectLanguages: "Seleccionar idiomas"
+  searchLanguages: "Buscar idiomas..."
+  noLanguagesFound: "No se encontraron idiomas"
+  allLanguagesSelected: "Todos los idiomas seleccionados"
+  cannotRemoveLastLanguage: "Debe tener al menos un idioma seleccionado"
+  failedToSaveLanguages: "Error al guardar las preferencias de idioma"
+  failedToLoadLanguages: "Error al cargar las preferencias de idioma"
+fr:
+  selectedLanguages: "Langues sélectionnées"
+  addMoreLanguages: "Ajouter plus de langues"
+  selectLanguages: "Sélectionner des langues"
+  searchLanguages: "Rechercher des langues..."
+  noLanguagesFound: "Aucune langue trouvée"
+  allLanguagesSelected: "Toutes les langues sélectionnées"
+  cannotRemoveLastLanguage: "Vous devez avoir au moins une langue sélectionnée"
+  failedToSaveLanguages: "Échec de la sauvegarde des préférences linguistiques"
+  failedToLoadLanguages: "Échec du chargement des préférences linguistiques"
+</i18n>
 
 <style scoped lang="scss">
 .spoken-language-selector {

@@ -8,6 +8,7 @@ import {
 } from "@vue/eslint-config-typescript";
 import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
 import jsonPlugin from "@eslint/json";
+import vueI18nPlugin from "@intlify/eslint-plugin-vue-i18n";
 
 export default defineConfigWithVueTs(
   {
@@ -41,13 +42,29 @@ export default defineConfigWithVueTs(
    */
   pluginVue.configs["flat/recommended"],
 
+  // Vue i18n plugin configuration
+  ...vueI18nPlugin.configs["flat/recommended"],
+
   {
     files: ["**/*.ts", "**/*.vue"],
+    languageOptions: {
+      parser: pluginVue.parser,
+    },
+    settings: {
+      "vue-i18n": {
+        localeDir: "./src/i18n/**",
+        messageSyntaxVersion: "^9.0.0",
+      },
+    },
     rules: {
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports" },
       ],
+      // Vue i18n specific rules - migration-friendly validation
+      "@intlify/vue-i18n/no-unused-keys": "warn",
+      "@intlify/vue-i18n/no-missing-keys": "warn",
+      "@intlify/vue-i18n/no-raw-text": "off", // Disabled during gradual migration
     },
   },
   // https://github.com/vuejs/eslint-config-typescript

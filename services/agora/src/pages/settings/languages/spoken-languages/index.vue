@@ -16,9 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle>{{
-          t("settings.language.spokenLanguages.title")
-        }}</template>
+        <template #middle>{{ t("pageTitle") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -36,6 +34,15 @@ import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 </script>
+
+<i18n lang="yaml">
+en:
+  pageTitle: "Spoken Languages"
+es:
+  pageTitle: "Idiomas hablados"
+fr:
+  pageTitle: "Langues parlées"
+</i18n>
 
 <style scoped lang="scss">
 .container {

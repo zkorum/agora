@@ -4,10 +4,8 @@ import es from "./es";
 import fr from "./fr";
 import type { TranslationSchema } from "./types";
 
-const messages: Record<SupportedDisplayLanguageCodes, TranslationSchema> = {
+export default {
   en: en,
   es: es,
   fr: fr,
-};
-
-export default messages;
+} as Record<SupportedDisplayLanguageCodes, TranslationSchema>;

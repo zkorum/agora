@@ -16,7 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle>{{ t("settings.language.title") }}</template>
+        <template #middle>{{ t("pageTitle") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -68,7 +68,7 @@ const displayLanguageSettings = computed((): SettingsInterface[] => {
   return [
     {
       type: "navigation",
-      label: t("settings.language.displayLanguage.title"),
+      label: t("displayLanguageLabel"),
       to: "/settings/languages/display-language/",
       style: "none",
       value: displayValue,
@@ -95,7 +95,7 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
   return [
     {
       type: "navigation",
-      label: t("settings.language.spokenLanguages.title"),
+      label: t("spokenLanguagesLabel"),
       to: "/settings/languages/spoken-languages/",
       style: "none",
       value: spokenValue,
@@ -103,6 +103,21 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
   ];
 });
 </script>
+
+<i18n lang="yaml">
+en:
+  pageTitle: "Language"
+  displayLanguageLabel: "Display Language"
+  spokenLanguagesLabel: "Spoken Languages"
+es:
+  pageTitle: "Idioma"
+  displayLanguageLabel: "Idioma de visualización"
+  spokenLanguagesLabel: "Idiomas hablados"
+fr:
+  pageTitle: "Langue"
+  displayLanguageLabel: "Langue d'affichage"
+  spokenLanguagesLabel: "Langues parlées"
+</i18n>
 
 <style scoped lang="scss">
 .container {

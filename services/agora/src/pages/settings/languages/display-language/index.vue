@@ -16,9 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle>{{
-          t("settings.language.displayLanguage.title")
-        }}</template>
+        <template #middle>{{ t("pageTitle") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -114,6 +112,15 @@ onMounted(async () => {
   }
 });
 </script>
+
+<i18n lang="yaml">
+en:
+  pageTitle: "Display Language"
+es:
+  pageTitle: "Idioma de visualización"
+fr:
+  pageTitle: "Langue d'affichage"
+</i18n>
 
 <style scoped lang="scss">
 .container {

@@ -146,7 +146,7 @@ function initializeMenu() {
 
   if (drawerBehavior.value == "desktop") {
     settingItemList.value.push({
-      name: t("navigation.sideDrawer.home"),
+      name: t("home"),
       route: "/",
       matchRouteList: ["/"],
       requireAuth: false,
@@ -157,7 +157,7 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
-      name: t("navigation.sideDrawer.explore"),
+      name: t("explore"),
       route: "/topics/",
       matchRouteList: ["/topics/"],
       requireAuth: false,
@@ -168,7 +168,7 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
-      name: t("navigation.sideDrawer.dings"),
+      name: t("dings"),
       route: "/notification/",
       matchRouteList: ["/notification/"],
       requireAuth: true,
@@ -180,7 +180,7 @@ function initializeMenu() {
   }
 
   settingItemList.value.push({
-    name: t("navigation.sideDrawer.profile"),
+    name: t("profile"),
     route: "/user-profile/conversations/",
     matchRouteList: ["/user-profile/conversations/"],
     requireAuth: true,
@@ -191,7 +191,7 @@ function initializeMenu() {
   });
 
   settingItemList.value.push({
-    name: t("navigation.sideDrawer.settings"),
+    name: t("settings"),
     route: "/settings/",
     matchRouteList: ["/settings/"],
     requireAuth: false,
@@ -217,6 +217,27 @@ function handleAuthenticatedRouteClick(
   }
 }
 </script>
+
+<i18n lang="yaml">
+en:
+  home: "Home"
+  explore: "Explore"
+  dings: "Dings"
+  profile: "Profile"
+  settings: "Settings"
+es:
+  home: "Inicio"
+  explore: "Explorar"
+  dings: "Dings"
+  profile: "Perfil"
+  settings: "Configuración"
+fr:
+  home: "Accueil"
+  explore: "Explorer"
+  dings: "Dings"
+  profile: "Profil"
+  settings: "Paramètres"
+</i18n>
 
 <style lang="scss" scoped>
 .container {

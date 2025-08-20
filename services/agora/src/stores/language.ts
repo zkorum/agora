@@ -57,6 +57,8 @@ export const useLanguageStore = defineStore("language", () => {
     if (availableLocales.includes(localeCode)) {
       locale.value = localeCode;
       displayLanguage.value = localeCode;
+    } else {
+      console.error("Unknown locale for i18n: " + localeCode);
     }
   }
 

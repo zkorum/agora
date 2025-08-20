@@ -16,7 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle> Settings </template>
+        <template #middle>{{ t("pageTitle") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -75,7 +75,7 @@ const { t } = useI18n();
 const { updateAuthState } = useBackendAuthApi();
 
 const deleteAccountLabel = computed(() =>
-  isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
+  isLoggedIn.value ? t("deleteAccount") : t("deleteGuestAccount")
 );
 
 const isDevelopment = process.env.NODE_ENV === "development";
@@ -83,13 +83,13 @@ const isDevelopment = process.env.NODE_ENV === "development";
 const accountSettings: SettingsInterface[] = [
   {
     type: "navigation",
-    label: "Profile",
+    label: t("profile"),
     to: "/settings/account/profile/",
     style: "none",
   },
   {
     type: "navigation",
-    label: "Content Preference",
+    label: t("contentPreference"),
     to: "/settings/account/content-preference/",
     style: "none",
   },
@@ -98,19 +98,19 @@ const accountSettings: SettingsInterface[] = [
 const aboutSettings: SettingsInterface[] = [
   {
     type: "navigation",
-    label: t("settings.language.title"),
+    label: t("language"),
     to: "/settings/languages/",
     style: "none",
   },
   {
     type: "navigation",
-    label: "Privacy Policy",
+    label: t("privacyPolicy"),
     to: "/legal/privacy/",
     style: "none",
   },
   {
     type: "navigation",
-    label: "Terms of Service",
+    label: t("termsOfService"),
     to: "/legal/terms/",
     style: "none",
   },
@@ -119,7 +119,7 @@ const aboutSettings: SettingsInterface[] = [
 const logoutSettings: SettingsInterface[] = [
   {
     type: "action",
-    label: "Log Out",
+    label: t("logOut"),
     action: () => {
       void logoutRequested(true);
     },
@@ -130,7 +130,7 @@ const logoutSettings: SettingsInterface[] = [
 const moderatorSettings: SettingsInterface[] = [
   {
     type: "navigation",
-    label: "Moderator - Organization",
+    label: t("moderatorOrganization"),
     to: "/settings/account/administrator/organization/",
     style: "none",
   },
@@ -139,7 +139,7 @@ const moderatorSettings: SettingsInterface[] = [
 const developmentSettings: SettingsInterface[] = [
   {
     type: "navigation",
-    label: "🔧 Component Testing",
+    label: t("componentTesting"),
     to: "/dev/component-testing",
     style: "none",
   },
@@ -160,15 +160,60 @@ function processDeleteAccount() {
       try {
         await deleteUserAccount();
         await updateAuthState({ partialLoginStatus: { isKnown: false } });
-        showNotifyMessage("Account deleted");
+        showNotifyMessage(t("accountDeleted"));
       } catch (e) {
         console.error("Failed to delete user account", e);
-        showNotifyMessage("Oops! Account deletion failed. Please try again");
+        showNotifyMessage(t("accountDeletionFailed"));
       }
     })();
   });
 }
 </script>
+
+<i18n lang="yaml">
+en:
+  pageTitle: "Settings"
+  deleteAccount: "Delete Account"
+  deleteGuestAccount: "Delete Guest Account"
+  profile: "Profile"
+  contentPreference: "Content Preference"
+  language: "Language"
+  privacyPolicy: "Privacy Policy"
+  termsOfService: "Terms of Service"
+  logOut: "Log Out"
+  moderatorOrganization: "Moderator - Organization"
+  componentTesting: "🔧 Component Testing"
+  accountDeleted: "Account deleted"
+  accountDeletionFailed: "Oops! Account deletion failed. Please try again"
+es:
+  pageTitle: "Configuración"
+  deleteAccount: "Eliminar cuenta"
+  deleteGuestAccount: "Eliminar cuenta de invitado"
+  profile: "Perfil"
+  contentPreference: "Preferencia de contenido"
+  language: "Idioma"
+  privacyPolicy: "Política de privacidad"
+  termsOfService: "Términos de servicio"
+  logOut: "Cerrar sesión"
+  moderatorOrganization: "Moderador - Organización"
+  componentTesting: "🔧 Pruebas de componentes"
+  accountDeleted: "Cuenta eliminada"
+  accountDeletionFailed: "¡Ups! Error al eliminar la cuenta. Inténtalo de nuevo"
+fr:
+  pageTitle: "Paramètres"
+  deleteAccount: "Supprimer le compte"
+  deleteGuestAccount: "Supprimer le compte invité"
+  profile: "Profil"
+  contentPreference: "Préférence de contenu"
+  language: "Langue"
+  privacyPolicy: "Politique de confidentialité"
+  termsOfService: "Conditions d'utilisation"
+  logOut: "Se déconnecter"
+  moderatorOrganization: "Modérateur - Organisation"
+  componentTesting: "🔧 Tests de composants"
+  accountDeleted: "Compte supprimé"
+  accountDeletionFailed: "Oups ! Échec de la suppression du compte. Veuillez réessayer"
+</i18n>
 
 <style scoped lang="scss">
 .container {
