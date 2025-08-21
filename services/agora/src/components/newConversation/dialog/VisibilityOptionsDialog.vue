@@ -18,7 +18,9 @@ import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.v
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const store = useNewPostDraftsStore();
+const { conversationDraft } = storeToRefs(store);
+const { togglePrivacy } = store;
 
 const visibilityOptions = [
   {
@@ -40,6 +42,6 @@ function handleOptionSelected(option: {
   value: string;
 }) {
   showDialog.value = false;
-  conversationDraft.value.isPrivate = option.value === "private";
+  togglePrivacy(option.value === "private");
 }
 </script>

@@ -204,7 +204,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       // Privacy and Advanced Settings
       isPrivate: false,
       privateConversationSettings: {
-        requiresLogin: true, // Default to requiring login when private
+        requiresLogin: false,
         hasScheduledConversion: false,
         conversionDate: tomorrow,
       },
