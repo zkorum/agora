@@ -1,19 +1,31 @@
 <template>
   <span>
-    By logging in, you agree to our
+    {{ t("agreementText") }}
     <span class="hrefLink">
-      <RouterLink :to="{ name: '/legal/terms/' }"> Terms of Service</RouterLink>
+      <RouterLink :to="{ name: '/legal/terms/' }">
+        {{ t("termsOfService") }}</RouterLink
+      >
     </span>
-    and
+    {{ t("and") }}
     <span class="hrefLink">
       <RouterLink :to="{ name: '/legal/privacy/' }">
-        Privacy Policy</RouterLink
+        {{ t("privacyPolicy") }}</RouterLink
       > </span
     >.
   </span>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  signupAgreementTranslations,
+  type SignupAgreementTranslations,
+} from "./SignupAgreement.i18n";
+
+const { t } = useComponentI18n<SignupAgreementTranslations>(
+  signupAgreementTranslations
+);
+</script>
 
 <style lang="scss" scoped>
 .hrefLink > a {

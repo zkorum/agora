@@ -3,7 +3,7 @@
     <q-dialog v-model="showDialog">
       <div class="dialog-container">
         <div class="dialog-header">
-          <div class="dialog-title">Opinion analysis</div>
+          <div class="dialog-title">{{ t("title") }}</div>
           <ZKButton
             button-type="icon"
             icon="mdi-close"
@@ -35,16 +35,16 @@
               <thead>
                 <tr>
                   <th></th>
-                  <th class="agree-header">Agree</th>
-                  <th class="pass-header">Pass</th>
-                  <th class="disagree-header">Disagree</th>
+                  <th class="agree-header">{{ t("agree") }}</th>
+                  <th class="pass-header">{{ t("pass") }}</th>
+                  <th class="disagree-header">{{ t("disagree") }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr class="total-row">
                   <td class="group-name">
                     {{
-                      `Total (${formatAmount(props.opinionItem.numParticipants)})`
+                      `${t("total")} (${formatAmount(props.opinionItem.numParticipants)})`
                     }}
                   </td>
                   <td class="agree-cell">
@@ -84,7 +84,7 @@
                 <template v-if="shouldShowGroupStats">
                   <tr v-if="noGroupStats.numUsers > 0" class="no-group-row">
                     <td class="group-name">
-                      {{ `No group (${noGroupStats.numUsers})` }}
+                      {{ `${t("noGroup")} (${noGroupStats.numUsers})` }}
                     </td>
                     <td class="agree-cell">
                       {{ noGroupStats.numAgrees }} •
@@ -163,7 +163,7 @@
           </div>
 
           <div class="view-original" @click="viewOriginalComment">
-            View original opinion
+            {{ t("viewOriginal") }}
           </div>
         </div>
       </div>
@@ -181,6 +181,11 @@ import { calculatePercentage } from "src/shared/common/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
 import { useRouterNavigation } from "src/utils/router/navigation";
 import { computed } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  opinionAnalysisDialogTranslations,
+  type OpinionAnalysisDialogTranslations,
+} from "./OpinionAnalysisDialog.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -188,6 +193,10 @@ const props = defineProps<{
 }>();
 
 const { forceOpenComment } = useRouterNavigation();
+
+const { t } = useComponentI18n<OpinionAnalysisDialogTranslations>(
+  opinionAnalysisDialogTranslations
+);
 
 const showDialog = defineModel<boolean>({ required: true });
 

@@ -4,7 +4,7 @@
     class="textBreak"
     :class="{ truncate: compactMode, coloredHrefs: !compactMode }"
     role="user-content"
-    :aria-label="compactMode ? 'Post content preview' : 'Post content'"
+    :aria-label="compactMode ? t('postContentPreview') : t('postContent')"
     @click="handleClick"
     v-html="sanitizedHtmlBody()"
   ></span>
@@ -12,12 +12,21 @@
 
 <script setup lang="ts">
 import { processHtmlBody } from "../../shared/shared";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  zkHtmlContentTranslations,
+  type ZKHtmlContentTranslations,
+} from "./ZKHtmlContent.i18n";
 
 const props = defineProps<{
   htmlBody: string;
   compactMode: boolean;
   enableLinks: boolean;
 }>();
+
+const { t } = useComponentI18n<ZKHtmlContentTranslations>(
+  zkHtmlContentTranslations
+);
 
 const sanitizedHtmlBody = () => {
   try {
