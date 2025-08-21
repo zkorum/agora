@@ -23,19 +23,18 @@
     <div class="container">
       <!-- Display language section -->
       <div class="section-header">
-        <p class="section-title">Display language</p>
+        <p class="section-title">{{ t("displayLanguageTitle") }}</p>
         <p class="section-description">
-          Your preferred language for the Agora App headers, buttons and other
-          text
+          {{ t("displayLanguageDescription") }}
         </p>
       </div>
       <SettingsSection :settings-item-list="displayLanguageSettings" />
 
       <!-- Additional languages section -->
       <div v-if="authStore.isLoggedIn" class="section-header">
-        <p class="section-title">Additional languages</p>
+        <p class="section-title">{{ t("additionalLanguagesTitle") }}</p>
         <p class="section-description">
-          For content you would like to see on Agora
+          {{ t("additionalLanguagesDescription") }}
         </p>
       </div>
       <SettingsSection
@@ -69,7 +68,7 @@ const languageStore = useLanguageStore();
 
 const displayLanguageSettings = computed((): SettingsInterface[] => {
   const displayLang = getLanguageByCode(languageStore.displayLanguage);
-  const displayValue = displayLang ? displayLang.name : "English";
+  const displayValue = displayLang ? displayLang.name : t("englishFallback");
 
   return [
     {
@@ -87,7 +86,7 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
   let spokenValue = "";
 
   if (spokenLanguages.length === 0) {
-    spokenValue = "None selected";
+    spokenValue = t("noneSelected");
   } else if (spokenLanguages.length === 1) {
     const firstLang = getLanguageByCode(spokenLanguages[0]);
     spokenValue = firstLang ? firstLang.name : spokenLanguages[0];
@@ -95,7 +94,8 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
     const firstLang = getLanguageByCode(spokenLanguages[0]);
     const firstName = firstLang ? firstLang.name : spokenLanguages[0];
     const otherCount = spokenLanguages.length - 1;
-    spokenValue = `${firstName} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
+    const otherText = otherCount > 1 ? t("others") : t("other");
+    spokenValue = `${firstName} ${t("and")} ${otherCount} ${otherText}`;
   }
 
   return [

@@ -8,13 +8,20 @@
         {{ displayDateString("YYYY-MM-DD") }}
       </div>
 
-      <div v-if="isModerationEdited" class="editedMessage">(edited)</div>
+      <div v-if="isModerationEdited" class="editedMessage">
+        {{ t("edited") }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useDateFormat } from "@vueuse/core";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  moderationTimeTranslations,
+  type ModerationTimeTranslations,
+} from "./ModerationTime.i18n";
 
 const props = defineProps<{
   createdAt: Date;
@@ -24,6 +31,10 @@ const props = defineProps<{
 const isModerationEdited =
   props.createdAt.getTime() === props.updatedAt.getTime() ? false : true;
 const displayDate = isModerationEdited ? props.updatedAt : props.createdAt;
+
+const { t } = useComponentI18n<ModerationTimeTranslations>(
+  moderationTimeTranslations
+);
 
 function displayDateString(format: string) {
   return useDateFormat(displayDate, format);

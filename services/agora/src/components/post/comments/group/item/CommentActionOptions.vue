@@ -44,6 +44,11 @@ import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  commentActionOptionsTranslations,
+  type CommentActionOptionsTranslations,
+} from "./CommentActionOptions.i18n";
 
 const emit = defineEmits(["deleted", "mutedComment"]);
 
@@ -70,6 +75,10 @@ const { deleteCommentBySlugId } = useBackendCommentApi();
 const showLoginDialog = ref(false);
 
 const { setReportIntention } = useConversationLoginIntentions();
+
+const { t } = useComponentI18n<CommentActionOptionsTranslations>(
+  commentActionOptionsTranslations
+);
 
 function onLoginConfirmationOk() {
   setReportIntention(props.commentItem.opinionSlugId);
@@ -102,7 +111,7 @@ async function shareOpinionCallback() {
     props.postSlugId +
     "?opinion=" +
     props.commentItem.opinionSlugId;
-  await webShare.share("Agora Opinion", sharePostUrl);
+  await webShare.share(t("agoraOpinion"), sharePostUrl);
 }
 
 async function muteUserCallback() {
@@ -123,10 +132,10 @@ async function moderateCommentCallback() {
 async function deleteCommentCallback() {
   const response = await deleteCommentBySlugId(props.commentItem.opinionSlugId);
   if (response) {
-    showNotifyMessage("Opinion deleted");
+    showNotifyMessage(t("opinionDeleted"));
     emit("deleted");
   } else {
-    showNotifyMessage("Failed to delete opinion");
+    showNotifyMessage(t("failedToDeleteOpinion"));
   }
 }
 

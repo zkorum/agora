@@ -1,7 +1,7 @@
 <template>
   <div class="dialog-step">
     <div class="header">
-      <div class="title">Welcome to Agora!</div>
+      <div class="title">{{ t("welcomeTitle") }}</div>
       <div class="subtitle">{{ title }}</div>
     </div>
 
@@ -16,11 +16,21 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  dialogStepLayoutTranslations,
+  type DialogStepLayoutTranslations,
+} from "./DialogStepLayout.i18n";
+
 interface Props {
   title: string;
 }
 
 defineProps<Props>();
+
+const { t } = useComponentI18n<DialogStepLayoutTranslations>(
+  dialogStepLayoutTranslations
+);
 </script>
 
 <style scoped lang="scss">

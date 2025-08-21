@@ -2,7 +2,10 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader :show-star-in-title="false" title="Common ground">
+        <AnalysisTitleHeader
+          :show-star-in-title="false"
+          :title="t('commonGroundTitle')"
+        >
           <template #action-button>
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
@@ -14,7 +17,7 @@
       <template #body>
         <EmptyStateMessage
           v-if="itemList.length === 0"
-          message="No common ground found yet."
+          :message="t('noCommonGroundMessage')"
         />
         <ConsensusItem
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
@@ -37,6 +40,11 @@ import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "./ConsensusItem.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  consensusTabTranslations,
+  type ConsensusTabTranslations,
+} from "./ConsensusTab.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -45,6 +53,10 @@ const props = defineProps<{
 }>();
 
 const currentTab = defineModel<ShortcutItem>();
+
+const { t } = useComponentI18n<ConsensusTabTranslations>(
+  consensusTabTranslations
+);
 
 function switchTab() {
   currentTab.value = "Common ground";

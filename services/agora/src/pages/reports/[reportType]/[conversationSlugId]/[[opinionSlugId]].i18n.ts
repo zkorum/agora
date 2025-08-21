@@ -11,6 +11,9 @@ export interface UserReportsViewerTranslations {
   reason: string;
   explanation: string;
   notAvailable: string;
+  invalidReportType: string;
+  invalidSlugIdParam: string;
+  unknownReportType: string;
   [key: string]: string;
 }
 
@@ -31,6 +34,9 @@ export const userReportsViewerTranslations: Record<
     reason: "Reason:",
     explanation: "Explanation:",
     notAvailable: "n/a",
+    invalidReportType: "Invalid report type",
+    invalidSlugIdParam: "Invalid slug ID param",
+    unknownReportType: "Unknown report type",
   },
   es: {
     userReportsViewer: "Visor de Reportes de Usuario",
@@ -45,6 +51,9 @@ export const userReportsViewerTranslations: Record<
     reason: "Razón:",
     explanation: "Explicación:",
     notAvailable: "n/d",
+    invalidReportType: "Tipo de reporte inválido",
+    invalidSlugIdParam: "Parámetro de ID slug inválido",
+    unknownReportType: "Tipo de reporte desconocido",
   },
   fr: {
     userReportsViewer: "Visualiseur de Rapports Utilisateur",
@@ -59,5 +68,8 @@ export const userReportsViewerTranslations: Record<
     reason: "Raison :",
     explanation: "Explication :",
     notAvailable: "n/d",
+    invalidReportType: "Type de rapport invalide",
+    invalidSlugIdParam: "Paramètre d'ID slug invalide",
+    unknownReportType: "Type de rapport inconnu",
   },
 };

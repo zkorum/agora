@@ -20,7 +20,7 @@
     </template>
 
     <div class="container">
-      <div class="title">Moderate the opinion</div>
+      <div class="title">{{ t("title") }}</div>
 
       <div class="userOpinion">
         <ZKHtmlContent
@@ -33,7 +33,7 @@
       <q-select
         v-model="moderationAction"
         :options="actionMapping"
-        label="Action"
+        :label="t('actionLabel')"
         emit-value
         map-options
       />
@@ -41,21 +41,21 @@
       <q-select
         v-model="moderationReason"
         :options="reasonMapping"
-        label="Reason"
+        :label="t('reasonLabel')"
         emit-value
         map-options
       />
 
-      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+      <q-input v-model="moderationExplanation" :label="t('explanationLabel')" />
 
       <ZKGradientButton
-        :label="hasExistingDecision ? 'Modify' : 'Moderate'"
+        :label="hasExistingDecision ? t('modifyButton') : t('moderateButton')"
         @click="clickedSubmit()"
       />
 
       <ZKGradientButton
         v-if="hasExistingDecision"
-        label="Withdraw"
+        :label="t('withdrawButton')"
         gradient-background="#E7E7FF"
         label-color="#6b4eff"
         @click="clickedWithdraw()"
@@ -82,6 +82,11 @@ import {
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  opinionModerationTranslations,
+  type OpinionModerationTranslations,
+} from "./OpinionModeration.i18n";
 
 const {
   moderateComment,
@@ -93,6 +98,10 @@ const { fetchOpinionsBySlugIdList } = useBackendCommentApi();
 
 const route = useRoute();
 const router = useRouter();
+
+const { t } = useComponentI18n<OpinionModerationTranslations>(
+  opinionModerationTranslations
+);
 
 const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<OpinionModerationAction>(

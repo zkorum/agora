@@ -129,7 +129,7 @@ async function openPage() {
         query: { opinion: opinionSlugId },
       });
     } else {
-      console.log("Unknown report type");
+      console.log(t("unknownReportType"));
     }
   }
 }
@@ -159,10 +159,10 @@ async function loadReports() {
       reportItemList.value =
         await fetchUserReportsByCommentSlugId(opinionSlugId);
     } else {
-      showNotifyMessage("Invalid report type");
+      showNotifyMessage(t("invalidReportType"));
     }
   } else {
-    showNotifyMessage("Invalid slug ID param");
+    showNotifyMessage(t("invalidSlugIdParam"));
   }
 }
 </script>

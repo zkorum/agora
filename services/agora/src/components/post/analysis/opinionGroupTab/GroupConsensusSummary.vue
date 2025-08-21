@@ -22,11 +22,10 @@
 
     <q-dialog v-model="showInformationDialog" position="bottom">
       <ZKBottomDialogContainer>
-        <div class="titleStyle">AI Summary</div>
+        <div class="titleStyle">{{ t("aiSummaryTitle") }}</div>
 
         <div>
-          We use Mistral Large (LLM model) to generate the summary & labels for
-          each consensus group.
+          {{ t("aiSummaryDescription") }}
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -39,13 +38,22 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { PolisKey } from "src/shared/types/zod";
 import { ref } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  groupConsensusSummaryTranslations,
+  type GroupConsensusSummaryTranslations,
+} from "./GroupConsensusSummary.i18n";
 
 defineProps<{
   summary: string;
   selectedClusterKey: PolisKey;
 }>();
 
-const summaryTitle = "Group summary";
+const { t } = useComponentI18n<GroupConsensusSummaryTranslations>(
+  groupConsensusSummaryTranslations
+);
+
+const summaryTitle = t("groupSummaryTitle");
 
 const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
