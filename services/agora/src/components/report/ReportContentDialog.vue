@@ -18,21 +18,17 @@
           :key="reason.value"
           @click="selectedReason = reason.value"
         >
-          <ZKButton
-            button-type="standardButton"
-            color="button-background-color"
-            text-color="black"
-          >
+          <PrimeButton severity="secondary" outlined class="reason-button">
             <div class="iconLayout">
               <div>
-                <q-icon :name="reason.icon" />
+                <q-icon :name="reason.icon" size="1.5rem" />
               </div>
 
               <div>
                 {{ reason.label }}
               </div>
             </div>
-          </ZKButton>
+          </PrimeButton>
         </div>
       </div>
     </div>
@@ -85,7 +81,6 @@
 <script setup lang="ts">
 import { useUserReports } from "src/utils/component/userReports";
 import { ref } from "vue";
-import ZKButton from "../ui-library/ZKButton.vue";
 import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
 import type { UserReportReason } from "src/shared/types/zod";
 import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
@@ -217,5 +212,11 @@ async function clickedSubmitButton() {
   justify-content: center;
   padding: 0.5rem;
   min-width: 5rem;
+}
+
+.reason-button {
+  min-height: 80px;
+  min-width: 120px;
+  border-radius: 12px;
 }
 </style>
