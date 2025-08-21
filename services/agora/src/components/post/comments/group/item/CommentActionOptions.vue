@@ -26,6 +26,14 @@
       @close="showReportDialog = false"
     />
   </q-dialog>
+
+  <!-- Action Dialog -->
+  <ZKActionDialog
+    v-model="actionDialogVisible"
+    :actions="actionDialogActions"
+    @action-selected="handleActionSelected"
+    @dialog-closed="handleDialogClosed"
+  />
 </template>
 
 <script setup lang="ts">
@@ -34,12 +42,14 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
 import type { OpinionItem } from "src/shared/types/zod";
+import type { ContentAction } from "src/utils/actions/core/types";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useWebShare } from "src/utils/share/WebShare";
-import { useBottomSheet } from "src/utils/ui/bottomSheet";
+import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -63,7 +73,12 @@ const webShare = useWebShare();
 
 const { showNotifyMessage } = useNotify();
 
-const { showCommentOptionSelector } = useBottomSheet();
+// Use the new content actions system
+const commentActions = useContentActions();
+
+// Action dialog state
+const actionDialogVisible = ref(false);
+const actionDialogActions = ref<ContentAction[]>([]);
 
 const showReportDialog = ref(false);
 
@@ -140,15 +155,41 @@ async function deleteCommentCallback() {
 }
 
 function optionButtonClicked() {
-  showCommentOptionSelector(
+  // Show comment actions using the new system
+  commentActions.showCommentActions(
+    props.commentItem.opinionSlugId,
     props.commentItem.username,
-    deleteCommentCallback,
-    reportContentCallback,
-    openUserReportsCallback,
-    muteUserCallback,
-    moderateCommentCallback,
-    shareOpinionCallback
+    {
+      deleteCommentCallback,
+      reportCommentCallback: reportContentCallback,
+      openUserReportsCallback,
+      muteUserCallback,
+      moderateCommentCallback,
+      shareOpinionCallback,
+    }
   );
+
+  // Get the dialog state and display it
+  const state = commentActions.getDialogState();
+  actionDialogVisible.value = state.isVisible;
+  actionDialogActions.value = state.actions;
+}
+
+/**
+ * Handle action selection
+ */
+async function handleActionSelected(action: ContentAction) {
+  console.log("Action selected:", action.id);
+  await commentActions.executeAction(action);
+}
+
+/**
+ * Handle dialog close
+ */
+function handleDialogClosed() {
+  actionDialogVisible.value = false;
+  actionDialogActions.value = [];
+  commentActions.closeDialog();
 }
 </script>
 
