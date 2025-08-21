@@ -4,7 +4,12 @@
       <div class="title">{{ t("submitReportTitle") }}</div>
 
       <div>
-        {{ t("improveCommunityText").replace("{reportType}", reportType) }}
+        {{
+          t("improveCommunityText").replace(
+            "{reportType}",
+            getTranslatedReportType(reportType)
+          )
+        }}
       </div>
 
       <div class="reportReasonsFlex">
@@ -39,8 +44,8 @@
         <div>
           {{
             t("flaggingReasonText")
-              .replace("{reportType}", reportType)
-              .replace("{selectedReason}", selectedReason || "")
+              .replace("{reportType}", getTranslatedReportType(reportType))
+              .replace("{selectedReason}", getTranslatedSelectedReason())
           }}
         </div>
 
@@ -56,23 +61,18 @@
 
         <div class="submitButtons">
           <div v-if="enabledSkip == false">
-            <ZKButton
-              button-type="largeButton"
+            <ZKGradientButton
               :label="t('skipButton')"
-              color="secondary"
-              text-color="primary"
-              flat
+              variant="text"
+              label-color="#666666"
               @click="clickedSkipExplanationButton()"
             />
           </div>
 
           <div>
-            <ZKButton
-              button-type="largeButton"
+            <ZKGradientButton
               :label="t('submitButton')"
-              :disable="explanation.length == 0 && !enabledSkip"
-              color="secondary"
-              text-color="primary"
+              :disabled="explanation.length == 0 && !enabledSkip"
               @click="clickedSubmitButton()"
             />
           </div>
@@ -83,9 +83,10 @@
 </template>
 
 <script setup lang="ts">
-import { userReportReasonMapping } from "src/utils/component/userReports";
+import { useUserReports } from "src/utils/component/userReports";
 import { ref } from "vue";
 import ZKButton from "../ui-library/ZKButton.vue";
+import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
 import type { UserReportReason } from "src/shared/types/zod";
 import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
 import { useBackendReportApi } from "src/utils/api/report";
@@ -113,6 +114,26 @@ const { createUserReportByPostSlugId, createUserReportByCommentSlugId } =
 const { t } = useComponentI18n<ReportContentDialogTranslations>(
   reportContentDialogTranslations
 );
+
+const userReportReasonMapping = useUserReports();
+
+function getTranslatedReportType(
+  reportType: "conversation" | "opinion"
+): string {
+  return reportType === "conversation"
+    ? t("reportTypeConversation")
+    : t("reportTypeOpinion");
+}
+
+function getTranslatedSelectedReason(): string {
+  if (!selectedReason.value) return "";
+
+  const reasonMapping = userReportReasonMapping.find(
+    (mapping) => mapping.value === selectedReason.value
+  );
+
+  return reasonMapping?.label || selectedReason.value;
+}
 
 async function clickedSkipExplanationButton() {
   explanation.value = "";

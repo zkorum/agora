@@ -6,6 +6,8 @@ export interface ReportContentDialogTranslations {
   addExplanationLabel: string;
   skipButton: string;
   submitButton: string;
+  reportTypeConversation: string;
+  reportTypeOpinion: string;
   [key: string]: string;
 }
 
@@ -23,6 +25,8 @@ export const reportContentDialogTranslations: Record<
     addExplanationLabel: "Add explanation",
     skipButton: "Skip",
     submitButton: "Submit",
+    reportTypeConversation: "conversation",
+    reportTypeOpinion: "opinion",
   },
   es: {
     submitReportTitle: "Enviar un reporte",
@@ -34,6 +38,8 @@ export const reportContentDialogTranslations: Record<
     addExplanationLabel: "Añadir explicación",
     skipButton: "Omitir",
     submitButton: "Enviar",
+    reportTypeConversation: "conversación",
+    reportTypeOpinion: "opinión",
   },
   fr: {
     submitReportTitle: "Soumettre un rapport",
@@ -45,5 +51,7 @@ export const reportContentDialogTranslations: Record<
     addExplanationLabel: "Ajouter une explication",
     skipButton: "Ignorer",
     submitButton: "Soumettre",
+    reportTypeConversation: "conversation",
+    reportTypeOpinion: "opinion",
   },
 };
