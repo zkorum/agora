@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 const clusterExampleImagePath =
-  process.env.VITE_PUBLIC_DIR + "images/onboarding/clusterExample.png";
+  process.env.VITE_PUBLIC_DIR + "/images/onboarding/clusterExample.png";
 </script>
 
 <style scoped lang="scss">

@@ -3,7 +3,7 @@ export function useConversationUrl() {
     return (
       window.location.origin +
       process.env.VITE_PUBLIC_DIR +
-      "conversation/" +
+      "/conversation/" +
       conversationSlugId
     );
   }
@@ -12,7 +12,7 @@ export function useConversationUrl() {
     return (
       window.location.origin +
       process.env.VITE_PUBLIC_DIR +
-      "conversation/" +
+      "/conversation/" +
       conversationSlugId +
       "/embed"
     );

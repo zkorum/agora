@@ -8,7 +8,7 @@ import { defineConfig } from "#q-app/wrappers";
 import "dotenv/config";
 
 export default defineConfig((ctx) => {
-  const publicDir = ctx.dev ? "/" : "/feed"; // "/" in dev, "/feed/" in production
+  const publicDir = "/feed";
 
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -67,7 +67,7 @@ export default defineConfig((ctx) => {
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
       // publicPath: ctx.dev ? "/" : "/feed/",
-      publicPath: publicDir,
+      publicPath: publicDir + "/", // we serve this behind a global nginx configured to serve the app at /feed/
       // extendViteConf(viteConf, _params) {
       //   viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
       // },

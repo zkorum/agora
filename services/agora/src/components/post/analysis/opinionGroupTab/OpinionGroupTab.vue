@@ -375,7 +375,7 @@ function composeImagePath(
 
   return (
     process.env.VITE_PUBLIC_DIR +
-    "images/cluster/cluster" +
+    "/images/cluster/cluster" +
     clusterNumber +
     "-" +
     (index + 1) +

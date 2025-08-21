@@ -71,7 +71,7 @@ import { homeTranslations, type HomeTranslations } from "./Home.i18n";
 
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 
-const agoraLogo = process.env.VITE_PUBLIC_DIR + "images/icons/agora-wings.svg";
+const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
 

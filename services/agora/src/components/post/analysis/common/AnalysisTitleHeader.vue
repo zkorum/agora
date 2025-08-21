@@ -3,7 +3,7 @@
     <div class="container">
       <div class="title">
         <div v-if="showStarInTitle" :style="{ paddingTop: '0.2rem' }">
-          <StaticIcon :src="starIcon" :size="'1rem'" />
+          <StaticIcon :src="'/images/icons/stars.svg'" :size="'1rem'" />
         </div>
         <div>
           {{ props.title }}
@@ -17,8 +17,6 @@
 
 <script setup lang="ts">
 import StaticIcon from "src/components/features/ui/StaticIcon.vue";
-
-const starIcon = process.env.VITE_PUBLIC_DIR + "images/icons/stars.svg";
 
 const props = defineProps<{
   title: string;
