@@ -17,10 +17,12 @@
                 <q-icon name="mdi-account-group" size="4rem" />
               </div>
 
-              <div :style="{ fontSize: '1.3rem' }">It is too quiet here...</div>
+              <div :style="{ fontSize: '1.3rem' }">
+                {{ t("emptyStateTitle") }}
+              </div>
 
               <div>
-                Create a new conversation using the
+                {{ t("emptyStateDescription") }}
                 <q-icon name="mdi-plus-circle" /> button.
               </div>
             </div>
@@ -68,9 +70,9 @@
               <q-icon name="mdi-check" size="4rem" />
             </div>
 
-            <div :style="{ fontSize: '1.3rem' }">You're all caught up</div>
+            <div :style="{ fontSize: '1.3rem' }">{{ t("completedTitle") }}</div>
 
-            <div>You have seen all the new conversations.</div>
+            <div>{{ t("completedDescription") }}</div>
           </div>
         </q-infinite-scroll>
       </q-pull-to-refresh>
@@ -91,7 +93,7 @@
       >
         <div class="newConversationIcon">
           <q-icon name="mdi-arrow-up" />
-          <div>New conversations</div>
+          <div>{{ t("newConversationsButton") }}</div>
         </div>
       </ZKButton>
     </q-page-sticky>
@@ -108,6 +110,11 @@ import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  compactPostListTranslations,
+  type CompactPostListTranslations,
+} from "./CompactPostList.i18n";
 
 const {
   partialHomeFeedList,
@@ -127,6 +134,10 @@ const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 const { y: windowY } = useWindowScroll();
 
 const currentTab = ref<"comment" | "analysis">("comment");
+
+const { t } = useComponentI18n<CompactPostListTranslations>(
+  compactPostListTranslations
+);
 
 onMounted(async () => {
   await hasNewPostCheck();

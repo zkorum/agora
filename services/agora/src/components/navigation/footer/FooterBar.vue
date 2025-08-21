@@ -57,8 +57,15 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 import { useRoute } from "vue-router";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  footerBarTranslations,
+  type FooterBarTranslations,
+} from "./FooterBar.i18n";
 
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+
+const { t } = useComponentI18n<FooterBarTranslations>(footerBarTranslations);
 
 interface BottomIcon {
   name: string;
@@ -83,21 +90,21 @@ const exploreIconFilled =
 
 const bottomIconList: BottomIcon[] = [
   {
-    name: "Home",
+    name: t("home"),
     standard: homeIconStandard,
     filled: homeIconFilled,
     route: "/",
     requireAuth: false,
   },
   {
-    name: "Explore",
+    name: t("explore"),
     standard: exploreIconStandard,
     filled: exploreIconFilled,
     route: "/topics/",
     requireAuth: false,
   },
   {
-    name: "Dings",
+    name: t("dings"),
     standard: notificationIconStandard,
     filled: notificationIconFilled,
     route: "/notification/",

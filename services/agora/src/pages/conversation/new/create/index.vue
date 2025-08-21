@@ -9,7 +9,9 @@
         button-type="largeButton"
         color="primary"
         :label="
-          conversationDraft.importSettings.isImportMode ? 'Import' : 'Next'
+          conversationDraft.importSettings.isImportMode
+            ? t('importButton')
+            : t('nextButton')
         "
         size="0.8rem"
         :loading="isSubmitButtonLoading"
@@ -35,7 +37,7 @@
             v-model="conversationDraft.title"
             borderless
             no-error-icon
-            placeholder="What do you want to ask?"
+            :placeholder="t('titlePlaceholder')"
             type="textarea"
             autogrow
             :maxlength="MAX_LENGTH_TITLE"
@@ -63,7 +65,7 @@
           <div class="editor-style">
             <ZKEditor
               v-model="conversationDraft.content"
-              placeholder="Body text. Provide context or relevant resources. Make sure it's aligned with the main question!"
+              :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :focus-editor="false"
               :show-toolbar="true"
@@ -113,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -139,6 +142,14 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import PollComponent from "src/components/newConversation/PollComponent.vue";
 import { useBackendPostApi } from "src/utils/api/post";
+import {
+  createConversationTranslations,
+  type CreateConversationTranslations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<CreateConversationTranslations>(
+  createConversationTranslations
+);
 
 const isSubmitButtonLoading = ref(false);
 

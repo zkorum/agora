@@ -1,11 +1,10 @@
 <template>
   <div class="card">
     <div v-if="!selectedReason" class="container">
-      <div class="title">Submit a report</div>
+      <div class="title">{{ t("submitReportTitle") }}</div>
 
       <div>
-        Thank you for helping us improve the community. What is the problem with
-        this {{ reportType }}?
+        {{ t("improveCommunityText").replace("{reportType}", reportType) }}
       </div>
 
       <div class="reportReasonsFlex">
@@ -35,10 +34,14 @@
 
     <div v-if="selectedReason" class="container">
       <div v-if="selectedReason" class="flaggingExplanation">
-        <div class="title">Thanks for your feedback!</div>
+        <div class="title">{{ t("thanksForFeedbackTitle") }}</div>
 
         <div>
-          Why are you flagging this {{ reportType }} as {{ selectedReason }}?
+          {{
+            t("flaggingReasonText")
+              .replace("{reportType}", reportType)
+              .replace("{selectedReason}", selectedReason || "")
+          }}
         </div>
 
         <div>
@@ -47,7 +50,7 @@
             :maxlength="MAX_LENGTH_USER_REPORT_EXPLANATION"
             outlined
             autogrow
-            label="Add explanation"
+            :label="t('addExplanationLabel')"
           />
         </div>
 
@@ -55,7 +58,7 @@
           <div v-if="enabledSkip == false">
             <ZKButton
               button-type="largeButton"
-              label="Skip"
+              :label="t('skipButton')"
               color="secondary"
               text-color="primary"
               flat
@@ -66,7 +69,7 @@
           <div>
             <ZKButton
               button-type="largeButton"
-              label="Submit"
+              :label="t('submitButton')"
               :disable="explanation.length == 0 && !enabledSkip"
               color="secondary"
               text-color="primary"
@@ -86,6 +89,11 @@ import ZKButton from "../ui-library/ZKButton.vue";
 import type { UserReportReason } from "src/shared/types/zod";
 import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
 import { useBackendReportApi } from "src/utils/api/report";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  reportContentDialogTranslations,
+  type ReportContentDialogTranslations,
+} from "./ReportContentDialog.i18n";
 
 const props = defineProps<{
   reportType: "conversation" | "opinion";
@@ -101,6 +109,10 @@ const enabledSkip = ref(false);
 
 const { createUserReportByPostSlugId, createUserReportByCommentSlugId } =
   useBackendReportApi();
+
+const { t } = useComponentI18n<ReportContentDialogTranslations>(
+  reportContentDialogTranslations
+);
 
 async function clickedSkipExplanationButton() {
   explanation.value = "";

@@ -5,7 +5,7 @@
       <PrimeInputText
         ref="inputRef"
         v-model="internalValue"
-        :placeholder="placeholder"
+        :placeholder="placeholder || t('searchPlaceholder')"
         class="search-input"
         type="text"
       />
@@ -20,6 +20,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  settingsSearchInputTranslations,
+  type SettingsSearchInputTranslations,
+} from "./SettingsSearchInput.i18n";
 
 interface Props {
   modelValue: string;
@@ -30,8 +35,12 @@ interface Emits {
   (e: "update:modelValue", value: string): void;
 }
 
+const { t } = useComponentI18n<SettingsSearchInputTranslations>(
+  settingsSearchInputTranslations
+);
+
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: "Search...",
+  placeholder: undefined,
 });
 
 const emit = defineEmits<Emits>();

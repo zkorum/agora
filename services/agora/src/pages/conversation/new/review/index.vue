@@ -6,7 +6,7 @@
       <ZKButton
         button-type="largeButton"
         color="primary"
-        :label="isSubmitButtonLoading ? 'Posting...' : 'Post'"
+        :label="isSubmitButtonLoading ? t('posting') : t('post')"
         size="0.8rem"
         :loading="isSubmitButtonLoading"
         @click="onSubmit()"
@@ -23,16 +23,15 @@
 
       <!-- Add Seed Opinions Section -->
       <div class="seed-opinions-section">
-        <div class="section-title">Add Seed Opinions</div>
+        <div class="section-title">{{ t("addSeedOpinions") }}</div>
         <p class="section-description">
-          It's recommended to seed 8 to 15 opinions across a range of
-          viewpoints. This has a powerful effect on early participation.
+          {{ t("seedOpinionsDescription") }}
         </p>
 
         <!-- Add Opinion Button -->
         <div class="add-button-container">
           <ConversationControlButton
-            label="Add"
+            :label="t('add')"
             icon="pi pi-plus"
             :show-border="false"
             icon-position="left"
@@ -63,7 +62,7 @@
               <ZKEditor
                 v-model="conversationDraft.seedOpinions[index]"
                 class="textarea-border-style"
-                placeholder="Input text"
+                :placeholder="t('inputTextPlaceholder')"
                 :show-toolbar="true"
                 min-height="1rem"
                 :add-background-color="true"
@@ -127,6 +126,11 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  conversationReviewTranslations,
+  type ConversationReviewTranslations,
+} from "./index.i18n";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
@@ -147,6 +151,10 @@ const opinionErrors = ref<Record<number, string>>({});
 const opinionRefs = ref<Record<number, HTMLElement>>({});
 
 const { createNewConversationIntention } = useLoginIntentionStore();
+
+const { t } = useComponentI18n<ConversationReviewTranslations>(
+  conversationReviewTranslations
+);
 
 onMounted(async () => {
   const validation = validateForReview();
@@ -185,8 +193,9 @@ function checkOpinionWordCount(index: number) {
   const validation = validateHtmlStringCharacterCount(opinion, "opinion");
 
   if (!validation.isValid) {
-    opinionErrors.value[index] =
-      `Opinion exceeds ${MAX_LENGTH_OPINION} character limit (${validation.characterCount}/${MAX_LENGTH_OPINION})`;
+    opinionErrors.value[index] = t("opinionExceedsLimit")
+      .replace("{limit}", MAX_LENGTH_OPINION.toString())
+      .replace("{count}", validation.characterCount.toString());
   } else {
     // Clear word count error if it exists, but keep other errors
     if (opinionErrors.value[index]?.includes("character limit")) {
@@ -243,7 +252,7 @@ function validateSeedOpinions(): boolean {
 
       // Check for empty opinions
       if (trimmedOpinion.length === 0) {
-        opinionErrors.value[index] = "Opinion cannot be empty";
+        opinionErrors.value[index] = t("opinionCannotBeEmpty");
         hasErrors = true;
         if (firstErrorIndex === -1) firstErrorIndex = index;
         return;
@@ -252,8 +261,9 @@ function validateSeedOpinions(): boolean {
       // Check word count limit
       const validation = validateHtmlStringCharacterCount(opinion, "opinion");
       if (!validation.isValid) {
-        opinionErrors.value[index] =
-          `Opinion exceeds ${MAX_LENGTH_OPINION} character limit (${validation.characterCount}/${MAX_LENGTH_OPINION})`;
+        opinionErrors.value[index] = t("opinionExceedsLimit")
+          .replace("{limit}", MAX_LENGTH_OPINION.toString())
+          .replace("{count}", validation.characterCount.toString());
         hasErrors = true;
         if (firstErrorIndex === -1) firstErrorIndex = index;
         return;
@@ -267,7 +277,7 @@ function validateSeedOpinions(): boolean {
       );
 
       if (duplicateIndex !== -1) {
-        opinionErrors.value[index] = "This opinion is a duplicate";
+        opinionErrors.value[index] = t("opinionDuplicate");
         hasErrors = true;
         if (firstErrorIndex === -1) firstErrorIndex = index;
       }
@@ -337,7 +347,7 @@ async function onSubmit() {
     } else {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: response.code,
-        defaultMessage: "Error while trying to create a new conversation",
+        defaultMessage: t("errorCreatingConversation"),
       });
     }
   }

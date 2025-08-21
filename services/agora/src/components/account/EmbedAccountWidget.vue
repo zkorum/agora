@@ -15,12 +15,12 @@
       <div>
         <PrimeButton
           icon="pi pi-sign-out"
-          label="Log Out"
+          :label="t('logoutButton')"
           text
           rounded
           class="logout-btn"
           size="small"
-          title="Logout"
+          :title="t('logoutTooltip')"
           @click.stop="confirmLogout"
         />
       </div>
@@ -30,10 +30,19 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useAuthSetup } from "src/utils/auth/setup";
 import UserAvatar from "./UserAvatar.vue";
+import {
+  embedAccountWidgetTranslations,
+  type EmbedAccountWidgetTranslations,
+} from "./EmbedAccountWidget.i18n";
+
+const { t } = useComponentI18n<EmbedAccountWidgetTranslations>(
+  embedAccountWidgetTranslations
+);
 
 const authStore = useAuthenticationStore();
 const userStore = useUserStore();

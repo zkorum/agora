@@ -16,13 +16,13 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle> Profile Settings </template>
+        <template #middle>{{ t("pageTitle") }}</template>
       </DefaultMenuBar>
     </template>
 
     <div class="container">
       <ZKCard padding="1rem" class="cardBackground">
-        <div class="titleStyle">Change username</div>
+        <div class="titleStyle">{{ t("changeUsernameTitle") }}</div>
 
         <UsernameChange v-if="isAuthInitialized" :show-submit-button="true" />
       </ZKCard>
@@ -32,11 +32,20 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import UsernameChange from "src/components/account/UsernameChange.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  profileSettingsTranslations,
+  type ProfileSettingsTranslations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<ProfileSettingsTranslations>(
+  profileSettingsTranslations
+);
 
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 </script>

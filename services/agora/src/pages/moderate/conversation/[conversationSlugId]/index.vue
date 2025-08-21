@@ -21,7 +21,7 @@
 
     <div class="container">
       <div class="title">
-        <div>Moderate the conversation</div>
+        <div>{{ t("moderateConversation") }}</div>
       </div>
 
       <div class="postPreview">
@@ -40,7 +40,7 @@
       <q-select
         v-model="moderationAction"
         :options="actionMapping"
-        label="Action"
+        :label="t('action')"
         emit-value
         map-options
       />
@@ -48,21 +48,24 @@
       <q-select
         v-model="moderationReason"
         :options="reasonMapping"
-        label="Reason"
+        :label="t('reason')"
         emit-value
         map-options
       />
 
-      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+      <q-input
+        v-model="moderationExplanation"
+        :label="t('explanationOptional')"
+      />
 
       <ZKGradientButton
-        :label="hasExistingDecision ? 'Modify' : 'Moderate'"
+        :label="hasExistingDecision ? t('modify') : t('moderate')"
         @click="clickedSubmit()"
       />
 
       <ZKGradientButton
         v-if="hasExistingDecision"
-        label="Withdraw"
+        :label="t('withdraw')"
         gradient-background="#E7E7FF"
         label-color="#6b4eff"
         @click="clickedWithdraw()"
@@ -90,6 +93,11 @@ import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  conversationModerationTranslations,
+  type ConversationModerationTranslations,
+} from "./index.i18n";
 
 const {
   moderatePost,
@@ -121,6 +129,10 @@ let postSlugId: string | null = null;
 loadRouteParams();
 
 const conversationItem = ref<ExtendedConversation>(emptyPost);
+
+const { t } = useComponentI18n<ConversationModerationTranslations>(
+  conversationModerationTranslations
+);
 
 onMounted(async () => {
   await initializeData();

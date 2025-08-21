@@ -22,8 +22,12 @@
     <div class="container">
       <div class="titleBar">
         <div class="title">
-          <div>User Reports Viewer</div>
-          <q-badge :label="reportType" />
+          <div>{{ t("userReportsViewer") }}</div>
+          <q-badge
+            :label="
+              reportType == 'conversation' ? t('conversation') : t('opinion')
+            "
+          />
         </div>
 
         <div>
@@ -31,8 +35,8 @@
             button-type="largeButton"
             :label="
               reportType == 'conversation'
-                ? 'Open ' + 'Conversation'
-                : 'Open ' + 'Opinion'
+                ? t('openConversation')
+                : t('openOpinion')
             "
             color="primary"
             @click="openPage()"
@@ -41,16 +45,23 @@
       </div>
 
       <div v-if="reportItemList.length == 0">
-        No reports are available for this {{ reportType }}.
+        {{
+          t("noReportsAvailable").replace(
+            "{type}",
+            reportType == "conversation" ? t("conversation") : t("opinion")
+          )
+        }}
       </div>
 
       <div v-if="reportItemList.length > 0" class="tableStyle">
         <div v-for="report in reportItemList" :key="report.id">
-          <div>ID: {{ report.id }}</div>
-          <div>Username: {{ report.username }}</div>
-          <div>Created At: {{ useTimeAgo(report.createdAt) }}</div>
-          <div>Reason: {{ report.reason }}</div>
-          <div>Explanation: {{ report.explanation ?? "n/a" }}</div>
+          <div>{{ t("id") }} {{ report.id }}</div>
+          <div>{{ t("username") }} {{ report.username }}</div>
+          <div>{{ t("createdAt") }} {{ useTimeAgo(report.createdAt) }}</div>
+          <div>{{ t("reason") }} {{ report.reason }}</div>
+          <div>
+            {{ t("explanation") }} {{ report.explanation ?? t("notAvailable") }}
+          </div>
         </div>
       </div>
     </div>
@@ -67,6 +78,11 @@ import { useTimeAgo } from "@vueuse/core";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  userReportsViewerTranslations,
+  type UserReportsViewerTranslations,
+} from "./[[opinionSlugId]].i18n";
 
 const route = useRoute();
 const router = useRouter();
@@ -79,6 +95,10 @@ const { fetchUserReportsByPostSlugId, fetchUserReportsByCommentSlugId } =
 const reportItemList = ref<UserReportItem[]>([]);
 
 const reportType = ref<"conversation" | "opinion">("conversation");
+
+const { t } = useComponentI18n<UserReportsViewerTranslations>(
+  userReportsViewerTranslations
+);
 
 onMounted(async () => {
   await loadReports();

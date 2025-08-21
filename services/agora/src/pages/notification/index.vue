@@ -17,7 +17,7 @@
         :fixed-height="true"
       >
         <template #middle>
-          <div>Notifications</div>
+          <div>{{ t("notifications") }}</div>
         </template>
       </DefaultMenuBar>
     </template>
@@ -71,11 +71,11 @@
         </div>
 
         <div v-if="notificationList.length > 0" class="endOfFeed">
-          End of notification feed
+          {{ t("endOfFeed") }}
         </div>
 
         <div v-if="notificationList.length == 0" class="endOfFeed">
-          You have no notifications
+          {{ t("noNotifications") }}
         </div>
       </q-infinite-scroll>
     </q-pull-to-refresh>
@@ -100,6 +100,11 @@ import { useRouter } from "vue-router";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  notificationTranslations,
+  type NotificationTranslations,
+} from "./index.i18n";
 
 const { notificationList } = storeToRefs(useNotificationStore());
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
@@ -110,6 +115,10 @@ const { markAllNotificationsAsRead } = useBackendNotificationApi();
 const hasMore = ref(true);
 
 const router = useRouter();
+
+const { t } = useComponentI18n<NotificationTranslations>(
+  notificationTranslations
+);
 
 onMounted(async () => {
   await markAllNotificationsAsRead();
@@ -140,13 +149,19 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
   let title;
   switch (notificationItem.type) {
     case "new_opinion":
-      title = `${notificationItem.username} contributed an opinion to your conversation:`;
+      title = t("contributedOpinion").replace(
+        "{username}",
+        notificationItem.username
+      );
       break;
     case "opinion_vote":
       title =
         notificationItem.numVotes === 1
-          ? "1 person voted on your opinion:"
-          : `${notificationItem.numVotes} people voted on your opinion:`;
+          ? t("onePersonVoted")
+          : t("peopleVoted").replace(
+              "{count}",
+              notificationItem.numVotes.toString()
+            );
       break;
   }
   return title;

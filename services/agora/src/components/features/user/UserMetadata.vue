@@ -11,13 +11,22 @@
     />
     <div v-if="authorVerified" class="verifiedMessage">
       <q-icon name="mdi-check-decagram" class="verifiedIconStyle" />
-      <div v-if="showVerifiedText">ID verified</div>
+      <div v-if="showVerifiedText">{{ t("idVerified") }}</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import DisplayUsername from "src/components/features/user/DisplayUsername.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  userMetadataTranslations,
+  type UserMetadataTranslations,
+} from "./UserMetadata.i18n";
+
+const { t } = useComponentI18n<UserMetadataTranslations>(
+  userMetadataTranslations
+);
 
 defineProps<{
   showIsGuest: boolean;

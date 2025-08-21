@@ -2,20 +2,20 @@
   <div>
     <ZKButton
       button-type="largeButton"
-      label="Delete Organization"
+      :label="t('deleteOrganizationButton')"
       @click="deleteOrganizationButtonClicked()"
     />
 
     <q-input
       v-model="username"
-      label="Username"
+      :label="t('usernameLabel')"
       autocomplete="off"
       data-1p-ignore
     />
 
     <ZKButton
       button-type="largeButton"
-      label="Add User to Organization"
+      :label="t('addUserToOrganizationButton')"
       :disable="username.length == 0"
       @click="addUserToOrganizationClicked()"
     />
@@ -23,9 +23,18 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
+import {
+  organizationViewTranslations,
+  type OrganizationViewTranslations,
+} from "./OrganizationView.i18n";
+
+const { t } = useComponentI18n<OrganizationViewTranslations>(
+  organizationViewTranslations
+);
 
 const props = defineProps<{
   organizationName: string;

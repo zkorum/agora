@@ -10,6 +10,15 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  analysisActionButtonTranslations,
+  type AnalysisActionButtonTranslations,
+} from "./AnalysisActionButton.i18n";
+
+const { t } = useComponentI18n<AnalysisActionButtonTranslations>(
+  analysisActionButtonTranslations
+);
 
 const props = defineProps<{
   type: "learnMore" | "viewMore" | "none";
@@ -20,7 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const buttonText = computed(() => {
-  return props.type === "learnMore" ? "Learn more" : "View more";
+  return props.type === "learnMore" ? t("learnMore") : t("viewMore");
 });
 
 const handleClick = () => {

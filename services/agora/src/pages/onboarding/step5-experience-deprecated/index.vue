@@ -18,7 +18,7 @@
     >
       <template #header>
         <InfoHeader
-          title="Choose how you want to experience Agora"
+          :title="t('title')"
           :description="description"
           icon-name="mdi-image"
         />
@@ -29,12 +29,10 @@
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">
               <div class="optionWrapper">
-                <div class="optionTitle">Safe Space</div>
+                <div class="optionTitle">{{ t("safeSpaceTitle") }}</div>
 
                 <div>
-                  Content flagged as antisocial (trolling or intolerance) is
-                  removed from my feed. If I want to see what was removed, I can
-                  check the post’s moderation history.
+                  {{ t("safeSpaceDescription") }}
                 </div>
               </div>
             </ZKCard>
@@ -45,10 +43,10 @@
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">
               <div class="optionWrapper">
-                <div class="optionTitle">Brave Space</div>
+                <div class="optionTitle">{{ t("braveSpaceTitle") }}</div>
 
                 <div>
-                  Content flagged as antisocial is shown to me with a warning.
+                  {{ t("braveSpaceDescription") }}
                 </div>
               </div>
             </ZKCard>
@@ -66,6 +64,15 @@ import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  step5ExperienceTranslations,
+  type Step5ExperienceTranslations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<Step5ExperienceTranslations>(
+  step5ExperienceTranslations
+);
 
 const description = ref("");
 

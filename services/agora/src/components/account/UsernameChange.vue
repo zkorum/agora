@@ -1,7 +1,7 @@
 <template>
   <q-input
     v-model="userName"
-    label="Username"
+    :label="t('usernameLabel')"
     :maxlength="MAX_LENGTH_USERNAME"
     :error="!isValidUsername"
     :error-message="userNameInvalidMessage"
@@ -31,7 +31,7 @@
     v-if="showSubmitButton"
     button-type="largeButton"
     :disable="!isValidUsername"
-    label="Update"
+    :label="t('updateButton')"
     color="primary"
     @click="submitButtonClicked()"
   />
@@ -48,6 +48,11 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import { useNotify } from "src/utils/ui/notify";
 import { useCommonApi } from "src/utils/api/common";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  usernameChangeTranslations,
+  type UsernameChangeTranslations,
+} from "./UsernameChange.i18n";
 
 defineProps<{
   showSubmitButton: boolean;
@@ -74,6 +79,10 @@ const userName = ref("");
 
 const isSubmitButtonLoading = ref(false);
 
+const { t } = useComponentI18n<UsernameChangeTranslations>(
+  usernameChangeTranslations
+);
+
 onMounted(async () => {
   await loadUserProfile();
   userName.value = profileData.value.userName;
@@ -95,14 +104,14 @@ async function submitButtonClicked() {
   );
   if (response.status == "success") {
     if (response.data) {
-      showNotifyMessage("Username changed");
+      showNotifyMessage(t("usernameChanged"));
     } else {
-      showNotifyMessage("Username is already in use");
+      showNotifyMessage(t("usernameAlreadyInUse"));
     }
   } else {
     handleAxiosErrorStatusCodes({
       axiosErrorCode: response.code,
-      defaultMessage: "Error while trying to submit username change",
+      defaultMessage: t("submitError"),
     });
   }
   isSubmitButtonLoading.value = false;
@@ -120,7 +129,7 @@ async function nameContainsValidCharacters(): Promise<boolean> {
         return true;
       } else {
         isValidUsername.value = false;
-        userNameInvalidMessage.value = "This username is currently in use";
+        userNameInvalidMessage.value = t("usernameCurrentlyInUse");
         return false;
       }
     } else {

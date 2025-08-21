@@ -16,7 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle>Component Testing</template>
+        <template #middle>{{ t("componentTesting") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -25,18 +25,17 @@
         <template #title>
           <div class="section-header">
             <i class="pi pi-cog section-icon"></i>
-            <span>Preferences Dialog</span>
+            <span>{{ t("preferencesDialog") }}</span>
           </div>
         </template>
         <template #content>
           <p class="section-description">
-            Test the post-signup preferences dialog that allows users to select
-            their language and topic preferences after creating an account.
+            {{ t("preferencesDialogDescription") }}
           </p>
 
           <div class="button-container">
             <PrimeButton
-              label="Open Preferences Dialog"
+              :label="t('openPreferencesDialogButton')"
               icon="pi pi-external-link"
               class="test-button"
               @click="openPreferencesDialog"
@@ -49,9 +48,18 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
+import {
+  componentTestingTranslations,
+  type ComponentTestingTranslations,
+} from "./component-testing.i18n";
+
+const { t } = useComponentI18n<ComponentTestingTranslations>(
+  componentTestingTranslations
+);
 
 const preferencesStore = useOnboardingPreferencesStore();
 const { openPreferencesDialog } = preferencesStore;

@@ -5,14 +5,24 @@
     @click="$emit('click')"
   >
     <div class="plus-icon"></div>
-    <span class="button-text">Start a conversation</span>
+    <span class="button-text">{{ t("buttonText") }}</span>
   </button>
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  startConversationButtonLongTranslations,
+  type StartConversationButtonLongTranslations,
+} from "./StartConversationButtonLong.i18n";
+
 defineEmits<{
   click: [];
 }>();
+
+const { t } = useComponentI18n<StartConversationButtonLongTranslations>(
+  startConversationButtonLongTranslations
+);
 </script>
 
 <style lang="scss" scoped>

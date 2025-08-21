@@ -16,7 +16,7 @@
 
     <q-dialog v-model="showDialog" position="bottom">
       <ZKBottomDialogContainer>
-        <div class="titleStyle">Filter Responses by:</div>
+        <div class="titleStyle">{{ t("filterTitle") }}</div>
 
         <div class="optionFlexStyle">
           <ZKButton
@@ -47,6 +47,11 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, onMounted, ref, watch } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  commentSortingSelectorTranslations,
+  type CommentSortingSelectorTranslations,
+} from "./CommentSortingSelector.i18n";
 
 const props = defineProps<{
   filterValue: string;
@@ -60,21 +65,26 @@ const { profileData } = storeToRefs(useUserStore());
 
 const showDialog = ref(false);
 
+const { t } = useComponentI18n<CommentSortingSelectorTranslations>(
+  commentSortingSelectorTranslations
+);
+
 interface OptionItem {
   name: string;
   value: CommentFilterOptions;
 }
 
-const baseOptions: OptionItem[] = [
-  { name: "Discover", value: "discover" },
-  { name: "New", value: "new" },
-  { name: "Moderation History", value: "moderated" },
-];
-const extendedOptions: OptionItem[] = baseOptions.concat([
-  { name: "Hidden", value: "hidden" },
+const baseOptions = computed((): OptionItem[] => [
+  { name: t("discover"), value: "discover" },
+  { name: t("new"), value: "new" },
+  { name: t("moderationHistory"), value: "moderated" },
 ]);
 
-const currentOptionList = ref<OptionItem[]>(baseOptions);
+const extendedOptions = computed((): OptionItem[] =>
+  baseOptions.value.concat([{ name: t("hidden"), value: "hidden" }])
+);
+
+const currentOptionList = ref<OptionItem[]>([]);
 
 onMounted(() => {
   initializeOptionList();
@@ -96,9 +106,9 @@ const currentFilterAlgorithm = computed(() => {
 
 function initializeOptionList() {
   if (profileData.value.isModerator) {
-    currentOptionList.value = extendedOptions;
+    currentOptionList.value = extendedOptions.value;
   } else {
-    currentOptionList.value = baseOptions;
+    currentOptionList.value = baseOptions.value;
   }
 }
 

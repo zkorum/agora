@@ -2,13 +2,13 @@
   <div>
     <DialogContainer
       v-model="showDialog"
-      :title="'Log in to Agora'"
-      :message="'Log in to participate in the discussions'"
+      :title="t('title')"
+      :message="t('message')"
       :show-cancel-dialog="true"
       :ok-callback="okButtonClicked"
       :cancel-callback="() => {}"
-      :label-ok="'Log In'"
-      :label-cancel="'Cancel'"
+      :label-ok="t('labelOk')"
+      :label-cancel="t('labelCancel')"
     >
       <template #body>
         <div v-if="subMessage" class="shadowBoxStyle">
@@ -30,6 +30,11 @@ import type { PossibleIntentions } from "src/stores/loginIntention";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useRouter } from "vue-router";
 import DialogContainer from "./DialogContainer.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  preLoginIntentionDialogTranslations,
+  type PreLoginIntentionDialogTranslations,
+} from "./PreLoginIntentionDialog.i18n";
 
 const showDialog = defineModel<boolean>({ required: true });
 
@@ -37,6 +42,10 @@ const props = defineProps<{
   okCallback: () => void;
   activeIntention: PossibleIntentions;
 }>();
+
+const { t } = useComponentI18n<PreLoginIntentionDialogTranslations>(
+  preLoginIntentionDialogTranslations
+);
 
 const { composeLoginIntentionDialogMessage, setActiveUserIntention } =
   useLoginIntentionStore();

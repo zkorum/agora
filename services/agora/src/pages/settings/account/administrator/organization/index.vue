@@ -16,7 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle> Administrator</template>
+        <template #middle> {{ t("administrator") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -37,12 +37,21 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import CreateOrganizationForm from "src/components/administrator/organization/CreateOrganizationForm.vue";
 import DeleteOrganizationForm from "src/components/administrator/organization/DeleteOrganizationForm.vue";
 import UserOrganizationMappings from "src/components/administrator/organization/UserOrganizationMappings.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import {
+  administratorOrganizationTranslations,
+  type AdministratorOrganizationTranslations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<AdministratorOrganizationTranslations>(
+  administratorOrganizationTranslations
+);
 </script>
 
 <style scoped lang="scss">

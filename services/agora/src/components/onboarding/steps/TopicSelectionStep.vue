@@ -1,5 +1,5 @@
 <template>
-  <DialogStepLayout title="Select topics you’re interested in to get started">
+  <DialogStepLayout :title="t('title')">
     <!-- Topics Grid -->
     <div class="topics-container">
       <PrimeChip
@@ -30,13 +30,13 @@
     <template #footer>
       <div class="footer-buttons">
         <PrimeButton
-          label="Back"
+          :label="t('backButton')"
           severity="secondary"
           outlined
           @click="emit('back')"
         />
         <PrimeButton
-          label="Close"
+          :label="t('closeButton')"
           :disabled="selectedTopicsCount === 0"
           @click="emit('close')"
         />
@@ -51,6 +51,15 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { storeToRefs } from "pinia";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, computed } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  topicSelectionStepTranslations,
+  type TopicSelectionStepTranslations,
+} from "./TopicSelectionStep.i18n";
+
+const { t } = useComponentI18n<TopicSelectionStepTranslations>(
+  topicSelectionStepTranslations
+);
 
 const emit = defineEmits<{
   (e: "close"): void;

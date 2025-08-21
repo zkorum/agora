@@ -20,7 +20,7 @@
       </DefaultMenuBar>
     </template>
 
-    <WidthWrapper :enable="true"> Load posts here </WidthWrapper>
+    <WidthWrapper :enable="true"> {{ t("loadPostsHere") }} </WidthWrapper>
   </DrawerLayout>
 </template>
 
@@ -30,6 +30,13 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  topicPageTranslations,
+  type TopicPageTranslations,
+} from "./TopicPage.i18n";
+
+const { t } = useComponentI18n<TopicPageTranslations>(topicPageTranslations);
 
 const route = useRoute();
 const topicCode = ref("");

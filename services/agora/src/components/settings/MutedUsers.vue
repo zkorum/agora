@@ -1,14 +1,14 @@
 <template>
   <div class="container">
     <div v-if="userMuteItemList.length == 0 && dataLoaded" class="infoMessage">
-      You have no muted users
+      {{ t("emptyMessage") }}
     </div>
     <ZKCard
       v-if="userMuteItemList.length > 0 && dataLoaded"
       padding="1rem"
       class="cardBackground"
     >
-      <p class="title">Muted users</p>
+      <p class="title">{{ t("title") }}</p>
 
       <q-list bordered padding>
         <div
@@ -52,12 +52,19 @@ import type { UserMuteItem } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { ref, onMounted } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  mutedUsersTranslations,
+  type MutedUsersTranslations,
+} from "./MutedUsers.i18n";
 
 const { getMutedUsers, muteUser } = useBackendUserMuteApi();
 const { loadPostData } = useHomeFeedStore();
 
 const userMuteItemList = ref<UserMuteItem[]>([]);
 const dataLoaded = ref(false);
+
+const { t } = useComponentI18n<MutedUsersTranslations>(mutedUsersTranslations);
 
 onMounted(async () => {
   await loadMuteData();

@@ -2,20 +2,20 @@
   <form class="container">
     <q-input
       v-model="username"
-      label="Username"
+      :label="t('usernameLabel')"
       autocomplete="off"
       data-1p-ignore
     />
     <ZKButton
       button-type="largeButton"
-      label="Fetch"
+      :label="t('fetchButton')"
       :disable="username.length == 0"
       @click="fetchOrganizations()"
     />
 
     <div v-if="dataLoaded">
       <div v-if="organizationList.length == 0">
-        User does not belong to any organizations
+        {{ t("noOrganizationsMessage") }}
       </div>
 
       <div v-for="organization in organizationList" :key="organization.name">
@@ -25,7 +25,7 @@
 
         <ZKButton
           button-type="largeButton"
-          label="Remove user organization mapping"
+          :label="t('removeUserOrganizationMappingButton')"
           @click="deleteOrganizationButtonClicked(organization.name)"
         />
       </div>
@@ -34,10 +34,19 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
 import type { OrganizationProperties } from "src/shared/types/zod";
+import {
+  userOrganizationMappingsTranslations,
+  type UserOrganizationMappingsTranslations,
+} from "./UserOrganizationMappings.i18n";
+
+const { t } = useComponentI18n<UserOrganizationMappingsTranslations>(
+  userOrganizationMappingsTranslations
+);
 
 const { getOrganizationsByUsername, removeUserOrganizationMapping } =
   useBackendAdministratorOrganizationApi();

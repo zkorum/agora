@@ -17,6 +17,15 @@ import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  postTypeDialogTranslations,
+  type PostTypeDialogTranslations,
+} from "./PostTypeDialog.i18n";
+
+const { t } = useComponentI18n<PostTypeDialogTranslations>(
+  postTypeDialogTranslations
+);
 
 const showDialog = defineModel<boolean>();
 
@@ -28,13 +37,13 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const postTypeOptions = [
   {
-    title: "New Conversation",
-    description: "Create a new conversation topic for discussion.",
+    title: t("newConversation"),
+    description: t("newConversationDescription"),
     value: "regular",
   },
   {
-    title: "Import from Polis",
-    description: "Import and continue an existing Polis conversation.",
+    title: t("importFromPolis"),
+    description: t("importFromPolisDescription"),
     value: "import",
   },
 ];

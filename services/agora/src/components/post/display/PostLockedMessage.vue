@@ -10,8 +10,7 @@
             <q-icon name="mdi-lock" class="lockIcon" size="1rem" />
           </div>
           <div>
-            Post locked as "{{ moderationReasonName }}". New opinions cannot be
-            posted.
+            {{ t("lockedMessage").replace("{reason}", moderationReasonName) }}
           </div>
         </div>
 
@@ -31,7 +30,7 @@
         <ZKButton
           v-if="profileData.isModerator"
           button-type="largeButton"
-          label="Edit"
+          :label="t('editButton')"
           color="primary"
           @click.stop.prevent="openModerationPage()"
         />
@@ -44,10 +43,19 @@
 import type { ConversationModerationProperties } from "src/shared/types/zod";
 import { moderationReasonMapping } from "src/utils/component/moderations";
 import { ref, watch } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "src/stores/user";
 import ModerationTime from "../common/moderation/ModerationTime.vue";
+import {
+  postLockedMessageTranslations,
+  type PostLockedMessageTranslations,
+} from "./PostLockedMessage.i18n";
+
+const { t } = useComponentI18n<PostLockedMessageTranslations>(
+  postLockedMessageTranslations
+);
 
 const props = defineProps<{
   moderationProperty: ConversationModerationProperties;

@@ -2,27 +2,36 @@
   <form class="container" @submit.prevent="setOrganization()">
     <q-input
       v-model="organizationName"
-      label="Name"
+      :label="t('nameLabel')"
       autocomplete="off"
       data-1p-ignore
     />
-    <q-input v-model="description" label="Description" />
-    <q-input v-model="imagePath" label="Image Path (file name or https path)" />
-    <div>File name: avatar_default_0.png</div>
-    <div>Full path: https://agoracitizen.network/images/big_logo_agora.png</div>
-    <q-input v-model="websiteUrl" label="Website URL" />
+    <q-input v-model="description" :label="t('descriptionLabel')" />
+    <q-input v-model="imagePath" :label="t('imagePathLabel')" />
+    <div>{{ t("fileNameExample") }}</div>
+    <div>{{ t("fullPathExample") }}</div>
+    <q-input v-model="websiteUrl" :label="t('websiteUrlLabel')" />
     <ZKButton
       button-type="largeButton"
-      label="Add Organization"
+      :label="t('addOrganizationButton')"
       type="submit"
     />
   </form>
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
+import {
+  createOrganizationFormTranslations,
+  type CreateOrganizationFormTranslations,
+} from "./CreateOrganizationForm.i18n";
+
+const { t } = useComponentI18n<CreateOrganizationFormTranslations>(
+  createOrganizationFormTranslations
+);
 
 const { createOrganization } = useBackendAdministratorOrganizationApi();
 

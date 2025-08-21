@@ -7,7 +7,7 @@
     <div class="poll-container">
       <div class="poll-header">
         <div class="poll-title">
-          <span class="poll-title-text">Add a poll</span>
+          <span class="poll-title-text">{{ t("addPoll") }}</span>
         </div>
         <PrimeButton
           icon="pi pi-times"
@@ -28,11 +28,11 @@
           :key="index"
           class="polling-option-item"
         >
-          <div class="option-label">Option {{ index + 1 }}</div>
+          <div class="option-label">{{ t("option") }} {{ index + 1 }}</div>
           <div class="option-input-container">
             <input
               :value="option"
-              placeholder="Input option text"
+              :placeholder="t('inputOptionText')"
               :maxlength="MAX_LENGTH_OPTION"
               class="option-input"
               type="text"
@@ -50,7 +50,7 @@
 
         <div class="add-option-container">
           <PrimeButton
-            label="Add Option"
+            :label="t('addOption')"
             icon="pi pi-plus"
             outlined
             :disabled="conversationDraft.poll.options.length >= 6"
@@ -64,10 +64,19 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
+import {
+  pollComponentTranslations,
+  type PollComponentTranslations,
+} from "./PollComponent.i18n";
+
+const { t } = useComponentI18n<PollComponentTranslations>(
+  pollComponentTranslations
+);
 
 const { resetPoll, updatePollOption, addPollOption, removePollOption } =
   useNewPostDraftsStore();

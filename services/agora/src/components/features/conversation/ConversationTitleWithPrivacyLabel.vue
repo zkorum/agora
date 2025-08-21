@@ -5,7 +5,7 @@
       class="privacy-label"
       :class="`privacy-label--${size}`"
     >
-      Private
+      {{ t("privateLabel") }}
     </div>
     <h1 class="conversation-title" :class="`conversation-title--${size}`">
       {{ title }}
@@ -14,6 +14,12 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  conversationTitleWithPrivacyLabelTranslations,
+  type ConversationTitleWithPrivacyLabelTranslations,
+} from "./ConversationTitleWithPrivacyLabel.i18n";
+
 interface Props {
   isPrivate: boolean; // Meaning the conversation is not indexed
   title: string;
@@ -21,6 +27,10 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
+  conversationTitleWithPrivacyLabelTranslations
+);
 </script>
 
 <style scoped lang="scss">

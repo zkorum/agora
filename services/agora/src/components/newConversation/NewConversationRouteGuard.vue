@@ -1,8 +1,8 @@
 <template>
   <ExitRoutePrompt
     v-model="showExitDialog"
-    title="Save conversation as draft?"
-    description="Your drafted conversation will be here when you return."
+    :title="t('saveConversationDraft')"
+    :description="t('draftWillBeHere')"
     :save-draft="saveDraft"
     :no-save-draft="noSaveDraft"
   />
@@ -15,6 +15,15 @@ import { storeToRefs } from "pinia";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  newConversationRouteGuardTranslations,
+  type NewConversationRouteGuardTranslations,
+} from "./NewConversationRouteGuard.i18n";
+
+const { t } = useComponentI18n<NewConversationRouteGuardTranslations>(
+  newConversationRouteGuardTranslations
+);
 
 interface Props {
   allowedRoutes?: string[];

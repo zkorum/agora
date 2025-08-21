@@ -3,8 +3,8 @@
     <ZKBottomDialogContainer>
       <div class="custom-timer-dialog">
         <div class="dialog-header">
-          <h3>Select Custom Time</h3>
-          <p>Choose when your conversation should become public</p>
+          <h3>{{ t("selectCustomTime") }}</h3>
+          <p>{{ t("chooseWhenPublic") }}</p>
         </div>
 
         <div class="date-picker-container">
@@ -21,13 +21,15 @@
         </div>
 
         <div class="dialog-actions">
-          <button class="action-button secondary" @click="goBack">Back</button>
+          <button class="action-button secondary" @click="goBack">
+            {{ t("back") }}
+          </button>
           <button
             class="action-button primary"
             :disabled="!customDate"
             @click="confirmSelection"
           >
-            Confirm
+            {{ t("confirm") }}
           </button>
         </div>
       </div>
@@ -40,6 +42,15 @@ import { ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  customTimerDialogTranslations,
+  type CustomTimerDialogTranslations,
+} from "./CustomTimerDialog.i18n";
+
+const { t } = useComponentI18n<CustomTimerDialogTranslations>(
+  customTimerDialogTranslations
+);
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 

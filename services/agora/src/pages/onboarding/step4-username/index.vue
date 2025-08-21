@@ -13,7 +13,7 @@
       >
         <template #header>
           <InfoHeader
-            title="Choose your username"
+            :title="t('title')"
             description=""
             icon-name="mdi-account-circle"
           />
@@ -21,7 +21,7 @@
 
         <template #body>
           <div class="container">
-            <div>How do you want to appear in Agora?</div>
+            <div>{{ t("howToAppear") }}</div>
 
             <UsernameChange
               :show-submit-button="false"
@@ -47,6 +47,15 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  step4UsernameTranslations,
+  type Step4UsernameTranslations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<Step4UsernameTranslations>(
+  step4UsernameTranslations
+);
 
 const { submitUsernameChange } = useBackendAccountApi();
 const { routeUserAfterLogin } = useLoginIntentionStore();
@@ -69,7 +78,7 @@ async function goToNextRoute() {
   if (response.status == "success") {
     await routeUserAfterLogin();
   } else {
-    showNotifyMessage("Username is already in use");
+    showNotifyMessage(t("usernameInUse"));
   }
   isSubmitButtonLoading.value = false;
 }
