@@ -51,6 +51,7 @@ const buttonStyles = computed(() => {
   cursor: pointer;
   outline: none;
   height: 40px;
+  padding: 0 20px;
   transition:
     opacity 0.2s ease,
     transform 0.1s ease,

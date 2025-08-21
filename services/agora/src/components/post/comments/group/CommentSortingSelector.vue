@@ -19,18 +19,17 @@
         <div class="titleStyle">{{ t("filterTitle") }}</div>
 
         <div class="optionFlexStyle">
-          <ZKButton
+          <ZKGradientButton
             v-for="optionItem in currentOptionList"
             :key="optionItem.name"
-            button-type="largeButton"
             :label="optionItem.name"
-            :color="
-              currentFilterAlgorithm == optionItem.name
-                ? 'primary'
-                : 'secondary'
+            :label-color="
+              currentFilterAlgorithm == optionItem.name ? '#FFFFFF' : '#6B4EFF'
             "
-            :text-color="
-              currentFilterAlgorithm == optionItem.name ? 'white' : 'primary'
+            :gradient-background="
+              currentFilterAlgorithm == optionItem.name
+                ? 'linear-gradient(114.81deg, #6B4EFF 76.45%, #4F92F6 100.1%)'
+                : 'linear-gradient(114.81deg, #e7e4f7 76.45%, #E8F1FF 100.1%)'
             "
             @click="selectedAlgorithm(optionItem.value)"
           />
@@ -44,6 +43,7 @@
 import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useUserStore } from "src/stores/user";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, onMounted, ref, watch } from "vue";

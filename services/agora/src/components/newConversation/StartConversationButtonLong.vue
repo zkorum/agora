@@ -31,11 +31,10 @@ const { t } = useComponentI18n<StartConversationButtonLongTranslations>(
   flex-direction: row;
   align-items: center;
   padding: 12px 16px;
-  gap: 8px;
+  gap: 1rem;
 
   /* Dimensions */
-  width: 227px;
-  height: 48px;
+  min-height: 48px;
 
   /* Gradient background from Figma */
   background: linear-gradient(180deg, #6b4eff 30.96%, #4f92f6 99.99%);
@@ -122,7 +121,7 @@ const { t } = useComponentI18n<StartConversationButtonLongTranslations>(
   /* Layout */
   display: flex;
   align-items: center;
-  white-space: nowrap;
-  flex-shrink: 0;
+  flex: 1;
+  text-align: left;
 }
 </style>
