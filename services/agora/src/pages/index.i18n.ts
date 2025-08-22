@@ -18,10 +18,10 @@ export const homeTranslations: Record<
   es: {
     following: "Siguiendo",
     popular: "Popular",
-    new: "Nuevo",
+    new: "Novedades",
   },
   fr: {
-    following: "Suivi",
+    following: "Abonnements",
     popular: "Populaire",
     new: "Nouveau",
   },
