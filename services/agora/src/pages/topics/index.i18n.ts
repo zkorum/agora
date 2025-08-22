@@ -2,7 +2,6 @@ export interface TopicsTranslations {
   exploreTopics: string;
   following: string;
   follow: string;
-  [key: string]: string;
 }
 
 export const topicsTranslations: Record<string, TopicsTranslations> = {

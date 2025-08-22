@@ -49,28 +49,29 @@ export const passportOnboardingTranslations: Record<
       "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
   },
   es: {
-    pageTitle: "Protege tu Privacidad",
+    pageTitle: "Proteja su privacidad",
     description:
-      "RariMe es una billetera de identidad con tecnología ZK que convierte tu pasaporte en una ID digital anónima, almacenada en tu dispositivo, para que puedas demostrar que eres un humano único sin compartir datos personales con nadie.",
+      "RariMe es una billetera de identidad con tecnología ZK que convierte su pasaporte en una ID digital anónima, almacenada en su dispositivo, para que pueda demostrar que es un humano único sin compartir datos personales con nadie.",
+
     download: "Descargar",
-    claimAnonymousId: "Reclama tu ID anónima",
-    comeBackAndVerify: "Regresa aquí y haz clic en Verificar",
-    scanQrCode: "Escanea el código QR con RariMe para verificar tu identidad",
+    claimAnonymousId: "Reclame su ID anónima",
+    comeBackAndVerify: "Regrese aquí y haga clic en Verificar",
+    scanQrCode: "Escanee el código QR con RariMe para verificar su identidad",
     failedToGenerateLink: "Error al generar el enlace de verificación",
     loadingVerificationLink: "Cargando enlace de verificación",
-    openLinkOnMobile: "O abre el siguiente enlace en tu navegador móvil:",
+    openLinkOnMobile: "O abra el siguiente enlace en su navegador móvil:",
     copy: "Copiar",
     waitingForVerification: "Esperando verificación...",
     verify: "Verificar",
     preferPhoneVerification: "Prefiero verificar con mi número de teléfono",
     verificationSuccessful: "Verificación exitosa 🎉",
     verificationFailed:
-      "El intento de verificación falló. Por favor inténtalo de nuevo.",
+      "El intento de verificación falló. Por favor, inténtelo de nuevo.",
     passportAlreadyLinked:
-      "Este pasaporte ya está vinculado a otra cuenta de RariMe. Por favor intenta con uno diferente.",
-    unexpectedError: "¡Ups! Error inesperado—intenta refrescar la página",
+      "Este pasaporte ya está vinculado a otra cuenta de RariMe. Por favor, intente con uno diferente.",
+    unexpectedError: "¡Ups! Error inesperado—intente refrescar la página",
     syncHiccup:
-      "¡Ups! Detectamos un problema de sincronización. Hemos actualizado tu código QR—¡intenta escanearlo de nuevo!",
+      "¡Ups! Detectamos un problema de sincronización. Hemos actualizado su código QR—¡intente escanearlo de nuevo!",
   },
   fr: {
     pageTitle: "Maîtrisez votre Confidentialité",

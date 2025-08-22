@@ -2,7 +2,6 @@ export interface PrivacyPolicyTranslations {
   privacyPolicy: string;
   referTo: string;
   externalPageLink: string;
-  [key: string]: string;
 }
 
 export const privacyPolicyTranslations: Record<

@@ -3,7 +3,6 @@ export interface UserOrganizationMappingsTranslations {
   fetchButton: string;
   noOrganizationsMessage: string;
   removeUserOrganizationMappingButton: string;
-  [key: string]: string;
 }
 
 export const userOrganizationMappingsTranslations: Record<

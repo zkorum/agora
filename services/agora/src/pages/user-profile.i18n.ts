@@ -3,7 +3,6 @@ export interface UserProfileTranslations {
   conversations: string;
   conversationTab: string;
   opinionTab: string;
-  [key: string]: string;
 }
 
 export const userProfileTranslations: Record<string, UserProfileTranslations> =

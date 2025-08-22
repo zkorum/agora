@@ -1,7 +1,6 @@
 export interface CommentSectionTranslations {
   opinionNotFound: string;
   opinionRemovedByModerators: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const commentSectionTranslations: Record<

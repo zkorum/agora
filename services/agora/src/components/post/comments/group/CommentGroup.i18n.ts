@@ -1,6 +1,5 @@
 export interface CommentGroupTranslations {
   noOpinionsMessage: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const commentGroupTranslations: Record<

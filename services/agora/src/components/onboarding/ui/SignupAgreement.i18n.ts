@@ -3,7 +3,6 @@ export interface SignupAgreementTranslations {
   termsOfService: string;
   and: string;
   privacyPolicy: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const signupAgreementTranslations: Record<

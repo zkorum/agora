@@ -4,7 +4,6 @@ export interface CompactPostListTranslations {
   completedTitle: string;
   completedDescription: string;
   newConversationsButton: string;
-  [key: string]: string;
 }
 
 export const compactPostListTranslations: Record<

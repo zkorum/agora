@@ -6,7 +6,6 @@ export interface OpinionAnalysisDialogTranslations {
   total: string;
   noGroup: string;
   viewOriginal: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const opinionAnalysisDialogTranslations: Record<

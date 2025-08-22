@@ -3,7 +3,6 @@ export interface ComponentTestingTranslations {
   preferencesDialog: string;
   preferencesDialogDescription: string;
   openPreferencesDialogButton: string;
-  [key: string]: string;
 }
 
 export const componentTestingTranslations: Record<
@@ -18,11 +17,11 @@ export const componentTestingTranslations: Record<
     openPreferencesDialogButton: "Open Preferences Dialog",
   },
   es: {
-    componentTesting: "Prueba de Componentes",
-    preferencesDialog: "Diálogo de Preferencias",
+    componentTesting: "Prueba de componentes",
+    preferencesDialog: "Diálogo de preferencias",
     preferencesDialogDescription:
-      "Prueba el diálogo de preferencias posterior al registro que permite a los usuarios seleccionar sus preferencias de idioma y tema después de crear una cuenta.",
-    openPreferencesDialogButton: "Abrir Diálogo de Preferencias",
+      "Pruebe el diálogo de preferencias posterior al registro que permite a los usuarios seleccionar sus preferencias de idioma y tema después de crear una cuenta.",
+    openPreferencesDialogButton: "Abrir diálogo de preferencias",
   },
   fr: {
     componentTesting: "Test de Composants",

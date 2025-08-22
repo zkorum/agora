@@ -7,7 +7,6 @@ export interface ActionsTranslations {
   share: string;
   moderationHistory: string;
   embedLink: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const actionsTranslations: Record<string, ActionsTranslations> = {

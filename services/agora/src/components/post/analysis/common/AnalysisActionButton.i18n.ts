@@ -1,7 +1,6 @@
 export interface AnalysisActionButtonTranslations {
   learnMore: string;
   viewMore: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const analysisActionButtonTranslations: Record<

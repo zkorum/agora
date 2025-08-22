@@ -10,7 +10,6 @@ export interface NewConversationControlBarTranslations {
   makePublic: string;
   removePoll: string;
   addPoll: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const newConversationControlBarTranslations: Record<

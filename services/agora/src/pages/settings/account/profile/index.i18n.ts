@@ -1,7 +1,6 @@
 export interface ProfileSettingsTranslations {
   pageTitle: string;
   changeUsernameTitle: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const profileSettingsTranslations: Record<

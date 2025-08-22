@@ -4,7 +4,6 @@ export interface OpinionGroupCommentsTranslations {
   thisGroup: string;
   allOthers: string;
   allOtherGroups: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const opinionGroupCommentsTranslations: Record<

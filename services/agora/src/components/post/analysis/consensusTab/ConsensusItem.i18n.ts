@@ -3,7 +3,6 @@ export interface ConsensusItemTranslations {
   pass: string;
   disagree: string;
   noVote: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const consensusItemTranslations: Record<

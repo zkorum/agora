@@ -6,7 +6,6 @@ export interface CreateOrganizationFormTranslations {
   fullPathExample: string;
   websiteUrlLabel: string;
   addOrganizationButton: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const createOrganizationFormTranslations: Record<

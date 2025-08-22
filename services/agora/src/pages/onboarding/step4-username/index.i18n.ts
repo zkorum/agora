@@ -2,7 +2,6 @@ export interface Step4UsernameTranslations {
   title: string;
   howToAppear: string;
   usernameInUse: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const step4UsernameTranslations: Record<
@@ -16,7 +15,7 @@ export const step4UsernameTranslations: Record<
   },
   es: {
     title: "Elige tu nombre de usuario",
-    howToAppear: "¿Cómo quieres aparecer en Agora?",
+    howToAppear: "¿Cómo quiere aparecer en Agora?",
     usernameInUse: "El nombre de usuario ya está en uso",
   },
   fr: {

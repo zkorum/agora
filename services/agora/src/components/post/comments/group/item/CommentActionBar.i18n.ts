@@ -6,7 +6,6 @@ export interface CommentActionBarTranslations {
   disagreeAriaLabel: string;
   passAriaLabel: string;
   agreeAriaLabel: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const commentActionBarTranslations: Record<

@@ -1,6 +1,5 @@
 export interface SettingsSearchInputTranslations {
   searchPlaceholder: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const settingsSearchInputTranslations: Record<

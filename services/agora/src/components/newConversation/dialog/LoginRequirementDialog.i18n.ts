@@ -5,7 +5,6 @@ export interface LoginRequirementDialogTranslations {
   requiresLoginDescription: string;
   guestParticipationTitle: string;
   guestParticipationDescription: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const loginRequirementDialogTranslations: Record<

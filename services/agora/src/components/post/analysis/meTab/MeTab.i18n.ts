@@ -2,7 +2,6 @@ export interface MeTabTranslations {
   whereDoIStandTitle: string;
   voteMoreToUnlock: string;
   youAgreeWith: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const meTabTranslations: Record<string, MeTabTranslations> = {

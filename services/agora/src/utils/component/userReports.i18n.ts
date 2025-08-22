@@ -5,7 +5,6 @@ export interface UserReportsTranslations {
   doxing: string;
   sexual: string;
   spam: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const userReportsTranslations: Record<string, UserReportsTranslations> =

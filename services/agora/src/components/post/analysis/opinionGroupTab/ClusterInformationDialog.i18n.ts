@@ -2,7 +2,6 @@ export interface ClusterInformationDialogTranslations {
   title: string;
   description1: string;
   description2: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const clusterInformationDialogTranslations: Record<

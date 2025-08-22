@@ -2,7 +2,6 @@ export interface GroupConsensusSummaryTranslations {
   groupSummaryTitle: string;
   aiSummaryTitle: string;
   aiSummaryDescription: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const groupConsensusSummaryTranslations: Record<

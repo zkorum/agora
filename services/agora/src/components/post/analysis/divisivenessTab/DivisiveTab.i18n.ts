@@ -3,7 +3,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface DivisiveTabTranslations {
   divisiveTitle: string;
   noDivisiveOpinionsMessage: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const divisiveTabTranslations: Record<

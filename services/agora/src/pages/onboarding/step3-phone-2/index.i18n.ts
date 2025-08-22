@@ -15,7 +15,6 @@ export interface Step3Phone2Translations {
   tooManyAttempts: string;
   invalidPhoneNumber: string;
   restrictedPhoneType: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
@@ -42,27 +41,27 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
         "Sorry, this phone number is not supported for security reasons. Please try another.",
     },
     es: {
-      title: "Ingresa el código de 6 dígitos",
+      title: "Ingrese el código de 6 dígitos",
       instructions:
-        "Ingresa el código de 6 dígitos que hemos enviado al número de teléfono",
+        "Ingrese el código de 6 dígitos que hemos enviado a su número de teléfono",
       expiresIn: "Expira en",
       codeExpired: "Código expirado",
-      changeNumber: "Cambiar Número",
-      resendCodeIn: "Reenviar Código en",
-      resendCode: "Reenviar Código",
-      pleaseEnterValidCode: "Por favor ingresa un código válido de 6 dígitos",
+      changeNumber: "Cambiar número",
+      resendCodeIn: "Reenviar código en",
+      resendCode: "Reenviar código",
+      pleaseEnterValidCode: "Por favor, ingrese un código válido de 6 dígitos",
       verificationSuccessful: "Verificación exitosa 🎉",
-      codeExpiredResend: "Código expirado—reenvía un nuevo código",
-      wrongCodeTryAgain: "Código incorrecto—intenta de nuevo",
+      codeExpiredResend: "Código expirado—reenvíe un nuevo código",
+      wrongCodeTryAgain: "Código incorrecto—intente de nuevo",
       syncHiccupDetected:
-        "¡Ups! Error de sincronización detectado—reenvía un nuevo código",
-      somethingWrong: "¡Ups! Algo está mal",
+        "¡Ups! Error de sincronización detectado—reenvíe un nuevo código",
+      somethingWrong: "¡Ups! Algo salió mal",
       tooManyAttempts:
-        "Demasiados intentos—por favor espera antes de solicitar un nuevo código",
+        "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
       invalidPhoneNumber:
-        "Lo siento, este número de teléfono es inválido. Por favor verifica e intenta de nuevo.",
+        "Lo siento, este número de teléfono es inválido. Por favor, verifique e intente de nuevo.",
       restrictedPhoneType:
-        "Lo siento, este número de teléfono no es compatible por razones de seguridad. Por favor prueba con otro.",
+        "Lo siento, este número de teléfono no es compatible por razones de seguridad. Por favor, pruebe con otro.",
     },
     fr: {
       title: "Entrez le code à 6 chiffres",

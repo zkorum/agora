@@ -14,7 +14,6 @@ export interface UserReportsViewerTranslations {
   invalidReportType: string;
   invalidSlugIdParam: string;
   unknownReportType: string;
-  [key: string]: string;
 }
 
 export const userReportsViewerTranslations: Record<
@@ -39,9 +38,9 @@ export const userReportsViewerTranslations: Record<
     unknownReportType: "Unknown report type",
   },
   es: {
-    userReportsViewer: "Visor de Reportes de Usuario",
-    openConversation: "Abrir Conversación",
-    openOpinion: "Abrir Opinión",
+    userReportsViewer: "Visor de reportes de usuario",
+    openConversation: "Abrir conversación",
+    openOpinion: "Abrir opinión",
     noReportsAvailable: "No hay reportes disponibles para esta {type}.",
     conversation: "Conversación",
     opinion: "Opinión",

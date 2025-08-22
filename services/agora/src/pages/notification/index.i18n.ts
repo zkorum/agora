@@ -5,7 +5,6 @@ export interface NotificationTranslations {
   contributedOpinion: string;
   onePersonVoted: string;
   peopleVoted: string;
-  [key: string]: string;
 }
 
 export const notificationTranslations: Record<
@@ -23,10 +22,10 @@ export const notificationTranslations: Record<
   es: {
     notifications: "Notificaciones",
     endOfFeed: "Fin del feed de notificaciones",
-    noNotifications: "No tienes notificaciones",
-    contributedOpinion: "contribuyó con una opinión a tu conversación:",
-    onePersonVoted: "1 persona votó en tu opinión:",
-    peopleVoted: "personas votaron en tu opinión:",
+    noNotifications: "No tiene notificaciones",
+    contributedOpinion: "contribuyó con una opinión a su conversación:",
+    onePersonVoted: "1 persona votó en su opinión:",
+    peopleVoted: "personas votaron en su opinión:",
   },
   fr: {
     notifications: "Notifications",
