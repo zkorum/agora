@@ -7,12 +7,11 @@
     <div class="poll-container">
       <div class="poll-header">
         <div class="poll-title">
-          <span class="poll-title-text">Add a poll</span>
+          <span class="poll-title-text">{{ t("addPoll") }}</span>
         </div>
         <PrimeButton
           icon="pi pi-times"
           text
-          severity="secondary"
           class="close-button"
           @click="resetPoll"
         />
@@ -29,11 +28,11 @@
           :key="index"
           class="polling-option-item"
         >
-          <div class="option-label">Option {{ index + 1 }}</div>
+          <div class="option-label">{{ t("option") }} {{ index + 1 }}</div>
           <div class="option-input-container">
             <input
               :value="option"
-              placeholder="Input option text"
+              :placeholder="t('inputOptionText')"
               :maxlength="MAX_LENGTH_OPTION"
               class="option-input"
               type="text"
@@ -51,9 +50,8 @@
 
         <div class="add-option-container">
           <PrimeButton
-            label="Add Option"
+            :label="t('addOption')"
             icon="pi pi-plus"
-            severity="secondary"
             outlined
             :disabled="conversationDraft.poll.options.length >= 6"
             class="add-option-button"
@@ -66,10 +64,19 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
+import {
+  pollComponentTranslations,
+  type PollComponentTranslations,
+} from "./PollComponent.i18n";
+
+const { t } = useComponentI18n<PollComponentTranslations>(
+  pollComponentTranslations
+);
 
 const { resetPoll, updatePollOption, addPollOption, removePollOption } =
   useNewPostDraftsStore();
@@ -228,10 +235,10 @@ function removeOption(index: number) {
   padding: 0.875rem 1.75rem !important;
   font-weight: 500 !important;
   font-size: 1rem !important;
+  border-color: $primary !important;
 
-  // Override PrimeVue default styles to match the screenshot
   &.p-button.p-button-outlined.p-button-secondary {
-    border: 1px solid #6366f1 !important;
+    border: 1px solid $primary !important;
     background-color: transparent !important;
     color: #6366f1 !important;
 

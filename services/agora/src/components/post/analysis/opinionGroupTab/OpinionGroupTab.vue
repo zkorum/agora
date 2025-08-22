@@ -2,13 +2,16 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader :show-star-in-title="false" title="Groups" />
+        <AnalysisTitleHeader
+          :show-star-in-title="false"
+          :title="t('groupsTitle')"
+        />
       </template>
 
       <template #body>
         <EmptyStateMessage
           v-if="props.polis.clusters.length <= 1"
-          message="Not enough groups to display."
+          :message="t('notEnoughGroupsMessage')"
         />
         <div v-else class="container">
           <div class="infoIcon">
@@ -40,7 +43,7 @@
               class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
             >
               <q-icon name="mdi-account-outline" />
-              Me
+              {{ t("meLabel") }}
             </div>
 
             <div :style="{ position: 'relative' }">
@@ -138,6 +141,11 @@ import OpinionGroupComments from "./OpinionGroupComments.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  opinionGroupTabTranslations,
+  type OpinionGroupTabTranslations,
+} from "./OpinionGroupTab.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -145,6 +153,10 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   totalParticipantCount: number;
 }>();
+
+const { t } = useComponentI18n<OpinionGroupTabTranslations>(
+  opinionGroupTabTranslations
+);
 
 const hasUngroupedParticipants = computed(() => {
   if (props.polis.clusters.length === 0) {
@@ -160,8 +172,6 @@ const hasUngroupedParticipants = computed(() => {
 const currentClusterTab = ref<PolisKey>(props.polis.clusters[0]?.key || "0");
 
 const showClusterInformation = ref(false);
-
-const VITE_PUBLIC_DIR = process.env.VITE_PUBLIC_DIR;
 
 const zodClusterImg = z.object({
   clusterWidthPercent: z.number(),
@@ -376,7 +386,7 @@ function composeImagePath(
   const version = "-v2";
 
   return (
-    VITE_PUBLIC_DIR +
+    process.env.VITE_PUBLIC_DIR +
     "/images/cluster/cluster" +
     clusterNumber +
     "-" +

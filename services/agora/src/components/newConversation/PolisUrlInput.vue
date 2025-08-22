@@ -4,15 +4,15 @@
       <div class="content-container">
         <div class="header">
           <i class="pi pi-link icon" />
-          <div class="title">Import Conversation from Polis</div>
+          <div class="title">{{ t("importTitle") }}</div>
         </div>
         <div class="urlInputDiv">
           <div class="description">
-            Paste a Polis URL below to import a conversation.
+            {{ t("description") }}
           </div>
 
           <div class="examples">
-            <p class="examples-title">Valid URL examples:</p>
+            <p class="examples-title">{{ t("validUrlExamples") }}</p>
             <ul class="examples-list">
               <li><code>{{ "https://pol.is/report/<report_id>" }}</code></li>
               <li><code>{{ "https://pol.is/<conversation_id>"}}</code></li>
@@ -32,7 +32,7 @@
           <div>
             <q-input
               v-model="model"
-              placeholder="e.g., https://pol.is/xxxxx"
+              :placeholder="t('urlPlaceholder')"
               outlined
               dense
               :error="showError"
@@ -41,27 +41,26 @@
             >
             </q-input>
             <div class="legal-notice">
-              By clicking "Import", you confirm that importing the content
-              complies with the
+              {{ t("legalNotice") }}
               <a
                 href="https://pol.is/tos"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="terms-link"
               >
-                Pol.is Terms
+                {{ t("polisTerms") }}
                 <q-icon name="mdi-open-in-new" />
               </a>
               and our
               <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
-                Terms of Use </RouterLink
+                {{ t("termsOfUse") }} </RouterLink
               >. Note that the original Polis data are licensed under the
               <a
                 href="https://creativecommons.org/licenses/by/4.0/"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="terms-link"
-                >Creative Commons Attribution 4.0 International license
+                >{{ t("ccLicense") }}
                 <q-icon name="mdi-open-in-new" /> </a
               >. Do not import illegal, abusive, or infringing material. Use the
               import API responsibly. Abuse is prohibited.
@@ -74,10 +73,19 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import { computed } from "vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
 import ZKCard from "../ui-library/ZKCard.vue";
+import {
+  polisUrlInputTranslations,
+  type PolisUrlInputTranslations,
+} from "./PolisUrlInput.i18n";
+
+const { t } = useComponentI18n<PolisUrlInputTranslations>(
+  polisUrlInputTranslations
+);
 
 const model = defineModel<string>({ required: true });
 

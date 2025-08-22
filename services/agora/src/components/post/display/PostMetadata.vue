@@ -41,12 +41,22 @@
     :ok-callback="() => onLoginConfirmationOk()"
     :active-intention="'reportUserContent'"
   />
+
+  <!-- Action Dialog -->
+  <ZKActionDialog
+    v-model="actionDialogVisible"
+    :actions="actionDialogActions"
+    @action-selected="handleActionSelected"
+    @dialog-closed="handleDialogClosed"
+  />
 </template>
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useBottomSheet } from "src/utils/ui/bottomSheet";
+import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
+import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { ref } from "vue";
+import type { ContentAction } from "src/utils/actions/core/types";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
@@ -73,9 +83,14 @@ const props = defineProps<{
 const router = useRouter();
 const route = useRoute();
 
-const { showPostOptionSelector } = useBottomSheet();
+// Use the new content actions system
+const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+// Action dialog state
+const actionDialogVisible = ref(false);
+const actionDialogActions = ref<ContentAction[]>([]);
 
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = useHomeFeedStore();
@@ -146,16 +161,37 @@ async function copyEmbedLinkCallback() {
 }
 
 function clickedMoreIcon() {
-  showPostOptionSelector(
-    props.postSlugId,
-    props.posterUserName,
-    reportContentCallback,
+  // Show post actions using the new system
+  postActions.showPostActions(props.postSlugId, props.posterUserName, {
+    reportPostCallback: reportContentCallback,
     openUserReportsCallback,
     muteUserCallback,
     moderatePostCallback,
     moderationHistoryCallback,
-    copyEmbedLinkCallback
-  );
+    copyEmbedLinkCallback,
+  });
+
+  // Get the dialog state and display it
+  const state = postActions.getDialogState();
+  actionDialogVisible.value = state.isVisible;
+  actionDialogActions.value = state.actions;
+}
+
+/**
+ * Handle action selection
+ */
+async function handleActionSelected(action: ContentAction) {
+  console.log("Action selected:", action.id);
+  await postActions.executeAction(action);
+}
+
+/**
+ * Handle dialog close
+ */
+function handleDialogClosed() {
+  actionDialogVisible.value = false;
+  actionDialogActions.value = [];
+  postActions.closeDialog();
 }
 </script>
 

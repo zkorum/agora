@@ -4,33 +4,32 @@
       <q-card-section class="header-section">
         <div class="header-content">
           <q-icon name="mdi-swap-horizontal" class="header-icon" />
-          <h3 class="header-title">Switch to Import Mode?</h3>
+          <h3 class="header-title">{{ t("switchToImportMode") }}</h3>
         </div>
       </q-card-section>
 
       <q-card-section class="content-section">
         <p class="main-message">
-          Switching to import mode will clear the following fields from the
-          conversation draft:
+          {{ t("switchingWillClear") }}
         </p>
 
         <ul class="content-list">
           <li v-if="hasTitle">
             <q-icon name="mdi-format-title" class="list-icon" />
-            Title
+            {{ t("title") }}
           </li>
           <li v-if="hasBody">
             <q-icon name="mdi-text" class="list-icon" />
-            Body text
+            {{ t("bodyText") }}
           </li>
           <li v-if="hasPoll">
             <q-icon name="mdi-poll" class="list-icon" />
-            Poll options
+            {{ t("pollOptions") }}
           </li>
         </ul>
 
         <p class="preserved-message">
-          Your privacy settings and organization selection will be preserved.
+          {{ t("settingsPreserved") }}
         </p>
       </q-card-section>
 
@@ -39,14 +38,14 @@
           button-type="largeButton"
           text-color="primary"
           color="secondary"
-          label="Cancel"
+          :label="t('cancel')"
           size="0.9rem"
           @click="handleCancel"
         />
         <ZKButton
           button-type="largeButton"
           color="primary"
-          label="Continue"
+          :label="t('continue')"
           size="0.9rem"
           @click="handleConfirm"
         />
@@ -60,6 +59,15 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  modeChangeConfirmationDialogTranslations,
+  type ModeChangeConfirmationDialogTranslations,
+} from "./ModeChangeConfirmationDialog.i18n";
+
+const { t } = useComponentI18n<ModeChangeConfirmationDialogTranslations>(
+  modeChangeConfirmationDialogTranslations
+);
 
 const showDialog = defineModel<boolean>();
 

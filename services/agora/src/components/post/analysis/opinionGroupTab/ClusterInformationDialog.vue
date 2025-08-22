@@ -2,17 +2,14 @@
   <div>
     <q-dialog v-model="showDialog" position="bottom">
       <ZKBottomDialogContainer>
-        <div class="title">Consensus Groups</div>
+        <div class="title">{{ t("title") }}</div>
 
         <div>
-          Consensus groups are created based on how people agree and disagree
-          with opinions.
+          {{ t("description1") }}
         </div>
 
         <div>
-          We use machine learning to identify different schools of thought. This
-          is the very same algorithm powering pol.is, the open-source wikisurvey
-          tool developed by Computational Democracy.
+          {{ t("description2") }}
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -21,6 +18,15 @@
 
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  clusterInformationDialogTranslations,
+  type ClusterInformationDialogTranslations,
+} from "./ClusterInformationDialog.i18n";
+
+const { t } = useComponentI18n<ClusterInformationDialogTranslations>(
+  clusterInformationDialogTranslations
+);
 
 const showDialog = defineModel<boolean>({ required: true });
 </script>

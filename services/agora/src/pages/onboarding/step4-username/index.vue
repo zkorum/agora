@@ -13,7 +13,7 @@
       >
         <template #header>
           <InfoHeader
-            title="Choose your username"
+            :title="t('title')"
             description=""
             icon-name="mdi-account-circle"
           />
@@ -21,7 +21,7 @@
 
         <template #body>
           <div class="container">
-            <div>How do you want to appear in Agora?</div>
+            <div>{{ t("howToAppear") }}</div>
 
             <UsernameChange
               :show-submit-button="false"
@@ -36,8 +36,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useBackendAccountApi } from "src/utils/api/account";
 import UsernameChange from "src/components/account/UsernameChange.vue";
 import { ref } from "vue";
@@ -46,9 +46,19 @@ import { storeToRefs } from "pinia";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import { useNotify } from "src/utils/ui/notify";
-import { useRouter } from "vue-router";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  step4UsernameTranslations,
+  type Step4UsernameTranslations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<Step4UsernameTranslations>(
+  step4UsernameTranslations
+);
 
 const { submitUsernameChange } = useBackendAccountApi();
+const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isValidUsername = ref(true);
 const userName = ref("");
@@ -59,8 +69,6 @@ const { showNotifyMessage } = useNotify();
 
 const isSubmitButtonLoading = ref(false);
 
-const router = useRouter();
-
 async function goToNextRoute() {
   isSubmitButtonLoading.value = true;
   const response = await submitUsernameChange(
@@ -68,9 +76,9 @@ async function goToNextRoute() {
     profileData.value.userName
   );
   if (response.status == "success") {
-    await router.push({ name: "/onboarding/step5-preferences/" });
+    await routeUserAfterLogin();
   } else {
-    showNotifyMessage("Username is already in use");
+    showNotifyMessage(t("usernameInUse"));
   }
   isSubmitButtonLoading.value = false;
 }

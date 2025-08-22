@@ -14,7 +14,7 @@
         >
           <template #header>
             <InfoHeader
-              title="Verify with phone number"
+              :title="t('pageTitle')"
               :description="''"
               icon-name="mdi-phone"
             />
@@ -22,7 +22,7 @@
 
           <template #body>
             <div class="container">
-              <div>You will receive a 6-digit one-time code by SMS</div>
+              <div>{{ t("smsDescription") }}</div>
 
               <!--
                 This component has some form of VNode bug that can cause Vite's dev server
@@ -36,7 +36,7 @@
                 :success="phoneData.isValid"
                 :error="phoneData.hasError"
                 show-code-on-list
-                placeholder="Phone number"
+                :placeholder="t('phoneNumberPlaceholder')"
                 required
                 :auto-format="false"
                 no-validation-error
@@ -61,25 +61,25 @@
                 <span>{{ phoneData.errorMessage }}</span>
               </div>
 
-              <ZKButton
-                button-type="largeButton"
-                label="I'd prefer to login with complete privacy"
-                text-color="primary"
+              <ZKGradientButton
+                :label="t('preferPrivateLogin')"
+                variant="text"
+                label-color="#6B4EFF"
                 @click="goToPassportVerification()"
               />
 
               <div v-if="devAuthorizedNumbers.length > 0">
                 <div class="developmentSection">
-                  <div>Development Numbers:</div>
+                  <div>{{ t("developmentNumbers") }}</div>
 
                   <div
                     v-for="authorizedNumber in devAuthorizedNumbers"
                     :key="authorizedNumber.fullNumber"
                   >
-                    <ZKButton
-                      button-type="largeButton"
-                      color="blue"
+                    <ZKGradientButton
                       :label="authorizedNumber.fullNumber"
+                      label-color="#FFFFFF"
+                      :style="{ width: '100%' }"
                       @click="injectDevelopmentNumber(authorizedNumber)"
                     />
                   </div>
@@ -94,8 +94,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { reactive } from "vue";
 import {
   parsePhoneNumberFromString,
@@ -105,7 +105,7 @@ import {
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import {
@@ -115,6 +115,15 @@ import {
 import { isPhoneNumberTypeSupported } from "src/shared/shared";
 import type { Results } from "maz-ui/components/MazPhoneNumberInput";
 import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  phoneOnboardingTranslations,
+  type PhoneOnboardingTranslations,
+} from "./PhoneOnboarding.i18n";
+
+const { t } = useComponentI18n<PhoneOnboardingTranslations>(
+  phoneOnboardingTranslations
+);
 
 const router = useRouter();
 
@@ -192,7 +201,7 @@ function validatePhoneNumber(
   const parsedNumber = parsePhoneNumberFromString(phoneNumber, countryCode);
 
   if (!parsedNumber) {
-    return { isValid: false, error: "Please enter a valid phone number" };
+    return { isValid: false, error: t("pleaseEnterValidPhone") };
   }
 
   // First: Check if country code is supported
@@ -200,12 +209,12 @@ function validatePhoneNumber(
     parsedNumber.countryCallingCode
   );
   if (!callingCode.success) {
-    return { isValid: false, error: "This country is not supported yet" };
+    return { isValid: false, error: t("countryNotSupported") };
   }
 
   // Second: Check if phone number format is valid
   if (!parsedNumber.isValid()) {
-    return { isValid: false, error: "Please enter a valid phone number" };
+    return { isValid: false, error: t("pleaseEnterValidPhone") };
   }
 
   // Third: Check if phone type is supported
@@ -215,7 +224,7 @@ function validatePhoneNumber(
   if (isPhoneTypeNotSupported) {
     return {
       isValid: false,
-      error: "This phone number type is not supported",
+      error: t("phoneTypeNotSupported"),
     };
   }
 
@@ -262,7 +271,7 @@ function validatePhoneInRealTime() {
     clearErrors();
     phoneData.isValid = true;
   } catch {
-    phoneData.errorMessage = "Please enter a valid phone number";
+    phoneData.errorMessage = t("pleaseEnterValidPhone");
     phoneData.hasError = true;
     phoneData.isValid = false;
   }
@@ -292,7 +301,7 @@ async function validateNumber(): Promise<boolean> {
     phoneData.hasAttemptedSubmission = true;
 
     if (!phoneData.phoneNumber || !phoneData.countryCode) {
-      setError("Please enter a phone number");
+      setError(t("pleaseEnterPhoneNumber"));
       return false;
     }
 
@@ -314,7 +323,7 @@ async function validateNumber(): Promise<boolean> {
     return true;
   } catch (e) {
     console.error("Unexpected error during phone validation", e);
-    setError("Please enter a valid phone number");
+    setError(t("pleaseEnterValidPhone"));
     return false;
   }
 }

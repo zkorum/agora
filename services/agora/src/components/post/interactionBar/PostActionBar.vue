@@ -17,7 +17,7 @@
           <div>
             <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
           </div>
-          <div>Share</div>
+          <div>{{ t("share") }}</div>
         </div>
       </ZKButton>
     </div>
@@ -28,6 +28,11 @@
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
 import InteractionTab from "./InteractionTab.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  postActionBarTranslations,
+  type PostActionBarTranslations,
+} from "./PostActionBar.i18n";
 
 const props = defineProps<{
   compactMode: boolean;
@@ -37,6 +42,10 @@ const props = defineProps<{
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,
 });
+
+const { t } = useComponentI18n<PostActionBarTranslations>(
+  postActionBarTranslations
+);
 
 defineEmits(["share"]);
 </script>

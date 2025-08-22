@@ -20,50 +20,65 @@
         </div>
 
         <div class="menuListFlex">
-          <div
+          <RouterLink
             v-for="settingItem in settingItemList"
             :key="settingItem.name"
-            @click="enterRoute(settingItem.route, settingItem.requireAuth)"
+            v-slot="{ navigate }"
+            :to="settingItem.route"
+            custom
           >
-            <ZKHoverEffect :enable-hover="true">
-              <div
-                class="settingItemStyle"
-                :class="{
-                  activeRoute: settingItem.matchRouteList.includes(route.name),
-                }"
-              >
-                <div class="iconItem">
-                  <ZKStyledIcon
-                    :svg-string="
-                      settingItem.matchRouteList.includes(route.name)
-                        ? settingItem.svgStringFilled
-                        : settingItem.svgStringStandard
-                    "
-                  />
+            <div
+              class="navigation-link"
+              @click="
+                handleAuthenticatedRouteClick(
+                  $event,
+                  settingItem.requireAuth,
+                  navigate
+                )
+              "
+            >
+              <ZKHoverEffect :enable-hover="true">
+                <div
+                  class="settingItemStyle"
+                  :class="{
+                    activeRoute: settingItem.matchRouteList.includes(
+                      route.name
+                    ),
+                  }"
+                >
+                  <div class="iconItem">
+                    <ZKStyledIcon
+                      :svg-string="
+                        settingItem.matchRouteList.includes(route.name)
+                          ? settingItem.svgStringFilled
+                          : settingItem.svgStringStandard
+                      "
+                    />
 
-                  <NewNotificationIndicator
-                    v-if="settingItem.name == 'Dings'"
-                  />
-                </div>
+                    <NewNotificationIndicator
+                      v-if="settingItem.name == 'Dings'"
+                    />
+                  </div>
 
-                <div class="itemName">
-                  {{ settingItem.name }}
+                  <div class="itemName">
+                    {{ settingItem.name }}
+                  </div>
                 </div>
-              </div>
-            </ZKHoverEffect>
-          </div>
+              </ZKHoverEffect>
+            </div>
+          </RouterLink>
         </div>
       </div>
 
       <div>
-        <RouterLink :to="{ name: '/conversation/new/create/' }">
-          <div
-            v-if="drawerBehavior == 'desktop'"
-            class="bottomSection startConversationButton"
-          >
-            <img :src="newConversationButton" />
-          </div>
-        </RouterLink>
+        <div
+          v-if="drawerBehavior == 'desktop'"
+          class="bottomSection StartConversationButtonLong"
+        >
+          <RouterLink :to="{ name: '/conversation/new/create/' }">
+            <StartConversationButtonLong />
+          </RouterLink>
+        </div>
       </div>
     </div>
 
@@ -81,17 +96,20 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
 import { useUserStore } from "src/stores/user";
 import { ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import type { RouteRecordName } from "vue-router";
+import { useRoute } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  sideDrawerTranslations,
+  type SideDrawerTranslations,
+} from "./SideDrawer.i18n";
 import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
+import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
 import DisplayUsername from "../features/user/DisplayUsername.vue";
-
-const newConversationButton =
-  process.env.VITE_PUBLIC_DIR + "/images/conversation/newConversationLong.svg";
 
 const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -102,15 +120,18 @@ const drawerIconLogo1 =
 const drawerIconLogo2 =
   process.env.VITE_PUBLIC_DIR + "/images/icons/agora-text.svg";
 
-const router = useRouter();
 const route = useRoute();
+
+const { t, locale } = useComponentI18n<SideDrawerTranslations>(
+  sideDrawerTranslations
+);
 
 const showLoginDialog = ref(false);
 
 interface SettingItem {
   name: string;
-  route: RouteRecordName;
-  matchRouteList: RouteRecordName[];
+  route: keyof RouteNamedMap;
+  matchRouteList: (keyof RouteNamedMap)[];
   requireAuth: boolean;
   svgStringStandard: string;
   svgStringFilled: string;
@@ -123,10 +144,16 @@ watch(drawerBehavior, () => {
   initializeMenu();
 });
 
+watch(locale, () => {
+  initializeMenu();
+});
+
 function initializeMenu() {
+  settingItemList.value = []; // Clear existing items
+
   if (drawerBehavior.value == "desktop") {
     settingItemList.value.push({
-      name: "Home",
+      name: t("home"),
       route: "/",
       matchRouteList: ["/"],
       requireAuth: false,
@@ -137,7 +164,7 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
-      name: "Explore",
+      name: t("explore"),
       route: "/topics/",
       matchRouteList: ["/topics/"],
       requireAuth: false,
@@ -148,7 +175,7 @@ function initializeMenu() {
     });
 
     settingItemList.value.push({
-      name: "Dings",
+      name: t("dings"),
       route: "/notification/",
       matchRouteList: ["/notification/"],
       requireAuth: true,
@@ -160,7 +187,7 @@ function initializeMenu() {
   }
 
   settingItemList.value.push({
-    name: "Profile",
+    name: t("profile"),
     route: "/user-profile/conversations/",
     matchRouteList: ["/user-profile/conversations/"],
     requireAuth: true,
@@ -171,7 +198,7 @@ function initializeMenu() {
   });
 
   settingItemList.value.push({
-    name: "Settings",
+    name: t("settings"),
     route: "/settings/",
     matchRouteList: ["/settings/"],
     requireAuth: false,
@@ -182,34 +209,18 @@ function initializeMenu() {
   });
 }
 
-async function enterRoute(routeName: RouteRecordName, requireAuth: boolean) {
+function handleAuthenticatedRouteClick(
+  event: Event,
+  requireAuth: boolean,
+  navigate: () => void
+) {
   if (requireAuth && isGuestOrLoggedIn.value === false) {
     showLoginDialog.value = true;
   } else {
     if (drawerBehavior.value == "mobile") {
       showMobileDrawer.value = false;
     }
-
-    if (routeName == "/user-profile/conversations/") {
-      await router.push({ name: "/user-profile/conversations/" });
-    } else if (routeName == "/notification/") {
-      await router.push({ name: "/notification/" });
-    } else if (routeName == "/settings/") {
-      await router.push({ name: "/settings/" });
-    } else if (routeName == "/") {
-      await router.push({ name: "/" });
-    } else if (routeName == "/topics/") {
-      await router.push({ name: "/topics/" });
-    } else {
-      console.error(
-        "Unknown route name when entering route in side bar: " +
-          String(routeName)
-      );
-      console.error(
-        "Unknown route name when entering route in side bar: " +
-          String(routeName)
-      );
-    }
+    navigate();
   }
 }
 </script>
@@ -281,7 +292,7 @@ async function enterRoute(routeName: RouteRecordName, requireAuth: boolean) {
   padding-bottom: 1rem;
 }
 
-.startConversationButton:hover {
+.StartConversationButtonLong:hover {
   cursor: pointer;
 }
 
@@ -299,5 +310,12 @@ async function enterRoute(routeName: RouteRecordName, requireAuth: boolean) {
 
 .itemName {
   padding-bottom: 0.2rem;
+}
+
+.navigation-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 </style>

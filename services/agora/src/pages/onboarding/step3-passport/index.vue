@@ -16,8 +16,8 @@
         >
           <template #header>
             <InfoHeader
-              title="Own Your Privacy"
-              :description="description"
+              :title="t('pageTitle')"
+              :description="t('description')"
               icon-name="mdi-wallet"
             />
           </template>
@@ -32,7 +32,7 @@
                     class="numberCircle"
                   />
                   <div>
-                    Download
+                    {{ t("download") }}
                     <span v-if="quasar.platform.is.mobile">
                       <a
                         class="hrefColor"
@@ -60,7 +60,7 @@
                     size="2rem"
                     class="numberCircle"
                   />
-                  Claim your anonymous ID
+                  {{ t("claimAnonymousId") }}
                 </div>
                 <div class="stepFlex">
                   <q-icon
@@ -69,10 +69,10 @@
                     class="numberCircle"
                   />
                   <div v-if="quasar.platform.is.mobile">
-                    Come back here and click Verify
+                    {{ t("comeBackAndVerify") }}
                   </div>
                   <div v-else>
-                    Scan the QR code with RariMe to verify your identity
+                    {{ t("scanQrCode") }}
                   </div>
                 </div>
 
@@ -84,7 +84,7 @@
                         class="verificationFailure"
                       >
                         <q-icon name="mdi-alert-box" size="3rem" />
-                        Failed to generate verification link
+                        {{ t("failedToGenerateLink") }}
                       </div>
                       <div
                         v-if="!verificationLinkGenerationFailed"
@@ -92,7 +92,7 @@
                       >
                         <q-spinner color="primary" size="3em" />
                         <div :style="{ fontSize: '0.8rem' }">
-                          Loading verification link
+                          {{ t("loadingVerificationLink") }}
                         </div>
                       </div>
                     </div>
@@ -102,18 +102,18 @@
                       class="verificationProcedureBlock"
                     >
                       <img :src="qrcode" alt="QR Code" />
-                      <div>Or open the below link on your mobile browser:</div>
+                      <div>{{ t("openLinkOnMobile") }}</div>
                       <!-- make this copyable -->
                       <div class="longUrl">{{ verificationLink }}</div>
 
                       <ZKButton
                         button-type="standardButton"
-                        label="Copy"
+                        :label="t('copy')"
                         icon="mdi-content-copy"
                         @click="copyVerificationLink()"
                       />
                       <div class="waitingVerificationText">
-                        Waiting for verification...
+                        {{ t("waitingForVerification") }}
                       </div>
                     </div>
                   </div>
@@ -124,13 +124,13 @@
                   >
                     <ZKButton
                       button-type="largeButton"
-                      label="Verify"
+                      :label="t('verify')"
                       color="primary"
                       :loading="verificationLink === ''"
                       @click="clickedVerifyButton()"
                     />
                     <div class="waitingVerificationText">
-                      Waiting for verification...
+                      {{ t("waitingForVerification") }}
                     </div>
                   </div>
                 </div>
@@ -139,7 +139,7 @@
 
             <ZKButton
               button-type="largeButton"
-              label="I'd rather verify with my phone number"
+              :label="t('preferPhoneVerification')"
               text-color="primary"
               @click="goToPhoneVerification()"
             />
@@ -151,8 +151,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useQuasar } from "quasar";
 import { useQRCode } from "@vueuse/integrations/useQRCode";
@@ -175,9 +175,15 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  passportOnboardingTranslations,
+  type PassportOnboardingTranslations,
+} from "./PassportOnboarding.i18n";
 
-const description =
-  "RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you’re a unique human without sharing any personal data with anyone.";
+const { t } = useComponentI18n<PassportOnboardingTranslations>(
+  passportOnboardingTranslations
+);
 
 const quasar = useQuasar();
 
@@ -257,7 +263,7 @@ async function generateVerificationLink(keyAction?: KeyAction) {
     }
   } catch (e) {
     console.error("Error while fetching Rarimo verification link", e);
-    showNotifyMessage("Oops! Unexpected error—try refreshing the page");
+    showNotifyMessage(t("unexpectedError"));
     verificationLinkGenerationFailed.value = true;
   }
 }
@@ -286,12 +292,10 @@ watch(qrcodeVerificationStatus, async () => {
       await completeVerification();
       break;
     case "failed_verification":
-      showNotifyMessage("Verification attempt failed. Please retry.");
+      showNotifyMessage(t("verificationFailed"));
       break;
     case "uniqueness_check_failed":
-      showNotifyMessage(
-        "This passport is already linked to another RariMe account. Please try a different one."
-      );
+      showNotifyMessage(t("passportAlreadyLinked"));
       break;
   }
 });
@@ -345,9 +349,7 @@ async function isDeviceLoggedIn() {
           // Something wrong probably happened during keystore eviction on log out.
           // Retry, and this time overwrite the existing key with a new one.
           window.clearInterval(isDeviceLoggedInIntervalId);
-          showNotifyMessage(
-            "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!"
-          );
+          showNotifyMessage(t("syncHiccup"));
           await generateVerificationLink("overwrite");
           break;
       }
@@ -364,7 +366,7 @@ function clickedVerifyButton() {
 
 async function completeVerification() {
   window.clearInterval(isDeviceLoggedInIntervalId);
-  showNotifyMessage("Verification successful 🎉");
+  showNotifyMessage(t("verificationSuccessful"));
   await updateAuthState({
     partialLoginStatus: { isLoggedIn: true },
     forceRefresh: true,

@@ -43,6 +43,9 @@ export default defineConfigWithVueTs(
 
   {
     files: ["**/*.ts", "**/*.vue"],
+    languageOptions: {
+      parser: pluginVue.parser,
+    },
     rules: {
       "@typescript-eslint/consistent-type-imports": [
         "error",

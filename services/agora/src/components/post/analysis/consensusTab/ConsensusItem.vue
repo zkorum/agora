@@ -17,10 +17,10 @@
         :vote-count3="opinionItemForVisualizer.numDisagrees"
         :vote-count4="numNoVotesForVisualizer"
         :num-participants="opinionItemForVisualizer.numParticipants"
-        label1="Agree"
-        label2="Pass"
-        label3="Disagree"
-        label4="No Vote"
+        :label1="t('agree')"
+        :label2="t('pass')"
+        :label3="t('disagree')"
+        :label4="t('noVote')"
         :show-legend="false"
       />
     </template>
@@ -40,12 +40,21 @@ import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  consensusItemTranslations,
+  type ConsensusItemTranslations,
+} from "./ConsensusItem.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
   opinionItem: OpinionItem;
   opinionItemForVisualizer: OpinionItem;
 }>();
+
+const { t } = useComponentI18n<ConsensusItemTranslations>(
+  consensusItemTranslations
+);
 
 const numNoVotesForVisualizer = computed(
   () =>

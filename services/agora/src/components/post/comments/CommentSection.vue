@@ -55,6 +55,11 @@ import { useUserStore } from "src/stores/user";
 import { useOpinionScrollable } from "src/composables/useOpinionScrollable";
 import { useOpinionFiltering } from "src/composables/useOpinionFiltering";
 import { useOpinionAgreements } from "src/composables/useOpinionAgreements";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  commentSectionTranslations,
+  type CommentSectionTranslations,
+} from "./CommentSection.i18n";
 
 const emit = defineEmits([
   "deleted",
@@ -86,6 +91,10 @@ const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
   useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+const { t } = useComponentI18n<CommentSectionTranslations>(
+  commentSectionTranslations
+);
 
 // Opinion scrolling functionality
 const { loadMore, hasMore, visibleOpinions, initializeOpinionList } =
@@ -299,12 +308,12 @@ async function highlightOpinionAndScroll(opinionSlugId: string) {
   );
 
   if (targetFilter === "not_found") {
-    showNotifyMessage("Opinion not found: " + opinionSlugId);
+    showNotifyMessage(t("opinionNotFound") + " " + opinionSlugId);
     return;
   }
 
   if (targetFilter === "removed_by_moderators") {
-    showNotifyMessage("This opinion has been removed by the moderators");
+    showNotifyMessage(t("opinionRemovedByModerators"));
     return;
   }
 

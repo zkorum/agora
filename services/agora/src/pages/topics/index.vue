@@ -16,7 +16,7 @@
         :has-menu-button="true"
         :fixed-height="true"
       >
-        <template #middle> Explore Topics </template>
+        <template #middle> {{ t("exploreTopics") }} </template>
       </DefaultMenuBar>
     </template>
 
@@ -30,7 +30,9 @@
         />
 
         <FollowButton
-          :label="followedTopicCodeSet.has(topic.code) ? 'Following' : 'Follow'"
+          :label="
+            followedTopicCodeSet.has(topic.code) ? t('following') : t('follow')
+          "
           :variant="followedTopicCodeSet.has(topic.code) ? '' : 'outlined'"
           :is-following="followedTopicCodeSet.has(topic.code)"
           :icon="''"
@@ -53,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
@@ -61,6 +64,9 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, ref } from "vue";
+import { topicsTranslations, type TopicsTranslations } from "./index.i18n";
+
+const { t } = useComponentI18n<TopicsTranslations>(topicsTranslations);
 
 const { loadTopicsData, followTopic, unfollowTopic } = useTopicStore();
 const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());

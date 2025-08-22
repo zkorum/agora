@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { useOnboardingPreferencesStore } from "./onboarding/preferences";
+import { onboardingFlowStore } from "./onboarding/flow";
 
 interface VotingIntention {
   enabled: boolean;
@@ -138,6 +140,13 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   async function routeUserAfterLogin() {
     completedUserLogin = true;
+    const onboardingStore = onboardingFlowStore();
+    const shouldShowPreferencesDialog =
+      onboardingStore.onboardingMode === "SIGNUP";
+
+    if (onboardingStore.onboardingMode === "SIGNUP") {
+      onboardingStore.onboardingMode = "LOGIN"; // Reset mode
+    }
 
     switch (activeUserIntention.value) {
       case "none":
@@ -180,6 +189,12 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         break;
       default:
         console.error("Unknown intention");
+    }
+
+    // Open preferences dialog after routing is complete
+    if (shouldShowPreferencesDialog) {
+      const preferencesStore = useOnboardingPreferencesStore();
+      preferencesStore.openPreferencesDialog();
     }
   }
 

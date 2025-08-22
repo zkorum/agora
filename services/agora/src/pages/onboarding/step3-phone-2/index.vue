@@ -14,7 +14,7 @@
         >
           <template #header>
             <InfoHeader
-              title="Enter the 6-digit code"
+              :title="t('title')"
               description=""
               icon-name="mdi-phone"
             />
@@ -22,7 +22,7 @@
 
           <template #body>
             <div class="instructions">
-              Enter the 6-digit that we have sent via the phone number
+              {{ t("instructions") }}
               <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
               >.
             </div>
@@ -40,21 +40,21 @@
                 v-if="verificationCodeExpirySeconds > 0"
                 class="weakColor codeExpiry"
               >
-                Expires in {{ verificationCodeExpirySeconds }}s
+                {{ t("expiresIn") }} {{ verificationCodeExpirySeconds }}s
               </div>
 
               <div
                 v-if="verificationCodeExpirySeconds <= 0"
                 class="weakColor codeExpiry"
               >
-                Code expired
+                {{ t("codeExpired") }}
               </div>
             </div>
 
             <div class="optionButtons">
               <ZKButton
                 button-type="largeButton"
-                label="Change Number"
+                :label="t('changeNumber')"
                 text-color="primary"
                 @click="changePhoneNumber()"
               />
@@ -63,8 +63,11 @@
                 button-type="largeButton"
                 :label="
                   verificationNextCodeSeconds > 0
-                    ? 'Resend Code in ' + verificationNextCodeSeconds + 's'
-                    : 'Resend Code'
+                    ? t('resendCodeIn') +
+                      ' ' +
+                      verificationNextCodeSeconds +
+                      's'
+                    : t('resendCode')
                 "
                 :disable="verificationNextCodeSeconds > 0"
                 text-color="primary"
@@ -79,8 +82,8 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { storeToRefs } from "pinia";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { onMounted, ref, computed } from "vue";
@@ -98,6 +101,15 @@ import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultIm
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  step3Phone2Translations,
+  type Step3Phone2Translations,
+} from "./index.i18n";
+
+const { t } = useComponentI18n<Step3Phone2Translations>(
+  step3Phone2Translations
+);
 
 const $q = useQuasar();
 let platform: "mobile" | "web" = "web";
@@ -175,7 +187,7 @@ async function nextButtonClicked() {
 
   if (validatedCode === null) {
     isSubmitButtonLoading.value = false;
-    showNotifyMessage("Please enter a valid 6-digit code");
+    showNotifyMessage(t("pleaseEnterValidCode"));
     return;
   }
 
@@ -189,7 +201,7 @@ async function nextButtonClicked() {
 
   if (response.status == "success") {
     if (response.data.success) {
-      showNotifyMessage("Verification successful 🎉");
+      showNotifyMessage(t("verificationSuccessful"));
       await updateAuthState({
         partialLoginStatus: { isLoggedIn: true },
         forceRefresh: true,
@@ -203,17 +215,17 @@ async function nextButtonClicked() {
       switch (response.data.reason) {
         case "expired_code":
           codeExpired();
-          showNotifyMessage("Code expired—resend a new code");
+          showNotifyMessage(t("codeExpiredResend"));
           break;
         case "wrong_guess":
-          showNotifyMessage("Wrong code—try again");
+          showNotifyMessage(t("wrongCodeTryAgain"));
           break;
         case "too_many_wrong_guess":
           codeExpired();
-          showNotifyMessage("Code expired—resend a new code");
+          showNotifyMessage(t("codeExpiredResend"));
           break;
         case "already_logged_in":
-          showNotifyMessage("Verification successful 🎉");
+          showNotifyMessage(t("verificationSuccessful"));
           await updateAuthState({
             partialLoginStatus: { isLoggedIn: true },
             forceRefresh: true,
@@ -225,7 +237,7 @@ async function nextButtonClicked() {
           }
           break;
         case "associated_with_another_user": {
-          showNotifyMessage("Oops! Sync hiccup detected—resend a new code");
+          showNotifyMessage(t("syncHiccupDetected"));
           // overwrite key but don't send a request
           await createDidOverwriteIfAlreadyExists(platform);
         }
@@ -233,7 +245,7 @@ async function nextButtonClicked() {
     }
   } else {
     console.error("Error while verifying code", response.message);
-    showNotifyMessage("Oops! Something is wrong");
+    showNotifyMessage(t("somethingWrong"));
   }
 }
 
@@ -253,7 +265,7 @@ async function requestCodeClicked(
     } else {
       switch (response.data.reason) {
         case "already_logged_in":
-          showNotifyMessage("Verification successful 🎉");
+          showNotifyMessage(t("verificationSuccessful"));
           await updateAuthState({
             partialLoginStatus: { isLoggedIn: true },
             forceRefresh: true,
@@ -270,27 +282,21 @@ async function requestCodeClicked(
           break;
         case "throttled":
           processRequestCodeResponse(response.data);
-          showNotifyMessage(
-            "Too many attempts—please wait before requesting a new code"
-          );
+          showNotifyMessage(t("tooManyAttempts"));
           break;
         case "invalid_phone_number":
           processRequestCodeResponse(response.data);
-          showNotifyMessage(
-            "Sorry, this phone number is invalid. Please check and try again."
-          );
+          showNotifyMessage(t("invalidPhoneNumber"));
           break;
         case "restricted_phone_type":
           processRequestCodeResponse(response.data);
-          showNotifyMessage(
-            "Sorry, this phone number is not supported for security reasons. Please try another."
-          );
+          showNotifyMessage(t("restrictedPhoneType"));
           break;
       }
     }
   } else {
     console.error("Error while requesting a code", response.message);
-    showNotifyMessage("Oops! Something is wrong");
+    showNotifyMessage(t("somethingWrong"));
   }
 }
 

@@ -2,7 +2,10 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader :show-star-in-title="false" title="Divisive">
+        <AnalysisTitleHeader
+          :show-star-in-title="false"
+          :title="t('divisiveTitle')"
+        >
           <template #action-button>
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
@@ -14,7 +17,7 @@
       <template #body>
         <EmptyStateMessage
           v-if="itemList.length === 0"
-          message="No divisive opinions found yet."
+          :message="t('noDivisiveOpinionsMessage')"
         />
         <ConsensusItem
           v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
@@ -37,6 +40,11 @@ import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  divisiveTabTranslations,
+  type DivisiveTabTranslations,
+} from "./DivisiveTab.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -45,6 +53,10 @@ const props = defineProps<{
 }>();
 
 const currentTab = defineModel<ShortcutItem>();
+
+const { t } = useComponentI18n<DivisiveTabTranslations>(
+  divisiveTabTranslations
+);
 
 function switchTab() {
   currentTab.value = "Divisive";

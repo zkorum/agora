@@ -16,7 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle> User Profile </template>
+        <template #middle> {{ t("userProfile") }} </template>
       </DefaultMenuBar>
     </template>
 
@@ -39,7 +39,7 @@
 
         <div class="profileMetadataBar">
           <div>
-            {{ profileData.activePostCount }} conversations
+            {{ profileData.activePostCount }} {{ t("conversations") }}
             <span class="dotPadding">•</span>
           </div>
           <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { onMounted, ref, watch } from "vue";
@@ -75,6 +76,10 @@ import type { RouteRecordName } from "vue-router";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  userProfileTranslations,
+  type UserProfileTranslations,
+} from "./user-profile.i18n";
 
 const router = useRouter();
 
@@ -87,15 +92,19 @@ interface CustomTab {
   value: number;
 }
 
+const { t } = useComponentI18n<UserProfileTranslations>(
+  userProfileTranslations
+);
+
 const tabList: CustomTab[] = [
   {
     route: "/user-profile/conversations/",
-    label: "Conversation",
+    label: t("conversationTab"),
     value: 0,
   },
   {
     route: "/user-profile/opinions/",
-    label: "Opinion",
+    label: t("opinionTab"),
     value: 1,
   },
 ];

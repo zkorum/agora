@@ -13,25 +13,22 @@
       >
         <template #header>
           <InfoHeader
-            title="Agora aims to be exclusively human"
-            :description="description"
+            :title="t('pageTitle')"
+            :description="t('description')"
             icon-name="mdi-heart"
           />
         </template>
 
         <template #body>
-          <ZKButton
-            button-type="largeButton"
-            label="Verify anonymously"
-            color="primary"
+          <ZKGradientButton
+            :label="t('verifyAnonymously')"
             @click="goToNextRoute()"
           />
 
-          <ZKButton
-            button-type="largeButton"
-            label="Verify with my phone number"
-            color="button-background-color"
-            text-color="primary"
+          <ZKGradientButton
+            :label="t('verifyWithPhone')"
+            gradient-background="#E7E7FF"
+            label-color="#6B4EFF"
             @click="verifyPhone()"
           />
 
@@ -45,18 +42,24 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useRouter } from "vue-router";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
-import SignupAgreement from "src/components/onboarding/SignupAgreement.vue";
+import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  step2SignupOnboardingTranslations,
+  type Step2SignupOnboardingTranslations,
+} from "./Step2SignupOnboarding.i18n";
+
+const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
+  step2SignupOnboardingTranslations
+);
 
 const router = useRouter();
-
-const description =
-  "More than half of internet traffic comes from bots. That’s why we verify users, so you’re debating people, not robots plotting world domination!";
 
 async function goToNextRoute() {
   await router.push({ name: "/onboarding/step3-passport/" });

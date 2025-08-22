@@ -1,42 +1,28 @@
 <template>
-  <div>
-    <div class="container backgroundColor">
-      <div class="flexStyle innerBackground">
-        <div v-for="(item, index) in settingsItemList" :key="item.label">
-          <ZKHoverEffect :enable-hover="true">
-            <div
-              class="menuItem"
-              :class="{
-                isWarningStyle: item.style == 'warning',
-                isNegativeStyle: item.style == 'negative',
-              }"
-              @click="item.action"
-            >
-              <div>
-                {{ item.label }}
-              </div>
-
-              <div>
-                <ZKIcon
-                  color="#7D7A85"
-                  name="mdi-chevron-right"
-                  size="1.5rem"
-                />
-              </div>
-            </div>
-
-            <q-separator v-if="index != settingsItemList.length - 1" />
-          </ZKHoverEffect>
-        </div>
-      </div>
+  <div class="settings-section">
+    <div class="settings-background">
+      <template v-for="(item, index) in settingsItemList" :key="item.label">
+        <SettingsItem
+          :item="item"
+          :show-separator="index < settingsItemList.length - 1"
+          :border-radius="
+            settingsItemList.length === 1
+              ? 'both'
+              : index === 0
+                ? 'top'
+                : index === settingsItemList.length - 1
+                  ? 'bottom'
+                  : 'none'
+          "
+        />
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import ZKIcon from "../ui-library/ZKIcon.vue";
+import SettingsItem from "./SettingsItem.vue";
 
 defineProps<{
   settingsItemList: SettingsInterface[];
@@ -44,36 +30,14 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-.menuItem {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 1rem;
-}
-
-.flexStyle {
-  display: flex;
-  flex-direction: column;
-}
-
-.container {
+.settings-section {
   margin-bottom: 2rem;
 }
 
-.isWarningStyle {
-  color: $warning;
-}
-
-.isNegativeStyle {
-  color: $negative;
-}
-
-.backgroundColor {
+.settings-background {
   background-color: white;
   border-radius: 20px;
+  display: flex;
+  flex-direction: column;
 }
 </style>

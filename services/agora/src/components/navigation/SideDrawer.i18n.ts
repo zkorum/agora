@@ -1,0 +1,36 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
+export interface SideDrawerTranslations {
+  home: string;
+  explore: string;
+  dings: string;
+  profile: string;
+  settings: string;
+}
+
+export const sideDrawerTranslations: Record<
+  SupportedDisplayLanguageCodes,
+  SideDrawerTranslations
+> = {
+  en: {
+    home: "Home",
+    explore: "Explore",
+    dings: "Dings",
+    profile: "Profile",
+    settings: "Settings",
+  },
+  es: {
+    home: "Inicio",
+    explore: "Explorar",
+    dings: "Dings",
+    profile: "Perfil",
+    settings: "Configuración",
+  },
+  fr: {
+    home: "Accueil",
+    explore: "Explorer",
+    dings: "Dings",
+    profile: "Profil",
+    settings: "Paramètres",
+  },
+};

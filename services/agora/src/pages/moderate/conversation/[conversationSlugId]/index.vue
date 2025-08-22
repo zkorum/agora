@@ -21,7 +21,7 @@
 
     <div class="container">
       <div class="title">
-        <div>Moderate the conversation</div>
+        <div>{{ t("moderateConversation") }}</div>
       </div>
 
       <div class="postPreview">
@@ -40,7 +40,7 @@
       <q-select
         v-model="moderationAction"
         :options="actionMapping"
-        label="Action"
+        :label="t('action')"
         emit-value
         map-options
       />
@@ -48,26 +48,26 @@
       <q-select
         v-model="moderationReason"
         :options="reasonMapping"
-        label="Reason"
+        :label="t('reason')"
         emit-value
         map-options
       />
 
-      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+      <q-input
+        v-model="moderationExplanation"
+        :label="t('explanationOptional')"
+      />
 
-      <ZKButton
-        button-type="largeButton"
-        :label="hasExistingDecision ? 'Modify' : 'Moderate'"
-        color="primary"
+      <ZKGradientButton
+        :label="hasExistingDecision ? t('modify') : t('moderate')"
         @click="clickedSubmit()"
       />
 
-      <ZKButton
+      <ZKGradientButton
         v-if="hasExistingDecision"
-        button-type="largeButton"
-        label="Withdraw"
-        color="secondary"
-        text-color="primary"
+        :label="t('withdraw')"
+        gradient-background="#E7E7FF"
+        label-color="#6b4eff"
         @click="clickedWithdraw()"
       />
     </div>
@@ -84,7 +84,7 @@ import type {
   ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import {
   moderationActionPostsMapping,
   moderationReasonMapping,
@@ -93,6 +93,11 @@ import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  conversationModerationTranslations,
+  type ConversationModerationTranslations,
+} from "./index.i18n";
 
 const {
   moderatePost,
@@ -124,6 +129,10 @@ let postSlugId: string | null = null;
 loadRouteParams();
 
 const conversationItem = ref<ExtendedConversation>(emptyPost);
+
+const { t } = useComponentI18n<ConversationModerationTranslations>(
+  conversationModerationTranslations
+);
 
 onMounted(async () => {
   await initializeData();

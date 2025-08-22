@@ -14,25 +14,22 @@
       >
         <template #header>
           <InfoHeader
-            title="Log In"
-            :description="description"
+            :title="t('pageTitle')"
+            :description="t('description')"
             icon-name="mdi-login"
           />
         </template>
 
         <template #body>
-          <ZKButton
-            button-type="largeButton"
-            label="Log In with RariMe"
-            color="primary"
+          <ZKGradientButton
+            :label="t('loginWithRariMe')"
             @click="goToPassportLogin()"
           />
 
-          <ZKButton
-            button-type="largeButton"
-            label="Login with my phone number"
-            color="secondary"
-            text-color="primary"
+          <ZKGradientButton
+            :label="t('loginWithPhone')"
+            gradient-background="#E7E7FF"
+            label-color="#6b4eff"
             @click="goToPhoneLogin()"
           />
 
@@ -44,15 +41,22 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/InfoHeader.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useRouter } from "vue-router";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
-import SignupAgreement from "src/components/onboarding/SignupAgreement.vue";
+import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  loginOnboardingTranslations,
+  type LoginOnboardingTranslations,
+} from "./LoginOnboarding.i18n";
 
-const description = "Please select a log in method.";
+const { t } = useComponentI18n<LoginOnboardingTranslations>(
+  loginOnboardingTranslations
+);
 
 const router = useRouter();
 

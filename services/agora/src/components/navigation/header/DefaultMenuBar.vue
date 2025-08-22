@@ -57,7 +57,7 @@
               >
                 <ZKButton
                   button-type="largeButton"
-                  label="Log in"
+                  :label="t('logIn')"
                   text-color="white"
                   color="primary"
                 />
@@ -83,6 +83,11 @@ import { storeToRefs } from "pinia";
 import { useNavigationStore } from "src/stores/navigation";
 import { useUserStore } from "src/stores/user";
 import UserAvatar from "src/components/account/UserAvatar.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  defaultMenuBarTranslations,
+  type DefaultMenuBarTranslations,
+} from "./DefaultMenuBar.i18n";
 
 defineProps<DefaultMenuBarProps>();
 
@@ -94,6 +99,10 @@ const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
 
 const { isLoggedIn, isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
   useAuthenticationStore()
+);
+
+const { t } = useComponentI18n<DefaultMenuBarTranslations>(
+  defaultMenuBarTranslations
 );
 
 function menuButtonClicked() {

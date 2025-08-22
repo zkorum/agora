@@ -30,6 +30,15 @@ import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import CustomTimerDialog from "./CustomTimerDialog.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  makePublicTimerDialogTranslations,
+  type MakePublicTimerDialogTranslations,
+} from "./MakePublicTimerDialog.i18n";
+
+const { t } = useComponentI18n<MakePublicTimerDialogTranslations>(
+  makePublicTimerDialogTranslations
+);
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 
@@ -69,12 +78,12 @@ const timerOptions: TimerOption[] = [
 
 function getTimerTitle(value: TimerOption["value"]): string {
   const titleMap: Record<TimerOption["value"], string> = {
-    never: "Never",
-    "24hours": "After 24 hours",
-    "3days": "After 3 days",
-    "1week": "After 1 week",
-    "1month": "After 1 month",
-    custom: "Custom",
+    never: t("never"),
+    "24hours": t("after24Hours"),
+    "3days": t("after3Days"),
+    "1week": t("after1Week"),
+    "1month": t("after1Month"),
+    custom: t("custom"),
   };
   return titleMap[value];
 }
@@ -89,15 +98,13 @@ function selectOption(option: TimerOption): void {
   selectedValue.value = option.value;
 
   if (option.value === "never") {
-    conversationDraft.value.privateConversationSettings.hasScheduledConversion =
-      false;
+    conversationDraft.value.privateConversationSettings.hasScheduledConversion = false;
     showDialog.value = false;
   } else if (option.value === "custom") {
     showDialog.value = false;
     showCustomDialog.value = true;
   } else if (option.hours) {
-    conversationDraft.value.privateConversationSettings.hasScheduledConversion =
-      true;
+    conversationDraft.value.privateConversationSettings.hasScheduledConversion = true;
     const targetDate = new Date();
     targetDate.setHours(targetDate.getHours() + option.hours);
     conversationDraft.value.privateConversationSettings.conversionDate =

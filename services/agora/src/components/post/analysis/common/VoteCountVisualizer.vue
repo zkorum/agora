@@ -6,28 +6,28 @@
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))}`,
         }"
-        :title="`${props.voteCount1} votes (${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))})`"
+        :title="`${props.voteCount1} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))})`"
       ></div>
       <div
         class="vote-bar vote-bar-2"
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))}`,
         }"
-        :title="`${props.voteCount2} votes (${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))})`"
+        :title="`${props.voteCount2} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))})`"
       ></div>
       <div
         class="vote-bar vote-bar-3"
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))}`,
         }"
-        :title="`${props.voteCount3} votes (${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))})`"
+        :title="`${props.voteCount3} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))})`"
       ></div>
       <div
         class="vote-bar vote-bar-4"
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))}`,
         }"
-        :title="`${props.voteCount4} votes (${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))})`"
+        :title="`${props.voteCount4} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))})`"
       ></div>
     </div>
 
@@ -48,6 +48,15 @@
 import { calculatePercentage } from "src/shared/common/util";
 import { formatPercentage } from "src/utils/common";
 import { computed } from "vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  voteCountVisualizerTranslations,
+  type VoteCountVisualizerTranslations,
+} from "./VoteCountVisualizer.i18n";
+
+const { t } = useComponentI18n<VoteCountVisualizerTranslations>(
+  voteCountVisualizerTranslations
+);
 
 const props = defineProps<{
   voteCount1: number;
@@ -64,10 +73,10 @@ const props = defineProps<{
 
 const legendItems = computed(() => {
   return [
-    { label: props.label1 || "Group 1", count: props.voteCount1 },
-    { label: props.label2 || "Group 2", count: props.voteCount2 },
-    { label: props.label3 || "Group 3", count: props.voteCount3 },
-    { label: props.label4 || "Group 4", count: props.voteCount4 },
+    { label: props.label1 || t("group1"), count: props.voteCount1 },
+    { label: props.label2 || t("group2"), count: props.voteCount2 },
+    { label: props.label3 || t("group3"), count: props.voteCount3 },
+    { label: props.label4 || t("group4"), count: props.voteCount4 },
   ];
 });
 </script>

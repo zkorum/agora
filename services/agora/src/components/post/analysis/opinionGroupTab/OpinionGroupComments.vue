@@ -2,7 +2,8 @@
   <div class="opinion-group-comments">
     <div class="header-flex-style">
       <h2 class="title">
-        Opinions <span class="count">{{ itemList.length }}</span>
+        {{ t("opinionsTitle") }}
+        <span class="count">{{ itemList.length }}</span>
       </h2>
 
       <div class="group-selector">
@@ -25,7 +26,7 @@
     </div>
 
     <div v-if="itemList.length === 0" class="no-comments">
-      No opinions available for this group.
+      {{ t("noOpinionsMessage") }}
     </div>
 
     <div v-else>
@@ -45,6 +46,11 @@ import { computed, ref, watch } from "vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  opinionGroupCommentsTranslations,
+  type OpinionGroupCommentsTranslations,
+} from "./OpinionGroupComments.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -53,6 +59,10 @@ const props = defineProps<{
   polis: ExtendedConversationPolis;
   hasUngroupedParticipants: boolean;
 }>();
+
+const { t } = useComponentI18n<OpinionGroupCommentsTranslations>(
+  opinionGroupCommentsTranslations
+);
 
 const displayMode = ref<"current" | "all_other_groups" | "all_others">(
   "current"
@@ -140,10 +150,10 @@ function getModifiedOpinionItem(comment: OpinionItem): OpinionItem {
 
 const currentModeName = computed(() => {
   return displayMode.value === "current"
-    ? "This group"
+    ? t("thisGroup")
     : displayMode.value === "all_others"
-      ? "All others"
-      : "All other groups";
+      ? t("allOthers")
+      : t("allOtherGroups");
 });
 
 const toggleNextMode = () => {

@@ -3,7 +3,7 @@
     <div class="container borderStyle">
       <ZKEditor
         v-model="opinionBody"
-        placeholder="Add your own opinion"
+        :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
         :add-background-color="true"
@@ -28,7 +28,7 @@
 
         <ZKButton
           button-type="largeButton"
-          label="Post"
+          :label="t('postButton')"
           color="primary"
           :disable="
             characterProgress > 100 ||
@@ -77,6 +77,11 @@ import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import type { RouteLocationNormalized } from "vue-router";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  commentComposerTranslations,
+  type CommentComposerTranslations,
+} from "./CommentComposer.i18n";
 
 const emit = defineEmits<{
   (e: "submittedComment", conversationSlugId: string): void;
@@ -137,6 +142,10 @@ const { y: yScroll } = useWindowScroll();
 let disableAutocollapse = false;
 
 const isSubmissionLoading = ref(false);
+
+const { t } = useComponentI18n<CommentComposerTranslations>(
+  commentComposerTranslations
+);
 
 onMounted(() => {
   lockRoute();
@@ -213,9 +222,7 @@ async function submitPostClicked() {
     if (response.status == "success") {
       if (!response.data.success) {
         if (response.data.reason == "conversation_locked") {
-          showNotifyMessage(
-            "Cannot create opinion because the conversation is locked"
-          );
+          showNotifyMessage(t("conversationLockedError"));
         }
       } else {
         emit("submittedComment", response.data.opinionSlugId);
@@ -226,7 +233,7 @@ async function submitPostClicked() {
     } else {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: response.code,
-        defaultMessage: "Error while trying to create a new opinion",
+        defaultMessage: t("createOpinionError"),
       });
     }
   }

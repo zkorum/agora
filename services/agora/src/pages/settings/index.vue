@@ -16,7 +16,7 @@
         :has-menu-button="false"
         :fixed-height="true"
       >
-        <template #middle> Settings </template>
+        <template #middle>{{ t("pageTitle") }}</template>
       </DefaultMenuBar>
     </template>
 
@@ -38,6 +38,10 @@
       <div v-if="isLoggedIn && profileData.isModerator">
         <SettingsSection :settings-item-list="moderatorSettings" />
       </div>
+
+      <div v-if="isDevelopment">
+        <SettingsSection :settings-item-list="developmentSettings" />
+      </div>
     </div>
   </DrawerLayout>
 </template>
@@ -56,7 +60,11 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  settingsTranslations,
+  type SettingsTranslations,
+} from "./Settings.i18n";
 
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -64,53 +72,58 @@ const { profileData } = storeToRefs(useUserStore());
 const { showDeleteAccountDialog } = useDialog();
 
 const { deleteUserAccount } = useBackendAccountApi();
-const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
+const { t } = useComponentI18n<SettingsTranslations>(settingsTranslations);
 
 const { updateAuthState } = useBackendAuthApi();
 
 const deleteAccountLabel = computed(() =>
-  isLoggedIn.value ? "Delete Account" : "Delete Guest Account"
+  isLoggedIn.value ? t("deleteAccount") : t("deleteGuestAccount")
 );
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const accountSettings: SettingsInterface[] = [
   {
-    label: "Profile",
-    action: () => {
-      void router.push({ name: "/settings/account/profile/" });
-    },
+    type: "navigation",
+    label: t("profile"),
+    to: "/settings/account/profile/",
     style: "none",
   },
   {
-    label: "Content Preference",
-    action: () => {
-      void router.push({ name: "/settings/account/content-preference/" });
-    },
+    type: "navigation",
+    label: t("contentPreference"),
+    to: "/settings/account/content-preference/",
     style: "none",
   },
 ];
 
 const aboutSettings: SettingsInterface[] = [
   {
-    label: "Privacy Policy",
-    action: () => {
-      void router.push({ name: "/legal/privacy/" });
-    },
+    type: "navigation",
+    label: t("language"),
+    to: "/settings/languages/",
     style: "none",
   },
   {
-    label: "Terms of Service",
-    action: () => {
-      void router.push({ name: "/legal/terms/" });
-    },
+    type: "navigation",
+    label: t("privacyPolicy"),
+    to: "/legal/privacy/",
+    style: "none",
+  },
+  {
+    type: "navigation",
+    label: t("termsOfService"),
+    to: "/legal/terms/",
     style: "none",
   },
 ];
 
 const logoutSettings: SettingsInterface[] = [
   {
-    label: "Log Out",
+    type: "action",
+    label: t("logOut"),
     action: () => {
       void logoutRequested(true);
     },
@@ -120,18 +133,25 @@ const logoutSettings: SettingsInterface[] = [
 
 const moderatorSettings: SettingsInterface[] = [
   {
-    label: "Moderator - Organization",
-    action: () => {
-      void router.push({
-        name: "/settings/account/administrator/organization/",
-      });
-    },
+    type: "navigation",
+    label: t("moderatorOrganization"),
+    to: "/settings/account/administrator/organization/",
+    style: "none",
+  },
+];
+
+const developmentSettings: SettingsInterface[] = [
+  {
+    type: "navigation",
+    label: t("componentTesting"),
+    to: "/dev/component-testing",
     style: "none",
   },
 ];
 
 const deleteAccountSettings: SettingsInterface[] = [
   {
+    type: "action",
     label: deleteAccountLabel.value,
     action: processDeleteAccount,
     style: "negative",
@@ -144,10 +164,10 @@ function processDeleteAccount() {
       try {
         await deleteUserAccount();
         await updateAuthState({ partialLoginStatus: { isKnown: false } });
-        showNotifyMessage("Account deleted");
+        showNotifyMessage(t("accountDeleted"));
       } catch (e) {
         console.error("Failed to delete user account", e);
-        showNotifyMessage("Oops! Account deletion failed. Please try again");
+        showNotifyMessage(t("accountDeletionFailed"));
       }
     })();
   });

@@ -1,11 +1,15 @@
 <template>
   <div class="card">
     <div v-if="!selectedReason" class="container">
-      <div class="title">Submit a report</div>
+      <div class="title">{{ t("submitReportTitle") }}</div>
 
       <div>
-        Thank you for helping us improve the community. What is the problem with
-        this {{ reportType }}?
+        {{
+          t("improveCommunityText").replace(
+            "{reportType}",
+            getTranslatedReportType(reportType)
+          )
+        }}
       </div>
 
       <div class="reportReasonsFlex">
@@ -14,31 +18,31 @@
           :key="reason.value"
           @click="selectedReason = reason.value"
         >
-          <ZKButton
-            button-type="standardButton"
-            color="button-background-color"
-            text-color="black"
-          >
+          <PrimeButton severity="secondary" outlined class="reason-button">
             <div class="iconLayout">
               <div>
-                <q-icon :name="reason.icon" />
+                <q-icon :name="reason.icon" size="1.5rem" />
               </div>
 
               <div>
                 {{ reason.label }}
               </div>
             </div>
-          </ZKButton>
+          </PrimeButton>
         </div>
       </div>
     </div>
 
     <div v-if="selectedReason" class="container">
       <div v-if="selectedReason" class="flaggingExplanation">
-        <div class="title">Thanks for your feedback!</div>
+        <div class="title">{{ t("thanksForFeedbackTitle") }}</div>
 
         <div>
-          Why are you flagging this {{ reportType }} as {{ selectedReason }}?
+          {{
+            t("flaggingReasonText")
+              .replace("{reportType}", getTranslatedReportType(reportType))
+              .replace("{selectedReason}", getTranslatedSelectedReason())
+          }}
         </div>
 
         <div>
@@ -47,29 +51,24 @@
             :maxlength="MAX_LENGTH_USER_REPORT_EXPLANATION"
             outlined
             autogrow
-            label="Add explanation"
+            :label="t('addExplanationLabel')"
           />
         </div>
 
         <div class="submitButtons">
           <div v-if="enabledSkip == false">
-            <ZKButton
-              button-type="largeButton"
-              label="Skip"
-              color="secondary"
-              text-color="primary"
-              flat
+            <ZKGradientButton
+              :label="t('skipButton')"
+              variant="text"
+              label-color="#666666"
               @click="clickedSkipExplanationButton()"
             />
           </div>
 
           <div>
-            <ZKButton
-              button-type="largeButton"
-              label="Submit"
-              :disable="explanation.length == 0 && !enabledSkip"
-              color="secondary"
-              text-color="primary"
+            <ZKGradientButton
+              :label="t('submitButton')"
+              :disabled="explanation.length == 0 && !enabledSkip"
               @click="clickedSubmitButton()"
             />
           </div>
@@ -80,12 +79,17 @@
 </template>
 
 <script setup lang="ts">
-import { userReportReasonMapping } from "src/utils/component/userReports";
+import { useUserReports } from "src/utils/component/userReports";
 import { ref } from "vue";
-import ZKButton from "../ui-library/ZKButton.vue";
+import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
 import type { UserReportReason } from "src/shared/types/zod";
 import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
 import { useBackendReportApi } from "src/utils/api/report";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  reportContentDialogTranslations,
+  type ReportContentDialogTranslations,
+} from "./ReportContentDialog.i18n";
 
 const props = defineProps<{
   reportType: "conversation" | "opinion";
@@ -101,6 +105,30 @@ const enabledSkip = ref(false);
 
 const { createUserReportByPostSlugId, createUserReportByCommentSlugId } =
   useBackendReportApi();
+
+const { t } = useComponentI18n<ReportContentDialogTranslations>(
+  reportContentDialogTranslations
+);
+
+const userReportReasonMapping = useUserReports();
+
+function getTranslatedReportType(
+  reportType: "conversation" | "opinion"
+): string {
+  return reportType === "conversation"
+    ? t("reportTypeConversation")
+    : t("reportTypeOpinion");
+}
+
+function getTranslatedSelectedReason(): string {
+  if (!selectedReason.value) return "";
+
+  const reasonMapping = userReportReasonMapping.find(
+    (mapping) => mapping.value === selectedReason.value
+  );
+
+  return reasonMapping?.label || selectedReason.value;
+}
 
 async function clickedSkipExplanationButton() {
   explanation.value = "";
@@ -184,5 +212,11 @@ async function clickedSubmitButton() {
   justify-content: center;
   padding: 0.5rem;
   min-width: 5rem;
+}
+
+.reason-button {
+  min-height: 80px;
+  min-width: 120px;
+  border-radius: 12px;
 }
 </style>

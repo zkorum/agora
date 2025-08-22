@@ -6,7 +6,7 @@
       :organization-image-url="selectedOrganizationImageUrl"
     />
 
-    <ZKButton2
+    <ConversationControlButton
       v-for="button in visibleControlButtons"
       :key="button.id"
       :label="button.label"
@@ -40,10 +40,11 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/useComponentI18n";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
-import ZKButton2 from "src/components/ui-library/ZKButton2.vue";
+import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
@@ -51,6 +52,10 @@ import VisibilityOptionsDialog from "src/components/newConversation/dialog/Visib
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  newConversationControlBarTranslations,
+  type NewConversationControlBarTranslations,
+} from "./NewConversationControlBar.i18n";
 
 interface ControlButton {
   id: string;
@@ -60,6 +65,10 @@ interface ControlButton {
   clickHandler: () => void;
   clickable: boolean;
 }
+
+const { t } = useComponentI18n<NewConversationControlBarTranslations>(
+  newConversationControlBarTranslations
+);
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -142,7 +151,7 @@ const getMakePublicLabel = () => {
   if (
     !conversationDraft.value.privateConversationSettings.hasScheduledConversion
   ) {
-    return "Make public: Never";
+    return t("makePublicNever");
   }
 
   const targetDate =
@@ -159,13 +168,13 @@ const getMakePublicLabel = () => {
 
   const formattedDate = formatter.format(targetDate);
 
-  return `Make public: ${formattedDate}`;
+  return t("makePublic").replace("{date}", formattedDate);
 };
 
 const controlButtons = computed((): ControlButton[] => [
   {
     id: "post-as",
-    label: `As ${postAsDisplayName.value}`,
+    label: t("asLabel").replace("{name}", postAsDisplayName.value),
     icon: showPostAsDialogVisible.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
@@ -176,8 +185,8 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "post-type",
     label: conversationDraft.value.importSettings.isImportMode
-      ? "Import from Polis"
-      : "New Conversation",
+      ? t("importFromPolis")
+      : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible:
       process.env.VITE_IS_ORG_IMPORT_ONLY === "true"
@@ -188,7 +197,7 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "visibility",
-    label: conversationDraft.value.isPrivate ? "Private" : "Public",
+    label: conversationDraft.value.isPrivate ? t("private") : t("public"),
     icon: showVisibilityDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
@@ -199,8 +208,8 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "login-requirement",
     label: conversationDraft.value.privateConversationSettings.requiresLogin
-      ? "Requires login"
-      : "Guest participation",
+      ? t("requiresLogin")
+      : t("guestParticipation"),
     icon: showLoginRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
@@ -220,7 +229,9 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "polling",
-    label: conversationDraft.value.poll.enabled ? "Remove poll" : "Add poll",
+    label: conversationDraft.value.poll.enabled
+      ? t("removePoll")
+      : t("addPoll"),
     icon: conversationDraft.value.poll.enabled ? "pi pi-minus" : "pi pi-plus",
     isVisible: conversationDraft.value.importSettings.isImportMode == false,
     clickHandler: togglePolling,

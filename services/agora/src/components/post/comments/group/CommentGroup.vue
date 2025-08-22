@@ -7,7 +7,7 @@
       v-if="commentItemList.length == 0 && !isLoading"
       class="noCommentMessage"
     >
-      There are no opinions in this conversation filter.
+      {{ t("noOpinionsMessage") }}
     </div>
 
     <div
@@ -51,6 +51,15 @@ import type {
 } from "src/shared/types/zod";
 import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  commentGroupTranslations,
+  type CommentGroupTranslations,
+} from "./CommentGroup.i18n";
+
+const { t } = useComponentI18n<CommentGroupTranslations>(
+  commentGroupTranslations
+);
 
 const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
 

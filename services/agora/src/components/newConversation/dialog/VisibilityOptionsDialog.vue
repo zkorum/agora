@@ -15,6 +15,11 @@ import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  visibilityOptionsDialogTranslations,
+  type VisibilityOptionsDialogTranslations,
+} from "./VisibilityOptionsDialog.i18n";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 
@@ -22,16 +27,19 @@ const store = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(store);
 const { togglePrivacy } = store;
 
+const { t } = useComponentI18n<VisibilityOptionsDialogTranslations>(
+  visibilityOptionsDialogTranslations
+);
+
 const visibilityOptions = [
   {
-    title: "Public",
-    description:
-      "This conversation will be visible to all users in the main Agora feed",
+    title: t("publicTitle"),
+    description: t("publicDescription"),
     value: "public",
   },
   {
-    title: "Private",
-    description: "Only visible to those with whom you share a link or QR code",
+    title: t("privateTitle"),
+    description: t("privateDescription"),
     value: "private",
   },
 ];

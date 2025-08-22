@@ -12,6 +12,10 @@ import {
 } from "../shared.js";
 import { isValidPhoneNumber } from "libphonenumber-js/max";
 import { isValidPolisUrl } from "../utils/polis.js";
+import {
+    ZodSupportedSpokenLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
+} from "../languages.js";
 
 export const zodUserReportReason = z.enum([
     "misleading",
@@ -399,17 +403,6 @@ export const zodExtendedOpinionDataWithConvId = z
         opinionItem: zodOpinionItem,
     })
     .strict();
-export const zodLanguageNameOption = z.enum(["English", "Spanish", "Chinese"]);
-export interface LanguageObject {
-    name: string;
-    lang: string;
-}
-export const languageObjectList: LanguageObject[] = [
-    { lang: "en", name: "English" },
-    { lang: "es", name: "Spanish" },
-    { lang: "fr", name: "French" },
-    { lang: "zh", name: "Chinese" },
-];
 export const zodRarimoStatusAttributes = z.enum([
     "not_verified",
     "verified",
@@ -892,6 +885,13 @@ export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
     zodIsKnownTrueLoginStatus,
 ]);
 
+export const zodLanguagePreferences = z
+    .object({
+        spokenLanguages: z.array(ZodSupportedSpokenLanguageCodes).min(1),
+        displayLanguage: ZodSupportedDisplayLanguageCodes,
+    })
+    .strict();
+
 export const zodLinkType = z.enum(["http", "deep"]);
 export const zodPolisUrl = z
     .string()
@@ -986,6 +986,7 @@ export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
 >;
 export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
+export type LanguagePreferences = z.infer<typeof zodLanguagePreferences>;
 export type LinkType = z.infer<typeof zodLinkType>;
 export type PolisUrl = z.infer<typeof zodPolisUrl>;
 export type AgreementType = z.infer<typeof zodAgreementType>;

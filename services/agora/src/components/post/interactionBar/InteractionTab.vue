@@ -11,7 +11,7 @@
       <ZKTab
         v-if="!compactMode"
         icon-code="ph:chart-donut"
-        text="Analysis"
+        :text="t('analysis')"
         :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
         @click="clickedTab('analysis')"
@@ -22,12 +22,21 @@
 
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  interactionTabTranslations,
+  type InteractionTabTranslations,
+} from "./InteractionTab.i18n";
 
 const model = defineModel<"comment" | "analysis">({ required: true });
 const props = defineProps<{
   opinionCount: number;
   compactMode: boolean;
 }>();
+
+const { t } = useComponentI18n<InteractionTabTranslations>(
+  interactionTabTranslations
+);
 
 function clickedTab(tabKey: "comment" | "analysis") {
   if (!props.compactMode) {

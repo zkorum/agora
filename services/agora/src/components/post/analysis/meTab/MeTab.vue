@@ -4,7 +4,7 @@
       <template #header>
         <AnalysisTitleHeader
           :show-star-in-title="true"
-          title="Where do I stand"
+          :title="t('whereDoIStandTitle')"
         >
           <template #action-button>
             <div @click="switchTab()">
@@ -30,6 +30,8 @@ import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import { meTabTranslations, type MeTabTranslations } from "./MeTab.i18n";
 
 const props = defineProps<{
   clusterKey: PolisKey | undefined; // happens when the user has not been found to belong to a given cluster
@@ -39,11 +41,13 @@ const props = defineProps<{
 
 const currentTab = defineModel<ShortcutItem>();
 
+const { t } = useComponentI18n<MeTabTranslations>(meTabTranslations);
+
 function getUserAnalysis() {
   if (props.clusterKey === undefined) {
-    return "Vote on more opinions to unlock";
+    return t("voteMoreToUnlock");
   }
-  const firstPart = `You agree with ${formatClusterLabel(props.clusterKey, true, props.aiLabel)}`;
+  const firstPart = `${t("youAgreeWith")} ${formatClusterLabel(props.clusterKey, true, props.aiLabel)}`;
   if (props.aiSummary === undefined) {
     return firstPart;
   }

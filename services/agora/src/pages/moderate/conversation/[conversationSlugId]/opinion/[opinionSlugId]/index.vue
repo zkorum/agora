@@ -20,7 +20,7 @@
     </template>
 
     <div class="container">
-      <div class="title">Moderate the opinion</div>
+      <div class="title">{{ t("title") }}</div>
 
       <div class="userOpinion">
         <ZKHtmlContent
@@ -33,7 +33,7 @@
       <q-select
         v-model="moderationAction"
         :options="actionMapping"
-        label="Action"
+        :label="t('actionLabel')"
         emit-value
         map-options
       />
@@ -41,26 +41,23 @@
       <q-select
         v-model="moderationReason"
         :options="reasonMapping"
-        label="Reason"
+        :label="t('reasonLabel')"
         emit-value
         map-options
       />
 
-      <q-input v-model="moderationExplanation" label="Explanation (optional)" />
+      <q-input v-model="moderationExplanation" :label="t('explanationLabel')" />
 
-      <ZKButton
-        button-type="largeButton"
-        :label="hasExistingDecision ? 'Modify' : 'Moderate'"
-        color="primary"
+      <ZKGradientButton
+        :label="hasExistingDecision ? t('modifyButton') : t('moderateButton')"
         @click="clickedSubmit()"
       />
 
-      <ZKButton
+      <ZKGradientButton
         v-if="hasExistingDecision"
-        button-type="largeButton"
-        label="Withdraw"
-        color="secondary"
-        text-color="primary"
+        :label="t('withdrawButton')"
+        gradient-background="#E7E7FF"
+        label-color="#6b4eff"
         @click="clickedWithdraw()"
       />
     </div>
@@ -77,7 +74,7 @@ import type {
   ModerationReason,
   OpinionItem,
 } from "src/shared/types/zod";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import {
   opinionModerationActionMapping,
   moderationReasonMapping,
@@ -85,6 +82,11 @@ import {
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  opinionModerationTranslations,
+  type OpinionModerationTranslations,
+} from "./OpinionModeration.i18n";
 
 const {
   moderateComment,
@@ -96,6 +98,10 @@ const { fetchOpinionsBySlugIdList } = useBackendCommentApi();
 
 const route = useRoute();
 const router = useRouter();
+
+const { t } = useComponentI18n<OpinionModerationTranslations>(
+  opinionModerationTranslations
+);
 
 const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<OpinionModerationAction>(

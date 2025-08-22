@@ -7,8 +7,8 @@
       :show-cancel-dialog="true"
       :cancel-callback="noSaveDraft"
       :ok-callback="saveDraft"
-      :label-ok="'Save as draft'"
-      :label-cancel="'Discard'"
+      :label-ok="t('saveAsDraft')"
+      :label-cancel="t('discard')"
     >
     </DialogContainer>
   </div>
@@ -16,6 +16,11 @@
 
 <script setup lang="ts">
 import DialogContainer from "../authentication/intention/DialogContainer.vue";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  exitRoutePromptTranslations,
+  type ExitRoutePromptTranslations,
+} from "./ExitRoutePrompt.i18n";
 
 const model = defineModel<boolean>({ required: true });
 
@@ -25,6 +30,10 @@ defineProps<{
   saveDraft: () => void;
   noSaveDraft: () => void;
 }>();
+
+const { t } = useComponentI18n<ExitRoutePromptTranslations>(
+  exitRoutePromptTranslations
+);
 </script>
 
 <style lang="scss" scoped>

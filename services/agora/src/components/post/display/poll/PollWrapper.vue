@@ -24,7 +24,8 @@
 
       <div class="actionButtonCluster">
         <div class="voteCount">
-          {{ totalVoteCount }} vote<span v-if="totalVoteCount > 1">s</span>
+          {{ totalVoteCount }}
+          {{ totalVoteCount === 1 ? t("vote") : t("votes") }}
         </div>
 
         <div v-if="!userVoteStatus.hasVoted">
@@ -39,7 +40,7 @@
                 name="material-symbols:grouped-bar-chart-rounded"
                 size="1rem"
               />
-              <div>Results</div>
+              <div>{{ t("results") }}</div>
             </div>
           </ZKButton>
 
@@ -54,7 +55,7 @@
                 name="material-symbols:how-to-vote"
                 size="1rem"
               />
-              <div>Vote</div>
+              <div>{{ t("vote") }}</div>
             </div>
           </ZKButton>
         </div>
@@ -85,6 +86,11 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import PollOption from "./PollOption.vue";
 import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  pollWrapperTranslations,
+  type PollWrapperTranslations,
+} from "./PollWrapper.i18n";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -104,6 +110,10 @@ const { loadPostData } = useHomeFeedStore();
 const { updateAuthState } = useBackendAuthApi();
 
 const { setVotingIntention } = useConversationLoginIntentions();
+
+const { t } = useComponentI18n<PollWrapperTranslations>(
+  pollWrapperTranslations
+);
 
 enum DisplayModes {
   Vote,

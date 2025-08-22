@@ -10,7 +10,7 @@
   flex-direction: column;
   gap: 1rem;
   padding: 2rem;
-  background-color: white;
+  background-color: $app-background-color;
   border-radius: 25px 25px 0 0;
   width: min(30rem, 100%);
 }

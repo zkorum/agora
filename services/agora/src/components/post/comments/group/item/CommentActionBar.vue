@@ -3,10 +3,10 @@
     <div class="agreementButtons">
       <VotingButton
         vote-type="disagree"
-        label="Disagree"
+        :label="t('disagree')"
         :is-selected="userVoteAction === 'disagree'"
         :disabled="isPostLocked"
-        :set-aria-label="`Disagree with comment. Current disagrees: ${props.commentItem.numDisagrees}`"
+        :set-aria-label="`${t('disagreeAriaLabel')} ${props.commentItem.numDisagrees}`"
         :vote-count="props.commentItem.numDisagrees"
         :percentage="formatPercentage(relativeTotalPercentageDisagrees)"
         :show-vote-count="userCastedVote"
@@ -15,10 +15,10 @@
 
       <VotingButton
         vote-type="pass"
-        label="Pass"
+        :label="t('pass')"
         :is-selected="userVoteAction === 'pass'"
         :disabled="isPostLocked"
-        :set-aria-label="`Pass on comment. Current passes: ${props.commentItem.numPasses}`"
+        :set-aria-label="`${t('passAriaLabel')} ${props.commentItem.numPasses}`"
         :vote-count="props.commentItem.numPasses"
         :percentage="formatPercentage(relativeTotalPercentagePasses)"
         :show-vote-count="userCastedVote"
@@ -27,10 +27,10 @@
 
       <VotingButton
         vote-type="agree"
-        label="Agree"
+        :label="t('agree')"
         :is-selected="userVoteAction === 'agree'"
         :disabled="isPostLocked"
-        :set-aria-label="`Agree with comment. Current agrees: ${props.commentItem.numAgrees}`"
+        :set-aria-label="`${t('agreeAriaLabel')} ${props.commentItem.numAgrees}`"
         :vote-count="props.commentItem.numAgrees"
         :percentage="formatPercentage(relativeTotalPercentageAgrees)"
         :show-vote-count="userCastedVote"
@@ -63,6 +63,11 @@ import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 import VotingButton from "src/components/features/opinion/VotingButton.vue";
 import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import {
+  commentActionBarTranslations,
+  type CommentActionBarTranslations,
+} from "./CommentActionBar.i18n";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -82,6 +87,10 @@ const { showNotifyMessage } = useNotify();
 const { castVoteForComment } = useBackendVoteApi();
 const { updateAuthState } = useBackendAuthApi();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+
+const { t } = useComponentI18n<CommentActionBarTranslations>(
+  commentActionBarTranslations
+);
 
 const userCastedVote = computed(() => {
   return props.commentSlugIdLikedMap.has(props.commentItem.opinionSlugId);
@@ -131,7 +140,7 @@ async function castPersonalVote(
     targetState = voteAction;
   } else {
     // temporarily disabling changing vote, until it is supported in external polis system
-    showNotifyMessage("Vote change temporarily disabled");
+    showNotifyMessage(t("voteChangeDisabled"));
     return;
   }
 

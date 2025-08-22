@@ -5,44 +5,30 @@
   >
     <img :src="brandImagePath" class="welcomeImage" />
     <div v-if="!isLoggedIn" class="buttonFlex">
-      <ZKButton
-        button-type="largeButton"
-        label="Sign Up"
-        color="primary"
-        @click="gotoNextRoute(false)"
-      />
+      <ZKGradientButton :label="t('signUp')" @click="gotoNextRoute(false)" />
 
-      <ZKButton
-        button-type="largeButton"
-        label="Log In"
-        color="white"
-        text-color="primary"
+      <ZKGradientButton
+        :label="t('login')"
+        gradient-background="#ffffff"
+        label-color="#6b4eff"
         @click="gotoNextRoute(true)"
       />
 
-      <ZKButton
-        button-type="largeButton"
-        text-color="black"
-        color="secondary"
-        label="Skip Authentication"
+      <ZKGradientButton
+        :label="t('skipAuthentication')"
+        gradient-background="#f1eeff"
+        label-color="#000000"
         @click="skipAuthentication()"
       />
     </div>
 
     <div v-if="isLoggedIn" class="buttonFlex">
-      <ZKButton
-        button-type="largeButton"
-        text-color="white"
-        color="primary"
-        label="Launch App"
-        @click="skipAuthentication()"
-      />
+      <ZKGradientButton :label="t('launchApp')" @click="skipAuthentication()" />
 
-      <ZKButton
-        button-type="largeButton"
-        label="Log Out"
-        color="secondary"
-        text-color="black"
+      <ZKGradientButton
+        :label="t('logOut')"
+        gradient-background="#80cbc4"
+        label-color="#000000"
         @click="logoutRequested(true)"
       />
     </div>
@@ -51,12 +37,16 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { useRouter } from "vue-router";
+import { useComponentI18n } from "src/composables/useComponentI18n";
+import { welcomeTranslations, type WelcomeTranslations } from "./Welcome.i18n";
+
+const { t } = useComponentI18n<WelcomeTranslations>(welcomeTranslations);
 
 const router = useRouter();
 
