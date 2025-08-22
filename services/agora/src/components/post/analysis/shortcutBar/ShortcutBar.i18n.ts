@@ -28,7 +28,7 @@ export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
     fr: {
       summary: "Résumé",
       me: "Moi",
-      commonGround: "Terrain commun",
+      commonGround: "Terrain d'entente",
       majority: "Majorité",
       divisive: "Controversé",
       groups: "Groupes",
