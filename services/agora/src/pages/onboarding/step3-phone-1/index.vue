@@ -119,7 +119,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   phoneOnboardingTranslations,
   type PhoneOnboardingTranslations,
-} from "./PhoneOnboarding.i18n";
+} from "./index.i18n";
 
 const { t } = useComponentI18n<PhoneOnboardingTranslations>(
   phoneOnboardingTranslations

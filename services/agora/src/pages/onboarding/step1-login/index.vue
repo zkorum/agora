@@ -52,7 +52,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   loginOnboardingTranslations,
   type LoginOnboardingTranslations,
-} from "./LoginOnboarding.i18n";
+} from "./index.i18n";
 
 const { t } = useComponentI18n<LoginOnboardingTranslations>(
   loginOnboardingTranslations

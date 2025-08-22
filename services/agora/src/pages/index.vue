@@ -67,7 +67,7 @@ import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
 import { useComponentI18n } from "src/composables/useComponentI18n";
-import { homeTranslations, type HomeTranslations } from "./Home.i18n";
+import { homeTranslations, type HomeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 

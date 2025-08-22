@@ -57,7 +57,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   languagesSettingsTranslations,
   type LanguagesSettingsTranslations,
-} from "./LanguagesSettings.i18n";
+} from "./index.i18n";
 import { computed } from "vue";
 
 const { t } = useComponentI18n<LanguagesSettingsTranslations>(

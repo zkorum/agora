@@ -41,7 +41,7 @@ export const languagesSettingsTranslations: Record<
     spokenLanguagesLabel: "Idiomas hablados",
     displayLanguageTitle: "Idioma de visualización",
     displayLanguageDescription:
-      "Tu idioma preferido para los encabezados, botones y otro texto de la aplicación Agora",
+      "Su idioma preferido para los encabezados, botones y otro texto de la aplicación Agora",
     additionalLanguagesTitle: "Idiomas adicionales",
     additionalLanguagesDescription:
       "Para contenido que te gustaría ver en Agora",

@@ -34,7 +34,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   spokenLanguagesSettingsTranslations,
   type SpokenLanguagesSettingsTranslations,
-} from "./SpokenLanguagesSettings.i18n";
+} from "./index.i18n";
 
 const { t } = useComponentI18n<SpokenLanguagesSettingsTranslations>(
   spokenLanguagesSettingsTranslations

@@ -41,29 +41,38 @@
             >
             </q-input>
             <div class="legal-notice">
-              {{ t("legalNotice") }}
-              <a
-                href="https://pol.is/tos"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="terms-link"
-              >
-                {{ t("polisTerms") }}
-                <q-icon name="mdi-open-in-new" />
-              </a>
-              and our
-              <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
-                {{ t("termsOfUse") }} </RouterLink
-              >. Note that the original Polis data are licensed under the
-              <a
-                href="https://creativecommons.org/licenses/by/4.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="terms-link"
-                >{{ t("ccLicense") }}
-                <q-icon name="mdi-open-in-new" /> </a
-              >. Do not import illegal, abusive, or infringing material. Use the
-              import API responsibly. Abuse is prohibited.
+              <i18n-t keypath="importConversation.legalNotice" tag="p"> <!-- TODO: move to 't' and v-html. This is loaded from global i18n -->
+                <!-- Polis Terms link -->
+                <template #polisTerms>
+                  <a
+                    href="https://pol.is/tos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="terms-link"
+                  >
+                    {{ t('polisTerms') }} <q-icon name="mdi-open-in-new" />
+                  </a>
+                </template>
+
+                <!-- Local Terms of Use link -->
+                <template #termsOfUse>
+                  <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
+                    {{ t('termsOfUse') }}
+                  </RouterLink>
+                </template>
+
+                <!-- Creative Commons license link -->
+                <template #ccLicense>
+                  <a
+                    href="https://creativecommons.org/licenses/by/4.0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="terms-link"
+                  >
+                    {{ t('ccLicense') }} <q-icon name="mdi-open-in-new" />
+                  </a>
+                </template>
+              </i18n-t>
             </div>
           </div>
         </div>
@@ -82,6 +91,7 @@ import {
   polisUrlInputTranslations,
   type PolisUrlInputTranslations,
 } from "./PolisUrlInput.i18n";
+
 
 const { t } = useComponentI18n<PolisUrlInputTranslations>(
   polisUrlInputTranslations

@@ -19,11 +19,11 @@ export const footerBarTranslations: Record<
   es: {
     home: "Inicio",
     explore: "Explorar",
-    dings: "Notif",
+    dings: "Dings",
   },
   fr: {
     home: "Accueil",
     explore: "Explorer",
-    dings: "Notif",
+    dings: "Dings",
   },
 };

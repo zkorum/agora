@@ -86,7 +86,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   opinionModerationTranslations,
   type OpinionModerationTranslations,
-} from "./OpinionModeration.i18n";
+} from "./index.i18n";
 
 const {
   moderateComment,

@@ -61,10 +61,7 @@ import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useComponentI18n } from "src/composables/useComponentI18n";
-import {
-  settingsTranslations,
-  type SettingsTranslations,
-} from "./Settings.i18n";
+import { settingsTranslations, type SettingsTranslations } from "./index.i18n";
 
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
