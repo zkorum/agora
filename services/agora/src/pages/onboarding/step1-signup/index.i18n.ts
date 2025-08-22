@@ -20,7 +20,7 @@ export const signupOnboardingTranslations: Record<
       "En un mundo marcado por las crecientes polarizaciones, Agora se esfuerza por rehumanizar y despolarizar los diálogos ciudadanos sobre temas sociales clave.",
   },
   fr: {
-    pageTitle: "Pourquoi Agora existe-t-elle ?",
+    pageTitle: "Pourquoi Agora existe ?",
     description:
       "Dans un monde marqué par des polarisations croissantes, Agora s'efforce de réhumaniser et de dépolariser les dialogues citoyens sur les enjeux sociétaux clés.",
   },

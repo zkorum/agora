@@ -1,7 +1,6 @@
 export interface PostLockedMessageTranslations {
   lockedMessage: string;
   editButton: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const postLockedMessageTranslations: Record<

@@ -5,7 +5,6 @@ export interface PreLoginIntentionDialogTranslations {
   message: string;
   labelOk: string;
   labelCancel: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const preLoginIntentionDialogTranslations: Record<

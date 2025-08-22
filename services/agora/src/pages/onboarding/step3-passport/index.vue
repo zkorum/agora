@@ -179,7 +179,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   passportOnboardingTranslations,
   type PassportOnboardingTranslations,
-} from "./PassportOnboarding.i18n";
+} from "./index.i18n";
 
 const { t } = useComponentI18n<PassportOnboardingTranslations>(
   passportOnboardingTranslations

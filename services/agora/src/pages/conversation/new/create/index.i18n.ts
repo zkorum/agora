@@ -3,7 +3,6 @@ export interface CreateConversationTranslations {
   nextButton: string;
   titlePlaceholder: string;
   bodyPlaceholder: string;
-  [key: string]: string;
 }
 
 export const createConversationTranslations: Record<
@@ -20,15 +19,13 @@ export const createConversationTranslations: Record<
   es: {
     importButton: "Importar",
     nextButton: "Siguiente",
-    titlePlaceholder: "¿Qué quieres preguntar?",
-    bodyPlaceholder:
-      "Texto del cuerpo. Proporciona contexto o recursos relevantes. ¡Asegúrate de que esté alineado con la pregunta principal!",
+    titlePlaceholder: "¿Qué quiere preguntar?",
+    bodyPlaceholder: "Agregue contexto o enlaces útiles",
   },
   fr: {
     importButton: "Importer",
     nextButton: "Suivant",
     titlePlaceholder: "Que voulez-vous demander ?",
-    bodyPlaceholder:
-      "Texte du corps. Fournissez du contexte ou des ressources pertinentes. Assurez-vous qu'il soit aligné avec la question principale !",
+    bodyPlaceholder: "Ajoutez du contexte ou des liens utiles",
   },
 };

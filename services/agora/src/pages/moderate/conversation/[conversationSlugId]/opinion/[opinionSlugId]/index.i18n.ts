@@ -6,7 +6,6 @@ export interface OpinionModerationTranslations {
   moderateButton: string;
   modifyButton: string;
   withdrawButton: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const opinionModerationTranslations: Record<

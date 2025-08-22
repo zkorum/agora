@@ -4,7 +4,6 @@ export interface OpinionGroupTabTranslations {
   groupsTitle: string;
   notEnoughGroupsMessage: string;
   meLabel: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const opinionGroupTabTranslations: Record<

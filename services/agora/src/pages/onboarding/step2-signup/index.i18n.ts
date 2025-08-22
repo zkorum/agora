@@ -21,14 +21,14 @@ export const step2SignupOnboardingTranslations: Record<
   es: {
     pageTitle: "Agora aspira a ser exclusivamente humana",
     description:
-      "Más de la mitad del tráfico de internet proviene de bots. Por eso verificamos usuarios, ¡para que debatas con personas, no con robots tramando dominar el mundo!",
+      "Más de la mitad del tráfico de internet proviene de bots. Por eso verificamos su identidad, ¡para que debata con personas y no con robots tramando dominar el mundo!",
     verifyAnonymously: "Verificar anónimamente",
     verifyWithPhone: "Verificar con mi número de teléfono",
   },
   fr: {
     pageTitle: "Agora vise à être exclusivement humaine",
     description:
-      "Plus de la moitié du trafic internet provient de bots. C'est pourquoi nous vérifions les utilisateurs, pour que vous débattiez avec des personnes, pas avec des robots complotant la domination mondiale !",
+      "Plus de la moitié du trafic internet provient de bots. C'est pourquoi nous vérifions l'identité des utilisateurs, pour que vous débattiez avec des personnes, pas avec des robots complotant la domination mondiale !",
     verifyAnonymously: "Vérifier anonymement",
     verifyWithPhone: "Vérifier avec mon numéro de téléphone",
   },

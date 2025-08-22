@@ -5,7 +5,6 @@ export interface ShortcutBarTranslations {
   majority: string;
   divisive: string;
   groups: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =

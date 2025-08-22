@@ -14,19 +14,19 @@ export const loginOnboardingTranslations: Record<
   en: {
     pageTitle: "Log In",
     description: "Please select a log in method.",
-    loginWithRariMe: "Log In with RariMe",
+    loginWithRariMe: "Login with RariMe",
     loginWithPhone: "Login with my phone number",
   },
   es: {
-    pageTitle: "Iniciar Sesión",
-    description: "Por favor selecciona un método de inicio de sesión.",
-    loginWithRariMe: "Iniciar Sesión con RariMe",
+    pageTitle: "Iniciar sesión",
+    description: "Por favor, seleccione un método de inicio de sesión.",
+    loginWithRariMe: "Iniciar sesión con RariMe",
     loginWithPhone: "Iniciar sesión con mi número de teléfono",
   },
   fr: {
-    pageTitle: "Se Connecter",
+    pageTitle: "Se connecter",
     description: "Veuillez sélectionner une méthode de connexion.",
-    loginWithRariMe: "Se Connecter avec RariMe",
+    loginWithRariMe: "Se connecter avec RariMe",
     loginWithPhone: "Se connecter avec mon numéro de téléphone",
   },
 };

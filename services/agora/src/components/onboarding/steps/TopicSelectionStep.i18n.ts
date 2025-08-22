@@ -2,7 +2,6 @@ export interface TopicSelectionStepTranslations {
   title: string;
   backButton: string;
   closeButton: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const topicSelectionStepTranslations: Record<

@@ -4,7 +4,6 @@ export interface FooterBarTranslations {
   home: string;
   explore: string;
   dings: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const footerBarTranslations: Record<
@@ -19,11 +18,11 @@ export const footerBarTranslations: Record<
   es: {
     home: "Inicio",
     explore: "Explorar",
-    dings: "Notif",
+    dings: "Dings",
   },
   fr: {
     home: "Accueil",
     explore: "Explorer",
-    dings: "Notif",
+    dings: "Dings",
   },
 };

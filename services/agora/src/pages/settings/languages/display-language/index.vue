@@ -68,7 +68,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   displayLanguageSettingsTranslations,
   type DisplayLanguageSettingsTranslations,
-} from "./DisplayLanguageSettings.i18n";
+} from "./index.i18n";
 import { storeToRefs } from "pinia";
 import { useLanguageStore } from "src/stores/language";
 import { useAuthenticationStore } from "src/stores/authentication";

@@ -1,6 +1,5 @@
 export interface TopicPageTranslations {
   loadPostsHere: string;
-  [key: string]: string;
 }
 
 export const topicPageTranslations: Record<string, TopicPageTranslations> = {

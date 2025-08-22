@@ -5,7 +5,6 @@ export interface VisibilityOptionsDialogTranslations {
   publicDescription: string;
   privateTitle: string;
   privateDescription: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const visibilityOptionsDialogTranslations: Record<

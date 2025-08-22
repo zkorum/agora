@@ -1,17 +1,17 @@
+import { type SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PolisUrlInputTranslations {
   importTitle: string;
   description: string;
   validUrlExamples: string;
   urlPlaceholder: string;
-  legalNotice: string;
   polisTerms: string;
   termsOfUse: string;
   ccLicense: string;
-  [key: string]: string;
 }
 
 export const polisUrlInputTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   PolisUrlInputTranslations
 > = {
   en: {
@@ -19,11 +19,9 @@ export const polisUrlInputTranslations: Record<
     description: "Paste a Polis URL below to import a conversation.",
     validUrlExamples: "Valid URL examples:",
     urlPlaceholder: "e.g., https://pol.is/xxxxx",
-    legalNotice:
-      'By clicking "Import", you confirm that importing the content complies with the',
     polisTerms: "Pol.is Terms",
     termsOfUse: "Terms of Use",
-    ccLicense: "Creative Commons Attribution 4.0 International license",
+    ccLicense: "CC BY 4.0",
   },
   es: {
     importTitle: "Importar Conversación desde Polis",
@@ -31,11 +29,9 @@ export const polisUrlInputTranslations: Record<
       "Pega una URL de Polis a continuación para importar una conversación.",
     validUrlExamples: "Ejemplos de URL válidas:",
     urlPlaceholder: "ej., https://pol.is/xxxxx",
-    legalNotice:
-      'Al hacer clic en "Importar", confirmas que importar el contenido cumple con los',
-    polisTerms: "Términos de Pol.is",
-    termsOfUse: "Términos de Uso",
-    ccLicense: "licencia Creative Commons Atribución 4.0 Internacional",
+    polisTerms: "Términos de uso de Pol.is",
+    termsOfUse: "Términos de uso",
+    ccLicense: "CC BY 4.0",
   },
   fr: {
     importTitle: "Importer une Conversation depuis Polis",
@@ -43,10 +39,8 @@ export const polisUrlInputTranslations: Record<
       "Collez une URL Polis ci-dessous pour importer une conversation.",
     validUrlExamples: "Exemples d'URL valides :",
     urlPlaceholder: "ex., https://pol.is/xxxxx",
-    legalNotice:
-      'En cliquant sur "Importer", vous confirmez que l\'importation du contenu respecte les',
-    polisTerms: "Conditions de Pol.is",
-    termsOfUse: "Conditions d'Utilisation",
-    ccLicense: "licence Creative Commons Attribution 4.0 International",
+    polisTerms: "Conditions d'utilisation de Pol.is",
+    termsOfUse: "Conditions d'utilisation",
+    ccLicense: "CC BY 4.0",
   },
 };

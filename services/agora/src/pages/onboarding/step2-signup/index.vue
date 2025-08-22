@@ -53,7 +53,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   step2SignupOnboardingTranslations,
   type Step2SignupOnboardingTranslations,
-} from "./Step2SignupOnboarding.i18n";
+} from "./index.i18n";
 
 const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
   step2SignupOnboardingTranslations

@@ -2,7 +2,6 @@ export interface TermsOfServiceTranslations {
   termsOfService: string;
   referTo: string;
   externalPageLink: string;
-  [key: string]: string;
 }
 
 export const termsOfServiceTranslations: Record<

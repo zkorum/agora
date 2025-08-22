@@ -34,7 +34,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   topicPageTranslations,
   type TopicPageTranslations,
-} from "./TopicPage.i18n";
+} from "./[topicCode].i18n";
 
 const { t } = useComponentI18n<TopicPageTranslations>(topicPageTranslations);
 

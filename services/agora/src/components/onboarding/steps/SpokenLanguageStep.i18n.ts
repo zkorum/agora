@@ -1,7 +1,6 @@
 export interface SpokenLanguageStepTranslations {
   title: string;
   nextButton: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const spokenLanguageStepTranslations: Record<

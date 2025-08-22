@@ -3,7 +3,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface ConsensusTabTranslations {
   commonGroundTitle: string;
   noCommonGroundMessage: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const consensusTabTranslations: Record<

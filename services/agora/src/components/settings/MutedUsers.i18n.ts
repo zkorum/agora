@@ -1,7 +1,6 @@
 export interface MutedUsersTranslations {
   title: string;
   emptyMessage: string;
-  [key: string]: string;
 }
 
 export const mutedUsersTranslations: Record<string, MutedUsersTranslations> = {

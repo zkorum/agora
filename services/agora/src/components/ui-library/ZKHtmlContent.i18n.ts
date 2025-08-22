@@ -1,7 +1,6 @@
 export interface ZKHtmlContentTranslations {
   postContentPreview: string;
   postContent: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const zkHtmlContentTranslations: Record<

@@ -4,7 +4,6 @@ export interface Step5ExperienceTranslations {
   safeSpaceDescription: string;
   braveSpaceTitle: string;
   braveSpaceDescription: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const step5ExperienceTranslations: Record<
@@ -21,13 +20,13 @@ export const step5ExperienceTranslations: Record<
       "Content flagged as antisocial is shown to me with a warning.",
   },
   es: {
-    title: "Elige cómo quieres experimentar Agora",
-    safeSpaceTitle: "Espacio Seguro",
+    title: "Elija cómo quiere experimentar Agora",
+    safeSpaceTitle: "Espacio seguro",
     safeSpaceDescription:
-      "El contenido marcado como antisocial (trolling o intolerancia) se elimina de mi feed. Si quiero ver lo que fue eliminado, puedo revisar el historial de moderación de la publicación.",
-    braveSpaceTitle: "Espacio Valiente",
+      "El contenido marcado como antisocial (trolling o intolerancia) se elimina de su feed. Si desea ver lo que fue eliminado, puede revisar el historial de moderación de la publicación.",
+    braveSpaceTitle: "Espacio valiente",
     braveSpaceDescription:
-      "El contenido marcado como antisocial se me muestra con una advertencia.",
+      "El contenido marcado como antisocial se le muestra con una advertencia.",
   },
   fr: {
     title: "Choisissez comment vous voulez vivre Agora",

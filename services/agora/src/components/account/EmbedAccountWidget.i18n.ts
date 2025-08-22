@@ -1,7 +1,6 @@
 export interface EmbedAccountWidgetTranslations {
   logoutButton: string;
   logoutTooltip: string;
-  [key: string]: string; // Required for Record<string, string> constraint
 }
 
 export const embedAccountWidgetTranslations: Record<
