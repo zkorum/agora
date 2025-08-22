@@ -79,7 +79,7 @@ const deleteAccountLabel = computed(() =>
   isLoggedIn.value ? t("deleteAccount") : t("deleteGuestAccount")
 );
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDevelopment = process.env.DEV;
 
 const accountSettings: SettingsInterface[] = [
   {

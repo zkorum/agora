@@ -31,7 +31,7 @@ export const notificationTranslations: Record<
     notifications: "Notifications",
     endOfFeed: "Fin du flux de notifications",
     noNotifications: "Vous n'avez aucune notification",
-    contributedOpinion: "a contribué avec une opinion à votre conversation :",
+    contributedOpinion: "a contribué une opinion à votre conversation :",
     onePersonVoted: "1 personne a voté sur votre opinion :",
     peopleVoted: "personnes ont voté sur votre opinion :",
   },

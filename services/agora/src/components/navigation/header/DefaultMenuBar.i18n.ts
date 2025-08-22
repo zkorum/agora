@@ -11,9 +11,9 @@ export const defaultMenuBarTranslations: Record<
     logIn: "Log in",
   },
   es: {
-    logIn: "Iniciar sesión",
+    logIn: "Log in",
   },
   fr: {
-    logIn: "Se connecter",
+    logIn: "Log in",
   },
 };
