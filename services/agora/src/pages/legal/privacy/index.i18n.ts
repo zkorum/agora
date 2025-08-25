@@ -23,4 +23,19 @@ export const privacyPolicyTranslations: Record<
     referTo: "Consultez",
     externalPageLink: "cette page externe (en cours)",
   },
+  "zh-CN": {
+    privacyPolicy: "隐私政策",
+    referTo: "请参阅",
+    externalPageLink: "此外部页面（开发中）",
+  },
+  "zh-TW": {
+    privacyPolicy: "隱私政策",
+    referTo: "請參閱",
+    externalPageLink: "此外部頁面（開發中）",
+  },
+  ja: {
+    privacyPolicy: "プライバシーポリシー",
+    referTo: "参照",
+    externalPageLink: "この外部ページ（開発中）",
+  },
 };

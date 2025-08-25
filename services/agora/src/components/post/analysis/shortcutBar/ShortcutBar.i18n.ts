@@ -33,4 +33,28 @@ export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
       divisive: "Controversé",
       groups: "Groupes",
     },
+    "zh-CN": {
+      summary: "总结",
+      me: "我",
+      commonGround: "共同点",
+      majority: "多数",
+      divisive: "分歧",
+      groups: "群组",
+    },
+    "zh-TW": {
+      summary: "總結",
+      me: "我",
+      commonGround: "共同點",
+      majority: "多數",
+      divisive: "分歧",
+      groups: "群組",
+    },
+    ja: {
+      summary: "要約",
+      me: "私",
+      commonGround: "共通点",
+      majority: "多数",
+      divisive: "分かれる",
+      groups: "グループ",
+    },
   };

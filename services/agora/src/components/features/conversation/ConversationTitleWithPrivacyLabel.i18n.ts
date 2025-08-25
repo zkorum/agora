@@ -15,4 +15,13 @@ export const conversationTitleWithPrivacyLabelTranslations: Record<
   fr: {
     privateLabel: "Privé",
   },
+  "zh-CN": {
+    privateLabel: "私密",
+  },
+  "zh-TW": {
+    privateLabel: "私密",
+  },
+  ja: {
+    privateLabel: "プライベート",
+  },
 };

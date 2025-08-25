@@ -23,4 +23,19 @@ export const step4UsernameTranslations: Record<
     howToAppear: "Comment voulez-vous apparaître dans Agora ?",
     usernameInUse: "Le nom d'utilisateur est déjà utilisé",
   },
+  "zh-CN": {
+    title: "选择您的用户名",
+    howToAppear: "您希望在 Agora 中如何显示？",
+    usernameInUse: "用户名已被使用",
+  },
+  "zh-TW": {
+    title: "選擇您的用戶名",
+    howToAppear: "您希望在 Agora 中如何顯示？",
+    usernameInUse: "用戶名已被使用",
+  },
+  ja: {
+    title: "ユーザー名を選択",
+    howToAppear: "Agora でどのように表示したいですか？",
+    usernameInUse: "ユーザー名はすでに使用されています",
+  },
 };

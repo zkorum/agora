@@ -33,4 +33,25 @@ export const welcomeTranslations: Record<
     launchApp: "Lancer l'Application",
     logOut: "Se Déconnecter",
   },
+  "zh-CN": {
+    signUp: "注册",
+    login: "登录",
+    skipAuthentication: "跳过认证",
+    launchApp: "启动应用",
+    logOut: "登出",
+  },
+  "zh-TW": {
+    signUp: "註冊",
+    login: "登入",
+    skipAuthentication: "跳過認證",
+    launchApp: "啟動應用",
+    logOut: "登出",
+  },
+  ja: {
+    signUp: "サインアップ",
+    login: "ログイン",
+    skipAuthentication: "認証をスキップ",
+    launchApp: "アプリを起動",
+    logOut: "ログアウト",
+  },
 };

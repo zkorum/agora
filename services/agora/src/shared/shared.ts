@@ -416,11 +416,11 @@ export const LANGUAGE_CODES: Record<string, string> = {
     yo: "Yoruba",
     za: "Zhuang",
     zh: "Chinese",
-    "zh-cn": "Chinese (China)",
-    "zh-hk": "Chinese (Hong Kong SAR)",
-    "zh-mo": "Chinese (Macau SAR)",
-    "zh-sg": "Chinese (Singapore)",
-    "zh-tw": "Chinese (Taiwan)",
+    "zh-CN": "Chinese (China)",
+    "zh-HK": "Chinese (Hong Kong SAR)",
+    "zh-MO": "Chinese (Macau SAR)",
+    "zh-SG": "Chinese (Singapore)",
+    "zh-TW": "Chinese (Taiwan)",
     zu: "Zulu",
 };
 

@@ -29,4 +29,22 @@ export const loginOnboardingTranslations: Record<
     loginWithRariMe: "Se connecter avec RariMe",
     loginWithPhone: "Se connecter avec mon numéro de téléphone",
   },
+  "zh-CN": {
+    pageTitle: "登录",
+    description: "请选择登录方式。",
+    loginWithRariMe: "使用 RariMe 登录",
+    loginWithPhone: "使用手机号登录",
+  },
+  "zh-TW": {
+    pageTitle: "登入",
+    description: "請選擇登入方式。",
+    loginWithRariMe: "使用 RariMe 登入",
+    loginWithPhone: "使用手機號登入",
+  },
+  ja: {
+    pageTitle: "ログイン",
+    description: "ログイン方法を選択してください。",
+    loginWithRariMe: "RariMe でログイン",
+    loginWithPhone: "携帯電話でログイン",
+  },
 };

@@ -41,12 +41,12 @@ export const ZodAllLanguageCodes = z.enum([
     "ro",
     "ru",
     "sr",
-    "zh-Hans",
+    "zh-CN",
     "sk",
     "sv",
     "ta",
     "th",
-    "zh-Hant",
+    "zh-TW",
     "tr",
     "uk",
     "ur",
@@ -59,7 +59,7 @@ export const ZodSupportedSpokenLanguageCodes = ZodAllLanguageCodes;
 export type SupportedSpokenLanguageCodes = AllLanguageCodes;
 
 // Languages that have UI translations available
-export const ZodSupportedDisplayLanguageCodes = z.enum(["en", "es", "fr"]);
+export const ZodSupportedDisplayLanguageCodes = z.enum(["en", "es", "fr", "zh-CN", "zh-TW", "ja"]);
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
 >;
@@ -100,6 +100,26 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "fr",
         name: "français",
         englishName: "French",
+        displaySupported: true,
+    },
+    {
+        code: "zh-CN",
+        name: "简体中文",
+        englishName: "Simplified Chinese (China)",
+        region: "CN",
+        displaySupported: true,
+    },
+    {
+        code: "zh-TW",
+        name: "繁體中文",
+        englishName: "Traditional Chinese (Taiwan)",
+        region: "TW",
+        displaySupported: false,
+    },
+    {
+        code: "ja",
+        name: "日本語",
+        englishName: "Japanese",
         displaySupported: true,
     },
 
@@ -245,12 +265,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "ja",
-        name: "日本語",
-        englishName: "Japanese",
-        displaySupported: false,
-    },
-    {
         code: "kn",
         name: "ಕನ್ನಡ",
         englishName: "Kannada",
@@ -317,13 +331,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "zh-Hans",
-        name: "简体中文",
-        englishName: "Simplified Chinese",
-        script: "Hans",
-        displaySupported: false,
-    },
-    {
         code: "sk",
         name: "slovenčina",
         englishName: "Slovak",
@@ -345,13 +352,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "th",
         name: "ไทย",
         englishName: "Thai",
-        displaySupported: false,
-    },
-    {
-        code: "zh-Hant",
-        name: "繁體中文",
-        englishName: "Traditional Chinese",
-        script: "Hant",
         displaySupported: false,
     },
     {

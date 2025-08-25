@@ -37,4 +37,28 @@ export const usernameChangeTranslations: Record<
     submitError:
       "Erreur lors de la tentative de soumission du changement de nom d'utilisateur",
   },
+  "zh-CN": {
+    usernameLabel: "用户名",
+    updateButton: "更新",
+    usernameChanged: "用户名已更改",
+    usernameAlreadyInUse: "用户名已被使用",
+    usernameCurrentlyInUse: "此用户名当前已被使用",
+    submitError: "尝试提交用户名更改时出错",
+  },
+  "zh-TW": {
+    usernameLabel: "用戶名",
+    updateButton: "更新",
+    usernameChanged: "用戶名已更改",
+    usernameAlreadyInUse: "用戶名已被使用",
+    usernameCurrentlyInUse: "此用戶名當前已被使用",
+    submitError: "嘗試提交用戶名更改時出錯",
+  },
+  ja: {
+    usernameLabel: "ユーザー名",
+    updateButton: "更新",
+    usernameChanged: "ユーザー名が変更されました",
+    usernameAlreadyInUse: "ユーザー名はすでに使用されています",
+    usernameCurrentlyInUse: "このユーザー名は現在使用されています",
+    submitError: "ユーザー名の変更を送信する際にエラーが発生しました",
+  },
 };

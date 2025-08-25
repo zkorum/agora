@@ -24,4 +24,19 @@ export const organizationViewTranslations: Record<
     usernameLabel: "Nom d'utilisateur",
     addUserToOrganizationButton: "Ajouter un utilisateur à l'organisation",
   },
+  "zh-CN": {
+    deleteOrganizationButton: "删除组织",
+    usernameLabel: "用户名",
+    addUserToOrganizationButton: "添加用户到组织",
+  },
+  "zh-TW": {
+    deleteOrganizationButton: "刪除組織",
+    usernameLabel: "用戶名",
+    addUserToOrganizationButton: "添加用戶到組織",
+  },
+  ja: {
+    deleteOrganizationButton: "組織を削除",
+    usernameLabel: "ユーザー名",
+    addUserToOrganizationButton: "ユーザーを組織に追加",
+  },
 };

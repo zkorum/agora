@@ -15,4 +15,13 @@ export const opinionIdentityCardTranslations: Record<
   fr: {
     seedOpinion: "Opinion germe",
   },
+  "zh-CN": {
+    seedOpinion: "种子意见",
+  },
+  "zh-TW": {
+    seedOpinion: "種子意見",
+  },
+  ja: {
+    seedOpinion: "シード意見",
+  },
 };

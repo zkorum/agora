@@ -15,4 +15,13 @@ export const settingsSearchInputTranslations: Record<
   fr: {
     searchPlaceholder: "Rechercher...",
   },
+  "zh-CN": {
+    searchPlaceholder: "搜索...",
+  },
+  "zh-TW": {
+    searchPlaceholder: "搜尋...",
+  },
+  ja: {
+    searchPlaceholder: "検索...",
+  },
 };

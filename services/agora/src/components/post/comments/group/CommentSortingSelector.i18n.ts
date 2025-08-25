@@ -32,4 +32,25 @@ export const commentSortingSelectorTranslations: Record<
     moderationHistory: "Historique de modération",
     hidden: "Masqué",
   },
+  "zh-CN": {
+    filterTitle: "按以下方式筛选回复：",
+    discover: "发现",
+    new: "最新",
+    moderationHistory: "审核历史",
+    hidden: "已隐藏",
+  },
+  "zh-TW": {
+    filterTitle: "按以下方式篩選回覆：",
+    discover: "發現",
+    new: "最新",
+    moderationHistory: "審核歷史",
+    hidden: "已隱藏",
+  },
+  ja: {
+    filterTitle: "回答を以下でフィルター：",
+    discover: "発見",
+    new: "新着",
+    moderationHistory: "モデレーション履歴",
+    hidden: "非表示",
+  },
 };

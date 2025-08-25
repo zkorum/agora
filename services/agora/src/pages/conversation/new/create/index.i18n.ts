@@ -28,4 +28,22 @@ export const createConversationTranslations: Record<
     titlePlaceholder: "Que voulez-vous demander ?",
     bodyPlaceholder: "Ajoutez du contexte ou des liens utiles",
   },
+  "zh-CN": {
+    importButton: "导入",
+    nextButton: "下一步",
+    titlePlaceholder: "您想问什么？",
+    bodyPlaceholder: "正文内容。提供背景或相关资源。确保与主要问题保持一致！",
+  },
+  "zh-TW": {
+    importButton: "匯入",
+    nextButton: "下一步",
+    titlePlaceholder: "您想問什麼？",
+    bodyPlaceholder: "正文內容。提供背景或相關資源。確保與主要問題保持一致！",
+  },
+  ja: {
+    importButton: "インポート",
+    nextButton: "次へ",
+    titlePlaceholder: "何を聞きたいですか？",
+    bodyPlaceholder: "本文テキスト。背景や関連リソースを提供してください。メインの質問と一致していることを確認してください！",
+  },
 };

@@ -23,4 +23,19 @@ export const topicSelectionStepTranslations: Record<
     backButton: "Retour",
     closeButton: "Fermer",
   },
+  "zh-CN": {
+    title: "选择您感兴趣的话题开始使用",
+    backButton: "返回",
+    closeButton: "关闭",
+  },
+  "zh-TW": {
+    title: "選擇您感興趣的話題開始使用",
+    backButton: "返回",
+    closeButton: "關閉",
+  },
+  ja: {
+    title: "興味のあるトピックを選択して開始",
+    backButton: "戻る",
+    closeButton: "閉じる",
+  },
 };

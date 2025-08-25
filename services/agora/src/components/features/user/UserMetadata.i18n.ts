@@ -16,4 +16,13 @@ export const userMetadataTranslations: Record<
   fr: {
     idVerified: "ID vérifié",
   },
+  "zh-CN": {
+    idVerified: "ID 已验证",
+  },
+  "zh-TW": {
+    idVerified: "ID 已驗證",
+  },
+  ja: {
+    idVerified: "ID が確認されました",
+  },
 };

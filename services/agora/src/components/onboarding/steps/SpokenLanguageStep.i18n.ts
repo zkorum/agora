@@ -19,4 +19,16 @@ export const spokenLanguageStepTranslations: Record<
     title: "Quelles langues parlez-vous ?",
     nextButton: "Suivant",
   },
+  "zh-CN": {
+    title: "您会说哪些语言？",
+    nextButton: "下一步",
+  },
+  "zh-TW": {
+    title: "您會說哪些語言？",
+    nextButton: "下一步",
+  },
+  ja: {
+    title: "あなたはどの言語を話しますか？",
+    nextButton: "次へ",
+  },
 };

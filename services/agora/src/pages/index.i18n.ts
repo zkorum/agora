@@ -25,4 +25,19 @@ export const homeTranslations: Record<
     popular: "Populaire",
     new: "Nouveau",
   },
+  "zh-CN": {
+    following: "关注",
+    popular: "热门",
+    new: "最新",
+  },
+  "zh-TW": {
+    following: "關注",
+    popular: "熱門",
+    new: "最新",
+  },
+  ja: {
+    following: "フォロー中",
+    popular: "人気",
+    new: "新着",
+  },
 };

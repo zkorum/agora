@@ -26,4 +26,19 @@ export const groupConsensusSummaryTranslations: Record<
     aiSummaryDescription:
       "Nous utilisons Mistral Large (modèle LLM) pour générer le résumé et les étiquettes de chaque groupe de consensus.",
   },
+  "zh-CN": {
+    groupSummaryTitle: "群组总结",
+    aiSummaryTitle: "AI 总结",
+    aiSummaryDescription: "我们使用 Mistral Large (LLM 模型) 为每个共识群组生成总结和标签。",
+  },
+  "zh-TW": {
+    groupSummaryTitle: "群組總結",
+    aiSummaryTitle: "AI 總結",
+    aiSummaryDescription: "我們使用 Mistral Large (LLM 模型) 為每個共識群組生成總結和標籤。",
+  },
+  ja: {
+    groupSummaryTitle: "グループ要約",
+    aiSummaryTitle: "AI 要約",
+    aiSummaryDescription: "我們は Mistral Large (LLM モデル) を使用して、各共識グループの要約とラベルを生成します。",
+  },
 };

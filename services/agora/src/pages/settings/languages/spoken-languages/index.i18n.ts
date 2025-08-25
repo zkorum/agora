@@ -17,4 +17,13 @@ export const spokenLanguagesSettingsTranslations: Record<
   fr: {
     pageTitle: "Langues parlées",
   },
+  "zh-CN": {
+    pageTitle: "口语语言",
+  },
+  "zh-TW": {
+    pageTitle: "口語語言",
+  },
+  ja: {
+    pageTitle: "口語言語",
+  },
 };

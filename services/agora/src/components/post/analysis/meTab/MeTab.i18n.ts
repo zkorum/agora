@@ -20,4 +20,19 @@ export const meTabTranslations: Record<string, MeTabTranslations> = {
     voteMoreToUnlock: "Votez sur plus d'opinions pour débloquer",
     youAgreeWith: "Vous êtes d'accord avec",
   },
+  "zh-CN": {
+    whereDoIStandTitle: "我的立场",
+    voteMoreToUnlock: "投票更多意见以解锁",
+    youAgreeWith: "您同意",
+  },
+  "zh-TW": {
+    whereDoIStandTitle: "我的立場",
+    voteMoreToUnlock: "投票更多意見以解鎖",
+    youAgreeWith: "您同意",
+  },
+  ja: {
+    whereDoIStandTitle: "私の立場",
+    voteMoreToUnlock: "より多くの意見に投票してアンロック",
+    youAgreeWith: "あなたは同意します",
+  },
 };
