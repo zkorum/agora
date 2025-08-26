@@ -25,4 +25,19 @@ export const opinionGroupTabTranslations: Record<
     notEnoughGroupsMessage: "Pas assez de groupes à afficher.",
     meLabel: "Moi",
   },
+  "zh-CN": {
+    groupsTitle: "群组",
+    notEnoughGroupsMessage: "群组数量不足以显示。",
+    meLabel: "我",
+  },
+  "zh-TW": {
+    groupsTitle: "群組",
+    notEnoughGroupsMessage: "群組數量不足以顯示。",
+    meLabel: "我",
+  },
+  ja: {
+    groupsTitle: "グループ",
+    notEnoughGroupsMessage: "表示するグループが不足しています。",
+    meLabel: "私",
+  },
 };

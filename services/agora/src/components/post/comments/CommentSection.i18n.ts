@@ -22,4 +22,16 @@ export const commentSectionTranslations: Record<
     opinionRemovedByModerators:
       "Cette opinion a été supprimée par les modérateurs",
   },
+  "zh-CN": {
+    opinionNotFound: "未找到意见：",
+    opinionRemovedByModerators: "此意见已被版主移除",
+  },
+  "zh-TW": {
+    opinionNotFound: "未找到意見：",
+    opinionRemovedByModerators: "此意見已被版主移除",
+  },
+  ja: {
+    opinionNotFound: "意見が見つかりません：",
+    opinionRemovedByModerators: "この意見はモデレーターによって削除されました",
+  },
 };

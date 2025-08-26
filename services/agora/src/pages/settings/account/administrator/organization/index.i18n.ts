@@ -16,4 +16,13 @@ export const administratorOrganizationTranslations: Record<
   fr: {
     administrator: "Administrateur",
   },
+  "zh-CN": {
+    administrator: "管理员",
+  },
+  "zh-TW": {
+    administrator: "管理員",
+  },
+  ja: {
+    administrator: "管理者",
+  },
 };

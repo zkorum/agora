@@ -32,4 +32,25 @@ export const step2SignupOnboardingTranslations: Record<
     verifyAnonymously: "Vérifier anonymement",
     verifyWithPhone: "Vérifier avec mon numéro de téléphone",
   },
+  "zh-CN": {
+    pageTitle: "Agora 旨在成为纯粹的人类",
+    description:
+      "超过一半的互联网流量来自机器人。这就是为什么我们要验证用户，这样你就是在和人辩论，而不是和机器人密谋世界霸权！",
+    verifyAnonymously: "匿名验证",
+    verifyWithPhone: "使用手机号验证",
+  },
+  "zh-TW": {
+    pageTitle: "Agora 旨在成為純粹的人類",
+    description:
+      "超過一半的互聯網流量來自機器人。這就是為什麼我們要驗證用戶，這樣你就是在和人辯論，而不是和機器人密謀世界霸權！",
+    verifyAnonymously: "匿名驗證",
+    verifyWithPhone: "使用手機號驗證",
+  },
+  ja: {
+    pageTitle: "Agora は純粋な人間を目指しています",
+    description:
+      "半分以上のインターネットトラフィックはロボットから来ています。そのため、ユーザーを検証するので、あなたは人と議論しているのではなく、ロボットが世界支配を計画しているのです！",
+    verifyAnonymously: "匿名検証",
+    verifyWithPhone: "携帯電話で検証",
+  },
 };

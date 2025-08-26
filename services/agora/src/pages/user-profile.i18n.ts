@@ -25,4 +25,22 @@ export const userProfileTranslations: Record<string, UserProfileTranslations> =
       conversationTab: "Conversation",
       opinionTab: "Opinion",
     },
+    "zh-CN": {
+      userProfile: "用户资料",
+      conversations: "对话",
+      conversationTab: "对话",
+      opinionTab: "意见",
+    },
+    "zh-TW": {
+      userProfile: "用戶資料",
+      conversations: "對話",
+      conversationTab: "對話",
+      opinionTab: "意見",
+    },
+    ja: {
+      userProfile: "ユーザープロフィール",
+      conversations: "会話",
+      conversationTab: "会話",
+      opinionTab: "意見",
+    },
   };

@@ -36,4 +36,28 @@ export const makePublicTimerDialogTranslations: Record<
     after1Month: "Après 1 mois",
     custom: "Personnalisé",
   },
+  "zh-CN": {
+    never: "从不",
+    after24Hours: "24小时后",
+    after3Days: "3天后",
+    after1Week: "1周后",
+    after1Month: "1个月后",
+    custom: "自定义",
+  },
+  "zh-TW": {
+    never: "永不",
+    after24Hours: "24小時後",
+    after3Days: "3天後",
+    after1Week: "1週後",
+    after1Month: "1個月後",
+    custom: "自定義",
+  },
+  ja: {
+    never: "決して",
+    after24Hours: "24時間後",
+    after3Days: "3日後",
+    after1Week: "1週間後",
+    after1Month: "1ヶ月後",
+    custom: "カスタム",
+  },
 };

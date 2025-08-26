@@ -16,4 +16,13 @@ export const defaultMenuBarTranslations: Record<
   fr: {
     logIn: "Log in",
   },
+  "zh-CN": {
+    logIn: "登录",
+  },
+  "zh-TW": {
+    logIn: "登入",
+  },
+  ja: {
+    logIn: "ログイン",
+  },
 };

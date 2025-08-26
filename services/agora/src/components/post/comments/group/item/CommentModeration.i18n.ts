@@ -22,4 +22,16 @@ export const commentModerationTranslations: Record<
     edit: "Modifier",
     moderatorFlaggedMessage: "Le modérateur a signalé cette réponse comme",
   },
+  "zh-CN": {
+    edit: "编辑",
+    moderatorFlaggedMessage: "版主标记此回复为",
+  },
+  "zh-TW": {
+    edit: "編輯",
+    moderatorFlaggedMessage: "版主標記此回覆為",
+  },
+  ja: {
+    edit: "編集",
+    moderatorFlaggedMessage: "モデレーターがこの回答を",
+  },
 };

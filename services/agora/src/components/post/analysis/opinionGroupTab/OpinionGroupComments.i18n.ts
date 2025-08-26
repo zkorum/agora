@@ -31,4 +31,25 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "Tous les autres",
     allOtherGroups: "Tous les autres groupes",
   },
+  "zh-CN": {
+    opinionsTitle: "意见",
+    noOpinionsMessage: "此群组没有意见。",
+    thisGroup: "此群组",
+    allOthers: "所有其他",
+    allOtherGroups: "所有其他群组",
+  },
+  "zh-TW": {
+    opinionsTitle: "意見",
+    noOpinionsMessage: "此群組沒有意見。",
+    thisGroup: "此群組",
+    allOthers: "所有其他",
+    allOtherGroups: "所有其他群組",
+  },
+  ja: {
+    opinionsTitle: "意見",
+    noOpinionsMessage: "このグループには意見がありません。",
+    thisGroup: "このグループ",
+    allOthers: "すべての他の",
+    allOtherGroups: "すべての他のグループ",
+  },
 };

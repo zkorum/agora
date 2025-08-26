@@ -23,4 +23,19 @@ export const commentActionOptionsTranslations: Record<
     opinionDeleted: "Opinion supprimée",
     failedToDeleteOpinion: "Échec de la suppression de l'opinion",
   },
+  "zh-CN": {
+    agoraOpinion: "Agora 意见",
+    opinionDeleted: "意见已删除",
+    failedToDeleteOpinion: "删除意见失败",
+  },
+  "zh-TW": {
+    agoraOpinion: "Agora 意見",
+    opinionDeleted: "意見已刪除",
+    failedToDeleteOpinion: "刪除意見失敗",
+  },
+  ja: {
+    agoraOpinion: "Agora 意見",
+    opinionDeleted: "意見が削除されました",
+    failedToDeleteOpinion: "意見の削除に失敗しました",
+  },
 };

@@ -32,4 +32,25 @@ export const voteCountVisualizerTranslations: Record<
     group3: "Groupe 3",
     group4: "Groupe 4",
   },
+  "zh-CN": {
+    votes: "票数",
+    group1: "组 1",
+    group2: "组 2",
+    group3: "组 3",
+    group4: "组 4",
+  },
+  "zh-TW": {
+    votes: "票數",
+    group1: "組 1",
+    group2: "組 2",
+    group3: "組 3",
+    group4: "組 4",
+  },
+  ja: {
+    votes: "票数",
+    group1: "グループ 1",
+    group2: "グループ 2",
+    group3: "グループ 3",
+    group4: "グループ 4",
+  },
 };

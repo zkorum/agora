@@ -17,4 +17,13 @@ export const displayLanguageSettingsTranslations: Record<
   fr: {
     pageTitle: "Langue d'affichage",
   },
+  "zh-CN": {
+    pageTitle: "显示语言",
+  },
+  "zh-TW": {
+    pageTitle: "顯示語言",
+  },
+  ja: {
+    pageTitle: "表示言語",
+  },
 };

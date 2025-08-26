@@ -19,4 +19,16 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "En savoir plus",
     viewMore: "Voir plus",
   },
+  "zh-CN": {
+    learnMore: "了解更多",
+    viewMore: "查看更多",
+  },
+  "zh-TW": {
+    learnMore: "了解更多",
+    viewMore: "查看更多",
+  },
+  ja: {
+    learnMore: "詳細を見る",
+    viewMore: "もっと見る",
+  },
 };

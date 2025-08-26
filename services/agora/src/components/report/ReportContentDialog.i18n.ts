@@ -54,4 +54,43 @@ export const reportContentDialogTranslations: Record<
     reportTypeConversation: "conversation",
     reportTypeOpinion: "opinion",
   },
+  "zh-CN": {
+    submitReportTitle: "提交报告",
+    improveCommunityText:
+      "感谢您帮助我们改善社区。这个{reportType}有什么问题？",
+    thanksForFeedbackTitle: "感谢您的反馈！",
+    flaggingReasonText:
+      "您为什么将此{reportType}标记为{selectedReason}？",
+    addExplanationLabel: "添加说明",
+    skipButton: "跳过",
+    submitButton: "提交",
+    reportTypeConversation: "对话",
+    reportTypeOpinion: "意见",
+  },
+  "zh-TW": {
+    submitReportTitle: "提交報告",
+    improveCommunityText:
+      "感謝您幫助我們改善社區。這個{reportType}有什麼問題？",
+    thanksForFeedbackTitle: "感謝您的反饋！",
+    flaggingReasonText:
+      "您為什麼將此{reportType}標記為{selectedReason}？",
+    addExplanationLabel: "新增說明",
+    skipButton: "跳過",
+    submitButton: "提交",
+    reportTypeConversation: "對話",
+    reportTypeOpinion: "意見",
+  },
+  ja: {
+    submitReportTitle: "報告を送信",
+    improveCommunityText:
+      "コミュニティの改善にご協力いただき、ありがとうございます。この{reportType}にどのような問題がありますか？",
+    thanksForFeedbackTitle: "フィードバックをありがとうございます！",
+    flaggingReasonText:
+      "なぜこの{reportType}を{selectedReason}としてフラグ付けしていますか？",
+    addExplanationLabel: "説明を追加",
+    skipButton: "スキップ",
+    submitButton: "送信",
+    reportTypeConversation: "会話",
+    reportTypeOpinion: "意見",
+  },
 };

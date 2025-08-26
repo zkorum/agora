@@ -21,4 +21,16 @@ export const consensusTabTranslations: Record<
     commonGroundTitle: "Terrain d'entente",
     noCommonGroundMessage: "Aucun terrain d'entente trouvé pour le moment.",
   },
+  "zh-CN": {
+    commonGroundTitle: "共同点",
+    noCommonGroundMessage: "尚未找到共同点。",
+  },
+  "zh-TW": {
+    commonGroundTitle: "共同點",
+    noCommonGroundMessage: "尚未找到共同點。",
+  },
+  ja: {
+    commonGroundTitle: "共通点",
+    noCommonGroundMessage: "まだ共通点が見つかりません。",
+  },
 };

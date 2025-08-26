@@ -35,4 +35,28 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "Toute personne ayant le lien peut voir la conversation, voter et contribuer des opinions",
   },
+  "zh-CN": {
+    requiresLoginTitle: "需要登录",
+    requiresLoginDescription:
+      "任何有链接的人都可以查看对话，但需要登录才能投票和贡献意见",
+    guestParticipationTitle: "访客参与",
+    guestParticipationDescription:
+      "任何有链接的人都可以查看对话、投票和贡献意见",
+  },
+  "zh-TW": {
+    requiresLoginTitle: "需要登入",
+    requiresLoginDescription:
+      "任何有連結的人都可以查看對話，但需要登入才能投票和貢獻意見",
+    guestParticipationTitle: "訪客參與",
+    guestParticipationDescription:
+      "任何有連結的人都可以查看對話、投票和貢獻意見",
+  },
+  ja: {
+    requiresLoginTitle: "ログインが必要",
+    requiresLoginDescription:
+      "リンクを持つ人は誰でも会話を閲覧できますが、投票や意見の投稿にはログインが必要です",
+    guestParticipationTitle: "ゲスト参加",
+    guestParticipationDescription:
+      "リンクを持つ人は誰でも会話を閲覧、投票、意見の投稿ができます",
+  },
 };
