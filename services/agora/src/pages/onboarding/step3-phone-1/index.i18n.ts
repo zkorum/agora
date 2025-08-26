@@ -51,7 +51,7 @@ export const phoneOnboardingTranslations: Record<
       "Ce type de numéro de téléphone n'est pas pris en charge",
     pleaseEnterPhoneNumber: "Veuillez saisir un numéro de téléphone",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "使用手机号验证",
     smsDescription: "您将收到一个6位一次性验证码",
     phoneNumberPlaceholder: "手机号",
@@ -62,7 +62,7 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported: "此手机号类型暂不支持",
     pleaseEnterPhoneNumber: "请输入手机号",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "使用手機號驗證",
     smsDescription: "您將收到一個6位一次性驗證碼",
     phoneNumberPlaceholder: "手機號",

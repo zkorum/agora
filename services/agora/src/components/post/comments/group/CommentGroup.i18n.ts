@@ -16,10 +16,10 @@ export const commentGroupTranslations: Record<
     noOpinionsMessage:
       "Il n'y a pas d'opinions dans ce filtre de conversation.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     noOpinionsMessage: "此对话筛选器中没有意见。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     noOpinionsMessage: "此對話篩選器中沒有意見。",
   },
   ja: {

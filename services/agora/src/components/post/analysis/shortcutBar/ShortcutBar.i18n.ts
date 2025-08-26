@@ -33,7 +33,7 @@ export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
       divisive: "Controversé",
       groups: "Groupes",
     },
-    "zh-CN": {
+    "zh-Hans": {
       summary: "总结",
       me: "我",
       commonGround: "共同点",
@@ -41,7 +41,7 @@ export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
       divisive: "分歧",
       groups: "群组",
     },
-    "zh-TW": {
+    "zh-Hant": {
       summary: "總結",
       me: "我",
       commonGround: "共同點",

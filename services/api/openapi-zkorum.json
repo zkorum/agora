@@ -6570,7 +6570,10 @@
                                         "enum": [
                                             "en",
                                             "es",
-                                            "fr"
+                                            "fr",
+                                            "zh-Hant",
+                                            "zh-Hans",
+                                            "ja"
                                         ]
                                     }
                                 },
@@ -6601,7 +6604,6 @@
                                                     "fr",
                                                     "en-GB",
                                                     "ar",
-                                                    "ar-fem",
                                                     "bn",
                                                     "eu",
                                                     "bg",
@@ -6634,16 +6636,17 @@
                                                     "ro",
                                                     "ru",
                                                     "sr",
-                                                    "zh-Hans",
                                                     "sk",
                                                     "sv",
                                                     "ta",
                                                     "th",
-                                                    "zh-Hant",
                                                     "tr",
                                                     "uk",
                                                     "ur",
-                                                    "vi"
+                                                    "vi",
+                                                    "zh-Hans",
+                                                    "zh-Hant",
+                                                    "ja"
                                                 ]
                                             },
                                             "minItems": 1
@@ -6653,7 +6656,10 @@
                                             "enum": [
                                                 "en",
                                                 "es",
-                                                "fr"
+                                                "fr",
+                                                "zh-Hant",
+                                                "zh-Hans",
+                                                "ja"
                                             ]
                                         }
                                     },
@@ -6687,7 +6693,6 @@
                                                 "fr",
                                                 "en-GB",
                                                 "ar",
-                                                "ar-fem",
                                                 "bn",
                                                 "eu",
                                                 "bg",
@@ -6720,16 +6725,17 @@
                                                 "ro",
                                                 "ru",
                                                 "sr",
-                                                "zh-Hans",
                                                 "sk",
                                                 "sv",
                                                 "ta",
                                                 "th",
-                                                "zh-Hant",
                                                 "tr",
                                                 "uk",
                                                 "ur",
-                                                "vi"
+                                                "vi",
+                                                "zh-Hans",
+                                                "zh-Hant",
+                                                "ja"
                                             ]
                                         },
                                         "minItems": 1
@@ -6739,7 +6745,10 @@
                                         "enum": [
                                             "en",
                                             "es",
-                                            "fr"
+                                            "fr",
+                                            "zh-Hant",
+                                            "zh-Hans",
+                                            "ja"
                                         ]
                                     }
                                 },

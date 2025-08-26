@@ -98,7 +98,7 @@ export const passportOnboardingTranslations: Record<
     syncHiccup:
       "Oups ! Problème de synchronisation détecté. Nous avons actualisé votre code QR—essayez de le scanner à nouveau !",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "拥有您的隐私",
     description:
       "RariMe 是一个 ZK 驱动的身份钱包，将您的护照转换为匿名数字 ID，存储在您的设备上，这样您就可以证明您是一个独特的、没有与任何人分享任何个人数据的人。",
@@ -115,11 +115,12 @@ export const passportOnboardingTranslations: Record<
     preferPhoneVerification: "我更喜欢使用手机号验证",
     verificationSuccessful: "验证成功 🎉",
     verificationFailed: "验证尝试失败。请重试。",
-    passportAlreadyLinked: "此护照已与另一个 RariMe 账户关联。请尝试使用不同的护照。",
+    passportAlreadyLinked:
+      "此护照已与另一个 RariMe 账户关联。请尝试使用不同的护照。",
     unexpectedError: "哎呀！意外错误——请刷新页面",
     syncHiccup: "哎呀！同步问题检测到。我们已经刷新了您的二维码——请再次扫描！",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "擁有您的隱私",
     description:
       "RariMe 是一個 ZK 驅動的身份錢包，將您的護照轉換為匿名數字 ID，存儲在您的設備上，這樣您就可以證明您是一個獨特的、沒有與任何人分享任何個人數據的人。",
@@ -136,7 +137,8 @@ export const passportOnboardingTranslations: Record<
     preferPhoneVerification: "我更喜歡使用手機號驗證",
     verificationSuccessful: "驗證成功 🎉",
     verificationFailed: "驗證嘗試失敗。請重試。",
-    passportAlreadyLinked: "此護照已與另一個 RariMe 賬戶關聯。請嘗試使用不同的護照。",
+    passportAlreadyLinked:
+      "此護照已與另一個 RariMe 賬戶關聯。請嘗試使用不同的護照。",
     unexpectedError: "哎呀！意外錯誤——請刷新頁面",
     syncHiccup: "哎呀！同步問題檢測到。我們已經刷新了您的二維碼——請再次掃描！",
   },
@@ -150,7 +152,8 @@ export const passportOnboardingTranslations: Record<
     scanQrCode: "RariMe で QR コードをスキャンして身元を確認",
     failedToGenerateLink: "検証リンクの生成に失敗",
     loadingVerificationLink: "検証リンクを読み込んでいます",
-    openLinkOnMobile: "または、以下のリンクをモバイルブラウザで開いてください：",
+    openLinkOnMobile:
+      "または、以下のリンクをモバイルブラウザで開いてください：",
     copy: "コピー",
     waitingForVerification: "検証待ち...",
     verify: "検証",
@@ -159,7 +162,8 @@ export const passportOnboardingTranslations: Record<
     verificationFailed: "検証試行に失敗しました。再試行してください。",
     passportAlreadyLinked:
       "このパスポートはすでに別の RariMe アカウントにリンクされています。別のパスポートを試してください。",
-    unexpectedError: "おっと！予期しないエラーが発生しました—ページを更新してください",
+    unexpectedError:
+      "おっと！予期しないエラーが発生しました—ページを更新してください",
     syncHiccup:
       "おっと！同期の問題が検出されました。QR コードを更新しました—再スキャンしてください！",
   },

@@ -22,11 +22,11 @@ export const commentSectionTranslations: Record<
     opinionRemovedByModerators:
       "Cette opinion a été supprimée par les modérateurs",
   },
-  "zh-CN": {
+  "zh-Hans": {
     opinionNotFound: "未找到意见：",
     opinionRemovedByModerators: "此意见已被版主移除",
   },
-  "zh-TW": {
+  "zh-Hant": {
     opinionNotFound: "未找到意見：",
     opinionRemovedByModerators: "此意見已被版主移除",
   },

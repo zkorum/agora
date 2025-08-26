@@ -12,10 +12,10 @@ export const topicPageTranslations: Record<string, TopicPageTranslations> = {
   fr: {
     loadPostsHere: "Charger les publications ici",
   },
-  "zh-CN": {
+  "zh-Hans": {
     loadPostsHere: "加载帖子",
   },
-  "zh-TW": {
+  "zh-Hant": {
     loadPostsHere: "載入帖子",
   },
   ja: {

@@ -17,10 +17,10 @@ export const deleteOrganizationFormTranslations: Record<
     noOrganizationsMessage:
       "Aucune organisation n'est enregistrée dans le système",
   },
-  "zh-CN": {
+  "zh-Hans": {
     noOrganizationsMessage: "系统中没有注册组织",
   },
-  "zh-TW": {
+  "zh-Hant": {
     noOrganizationsMessage: "系統中沒有註冊組織",
   },
   ja: {

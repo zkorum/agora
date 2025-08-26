@@ -17,10 +17,10 @@ export const spokenLanguagesSettingsTranslations: Record<
   fr: {
     pageTitle: "Langues parlées",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "口语语言",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "口語語言",
   },
   ja: {

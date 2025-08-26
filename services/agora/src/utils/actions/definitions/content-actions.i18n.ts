@@ -40,7 +40,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     moderationHistory: "Historique de Modération",
     embedLink: "Copier le Lien d'Intégration",
   },
-  "zh-CN": {
+  "zh-Hans": {
     report: "举报",
     muteUser: "屏蔽用户",
     delete: "删除",
@@ -50,7 +50,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     moderationHistory: "审核历史",
     embedLink: "复制嵌入链接",
   },
-  "zh-TW": {
+  "zh-Hant": {
     report: "舉報",
     muteUser: "屏蔽用戶",
     delete: "刪除",

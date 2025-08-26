@@ -16,11 +16,11 @@ export const mutedUsersTranslations: Record<string, MutedUsersTranslations> = {
     title: "Utilisateurs masqués",
     emptyMessage: "Vous n'avez pas d'utilisateurs masqués",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "已静音用户",
     emptyMessage: "您没有已静音的用户",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "已靜音用戶",
     emptyMessage: "您沒有已靜音的用戶",
   },

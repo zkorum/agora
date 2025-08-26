@@ -34,13 +34,13 @@ export const postTypeDialogTranslations: Record<
     importFromPolisDescription:
       "Importer et continuer une conversation Polis existante.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     newConversation: "新对话",
     newConversationDescription: "创建一个新的话题进行讨论。",
     importFromPolis: "从 Polis 导入",
     importFromPolisDescription: "导入并继续一个现有的 Polis 对话。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     newConversation: "新對話",
     newConversationDescription: "創建一個新的话题進行討論。",
     importFromPolis: "從 Polis 導入",

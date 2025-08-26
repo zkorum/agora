@@ -39,7 +39,7 @@ export const commentActionBarTranslations: Record<
     passAriaLabel: "Passer le commentaire. Passes actuels:",
     agreeAriaLabel: "D'accord avec le commentaire. Accords actuels:",
   },
-  "zh-CN": {
+  "zh-Hans": {
     disagree: "不同意",
     pass: "跳过",
     agree: "同意",
@@ -48,7 +48,7 @@ export const commentActionBarTranslations: Record<
     passAriaLabel: "跳过此评论。当前跳过数：",
     agreeAriaLabel: "同意此评论。当前同意数：",
   },
-  "zh-TW": {
+  "zh-Hant": {
     disagree: "不同意",
     pass: "跳過",
     agree: "同意",

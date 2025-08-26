@@ -22,11 +22,11 @@ export const divisiveTabTranslations: Record<
     noDivisiveOpinionsMessage:
       "Aucune opinion controversée trouvée pour le moment.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     divisiveTitle: "分歧",
     noDivisiveOpinionsMessage: "尚未找到分歧意见。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     divisiveTitle: "分歧",
     noDivisiveOpinionsMessage: "尚未找到分歧意見。",
   },

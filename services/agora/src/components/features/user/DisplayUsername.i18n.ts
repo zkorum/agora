@@ -17,10 +17,10 @@ export const displayUsernameTranslations: Record<
   fr: {
     guest: "Invité",
   },
-  "zh-CN": {
+  "zh-Hans": {
     guest: "访客",
   },
-  "zh-TW": {
+  "zh-Hant": {
     guest: "訪客",
   },
   ja: {

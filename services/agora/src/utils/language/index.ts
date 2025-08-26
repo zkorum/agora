@@ -5,9 +5,10 @@ import type {
   SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
 import {
+  parseDisplayLanguage,
+  parseSpokenLanguage,
   SupportedSpokenLanguageMetadataList,
   ZodSupportedDisplayLanguageCodes,
-  ZodParseBrowserLanguage,
 } from "src/shared/languages";
 
 export function getLanguageByCode(code: string): LanguageMetadata | undefined {
@@ -37,7 +38,13 @@ export function parseBrowserLanguage({
   displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
 } {
-  return ZodParseBrowserLanguage.parse(browserLang);
+  const displayLanguage = parseDisplayLanguage(browserLang);
+  const spokenLanguage = parseSpokenLanguage(browserLang);
+
+  return {
+    displayLanguage,
+    spokenLanguages: [spokenLanguage],
+  };
 }
 
 /**

@@ -37,25 +37,29 @@ export const step5ExperienceTranslations: Record<
     braveSpaceDescription:
       "Le contenu signalé comme antisocial m'est montré avec un avertissement.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "选择您希望如何体验 Agora",
     safeSpaceTitle: "安全空间",
-    safeSpaceDescription: "被标记为反社会（挑衅或不宽容）的内容会被从我的 feed 中删除。如果我想查看被删除的内容，我可以检查帖子的 moderation 历史。",
+    safeSpaceDescription:
+      "被标记为反社会（挑衅或不宽容）的内容会被从我的 feed 中删除。如果我想查看被删除的内容，我可以检查帖子的 moderation 历史。",
     braveSpaceTitle: "勇敢空间",
     braveSpaceDescription: "被标记为反社会的内容会显示给我，并带有警告。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "選擇您希望如何體驗 Agora",
     safeSpaceTitle: "安全空間",
-    safeSpaceDescription: "被標記為反社會（挑釁或不寬容）的內容會被從我的 feed 中刪除。如果我想查看被刪除的內容，我可以檢查帖子的 moderation 歷史。",
+    safeSpaceDescription:
+      "被標記為反社會（挑釁或不寬容）的內容會被從我的 feed 中刪除。如果我想查看被刪除的內容，我可以檢查帖子的 moderation 歷史。",
     braveSpaceTitle: "勇敢空間",
     braveSpaceDescription: "被標記為反社會的內容會顯示給我，並帶有警告。",
   },
   ja: {
     title: "Agora をどのように体験したいですか",
     safeSpaceTitle: "安全な空間",
-    safeSpaceDescription: "反社会的（挑発や不寛容）とフラグ付けされたコンテンツは、フィードから削除されます。削除されたコンテンツを確認したい場合は、投稿の moderation 履歴を確認できます。",
+    safeSpaceDescription:
+      "反社会的（挑発や不寛容）とフラグ付けされたコンテンツは、フィードから削除されます。削除されたコンテンツを確認したい場合は、投稿の moderation 履歴を確認できます。",
     braveSpaceTitle: "勇敢な空間",
-    braveSpaceDescription: "反社会的とフラグ付けされたコンテンツは、警告とともに表示されます。",
+    braveSpaceDescription:
+      "反社会的とフラグ付けされたコンテンツは、警告とともに表示されます。",
   },
 };

@@ -19,11 +19,11 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "En savoir plus",
     viewMore: "Voir plus",
   },
-  "zh-CN": {
+  "zh-Hans": {
     learnMore: "了解更多",
     viewMore: "查看更多",
   },
-  "zh-TW": {
+  "zh-Hant": {
     learnMore: "了解更多",
     viewMore: "查看更多",
   },

@@ -17,10 +17,10 @@ export const moderationTimeTranslations: Record<
   fr: {
     edited: "(modifié)",
   },
-  "zh-CN": {
+  "zh-Hans": {
     edited: "(已编辑)",
   },
-  "zh-TW": {
+  "zh-Hant": {
     edited: "(已編輯)",
   },
   ja: {

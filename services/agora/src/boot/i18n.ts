@@ -2,6 +2,7 @@ import { defineBoot } from "#q-app/wrappers";
 import { createI18n } from "vue-i18n";
 
 import messages from "src/i18n";
+import { parseDisplayLanguage } from "src/shared/languages";
 
 export type MessageLanguages = keyof typeof messages;
 // Type-define 'en-US' as the master schema for the resource
@@ -23,14 +24,9 @@ declare module "vue-i18n" {
 
 // Detect browser language
 function detectBrowserLanguage(): MessageLanguages {
-  const browserLang = navigator.language.toLowerCase();
-
-  // Map browser language codes to our supported languages
-  if (browserLang.startsWith("es")) return "es";
-  if (browserLang.startsWith("fr")) return "fr";
-
-  // Default to English
-  return "en";
+  const browserLang = navigator.language;
+  const displayLanguage = parseDisplayLanguage(browserLang);
+  return displayLanguage;
 }
 
 export default defineBoot(({ app }) => {
@@ -39,9 +35,15 @@ export default defineBoot(({ app }) => {
   const defaultLocale =
     (storedLocale as MessageLanguages) || detectBrowserLanguage();
 
+  const fallbackLocale = {
+    "zh-Hant": ["zh-Hans", "en"],
+    "zh-Hans": ["zh-Hant", "en"],
+    default: ["en"],
+  };
+
   const i18n = createI18n<{ message: MessageSchema }, MessageLanguages>({
     locale: defaultLocale,
-    fallbackLocale: "en",
+    fallbackLocale,
     legacy: false,
     messages,
   });

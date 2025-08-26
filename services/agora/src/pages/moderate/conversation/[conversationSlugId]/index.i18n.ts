@@ -40,7 +40,7 @@ export const conversationModerationTranslations: Record<
     moderate: "Modérer",
     withdraw: "Retirer",
   },
-  "zh-CN": {
+  "zh-Hans": {
     moderateConversation: "管理对话",
     action: "操作",
     reason: "原因",
@@ -49,7 +49,7 @@ export const conversationModerationTranslations: Record<
     moderate: "管理",
     withdraw: "撤回",
   },
-  "zh-TW": {
+  "zh-Hant": {
     moderateConversation: "管理對話",
     action: "操作",
     reason: "原因",

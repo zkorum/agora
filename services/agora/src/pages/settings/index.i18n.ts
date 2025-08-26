@@ -67,7 +67,7 @@ export const settingsTranslations: Record<
     accountDeletionFailed:
       "Oups ! Échec de la suppression du compte. Veuillez réessayer",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "设置",
     deleteAccount: "删除账户",
     deleteGuestAccount: "删除访客账户",
@@ -82,7 +82,7 @@ export const settingsTranslations: Record<
     accountDeleted: "账户已删除",
     accountDeletionFailed: "哎呀！账户删除失败，请重试",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "設定",
     deleteAccount: "刪除帳戶",
     deleteGuestAccount: "刪除訪客帳戶",
@@ -110,6 +110,7 @@ export const settingsTranslations: Record<
     moderatorOrganization: "モデレーター - 組織",
     componentTesting: "🔧 コンポーネントテスト",
     accountDeleted: "アカウントが削除されました",
-    accountDeletionFailed: "おっと！アカウントの削除に失敗しました。もう一度お試しください",
+    accountDeletionFailed:
+      "おっと！アカウントの削除に失敗しました。もう一度お試しください",
   },
 };

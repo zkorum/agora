@@ -32,14 +32,14 @@ export const commentSortingSelectorTranslations: Record<
     moderationHistory: "Historique de modération",
     hidden: "Masqué",
   },
-  "zh-CN": {
+  "zh-Hans": {
     filterTitle: "按以下方式筛选回复：",
     discover: "发现",
     new: "最新",
     moderationHistory: "审核历史",
     hidden: "已隐藏",
   },
-  "zh-TW": {
+  "zh-Hant": {
     filterTitle: "按以下方式篩選回覆：",
     discover: "發現",
     new: "最新",

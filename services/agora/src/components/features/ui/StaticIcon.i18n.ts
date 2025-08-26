@@ -12,10 +12,10 @@ export const staticIconTranslations: Record<string, StaticIconTranslations> = {
   fr: {
     stars: "Étoiles",
   },
-  "zh-CN": {
+  "zh-Hans": {
     stars: "星星",
   },
-  "zh-TW": {
+  "zh-Hant": {
     stars: "星星",
   },
   ja: {

@@ -35,7 +35,7 @@ export const notificationTranslations: Record<
     onePersonVoted: "1 personne a voté sur votre opinion :",
     peopleVoted: "personnes ont voté sur votre opinion :",
   },
-  "zh-CN": {
+  "zh-Hans": {
     notifications: "通知",
     endOfFeed: "通知列表结束",
     noNotifications: "您没有通知",
@@ -43,7 +43,7 @@ export const notificationTranslations: Record<
     onePersonVoted: "1 人为您的意见投票：",
     peopleVoted: "人为您的意见投票：",
   },
-  "zh-TW": {
+  "zh-Hant": {
     notifications: "通知",
     endOfFeed: "通知列表結束",
     noNotifications: "您沒有通知",
