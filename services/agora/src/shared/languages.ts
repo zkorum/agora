@@ -40,10 +40,22 @@ export const ZodAllLanguageCodes = z.enum([
     "ro",
     "ru",
     "sr",
+<<<<<<< Updated upstream
+||||||| Stash base
+    "zh-CN",
+=======
+    "zh-Hans",
+>>>>>>> Stashed changes
     "sk",
     "sv",
     "ta",
     "th",
+<<<<<<< Updated upstream
+||||||| Stash base
+    "zh-TW",
+=======
+    "zh-Hant",
+>>>>>>> Stashed changes
     "tr",
     "uk",
     "ur",
@@ -59,6 +71,7 @@ export const ZodSupportedSpokenLanguageCodes = ZodAllLanguageCodes;
 export type SupportedSpokenLanguageCodes = AllLanguageCodes;
 
 // Languages that have UI translations available
+<<<<<<< Updated upstream
 export const ZodSupportedDisplayLanguageCodes = z.enum([
     "en",
     "es",
@@ -67,6 +80,11 @@ export const ZodSupportedDisplayLanguageCodes = z.enum([
     "zh-Hans",
     "ja",
 ]);
+||||||| Stash base
+export const ZodSupportedDisplayLanguageCodes = z.enum(["en", "es", "fr", "zh-CN", "zh-TW", "ja"]);
+=======
+export const ZodSupportedDisplayLanguageCodes = z.enum(["en", "es", "fr"]);
+>>>>>>> Stashed changes
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
 >;
@@ -109,6 +127,7 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         englishName: "French",
         displaySupported: true,
     },
+<<<<<<< Updated upstream
     {
         code: "zh-Hans",
         name: "简体中文",
@@ -129,6 +148,31 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         englishName: "Japanese",
         displaySupported: true,
     },
+||||||| Stash base
+    {
+        code: "zh-CN",
+        name: "简体中文",
+        englishName: "Simplified Chinese (China)",
+        region: "CN",
+        displaySupported: true,
+    },
+    {
+        code: "zh-TW",
+        name: "繁體中文",
+        englishName: "Traditional Chinese (Taiwan)",
+        region: "TW",
+        displaySupported: false,
+    },
+    {
+        code: "ja",
+        name: "日本語",
+        englishName: "Japanese",
+        displaySupported: true,
+    },
+
+=======
+
+>>>>>>> Stashed changes
     // Additional languages (for spoken languages only)
     {
         code: "ar",
@@ -257,6 +301,12 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
+        code: "ja",
+        name: "日本語",
+        englishName: "Japanese",
+        displaySupported: false,
+    },
+    {
         code: "kn",
         name: "ಕನ್ನಡ",
         englishName: "Kannada",
@@ -323,6 +373,13 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
+        code: "zh-Hans",
+        name: "简体中文",
+        englishName: "Simplified Chinese",
+        script: "Hans",
+        displaySupported: false,
+    },
+    {
         code: "sk",
         name: "slovenčina",
         englishName: "Slovak",
@@ -344,6 +401,13 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "th",
         name: "ไทย",
         englishName: "Thai",
+        displaySupported: false,
+    },
+    {
+        code: "zh-Hant",
+        name: "繁體中文",
+        englishName: "Traditional Chinese",
+        script: "Hant",
         displaySupported: false,
     },
     {
