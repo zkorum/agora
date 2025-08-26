@@ -42,7 +42,7 @@ export const createOrganizationFormTranslations: Record<
     websiteUrlLabel: "URL du site web",
     addOrganizationButton: "Ajouter une Organisation",
   },
-  "zh-CN": {
+  "zh-Hans": {
     nameLabel: "名称",
     descriptionLabel: "描述",
     imagePathLabel: "图片路径（文件名或 https 路径）",
@@ -52,7 +52,7 @@ export const createOrganizationFormTranslations: Record<
     websiteUrlLabel: "网站网址",
     addOrganizationButton: "添加组织",
   },
-  "zh-TW": {
+  "zh-Hant": {
     nameLabel: "名稱",
     descriptionLabel: "描述",
     imagePathLabel: "圖片路徑（檔案名稱或 https 路徑）",

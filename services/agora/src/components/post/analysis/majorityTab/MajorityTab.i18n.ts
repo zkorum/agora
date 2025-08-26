@@ -22,11 +22,11 @@ export const majorityTabTranslations: Record<
     noMajorityOpinionsMessage:
       "Aucune opinion majoritaire trouvée pour le moment.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     majorityTitle: "多数",
     noMajorityOpinionsMessage: "尚未找到多数意见。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     majorityTitle: "多數",
     noMajorityOpinionsMessage: "尚未找到多數意見。",
   },

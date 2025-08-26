@@ -23,12 +23,12 @@ export const commentActionOptionsTranslations: Record<
     opinionDeleted: "Opinion supprimée",
     failedToDeleteOpinion: "Échec de la suppression de l'opinion",
   },
-  "zh-CN": {
+  "zh-Hans": {
     agoraOpinion: "Agora 意见",
     opinionDeleted: "意见已删除",
     failedToDeleteOpinion: "删除意见失败",
   },
-  "zh-TW": {
+  "zh-Hant": {
     agoraOpinion: "Agora 意見",
     opinionDeleted: "意見已刪除",
     failedToDeleteOpinion: "刪除意見失敗",

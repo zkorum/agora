@@ -71,7 +71,7 @@ export const userReportsViewerTranslations: Record<
     invalidSlugIdParam: "Paramètre d'ID slug invalide",
     unknownReportType: "Type de rapport inconnu",
   },
-  "zh-CN": {
+  "zh-Hans": {
     userReportsViewer: "用户报告查看器",
     openConversation: "打开对话",
     openOpinion: "打开意见",
@@ -88,7 +88,7 @@ export const userReportsViewerTranslations: Record<
     invalidSlugIdParam: "无效的 slug ID 参数",
     unknownReportType: "未知报告类型",
   },
-  "zh-TW": {
+  "zh-Hant": {
     userReportsViewer: "用戶報告查看器",
     openConversation: "打開對話",
     openOpinion: "打開意見",

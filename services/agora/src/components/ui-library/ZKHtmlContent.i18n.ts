@@ -19,11 +19,11 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "Aperçu du contenu",
     postContent: "Contenu du post",
   },
-  "zh-CN": {
+  "zh-Hans": {
     postContentPreview: "帖子内容预览",
     postContent: "帖子内容",
   },
-  "zh-TW": {
+  "zh-Hant": {
     postContentPreview: "帖子內容預覽",
     postContent: "帖子內容",
   },

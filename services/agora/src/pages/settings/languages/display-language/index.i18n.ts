@@ -17,10 +17,10 @@ export const displayLanguageSettingsTranslations: Record<
   fr: {
     pageTitle: "Langue d'affichage",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "显示语言",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "顯示語言",
   },
   ja: {

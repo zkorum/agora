@@ -16,10 +16,10 @@ export const postActionBarTranslations: Record<
   fr: {
     share: "Partager",
   },
-  "zh-CN": {
+  "zh-Hans": {
     share: "分享",
   },
-  "zh-TW": {
+  "zh-Hant": {
     share: "分享",
   },
   ja: {

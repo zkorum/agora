@@ -17,10 +17,10 @@ export const dialogStepLayoutTranslations: Record<
   fr: {
     welcomeTitle: "Bienvenue sur Agora !",
   },
-  "zh-CN": {
+  "zh-Hans": {
     welcomeTitle: "欢迎来到 Agora！",
   },
-  "zh-TW": {
+  "zh-Hant": {
     welcomeTitle: "歡迎來到 Agora！",
   },
   ja: {

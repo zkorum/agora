@@ -23,12 +23,12 @@ export const topicSelectionStepTranslations: Record<
     backButton: "Retour",
     closeButton: "Fermer",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "选择您感兴趣的话题开始使用",
     backButton: "返回",
     closeButton: "关闭",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "選擇您感興趣的話題開始使用",
     backButton: "返回",
     closeButton: "關閉",

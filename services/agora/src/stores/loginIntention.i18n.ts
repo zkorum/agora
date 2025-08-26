@@ -38,4 +38,27 @@ export const welcomeTranslations: Record<
       "Un compte utilisateur est requis pour signaler du contenu.",
     voting: "Vous serez redirigé vers cette conversation à votre retour.",
   },
+  "zh-Hant": {
+    newOpinion: "您撰寫的意見草稿將在您返回時恢復。",
+    newConversation: "您撰寫的對話草稿將在您返回時恢復。",
+    agreement: "當您返回時，將回到此意見。",
+    reportUserContent: "檢舉用戶內容需要一個用戶帳號。",
+    voting: "當您返回時，將回到此對話。",
+  },
+  "zh-Hans": {
+    newOpinion: "您撰写的意见草稿将在您返回时恢复。",
+    newConversation: "您撰写的对话草稿将在您返回时恢复。",
+    agreement: "当您返回时，将回到此意见。",
+    reportUserContent: "举报用户内容需要一个用户账号。",
+    voting: "当您返回时，将回到此对话。",
+  },
+  ja: {
+    newOpinion: "お書きいただいたご意見の下書きは、戻られた際に復元されます。",
+    newConversation:
+      "お書きいただいた会話の下書きは、戻られた際に復元されます。",
+    agreement: "戻られた際に、このご意見に戻ります。",
+    reportUserContent:
+      "ユーザーコンテンツを報告するには、アカウントが必要です。",
+    voting: "戻られた際に、この会話に戻ります。",
+  },
 };

@@ -27,13 +27,13 @@ export const consensusItemTranslations: Record<
     disagree: "Pas d'accord",
     noVote: "Pas de vote",
   },
-  "zh-CN": {
+  "zh-Hans": {
     agree: "同意",
     pass: "通过",
     disagree: "不同意",
     noVote: "不投票",
   },
-  "zh-TW": {
+  "zh-Hant": {
     agree: "同意",
     pass: "通過",
     disagree: "不同意",

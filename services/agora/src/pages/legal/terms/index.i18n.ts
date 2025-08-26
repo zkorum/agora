@@ -23,12 +23,12 @@ export const termsOfServiceTranslations: Record<
     referTo: "Consultez",
     externalPageLink: "cette page externe (en cours)",
   },
-  "zh-CN": {
+  "zh-Hans": {
     termsOfService: "服务条款",
     referTo: "请参阅",
     externalPageLink: "此外部页面（开发中）",
   },
-  "zh-TW": {
+  "zh-Hant": {
     termsOfService: "服務條款",
     referTo: "請參閱",
     externalPageLink: "此外部頁面（開發中）",

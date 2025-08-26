@@ -36,7 +36,7 @@ export const makePublicTimerDialogTranslations: Record<
     after1Month: "Après 1 mois",
     custom: "Personnalisé",
   },
-  "zh-CN": {
+  "zh-Hans": {
     never: "从不",
     after24Hours: "24小时后",
     after3Days: "3天后",
@@ -44,7 +44,7 @@ export const makePublicTimerDialogTranslations: Record<
     after1Month: "1个月后",
     custom: "自定义",
   },
-  "zh-TW": {
+  "zh-Hant": {
     never: "永不",
     after24Hours: "24小時後",
     after3Days: "3天後",

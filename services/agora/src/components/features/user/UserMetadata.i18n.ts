@@ -16,10 +16,10 @@ export const userMetadataTranslations: Record<
   fr: {
     idVerified: "ID vérifié",
   },
-  "zh-CN": {
+  "zh-Hans": {
     idVerified: "ID 已验证",
   },
-  "zh-TW": {
+  "zh-Hant": {
     idVerified: "ID 已驗證",
   },
   ja: {

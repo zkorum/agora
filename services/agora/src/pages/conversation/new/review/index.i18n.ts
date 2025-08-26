@@ -60,29 +60,29 @@ export const conversationReviewTranslations: Record<
     errorCreatingConversation:
       "Erreur lors de la tentative de création d'une nouvelle conversation",
   },
-  "zh-CN": {
+  "zh-Hans": {
     posting: "发布中...",
     post: "发布",
     addSeedOpinions: "添加种子意见",
-    seedOpinionsDescription: "建议在不同观点范围内播种8到15个意见。这会对早期参与产生强大的影响。",
+    seedOpinionsDescription:
+      "建议在不同观点范围内播种8到15个意见。这会对早期参与产生强大的影响。",
     add: "添加",
     inputTextPlaceholder: "输入文本",
     opinionCannotBeEmpty: "意见不能为空",
-    opinionExceedsLimit:
-      "意见超过 {limit} 字符限制 ({count}/{limit})",
+    opinionExceedsLimit: "意见超过 {limit} 字符限制 ({count}/{limit})",
     opinionDuplicate: "意见重复",
     errorCreatingConversation: "创建新对话时出错",
   },
-  "zh-TW": {
+  "zh-Hant": {
     posting: "發布中...",
     post: "發布",
     addSeedOpinions: "添加種子意見",
-    seedOpinionsDescription: "建議在不同觀點範圍內播種8到15個意見。這會對早期參與產生強大的影響。",
+    seedOpinionsDescription:
+      "建議在不同觀點範圍內播種8到15個意見。這會對早期參與產生強大的影響。",
     add: "添加",
     inputTextPlaceholder: "輸入文本",
     opinionCannotBeEmpty: "意見不能為空",
-    opinionExceedsLimit:
-      "意見超過 {limit} 字符限制 ({count}/{limit})",
+    opinionExceedsLimit: "意見超過 {limit} 字符限制 ({count}/{limit})",
     opinionDuplicate: "意見重複",
     errorCreatingConversation: "創建新對話時出錯",
   },
@@ -90,7 +90,8 @@ export const conversationReviewTranslations: Record<
     posting: "投稿中...",
     post: "投稿",
     addSeedOpinions: "種子意見を追加",
-    seedOpinionsDescription: "異なる視点の範囲で8から15個の意見を播種することをお勧めします。これは早期参加に強力な影響を与えます。",
+    seedOpinionsDescription:
+      "異なる視点の範囲で8から15個の意見を播種することをお勧めします。これは早期参加に強力な影響を与えます。",
     add: "追加",
     inputTextPlaceholder: "テキストを入力",
     opinionCannotBeEmpty: "意見を入力してください",

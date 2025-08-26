@@ -43,7 +43,7 @@ export const polisUrlInputTranslations: Record<
     termsOfUse: "Conditions d'utilisation",
     ccLicense: "CC BY 4.0",
   },
-  "zh-CN": {
+  "zh-Hans": {
     importTitle: "从 Polis 导入对话",
     description: "粘贴一个 Polis URL 以导入对话。",
     validUrlExamples: "有效 URL 示例：",
@@ -52,7 +52,7 @@ export const polisUrlInputTranslations: Record<
     termsOfUse: "使用条款",
     ccLicense: "CC BY 4.0",
   },
-  "zh-TW": {
+  "zh-Hant": {
     importTitle: "從 Polis 導入對話",
     description: "粘貼一個 Polis URL 以導入對話。",
     validUrlExamples: "有效 URL 示例：",
@@ -63,7 +63,8 @@ export const polisUrlInputTranslations: Record<
   },
   ja: {
     importTitle: "Polis から会話をインポート",
-    description: "会話をインポートするために Polis の URL を貼り付けてください。",
+    description:
+      "会話をインポートするために Polis の URL を貼り付けてください。",
     validUrlExamples: "有効な URL の例：",
     urlPlaceholder: "例：https://pol.is/xxxxx",
     polisTerms: "Pol.is の利用規約",

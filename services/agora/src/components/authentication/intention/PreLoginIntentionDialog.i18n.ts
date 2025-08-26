@@ -29,13 +29,13 @@ export const preLoginIntentionDialogTranslations: Record<
     labelOk: "Se Connecter",
     labelCancel: "Annuler",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "登录 Agora",
     message: "登录以参与讨论",
     labelOk: "登录",
     labelCancel: "取消",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "登入 Agora",
     message: "登入以參與討論",
     labelOk: "登入",

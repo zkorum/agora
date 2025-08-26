@@ -29,13 +29,13 @@ export const loginOnboardingTranslations: Record<
     loginWithRariMe: "Se connecter avec RariMe",
     loginWithPhone: "Se connecter avec mon numéro de téléphone",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "登录",
     description: "请选择登录方式。",
     loginWithRariMe: "使用 RariMe 登录",
     loginWithPhone: "使用手机号登录",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "登入",
     description: "請選擇登入方式。",
     loginWithRariMe: "使用 RariMe 登入",

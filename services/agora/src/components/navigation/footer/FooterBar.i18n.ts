@@ -25,12 +25,12 @@ export const footerBarTranslations: Record<
     explore: "Explorer",
     dings: "Dings",
   },
-  "zh-CN": {
+  "zh-Hans": {
     home: "首页",
     explore: "探索",
     dings: "Dings",
   },
-  "zh-TW": {
+  "zh-Hant": {
     home: "首頁",
     explore: "探索",
     dings: "Dings",

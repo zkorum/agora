@@ -20,11 +20,11 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "Enregistrer comme brouillon",
     discard: "Rejeter",
   },
-  "zh-CN": {
+  "zh-Hans": {
     saveAsDraft: "保存为草稿",
     discard: "丢弃",
   },
-  "zh-TW": {
+  "zh-Hant": {
     saveAsDraft: "保存為草稿",
     discard: "丟棄",
   },

@@ -51,7 +51,7 @@ export const spokenLanguageSelectorTranslations: Record<
       "Échec de la sauvegarde des préférences linguistiques",
     failedToLoadLanguages: "Échec du chargement des préférences linguistiques",
   },
-  "zh-CN": {
+  "zh-Hans": {
     selectedLanguages: "已选择的语言",
     addMoreLanguages: "添加更多语言",
     selectLanguages: "选择语言",
@@ -62,7 +62,7 @@ export const spokenLanguageSelectorTranslations: Record<
     failedToSaveLanguages: "保存语言偏好设置失败",
     failedToLoadLanguages: "加载语言偏好设置失败",
   },
-  "zh-TW": {
+  "zh-Hant": {
     selectedLanguages: "已選擇的語言",
     addMoreLanguages: "新增更多語言",
     selectLanguages: "選擇語言",

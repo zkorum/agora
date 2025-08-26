@@ -39,7 +39,7 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "Aucun groupe",
     viewOriginal: "Voir l'opinion originale",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "意见分析",
     agree: "同意",
     pass: "通过",
@@ -48,7 +48,7 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "没有组",
     viewOriginal: "查看原始意见",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "意見分析",
     agree: "同意",
     pass: "通過",

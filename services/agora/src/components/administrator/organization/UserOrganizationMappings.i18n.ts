@@ -29,13 +29,13 @@ export const userOrganizationMappingsTranslations: Record<
     removeUserOrganizationMappingButton:
       "Supprimer le mappage utilisateur-organisation",
   },
-  "zh-CN": {
+  "zh-Hans": {
     usernameLabel: "用户名",
     fetchButton: "获取",
     noOrganizationsMessage: "用户不属于任何组织",
     removeUserOrganizationMappingButton: "移除用户组织映射",
   },
-  "zh-TW": {
+  "zh-Hant": {
     usernameLabel: "用戶名",
     fetchButton: "獲取",
     noOrganizationsMessage: "用戶不屬於任何組織",
