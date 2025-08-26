@@ -2478,22 +2478,10 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
     Ro: 'ro',
     Ru: 'ru',
     Sr: 'sr',
-<<<<<<< Updated upstream
-||||||| Stash base
-    ZhTw: 'zh-TW',
-=======
-    ZhHans: 'zh-Hans',
->>>>>>> Stashed changes
     Sk: 'sk',
     Sv: 'sv',
     Ta: 'ta',
     Th: 'th',
-<<<<<<< Updated upstream
-||||||| Stash base
-    ZhCn: 'zh-CN',
-=======
-    ZhHant: 'zh-Hant',
->>>>>>> Stashed changes
     Tr: 'tr',
     Uk: 'uk',
     Ur: 'ur',
@@ -2507,19 +2495,10 @@ export type ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum = 
 export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = {
     En: 'en',
     Es: 'es',
-<<<<<<< Updated upstream
     Fr: 'fr',
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja'
-||||||| Stash base
-    Fr: 'fr',
-    ZhTw: 'zh-TW',
-    ZhCn: 'zh-CN',
-    Ja: 'ja'
-=======
-    Fr: 'fr'
->>>>>>> Stashed changes
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
