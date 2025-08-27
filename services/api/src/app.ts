@@ -129,21 +129,38 @@ Input Format:
 
 Rules:
 - Use conversationTitle and conversationBody as context.
+- Detect sarcasm/irony; avoid literal misreadings.
 - For each cluster independently:
     - representativeAgree = views most members support.
     - representativeDisagree = views most members reject.
-    - Consider all representative opinions of that cluster for label/summary.
-- Detect sarcasm/irony; avoid literal misreadings.
 
 Labels:
-- 1–2 words, ≤30 chars, neutral agentive nouns (-ists, -ers, -ians)
-- No policy details, mechanisms, or geography
-- Abstract stance, professional tone
+1. Length and Format:
+    - 1–2 words, ≤30 chars, neutral agentive nouns (-ists, -ers, -ians)
+    - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
+    - Avoid policy-specific terms or geographic references.
+    - Avoid abstract concepts (e.g. avoid “Concerns”)
+2. Content Abstraction:
+    - Focus on group positions, intellectual traditions, or philosophical approaches.
+    - Overt discussion-specific context may be omitted if the context is implied by opposing clusters (e.g. use labels like “Skeptics”, “Technologists”, and “Ethicists” instead of "AI Skeptics", "AI Tool Advocates", "AI Ethicists")
+    - Avoid describing specific mechanisms (e.g., avoid "Income Threshold Supporters" or “Rural Educators”).
+3. Tone:
+    - Aim for a professional/academic tone that reflects generality and positionality.
+    - Use terms that could apply across contexts (e.g., "Pragmatists", "Skeptics").
+4. Examples:
+    - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
+    - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
+5. Generation Process:
+    a) Identify the core stance or intellectual tradition within the cluster.
+    b) Abstract this stance into a general term using agentive suffixes.
+    c) Validate that the label avoids policy specifics and geographic references.
+    d) Validate that the label is either 1 or 2 words.
 
 Summaries:
 - ≤300 chars, neutral, concise
 - Reflect cluster perspective and disagreements
-- Grounded in cluster opinions and conversation context
+- Grounded in cluster representative opinions and conversation context
+- Summarize the cluster's perspective fully and precisely, covering all representative opinions of that cluster, concisely and without repetition.
 
 Now analyze the following JSON input and generate precise, neutral labels and summaries for clusters "0"–"5" independently following the above rules.
 `,
