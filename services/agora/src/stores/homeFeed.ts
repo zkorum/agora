@@ -131,13 +131,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   let fullHomeFeedList: ExtendedConversation[] = [];
   const partialHomeFeedList = ref<ExtendedConversation[]>([]);
 
-  const emptyPostDataList = ref<ExtendedConversation[]>([
-    emptyPost,
-    emptyPost,
-    emptyPost,
-    emptyPost,
-  ]);
-
   watch(currentHomeFeedTab, async () => {
     await loadPostData();
   });
@@ -220,7 +213,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     resetPostData,
     loadMore,
     partialHomeFeedList,
-    emptyPostDataList,
     emptyPost,
     hasPendingNewPosts,
     initializedFeed,
