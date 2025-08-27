@@ -113,7 +113,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       votedIndex: 0,
     },
     polis: {
-      aiSummary: undefined,
       clusters: [],
     },
     userInteraction: {

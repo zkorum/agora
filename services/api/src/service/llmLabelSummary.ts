@@ -20,7 +20,7 @@ import {
     ConverseCommand,
     type Message,
 } from "@aws-sdk/client-bedrock-runtime";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { type JSONObject } from "extract-first-json";
 import * as commentService from "./comment.js";
@@ -44,10 +44,6 @@ interface ClusterInsights {
 interface ConversationInsights {
     conversationTitle: string;
     conversationBody?: string;
-    majorityAgree: string[];
-    majorityDisagree: string[];
-    controversial: string[];
-    groupAwareConsensusAgree: string[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -80,32 +76,6 @@ export async function updateAiLabelsAndSummaries({
             conversationId,
         )}: ${JSON.stringify(genLabelSummaryOutput)}`,
     );
-    await doUpdateAiLabelsAndSummaries({
-        db,
-        conversationId,
-        genLabelSummaryOutput,
-    });
-    // update DB with LLM value
-}
-
-interface DoUpdateAiLabelsAndSummariesProps {
-    db: PostgresJsDatabase;
-    conversationId: number;
-    genLabelSummaryOutput:
-        | GenLabelSummaryOutputStrict
-        | GenLabelSummaryOutputLoose;
-}
-
-async function doUpdateAiLabelsAndSummaries({
-    db,
-    conversationId,
-    genLabelSummaryOutput,
-}: DoUpdateAiLabelsAndSummariesProps): Promise<void> {
-    await updateConversationSummary({
-        db,
-        conversationId,
-        summary: genLabelSummaryOutput.summary,
-    });
     await updateClustersLabelsAndSummaries({
         db,
         conversationId,
@@ -148,35 +118,6 @@ async function updateClustersLabelsAndSummaries({
             AND "pc"."polis_content_id" = "p"."id";
         `);
     }
-}
-
-interface UpdateConversationSummaryProps {
-    db: PostgresJsDatabase;
-    conversationId: number;
-    summary: string;
-}
-
-async function updateConversationSummary({
-    db,
-    conversationId,
-    summary,
-}: UpdateConversationSummaryProps): Promise<void> {
-    await db
-        .update(polisContentTable)
-        .set({
-            aiSummary: summary,
-        })
-        .from(conversationTable)
-        .where(
-            and(
-                eq(
-                    conversationTable.currentPolisContentId,
-                    polisContentTable.id,
-                ),
-                eq(conversationTable.id, polisContentTable.conversationId),
-                eq(polisContentTable.conversationId, conversationId),
-            ),
-        );
 }
 
 interface InvokeRemoteModelProps {
@@ -308,10 +249,6 @@ async function getConversationInsights({
 }
 
 interface CoreOpinions {
-    majorityAgree: string[];
-    majorityDisagree: string[];
-    controversial: string[];
-    groupAwareConsensusAgree: string[];
     clusters: Record<string, ClusterInsights>;
 }
 
@@ -324,33 +261,6 @@ async function getCoreOpinions({
     db,
     conversationId,
 }: GetCoreOpinionsProps): Promise<CoreOpinions> {
-    const majorityAgreeOpinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "majority-agree",
-        limit: 5,
-    });
-    const majorityDisagreeOpinions = await commentService.fetchOpinionsByPostId(
-        {
-            db,
-            postId: conversationId,
-            filterTarget: "majority-disagree",
-            limit: 5,
-        },
-    );
-    const controversialOpinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "controversial",
-        limit: 5,
-    });
-    const groupAwareConsensusOpinions =
-        await commentService.fetchOpinionsByPostId({
-            db,
-            postId: conversationId,
-            filterTarget: "group-aware-consensus",
-            limit: 5,
-        });
     const cluster0Opinions = await commentService.fetchOpinionsByPostId({
         db,
         postId: conversationId,
@@ -393,19 +303,6 @@ async function getCoreOpinions({
         clusterKey: "5",
         limit: 5,
     });
-
-    const majorityAgreeOpinionInsights: string[] = Array.from(
-        majorityAgreeOpinions.values(),
-    ).map((opinion) => opinion.opinion);
-    const majorityDisagreeOpinionInsights: string[] = Array.from(
-        majorityDisagreeOpinions.values(),
-    ).map((opinion) => opinion.opinion);
-    const controversialOpinionInsights: string[] = Array.from(
-        controversialOpinions.values(),
-    ).map((opinion) => opinion.opinion);
-    const groupAwareConsensusAgreeOpinionInsights: string[] = Array.from(
-        groupAwareConsensusOpinions.values(),
-    ).map((opinion) => opinion.opinion);
 
     const clusters: Record<string, ClusterInsights> = {};
     if (cluster0Opinions.size !== 0) {
@@ -571,10 +468,6 @@ async function getCoreOpinions({
         };
     }
     return {
-        majorityAgree: majorityAgreeOpinionInsights,
-        majorityDisagree: majorityDisagreeOpinionInsights,
-        controversial: controversialOpinionInsights,
-        groupAwareConsensusAgree: groupAwareConsensusAgreeOpinionInsights,
         clusters,
     };
 }

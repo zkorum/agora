@@ -846,9 +846,6 @@
                                                     "polis": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "aiSummary": {
-                                                                "type": "string"
-                                                            },
                                                             "clusters": {
                                                                 "type": "array",
                                                                 "items": {
@@ -1686,9 +1683,6 @@
                                             "polis": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "aiSummary": {
-                                                        "type": "string"
-                                                    },
                                                     "clusters": {
                                                         "type": "array",
                                                         "items": {
@@ -1994,9 +1988,6 @@
                                                     "polis": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "aiSummary": {
-                                                                "type": "string"
-                                                            },
                                                             "clusters": {
                                                                 "type": "array",
                                                                 "items": {
@@ -5475,9 +5466,6 @@
                                                 "polis": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "aiSummary": {
-                                                            "type": "string"
-                                                        },
                                                         "clusters": {
                                                             "type": "array",
                                                             "items": {

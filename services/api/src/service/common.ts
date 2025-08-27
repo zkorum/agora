@@ -286,7 +286,6 @@ export function useCommonPost() {
                 moderationCreatedAt: conversationModerationTable.createdAt,
                 moderationUpdatedAt: conversationModerationTable.updatedAt,
                 // polis
-                conversationAiSummary: polisContentTable.aiSummary,
                 polisContentId: polisContentTable.id,
                 polisCluster0Id: polisClusterTableAlias0.id,
                 polisCluster0AiLabel: polisClusterTableAlias0.aiLabel,
@@ -605,12 +604,10 @@ export function useCommonPost() {
                     clusters.push(cluster);
                 }
                 polis = {
-                    aiSummary: toUnionUndefined(postItem.conversationAiSummary),
                     clusters: clusters,
                 };
             } else {
                 polis = {
-                    aiSummary: toUnionUndefined(postItem.conversationAiSummary),
                     clusters: [],
                 };
             }
