@@ -9,13 +9,6 @@ import { useUserStore } from "./user";
 const MINIMUM_LOADING_DURATION_MS = 400;
 const POSTS_PER_PAGE = 10;
 
-export type PossibleCommentRankingActions = "like" | "dislike" | "pass";
-
-export interface UserRankedCommentItem {
-  index: number;
-  action: PossibleCommentRankingActions;
-}
-
 export type HomeFeedSortOption = "following" | "new";
 
 export const useHomeFeedStore = defineStore("homeFeed", () => {
