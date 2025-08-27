@@ -29,19 +29,8 @@
           </div>
 
           <div>
-            <div v-if="!initializedFeed" class="postListFlex">
-              <div
-                v-for="postData in emptyPostDataList"
-                :key="postData.metadata.conversationSlugId"
-              >
-                <PostDetails
-                  v-model="currentTab"
-                  :conversation-data="postData"
-                  :compact-mode="true"
-                  class="showCursor"
-                  @click="openPost(postData.metadata.conversationSlugId)"
-                />
-              </div>
+            <div v-if="!initializedFeed" class="centerMessage">
+              <q-spinner-dots size="4rem" color="primary" />
             </div>
 
             <div
@@ -118,7 +107,6 @@ import {
 
 const {
   partialHomeFeedList,
-  emptyPostDataList,
   hasPendingNewPosts,
   initializedFeed,
   canLoadMore,

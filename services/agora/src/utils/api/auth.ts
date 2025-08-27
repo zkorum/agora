@@ -207,7 +207,10 @@ export function useBackendAuthApi() {
         newLoginStatus.isKnown == false
       ) {
         console.log("Cleaning data from detecting change to unknown device");
-        await logoutDataCleanup();
+        await logoutDataCleanup({
+          shouldClearLanguagePreferences:
+            oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
+        });
         if (route.name) {
           await firstLoadGuard(route.name);
         }
@@ -222,7 +225,10 @@ export function useBackendAuthApi() {
           await loadAuthenticatedModules();
         } else {
           console.log("Cleaning data from logging out");
-          await logoutDataCleanup();
+          await logoutDataCleanup({
+            shouldClearLanguagePreferences:
+              oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
+          });
           if (route.name) {
             await firstLoadGuard(route.name);
           }
@@ -243,7 +249,11 @@ export function useBackendAuthApi() {
     });
   }
 
-  async function logoutDataCleanup() {
+  async function logoutDataCleanup({
+    shouldClearLanguagePreferences,
+  }: {
+    shouldClearLanguagePreferences: boolean;
+  }) {
     const platform: "mobile" | "web" = getPlatform($q.platform);
 
     await deleteDid(platform);
@@ -259,7 +269,9 @@ export function useBackendAuthApi() {
 
     clearTopicsData();
 
-    await clearLanguagePreferences();
+    if (shouldClearLanguagePreferences) {
+      await clearLanguagePreferences();
+    }
   }
 
   return {
@@ -269,6 +281,5 @@ export function useBackendAuthApi() {
     getDeviceLoginStatus,
     updateAuthState,
     initializeAuthState,
-    logoutDataCleanup,
   };
 }
