@@ -7,18 +7,6 @@
       <ShortcutBar v-model="currentTab" />
 
       <div
-        v-if="currentTab === 'Summary' || currentTab === 'Me'"
-        class="tabComponent"
-      >
-        <MeTab
-          v-model="currentTab"
-          :cluster-key="userCluster?.key"
-          :ai-label="userCluster?.aiLabel"
-          :ai-summary="userCluster?.aiSummary"
-        />
-      </div>
-
-      <div
         v-if="currentTab === 'Summary' || currentTab === 'Common ground'"
         class="tabComponent"
       >
@@ -26,18 +14,6 @@
           v-model="currentTab"
           :conversation-slug-id="props.conversationSlugId"
           :item-list="consensusItemList"
-          :compact-mode="currentTab === 'Summary'"
-        />
-      </div>
-
-      <div
-        v-if="currentTab === 'Summary' || currentTab === 'Majority'"
-        class="tabComponent"
-      >
-        <MajorityTab
-          v-model="currentTab"
-          :conversation-slug-id="props.conversationSlugId"
-          :item-list="majorityItemList"
           :compact-mode="currentTab === 'Summary'"
         />
       </div>
@@ -55,11 +31,7 @@
       </div>
 
       <div
-        v-if="
-          currentTab === 'Summary' ||
-          currentTab === 'Groups' ||
-          currentTab === 'Me'
-        "
+        v-if="currentTab === 'Summary' || currentTab === 'Groups'"
         class="tabComponent"
       >
         <OpinionGroupTab
@@ -75,7 +47,6 @@
 
 <script setup lang="ts">
 import type {
-  ClusterMetadata,
   ExtendedConversationPolis,
   OpinionItem,
   PolisKey,
@@ -84,10 +55,8 @@ import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
-import MajorityTab from "./majorityTab/MajorityTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import { ref, onMounted } from "vue";
-import MeTab from "./meTab/MeTab.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 
 const props = defineProps<{
@@ -100,7 +69,6 @@ const isLoading = ref<boolean>(true);
 
 const {
   fetchConsensusItemList,
-  fetchMajorityItemList,
   fetchControversialItemList,
   fetchAllRepresentativeItemLists,
 } = useBackendCommentApi();
@@ -108,7 +76,6 @@ const {
 const currentTab = ref<ShortcutItem>("Summary");
 
 const consensusItemList = ref<OpinionItem[]>([]);
-const majorityItemList = ref<OpinionItem[]>([]);
 const divisiveItemList = ref<OpinionItem[]>([]);
 const representativeItemListPerClusterKey = ref<
   Partial<Record<PolisKey, OpinionItem[]>>
@@ -123,7 +90,6 @@ async function loadItemLists({
   consensusItemList.value = await fetchConsensusItemList({
     conversationSlugId,
   });
-  majorityItemList.value = await fetchMajorityItemList({ conversationSlugId });
   divisiveItemList.value = await fetchControversialItemList({
     conversationSlugId,
   });
@@ -132,10 +98,6 @@ async function loadItemLists({
       conversationSlugId,
     });
 }
-
-const userCluster: ClusterMetadata | undefined = props.polis.clusters.find(
-  (c) => c.isUserInCluster
-);
 
 onMounted(async () => {
   await loadItemLists({ conversationSlugId: props.conversationSlugId });
