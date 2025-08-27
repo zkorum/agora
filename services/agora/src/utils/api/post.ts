@@ -21,8 +21,8 @@ import type {
   FeedSortAlgorithm,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import type { DummyPollOptionFormat } from "src/stores/homeFeed";
 import type { FetchFeedResponse } from "src/shared/types/dto";
+import { zodExtendedConversationData } from "src/shared/types/zod";
 
 export function useBackendPostApi() {
   const {
@@ -38,17 +38,6 @@ export function useBackendPostApi() {
   function createInternalPostData(
     postElement: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner
   ): ExtendedConversation {
-    // Create the polling object
-    const pollOptionList: DummyPollOptionFormat[] = [];
-    postElement.payload.poll?.forEach((pollOption) => {
-      const internalItem: DummyPollOptionFormat = {
-        index: pollOption.optionNumber - 1,
-        numResponses: pollOption.numResponses,
-        option: pollOption.optionTitle,
-      };
-      pollOptionList.push(internalItem);
-    });
-
     const parseditem = composeInternalPostList([postElement])[0];
     return parseditem;
   }
@@ -291,54 +280,41 @@ export function useBackendPostApi() {
   function composeInternalPostList(
     incomingPostList: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner[]
   ): ExtendedConversation[] {
-    const parsedList: ExtendedConversation[] = [];
-    incomingPostList.forEach((item) => {
-      const moderationStatus = item.metadata.moderation
-        .status as moderationStatusOptionsType;
+    // Convert API response format to zod-compatible format (string dates to Date objects)
+    const transformedList = incomingPostList.map((item) => ({
+      ...item,
+      metadata: {
+        ...item.metadata,
+        createdAt: new Date(item.metadata.createdAt),
+        updatedAt: new Date(item.metadata.updatedAt),
+        lastReactedAt: new Date(item.metadata.lastReactedAt),
+        moderation:
+          (item.metadata.moderation.status as moderationStatusOptionsType) ===
+          "moderated"
+            ? {
+                ...item.metadata.moderation,
+                createdAt: new Date(item.metadata.moderation.createdAt),
+                updatedAt: new Date(item.metadata.moderation.updatedAt),
+              }
+            : item.metadata.moderation,
+      },
+    }));
 
-      const newPost: ExtendedConversation = {
-        metadata: {
-          authorUsername: String(item.metadata.authorUsername),
-          opinionCount: item.metadata.opinionCount,
-          voteCount: item.metadata.voteCount,
-          participantCount: item.metadata.participantCount,
-          createdAt: new Date(item.metadata.createdAt),
-          lastReactedAt: new Date(item.metadata.lastReactedAt),
-          conversationSlugId: item.metadata.conversationSlugId,
-          updatedAt: new Date(item.metadata.updatedAt),
-          moderation: {
-            status: moderationStatus,
-            action: item.metadata.moderation.action,
-            reason: item.metadata.moderation.reason,
-            explanation: item.metadata.moderation.explanation,
-            createdAt: new Date(item.metadata.moderation.createdAt),
-            updatedAt: new Date(item.metadata.moderation.updatedAt),
-          },
-          isIndexed: item.metadata.isIndexed,
-          isLoginRequired: item.metadata.isLoginRequired,
-          organization: {
-            description: item.metadata.organization?.description || "",
-            imageUrl: item.metadata.organization?.imageUrl || "",
-            name: item.metadata.organization?.name || "",
-            websiteUrl: item.metadata.organization?.websiteUrl || "",
-          },
-        },
-        payload: {
-          title: item.payload.title,
-          body: item.payload.body,
-          poll: item.payload.poll,
-        },
-        interaction: {
-          hasVoted: item.interaction.hasVoted,
-          votedIndex: item.interaction.votedIndex - 1,
-        },
-        polis: item.polis,
-      };
+    // Use zod to parse and validate the transformed conversation data
+    const conversationListResult = zodExtendedConversationData
+      .array()
+      .safeParse(transformedList);
 
-      parsedList.push(newPost);
-    });
+    if (!conversationListResult.success) {
+      console.error(
+        "Failed to parse conversation data with zod:",
+        conversationListResult.error
+      );
+      showNotifyMessage("Invalid conversation data received from server.");
+      return [];
+    }
 
-    return parsedList;
+    return conversationListResult.data;
   }
 
   async function deletePostBySlugId(postSlugId: string) {

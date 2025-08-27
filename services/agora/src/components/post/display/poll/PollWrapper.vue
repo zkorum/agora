@@ -4,13 +4,13 @@
       <div class="pollOptionList">
         <PollOption
           v-for="optionItem in localPollOptionList"
-          :key="optionItem.index"
-          :option="optionItem.option"
+          :key="optionItem.optionNumber"
+          :option="optionItem.optionTitle"
           :display-mode="
             currentDisplayMode == DisplayModes.Vote ? 'option' : 'result'
           "
           :voted-by-user="
-            userVoteStatus.votedIndex == optionItem.index &&
+            userVoteStatus.votedIndex == optionItem.optionNumber - 1 &&
             userVoteStatus.hasVoted
           "
           :option-percentage="
@@ -18,7 +18,7 @@
               ? 0
               : Math.round((optionItem.numResponses * 100) / totalVoteCount)
           "
-          @click="clickedVotingOption(optionItem.index, $event)"
+          @click="clickedVotingOption(optionItem.optionNumber - 1, $event)"
         />
       </div>
 
@@ -72,13 +72,14 @@
 
 <script setup lang="ts">
 import ZKButton from "../../../ui-library/ZKButton.vue";
-import {
-  useHomeFeedStore,
-  type DummyPollOptionFormat,
-} from "src/stores/homeFeed";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { onBeforeMount, ref, watch } from "vue";
 import { useBackendPollApi } from "src/utils/api/poll";
-import type { UserInteraction, PollList } from "src/shared/types/zod";
+import type {
+  UserInteraction,
+  PollList,
+  PollOptionWithResult,
+} from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import ZKIcon from "../../../ui-library/ZKIcon.vue";
 import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
@@ -99,7 +100,7 @@ const props = defineProps<{
   loginRequiredToParticipate: boolean;
 }>();
 
-const localPollOptionList = ref<DummyPollOptionFormat[]>([]);
+const localPollOptionList = ref<PollOptionWithResult[]>([]);
 initializeLocalPoll();
 
 const dataLoaded = ref(false);
@@ -152,7 +153,7 @@ function initializeTotalVoteCount() {
 
 function incrementLocalPollIndex(targetIndex: number) {
   localPollOptionList.value.forEach((pollOption) => {
-    if (targetIndex == pollOption.index) {
+    if (targetIndex == pollOption.optionNumber - 1) {
       pollOption.numResponses += 1;
     }
   });
@@ -160,12 +161,7 @@ function incrementLocalPollIndex(targetIndex: number) {
 
 function initializeLocalPoll() {
   props.pollOptions?.forEach((pollOption) => {
-    const localPollItem: DummyPollOptionFormat = {
-      index: pollOption.optionNumber - 1,
-      numResponses: pollOption.numResponses,
-      option: pollOption.optionTitle,
-    };
-    localPollOptionList.value.push(localPollItem);
+    localPollOptionList.value.push(pollOption);
   });
 }
 
