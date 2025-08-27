@@ -1,11 +1,9 @@
 import { defineStore } from "pinia";
-import {
-  type DummyCommentFormat,
-  type PossibleCommentRankingActions,
-} from "./homeFeed";
+import type { PossibleCommentRankingActions } from "./homeFeed";
+import type { OpinionItem } from "src/shared/types/zod";
 
 export interface UserCommentHistoryitem {
-  commentItem: DummyCommentFormat;
+  commentItem: OpinionItem;
   postSlugId: string;
   title: string;
   authorName: string;
