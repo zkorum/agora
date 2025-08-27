@@ -82,6 +82,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   const initializedFeed = ref(false);
   const canLoadMore = ref(true);
+  const isLoadingFeed = ref(false);
 
   const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
 
@@ -135,25 +136,47 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   });
 
   async function loadPostData(): Promise<boolean> {
-    const response = await fetchRecentPost({
-      loadUserPollData: isGuestOrLoggedIn.value,
-      sortAlgorithm: currentHomeFeedTab.value,
-    });
+    isLoadingFeed.value = true;
+    const loadingStartTime = Date.now();
+    const wasInitialized = initializedFeed.value;
 
-    if (response.status == "success") {
-      fullHomeFeedList = response.data.conversationDataList;
-      partialHomeFeedList.value = [];
-      hasPendingNewPosts.value = false;
-      localTopConversationSlugIdList = response.data.topConversationSlugIdList;
-      initializedFeed.value = true;
+    try {
+      const response = await fetchRecentPost({
+        loadUserPollData: isGuestOrLoggedIn.value,
+        sortAlgorithm: currentHomeFeedTab.value,
+      });
 
-      canLoadMore.value = true;
-      loadMore();
+      if (response.status == "success") {
+        fullHomeFeedList = response.data.conversationDataList;
+        partialHomeFeedList.value = [];
+        hasPendingNewPosts.value = false;
+        localTopConversationSlugIdList =
+          response.data.topConversationSlugIdList;
 
-      return false;
-    } else {
-      initializedFeed.value = true;
-      return false;
+        canLoadMore.value = true;
+        loadMore();
+
+        return false;
+      } else {
+        return false;
+      }
+    } finally {
+      // Enforce minimum loading duration to prevent flash
+      const elapsed = Date.now() - loadingStartTime;
+      const minimumDuration = wasInitialized ? 400 : 0; // Only delay for tab switches
+      const remainingTime = Math.max(0, minimumDuration - elapsed);
+
+      if (remainingTime > 0) {
+        setTimeout(() => {
+          // Set both states simultaneously to prevent flash
+          initializedFeed.value = true;
+          isLoadingFeed.value = false;
+        }, remainingTime);
+      } else {
+        // Set immediately if no delay needed
+        initializedFeed.value = true;
+        isLoadingFeed.value = false;
+      }
     }
   }
 
@@ -217,5 +240,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     initializedFeed,
     currentHomeFeedTab,
     canLoadMore,
+    isLoadingFeed,
   };
 });

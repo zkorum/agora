@@ -29,13 +29,18 @@
           </div>
 
           <div>
-            <div v-if="!initializedFeed" class="centerMessage">
+            <!-- Loading indicator for tab switches only -->
+            <div
+              v-if="isLoadingFeed && initializedFeed"
+              class="centerMessage loading-indicator"
+            >
               <q-spinner-dots size="4rem" color="primary" />
             </div>
 
             <div
               v-if="initializedFeed && partialHomeFeedList.length > 0"
               class="postListFlex"
+              :class="{ 'loading-overlay': isLoadingFeed }"
             >
               <div
                 v-for="postData in partialHomeFeedList"
@@ -110,6 +115,7 @@ const {
   hasPendingNewPosts,
   initializedFeed,
   canLoadMore,
+  isLoadingFeed,
 } = storeToRefs(useHomeFeedStore());
 const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
 
@@ -197,5 +203,18 @@ async function refreshPage(done: () => void) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.loading-overlay {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
 }
 </style>
