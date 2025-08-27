@@ -1329,12 +1329,6 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis {
     /**
      * 
-     * @type {string}
-     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
-     */
-    'aiSummary'?: string;
-    /**
-     * 
      * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>}
      * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
      */

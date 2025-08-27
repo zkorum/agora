@@ -330,7 +330,6 @@ export const zodClusterMetadata = z.object({
 });
 export const zodConversationPolis = z
     .object({
-        aiSummary: z.string().optional(),
         clusters: zodClusterMetadata.array(),
     })
     .strict();
@@ -847,12 +846,10 @@ export const zodGenLabelSummaryOutputClusterLoose = z.record(
 );
 
 export const zodGenLabelSummaryOutputStrict = z.object({
-    summary: z.string().max(300),
     clusters: zodGenLabelSummaryOutputClusterStrict,
 });
 
 export const zodGenLabelSummaryOutputLoose = z.object({
-    summary: z.coerce.string(),
     clusters: zodGenLabelSummaryOutputClusterLoose,
 });
 
