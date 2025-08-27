@@ -29,9 +29,7 @@ const { t } = useComponentI18n<ShortcutBarTranslations>(
 
 const shortcutItemList: ShortcutItem[] = [
   "Summary",
-  "Me",
   "Common ground",
-  "Majority",
   "Divisive",
   "Groups",
 ];
@@ -39,9 +37,7 @@ const shortcutItemList: ShortcutItem[] = [
 function getTranslatedLabel(item: ShortcutItem): string {
   const keyMap: Record<ShortcutItem, keyof ShortcutBarTranslations> = {
     Summary: "summary",
-    Me: "me",
     "Common ground": "commonGround",
-    Majority: "majority",
     Divisive: "divisive",
     Groups: "groups",
   };

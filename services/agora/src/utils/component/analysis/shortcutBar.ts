@@ -1,7 +1,1 @@
-export type ShortcutItem =
-  | "Summary"
-  | "Me"
-  | "Common ground"
-  | "Majority"
-  | "Divisive"
-  | "Groups";
+export type ShortcutItem = "Summary" | "Common ground" | "Divisive" | "Groups";
