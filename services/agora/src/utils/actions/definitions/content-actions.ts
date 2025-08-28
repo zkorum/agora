@@ -299,15 +299,9 @@ export function useContentActions() {
     };
   };
 
-  /**
-   * Get current dialog state
-   */
-  const getDialogState = () => dialogState.value;
-
   return {
     // Dialog state
     dialogState,
-    getDialogState,
     confirmationState,
 
     // Action functions

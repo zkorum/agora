@@ -29,8 +29,8 @@
 
   <!-- Action Dialog -->
   <ZKActionDialog
-    v-model="actionDialogVisible"
-    :actions="actionDialogActions"
+    v-model="commentActions.dialogState.value.isVisible"
+    :actions="commentActions.dialogState.value.actions"
     @action-selected="handleActionSelected"
     @dialog-closed="handleDialogClosed"
   />
@@ -87,10 +87,6 @@ const { showNotifyMessage } = useNotify();
 
 // Use the new content actions system
 const commentActions = useContentActions();
-
-// Action dialog state
-const actionDialogVisible = ref(false);
-const actionDialogActions = ref<ContentAction[]>([]);
 
 const showReportDialog = ref(false);
 
@@ -180,11 +176,6 @@ function optionButtonClicked() {
       shareOpinionCallback,
     }
   );
-
-  // Get the dialog state and display it
-  const state = commentActions.getDialogState();
-  actionDialogVisible.value = state.isVisible;
-  actionDialogActions.value = state.actions;
 }
 
 /**
@@ -199,8 +190,6 @@ async function handleActionSelected(action: ContentAction) {
  * Handle dialog close
  */
 function handleDialogClosed() {
-  actionDialogVisible.value = false;
-  actionDialogActions.value = [];
   commentActions.closeDialog();
 }
 </script>

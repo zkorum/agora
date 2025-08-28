@@ -44,8 +44,8 @@
 
   <!-- Action Dialog -->
   <ZKActionDialog
-    v-model="actionDialogVisible"
-    :actions="actionDialogActions"
+    v-model="postActions.dialogState.value.isVisible"
+    :actions="postActions.dialogState.value.actions"
     @action-selected="handleActionSelected"
     @dialog-closed="handleDialogClosed"
   />
@@ -99,10 +99,6 @@ const route = useRoute();
 const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
-
-// Action dialog state
-const actionDialogVisible = ref(false);
-const actionDialogActions = ref<ContentAction[]>([]);
 
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = useHomeFeedStore();
@@ -182,11 +178,6 @@ function clickedMoreIcon() {
     moderationHistoryCallback,
     copyEmbedLinkCallback,
   });
-
-  // Get the dialog state and display it
-  const state = postActions.getDialogState();
-  actionDialogVisible.value = state.isVisible;
-  actionDialogActions.value = state.actions;
 }
 
 /**
@@ -201,8 +192,6 @@ async function handleActionSelected(action: ContentAction) {
  * Handle dialog close
  */
 function handleDialogClosed() {
-  actionDialogVisible.value = false;
-  actionDialogActions.value = [];
   postActions.closeDialog();
 }
 </script>
