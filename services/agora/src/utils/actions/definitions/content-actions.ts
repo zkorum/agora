@@ -268,9 +268,6 @@ export function useContentActions() {
    */
   const handleConfirmationCancel = (): void => {
     closeConfirmationDialog();
-
-    // Show action dialog again
-    dialogState.value.isVisible = true;
   };
 
   /**
