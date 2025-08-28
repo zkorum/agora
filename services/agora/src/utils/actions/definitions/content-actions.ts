@@ -36,7 +36,7 @@ import {
 } from "./content-actions.i18n";
 
 // Actions that require confirmation before execution
-const DESTRUCTIVE_ACTIONS = ["delete"];
+const DESTRUCTIVE_ACTIONS = ["delete", "muteUser"];
 
 /**
  * Main composable for content actions management
@@ -204,17 +204,23 @@ export function useContentActions() {
     const targetType = dialogState.value.context?.targetType;
 
     let confirmMessage = t("confirmGenericAction");
+    let confirmText = t("confirm");
+
     if (action.id === "delete") {
       confirmMessage =
         targetType === "post"
           ? t("confirmDeletePost")
           : t("confirmDeleteComment");
+      confirmText = t("delete");
+    } else if (action.id === "muteUser") {
+      confirmMessage = t("confirmMuteUser");
+      confirmText = t("muteUser");
     }
 
     confirmationState.value = {
       isVisible: true,
       message: confirmMessage,
-      confirmText: t("delete"),
+      confirmText: confirmText,
       cancelText: t("cancel"),
       variant: action.variant === "destructive" ? "destructive" : "default",
       pendingAction: action,
