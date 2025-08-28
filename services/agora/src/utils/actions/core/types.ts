@@ -10,7 +10,6 @@ export interface BaseContentAction {
   description?: string;
   icon: string;
   variant?: "default" | "destructive" | "warning";
-  requiresConfirmation?: boolean;
 }
 
 // Context for determining available content actions
