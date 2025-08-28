@@ -56,7 +56,6 @@ export function getPostActions(
       label: translations.delete,
       icon: "mdi-delete",
       variant: "destructive",
-      requiresConfirmation: true,
       handler: deletePostCallback,
       isVisible: (context: ContentActionContext) =>
         context.userRole === "owner" && !context.isEmbeddedMode,

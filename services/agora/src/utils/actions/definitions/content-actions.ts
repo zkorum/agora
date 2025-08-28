@@ -12,12 +12,31 @@ import { useActionPermissions, createActionContext } from "../core/permissions";
 import { useActionHandlers } from "../core/handlers";
 import { getAvailableCommentActions } from "./comments";
 import { getAvailablePostActions } from "./posts";
-import type { ContentActionDialogState, ContentAction } from "../core/types";
+import type {
+  ContentActionDialogState,
+  ContentAction,
+  ContentActionContext,
+} from "../core/types";
+
+// Confirmation dialog state interface
+interface ConfirmationDialogState {
+  isVisible: boolean;
+  title?: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant: "default" | "destructive";
+  pendingAction: ContentAction | null;
+  pendingActionContext: ContentActionContext | null;
+}
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   actionsTranslations,
   type ActionsTranslations,
 } from "./content-actions.i18n";
+
+// Actions that require confirmation before execution
+const DESTRUCTIVE_ACTIONS = ["delete"];
 
 /**
  * Main composable for content actions management
@@ -35,6 +54,17 @@ export function useContentActions() {
     isVisible: false,
     context: null,
     actions: [],
+  });
+
+  // Confirmation dialog state management
+  const confirmationState = ref<ConfirmationDialogState>({
+    isVisible: false,
+    message: "",
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    variant: "default",
+    pendingAction: null,
+    pendingActionContext: null,
   });
 
   /**
@@ -157,21 +187,56 @@ export function useContentActions() {
   const executeAction = async (action: ContentAction): Promise<void> => {
     if (!dialogState.value.context) return;
 
+    // Check if this action requires confirmation
+    if (DESTRUCTIVE_ACTIONS.includes(action.id)) {
+      showConfirmationDialog(action);
+      return;
+    }
+
+    // Execute action directly if no confirmation needed
+    await executeActionDirectly(action);
+  };
+
+  /**
+   * Show confirmation dialog for destructive actions
+   */
+  const showConfirmationDialog = (action: ContentAction): void => {
+    const targetType = dialogState.value.context?.targetType;
+
+    let confirmMessage = t("confirmGenericAction");
+    if (action.id === "delete") {
+      confirmMessage =
+        targetType === "post"
+          ? t("confirmDeletePost")
+          : t("confirmDeleteComment");
+    }
+
+    confirmationState.value = {
+      isVisible: true,
+      message: confirmMessage,
+      confirmText: t("delete"),
+      cancelText: t("cancel"),
+      variant: action.variant === "destructive" ? "destructive" : "default",
+      pendingAction: action,
+      pendingActionContext: dialogState.value.context,
+    };
+
+    // Hide action dialog while showing confirmation
+    dialogState.value.isVisible = false;
+  };
+
+  /**
+   * Execute action directly without confirmation
+   */
+  const executeActionDirectly = async (
+    action: ContentAction,
+    context?: ContentActionContext
+  ): Promise<void> => {
+    const actionContext = context || dialogState.value.context;
+    if (!actionContext) return;
+
     try {
-      let handler = action.handler;
-
-      // Add confirmation wrapper for destructive actions
-      if (action.requiresConfirmation) {
-        const confirmMessage =
-          action.id === "delete"
-            ? `Are you sure you want to delete this ${dialogState.value.context.targetType}?`
-            : "Are you sure you want to perform this action?";
-
-        const wrappedHandler = () => action.handler(dialogState.value.context!);
-        handler = handlers.withConfirmation(wrappedHandler, confirmMessage);
-      }
-
-      await handler(dialogState.value.context);
+      await action.handler(actionContext);
 
       // Close dialog after successful action (except for certain actions that should keep it open)
       const keepOpenActions = ["moderationHistory", "embedLink"];
@@ -181,6 +246,46 @@ export function useContentActions() {
     } catch (error) {
       console.error("Error executing action:", error);
     }
+  };
+
+  /**
+   * Handle confirmation dialog confirmation
+   */
+  const handleConfirmation = async (): Promise<void> => {
+    const action = confirmationState.value.pendingAction;
+    const context = confirmationState.value.pendingActionContext;
+    if (!action || !context) return;
+
+    // Close confirmation dialog
+    closeConfirmationDialog();
+
+    // Execute the pending action with the stored context
+    await executeActionDirectly(action, context);
+  };
+
+  /**
+   * Handle confirmation dialog cancellation
+   */
+  const handleConfirmationCancel = (): void => {
+    closeConfirmationDialog();
+
+    // Show action dialog again
+    dialogState.value.isVisible = true;
+  };
+
+  /**
+   * Close confirmation dialog
+   */
+  const closeConfirmationDialog = (): void => {
+    confirmationState.value = {
+      isVisible: false,
+      message: "",
+      confirmText: "Confirm",
+      cancelText: "Cancel",
+      variant: "default",
+      pendingAction: null,
+      pendingActionContext: null,
+    };
   };
 
   /**
@@ -201,14 +306,20 @@ export function useContentActions() {
 
   return {
     // Dialog state
-    dialogState: dialogState.value,
+    dialogState,
     getDialogState,
+    confirmationState,
 
     // Action functions
     showCommentActions,
     showPostActions,
     executeAction,
     closeDialog,
+
+    // Confirmation dialog functions
+    handleConfirmation,
+    handleConfirmationCancel,
+    closeConfirmationDialog,
 
     // Utilities
     permissions,

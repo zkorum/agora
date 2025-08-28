@@ -34,6 +34,17 @@
     @action-selected="handleActionSelected"
     @dialog-closed="handleDialogClosed"
   />
+
+  <!-- Confirmation Dialog -->
+  <ZKConfirmDialog
+    v-model="commentActions.confirmationState.value.isVisible"
+    :message="commentActions.confirmationState.value.message"
+    :confirm-text="commentActions.confirmationState.value.confirmText"
+    :cancel-text="commentActions.confirmationState.value.cancelText"
+    :variant="commentActions.confirmationState.value.variant"
+    @confirm="commentActions.handleConfirmation"
+    @cancel="commentActions.handleConfirmationCancel"
+  />
 </template>
 
 <script setup lang="ts">
@@ -43,6 +54,7 @@ import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useAuthenticationStore } from "src/stores/authentication";
