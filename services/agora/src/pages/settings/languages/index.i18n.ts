@@ -35,6 +35,22 @@ export const languagesSettingsTranslations: Record<
     other: "other",
     others: "others",
   },
+  ar: {
+    pageTitle: "اللغة",
+    displayLanguageLabel: "لغة العرض",
+    spokenLanguagesLabel: "اللغات المنطوقة",
+    displayLanguageTitle: "لغة العرض",
+    displayLanguageDescription:
+      "لغتك المفضلة لرؤوس صفحات تطبيق أجورا والأزرار والنصوص الأخرى",
+    additionalLanguagesTitle: "لغات إضافية",
+    additionalLanguagesDescription:
+      "للمحتوى الذي ترغب في رؤيته على أجورا",
+    englishFallback: "الإنجليزية",
+    noneSelected: "لا يوجد اختيار",
+    and: "و",
+    other: "آخر",
+    others: "آخرون",
+  },
   es: {
     pageTitle: "Idioma",
     displayLanguageLabel: "Idioma de visualización",

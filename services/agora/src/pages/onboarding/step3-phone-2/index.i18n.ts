@@ -40,6 +40,28 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
       restrictedPhoneType:
         "Sorry, this phone number is not supported for security reasons. Please try another.",
     },
+    ar: {
+      title: "أدخل الرمز المكون من 6 أرقام",
+      instructions:
+        "أدخل الرمز المكون من 6 أرقام الذي أرسلناه عبر رقم الهاتف",
+      expiresIn: "ينتهي في",
+      codeExpired: "انتهت صلاحية الرمز",
+      changeNumber: "تغيير الرقم",
+      resendCodeIn: "إعادة إرسال الرمز خلال",
+      resendCode: "إعادة إرسال الرمز",
+      pleaseEnterValidCode: "الرجاء إدخال رمز صالح مكون من 6 أرقام",
+      verificationSuccessful: "تم التحقق بنجاح 🎉",
+      codeExpiredResend: "انتهت صلاحية الرمز - أرسل رمزاً جديداً",
+      wrongCodeTryAgain: "رمز خاطئ - حاول مرة أخرى",
+      syncHiccupDetected: "عفواً! تم اكتشاف خلل في المزامنة - أرسل رمزاً جديداً",
+      somethingWrong: "عفواً! هناك خطأ ما",
+      tooManyAttempts:
+        "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
+      invalidPhoneNumber:
+        "عذراً، رقم الهاتف هذا غير صالح. يرجى التحقق والمحاولة مرة أخرى.",
+      restrictedPhoneType:
+        "عذراً، رقم الهاتف هذا غير مدعوم لأسباب أمنية. يرجى تجربة رقم آخر.",
+    },
     es: {
       title: "Ingrese el código de 6 dígitos",
       instructions:

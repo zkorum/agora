@@ -20,6 +20,14 @@ export const makePublicTimerDialogTranslations: Record<
     after1Month: "After 1 month",
     custom: "Custom",
   },
+  ar: {
+    never: "أبداً",
+    after24Hours: "بعد 24 ساعة",
+    after3Days: "بعد 3 أيام",
+    after1Week: "بعد أسبوع",
+    after1Month: "بعد شهر",
+    custom: "مخصص",
+  },
   es: {
     never: "Nunca",
     after24Hours: "Después de 24 horas",

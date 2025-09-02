@@ -17,6 +17,13 @@ export const compactPostListTranslations: Record<
     completedDescription: "You have seen all the new conversations.",
     newConversationsButton: "New conversations",
   },
+  ar: {
+    emptyStateTitle: "إنه هادئ جداً هنا...",
+    emptyStateDescription: "أنشئ محادثة جديدة باستخدام",
+    completedTitle: "لقد اطلعت على كل شيء",
+    completedDescription: "لقد شاهدت جميع المحادثات الجديدة.",
+    newConversationsButton: "محادثات جديدة",
+  },
   es: {
     emptyStateTitle: "Está muy silencioso aquí...",
     emptyStateDescription: "Crea una nueva conversación usando el",

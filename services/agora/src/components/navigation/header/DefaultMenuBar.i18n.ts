@@ -10,6 +10,9 @@ export const defaultMenuBarTranslations: Record<
   en: {
     logIn: "Log in",
   },
+  ar: {
+    logIn: "تسجيل الدخول",
+  },
   es: {
     logIn: "Log in",
   },

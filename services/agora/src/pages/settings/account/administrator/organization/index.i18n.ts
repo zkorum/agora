@@ -10,6 +10,9 @@ export const administratorOrganizationTranslations: Record<
   en: {
     administrator: "Administrator",
   },
+  ar: {
+    administrator: "المشرف",
+  },
   es: {
     administrator: "Administrador",
   },

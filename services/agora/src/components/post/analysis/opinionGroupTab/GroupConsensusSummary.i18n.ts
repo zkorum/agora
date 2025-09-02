@@ -14,6 +14,12 @@ export const groupConsensusSummaryTranslations: Record<
     aiSummaryDescription:
       "We use Mistral Large (LLM model) to generate the summary & labels for each consensus group.",
   },
+  ar: {
+    groupSummaryTitle: "ملخص المجموعة",
+    aiSummaryTitle: "ملخص الذكاء الاصطناعي",
+    aiSummaryDescription:
+      "نحن نستخدم Mistral Large (نموذج LLM) لإنشاء الملخص والتسميات لكل مجموعة إجماع.",
+  },
   es: {
     groupSummaryTitle: "Resumen del grupo",
     aiSummaryTitle: "Resumen de IA",

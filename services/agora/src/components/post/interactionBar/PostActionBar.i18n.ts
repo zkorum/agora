@@ -10,6 +10,9 @@ export const postActionBarTranslations: Record<
   en: {
     share: "Share",
   },
+  ar: {
+    share: "مشاركة",
+  },
   es: {
     share: "Compartir",
   },

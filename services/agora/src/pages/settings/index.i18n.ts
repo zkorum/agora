@@ -35,6 +35,22 @@ export const settingsTranslations: Record<
     accountDeleted: "Account deleted",
     accountDeletionFailed: "Oops! Account deletion failed. Please try again",
   },
+  ar: {
+    pageTitle: "الإعدادات",
+    deleteAccount: "حذف الحساب",
+    deleteGuestAccount: "حذف حساب الضيف",
+    profile: "الملف الشخصي",
+    contentPreference: "تفضيلات المحتوى",
+    language: "اللغة",
+    privacyPolicy: "سياسة الخصوصية",
+    termsOfService: "شروط الخدمة",
+    logOut: "تسجيل الخروج",
+    moderatorOrganization: "المشرف - المنظمة",
+    componentTesting: "🔧 اختبار المكونات",
+    accountDeleted: "تم حذف الحساب",
+    accountDeletionFailed:
+      "عذراً! فشل حذف الحساب. يرجى المحاولة مرة أخرى",
+  },
   es: {
     pageTitle: "Configuración",
     deleteAccount: "Eliminar cuenta",

@@ -2492,7 +2492,8 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum =
     Fr: 'fr',
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
-    Ja: 'ja'
+    Ja: 'ja',
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
@@ -2517,7 +2518,8 @@ export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnu
     Fr: 'fr',
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
-    Ja: 'ja'
+    Ja: 'ja',
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
@@ -2600,7 +2602,8 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = 
     Fr: 'fr',
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
-    Ja: 'ja'
+    Ja: 'ja',
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];

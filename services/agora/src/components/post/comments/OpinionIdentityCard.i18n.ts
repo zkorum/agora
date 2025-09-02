@@ -9,6 +9,9 @@ export const opinionIdentityCardTranslations: Record<
   en: {
     seedOpinion: "Seed opinion",
   },
+  ar: {
+    seedOpinion: "الرأي البدائي",
+  },
   es: {
     seedOpinion: "Opinión semilla",
   },

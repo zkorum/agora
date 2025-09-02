@@ -13,6 +13,11 @@ export const step4UsernameTranslations: Record<
     howToAppear: "How do you want to appear in Agora?",
     usernameInUse: "Username is already in use",
   },
+  ar: {
+    title: "اختر اسم المستخدم الخاص بك",
+    howToAppear: "كيف تريد أن تظهر في أجورا؟",
+    usernameInUse: "اسم المستخدم مُستخدم بالفعل",
+  },
   es: {
     title: "Elige tu nombre de usuario",
     howToAppear: "¿Cómo quiere aparecer en Agora?",

@@ -22,6 +22,15 @@ export const conversationModerationTranslations: Record<
     moderate: "Moderate",
     withdraw: "Withdraw",
   },
+  ar: {
+    moderateConversation: "إشراف على المحادثة",
+    action: "الإجراء",
+    reason: "السبب",
+    explanationOptional: "الشرح (اختياري)",
+    modify: "تعديل",
+    moderate: "إشراف",
+    withdraw: "سحب",
+  },
   es: {
     moderateConversation: "Moderar la conversación",
     action: "Acción",

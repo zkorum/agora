@@ -18,6 +18,14 @@ export const postTypeDialogTranslations: Record<
     importFromPolisDescription:
       "Import and continue an existing Polis conversation.",
   },
+  ar: {
+    newConversation: "محادثة جديدة",
+    newConversationDescription:
+      "إنشاء موضوع محادثة جديد للنقاش.",
+    importFromPolis: "استيراد من بوليس",
+    importFromPolisDescription:
+      "استيراد ومتابعة محادثة بوليس موجودة.",
+  },
   es: {
     newConversation: "Nueva Conversación",
     newConversationDescription:

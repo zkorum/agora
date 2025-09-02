@@ -22,6 +22,16 @@ export const createOrganizationFormTranslations: Record<
     websiteUrlLabel: "Website URL",
     addOrganizationButton: "Add Organization",
   },
+  ar: {
+    nameLabel: "الاسم",
+    descriptionLabel: "الوصف",
+    imagePathLabel: "مسار الصورة (اسم الملف أو مسار https)",
+    fileNameExample: "اسم الملف: avatar_default_0.png",
+    fullPathExample:
+      "المسار الكامل: https://agoracitizen.network/images/big_logo_agora.png",
+    websiteUrlLabel: "رابط الموقع",
+    addOrganizationButton: "إضافة منظمة",
+  },
   es: {
     nameLabel: "Nombre",
     descriptionLabel: "Descripción",

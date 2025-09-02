@@ -26,6 +26,18 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "Cancel",
     continue: "Continue",
   },
+  ar: {
+    switchToImportMode: "التبديل إلى وضع الاستيراد؟",
+    switchingWillClear:
+      "التبديل إلى وضع الاستيراد سيمحو الحقول التالية من مسودة المحادثة:",
+    title: "العنوان",
+    bodyText: "نص المحتوى",
+    pollOptions: "خيارات الاستطلاع",
+    settingsPreserved:
+      "سيتم الاحتفاظ بإعدادات الخصوصية واختيار المنظمة.",
+    cancel: "إلغاء",
+    continue: "متابعة",
+  },
   es: {
     switchToImportMode: "¿Cambiar al Modo de Importación?",
     switchingWillClear:

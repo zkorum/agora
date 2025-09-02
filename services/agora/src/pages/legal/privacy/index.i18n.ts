@@ -13,6 +13,11 @@ export const privacyPolicyTranslations: Record<
     referTo: "Refer to",
     externalPageLink: "this external page (WIP)",
   },
+  ar: {
+    privacyPolicy: "سياسة الخصوصية",
+    referTo: "راجع",
+    externalPageLink: "هذه الصفحة الخارجية (قيد التطوير)",
+  },
   es: {
     privacyPolicy: "Política de Privacidad",
     referTo: "Consulte",

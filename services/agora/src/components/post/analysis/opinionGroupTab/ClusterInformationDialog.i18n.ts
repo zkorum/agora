@@ -15,6 +15,13 @@ export const clusterInformationDialogTranslations: Record<
     description2:
       "We use machine learning to identify different schools of thought. This is the very same algorithm powering pol.is, the open-source wikisurvey tool developed by Computational Democracy.",
   },
+  ar: {
+    title: "مجموعات الإجماع",
+    description1:
+      "يتم إنشاء مجموعات الإجماع بناءً على كيفية موافقة الناس ورفضهم للآراء.",
+    description2:
+      "نحن نستخدم التعلم الآلي لتحديد مدارس الفكر المختلفة. هذه هي نفس الخوارزمية التي تشغل pol.is، أداة wikisurvey مفتوحة المصدر المطورة من قبل Computational Democracy.",
+  },
   es: {
     title: "Grupos de Consenso",
     description1:

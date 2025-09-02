@@ -12,6 +12,10 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "Save as draft",
     discard: "Discard",
   },
+  ar: {
+    saveAsDraft: "حفظ كمسودة",
+    discard: "إلغاء",
+  },
   es: {
     saveAsDraft: "Guardar como borrador",
     discard: "Descartar",

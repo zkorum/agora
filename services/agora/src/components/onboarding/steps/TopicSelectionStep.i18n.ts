@@ -13,6 +13,11 @@ export const topicSelectionStepTranslations: Record<
     backButton: "Back",
     closeButton: "Close",
   },
+  ar: {
+    title: "اختر المواضيع التي تهتم بها للبدء",
+    backButton: "العودة",
+    closeButton: "إغلاق",
+  },
   es: {
     title: "Selecciona los temas que te interesan para comenzar",
     backButton: "Atrás",

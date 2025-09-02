@@ -10,6 +10,10 @@ export const deleteOrganizationFormTranslations: Record<
   en: {
     noOrganizationsMessage: "No organizations are registered in the system",
   },
+  ar: {
+    noOrganizationsMessage:
+      "لا توجد منظمات مسجلة في النظام",
+  },
   es: {
     noOrganizationsMessage: "No hay organizaciones registradas en el sistema",
   },

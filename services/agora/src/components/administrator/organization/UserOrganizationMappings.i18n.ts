@@ -15,6 +15,13 @@ export const userOrganizationMappingsTranslations: Record<
     noOrganizationsMessage: "User does not belong to any organizations",
     removeUserOrganizationMappingButton: "Remove user organization mapping",
   },
+  ar: {
+    usernameLabel: "اسم المستخدم",
+    fetchButton: "جلب",
+    noOrganizationsMessage: "المستخدم لا ينتمي إلى أي منظمات",
+    removeUserOrganizationMappingButton:
+      "إزالة ربط المستخدم بالمنظمة",
+  },
   es: {
     usernameLabel: "Nombre de usuario",
     fetchButton: "Buscar",

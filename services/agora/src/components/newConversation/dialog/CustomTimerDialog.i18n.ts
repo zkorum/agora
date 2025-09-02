@@ -16,6 +16,12 @@ export const customTimerDialogTranslations: Record<
     back: "Back",
     confirm: "Confirm",
   },
+  ar: {
+    selectCustomTime: "تحديد وقت مخصص",
+    chooseWhenPublic: "اختر متى ستصبح محادثتك عامة",
+    back: "العودة",
+    confirm: "تأكيد",
+  },
   es: {
     selectCustomTime: "Seleccionar Hora Personalizada",
     chooseWhenPublic: "Elija cuándo su conversación se hará pública",

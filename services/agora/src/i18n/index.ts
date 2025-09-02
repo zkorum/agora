@@ -5,6 +5,7 @@ import fr from "./fr";
 import zh_Hans from "./zh-Hans";
 import zh_Hant from "./zh-Hant";
 import ja from "./ja";
+import ar from "./ar";
 import type { TranslationSchema } from "./types";
 
 export default {
@@ -14,4 +15,5 @@ export default {
   "zh-Hans": zh_Hans,
   "zh-Hant": zh_Hant,
   ja: ja,
+  ar: ar,
 } as Record<SupportedDisplayLanguageCodes, TranslationSchema>;

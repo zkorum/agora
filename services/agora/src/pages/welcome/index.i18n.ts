@@ -19,6 +19,13 @@ export const welcomeTranslations: Record<
     launchApp: "Launch App",
     logOut: "Log Out",
   },
+  ar: {
+    signUp: "التسجيل",
+    login: "تسجيل الدخول",
+    skipAuthentication: "تخطي المصادقة",
+    launchApp: "تشغيل التطبيق",
+    logOut: "تسجيل الخروج",
+  },
   es: {
     signUp: "Registrarse",
     login: "Iniciar Sesión",

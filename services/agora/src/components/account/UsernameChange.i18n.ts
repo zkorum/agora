@@ -20,6 +20,14 @@ export const usernameChangeTranslations: Record<
     usernameCurrentlyInUse: "This username is currently in use",
     submitError: "Error while trying to submit username change",
   },
+  ar: {
+    usernameLabel: "اسم المستخدم",
+    updateButton: "تحديث",
+    usernameChanged: "تم تغيير اسم المستخدم",
+    usernameAlreadyInUse: "اسم المستخدم مُستخدم بالفعل",
+    usernameCurrentlyInUse: "هذا الاسم مُستخدم حالياً",
+    submitError: "خطأ أثناء محاولة تغيير اسم المستخدم",
+  },
   es: {
     usernameLabel: "Nombre de usuario",
     updateButton: "Actualizar",

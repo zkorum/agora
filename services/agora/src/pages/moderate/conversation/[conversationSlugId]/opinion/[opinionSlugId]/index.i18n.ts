@@ -21,6 +21,15 @@ export const opinionModerationTranslations: Record<
     modifyButton: "Modify",
     withdrawButton: "Withdraw",
   },
+  ar: {
+    title: "إشراف على الرأي",
+    actionLabel: "الإجراء",
+    reasonLabel: "السبب",
+    explanationLabel: "الشرح (اختياري)",
+    moderateButton: "إشراف",
+    modifyButton: "تعديل",
+    withdrawButton: "سحب",
+  },
   es: {
     title: "Moderar la opinión",
     actionLabel: "Acción",

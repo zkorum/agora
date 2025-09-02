@@ -6,6 +6,9 @@ export const topicPageTranslations: Record<string, TopicPageTranslations> = {
   en: {
     loadPostsHere: "Load posts here",
   },
+  ar: {
+    loadPostsHere: "تحميل المنشورات هنا",
+  },
   es: {
     loadPostsHere: "Cargar publicaciones aquí",
   },

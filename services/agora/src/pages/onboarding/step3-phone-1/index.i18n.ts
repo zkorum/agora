@@ -27,6 +27,17 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported: "This phone number type is not supported",
     pleaseEnterPhoneNumber: "Please enter a phone number",
   },
+  ar: {
+    pageTitle: "التحقق برقم الهاتف",
+    smsDescription: "ستتلقى رمزًا مكوّنًا من 6 أرقام لمرة واحدة عبر رسالة نصية",
+    phoneNumberPlaceholder: "رقم الهاتف",
+    preferPrivateLogin: "أفضل تسجيل الدخول بخصوصية تامة",
+    developmentNumbers: "أرقام للاختبار:",
+    pleaseEnterValidPhone: "الرجاء إدخال رقم هاتف صالح",
+    countryNotSupported: "هذا البلد غير مدعوم بعد",
+    phoneTypeNotSupported: "نوع رقم الهاتف هذا غير مدعوم",
+    pleaseEnterPhoneNumber: "الرجاء إدخال رقم هاتف",
+  },
   es: {
     pageTitle: "Verificar con número de teléfono",
     smsDescription: "Recibirá un código de un solo uso de 6 dígitos por SMS",

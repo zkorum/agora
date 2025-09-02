@@ -21,6 +21,15 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "No group",
     viewOriginal: "View original opinion",
   },
+  ar: {
+    title: "تحليل الرأي",
+    agree: "أوافق",
+    pass: "تمرير",
+    disagree: "أرفض",
+    total: "المجموع",
+    noGroup: "لا توجد مجموعة",
+    viewOriginal: "عرض الرأي الأصلي",
+  },
   es: {
     title: "Análisis de opinión",
     agree: "De acuerdo",

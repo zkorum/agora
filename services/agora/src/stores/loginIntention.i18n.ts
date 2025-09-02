@@ -20,6 +20,16 @@ export const welcomeTranslations: Record<
     reportUserContent: "A user account is required to report user content.",
     voting: "You will be returned to this conversation when you return.",
   },
+  ar: {
+    newOpinion:
+      "سيتم استعادة مسودة رأيك المكتوب عند عودتك.",
+    newConversation:
+      "سيتم استعادة مسودة محادثتك المكتوبة عند عودتك.",
+    agreement: "ستعود إلى هذا الرأي عند عودتك.",
+    reportUserContent:
+      "مطلوب حساب مستخدم للإبلاغ عن محتوى المستخدم.",
+    voting: "ستعود إلى هذه المحادثة عند عودتك.",
+  },
   es: {
     newOpinion: "Su borrador se restaurará cuando regrese.",
     newConversation:

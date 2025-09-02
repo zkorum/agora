@@ -13,6 +13,10 @@ export const divisiveTabTranslations: Record<
     divisiveTitle: "Divisive",
     noDivisiveOpinionsMessage: "No divisive opinions found yet.",
   },
+  ar: {
+    divisiveTitle: "مثير للجدل",
+    noDivisiveOpinionsMessage: "لم يتم العثور على آراء مثيرة للجدل بعد.",
+  },
   es: {
     divisiveTitle: "Divisivo",
     noDivisiveOpinionsMessage: "Aún no se encontraron opiniones divisivas.",

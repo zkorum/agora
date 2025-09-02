@@ -11,6 +11,9 @@ export const spokenLanguagesSettingsTranslations: Record<
   en: {
     pageTitle: "Spoken Languages",
   },
+  ar: {
+    pageTitle: "اللغات المنطوقة",
+  },
   es: {
     pageTitle: "Idiomas hablados",
   },

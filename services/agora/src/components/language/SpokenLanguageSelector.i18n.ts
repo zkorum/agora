@@ -27,6 +27,18 @@ export const spokenLanguageSelectorTranslations: Record<
     failedToSaveLanguages: "Failed to save language preferences",
     failedToLoadLanguages: "Failed to load language preferences",
   },
+  ar: {
+    selectedLanguages: "اللغات المُختارة",
+    addMoreLanguages: "إضافة مزيد من اللغات",
+    selectLanguages: "اختيار اللغات",
+    searchLanguages: "البحث عن اللغات...",
+    noLanguagesFound: "لم يتم العثور على لغات",
+    allLanguagesSelected: "تم اختيار جميع اللغات",
+    cannotRemoveLastLanguage:
+      "يجب أن تكون لديك لغة واحدة مُختارة على الأقل",
+    failedToSaveLanguages: "فشل في حفظ تفضيلات اللغة",
+    failedToLoadLanguages: "فشل في تحميل تفضيلات اللغة",
+  },
   es: {
     selectedLanguages: "Idiomas seleccionados",
     addMoreLanguages: "Agregar más idiomas",

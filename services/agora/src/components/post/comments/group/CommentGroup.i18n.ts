@@ -9,6 +9,9 @@ export const commentGroupTranslations: Record<
   en: {
     noOpinionsMessage: "There are no opinions in this conversation filter.",
   },
+  ar: {
+    noOpinionsMessage: "لا توجد آراء في هذا مرشح المحادثة.",
+  },
   es: {
     noOpinionsMessage: "No hay opiniones en este filtro de conversación.",
   },

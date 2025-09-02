@@ -16,6 +16,12 @@ export const pollComponentTranslations: Record<
     inputOptionText: "Input option text",
     addOption: "Add Option",
   },
+  ar: {
+    addPoll: "إضافة استطلاع",
+    option: "خيار",
+    inputOptionText: "أدخل نص الخيار",
+    addOption: "إضافة خيار",
+  },
   es: {
     addPoll: "Agregar una encuesta",
     option: "Opción",

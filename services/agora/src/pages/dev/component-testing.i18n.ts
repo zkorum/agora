@@ -16,6 +16,13 @@ export const componentTestingTranslations: Record<
       "Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
     openPreferencesDialogButton: "Open Preferences Dialog",
   },
+  ar: {
+    componentTesting: "ترجمة: Component Testing",
+    preferencesDialog: "ترجمة: Preferences Dialog",
+    preferencesDialogDescription:
+      "ترجمة: Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
+    openPreferencesDialogButton: "ترجمة: Open Preferences Dialog",
+  },
   es: {
     componentTesting: "Prueba de componentes",
     preferencesDialog: "Diálogo de preferencias",

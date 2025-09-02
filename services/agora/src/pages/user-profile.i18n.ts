@@ -13,6 +13,12 @@ export const userProfileTranslations: Record<string, UserProfileTranslations> =
       conversationTab: "Conversation",
       opinionTab: "Opinion",
     },
+    ar: {
+      userProfile: "ملف المستخدم",
+      conversations: "محادثات",
+      conversationTab: "المحادثة",
+      opinionTab: "الرأي",
+    },
     es: {
       userProfile: "Perfil de Usuario",
       conversations: "conversaciones",

@@ -6,6 +6,9 @@ export const staticIconTranslations: Record<string, StaticIconTranslations> = {
   en: {
     stars: "Stars",
   },
+  ar: {
+    stars: "نجوم",
+  },
   es: {
     stars: "Estrellas",
   },

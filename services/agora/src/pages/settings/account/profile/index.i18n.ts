@@ -11,6 +11,10 @@ export const profileSettingsTranslations: Record<
     pageTitle: "Profile Settings",
     changeUsernameTitle: "Change username",
   },
+  ar: {
+    pageTitle: "إعدادات الملف الشخصي",
+    changeUsernameTitle: "تغيير اسم المستخدم",
+  },
   es: {
     pageTitle: "Configuración de Perfil",
     changeUsernameTitle: "Cambiar nombre de usuario",

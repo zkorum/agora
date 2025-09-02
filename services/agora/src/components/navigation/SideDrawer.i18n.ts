@@ -19,6 +19,13 @@ export const sideDrawerTranslations: Record<
     profile: "Profile",
     settings: "Settings",
   },
+  ar: {
+    home: "الرئيسية",
+    explore: "استكشاف",
+    dings: "التنبيهات",
+    profile: "الملف الشخصي",
+    settings: "الإعدادات",
+  },
   es: {
     home: "Inicio",
     explore: "Explorar",

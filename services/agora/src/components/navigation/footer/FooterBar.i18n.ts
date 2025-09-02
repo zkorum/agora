@@ -15,6 +15,11 @@ export const footerBarTranslations: Record<
     explore: "Explore",
     dings: "Dings",
   },
+  ar: {
+    home: "الرئيسية",
+    explore: "استكشاف",
+    dings: "التنبيهات",
+  },
   es: {
     home: "Inicio",
     explore: "Explorar",

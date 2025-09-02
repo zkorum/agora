@@ -9,6 +9,9 @@ export const conversationTitleWithPrivacyLabelTranslations: Record<
   en: {
     privateLabel: "Private",
   },
+  ar: {
+    privateLabel: "خاص",
+  },
   es: {
     privateLabel: "Privado",
   },

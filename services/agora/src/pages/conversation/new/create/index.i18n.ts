@@ -16,6 +16,13 @@ export const createConversationTranslations: Record<
     bodyPlaceholder:
       "Body text. Provide context or relevant resources. Make sure it's aligned with the main question!",
   },
+  ar: {
+    importButton: "استيراد",
+    nextButton: "التالي",
+    titlePlaceholder: "ماذا تريد أن تسأل؟",
+    bodyPlaceholder:
+      "نص المحتوى. قدم سياقاً أو موارد ذات صلة. تأكد من أنه متماشٍ مع السؤال الرئيسي!",
+  },
   es: {
     importButton: "Importar",
     nextButton: "Siguiente",

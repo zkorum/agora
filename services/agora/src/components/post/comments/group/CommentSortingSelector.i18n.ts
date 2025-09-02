@@ -18,6 +18,13 @@ export const commentSortingSelectorTranslations: Record<
     moderationHistory: "Moderation History",
     hidden: "Hidden",
   },
+  ar: {
+    filterTitle: "تصفية الردود حسب:",
+    discover: "استكشف",
+    new: "جديد",
+    moderationHistory: "تاريخ الإشراف",
+    hidden: "مخفي",
+  },
   es: {
     filterTitle: "Filtrar respuestas por:",
     discover: "Descubrir",

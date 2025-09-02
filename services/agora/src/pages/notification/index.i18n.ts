@@ -19,6 +19,14 @@ export const notificationTranslations: Record<
     onePersonVoted: "1 person voted on your opinion:",
     peopleVoted: "people voted on your opinion:",
   },
+  ar: {
+    notifications: "الإشعارات",
+    endOfFeed: "انتهاء موجز الإشعارات",
+    noNotifications: "لا توجد لديك إشعارات",
+    contributedOpinion: "ساهم برأي في محادثتك:",
+    onePersonVoted: "شخص واحد صوت على رأيك:",
+    peopleVoted: "أشخاص صوتوا على رأيك:",
+  },
   es: {
     notifications: "Notificaciones",
     endOfFeed: "Fin del feed de notificaciones",
