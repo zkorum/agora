@@ -29,10 +29,10 @@ export const phoneOnboardingTranslations: Record<
   },
   ar: {
     pageTitle: "التحقق برقم الهاتف",
-    smsDescription: "ستتلقى رمز مكون من 6 أرقام لمرة واحدة عبر الرسائل النصية",
+    smsDescription: "ستتلقى رمزًا مكوّنًا من 6 أرقام لمرة واحدة عبر رسالة نصية",
     phoneNumberPlaceholder: "رقم الهاتف",
-    preferPrivateLogin: "أفضل تسجيل الدخول بخصوصية كاملة",
-    developmentNumbers: "أرقام التطوير:",
+    preferPrivateLogin: "أفضل تسجيل الدخول بخصوصية تامة",
+    developmentNumbers: "أرقام للاختبار:",
     pleaseEnterValidPhone: "الرجاء إدخال رقم هاتف صالح",
     countryNotSupported: "هذا البلد غير مدعوم بعد",
     phoneTypeNotSupported: "نوع رقم الهاتف هذا غير مدعوم",
