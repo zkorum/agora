@@ -15,8 +15,8 @@ export const commentModerationTranslations: Record<
     moderatorFlaggedMessage: "Moderator flagged this response as",
   },
   ar: {
-    edit: "ترجمة: Edit",
-    moderatorFlaggedMessage: "ترجمة: Moderator flagged this response as",
+    edit: "تحرير",
+    moderatorFlaggedMessage: "أشر المشرف إلى هذا الرد كـ",
   },
   es: {
     edit: "Editar",

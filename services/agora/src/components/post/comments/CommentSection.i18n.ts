@@ -13,9 +13,8 @@ export const commentSectionTranslations: Record<
       "This opinion has been removed by the moderators",
   },
   ar: {
-    opinionNotFound: "ترجمة: Opinion not found:",
-    opinionRemovedByModerators:
-      "ترجمة: This opinion has been removed by the moderators",
+    opinionNotFound: "الرأي غير موجود",
+    opinionRemovedByModerators: "تمت إزالة هذا الرأي من قبل المشرفين",
   },
   es: {
     opinionNotFound: "Opinión no encontrada:",

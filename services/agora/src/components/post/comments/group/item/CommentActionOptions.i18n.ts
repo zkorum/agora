@@ -14,9 +14,9 @@ export const commentActionOptionsTranslations: Record<
     failedToDeleteOpinion: "Failed to delete opinion",
   },
   ar: {
-    agoraOpinion: "ترجمة: Agora Opinion",
-    opinionDeleted: "ترجمة: Opinion deleted",
-    failedToDeleteOpinion: "ترجمة: Failed to delete opinion",
+    agoraOpinion: "رأي أجورا",
+    opinionDeleted: "تم حذف الرأي",
+    failedToDeleteOpinion: "فشل في حذف الرأي",
   },
   es: {
     agoraOpinion: "Opinión de Agora",

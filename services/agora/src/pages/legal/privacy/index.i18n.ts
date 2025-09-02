@@ -14,9 +14,9 @@ export const privacyPolicyTranslations: Record<
     externalPageLink: "this external page (WIP)",
   },
   ar: {
-    privacyPolicy: "ترجمة: Privacy Policy",
-    referTo: "ترجمة: Refer to",
-    externalPageLink: "ترجمة: this external page (WIP)",
+    privacyPolicy: "سياسة الخصوصية",
+    referTo: "راجع",
+    externalPageLink: "هذه الصفحة الخارجية (قيد التطوير)",
   },
   es: {
     privacyPolicy: "Política de Privacidad",

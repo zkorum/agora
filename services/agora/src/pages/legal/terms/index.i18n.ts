@@ -14,9 +14,9 @@ export const termsOfServiceTranslations: Record<
     externalPageLink: "this external page (WIP)",
   },
   ar: {
-    termsOfService: "ترجمة: Terms of Service",
-    referTo: "ترجمة: Refer to",
-    externalPageLink: "ترجمة: this external page (WIP)",
+    termsOfService: "شروط الخدمة",
+    referTo: "راجع",
+    externalPageLink: "هذه الصفحة الخارجية (قيد التطوير)",
   },
   es: {
     termsOfService: "Términos de Servicio",

@@ -22,13 +22,13 @@ export const commentActionBarTranslations: Record<
     agreeAriaLabel: "Agree with comment. Current agrees:",
   },
   ar: {
-    disagree: "ترجمة: Disagree",
-    pass: "ترجمة: Pass",
-    agree: "ترجمة: Agree",
-    voteChangeDisabled: "ترجمة: Vote change temporarily disabled",
-    disagreeAriaLabel: "ترجمة: Disagree with comment. Current disagrees:",
-    passAriaLabel: "ترجمة: Pass on comment. Current passes:",
-    agreeAriaLabel: "ترجمة: Agree with comment. Current agrees:",
+    disagree: "أرفض",
+    pass: "تمرير",
+    agree: "أوافق",
+    voteChangeDisabled: "تغيير التصويت معطل مؤقتاً",
+    disagreeAriaLabel: "أرفض التعليق. عدد الرفض الحالي:"
+    passAriaLabel: "تمرير التعليق. عدد التمرير الحالي:"
+    agreeAriaLabel: "أوافق على التعليق. عدد الموافقة الحالي:"
   },
   es: {
     disagree: "En desacuerdo",

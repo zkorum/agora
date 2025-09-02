@@ -16,9 +16,9 @@ export const opinionGroupTabTranslations: Record<
     meLabel: "Me",
   },
   ar: {
-    groupsTitle: "ترجمة: Groups",
-    notEnoughGroupsMessage: "ترجمة: Not enough groups to display.",
-    meLabel: "ترجمة: Me",
+    groupsTitle: "المجموعات",
+    notEnoughGroupsMessage: "لا توجد مجموعات كافية للعرض.",
+    meLabel: "أنا",
   },
   es: {
     groupsTitle: "Grupos",
