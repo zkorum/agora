@@ -26,9 +26,9 @@ export const commentActionBarTranslations: Record<
     pass: "تمرير",
     agree: "أوافق",
     voteChangeDisabled: "تغيير التصويت معطل مؤقتاً",
-    disagreeAriaLabel: "أرفض التعليق. عدد الرفض الحالي:"
-    passAriaLabel: "تمرير التعليق. عدد التمرير الحالي:"
-    agreeAriaLabel: "أوافق على التعليق. عدد الموافقة الحالي:"
+    disagreeAriaLabel: "أرفض التعليق. عدد الرفض الحالي:",
+    passAriaLabel: "تمرير التعليق. عدد التمرير الحالي:",
+    agreeAriaLabel: "أوافق على التعليق. عدد الموافقة الحالي:",
   },
   es: {
     disagree: "En desacuerdo",
