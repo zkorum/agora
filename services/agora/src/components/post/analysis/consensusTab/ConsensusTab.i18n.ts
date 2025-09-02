@@ -13,6 +13,10 @@ export const consensusTabTranslations: Record<
     commonGroundTitle: "Common ground",
     noCommonGroundMessage: "No common ground found yet.",
   },
+  ar: {
+    commonGroundTitle: "أرضية مشتركة",
+    noCommonGroundMessage: "لم يتم العثور على أرضية مشتركة بعد.",
+  },
   es: {
     commonGroundTitle: "Terreno común",
     noCommonGroundMessage: "Aún no se encontró terreno común.",

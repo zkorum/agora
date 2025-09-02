@@ -9,6 +9,9 @@ export const settingsSearchInputTranslations: Record<
   en: {
     searchPlaceholder: "Search...",
   },
+  ar: {
+    searchPlaceholder: "بحث...",
+  },
   es: {
     searchPlaceholder: "Buscar...",
   },

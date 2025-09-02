@@ -17,6 +17,12 @@ export const preLoginIntentionDialogTranslations: Record<
     labelOk: "Log In",
     labelCancel: "Cancel",
   },
+  ar: {
+    title: "تسجيل الدخول إلى أغورا",
+    message: "سجّل دخولك للمشاركة في النقاشات",
+    labelOk: "تسجيل الدخول",
+    labelCancel: "إلغاء",
+  },
   es: {
     title: "Iniciar sesión en Ágora",
     message: "Inicia sesión para participar en las discusiones",

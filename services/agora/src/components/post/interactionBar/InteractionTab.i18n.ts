@@ -10,6 +10,9 @@ export const interactionTabTranslations: Record<
   en: {
     analysis: "Analysis",
   },
+  ar: {
+    analysis: "التحليل",
+  },
   es: {
     analysis: "Análisis",
   },

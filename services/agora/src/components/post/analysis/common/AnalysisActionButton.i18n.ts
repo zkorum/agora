@@ -11,6 +11,10 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "Learn more",
     viewMore: "View more",
   },
+  ar: {
+    learnMore: "تعلّم أكثر",
+    viewMore: "عرض أكثر",
+  },
   es: {
     learnMore: "Aprender más",
     viewMore: "Ver más",

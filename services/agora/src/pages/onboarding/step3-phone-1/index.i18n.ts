@@ -27,6 +27,17 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported: "This phone number type is not supported",
     pleaseEnterPhoneNumber: "Please enter a phone number",
   },
+  ar: {
+    pageTitle: "ترجمة: Verify with phone number",
+    smsDescription: "ترجمة: You will receive a 6-digit one-time code by SMS",
+    phoneNumberPlaceholder: "ترجمة: Phone number",
+    preferPrivateLogin: "ترجمة: I'd prefer to login with complete privacy",
+    developmentNumbers: "ترجمة: Development Numbers:",
+    pleaseEnterValidPhone: "ترجمة: Please enter a valid phone number",
+    countryNotSupported: "ترجمة: This country is not supported yet",
+    phoneTypeNotSupported: "ترجمة: This phone number type is not supported",
+    pleaseEnterPhoneNumber: "ترجمة: Please enter a phone number",
+  },
   es: {
     pageTitle: "Verificar con número de teléfono",
     smsDescription: "Recibirá un código de un solo uso de 6 dígitos por SMS",

@@ -15,6 +15,11 @@ export const homeTranslations: Record<
     popular: "Popular",
     new: "New",
   },
+  ar: {
+    following: "المتابَعة",
+    popular: "الشائع",
+    new: "جديد",
+  },
   es: {
     following: "Siguiendo",
     popular: "Popular",

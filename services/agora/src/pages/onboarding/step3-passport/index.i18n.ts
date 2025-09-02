@@ -48,6 +48,29 @@ export const passportOnboardingTranslations: Record<
     syncHiccup:
       "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
   },
+  ar: {
+    pageTitle: "ترجمة: Own Your Privacy",
+    description:
+      "ترجمة: RariMe is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you're a unique human without sharing any personal data with anyone.",
+    download: "ترجمة: Download",
+    claimAnonymousId: "ترجمة: Claim your anonymous ID",
+    comeBackAndVerify: "ترجمة: Come back here and click Verify",
+    scanQrCode: "ترجمة: Scan the QR code with RariMe to verify your identity",
+    failedToGenerateLink: "ترجمة: Failed to generate verification link",
+    loadingVerificationLink: "ترجمة: Loading verification link",
+    openLinkOnMobile: "ترجمة: Or open the below link on your mobile browser:",
+    copy: "ترجمة: Copy",
+    waitingForVerification: "ترجمة: Waiting for verification...",
+    verify: "ترجمة: Verify",
+    preferPhoneVerification: "ترجمة: I'd rather verify with my phone number",
+    verificationSuccessful: "ترجمة: Verification successful 🎉",
+    verificationFailed: "ترجمة: Verification attempt failed. Please retry.",
+    passportAlreadyLinked:
+      "ترجمة: This passport is already linked to another RariMe account. Please try a different one.",
+    unexpectedError: "ترجمة: Oops! Unexpected error—try refreshing the page",
+    syncHiccup:
+      "ترجمة: Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
+  },
   es: {
     pageTitle: "Proteja su privacidad",
     description:

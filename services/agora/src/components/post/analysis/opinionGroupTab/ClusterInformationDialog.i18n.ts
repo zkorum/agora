@@ -15,6 +15,13 @@ export const clusterInformationDialogTranslations: Record<
     description2:
       "We use machine learning to identify different schools of thought. This is the very same algorithm powering pol.is, the open-source wikisurvey tool developed by Computational Democracy.",
   },
+  ar: {
+    title: "ترجمة: Consensus Groups",
+    description1:
+      "ترجمة: Consensus groups are created based on how people agree and disagree with opinions.",
+    description2:
+      "ترجمة: We use machine learning to identify different schools of thought. This is the very same algorithm powering pol.is, the open-source wikisurvey tool developed by Computational Democracy.",
+  },
   es: {
     title: "Grupos de Consenso",
     description1:

@@ -21,6 +21,15 @@ export const commentActionBarTranslations: Record<
     passAriaLabel: "Pass on comment. Current passes:",
     agreeAriaLabel: "Agree with comment. Current agrees:",
   },
+  ar: {
+    disagree: "ترجمة: Disagree",
+    pass: "ترجمة: Pass",
+    agree: "ترجمة: Agree",
+    voteChangeDisabled: "ترجمة: Vote change temporarily disabled",
+    disagreeAriaLabel: "ترجمة: Disagree with comment. Current disagrees:",
+    passAriaLabel: "ترجمة: Pass on comment. Current passes:",
+    agreeAriaLabel: "ترجمة: Agree with comment. Current agrees:",
+  },
   es: {
     disagree: "En desacuerdo",
     pass: "Pasar",

@@ -11,6 +11,10 @@ export const spokenLanguageStepTranslations: Record<
     title: "What languages do you speak?",
     nextButton: "Next",
   },
+  ar: {
+    title: "ما هي اللغات التي تتحدثها؟",
+    nextButton: "التالي",
+  },
   es: {
     title: "¿Qué idiomas hablas?",
     nextButton: "Siguiente",

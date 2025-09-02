@@ -28,6 +28,19 @@ export const reportContentDialogTranslations: Record<
     reportTypeConversation: "conversation",
     reportTypeOpinion: "opinion",
   },
+  ar: {
+    submitReportTitle: "إرسال تقرير",
+    improveCommunityText:
+      "شكرًا لك على مساعدتنا في تحسين المجتمع. ما هي المشكلة في هذه {reportType}؟",
+    thanksForFeedbackTitle: "شكرًا لك على ملاحظاتك!",
+    flaggingReasonText:
+      "لماذا تقوم بالإبلاغ عن هذه {reportType} كـ {selectedReason}؟",
+    addExplanationLabel: "إضافة توضيح",
+    skipButton: "تخطي",
+    submitButton: "إرسال",
+    reportTypeConversation: "محادثة",
+    reportTypeOpinion: "رأي",
+  },
   es: {
     submitReportTitle: "Enviar un reporte",
     improveCommunityText:

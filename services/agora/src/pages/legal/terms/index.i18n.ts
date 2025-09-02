@@ -13,6 +13,11 @@ export const termsOfServiceTranslations: Record<
     referTo: "Refer to",
     externalPageLink: "this external page (WIP)",
   },
+  ar: {
+    termsOfService: "ترجمة: Terms of Service",
+    referTo: "ترجمة: Refer to",
+    externalPageLink: "ترجمة: this external page (WIP)",
+  },
   es: {
     termsOfService: "Términos de Servicio",
     referTo: "Consulte",

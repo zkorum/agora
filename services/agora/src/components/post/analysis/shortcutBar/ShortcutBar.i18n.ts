@@ -17,6 +17,14 @@ export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
       divisive: "Divisive",
       groups: "Groups",
     },
+    ar: {
+      summary: "ملخص",
+      me: "أنا",
+      commonGround: "أرضية مشتركة",
+      majority: "الأغلبية",
+      divisive: "مثير للجدل",
+      groups: "مجموعات",
+    },
     es: {
       summary: "Resumen",
       me: "Yo",

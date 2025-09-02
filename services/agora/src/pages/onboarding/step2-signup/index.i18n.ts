@@ -18,6 +18,13 @@ export const step2SignupOnboardingTranslations: Record<
     verifyAnonymously: "Verify anonymously",
     verifyWithPhone: "Verify with my phone number",
   },
+  ar: {
+    pageTitle: "تهدف أجورا إلى أن تكون للبشر حصرياً",
+    description:
+      "أكثر من نصف حركة المرور على الإنترنت تأتي من البوتات. لهذا نتحقق من المستخدمين، حتى تناقش البشر وليس الروبوتات التي تخطط للهيمنة على العالم!",
+    verifyAnonymously: "التحقق بشكل مجهول",
+    verifyWithPhone: "التحقق برقم هاتفي",
+  },
   es: {
     pageTitle: "Agora aspira a ser exclusivamente humana",
     description:

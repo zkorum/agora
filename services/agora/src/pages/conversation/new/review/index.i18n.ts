@@ -31,6 +31,21 @@ export const conversationReviewTranslations: Record<
     errorCreatingConversation:
       "Error while trying to create a new conversation",
   },
+  ar: {
+    posting: "جاري النشر...",
+    post: "نشر",
+    addSeedOpinions: "إضافة آراء أولية",
+    seedOpinionsDescription:
+      "يُنصح ببذر 8 إلى 15 رأيًا عبر مجموعة من وجهات النظر. هذا له تأثير قوي على المشاركة المبكرة.",
+    add: "إضافة",
+    inputTextPlaceholder: "أدخل النص",
+    opinionCannotBeEmpty: "لا يمكن أن يكون الرأي فارغًا",
+    opinionExceedsLimit:
+      "الرأي يتجاوز حد الـ {limit} حرف ({count}/{limit})",
+    opinionDuplicate: "هذا الرأي مكرر",
+    errorCreatingConversation:
+      "خطأ أثناء محاولة إنشاء محادثة جديدة",
+  },
   es: {
     posting: "Publicando...",
     post: "Publicar",

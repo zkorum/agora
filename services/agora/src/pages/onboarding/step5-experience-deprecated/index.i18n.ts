@@ -19,6 +19,15 @@ export const step5ExperienceTranslations: Record<
     braveSpaceDescription:
       "Content flagged as antisocial is shown to me with a warning.",
   },
+  ar: {
+    title: "اختر كيف تريد أن تجرب أجورا",
+    safeSpaceTitle: "مساحة آمنة",
+    safeSpaceDescription:
+      "المحتوى المُعلَّم كمعادٍ للمجتمع (مثل التحرش أو التعصب) يُزال من خلاصتي. إذا كنت أريد رؤية ما تم إزالته، يمكنني التحقق من تاريخ الإشراف على المنشور.",
+    braveSpaceTitle: "مساحة شجاعة",
+    braveSpaceDescription:
+      "المحتوى المُعلَّم كمعادٍ للمجتمع يُعرض لي مع تحذير.",
+  },
   es: {
     title: "Elija cómo quiere experimentar Agora",
     safeSpaceTitle: "Espacio seguro",

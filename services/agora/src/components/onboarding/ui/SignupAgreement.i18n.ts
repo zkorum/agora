@@ -15,6 +15,12 @@ export const signupAgreementTranslations: Record<
     and: "and",
     privacyPolicy: "Privacy Policy",
   },
+  ar: {
+    agreementText: "بتسجيل الدخول، فإنك توافق على",
+    termsOfService: "شروط الخدمة",
+    and: "و",
+    privacyPolicy: "سياسة الخصوصية",
+  },
   es: {
     agreementText: "Al iniciar sesión, aceptas nuestros",
     termsOfService: "Términos de Servicio",

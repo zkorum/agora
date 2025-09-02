@@ -21,6 +21,15 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "No group",
     viewOriginal: "View original opinion",
   },
+  ar: {
+    title: "ترجمة: Opinion analysis",
+    agree: "ترجمة: Agree",
+    pass: "ترجمة: Pass",
+    disagree: "ترجمة: Disagree",
+    total: "ترجمة: Total",
+    noGroup: "ترجمة: No group",
+    viewOriginal: "ترجمة: View original opinion",
+  },
   es: {
     title: "Análisis de opinión",
     agree: "De acuerdo",

@@ -17,6 +17,13 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "All others",
     allOtherGroups: "All other groups",
   },
+  ar: {
+    opinionsTitle: "ترجمة: Opinions",
+    noOpinionsMessage: "ترجمة: No opinions available for this group.",
+    thisGroup: "ترجمة: This group",
+    allOthers: "ترجمة: All others",
+    allOtherGroups: "ترجمة: All other groups",
+  },
   es: {
     opinionsTitle: "Opiniones",
     noOpinionsMessage: "No hay opiniones disponibles para este grupo.",

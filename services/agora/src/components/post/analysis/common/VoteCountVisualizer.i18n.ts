@@ -18,6 +18,13 @@ export const voteCountVisualizerTranslations: Record<
     group3: "Group 3",
     group4: "Group 4",
   },
+  ar: {
+    votes: "أصوات",
+    group1: "مجموعة 1",
+    group2: "مجموعة 2",
+    group3: "مجموعة 3",
+    group4: "مجموعة 4",
+  },
   es: {
     votes: "votos",
     group1: "Grupo 1",

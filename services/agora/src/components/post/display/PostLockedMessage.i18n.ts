@@ -11,6 +11,10 @@ export const postLockedMessageTranslations: Record<
     lockedMessage: 'Post locked as "{reason}". New opinions cannot be posted.',
     editButton: "Edit",
   },
+  ar: {
+    lockedMessage: 'تم قفل المنشور بسبب "{reason}". لا يمكن نشر آراء جديدة.',
+    editButton: "تعديل",
+  },
   es: {
     lockedMessage:
       'Publicación bloqueada como "{reason}". No se pueden publicar nuevas opiniones.',

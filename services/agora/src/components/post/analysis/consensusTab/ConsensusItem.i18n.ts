@@ -15,6 +15,12 @@ export const consensusItemTranslations: Record<
     disagree: "Disagree",
     noVote: "No Vote",
   },
+  ar: {
+    agree: "أوافق",
+    pass: "تخطي",
+    disagree: "لا أوافق",
+    noVote: "لم أصوّت",
+  },
   es: {
     agree: "De acuerdo",
     pass: "Pasar",

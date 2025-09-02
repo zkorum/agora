@@ -19,6 +19,14 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "Anyone with the link can view the conversation, vote and contribute opinions",
   },
+  ar: {
+    requiresLoginTitle: "يتطلب تسجيل الدخول",
+    requiresLoginDescription:
+      "يمكن لأي شخص لديه الرابط عرض المحادثة، ولكن سيحتاج إلى تسجيل الدخول للتصويت وإضافة آراء",
+    guestParticipationTitle: "مشاركة الضيوف",
+    guestParticipationDescription:
+      "يمكن لأي شخص لديه الرابط عرض المحادثة والتصويت وإضافة آراء",
+  },
   es: {
     requiresLoginTitle: "Requiere inicio de sesión",
     requiresLoginDescription:

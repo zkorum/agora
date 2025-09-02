@@ -40,6 +40,28 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
       restrictedPhoneType:
         "Sorry, this phone number is not supported for security reasons. Please try another.",
     },
+    ar: {
+      title: "ترجمة: Enter the 6-digit code",
+      instructions:
+        "ترجمة: Enter the 6-digit that we have sent via the phone number",
+      expiresIn: "ترجمة: Expires in",
+      codeExpired: "ترجمة: Code expired",
+      changeNumber: "ترجمة: Change Number",
+      resendCodeIn: "ترجمة: Resend Code in",
+      resendCode: "ترجمة: Resend Code",
+      pleaseEnterValidCode: "ترجمة: Please enter a valid 6-digit code",
+      verificationSuccessful: "ترجمة: Verification successful 🎉",
+      codeExpiredResend: "ترجمة: Code expired—resend a new code",
+      wrongCodeTryAgain: "ترجمة: Wrong code—try again",
+      syncHiccupDetected: "ترجمة: Oops! Sync hiccup detected—resend a new code",
+      somethingWrong: "ترجمة: Oops! Something is wrong",
+      tooManyAttempts:
+        "ترجمة: Too many attempts—please wait before requesting a new code",
+      invalidPhoneNumber:
+        "ترجمة: Sorry, this phone number is invalid. Please check and try again.",
+      restrictedPhoneType:
+        "ترجمة: Sorry, this phone number is not supported for security reasons. Please try another.",
+    },
     es: {
       title: "Ingrese el código de 6 dígitos",
       instructions:

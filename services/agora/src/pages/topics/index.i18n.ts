@@ -10,6 +10,11 @@ export const topicsTranslations: Record<string, TopicsTranslations> = {
     following: "Following",
     follow: "Follow",
   },
+  ar: {
+    exploreTopics: "استكشف المواضيع",
+    following: "المتابَعة",
+    follow: "متابعة",
+  },
   es: {
     exploreTopics: "Explorar Temas",
     following: "Siguiendo",

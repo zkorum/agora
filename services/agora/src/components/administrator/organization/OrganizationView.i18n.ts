@@ -14,6 +14,11 @@ export const organizationViewTranslations: Record<
     usernameLabel: "Username",
     addUserToOrganizationButton: "Add User to Organization",
   },
+  ar: {
+    deleteOrganizationButton: "حذف المنظمة",
+    usernameLabel: "اسم المستخدم",
+    addUserToOrganizationButton: "إضافة مستخدم للمنظمة",
+  },
   es: {
     deleteOrganizationButton: "Eliminar Organización",
     usernameLabel: "Nombre de usuario",

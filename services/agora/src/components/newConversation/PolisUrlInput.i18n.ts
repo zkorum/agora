@@ -23,6 +23,15 @@ export const polisUrlInputTranslations: Record<
     termsOfUse: "Terms of Use",
     ccLicense: "CC BY 4.0",
   },
+  ar: {
+    importTitle: "استيراد محادثة من بوليس",
+    description: "الصق رابط بوليس أدناه لاستيراد محادثة.",
+    validUrlExamples: "أمثلة روابط صالحة:",
+    urlPlaceholder: "مثلاً، https://pol.is/xxxxx",
+    polisTerms: "شروط بوليس",
+    termsOfUse: "شروط الاستخدام",
+    ccLicense: "CC BY 4.0",
+  },
   es: {
     importTitle: "Importar Conversación desde Polis",
     description:

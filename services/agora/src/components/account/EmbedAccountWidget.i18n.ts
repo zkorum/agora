@@ -11,6 +11,10 @@ export const embedAccountWidgetTranslations: Record<
     logoutButton: "Log Out",
     logoutTooltip: "Logout",
   },
+  ar: {
+    logoutButton: "تسجيل الخروج",
+    logoutTooltip: "تسجيل الخروج",
+  },
   es: {
     logoutButton: "Cerrar Sesión",
     logoutTooltip: "Cerrar Sesión",

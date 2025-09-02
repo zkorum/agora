@@ -17,6 +17,14 @@ export const userReportsTranslations: Record<string, UserReportsTranslations> =
       sexual: "Sexual",
       spam: "Spam",
     },
+    ar: {
+      misleading: "مضلل",
+      antisocial: "غير اجتماعي",
+      illegal: "غير قانوني",
+      doxing: "كشف الهوية",
+      sexual: "جنسي",
+      spam: "بريد عشوائي",
+    },
     es: {
       misleading: "Engañoso",
       antisocial: "Antisocial",

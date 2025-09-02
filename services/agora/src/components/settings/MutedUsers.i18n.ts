@@ -8,6 +8,10 @@ export const mutedUsersTranslations: Record<string, MutedUsersTranslations> = {
     title: "Muted users",
     emptyMessage: "You have no muted users",
   },
+  ar: {
+    title: "المستخدمون المكتومون",
+    emptyMessage: "ليس لديك مستخدمون مكتومون",
+  },
   es: {
     title: "Usuarios silenciados",
     emptyMessage: "No tienes usuarios silenciados",

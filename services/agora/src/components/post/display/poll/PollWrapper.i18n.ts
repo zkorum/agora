@@ -11,6 +11,11 @@ export const pollWrapperTranslations: Record<string, PollWrapperTranslations> =
       vote: "Vote",
       votes: "votes",
     },
+    ar: {
+      results: "النتائج",
+      vote: "تصويت",
+      votes: "أصوات",
+    },
     es: {
       results: "Resultados",
       vote: "Votar",

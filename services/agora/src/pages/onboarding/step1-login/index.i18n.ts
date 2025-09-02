@@ -17,6 +17,12 @@ export const loginOnboardingTranslations: Record<
     loginWithRariMe: "Login with RariMe",
     loginWithPhone: "Login with my phone number",
   },
+  ar: {
+    pageTitle: "تسجيل الدخول",
+    description: "يرجى اختيار طريقة تسجيل الدخول.",
+    loginWithRariMe: "تسجيل الدخول باستخدام RariMe",
+    loginWithPhone: "تسجيل الدخول برقم هاتفي",
+  },
   es: {
     pageTitle: "Iniciar sesión",
     description: "Por favor, seleccione un método de inicio de sesión.",
