@@ -14,7 +14,7 @@ export const userProfileTranslations: Record<string, UserProfileTranslations> =
       opinionTab: "Opinion",
     },
     ar: {
-      userProfile: "ملف المستخدم",
+      userProfile: "الملف الشخصي",
       conversations: "محادثات",
       conversationTab: "المحادثة",
       opinionTab: "الرأي",
