@@ -1,4 +1,4 @@
-flyway.url=jdbc:postgresql://localhost:5432/agora
-flyway.user=postgres
-flyway.password=CHANGEME
+flyway.url=jdbc:postgresql://localhost:{PORT}/{POSTGRES_DB} # Get values from docker-compose.yml
+flyway.user={POSTGRES_USER} # Get value from docker-compose.yml
+flyway.password={POSTGRES_PASSWORD} # Get value from docker-compose.yml
 flyway.cleanDisabled=true
