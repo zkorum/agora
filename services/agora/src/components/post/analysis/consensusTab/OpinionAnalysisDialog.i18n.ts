@@ -15,7 +15,7 @@ export const opinionAnalysisDialogTranslations: Record<
   en: {
     title: "Opinion analysis",
     agree: "Agree",
-    pass: "Pass",
+    pass: "Unsure",
     disagree: "Disagree",
     total: "Total",
     noGroup: "No group",
@@ -24,7 +24,7 @@ export const opinionAnalysisDialogTranslations: Record<
   ar: {
     title: "تحليل الرأي",
     agree: "أوافق",
-    pass: "تمرير",
+    pass: "غير متأكد",
     disagree: "أرفض",
     total: "المجموع",
     noGroup: "لا توجد مجموعة",
@@ -33,7 +33,7 @@ export const opinionAnalysisDialogTranslations: Record<
   es: {
     title: "Análisis de opinión",
     agree: "De acuerdo",
-    pass: "Pasar",
+    pass: "No seguro",
     disagree: "En desacuerdo",
     total: "Total",
     noGroup: "Sin grupo",
@@ -42,7 +42,7 @@ export const opinionAnalysisDialogTranslations: Record<
   fr: {
     title: "Analyse d'opinion",
     agree: "D'accord",
-    pass: "Passer",
+    pass: "Incertain",
     disagree: "Pas d'accord",
     total: "Total",
     noGroup: "Aucun groupe",
@@ -51,7 +51,7 @@ export const opinionAnalysisDialogTranslations: Record<
   "zh-Hans": {
     title: "意见分析",
     agree: "同意",
-    pass: "通过",
+    pass: "不确定",
     disagree: "不同意",
     total: "总票数",
     noGroup: "没有组",
@@ -60,7 +60,7 @@ export const opinionAnalysisDialogTranslations: Record<
   "zh-Hant": {
     title: "意見分析",
     agree: "同意",
-    pass: "通過",
+    pass: "不確定",
     disagree: "不同意",
     total: "總票數",
     noGroup: "沒有組",
@@ -69,7 +69,7 @@ export const opinionAnalysisDialogTranslations: Record<
   ja: {
     title: "意見分析",
     agree: "同意",
-    pass: "通過",
+    pass: "わからない",
     disagree: "不同意",
     total: "總票數",
     noGroup: "グループなし",
