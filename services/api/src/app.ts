@@ -118,7 +118,7 @@ Input Format:
   "conversationTitle": "string",
   "conversationBody": "string (optional)",
   "clusters": {
-    "0": { "representativeAgree": [...], "representativeDisagree": [...] },
+    "0": { "agreesWith": [...], "disagreesWith": [...] },
     "1": { ... },
     "2": { ... },
     "3": { ... },
@@ -131,8 +131,9 @@ Rules:
 - Use conversationTitle and conversationBody as context.
 - Detect sarcasm/irony; avoid literal misreadings.
 - For each cluster independently:
-    - representativeAgree = views most members support.
-    - representativeDisagree = views most members reject.
+    - agreesWith = representative opinions most members support.
+    - disagreesWith = representative opinions most members reject.
+    - Make sure to consider whether the cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
 
 Labels:
 1. Length and Format:
