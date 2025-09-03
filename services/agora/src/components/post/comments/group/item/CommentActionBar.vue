@@ -163,7 +163,7 @@ async function castPersonalVote(
 <style scoped lang="scss">
 .agreementButtons {
   display: grid;
-  grid-template-columns: 1fr 0.5fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
   gap: 0.5rem;
   padding-left: 0.2rem;
