@@ -15,7 +15,7 @@ export const signupOnboardingTranslations: Record<
       "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.",
   },
   ar: {
-    pageTitle: "لماذا توجد أجورا؟",
+    pageTitle: "ما الهدف من وجود أغورا؟",
     description:
       "في عالم يشهد استقطاباً متزايداً، تسعى أجورا لإعادة أنسنة وإزالة الاستقطاب في حوارات المواطنين حول القضايا المجتمعية الرئيسية.",
   },

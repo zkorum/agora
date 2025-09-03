@@ -33,6 +33,23 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
       "Are you sure you want to mute this user? You won't see their conversations and opinions anymore.",
     confirmGenericAction: "Are you sure you want to perform this action?",
   },
+  ar: {
+    report: "إبلاغ",
+    muteUser: "كتم المستخدم",
+    delete: "حذف",
+    moderate: "إدارة",
+    userReports: "بلاغات المستخدمين",
+    share: "مشاركة",
+    moderationHistory: "سجل الإدارة",
+    embedLink: "نسخ رابط التضمين",
+    cancel: "إلغاء",
+    confirm: "تأكيد",
+    confirmDeletePost: "هل أنت متأكد أنك تريد حذف هذه المحادثة؟",
+    confirmDeleteComment: "هل أنت متأكد أنك تريد حذف هذا الرأي؟",
+    confirmMuteUser:
+      "هل أنت متأكد أنك تريد كتم هذا المستخدم؟ لن ترى محادثاته وآراءه بعد الآن.",
+    confirmGenericAction: "هل أنت متأكد أنك تريد تنفيذ هذا الإجراء؟",
+  },
   es: {
     report: "Reportar",
     muteUser: "Silenciar Usuario",
