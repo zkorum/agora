@@ -38,8 +38,6 @@ There is an example file `env.example` which can be used as the reference.
 cp env.example .env
 ```
 
-Make sure that VITE_IS_ORG_IMPORT_ONLY="false"
-
 Take note of the two VITE_DEV_AUTHORIZED_PHONES which will enable you to login to the Agora client.
 
 Start the app with: 

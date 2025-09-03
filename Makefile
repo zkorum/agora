@@ -20,7 +20,7 @@ dev-app:
 	cd services/agora && yarn dev 
 
 dev-api:
-	cd services/api && && docker-compose up -d && pnpm start:dev  
+	cd services/api && pnpm start:dev  
 
 dev-polis:
 	cd services/python-bridge && source .venv/bin/activate && flask --app main run
