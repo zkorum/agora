@@ -1,12 +1,9 @@
 <template>
   <div class="options-list">
-    <div
-      v-for="(option, index) in options"
-      :key="index"
-      class="option-item"
-      :class="{ selected: isSelected(option) }"
-      @click="selectOption(option)"
-    >
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+    <!-- Dialog options should be keyboard navigable for users with motor disabilities -->
+    <div v-for="(option, index) in options" :key="index" class="option-item" :class="{ selected: isSelected(option) }"
+      @click="selectOption(option)">
       <div class="option-header">{{ option.title }}</div>
       <div class="option-description">{{ option.description }}</div>
     </div>

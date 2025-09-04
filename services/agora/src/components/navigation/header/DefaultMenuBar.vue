@@ -1,38 +1,26 @@
 <template>
   <div>
+    <!-- TODO: ACCESSIBILITY - Change <div> to semantic <button> element for keyboard accessibility -->
+    <!-- Header click to scroll to top should be keyboard accessible for users with motor disabilities -->
     <div class="container" @click="scrollToTop()">
       <TopMenuWrapper>
         <div class="gridContainer">
-          <div
-            class="leftContainer"
-            :class="{ individualContainer: fixedHeight }"
-          >
+          <div class="leftContainer" :class="{ individualContainer: fixedHeight }">
             <div v-if="hasMenuButton">
               <div>
-                <UserAvatar
-                  v-if="
-                    isGuestOrLoggedIn &&
-                    !isCapacitor &&
-                    drawerBehavior == 'mobile'
-                  "
-                  class="menuButtonHover"
-                  :size="40"
-                  :user-identity="profileData.userName"
-                  @click="menuButtonClicked()"
-                />
-              </div>
-
-              <ZKButton
-                v-if="
-                  !isGuestOrLoggedIn &&
+                <UserAvatar v-if="
+                  isGuestOrLoggedIn &&
                   !isCapacitor &&
                   drawerBehavior == 'mobile'
-                "
-                button-type="standardButton"
-                icon="mdi-menu"
-                text-color="black"
-                @click="menuButtonClicked()"
-              />
+                " class="menuButtonHover" :size="40" :user-identity="profileData.userName"
+                  @click="menuButtonClicked()" />
+              </div>
+
+              <ZKButton v-if="
+                !isGuestOrLoggedIn &&
+                !isCapacitor &&
+                drawerBehavior == 'mobile'
+              " button-type="standardButton" icon="mdi-menu" text-color="black" @click="menuButtonClicked()" />
             </div>
 
             <BackButton v-if="hasBackButton" />
@@ -40,27 +28,13 @@
             <CloseButton v-if="hasCloseButton" />
             <slot name="left"></slot>
           </div>
-          <div
-            class="centerContainer"
-            :class="{ individualContainer: fixedHeight }"
-          >
+          <div class="centerContainer" :class="{ individualContainer: fixedHeight }">
             <slot name="middle"></slot>
           </div>
-          <div
-            class="rightContainer"
-            :class="{ individualContainer: fixedHeight }"
-          >
+          <div class="rightContainer" :class="{ individualContainer: fixedHeight }">
             <div>
-              <RouterLink
-                v-if="hasLoginButton && !isLoggedIn && isAuthInitialized"
-                :to="{ name: '/welcome/' }"
-              >
-                <ZKButton
-                  button-type="largeButton"
-                  :label="t('logIn')"
-                  text-color="white"
-                  color="primary"
-                />
+              <RouterLink v-if="hasLoginButton && !isLoggedIn && isAuthInitialized" :to="{ name: '/welcome/' }">
+                <ZKButton button-type="largeButton" :label="t('logIn')" text-color="white" color="primary" />
               </RouterLink>
             </div>
 

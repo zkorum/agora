@@ -1,28 +1,17 @@
 <template>
-  <RouterLink
-    v-if="item.type === 'navigation'"
-    v-slot="{ navigate }"
-    :to="item.to"
-    custom
-  >
+  <RouterLink v-if="item.type === 'navigation'" v-slot="{ navigate }" :to="item.to" custom>
+    <!-- TODO: ACCESSIBILITY - Change <div> to semantic <button> element for keyboard accessibility -->
+    <!-- Settings navigation items should be keyboard navigable for users with motor disabilities -->
     <div class="settings-item" @click="handleItemClick($event, navigate)">
-      <SettingsMenuItem
-        :label="item.label"
-        :value="item.value"
-        :style="item.style"
-        :show-separator="showSeparator"
-        :border-radius="borderRadius"
-      />
+      <SettingsMenuItem :label="item.label" :value="item.value" :style="item.style" :show-separator="showSeparator"
+        :border-radius="borderRadius" />
     </div>
   </RouterLink>
+  <!-- TODO: ACCESSIBILITY - Change <div> to semantic <button> element for keyboard accessibility -->
+  <!-- Settings action items should be keyboard navigable for users with motor disabilities -->
   <div v-else class="settings-item" @click="handleItemClick($event)">
-    <SettingsMenuItem
-      :label="item.label"
-      :value="item.value"
-      :style="item.style"
-      :show-separator="showSeparator"
-      :border-radius="borderRadius"
-    />
+    <SettingsMenuItem :label="item.label" :value="item.value" :style="item.style" :show-separator="showSeparator"
+      :border-radius="borderRadius" />
   </div>
 </template>
 

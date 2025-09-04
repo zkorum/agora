@@ -1,4 +1,6 @@
 <template>
+  <!-- TODO: ACCESSIBILITY - Consider adding proper ARIA attributes and keyboard event handling -->
+  <!-- Hover effect wrapper should support keyboard interaction for users who cannot use mouse -->
   <div :class="{ desktopHoverEffect: enableHover }">
     <slot />
   </div>

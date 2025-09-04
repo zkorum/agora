@@ -8,13 +8,10 @@
         </div>
 
         <div class="action-list">
-          <div
-            v-for="action in actions"
-            :key="action.id"
-            class="action-item"
-            :class="getActionVariantClass(action)"
-            @click="handleActionClick(action)"
-          >
+          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+          <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
+          <div v-for="action in actions" :key="action.id" class="action-item" :class="getActionVariantClass(action)"
+            @click="handleActionClick(action)">
             <div class="action-icon">
               <q-icon :name="action.icon" size="24px" />
             </div>

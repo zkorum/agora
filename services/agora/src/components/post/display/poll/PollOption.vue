@@ -1,25 +1,17 @@
 <template>
   <div>
-    <div
-      class="commonBase commonBefore"
-      :class="{
-        'gradient-border-result': displayMode == 'result',
-        'gradient-border-option': displayMode == 'option',
-      }"
-    >
-      <div
-        v-if="displayMode == 'result'"
-        class="progress-bar"
-        :style="{ width: optionPercentage + '%' }"
-      ></div>
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
+    <!-- This poll option should be focusable and keyboard navigable for users who rely on assistive technologies -->
+    <div class="commonBase commonBefore" :class="{
+      'gradient-border-result': displayMode == 'result',
+      'gradient-border-option': displayMode == 'option',
+    }">
+      <div v-if="displayMode == 'result'" class="progress-bar" :style="{ width: optionPercentage + '%' }"></div>
 
-      <div
-        class="pollOverlayBase"
-        :class="{
-          pollOverlayLeft: displayMode == 'result',
-          pollOverlayCenter: displayMode == 'option',
-        }"
-      >
+      <div class="pollOverlayBase" :class="{
+        pollOverlayLeft: displayMode == 'result',
+        pollOverlayCenter: displayMode == 'option',
+      }">
         <div>
           {{ option }}
           <span v-if="votedByUser" :style="{ paddingLeft: '0.2rem' }">

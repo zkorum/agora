@@ -2,11 +2,10 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader
-          :show-star-in-title="false"
-          :title="t('commonGroundTitle')"
-        >
+        <AnalysisTitleHeader :show-star-in-title="false" :title="t('commonGroundTitle')">
           <template #action-button>
+            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+            <!-- Tab switching should be keyboard accessible for users with motor disabilities -->
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
             </div>
@@ -15,18 +14,10 @@
       </template>
 
       <template #body>
-        <EmptyStateMessage
-          v-if="itemList.length === 0"
-          :message="t('noCommonGroundMessage')"
-        />
-        <ConsensusItem
-          v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList"
-          v-else
-          :key="consensusItem.opinion"
-          :conversation-slug-id="props.conversationSlugId"
-          :opinion-item="consensusItem"
-          :opinion-item-for-visualizer="consensusItem"
-        />
+        <EmptyStateMessage v-if="itemList.length === 0" :message="t('noCommonGroundMessage')" />
+        <ConsensusItem v-for="consensusItem in compactMode ? itemList.slice(0, 3) : itemList" v-else
+          :key="consensusItem.opinion" :conversation-slug-id="props.conversationSlugId" :opinion-item="consensusItem"
+          :opinion-item-for-visualizer="consensusItem" />
       </template>
     </AnalysisSectionWrapper>
   </div>

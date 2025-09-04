@@ -1,46 +1,33 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableFooter: true,
-      enableHeader: true,
-      reducedWidth: false,
-    }"
-  >
+  <DrawerLayout :general-props="{
+    addGeneralPadding: false,
+    addBottomPadding: false,
+    enableFooter: true,
+    enableHeader: true,
+    reducedWidth: false,
+  }">
     <template #header>
-      <DefaultMenuBar
-        :has-menu-button="true"
-        :has-back-button="false"
-        :has-close-button="false"
-        :has-login-button="true"
-        :fixed-height="false"
-      >
+      <DefaultMenuBar :has-menu-button="true" :has-back-button="false" :has-close-button="false"
+        :has-login-button="true" :fixed-height="false">
         <template #middle>
-          <img
-            v-if="drawerBehavior == 'mobile'"
-            :src="agoraLogo"
-            class="agoraLogoStyle"
-          />
+          <img v-if="drawerBehavior == 'mobile'" :src="agoraLogo" class="agoraLogoStyle" />
         </template>
       </DefaultMenuBar>
 
       <WidthWrapper :enable="true">
         <div class="tabCluster">
+          <!-- TODO: ACCESSIBILITY - Change <div> wrapper to semantic <button> or add proper ARIA attributes -->
+          <!-- Tab navigation should be keyboard accessible for users with motor disabilities -->
           <div class="tabItem" @click="selectedTab('following')">
-            <ZKTab
-              :text="isLoggedIn ? t('following') : t('popular')"
-              :is-highlighted="currentHomeFeedTab === 'following'"
-              :should-underline-on-highlight="false"
-            />
+            <ZKTab :text="isLoggedIn ? t('following') : t('popular')"
+              :is-highlighted="currentHomeFeedTab === 'following'" :should-underline-on-highlight="false" />
           </div>
 
+          <!-- TODO: ACCESSIBILITY - Change <div> wrapper to semantic <button> or add proper ARIA attributes -->
+          <!-- Tab navigation should be keyboard accessible for users with motor disabilities -->
           <div class="tabItem" @click="selectedTab('new')">
-            <ZKTab
-              :text="t('new')"
-              :is-highlighted="currentHomeFeedTab === 'new'"
-              :should-underline-on-highlight="false"
-            />
+            <ZKTab :text="t('new')" :is-highlighted="currentHomeFeedTab === 'new'"
+              :should-underline-on-highlight="false" />
           </div>
         </div>
       </WidthWrapper>

@@ -2,68 +2,45 @@
   <div>
     <AnalysisSectionWrapper>
       <template #header>
-        <AnalysisTitleHeader
-          :show-star-in-title="false"
-          :title="t('groupsTitle')"
-        />
+        <AnalysisTitleHeader :show-star-in-title="false" :title="t('groupsTitle')" />
       </template>
 
       <template #body>
-        <EmptyStateMessage
-          v-if="props.polis.clusters.length <= 1"
-          :message="t('notEnoughGroupsMessage')"
-        />
+        <EmptyStateMessage v-if="props.polis.clusters.length <= 1" :message="t('notEnoughGroupsMessage')" />
         <div v-else class="container">
           <div class="infoIcon">
             <ZKButton button-type="icon" @click="showClusterInformation = true">
-              <ZKIcon
-                color="#6d6a74"
-                name="mdi-information-outline"
-                size="1.2rem"
-              />
+              <ZKIcon color="#6d6a74" name="mdi-information-outline" size="1.2rem" />
             </ZKButton>
           </div>
 
           <ClusterInformationDialog v-model="showClusterInformation" />
 
-          <div
-            v-for="(imgItem, imageIndex) in activeCluster.imgList"
-            :key="imageIndex"
-            class="imageStyle"
-            :style="{
-              width: imgItem.clusterWidthPercent + '%',
-              top: imgItem.top + '%',
-              left: imgItem.left + '%',
-            }"
-            @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
-          >
+          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+          <!-- Cluster selection areas should be keyboard navigable for users with motor disabilities -->
+          <div v-for="(imgItem, imageIndex) in activeCluster.imgList" :key="imageIndex" class="imageStyle" :style="{
+            width: imgItem.clusterWidthPercent + '%',
+            top: imgItem.top + '%',
+            left: imgItem.left + '%',
+          }" @click="toggleClusterSelection(String(imageIndex) as PolisKey)">
             <!-- TODO: Integration the show me label -->
-            <div
-              v-if="props.polis.clusters[imageIndex].isUserInCluster"
-              class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
-            >
+            <div v-if="props.polis.clusters[imageIndex].isUserInCluster"
+              class="clusterMeLabel borderStyle clusterMeFlex dynamicFont">
               <q-icon name="mdi-account-outline" />
               {{ t("meLabel") }}
             </div>
 
             <div :style="{ position: 'relative' }">
-              <img
-                :src="
-                  composeImagePath(
-                    imgItem.isSelected,
-                    imageIndex,
-                    activeCluster.numNodes
-                  )
-                "
-                :style="{ width: '100%' }"
-              />
-              <div
-                class="clusterNameOverlay borderStyle dynamicFont"
-                :style="{
-                  top: '30%',
-                  left: '22%',
-                }"
-              >
+              <img :src="composeImagePath(
+                imgItem.isSelected,
+                imageIndex,
+                activeCluster.numNodes
+              )
+                " :style="{ width: '100%' }" />
+              <div class="clusterNameOverlay borderStyle dynamicFont" :style="{
+                top: '30%',
+                left: '22%',
+              }">
                 <div class="clusterLabelFlex">
                   <div class="clusterOverlayFontBold">
                     {{
@@ -92,29 +69,16 @@
         </div>
 
         <template v-if="props.polis.clusters.length > 1">
-          <OpinionGroupSelector
-            :cluster-metadata-list="props.polis.clusters"
-            :selected-cluster-key="currentClusterTab"
-            @changed-cluster-key="currentClusterTab = $event"
-          />
+          <OpinionGroupSelector :cluster-metadata-list="props.polis.clusters" :selected-cluster-key="currentClusterTab"
+            @changed-cluster-key="currentClusterTab = $event" />
 
-          <GroupConsensusSummary
-            v-if="currentAiSummary"
-            :summary="currentAiSummary"
-            :selected-cluster-key="currentClusterTab"
-          />
+          <GroupConsensusSummary v-if="currentAiSummary" :summary="currentAiSummary"
+            :selected-cluster-key="currentClusterTab" />
 
-          <OpinionGroupComments
-            :polis="props.polis"
-            :conversation-slug-id="props.conversationSlugId"
-            :item-list="
-              props.itemListPerClusterKey[currentClusterTab] ??
-              ([] as OpinionItem[])
-            "
-            :current-cluster-tab="currentClusterTab"
-            :has-ungrouped-participants="hasUngroupedParticipants"
-            @update:current-cluster-tab="currentClusterTab = $event"
-          />
+          <OpinionGroupComments :polis="props.polis" :conversation-slug-id="props.conversationSlugId" :item-list="props.itemListPerClusterKey[currentClusterTab] ??
+            ([] as OpinionItem[])
+            " :current-cluster-tab="currentClusterTab" :has-ungrouped-participants="hasUngroupedParticipants"
+            @update:current-cluster-tab="currentClusterTab = $event" />
         </template>
       </template>
     </AnalysisSectionWrapper>

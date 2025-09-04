@@ -2,75 +2,47 @@
   <div>
     <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
       <div class="container">
-        <div
-          v-for="commentItem in profileData.userCommentList"
-          :key="commentItem.opinionItem.opinionSlugId"
-        >
+        <div v-for="commentItem in profileData.userCommentList" :key="commentItem.opinionItem.opinionSlugId">
           <ZKHoverEffect :enable-hover="true">
-            <div
-              class="commentItemStyle hoverColor"
-              @click="
-                openComment(
-                  commentItem.conversationData.metadata.conversationSlugId,
-                  commentItem.opinionItem.opinionSlugId
-                )
-              "
-            >
+            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+            <!-- Comment item click areas should be keyboard navigable for users with motor disabilities -->
+            <div class="commentItemStyle hoverColor" @click="
+              openComment(
+                commentItem.conversationData.metadata.conversationSlugId,
+                commentItem.opinionItem.opinionSlugId
+              )
+              ">
               <div class="topRowFlex">
                 <div class="postTitle">
-                  <ConversationTitleWithPrivacyLabel
-                    :is-private="
-                      !commentItem.conversationData.metadata.isIndexed
-                    "
-                    :title="commentItem.conversationData.payload.title"
-                    size="medium"
-                  />
+                  <ConversationTitleWithPrivacyLabel :is-private="!commentItem.conversationData.metadata.isIndexed
+                    " :title="commentItem.conversationData.payload.title" size="medium" />
                 </div>
                 <div>
-                  <CommentActionOptions
-                    :comment-item="commentItem.opinionItem"
-                    :post-slug-id="
-                      commentItem.conversationData.metadata.conversationSlugId
-                    "
-                    @deleted="commentDeleted()"
-                  />
+                  <CommentActionOptions :comment-item="commentItem.opinionItem" :post-slug-id="commentItem.conversationData.metadata.conversationSlugId
+                    " @deleted="commentDeleted()" />
                 </div>
               </div>
 
               <!-- TODO: Map author verification status -->
-              <UserIdentityCard
-                :author-verified="false"
-                :created-at="commentItem.opinionItem.createdAt"
-                :user-identity="commentItem.opinionItem.username"
-                :show-verified-text="false"
-                :organization-image-url="''"
-              />
+              <UserIdentityCard :author-verified="false" :created-at="commentItem.opinionItem.createdAt"
+                :user-identity="commentItem.opinionItem.username" :show-verified-text="false"
+                :organization-image-url="''" />
 
               <div>
-                <ZKHtmlContent
-                  :html-body="commentItem.opinionItem.opinion"
-                  :compact-mode="false"
-                  :enable-links="false"
-                />
+                <ZKHtmlContent :html-body="commentItem.opinionItem.opinion" :compact-mode="false"
+                  :enable-links="false" />
               </div>
 
-              <CommentModeration
-                v-if="commentItem.opinionItem.moderation?.status == 'moderated'"
-                :comment-item="commentItem.opinionItem"
-                :post-slug-id="
-                  commentItem.conversationData.metadata.conversationSlugId
-                "
-              />
+              <CommentModeration v-if="commentItem.opinionItem.moderation?.status == 'moderated'"
+                :comment-item="commentItem.opinionItem" :post-slug-id="commentItem.conversationData.metadata.conversationSlugId
+                  " />
             </div>
           </ZKHoverEffect>
         </div>
       </div>
     </q-infinite-scroll>
 
-    <div
-      v-if="profileData.dataLoaded && profileData.userCommentList.length == 0"
-      class="emptyMessage"
-    >
+    <div v-if="profileData.dataLoaded && profileData.userCommentList.length == 0" class="emptyMessage">
       You have no opinions
     </div>
   </div>

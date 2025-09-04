@@ -1,49 +1,29 @@
 <template>
   <div>
     <div class="flexIcons container">
-      <RouterLink
-        v-for="iconItem in bottomIconList"
-        :key="iconItem.name"
-        v-slot="{ navigate }"
-        :to="iconItem.route"
-        custom
-      >
-        <div
-          class="iconStyle navigation-link"
-          @click="handleNavigationClick($event, iconItem, navigate)"
-        >
+      <RouterLink v-for="iconItem in bottomIconList" :key="iconItem.name" v-slot="{ navigate }" :to="iconItem.route"
+        custom>
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Footer navigation items should be keyboard accessible for users with motor disabilities -->
+        <div class="iconStyle navigation-link" @click="handleNavigationClick($event, iconItem, navigate)">
           <div class="iconDiv">
-            <NewNotificationIndicator
-              v-if="iconItem.route === '/notification/'"
-            />
-            <ZKStyledIcon
-              :svg-string="
-                route.name === iconItem.route
-                  ? iconItem.filled
-                  : iconItem.standard
-              "
-            />
+            <NewNotificationIndicator v-if="iconItem.route === '/notification/'" />
+            <ZKStyledIcon :svg-string="route.name === iconItem.route
+                ? iconItem.filled
+                : iconItem.standard
+              " />
           </div>
 
-          <div
-            :style="{
-              color: route.name === iconItem.route ? '#6B4EFF' : '#7D7A85',
-            }"
-          >
-            <ZKStyledText
-              :text="iconItem.name"
-              :add-gradient="route.name === iconItem.route"
-            />
+          <div :style="{
+            color: route.name === iconItem.route ? '#6B4EFF' : '#7D7A85',
+          }">
+            <ZKStyledText :text="iconItem.name" :add-gradient="route.name === iconItem.route" />
           </div>
         </div>
       </RouterLink>
     </div>
 
-    <PreLoginIntentionDialog
-      v-model="showLoginDialog"
-      :ok-callback="() => {}"
-      :active-intention="'none'"
-    />
+    <PreLoginIntentionDialog v-model="showLoginDialog" :ok-callback="() => { }" :active-intention="'none'" />
   </div>
 </template>
 

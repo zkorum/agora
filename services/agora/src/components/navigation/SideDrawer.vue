@@ -8,56 +8,35 @@
         </div>
 
         <div v-if="isGuestOrLoggedIn" class="usernameBar">
-          <UserAvatar
-            :key="profileData.userName"
-            :user-identity="profileData.userName"
-            :size="35"
-          />
-          <DisplayUsername
-            :username="profileData.userName"
-            :show-is-guest="isGuest"
-          />
+          <UserAvatar :key="profileData.userName" :user-identity="profileData.userName" :size="35" />
+          <DisplayUsername :username="profileData.userName" :show-is-guest="isGuest" />
         </div>
 
         <div class="menuListFlex">
-          <RouterLink
-            v-for="settingItem in settingItemList"
-            :key="settingItem.name"
-            v-slot="{ navigate }"
-            :to="settingItem.route"
-            custom
-          >
-            <div
-              class="navigation-link"
-              @click="
-                handleAuthenticatedRouteClick(
-                  $event,
-                  settingItem.requireAuth,
-                  navigate
-                )
-              "
-            >
+          <RouterLink v-for="settingItem in settingItemList" :key="settingItem.name" v-slot="{ navigate }"
+            :to="settingItem.route" custom>
+            <!-- TODO: ACCESSIBILITY - Change <div> to semantic <button> element for keyboard accessibility -->
+            <!-- Navigation links should be keyboard accessible for users with motor disabilities -->
+            <div class="navigation-link" @click="
+              handleAuthenticatedRouteClick(
+                $event,
+                settingItem.requireAuth,
+                navigate
+              )
+              ">
               <ZKHoverEffect :enable-hover="true">
-                <div
-                  class="settingItemStyle"
-                  :class="{
-                    activeRoute: settingItem.matchRouteList.includes(
-                      route.name
-                    ),
-                  }"
-                >
+                <div class="settingItemStyle" :class="{
+                  activeRoute: settingItem.matchRouteList.includes(
+                    route.name
+                  ),
+                }">
                   <div class="iconItem">
-                    <ZKStyledIcon
-                      :svg-string="
-                        settingItem.matchRouteList.includes(route.name)
-                          ? settingItem.svgStringFilled
-                          : settingItem.svgStringStandard
-                      "
-                    />
+                    <ZKStyledIcon :svg-string="settingItem.matchRouteList.includes(route.name)
+                        ? settingItem.svgStringFilled
+                        : settingItem.svgStringStandard
+                      " />
 
-                    <NewNotificationIndicator
-                      v-if="settingItem.name == 'Dings'"
-                    />
+                    <NewNotificationIndicator v-if="settingItem.name == 'Dings'" />
                   </div>
 
                   <div class="itemName">
@@ -71,10 +50,7 @@
       </div>
 
       <div>
-        <div
-          v-if="drawerBehavior == 'desktop'"
-          class="bottomSection StartConversationButtonLong"
-        >
+        <div v-if="drawerBehavior == 'desktop'" class="bottomSection StartConversationButtonLong">
           <RouterLink :to="{ name: '/conversation/new/create/' }">
             <StartConversationButtonLong />
           </RouterLink>
@@ -82,11 +58,7 @@
       </div>
     </div>
 
-    <PreLoginIntentionDialog
-      v-model="showLoginDialog"
-      :ok-callback="() => {}"
-      :active-intention="'none'"
-    />
+    <PreLoginIntentionDialog v-model="showLoginDialog" :ok-callback="() => { }" :active-intention="'none'" />
   </div>
 </template>
 

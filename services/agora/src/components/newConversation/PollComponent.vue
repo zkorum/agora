@@ -1,20 +1,11 @@
 <template>
-  <ZKCard
-    padding="1.5rem"
-    :style="{ marginTop: '1rem', backgroundColor: 'white' }"
-    class="pollBorder"
-  >
+  <ZKCard padding="1.5rem" :style="{ marginTop: '1rem', backgroundColor: 'white' }" class="pollBorder">
     <div class="poll-container">
       <div class="poll-header">
         <div class="poll-title">
           <span class="poll-title-text">{{ t("addPoll") }}</span>
         </div>
-        <PrimeButton
-          icon="pi pi-times"
-          text
-          class="close-button"
-          @click="resetPoll"
-        />
+        <PrimeButton icon="pi pi-times" text class="close-button" @click="resetPoll" />
       </div>
 
       <div v-if="validationState.poll.showError" class="pollErrorMessage">
@@ -23,40 +14,23 @@
       </div>
 
       <div class="polling-options-container">
-        <div
-          v-for="(option, index) in conversationDraft.poll.options"
-          :key="index"
-          class="polling-option-item"
-        >
+        <div v-for="(option, index) in conversationDraft.poll.options" :key="index" class="polling-option-item">
           <div class="option-label">{{ t("option") }} {{ index + 1 }}</div>
           <div class="option-input-container">
-            <input
-              :value="option"
-              :placeholder="t('inputOptionText')"
-              :maxlength="MAX_LENGTH_OPTION"
-              class="option-input"
-              type="text"
-              @input="handleOptionInput(index, $event)"
-            />
-            <div
-              v-if="conversationDraft.poll.options.length > 2"
-              class="delete-option-icon"
-              @click="removeOption(index)"
-            >
+            <input :value="option" :placeholder="t('inputOptionText')" :maxlength="MAX_LENGTH_OPTION"
+              class="option-input" type="text" @input="handleOptionInput(index, $event)" />
+            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+            <!-- Delete option button should be keyboard accessible for users with motor disabilities -->
+            <div v-if="conversationDraft.poll.options.length > 2" class="delete-option-icon"
+              @click="removeOption(index)">
               <q-icon name="mdi-delete" />
             </div>
           </div>
         </div>
 
         <div class="add-option-container">
-          <PrimeButton
-            :label="t('addOption')"
-            icon="pi pi-plus"
-            outlined
-            :disabled="conversationDraft.poll.options.length >= 6"
-            class="add-option-button"
-            @click="addOption()"
-          />
+          <PrimeButton :label="t('addOption')" icon="pi pi-plus" outlined
+            :disabled="conversationDraft.poll.options.length >= 6" class="add-option-button" @click="addOption()" />
         </div>
       </div>
     </div>

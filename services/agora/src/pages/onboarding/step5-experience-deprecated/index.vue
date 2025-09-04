@@ -1,30 +1,20 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: true,
-    }"
-  >
-    <StepperLayout
-      :submit-call-back="goToNextRoute"
-      :current-step="5"
-      :total-steps="6"
-      :enable-next-button="true"
-      :show-next-button="false"
-      :show-loading-button="false"
-    >
+  <DrawerLayout :general-props="{
+    addGeneralPadding: false,
+    addBottomPadding: false,
+    enableHeader: true,
+    enableFooter: false,
+    reducedWidth: true,
+  }">
+    <StepperLayout :submit-call-back="goToNextRoute" :current-step="5" :total-steps="6" :enable-next-button="true"
+      :show-next-button="false" :show-loading-button="false">
       <template #header>
-        <InfoHeader
-          :title="t('title')"
-          :description="description"
-          icon-name="mdi-image"
-        />
+        <InfoHeader :title="t('title')" :description="description" icon-name="mdi-image" />
       </template>
 
       <template #body>
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Experience selection options should be keyboard navigable for users with disabilities -->
         <div @click="selectedOption('safe-space')">
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">
@@ -39,6 +29,8 @@
           </ZKHoverEffect>
         </div>
 
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Experience selection options should be keyboard navigable for users with disabilities -->
         <div @click="selectedOption('brave-space')">
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">

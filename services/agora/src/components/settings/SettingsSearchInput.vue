@@ -2,18 +2,11 @@
   <div class="settings-background">
     <PrimeIconField class="search-field">
       <PrimeInputIcon class="pi pi-search" />
-      <PrimeInputText
-        ref="inputRef"
-        v-model="internalValue"
-        :placeholder="placeholder || t('searchPlaceholder')"
-        class="search-input"
-        type="text"
-      />
-      <PrimeInputIcon
-        v-if="modelValue"
-        class="pi pi-times cursor-pointer clear-icon"
-        @click="clearSearch"
-      />
+      <PrimeInputText ref="inputRef" v-model="internalValue" :placeholder="placeholder || t('searchPlaceholder')"
+        class="search-input" type="text" />
+      <!-- TODO: ACCESSIBILITY - Change <PrimeInputIcon> to <button> element for keyboard accessibility -->
+      <!-- Clear search button should be keyboard accessible for users with motor disabilities -->
+      <PrimeInputIcon v-if="modelValue" class="pi pi-times cursor-pointer clear-icon" @click="clearSearch" />
     </PrimeIconField>
   </div>
 </template>

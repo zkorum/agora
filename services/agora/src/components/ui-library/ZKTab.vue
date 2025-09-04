@@ -1,21 +1,15 @@
 <template>
-  <div
-    class="tabStyle"
-    :class="{
-      highlightTab: isHighlighted,
-      underlineTab: shouldUnderlineOnHighlight,
-      activeTabUnderlineColor: isHighlighted && shouldUnderlineOnHighlight,
-      inactiveTabUnderlineColor: !isHighlighted && shouldUnderlineOnHighlight,
-    }"
-  >
+  <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
+  <!-- Tab elements should be keyboard navigable and have proper ARIA attributes for assistive technologies -->
+  <div class="tabStyle" :class="{
+    highlightTab: isHighlighted,
+    underlineTab: shouldUnderlineOnHighlight,
+    activeTabUnderlineColor: isHighlighted && shouldUnderlineOnHighlight,
+    inactiveTabUnderlineColor: !isHighlighted && shouldUnderlineOnHighlight,
+  }">
     <!--  TODO: proper icon color -->
     <!-- :color="isHighlighted ? 'primary' : '#7D7A85'" -->
-    <ZKIcon
-      v-if="iconCode !== undefined"
-      :color="isHighlighted ? '#6b4eff' : '#7D7A85'"
-      :name="iconCode"
-      size="1rem"
-    />
+    <ZKIcon v-if="iconCode !== undefined" :color="isHighlighted ? '#6b4eff' : '#7D7A85'" :name="iconCode" size="1rem" />
     <div v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
       {{ text }}
     </div>

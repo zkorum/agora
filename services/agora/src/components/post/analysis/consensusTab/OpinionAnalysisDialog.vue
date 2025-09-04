@@ -4,30 +4,16 @@
       <div class="dialog-container">
         <div class="dialog-header">
           <div class="dialog-title">{{ t("title") }}</div>
-          <ZKButton
-            button-type="icon"
-            icon="mdi-close"
-            size="1rem"
-            @click="showDialog = false"
-          />
+          <ZKButton button-type="icon" icon="mdi-close" size="1rem" @click="showDialog = false" />
         </div>
 
         <div class="dialog-content">
-          <OpinionIdentityCard
-            :author-verified="false"
-            :created-at="opinionItem.createdAt"
-            :user-identity="opinionItem.username"
-            :show-verified-text="false"
-            :organization-image-url="''"
-            :is-seed="opinionItem.isSeed"
-          />
+          <OpinionIdentityCard :author-verified="false" :created-at="opinionItem.createdAt"
+            :user-identity="opinionItem.username" :show-verified-text="false" :organization-image-url="''"
+            :is-seed="opinionItem.isSeed" />
 
           <div class="opinion-text">
-            <ZKHtmlContent
-              :html-body="opinionItem.opinion"
-              :compact-mode="false"
-              :enable-links="true"
-            />
+            <ZKHtmlContent :html-body="opinionItem.opinion" :compact-mode="false" :enable-links="true" />
           </div>
 
           <div class="opinion-stats">
@@ -120,10 +106,7 @@
                       }}
                     </td>
                   </tr>
-                  <tr
-                    v-for="(group, index) in opinionItem.clustersStats"
-                    :key="index"
-                  >
+                  <tr v-for="(group, index) in opinionItem.clustersStats" :key="index">
                     <td class="group-name">
                       {{
                         `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
@@ -162,6 +145,8 @@
             </table>
           </div>
 
+          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+          <!-- View original comment link should be keyboard accessible for users with motor disabilities -->
           <div class="view-original" @click="viewOriginalComment">
             {{ t("viewOriginal") }}
           </div>

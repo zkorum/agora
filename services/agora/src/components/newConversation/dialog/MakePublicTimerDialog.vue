@@ -2,26 +2,19 @@
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer>
       <div class="timer-options">
-        <div
-          v-for="(option, index) in timerOptions"
-          :key="index"
-          class="option-item"
-          :class="{
-            selected: isSelected(option),
-            'custom-option': option.value === 'custom',
-          }"
-          @click="selectOption(option)"
-        >
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Timer option selection should be keyboard accessible for users with motor disabilities -->
+        <div v-for="(option, index) in timerOptions" :key="index" class="option-item" :class="{
+          selected: isSelected(option),
+          'custom-option': option.value === 'custom',
+        }" @click="selectOption(option)">
           <div class="option-header">{{ getTimerTitle(option.value) }}</div>
         </div>
       </div>
     </ZKBottomDialogContainer>
   </q-dialog>
 
-  <CustomTimerDialog
-    v-model:show-dialog="showCustomDialog"
-    @go-back="handleGoBack"
-  />
+  <CustomTimerDialog v-model:show-dialog="showCustomDialog" @go-back="handleGoBack" />
 </template>
 
 <script setup lang="ts">

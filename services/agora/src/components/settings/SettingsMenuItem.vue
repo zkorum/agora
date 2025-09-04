@@ -1,16 +1,15 @@
 <template>
   <div>
-    <div
-      class="menu-item"
-      :class="{
-        'menu-item--warning': style === 'warning',
-        'menu-item--negative': style === 'negative',
-        'menu-item--rounded-top':
-          borderRadius === 'top' || borderRadius === 'both',
-        'menu-item--rounded-bottom':
-          borderRadius === 'bottom' || borderRadius === 'both',
-      }"
-    >
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+    <!-- Settings menu item should be keyboard navigable for users with motor disabilities -->
+    <div class="menu-item" :class="{
+      'menu-item--warning': style === 'warning',
+      'menu-item--negative': style === 'negative',
+      'menu-item--rounded-top':
+        borderRadius === 'top' || borderRadius === 'both',
+      'menu-item--rounded-bottom':
+        borderRadius === 'bottom' || borderRadius === 'both',
+    }">
       <div class="menu-item__left">
         <div class="menu-item__content">
           <slot name="content">
@@ -26,12 +25,7 @@
 
       <div class="menu-item__right">
         <slot name="right-icon">
-          <ZKIcon
-            color="#7D7A85"
-            name="mdi-chevron-right"
-            size="1.5rem"
-            class="menu-item__chevron"
-          />
+          <ZKIcon color="#7D7A85" name="mdi-chevron-right" size="1.5rem" class="menu-item__chevron" />
         </slot>
       </div>
     </div>

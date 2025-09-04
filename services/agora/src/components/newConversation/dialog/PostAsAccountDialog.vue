@@ -1,42 +1,28 @@
 <template>
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer>
-      <div
-        class="account-option"
-        :class="{
-          'account-option--selected': isAccountSelected(
-            false,
-            profileData.userName
-          ),
-        }"
-        @click="setPostAs(false, profileData.userName)"
-      >
-        <DynamicProfileImage
-          :user-identity="profileData.userName"
-          :size="32"
-          class="account-avatar"
-        />
+      <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+      <!-- Account option selection should be keyboard accessible for users with motor disabilities -->
+      <div class="account-option" :class="{
+        'account-option--selected': isAccountSelected(
+          false,
+          profileData.userName
+        ),
+      }" @click="setPostAs(false, profileData.userName)">
+        <DynamicProfileImage :user-identity="profileData.userName" :size="32" class="account-avatar" />
         <span class="account-name">{{ profileData.userName }}</span>
       </div>
 
-      <div
-        v-for="organization in profileData.organizationList"
-        :key="organization.name"
-        class="account-option"
-        :class="{
-          'account-option--selected': isAccountSelected(
-            true,
-            organization.name
-          ),
-        }"
-        @click="setPostAs(true, organization.name)"
-      >
-        <DynamicProfileImage
-          :user-identity="organization.name"
-          :size="32"
-          :organization-image-url="organization.imageUrl"
-          class="account-avatar"
-        />
+      <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+      <!-- Organization account option selection should be keyboard accessible for users with motor disabilities -->
+      <div v-for="organization in profileData.organizationList" :key="organization.name" class="account-option" :class="{
+        'account-option--selected': isAccountSelected(
+          true,
+          organization.name
+        ),
+      }" @click="setPostAs(true, organization.name)">
+        <DynamicProfileImage :user-identity="organization.name" :size="32"
+          :organization-image-url="organization.imageUrl" class="account-avatar" />
         <span class="account-name">{{ organization.name }}</span>
       </div>
     </ZKBottomDialogContainer>
