@@ -54,7 +54,7 @@ export const compactPostListTranslations: Record<
   },
   ja: {
     emptyStateTitle: "ここは静かすぎます...",
-    emptyStateDescription: "使用",
+    emptyStateDescription: "をタップして新しい会話を作成してください。",
     completedTitle: "すべての新しい会話を見ました",
     completedDescription: "すべての新しい会話を見ました。",
     newConversationsButton: "新しい会話",
