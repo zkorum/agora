@@ -6,16 +6,19 @@ export const staticIconTranslations: Record<string, StaticIconTranslations> = {
   en: {
     stars: "Stars",
   },
+  ar: {
+    stars: "نجوم",
+  },
   es: {
     stars: "Estrellas",
   },
   fr: {
     stars: "Étoiles",
   },
-  "zh-CN": {
+  "zh-Hans": {
     stars: "星星",
   },
-  "zh-TW": {
+  "zh-Hant": {
     stars: "星星",
   },
   ja: {

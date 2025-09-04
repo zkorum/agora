@@ -11,16 +11,19 @@ export const displayUsernameTranslations: Record<
   en: {
     guest: "Guest",
   },
+  ar: {
+    guest: "ضيف",
+  },
   es: {
     guest: "Invitado",
   },
   fr: {
     guest: "Invité",
   },
-  "zh-CN": {
+  "zh-Hans": {
     guest: "访客",
   },
-  "zh-TW": {
+  "zh-Hant": {
     guest: "訪客",
   },
   ja: {

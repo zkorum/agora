@@ -10,16 +10,19 @@ export const defaultMenuBarTranslations: Record<
   en: {
     logIn: "Log in",
   },
+  ar: {
+    logIn: "تسجيل الدخول",
+  },
   es: {
     logIn: "Log in",
   },
   fr: {
     logIn: "Log in",
   },
-  "zh-CN": {
+  "zh-Hans": {
     logIn: "登录",
   },
-  "zh-TW": {
+  "zh-Hant": {
     logIn: "登入",
   },
   ja: {

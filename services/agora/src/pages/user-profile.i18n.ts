@@ -13,6 +13,12 @@ export const userProfileTranslations: Record<string, UserProfileTranslations> =
       conversationTab: "Conversation",
       opinionTab: "Opinion",
     },
+    ar: {
+      userProfile: "الملف الشخصي",
+      conversations: "محادثات",
+      conversationTab: "المحادثة",
+      opinionTab: "الرأي",
+    },
     es: {
       userProfile: "Perfil de Usuario",
       conversations: "conversaciones",
@@ -25,13 +31,13 @@ export const userProfileTranslations: Record<string, UserProfileTranslations> =
       conversationTab: "Conversation",
       opinionTab: "Opinion",
     },
-    "zh-CN": {
+    "zh-Hans": {
       userProfile: "用户资料",
       conversations: "对话",
       conversationTab: "对话",
       opinionTab: "意见",
     },
-    "zh-TW": {
+    "zh-Hant": {
       userProfile: "用戶資料",
       conversations: "對話",
       conversationTab: "對話",

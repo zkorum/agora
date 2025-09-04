@@ -11,37 +11,43 @@ export const consensusItemTranslations: Record<
 > = {
   en: {
     agree: "Agree",
-    pass: "Pass",
+    pass: "Unsure",
     disagree: "Disagree",
     noVote: "No Vote",
   },
+  ar: {
+    agree: "أوافق",
+    pass: "غير متأكد",
+    disagree: "لا أوافق",
+    noVote: "لم أصوّت",
+  },
   es: {
     agree: "De acuerdo",
-    pass: "Pasar",
+    pass: "No seguro",
     disagree: "En desacuerdo",
     noVote: "Sin voto",
   },
   fr: {
     agree: "D'accord",
-    pass: "Passer",
+    pass: "Incertain",
     disagree: "Pas d'accord",
     noVote: "Pas de vote",
   },
-  "zh-CN": {
+  "zh-Hans": {
     agree: "同意",
-    pass: "通过",
+    pass: "不确定",
     disagree: "不同意",
     noVote: "不投票",
   },
-  "zh-TW": {
+  "zh-Hant": {
     agree: "同意",
-    pass: "通過",
+    pass: "不確定",
     disagree: "不同意",
     noVote: "不投票",
   },
   ja: {
     agree: "同意",
-    pass: "通過",
+    pass: "わからない",
     disagree: "不同意",
     noVote: "不投票",
   },

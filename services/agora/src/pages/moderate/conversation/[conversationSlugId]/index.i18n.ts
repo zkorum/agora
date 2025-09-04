@@ -22,6 +22,15 @@ export const conversationModerationTranslations: Record<
     moderate: "Moderate",
     withdraw: "Withdraw",
   },
+  ar: {
+    moderateConversation: "إشراف على المحادثة",
+    action: "الإجراء",
+    reason: "السبب",
+    explanationOptional: "الشرح (اختياري)",
+    modify: "تعديل",
+    moderate: "إشراف",
+    withdraw: "سحب",
+  },
   es: {
     moderateConversation: "Moderar la conversación",
     action: "Acción",
@@ -40,7 +49,7 @@ export const conversationModerationTranslations: Record<
     moderate: "Modérer",
     withdraw: "Retirer",
   },
-  "zh-CN": {
+  "zh-Hans": {
     moderateConversation: "管理对话",
     action: "操作",
     reason: "原因",
@@ -49,7 +58,7 @@ export const conversationModerationTranslations: Record<
     moderate: "管理",
     withdraw: "撤回",
   },
-  "zh-TW": {
+  "zh-Hant": {
     moderateConversation: "管理對話",
     action: "操作",
     reason: "原因",

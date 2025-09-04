@@ -9,16 +9,19 @@ export const opinionIdentityCardTranslations: Record<
   en: {
     seedOpinion: "Seed opinion",
   },
+  ar: {
+    seedOpinion: "الرأي البدائي",
+  },
   es: {
     seedOpinion: "Opinión semilla",
   },
   fr: {
     seedOpinion: "Opinion germe",
   },
-  "zh-CN": {
+  "zh-Hans": {
     seedOpinion: "种子意见",
   },
-  "zh-TW": {
+  "zh-Hant": {
     seedOpinion: "種子意見",
   },
   ja: {

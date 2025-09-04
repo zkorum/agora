@@ -29,24 +29,18 @@
           </div>
 
           <div>
-            <div v-if="!initializedFeed" class="postListFlex">
-              <div
-                v-for="postData in emptyPostDataList"
-                :key="postData.metadata.conversationSlugId"
-              >
-                <PostDetails
-                  v-model="currentTab"
-                  :conversation-data="postData"
-                  :compact-mode="true"
-                  class="showCursor"
-                  @click="openPost(postData.metadata.conversationSlugId)"
-                />
-              </div>
+            <!-- Loading indicator for tab switches only -->
+            <div
+              v-if="isLoadingFeed && initializedFeed"
+              class="centerMessage loading-indicator"
+            >
+              <q-spinner-dots size="4rem" color="primary" />
             </div>
 
             <div
               v-if="initializedFeed && partialHomeFeedList.length > 0"
               class="postListFlex"
+              :class="{ 'loading-overlay': isLoadingFeed }"
             >
               <div
                 v-for="postData in partialHomeFeedList"
@@ -118,10 +112,10 @@ import {
 
 const {
   partialHomeFeedList,
-  emptyPostDataList,
   hasPendingNewPosts,
   initializedFeed,
   canLoadMore,
+  isLoadingFeed,
 } = storeToRefs(useHomeFeedStore());
 const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
 
@@ -209,5 +203,18 @@ async function refreshPage(done: () => void) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.loading-overlay {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
 }
 </style>

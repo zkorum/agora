@@ -6,16 +6,19 @@ export const topicPageTranslations: Record<string, TopicPageTranslations> = {
   en: {
     loadPostsHere: "Load posts here",
   },
+  ar: {
+    loadPostsHere: "تحميل المنشورات هنا",
+  },
   es: {
     loadPostsHere: "Cargar publicaciones aquí",
   },
   fr: {
     loadPostsHere: "Charger les publications ici",
   },
-  "zh-CN": {
+  "zh-Hans": {
     loadPostsHere: "加载帖子",
   },
-  "zh-TW": {
+  "zh-Hant": {
     loadPostsHere: "載入帖子",
   },
   ja: {

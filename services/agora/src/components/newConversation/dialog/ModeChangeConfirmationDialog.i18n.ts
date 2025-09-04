@@ -26,6 +26,18 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "Cancel",
     continue: "Continue",
   },
+  ar: {
+    switchToImportMode: "التبديل إلى وضع الاستيراد؟",
+    switchingWillClear:
+      "التبديل إلى وضع الاستيراد سيمحو الحقول التالية من مسودة المحادثة:",
+    title: "العنوان",
+    bodyText: "نص المحتوى",
+    pollOptions: "خيارات الاستطلاع",
+    settingsPreserved:
+      "سيتم الاحتفاظ بإعدادات الخصوصية واختيار المنظمة.",
+    cancel: "إلغاء",
+    continue: "متابعة",
+  },
   es: {
     switchToImportMode: "¿Cambiar al Modo de Importación?",
     switchingWillClear:
@@ -50,7 +62,7 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "Annuler",
     continue: "Continuer",
   },
-  "zh-CN": {
+  "zh-Hans": {
     switchToImportMode: "切换到导入模式？",
     switchingWillClear: "切换到导入模式将清除以下字段：",
     title: "标题",
@@ -60,7 +72,7 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "取消",
     continue: "继续",
   },
-  "zh-TW": {
+  "zh-Hant": {
     switchToImportMode: "切換到導入模式？",
     switchingWillClear: "切換到導入模式將清除以下字段：",
     title: "標題",
@@ -72,7 +84,8 @@ export const modeChangeConfirmationDialogTranslations: Record<
   },
   ja: {
     switchToImportMode: "インポートモードに切り替えますか？",
-    switchingWillClear: "インポートモードに切り替えると、以下のフィールドがクリアされます：",
+    switchingWillClear:
+      "インポートモードに切り替えると、以下のフィールドがクリアされます：",
     title: "タイトル",
     bodyText: "本文",
     pollOptions: "投票オプション",

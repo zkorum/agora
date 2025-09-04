@@ -44,16 +44,28 @@
 
   <!-- Action Dialog -->
   <ZKActionDialog
-    v-model="actionDialogVisible"
-    :actions="actionDialogActions"
+    v-model="postActions.dialogState.value.isVisible"
+    :actions="postActions.dialogState.value.actions"
     @action-selected="handleActionSelected"
     @dialog-closed="handleDialogClosed"
+  />
+
+  <!-- Confirmation Dialog -->
+  <ZKConfirmDialog
+    v-model="postActions.confirmationState.value.isVisible"
+    :message="postActions.confirmationState.value.message"
+    :confirm-text="postActions.confirmationState.value.confirmText"
+    :cancel-text="postActions.confirmationState.value.cancelText"
+    :variant="postActions.confirmationState.value.variant"
+    @confirm="postActions.handleConfirmation"
+    @cancel="postActions.handleConfirmationCancel"
   />
 </template>
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { ref } from "vue";
 import type { ContentAction } from "src/utils/actions/core/types";
@@ -87,10 +99,6 @@ const route = useRoute();
 const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
-
-// Action dialog state
-const actionDialogVisible = ref(false);
-const actionDialogActions = ref<ContentAction[]>([]);
 
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = useHomeFeedStore();
@@ -170,11 +178,6 @@ function clickedMoreIcon() {
     moderationHistoryCallback,
     copyEmbedLinkCallback,
   });
-
-  // Get the dialog state and display it
-  const state = postActions.getDialogState();
-  actionDialogVisible.value = state.isVisible;
-  actionDialogActions.value = state.actions;
 }
 
 /**
@@ -189,8 +192,6 @@ async function handleActionSelected(action: ContentAction) {
  * Handle dialog close
  */
 function handleDialogClosed() {
-  actionDialogVisible.value = false;
-  actionDialogActions.value = [];
   postActions.closeDialog();
 }
 </script>

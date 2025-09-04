@@ -5,69 +5,9 @@ import { useAuthenticationStore } from "./authentication";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "./user";
 
-export interface DummyPollOptionFormat {
-  index: number;
-  option: string;
-  numResponses: number;
-}
-
-export interface DummyCommentFormat {
-  index: number;
-  createdAt: Date;
-  comment: string;
-  numUpvotes: number;
-  numDownvotes: number;
-  slugId: string;
-}
-
-export interface DummyPostMetadataFormat {
-  uid: string;
-  slugId: string;
-  isHidden: boolean;
-  createdAt: string;
-  commentCount: number;
-  communityId: string;
-  posterName: string;
-  posterImagePath: string;
-}
-
-export interface DummyPostUserVote {
-  hasVoted: boolean;
-  voteIndex: number;
-}
-
-export type PossibleCommentRankingActions = "like" | "dislike" | "pass";
-
-export interface UserRankedCommentItem {
-  index: number;
-  action: PossibleCommentRankingActions;
-}
-
-export interface DummyCommentRankingFormat {
-  rankedCommentList: Map<number, PossibleCommentRankingActions>;
-  assignedRankingItems: number[];
-}
-
-export interface DummyUserPollResponse {
-  hadResponded: boolean;
-  responseIndex: number;
-}
-
-export interface DummyUserPostDataFormat {
-  slugId: string;
-  poll: {
-    castedVote: boolean;
-    votedIndex: number;
-  };
-  comment: { ratedIndexList: number[] };
-}
-
-export interface DummyPostDataFormat extends ExtendedConversation {
-  userInteraction: {
-    pollResponse: DummyUserPollResponse;
-    commentRanking: DummyCommentRankingFormat;
-  };
-}
+// Constants for timing and pagination
+const MINIMUM_LOADING_DURATION_MS = 400;
+const POSTS_PER_PAGE = 10;
 
 export type HomeFeedSortOption = "following" | "new";
 
@@ -82,12 +22,13 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   const initializedFeed = ref(false);
   const canLoadMore = ref(true);
+  const isLoadingFeed = ref(false);
 
   const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
 
   let localTopConversationSlugIdList: string[] = [];
 
-  const emptyPost: DummyPostDataFormat = {
+  const emptyPost: ExtendedConversation = {
     metadata: {
       createdAt: new Date(),
       opinionCount: 0,
@@ -113,55 +54,63 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       votedIndex: 0,
     },
     polis: {
-      aiSummary: undefined,
       clusters: [],
-    },
-    userInteraction: {
-      commentRanking: {
-        assignedRankingItems: [],
-        rankedCommentList: new Map<number, PossibleCommentRankingActions>(),
-      },
-      pollResponse: {
-        hadResponded: false,
-        responseIndex: 0,
-      },
     },
   };
 
   let fullHomeFeedList: ExtendedConversation[] = [];
   const partialHomeFeedList = ref<ExtendedConversation[]>([]);
 
-  const emptyPostDataList = ref<ExtendedConversation[]>([
-    emptyPost,
-    emptyPost,
-    emptyPost,
-    emptyPost,
-  ]);
-
   watch(currentHomeFeedTab, async () => {
     await loadPostData();
   });
 
   async function loadPostData(): Promise<boolean> {
-    const response = await fetchRecentPost({
-      loadUserPollData: isGuestOrLoggedIn.value,
-      sortAlgorithm: currentHomeFeedTab.value,
-    });
+    isLoadingFeed.value = true;
+    const loadingStartTime = Date.now();
+    const wasInitialized = initializedFeed.value;
 
-    if (response.status == "success") {
-      fullHomeFeedList = response.data.conversationDataList;
-      partialHomeFeedList.value = [];
-      hasPendingNewPosts.value = false;
-      localTopConversationSlugIdList = response.data.topConversationSlugIdList;
-      initializedFeed.value = true;
+    try {
+      const response = await fetchRecentPost({
+        loadUserPollData: isGuestOrLoggedIn.value,
+        sortAlgorithm: currentHomeFeedTab.value,
+      });
 
-      canLoadMore.value = true;
-      loadMore();
+      if (response.status == "success") {
+        fullHomeFeedList = response.data.conversationDataList;
+        partialHomeFeedList.value = [];
+        hasPendingNewPosts.value = false;
+        localTopConversationSlugIdList =
+          response.data.topConversationSlugIdList;
 
-      return false;
-    } else {
-      initializedFeed.value = true;
-      return false;
+        canLoadMore.value = true;
+        loadMore();
+
+        return true; // Success
+      } else {
+        console.error("Failed to load post data:", response);
+        return false; // Failure
+      }
+    } catch (error) {
+      console.error("Error loading post data:", error);
+      return false; // Error occurred
+    } finally {
+      // Enforce minimum loading duration to prevent flash
+      const elapsed = Date.now() - loadingStartTime;
+      const minimumDuration = wasInitialized ? MINIMUM_LOADING_DURATION_MS : 0; // Only delay for tab switches
+      const remainingTime = Math.max(0, minimumDuration - elapsed);
+
+      if (remainingTime > 0) {
+        setTimeout(() => {
+          // Set both states simultaneously to prevent flash
+          initializedFeed.value = true;
+          isLoadingFeed.value = false;
+        }, remainingTime);
+      } else {
+        // Set immediately if no delay needed
+        initializedFeed.value = true;
+        isLoadingFeed.value = false;
+      }
     }
   }
 
@@ -170,26 +119,32 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       return;
     }
 
-    const response = await fetchRecentPost({
-      loadUserPollData: isGuestOrLoggedIn.value,
-      sortAlgorithm: currentHomeFeedTab.value,
-    });
-    if (
-      response.status == "success" &&
-      response.data.topConversationSlugIdList.length > 0
-    ) {
-      // Check for any new slug IDs
-      const newItems = response.data.topConversationSlugIdList.filter(
-        (slugId) => !localTopConversationSlugIdList.includes(slugId)
-      );
-      if (newItems.length > 0) {
-        localTopConversationSlugIdList =
-          response.data.topConversationSlugIdList;
-        hasPendingNewPosts.value = true;
+    try {
+      const response = await fetchRecentPost({
+        loadUserPollData: isGuestOrLoggedIn.value,
+        sortAlgorithm: currentHomeFeedTab.value,
+      });
+
+      if (
+        response.status == "success" &&
+        response.data.topConversationSlugIdList.length > 0
+      ) {
+        // Check for any new slug IDs
+        const newItems = response.data.topConversationSlugIdList.filter(
+          (slugId) => !localTopConversationSlugIdList.includes(slugId)
+        );
+        if (newItems.length > 0) {
+          localTopConversationSlugIdList =
+            response.data.topConversationSlugIdList;
+          hasPendingNewPosts.value = true;
+        } else {
+          hasPendingNewPosts.value = false;
+        }
       } else {
         hasPendingNewPosts.value = false;
       }
-    } else {
+    } catch (error) {
+      console.error("Error checking for new posts:", error);
       hasPendingNewPosts.value = false;
     }
   }
@@ -201,11 +156,10 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   function loadMore(): boolean {
-    const loadLimit = 10;
     if (fullHomeFeedList.length > 0) {
       const itemsToLoad: ExtendedConversation[] = fullHomeFeedList.splice(
         0,
-        Math.min(loadLimit, fullHomeFeedList.length)
+        Math.min(POSTS_PER_PAGE, fullHomeFeedList.length)
       );
       partialHomeFeedList.value = partialHomeFeedList.value.concat(itemsToLoad);
     }
@@ -220,11 +174,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     resetPostData,
     loadMore,
     partialHomeFeedList,
-    emptyPostDataList,
     emptyPost,
     hasPendingNewPosts,
     initializedFeed,
     currentHomeFeedTab,
     canLoadMore,
+    isLoadingFeed,
   };
 });

@@ -10,16 +10,19 @@ export const startConversationButtonLongTranslations: Record<
   en: {
     buttonText: "Start a conversation",
   },
+  ar: {
+    buttonText: "بدء محادثة",
+  },
   es: {
     buttonText: "Iniciar una conversación",
   },
   fr: {
     buttonText: "Démarrer une conversation",
   },
-  "zh-CN": {
+  "zh-Hans": {
     buttonText: "开始对话",
   },
-  "zh-TW": {
+  "zh-Hant": {
     buttonText: "開始對話",
   },
   ja: {

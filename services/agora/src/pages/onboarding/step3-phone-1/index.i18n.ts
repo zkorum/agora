@@ -27,6 +27,17 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported: "This phone number type is not supported",
     pleaseEnterPhoneNumber: "Please enter a phone number",
   },
+  ar: {
+    pageTitle: "التحقق برقم الهاتف",
+    smsDescription: "ستتلقى رمزًا مكوّنًا من 6 أرقام لمرة واحدة عبر رسالة نصية",
+    phoneNumberPlaceholder: "رقم الهاتف",
+    preferPrivateLogin: "أفضل تسجيل الدخول بخصوصية تامة",
+    developmentNumbers: "أرقام للاختبار:",
+    pleaseEnterValidPhone: "الرجاء إدخال رقم هاتف صالح",
+    countryNotSupported: "هذا البلد غير مدعوم بعد",
+    phoneTypeNotSupported: "نوع رقم الهاتف هذا غير مدعوم",
+    pleaseEnterPhoneNumber: "الرجاء إدخال رقم هاتف",
+  },
   es: {
     pageTitle: "Verificar con número de teléfono",
     smsDescription: "Recibirá un código de un solo uso de 6 dígitos por SMS",
@@ -51,7 +62,7 @@ export const phoneOnboardingTranslations: Record<
       "Ce type de numéro de téléphone n'est pas pris en charge",
     pleaseEnterPhoneNumber: "Veuillez saisir un numéro de téléphone",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "使用手机号验证",
     smsDescription: "您将收到一个6位一次性验证码",
     phoneNumberPlaceholder: "手机号",
@@ -62,7 +73,7 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported: "此手机号类型暂不支持",
     pleaseEnterPhoneNumber: "请输入手机号",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "使用手機號驗證",
     smsDescription: "您將收到一個6位一次性驗證碼",
     phoneNumberPlaceholder: "手機號",

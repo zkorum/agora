@@ -29,10 +29,21 @@
 
   <!-- Action Dialog -->
   <ZKActionDialog
-    v-model="actionDialogVisible"
-    :actions="actionDialogActions"
+    v-model="commentActions.dialogState.value.isVisible"
+    :actions="commentActions.dialogState.value.actions"
     @action-selected="handleActionSelected"
     @dialog-closed="handleDialogClosed"
+  />
+
+  <!-- Confirmation Dialog -->
+  <ZKConfirmDialog
+    v-model="commentActions.confirmationState.value.isVisible"
+    :message="commentActions.confirmationState.value.message"
+    :confirm-text="commentActions.confirmationState.value.confirmText"
+    :cancel-text="commentActions.confirmationState.value.cancelText"
+    :variant="commentActions.confirmationState.value.variant"
+    @confirm="commentActions.handleConfirmation"
+    @cancel="commentActions.handleConfirmationCancel"
   />
 </template>
 
@@ -43,6 +54,7 @@ import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -75,10 +87,6 @@ const { showNotifyMessage } = useNotify();
 
 // Use the new content actions system
 const commentActions = useContentActions();
-
-// Action dialog state
-const actionDialogVisible = ref(false);
-const actionDialogActions = ref<ContentAction[]>([]);
 
 const showReportDialog = ref(false);
 
@@ -168,11 +176,6 @@ function optionButtonClicked() {
       shareOpinionCallback,
     }
   );
-
-  // Get the dialog state and display it
-  const state = commentActions.getDialogState();
-  actionDialogVisible.value = state.isVisible;
-  actionDialogActions.value = state.actions;
 }
 
 /**
@@ -187,8 +190,6 @@ async function handleActionSelected(action: ContentAction) {
  * Handle dialog close
  */
 function handleDialogClosed() {
-  actionDialogVisible.value = false;
-  actionDialogActions.value = [];
   commentActions.closeDialog();
 }
 </script>

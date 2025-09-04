@@ -10,16 +10,19 @@ export const interactionTabTranslations: Record<
   en: {
     analysis: "Analysis",
   },
+  ar: {
+    analysis: "التحليل",
+  },
   es: {
     analysis: "Análisis",
   },
   fr: {
     analysis: "Analyse",
   },
-  "zh-CN": {
+  "zh-Hans": {
     analysis: "分析",
   },
-  "zh-TW": {
+  "zh-Hant": {
     analysis: "分析",
   },
   ja: {

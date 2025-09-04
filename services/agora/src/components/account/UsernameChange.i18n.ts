@@ -20,6 +20,14 @@ export const usernameChangeTranslations: Record<
     usernameCurrentlyInUse: "This username is currently in use",
     submitError: "Error while trying to submit username change",
   },
+  ar: {
+    usernameLabel: "اسم المستخدم",
+    updateButton: "تحديث",
+    usernameChanged: "تم تغيير اسم المستخدم",
+    usernameAlreadyInUse: "اسم المستخدم مُستخدم بالفعل",
+    usernameCurrentlyInUse: "هذا الاسم مُستخدم حالياً",
+    submitError: "خطأ أثناء محاولة تغيير اسم المستخدم",
+  },
   es: {
     usernameLabel: "Nombre de usuario",
     updateButton: "Actualizar",
@@ -37,7 +45,7 @@ export const usernameChangeTranslations: Record<
     submitError:
       "Erreur lors de la tentative de soumission du changement de nom d'utilisateur",
   },
-  "zh-CN": {
+  "zh-Hans": {
     usernameLabel: "用户名",
     updateButton: "更新",
     usernameChanged: "用户名已更改",
@@ -45,7 +53,7 @@ export const usernameChangeTranslations: Record<
     usernameCurrentlyInUse: "此用户名当前已被使用",
     submitError: "尝试提交用户名更改时出错",
   },
-  "zh-TW": {
+  "zh-Hant": {
     usernameLabel: "用戶名",
     updateButton: "更新",
     usernameChanged: "用戶名已更改",

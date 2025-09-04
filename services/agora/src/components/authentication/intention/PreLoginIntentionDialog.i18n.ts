@@ -17,6 +17,12 @@ export const preLoginIntentionDialogTranslations: Record<
     labelOk: "Log In",
     labelCancel: "Cancel",
   },
+  ar: {
+    title: "تسجيل الدخول إلى أغورا",
+    message: "سجّل دخولك للمشاركة في النقاشات",
+    labelOk: "تسجيل الدخول",
+    labelCancel: "إلغاء",
+  },
   es: {
     title: "Iniciar sesión en Ágora",
     message: "Inicia sesión para participar en las discusiones",
@@ -29,13 +35,13 @@ export const preLoginIntentionDialogTranslations: Record<
     labelOk: "Se Connecter",
     labelCancel: "Annuler",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "登录 Agora",
     message: "登录以参与讨论",
     labelOk: "登录",
     labelCancel: "取消",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "登入 Agora",
     message: "登入以參與討論",
     labelOk: "登入",

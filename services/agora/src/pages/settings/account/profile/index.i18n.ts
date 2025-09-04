@@ -11,6 +11,10 @@ export const profileSettingsTranslations: Record<
     pageTitle: "Profile Settings",
     changeUsernameTitle: "Change username",
   },
+  ar: {
+    pageTitle: "إعدادات الملف الشخصي",
+    changeUsernameTitle: "تغيير اسم المستخدم",
+  },
   es: {
     pageTitle: "Configuración de Perfil",
     changeUsernameTitle: "Cambiar nombre de usuario",
@@ -19,11 +23,11 @@ export const profileSettingsTranslations: Record<
     pageTitle: "Paramètres du Profil",
     changeUsernameTitle: "Changer le nom d'utilisateur",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "个人资料设置",
     changeUsernameTitle: "更改用户名",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "個人資料設定",
     changeUsernameTitle: "更改用戶名",
   },

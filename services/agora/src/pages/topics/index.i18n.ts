@@ -10,6 +10,11 @@ export const topicsTranslations: Record<string, TopicsTranslations> = {
     following: "Following",
     follow: "Follow",
   },
+  ar: {
+    exploreTopics: "استكشف المواضيع",
+    following: "المتابَعة",
+    follow: "متابعة",
+  },
   es: {
     exploreTopics: "Explorar Temas",
     following: "Siguiendo",
@@ -20,12 +25,12 @@ export const topicsTranslations: Record<string, TopicsTranslations> = {
     following: "Suivi",
     follow: "Suivre",
   },
-  "zh-CN": {
+  "zh-Hans": {
     exploreTopics: "探索话题",
     following: "关注中",
     follow: "关注",
   },
-  "zh-TW": {
+  "zh-Hant": {
     exploreTopics: "探索話題",
     following: "關注中",
     follow: "關注",

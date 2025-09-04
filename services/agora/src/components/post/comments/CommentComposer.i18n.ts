@@ -17,6 +17,13 @@ export const commentComposerTranslations: Record<
       "Cannot create opinion because the conversation is locked",
     createOpinionError: "Error while trying to create a new opinion",
   },
+  ar: {
+    placeholder: "أضف رأيك الخاص",
+    postButton: "نشر",
+    conversationLockedError:
+      "لا يمكن إنشاء رأي لأن المحادثة مقفلة",
+    createOpinionError: "خطأ أثناء محاولة إنشاء رأي جديد",
+  },
   es: {
     placeholder: "Añade tu propia opinión",
     postButton: "Publicar",
@@ -32,13 +39,13 @@ export const commentComposerTranslations: Record<
     createOpinionError:
       "Erreur lors de la tentative de création d'une nouvelle opinion",
   },
-  "zh-CN": {
+  "zh-Hans": {
     placeholder: "添加您自己的意见",
     postButton: "发布",
     conversationLockedError: "无法创建意见，因为对话已锁定",
     createOpinionError: "尝试创建新意见时出错",
   },
-  "zh-TW": {
+  "zh-Hant": {
     placeholder: "添加您自己的意見",
     postButton: "發布",
     conversationLockedError: "無法創建意見，因為對話已鎖定",

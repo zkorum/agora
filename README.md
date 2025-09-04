@@ -20,7 +20,7 @@ We are at a critical moment where social media platforms are increasingly evolvi
 - Q2 2025: Evolving from MVP to SLCP (Simple, Lovable, Complete Product)
 - Q3 & Q4 2025: Develop pilot projects with institutions, NGOs, market research firms, media outlets, and other partners looking to engage their audiences through Agora.
 
-#### Check out detailed product development roadmap [here](https://github.com/zkorum/product/issues/34)
+#### Check out detailed product development roadmap [here](https://github.com/zkorum/product/issues/34#issuecomment-2944640139)
 
 ## Development
 
@@ -36,44 +36,7 @@ Install:
 - [pnpm](https://pnpm.io/)
 - [watchman](https://facebook.github.io/watchman/)
 - [docker](https://www.docker.com/)
-
-### Run in dev mode
-
-All the components run in watch mode.
-
-With `gnome-terminal`, you can use the following script to automatically open a terminal with one tab per service and a working tab (make sure you edit `BASE_DIR` in the script before running it):
-
-```
-./run_all_in_gnome_terminal_tabs.sh
-```
-
-Otherwise, open four terminals in the root directory, then run the following commands.
-
-Shared tab - automatically rsync shared files to back and front:
-
-```
-make dev-sync
-```
-
-OpenAPI tab - automatically generate frontend stub from backends and subsequent openapi changes:
-
-```
-make dev-generate
-```
-
-Frontend App tab:
-
-```
-make dev-app
-```
-
-Backend API tab:
-
-```
-make dev-back
-```
-
-... and start coding!
+- [yarn](https://yarnpkg.com/)
 
 ## Services
 
@@ -93,9 +56,50 @@ A Flask application to enable the Node backend to communicate with the data scie
 
 We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding front.
 
+### Getting started
+Please read README's in `/agora`, `/api`, and `/python-bridge`
+
+### Run in dev mode
+
+Frontend App:
+
+```
+make dev-app
+```
+
+Backend API:
+
+```
+make dev-api
+```
+
+Python Bridge:
+
+```
+make dev-polis
+```
+
 ### Shared
 
 Some typescript source files are shared directly without using npm packages - by copy-pasting using rsync.
+
+Use these commands to automatically rsync shared files to back and front:
+
+```
+make dev-sync
+```
+
+### OpenAPI  
+
+Automatically generate frontend stub from backends and subsequent openapi changes:
+
+```
+make dev-generate
+```
+
+
+... and start coding!
+
 
 ## Embedding Agora on your website
 

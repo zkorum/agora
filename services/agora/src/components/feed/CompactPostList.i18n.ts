@@ -17,6 +17,13 @@ export const compactPostListTranslations: Record<
     completedDescription: "You have seen all the new conversations.",
     newConversationsButton: "New conversations",
   },
+  ar: {
+    emptyStateTitle: "إنه هادئ جداً هنا...",
+    emptyStateDescription: "أنشئ محادثة جديدة باستخدام",
+    completedTitle: "لقد اطلعت على كل شيء",
+    completedDescription: "لقد شاهدت جميع المحادثات الجديدة.",
+    newConversationsButton: "محادثات جديدة",
+  },
   es: {
     emptyStateTitle: "Está muy silencioso aquí...",
     emptyStateDescription: "Crea una nueva conversación usando el",
@@ -31,14 +38,14 @@ export const compactPostListTranslations: Record<
     completedDescription: "Vous avez vu toutes les nouvelles conversations.",
     newConversationsButton: "Nouvelles conversations",
   },
-  "zh-CN": {
+  "zh-Hans": {
     emptyStateTitle: "这里太安静了...",
     emptyStateDescription: "使用",
     completedTitle: "你已经看完了所有新对话",
     completedDescription: "你已经看完了所有新对话。",
     newConversationsButton: "新对话",
   },
-  "zh-TW": {
+  "zh-Hant": {
     emptyStateTitle: "這裡太安靜了...",
     emptyStateDescription: "使用",
     completedTitle: "你已經看完了所有新對話",

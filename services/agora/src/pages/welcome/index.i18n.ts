@@ -19,6 +19,13 @@ export const welcomeTranslations: Record<
     launchApp: "Launch App",
     logOut: "Log Out",
   },
+  ar: {
+    signUp: "التسجيل",
+    login: "تسجيل الدخول",
+    skipAuthentication: "تخطي المصادقة",
+    launchApp: "تشغيل التطبيق",
+    logOut: "تسجيل الخروج",
+  },
   es: {
     signUp: "Registrarse",
     login: "Iniciar Sesión",
@@ -33,14 +40,14 @@ export const welcomeTranslations: Record<
     launchApp: "Lancer l'Application",
     logOut: "Se Déconnecter",
   },
-  "zh-CN": {
+  "zh-Hans": {
     signUp: "注册",
     login: "登录",
     skipAuthentication: "跳过认证",
     launchApp: "启动应用",
     logOut: "登出",
   },
-  "zh-TW": {
+  "zh-Hant": {
     signUp: "註冊",
     login: "登入",
     skipAuthentication: "跳過認證",

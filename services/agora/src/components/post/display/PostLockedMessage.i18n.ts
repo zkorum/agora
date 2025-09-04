@@ -11,6 +11,10 @@ export const postLockedMessageTranslations: Record<
     lockedMessage: 'Post locked as "{reason}". New opinions cannot be posted.',
     editButton: "Edit",
   },
+  ar: {
+    lockedMessage: 'تم قفل المنشور بسبب "{reason}". لا يمكن نشر آراء جديدة.',
+    editButton: "تعديل",
+  },
   es: {
     lockedMessage:
       'Publicación bloqueada como "{reason}". No se pueden publicar nuevas opiniones.',
@@ -21,16 +25,17 @@ export const postLockedMessageTranslations: Record<
       'Publication verrouillée en tant que "{reason}". De nouvelles opinions ne peuvent pas être publiées.',
     editButton: "Modifier",
   },
-  "zh-CN": {
+  "zh-Hans": {
     lockedMessage: "帖子被锁定为“{reason}”。无法发布新意见。",
     editButton: "编辑",
   },
-  "zh-TW": {
+  "zh-Hant": {
     lockedMessage: "帖子被鎖定為“{reason}”。無法發布新意見。",
     editButton: "編輯",
   },
   ja: {
-    lockedMessage: "投稿が「{reason}」によってロックされています。新しい意見を投稿できません。",
+    lockedMessage:
+      "投稿が「{reason}」によってロックされています。新しい意見を投稿できません。",
     editButton: "編集",
   },
 };

@@ -29,6 +29,19 @@ export const newConversationControlBarTranslations: Record<
     removePoll: "Remove poll",
     addPoll: "Add poll",
   },
+  ar: {
+    asLabel: "باسم {name}",
+    importFromPolis: "استيراد من بوليس",
+    newConversation: "محادثة جديدة",
+    private: "خاص",
+    public: "عام",
+    requiresLogin: "يتطلب تسجيل الدخول",
+    guestParticipation: "مشاركة الضيوف",
+    makePublicNever: "جعله عامًا: أبدًا",
+    makePublic: "جعله عامًا: {date}",
+    removePoll: "إزالة الاستطلاع",
+    addPoll: "إضافة استطلاع",
+  },
   es: {
     asLabel: "Como {name}",
     importFromPolis: "Importar desde Polis",
@@ -55,7 +68,7 @@ export const newConversationControlBarTranslations: Record<
     removePoll: "Supprimer le sondage",
     addPoll: "Ajouter un sondage",
   },
-  "zh-CN": {
+  "zh-Hans": {
     asLabel: "作为 {name}",
     importFromPolis: "从 Polis 导入",
     newConversation: "新对话",
@@ -68,7 +81,7 @@ export const newConversationControlBarTranslations: Record<
     removePoll: "移除投票",
     addPoll: "添加投票",
   },
-  "zh-TW": {
+  "zh-Hant": {
     asLabel: "作為 {name}",
     importFromPolis: "從 Polis 匯入",
     newConversation: "新對話",

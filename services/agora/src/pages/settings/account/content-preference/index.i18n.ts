@@ -10,16 +10,19 @@ export const contentPreferenceTranslations: Record<
   en: {
     contentPreference: "Content Preference",
   },
+  ar: {
+    contentPreference: "تفضيلات المحتوى",
+  },
   es: {
     contentPreference: "Preferencia de Contenido",
   },
   fr: {
     contentPreference: "Préférence de Contenu",
   },
-  "zh-CN": {
+  "zh-Hans": {
     contentPreference: "内容偏好",
   },
-  "zh-TW": {
+  "zh-Hant": {
     contentPreference: "內容偏好",
   },
   ja: {

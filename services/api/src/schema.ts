@@ -1627,7 +1627,6 @@ export const polisContentTable = pgTable("polis_content", {
         .references(() => conversationTable.id)
         .notNull(), // not unique, there will be multiple rows over the life of the conversation
     rawData: jsonb("raw_data").notNull(), // from external polis system
-    aiSummary: varchar("ai_summary", { length: 500 }), // TODO: set max-length appropriately
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,

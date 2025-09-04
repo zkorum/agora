@@ -15,6 +15,13 @@ export const clusterInformationDialogTranslations: Record<
     description2:
       "We use machine learning to identify different schools of thought. This is the very same algorithm powering pol.is, the open-source wikisurvey tool developed by Computational Democracy.",
   },
+  ar: {
+    title: "مجموعات الإجماع",
+    description1:
+      "يتم إنشاء مجموعات الإجماع بناءً على كيفية موافقة الناس ورفضهم للآراء.",
+    description2:
+      "نحن نستخدم التعلم الآلي لتحديد مدارس الفكر المختلفة. هذه هي نفس الخوارزمية التي تشغل pol.is، أداة wikisurvey مفتوحة المصدر المطورة من قبل Computational Democracy.",
+  },
   es: {
     title: "Grupos de Consenso",
     description1:
@@ -29,19 +36,23 @@ export const clusterInformationDialogTranslations: Record<
     description2:
       "Nous utilisons l'apprentissage automatique pour identifier différentes écoles de pensée. C'est le même algorithme qui alimente pol.is, l'outil de sondage wiki open-source développé par Computational Democracy.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "共识群组",
     description1: "共识群组是根据人们对意见的同意和不同意程度创建的。",
-    description2: "我们使用机器学习来识别不同的思想流派。这是与 pol.is 相同的算法，pol.is 是 Computational Democracy 开发的开放源码的 wiki 调查工具。",
+    description2:
+      "我们使用机器学习来识别不同的思想流派。这是与 pol.is 相同的算法，pol.is 是 Computational Democracy 开发的开放源码的 wiki 调查工具。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "共識群組",
     description1: "共識群組是根據人們對意見的同意和不同意程度創建的。",
-    description2: "我們使用機器學習來識別不同的思想流派。這是與 pol.is 相同的算法，pol.is 是 Computational Democracy 開發的開放源碼的 wiki 調查工具。",
+    description2:
+      "我們使用機器學習來識別不同的思想流派。這是與 pol.is 相同的算法，pol.is 是 Computational Democracy 開發的開放源碼的 wiki 調查工具。",
   },
   ja: {
     title: "共識グループ",
-    description1: "共識グループは、人々が意見に対して同意しているか、不同意しているかに基づいて作成されます。",
-    description2: "我々は機械学習を使用して、異なる思想流派を識別します。これは、 Computational Democracy によって開発されたオープンソースの wiki 調査ツール pol.is によって使用されるのと同じアルゴリズムです。",
+    description1:
+      "共識グループは、人々が意見に対して同意しているか、不同意しているかに基づいて作成されます。",
+    description2:
+      "我々は機械学習を使用して、異なる思想流派を識別します。これは、 Computational Democracy によって開発されたオープンソースの wiki 調査ツール pol.is によって使用されるのと同じアルゴリズムです。",
   },
 };

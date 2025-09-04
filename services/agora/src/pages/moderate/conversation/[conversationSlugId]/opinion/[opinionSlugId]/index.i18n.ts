@@ -21,6 +21,15 @@ export const opinionModerationTranslations: Record<
     modifyButton: "Modify",
     withdrawButton: "Withdraw",
   },
+  ar: {
+    title: "إشراف على الرأي",
+    actionLabel: "الإجراء",
+    reasonLabel: "السبب",
+    explanationLabel: "الشرح (اختياري)",
+    moderateButton: "إشراف",
+    modifyButton: "تعديل",
+    withdrawButton: "سحب",
+  },
   es: {
     title: "Moderar la opinión",
     actionLabel: "Acción",
@@ -39,7 +48,7 @@ export const opinionModerationTranslations: Record<
     modifyButton: "Modifier",
     withdrawButton: "Retirer",
   },
-  "zh-CN": {
+  "zh-Hans": {
     title: "管理意见",
     actionLabel: "操作",
     reasonLabel: "原因",
@@ -48,7 +57,7 @@ export const opinionModerationTranslations: Record<
     modifyButton: "修改",
     withdrawButton: "撤回",
   },
-  "zh-TW": {
+  "zh-Hant": {
     title: "管理意見",
     actionLabel: "操作",
     reasonLabel: "原因",

@@ -14,6 +14,11 @@ export const signupOnboardingTranslations: Record<
     description:
       "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.",
   },
+  ar: {
+    pageTitle: "ما الهدف من وجود أغورا؟",
+    description:
+      "في عالم يشهد استقطاباً متزايداً، تسعى أجورا لإعادة أنسنة وإزالة الاستقطاب في حوارات المواطنين حول القضايا المجتمعية الرئيسية.",
+  },
   es: {
     pageTitle: "¿Por qué existe Agora?",
     description:
@@ -24,14 +29,15 @@ export const signupOnboardingTranslations: Record<
     description:
       "Dans un monde marqué par des polarisations croissantes, Agora s'efforce de réhumaniser et de dépolariser les dialogues citoyens sur les enjeux sociétaux clés.",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "为什么存在 Agora？",
     description:
       "在一个日益两极化的世界中，Agora 努力重新人性化并去两极化公民对话，以解决关键社会问题。",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "為什麼存在 Agora？",
-    description: "在一個日益兩極化的世界中，Agora 努力重新人性化並去兩極化公民對話，以解決關鍵社會問題。",
+    description:
+      "在一個日益兩極化的世界中，Agora 努力重新人性化並去兩極化公民對話，以解決關鍵社會問題。",
   },
   ja: {
     pageTitle: "Agora が存在する理由",

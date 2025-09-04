@@ -12,6 +12,10 @@ export const commentSectionTranslations: Record<
     opinionRemovedByModerators:
       "This opinion has been removed by the moderators",
   },
+  ar: {
+    opinionNotFound: "الرأي غير موجود",
+    opinionRemovedByModerators: "تمت إزالة هذا الرأي من قبل المشرفين",
+  },
   es: {
     opinionNotFound: "Opinión no encontrada:",
     opinionRemovedByModerators:
@@ -22,11 +26,11 @@ export const commentSectionTranslations: Record<
     opinionRemovedByModerators:
       "Cette opinion a été supprimée par les modérateurs",
   },
-  "zh-CN": {
+  "zh-Hans": {
     opinionNotFound: "未找到意见：",
     opinionRemovedByModerators: "此意见已被版主移除",
   },
-  "zh-TW": {
+  "zh-Hant": {
     opinionNotFound: "未找到意見：",
     opinionRemovedByModerators: "此意見已被版主移除",
   },

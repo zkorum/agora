@@ -91,58 +91,8 @@ export function useActionHandlers() {
     }
   };
 
-  /**
-   * Create a wrapper for handling confirmation dialogs
-   */
-  const withConfirmation = (
-    handler: () => void | Promise<void>,
-    message: string = "Are you sure you want to perform this action?"
-  ) => {
-    return async () => {
-      if (confirm(message)) {
-        await handler();
-      }
-    };
-  };
-
-  /**
-   * Handle action with proper error handling and notifications
-   */
-  const handleActionSafely = async (
-    actionId: string,
-    context: ContentActionContext,
-    handler: () => void | Promise<void>,
-    confirmationMessage?: string
-  ): Promise<ContentActionResult> => {
-    try {
-      let wrappedHandler = handler;
-
-      // Add confirmation wrapper if needed
-      if (confirmationMessage) {
-        wrappedHandler = withConfirmation(handler, confirmationMessage);
-      }
-
-      const result = await executeAction(actionId, context, wrappedHandler);
-
-      // Show success notification for certain actions
-      if (result.success && result.message) {
-        showNotifyMessage(result.message);
-      }
-
-      return result;
-    } catch (error) {
-      console.error(`Error in handleActionSafely for ${actionId}:`, error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      showNotifyMessage(`Error: ${errorMessage}`);
-      return { success: false, error: errorMessage };
-    }
-  };
-
   return {
     executeAction,
     handlePostDelete,
-    handleActionSafely,
-    withConfirmation,
   };
 }

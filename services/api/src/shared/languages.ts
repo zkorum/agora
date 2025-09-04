@@ -8,7 +8,6 @@ export const ZodAllLanguageCodes = z.enum([
     "fr",
     "en-GB",
     "ar",
-    "ar-fem",
     "bn",
     "eu",
     "bg",
@@ -41,16 +40,17 @@ export const ZodAllLanguageCodes = z.enum([
     "ro",
     "ru",
     "sr",
-    "zh-Hans",
     "sk",
     "sv",
     "ta",
     "th",
-    "zh-Hant",
     "tr",
     "uk",
     "ur",
     "vi",
+    "zh-Hans",
+    "zh-Hant",
+    "ja",
 ]);
 export type AllLanguageCodes = z.infer<typeof ZodAllLanguageCodes>;
 
@@ -59,7 +59,15 @@ export const ZodSupportedSpokenLanguageCodes = ZodAllLanguageCodes;
 export type SupportedSpokenLanguageCodes = AllLanguageCodes;
 
 // Languages that have UI translations available
-export const ZodSupportedDisplayLanguageCodes = z.enum(["en", "es", "fr"]);
+export const ZodSupportedDisplayLanguageCodes = z.enum([
+    "en",
+    "es",
+    "fr",
+    "zh-Hant",
+    "zh-Hans",
+    "ja",
+    "ar",
+]);
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
 >;
@@ -102,28 +110,33 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         englishName: "French",
         displaySupported: true,
     },
-
-    // Additional languages (for spoken languages only)
     {
-        code: "en-GB",
-        name: "British English",
-        englishName: "British English",
-        region: "GB",
-        displaySupported: false,
+        code: "zh-Hans",
+        name: "简体中文",
+        englishName: "Simplified Chinese",
+        script: "Hans",
+        displaySupported: true,
+    },
+    {
+        code: "zh-Hant",
+        name: "繁體中文",
+        englishName: "Traditional Chinese",
+        script: "Hant",
+        displaySupported: true,
+    },
+    {
+        code: "ja",
+        name: "日本語",
+        englishName: "Japanese",
+        displaySupported: true,
     },
     {
         code: "ar",
         name: "العربية",
         englishName: "Arabic",
-        displaySupported: false,
+        displaySupported: true,
     },
-    {
-        code: "ar-fem",
-        name: "العربية (مؤنث)",
-        englishName: "Arabic (Feminine)",
-        variant: "fem",
-        displaySupported: false,
-    },
+    // Additional languages (for spoken languages only)
     {
         code: "bn",
         name: "বাংলা",
@@ -245,12 +258,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "ja",
-        name: "日本語",
-        englishName: "Japanese",
-        displaySupported: false,
-    },
-    {
         code: "kn",
         name: "ಕನ್ನಡ",
         englishName: "Kannada",
@@ -317,13 +324,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "zh-Hans",
-        name: "简体中文",
-        englishName: "Simplified Chinese",
-        script: "Hans",
-        displaySupported: false,
-    },
-    {
         code: "sk",
         name: "slovenčina",
         englishName: "Slovak",
@@ -345,13 +345,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "th",
         name: "ไทย",
         englishName: "Thai",
-        displaySupported: false,
-    },
-    {
-        code: "zh-Hant",
-        name: "繁體中文",
-        englishName: "Traditional Chinese",
-        script: "Hant",
         displaySupported: false,
     },
     {
@@ -384,46 +377,54 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
  * Normalize language code to match our supported languages with Zod transform
  * e.g., 'en-US' -> 'en' (for display languages)
  */
-export const ZodNormalizeDisplayLanguageCode = z.string().transform((code) => {
+export function parseDisplayLanguage(
+    code: string,
+): SupportedDisplayLanguageCodes {
     if (!code) return "en";
 
-    const lowered = code.toLowerCase();
-    const primary = lowered.split("-")[0];
+    // Try specific exact match first
+    const exactMatch = ZodSupportedDisplayLanguageCodes.safeParse(code);
+    if (exactMatch.success) return exactMatch.data;
 
-    const result = ZodSupportedDisplayLanguageCodes.safeParse(primary);
-    return result.success ? result.data : "en";
-});
-
-export const ZodNormalizeSpokenLanguageCode = z.string().transform((code) => {
-    if (!code) return "en";
-
-    const lowered = code.toLowerCase();
-
-    // Try exact match first
-    const exactMatch = SupportedSpokenLanguageMetadataList.find(
-        (lang) => lang.code.toLowerCase() === lowered,
-    );
-    if (exactMatch) return exactMatch.code;
+    // Handle fallbacks
+    if (code === "zh-HK" || code === "zh-TW" || code === "zh-MO") {
+        return "zh-Hant";
+    }
+    if (code.startsWith("zh")) return "zh-Hans";
 
     // Try primary language match
-    const primary = lowered.split("-")[0];
+    const primary = code.split("-")[0];
+    const result = ZodSupportedDisplayLanguageCodes.safeParse(primary);
+    if (result.success) return result.data;
+
+    // Else default to English
+    return "en";
+}
+
+export function parseSpokenLanguage(
+    code: string,
+): SupportedSpokenLanguageCodes {
+    if (!code) return "en";
+
+    // Try specific exact match first
+    const exactMatch = SupportedSpokenLanguageMetadataList.find(
+        (lang) => lang.code.toLowerCase() === code,
+    );
+    if (exactMatch !== undefined) return exactMatch.code;
+
+    // Handle fallbacks
+    if (code === "zh-HK" || code === "zh-TW" || code === "zh-MO") {
+        return "zh-Hant";
+    }
+    if (code.startsWith("zh")) return "zh-Hans";
+
+    // Try primary language match
+    const primary = code.split("-")[0];
     const primaryMatch = SupportedSpokenLanguageMetadataList.find(
         (lang) => lang.code.toLowerCase().split("-")[0] === primary,
     );
-    if (primaryMatch) return primaryMatch.code;
+    if (primaryMatch !== undefined) return primaryMatch.code;
 
+    // Else default to English
     return "en";
-});
-
-/**
- * Parse browser language to our supported format with Zod
- */
-export const ZodParseBrowserLanguage = z.string().transform((browserLang) => {
-    const displayLanguage = ZodNormalizeDisplayLanguageCode.parse(browserLang);
-    const spokenLanguage = ZodNormalizeSpokenLanguageCode.parse(browserLang);
-
-    return {
-        displayLanguage,
-        spokenLanguages: [spokenLanguage] as SupportedSpokenLanguageCodes[],
-    };
-});
+}

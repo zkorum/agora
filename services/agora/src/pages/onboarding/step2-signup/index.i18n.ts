@@ -18,6 +18,13 @@ export const step2SignupOnboardingTranslations: Record<
     verifyAnonymously: "Verify anonymously",
     verifyWithPhone: "Verify with my phone number",
   },
+  ar: {
+    pageTitle: "تهدف أجورا إلى أن تكون للبشر حصرياً",
+    description:
+      "أكثر من نصف حركة المرور على الإنترنت تأتي من الروبوتات. لهذا السبب نتحقق من المستخدمين، لتضمن أن المناقشات تتم مع أشخاص حقيقيين، وليس روبوتات تخطط للسيطرة على العالم!",
+    verifyAnonymously: "التحقق بشكل مجهول",
+    verifyWithPhone: "التحقق برقم هاتفي",
+  },
   es: {
     pageTitle: "Agora aspira a ser exclusivamente humana",
     description:
@@ -32,14 +39,14 @@ export const step2SignupOnboardingTranslations: Record<
     verifyAnonymously: "Vérifier anonymement",
     verifyWithPhone: "Vérifier avec mon numéro de téléphone",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "Agora 旨在成为纯粹的人类",
     description:
       "超过一半的互联网流量来自机器人。这就是为什么我们要验证用户，这样你就是在和人辩论，而不是和机器人密谋世界霸权！",
     verifyAnonymously: "匿名验证",
     verifyWithPhone: "使用手机号验证",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "Agora 旨在成為純粹的人類",
     description:
       "超過一半的互聯網流量來自機器人。這就是為什麼我們要驗證用戶，這樣你就是在和人辯論，而不是和機器人密謀世界霸權！",

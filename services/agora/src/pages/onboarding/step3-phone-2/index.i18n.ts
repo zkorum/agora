@@ -40,6 +40,28 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
       restrictedPhoneType:
         "Sorry, this phone number is not supported for security reasons. Please try another.",
     },
+    ar: {
+      title: "أدخل الرمز المكون من 6 أرقام",
+      instructions:
+        "أدخل الرمز المكون من 6 أرقام الذي أرسلناه عبر رقم الهاتف",
+      expiresIn: "ينتهي في",
+      codeExpired: "انتهت صلاحية الرمز",
+      changeNumber: "تغيير الرقم",
+      resendCodeIn: "إعادة إرسال الرمز خلال",
+      resendCode: "إعادة إرسال الرمز",
+      pleaseEnterValidCode: "الرجاء إدخال رمز صالح مكون من 6 أرقام",
+      verificationSuccessful: "تم التحقق بنجاح 🎉",
+      codeExpiredResend: "انتهت صلاحية الرمز - أرسل رمزاً جديداً",
+      wrongCodeTryAgain: "رمز خاطئ - حاول مرة أخرى",
+      syncHiccupDetected: "عفواً! تم اكتشاف خلل في المزامنة - أرسل رمزاً جديداً",
+      somethingWrong: "عفواً! هناك خطأ ما",
+      tooManyAttempts:
+        "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
+      invalidPhoneNumber:
+        "عذراً، رقم الهاتف هذا غير صالح. يرجى التحقق والمحاولة مرة أخرى.",
+      restrictedPhoneType:
+        "عذراً، رقم الهاتف هذا غير مدعوم لأسباب أمنية. يرجى تجربة رقم آخر.",
+    },
     es: {
       title: "Ingrese el código de 6 dígitos",
       instructions:
@@ -86,7 +108,7 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
       restrictedPhoneType:
         "Désolé, ce numéro de téléphone n'est pas pris en charge pour des raisons de sécurité. Veuillez en essayer un autre.",
     },
-    "zh-CN": {
+    "zh-Hans": {
       title: "输入6位验证码",
       instructions: "输入我们通过手机号发送的6位验证码",
       expiresIn: "过期时间",
@@ -104,7 +126,7 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
       invalidPhoneNumber: "抱歉，这个手机号无效。请检查并重试。",
       restrictedPhoneType: "抱歉，这个手机号因安全原因不支持。请尝试其他号码。",
     },
-    "zh-TW": {
+    "zh-Hant": {
       title: "輸入6位驗證碼",
       instructions: "輸入我們通過手機號發送的6位驗證碼",
       expiresIn: "過期時間",
@@ -134,10 +156,14 @@ export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
       verificationSuccessful: "検証成功 🎉",
       codeExpiredResend: "コードが期限切れです—新しいコードを再送信",
       wrongCodeTryAgain: "コードが間違っています—もう一度試してください",
-      syncHiccupDetected: "おっと！同期の問題が検出されました—新しいコードを再送信",
+      syncHiccupDetected:
+        "おっと！同期の問題が検出されました—新しいコードを再送信",
       somethingWrong: "おっと！何かが間違っています",
-      tooManyAttempts: "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",
-      invalidPhoneNumber: "申し訳ありませんが、この電話番号は無効です。確認してからもう一度試してください。",
-      restrictedPhoneType: "申し訳ありませんが、この電話番号はセキュリティ上の理由でサポートされていません。別の番号を試してください。",
+      tooManyAttempts:
+        "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",
+      invalidPhoneNumber:
+        "申し訳ありませんが、この電話番号は無効です。確認してからもう一度試してください。",
+      restrictedPhoneType:
+        "申し訳ありませんが、この電話番号はセキュリティ上の理由でサポートされていません。別の番号を試してください。",
     },
   };

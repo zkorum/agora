@@ -9,16 +9,19 @@ export const settingsSearchInputTranslations: Record<
   en: {
     searchPlaceholder: "Search...",
   },
+  ar: {
+    searchPlaceholder: "بحث...",
+  },
   es: {
     searchPlaceholder: "Buscar...",
   },
   fr: {
     searchPlaceholder: "Rechercher...",
   },
-  "zh-CN": {
+  "zh-Hans": {
     searchPlaceholder: "搜索...",
   },
-  "zh-TW": {
+  "zh-Hant": {
     searchPlaceholder: "搜尋...",
   },
   ja: {

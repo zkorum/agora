@@ -35,19 +35,13 @@ const { t } = useComponentI18n<LoginRequirementDialogTranslations>(
 
 const loginRequirementOptions = [
   {
-    title: t("requiresLoginTitle"),
-    description: t("requiresLoginDescription"),
-    value: "requiresLogin",
-  },
-  {
     title: t("guestParticipationTitle"),
     description: t("guestParticipationDescription"),
     value: "guestParticipation",
   },
   {
-    title: "Requires login",
-    description:
-      "Anyone with the link can view the conversation, but will need to login to vote and contribute opinions",
+    title: t("requiresLoginTitle"),
+    description: t("requiresLoginDescription"),
     value: "requiresLogin",
   },
 ];

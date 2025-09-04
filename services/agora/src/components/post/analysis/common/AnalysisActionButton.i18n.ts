@@ -11,6 +11,10 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "Learn more",
     viewMore: "View more",
   },
+  ar: {
+    learnMore: "تعلّم أكثر",
+    viewMore: "عرض أكثر",
+  },
   es: {
     learnMore: "Aprender más",
     viewMore: "Ver más",
@@ -19,11 +23,11 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "En savoir plus",
     viewMore: "Voir plus",
   },
-  "zh-CN": {
+  "zh-Hans": {
     learnMore: "了解更多",
     viewMore: "查看更多",
   },
-  "zh-TW": {
+  "zh-Hant": {
     learnMore: "了解更多",
     viewMore: "查看更多",
   },

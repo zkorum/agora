@@ -17,6 +17,13 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "All others",
     allOtherGroups: "All other groups",
   },
+  ar: {
+    opinionsTitle: "الآراء",
+    noOpinionsMessage: "لا توجد آراء متاحة لهذه المجموعة.",
+    thisGroup: "هذه المجموعة",
+    allOthers: "جميع الآخرين",
+    allOtherGroups: "جميع المجموعات الأخرى",
+  },
   es: {
     opinionsTitle: "Opiniones",
     noOpinionsMessage: "No hay opiniones disponibles para este grupo.",
@@ -31,14 +38,14 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "Tous les autres",
     allOtherGroups: "Tous les autres groupes",
   },
-  "zh-CN": {
+  "zh-Hans": {
     opinionsTitle: "意见",
     noOpinionsMessage: "此群组没有意见。",
     thisGroup: "此群组",
     allOthers: "所有其他",
     allOtherGroups: "所有其他群组",
   },
-  "zh-TW": {
+  "zh-Hant": {
     opinionsTitle: "意見",
     noOpinionsMessage: "此群組沒有意見。",
     thisGroup: "此群組",

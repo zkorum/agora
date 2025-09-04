@@ -2,17 +2,15 @@
 
 ## Prepare the dependencies
 
-### (Optional) NVM
-
-Install [nvm](https://github.com/nvm-sh/nvm).
-
 ### NPM
 
-Install npm LTS using `nvm install lts/*` and make this default.
+Recommended: Install [nvm](https://github.com/nvm-sh/nvm)  and install npm LTS using `nvm install lts/*` and make this default.
+
+Or follow [npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/)
 
 ### Yarn
 
-Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable).
+Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable)
 
 ### Install dependencies
 
@@ -38,10 +36,12 @@ There is an example file `env.example` which can be used as the reference.
 
 ```bash
 cp env.example .env
-# modify .env
-. ./.env
-yarn dev
 ```
+
+Take note of the two VITE_DEV_AUTHORIZED_PHONES which will enable you to login to the Agora client.
+
+Start the app with: 
+`yarn dev` in the `services/agora` directory or running `make dev-app` at the root of this project.
 
 ## Logos
 

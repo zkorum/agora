@@ -11,16 +11,19 @@ export const displayLanguageSettingsTranslations: Record<
   en: {
     pageTitle: "Display Language",
   },
+  ar: {
+    pageTitle: "لغة العرض",
+  },
   es: {
     pageTitle: "Idioma de visualización",
   },
   fr: {
     pageTitle: "Langue d'affichage",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "显示语言",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "顯示語言",
   },
   ja: {

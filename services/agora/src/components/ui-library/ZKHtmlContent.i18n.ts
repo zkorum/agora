@@ -11,6 +11,10 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "Post content preview",
     postContent: "Post content",
   },
+  ar: {
+    postContentPreview: "معاينة محتوى المنشور",
+    postContent: "محتوى المنشور",
+  },
   es: {
     postContentPreview: "Vista previa del contenido",
     postContent: "Contenido de la publicación",
@@ -19,11 +23,11 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "Aperçu du contenu",
     postContent: "Contenu du post",
   },
-  "zh-CN": {
+  "zh-Hans": {
     postContentPreview: "帖子内容预览",
     postContent: "帖子内容",
   },
-  "zh-TW": {
+  "zh-Hant": {
     postContentPreview: "帖子內容預覽",
     postContent: "帖子內容",
   },

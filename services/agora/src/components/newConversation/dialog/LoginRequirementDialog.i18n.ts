@@ -19,6 +19,14 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "Anyone with the link can view the conversation, vote and contribute opinions",
   },
+  ar: {
+    requiresLoginTitle: "يتطلب تسجيل الدخول",
+    requiresLoginDescription:
+      "يمكن لأي شخص لديه الرابط عرض المحادثة، ولكن سيحتاج إلى تسجيل الدخول للتصويت وإضافة آراء",
+    guestParticipationTitle: "مشاركة الضيوف",
+    guestParticipationDescription:
+      "يمكن لأي شخص لديه الرابط عرض المحادثة والتصويت وإضافة آراء",
+  },
   es: {
     requiresLoginTitle: "Requiere inicio de sesión",
     requiresLoginDescription:
@@ -35,7 +43,7 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "Toute personne ayant le lien peut voir la conversation, voter et contribuer des opinions",
   },
-  "zh-CN": {
+  "zh-Hans": {
     requiresLoginTitle: "需要登录",
     requiresLoginDescription:
       "任何有链接的人都可以查看对话，但需要登录才能投票和贡献意见",
@@ -43,7 +51,7 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "任何有链接的人都可以查看对话、投票和贡献意见",
   },
-  "zh-TW": {
+  "zh-Hant": {
     requiresLoginTitle: "需要登入",
     requiresLoginDescription:
       "任何有連結的人都可以查看對話，但需要登入才能投票和貢獻意見",

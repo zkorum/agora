@@ -54,7 +54,6 @@ export function getCommentActions(
       label: translations.delete,
       icon: "mdi-delete",
       variant: "destructive",
-      requiresConfirmation: true,
       handler: deleteCommentCallback,
       isVisible: (context: ContentActionContext) =>
         context.userRole === "owner",

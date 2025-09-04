@@ -37,6 +37,23 @@ export const userReportsViewerTranslations: Record<
     invalidSlugIdParam: "Invalid slug ID param",
     unknownReportType: "Unknown report type",
   },
+  ar: {
+    userReportsViewer: "عارض تقارير المستخدمين",
+    openConversation: "فتح المحادثة",
+    openOpinion: "فتح الرأي",
+    noReportsAvailable: "لا توجد تقارير متاحة لهذا {type}.",
+    conversation: "محادثة",
+    opinion: "رأي",
+    id: "المعرف:",
+    username: "اسم المستخدم:",
+    createdAt: "تم الإنشاء في:",
+    reason: "السبب:",
+    explanation: "التوضيح:",
+    notAvailable: "غير متوفر",
+    invalidReportType: "نوع تقرير غير صحيح",
+    invalidSlugIdParam: "معامل معرف slug غير صحيح",
+    unknownReportType: "نوع تقرير غير معروف",
+  },
   es: {
     userReportsViewer: "Visor de reportes de usuario",
     openConversation: "Abrir conversación",
@@ -71,7 +88,7 @@ export const userReportsViewerTranslations: Record<
     invalidSlugIdParam: "Paramètre d'ID slug invalide",
     unknownReportType: "Type de rapport inconnu",
   },
-  "zh-CN": {
+  "zh-Hans": {
     userReportsViewer: "用户报告查看器",
     openConversation: "打开对话",
     openOpinion: "打开意见",
@@ -88,7 +105,7 @@ export const userReportsViewerTranslations: Record<
     invalidSlugIdParam: "无效的 slug ID 参数",
     unknownReportType: "未知报告类型",
   },
-  "zh-TW": {
+  "zh-Hant": {
     userReportsViewer: "用戶報告查看器",
     openConversation: "打開對話",
     openOpinion: "打開意見",

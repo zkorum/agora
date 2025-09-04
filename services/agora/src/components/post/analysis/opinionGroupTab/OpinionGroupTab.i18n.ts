@@ -15,6 +15,11 @@ export const opinionGroupTabTranslations: Record<
     notEnoughGroupsMessage: "Not enough groups to display.",
     meLabel: "Me",
   },
+  ar: {
+    groupsTitle: "المجموعات",
+    notEnoughGroupsMessage: "لا توجد مجموعات كافية للعرض.",
+    meLabel: "أنا",
+  },
   es: {
     groupsTitle: "Grupos",
     notEnoughGroupsMessage: "No hay suficientes grupos para mostrar.",
@@ -25,12 +30,12 @@ export const opinionGroupTabTranslations: Record<
     notEnoughGroupsMessage: "Pas assez de groupes à afficher.",
     meLabel: "Moi",
   },
-  "zh-CN": {
+  "zh-Hans": {
     groupsTitle: "群组",
     notEnoughGroupsMessage: "群组数量不足以显示。",
     meLabel: "我",
   },
-  "zh-TW": {
+  "zh-Hant": {
     groupsTitle: "群組",
     notEnoughGroupsMessage: "群組數量不足以顯示。",
     meLabel: "我",

@@ -11,6 +11,10 @@ export const embedAccountWidgetTranslations: Record<
     logoutButton: "Log Out",
     logoutTooltip: "Logout",
   },
+  ar: {
+    logoutButton: "تسجيل الخروج",
+    logoutTooltip: "تسجيل الخروج",
+  },
   es: {
     logoutButton: "Cerrar Sesión",
     logoutTooltip: "Cerrar Sesión",
@@ -19,11 +23,11 @@ export const embedAccountWidgetTranslations: Record<
     logoutButton: "Se Déconnecter",
     logoutTooltip: "Se Déconnecter",
   },
-  "zh-CN": {
+  "zh-Hans": {
     logoutButton: "登出",
     logoutTooltip: "登出",
   },
-  "zh-TW": {
+  "zh-Hant": {
     logoutButton: "登出",
     logoutTooltip: "登出",
   },

@@ -19,6 +19,14 @@ export const visibilityOptionsDialogTranslations: Record<
     privateDescription:
       "Only visible to those with whom you share a link or QR code",
   },
+  ar: {
+    publicTitle: "عام",
+    publicDescription:
+      "ستكون هذه المحادثة مرئية لجميع المستخدمين في موجز أغورا الرئيسي",
+    privateTitle: "خاص",
+    privateDescription:
+      "مرئية فقط لأولئك الذين تشاركهم رابطاً أو رمز QR",
+  },
   es: {
     publicTitle: "Público",
     publicDescription:
@@ -35,13 +43,13 @@ export const visibilityOptionsDialogTranslations: Record<
     privateDescription:
       "Visible uniquement par ceux avec qui vous partagez un lien ou un code QR",
   },
-  "zh-CN": {
+  "zh-Hans": {
     publicTitle: "公开",
     publicDescription: "此对话将在主 Agora  feed 中对所有用户可见",
     privateTitle: "私密",
     privateDescription: "仅对分享链接或二维码的人可见",
   },
-  "zh-TW": {
+  "zh-Hant": {
     publicTitle: "公開",
     publicDescription: "此對話將在主 Agora feed 中對所有用戶可見",
     privateTitle: "私密",
@@ -49,7 +57,8 @@ export const visibilityOptionsDialogTranslations: Record<
   },
   ja: {
     publicTitle: "公開",
-    publicDescription: "この会話は主 Agora feed ですべてのユーザーに表示されます",
+    publicDescription:
+      "この会話は主 Agora feed ですべてのユーザーに表示されます",
     privateTitle: "プライベート",
     privateDescription: "リンクまたはQRコードを共有した人のみが見れます",
   },

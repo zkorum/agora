@@ -1329,12 +1329,6 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis {
     /**
      *
-     * @type {string}
-     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
-     */
-    'aiSummary'?: string;
-    /**
-     *
      * @type {Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolisClustersInner>}
      * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPolis
      */
@@ -2446,7 +2440,6 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
     Fr: 'fr',
     EnGb: 'en-GB',
     Ar: 'ar',
-    ArFem: 'ar-fem',
     Bn: 'bn',
     Eu: 'eu',
     Bg: 'bg',
@@ -2479,16 +2472,17 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
     Ro: 'ro',
     Ru: 'ru',
     Sr: 'sr',
-    ZhTw: 'zh-TW',
     Sk: 'sk',
     Sv: 'sv',
     Ta: 'ta',
     Th: 'th',
-    ZhCn: 'zh-CN',
     Tr: 'tr',
     Uk: 'uk',
     Ur: 'ur',
-    Vi: 'vi'
+    Vi: 'vi',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Ja2: 'ja'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum];
@@ -2496,9 +2490,10 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum =
     En: 'en',
     Es: 'es',
     Fr: 'fr',
-    ZhTw: 'zh-TW',
-    ZhCn: 'zh-CN',
-    Ja: 'ja'
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
@@ -2520,7 +2515,11 @@ export interface ApiV1UserLanguagePreferencesGetPostRequest {
 export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = {
     En: 'en',
     Es: 'es',
-    Fr: 'fr'
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
@@ -2551,7 +2550,6 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = 
     Fr: 'fr',
     EnGb: 'en-GB',
     Ar: 'ar',
-    ArFem: 'ar-fem',
     Bn: 'bn',
     Eu: 'eu',
     Bg: 'bg',
@@ -2584,23 +2582,28 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = 
     Ro: 'ro',
     Ru: 'ru',
     Sr: 'sr',
-    ZhHans: 'zh-Hans',
     Sk: 'sk',
     Sv: 'sv',
     Ta: 'ta',
     Th: 'th',
-    ZhHant: 'zh-Hant',
     Tr: 'tr',
     Uk: 'uk',
     Ur: 'ur',
-    Vi: 'vi'
+    Vi: 'vi',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Ja2: 'ja'
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum];
 export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = {
     En: 'en',
     Es: 'es',
-    Fr: 'fr'
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];

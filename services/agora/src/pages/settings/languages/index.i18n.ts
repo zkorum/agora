@@ -35,6 +35,22 @@ export const languagesSettingsTranslations: Record<
     other: "other",
     others: "others",
   },
+  ar: {
+    pageTitle: "اللغة",
+    displayLanguageLabel: "لغة العرض",
+    spokenLanguagesLabel: "اللغات المنطوقة",
+    displayLanguageTitle: "لغة العرض",
+    displayLanguageDescription:
+      "لغتك المفضلة لرؤوس صفحات تطبيق أجورا والأزرار والنصوص الأخرى",
+    additionalLanguagesTitle: "لغات إضافية",
+    additionalLanguagesDescription:
+      "للمحتوى الذي ترغب في رؤيته على أجورا",
+    englishFallback: "الإنجليزية",
+    noneSelected: "لا يوجد اختيار",
+    and: "و",
+    other: "آخر",
+    others: "آخرون",
+  },
   es: {
     pageTitle: "Idioma",
     displayLanguageLabel: "Idioma de visualización",
@@ -67,12 +83,13 @@ export const languagesSettingsTranslations: Record<
     other: "autre",
     others: "autres",
   },
-  "zh-CN": {
+  "zh-Hans": {
     pageTitle: "语言",
     displayLanguageLabel: "显示语言",
     spokenLanguagesLabel: "口语语言",
     displayLanguageTitle: "显示语言",
-    displayLanguageDescription: "您的 Agora 应用的头部、按钮和其他文本的首选语言",
+    displayLanguageDescription:
+      "您的 Agora 应用的头部、按钮和其他文本的首选语言",
     additionalLanguagesTitle: "额外语言",
     additionalLanguagesDescription: "您希望在 Agora 上看到的语言",
     englishFallback: "英语",
@@ -81,12 +98,13 @@ export const languagesSettingsTranslations: Record<
     other: "其他",
     others: "其他",
   },
-  "zh-TW": {
+  "zh-Hant": {
     pageTitle: "語言",
     displayLanguageLabel: "顯示語言",
     spokenLanguagesLabel: "口語語言",
     displayLanguageTitle: "顯示語言",
-    displayLanguageDescription: "您的 Agora 應用的標題、按鈕和其他文本的首選語言",
+    displayLanguageDescription:
+      "您的 Agora 應用的標題、按鈕和其他文本的首選語言",
     additionalLanguagesTitle: "額外語言",
     additionalLanguagesDescription: "您希望在 Agora 上看到的語言",
     englishFallback: "英語",
@@ -100,7 +118,8 @@ export const languagesSettingsTranslations: Record<
     displayLanguageLabel: "表示言語",
     spokenLanguagesLabel: "口語言語",
     displayLanguageTitle: "表示言語",
-    displayLanguageDescription: "あなたの Agora アプリのヘッダー、ボタン、その他のテキストのお好みの言語",
+    displayLanguageDescription:
+      "あなたの Agora アプリのヘッダー、ボタン、その他のテキストのお好みの言語",
     additionalLanguagesTitle: "追加言語",
     additionalLanguagesDescription: "Agora で見たい言語",
     englishFallback: "英語",

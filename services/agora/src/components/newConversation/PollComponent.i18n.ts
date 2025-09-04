@@ -16,6 +16,12 @@ export const pollComponentTranslations: Record<
     inputOptionText: "Input option text",
     addOption: "Add Option",
   },
+  ar: {
+    addPoll: "إضافة استطلاع",
+    option: "خيار",
+    inputOptionText: "أدخل نص الخيار",
+    addOption: "إضافة خيار",
+  },
   es: {
     addPoll: "Agregar una encuesta",
     option: "Opción",
@@ -28,13 +34,13 @@ export const pollComponentTranslations: Record<
     inputOptionText: "Saisir le texte de l'option",
     addOption: "Ajouter une Option",
   },
-  "zh-CN": {
+  "zh-Hans": {
     addPoll: "添加投票",
     option: "选项",
     inputOptionText: "输入选项文本",
     addOption: "添加选项",
   },
-  "zh-TW": {
+  "zh-Hant": {
     addPoll: "添加投票",
     option: "選項",
     inputOptionText: "輸入選項文本",

@@ -11,16 +11,19 @@ export const dialogStepLayoutTranslations: Record<
   en: {
     welcomeTitle: "Welcome to Agora!",
   },
+  ar: {
+    welcomeTitle: "مرحباً بك في أغورا!",
+  },
   es: {
     welcomeTitle: "¡Bienvenido a Ágora!",
   },
   fr: {
     welcomeTitle: "Bienvenue sur Agora !",
   },
-  "zh-CN": {
+  "zh-Hans": {
     welcomeTitle: "欢迎来到 Agora！",
   },
-  "zh-TW": {
+  "zh-Hant": {
     welcomeTitle: "歡迎來到 Agora！",
   },
   ja: {

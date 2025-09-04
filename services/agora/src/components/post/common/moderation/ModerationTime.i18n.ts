@@ -11,16 +11,19 @@ export const moderationTimeTranslations: Record<
   en: {
     edited: "(edited)",
   },
+  ar: {
+    edited: "(معدل)",
+  },
   es: {
     edited: "(editado)",
   },
   fr: {
     edited: "(modifié)",
   },
-  "zh-CN": {
+  "zh-Hans": {
     edited: "(已编辑)",
   },
-  "zh-TW": {
+  "zh-Hant": {
     edited: "(已編輯)",
   },
   ja: {
