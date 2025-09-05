@@ -216,13 +216,15 @@ def get_math_results():
 
     # For fewer than 14 statements, gradually increase min_user_vote_threshold from 4 up to 7.
     # At 14 statements and above (round(14/2) = 7), the threshold stays at 7.
-    total_statement_ids = {vote.statement_id for vote in payload.votes}
-    statement_count = len(total_statement_ids)
-    potential_threshold = round(statement_count / 2)
-    if potential_threshold == 0:
-        min_user_vote_threshold = 1
-    else:
-        min_user_vote_threshold = max(4, min(potential_threshold, 7))
+    # total_statement_ids = {vote.statement_id for vote in payload.votes}
+    # statement_count = len(total_statement_ids)
+    # potential_threshold = round(statement_count / 2)
+    # if potential_threshold == 0:
+    #     min_user_vote_threshold = 1
+    # else:
+    #     min_user_vote_threshold = max(4, min(potential_threshold, 7))
+
+    min_user_vote_threshold = 7  # same value as polis
 
     return jsonify(
         get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
