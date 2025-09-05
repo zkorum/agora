@@ -16,9 +16,9 @@ export const groupConsensusSummaryTranslations: Record<
   },
   ar: {
     groupSummaryTitle: "ملخص المجموعة",
-    aiSummaryTitle: "ملخص الذكاء الاصطناعي",
+    aiSummaryTitle: " ملخص الذكاء الاصطناعي",
     aiSummaryDescription:
-      "نحن نستخدم Mistral Large (نموذج LLM) لإنشاء الملخص والتسميات لكل مجموعة إجماع.",
+      "نستعين بنموذج Mistral Large (LLM) لإنشاء ملخصات وعناوين لكل مجموعة توافق.",
   },
   es: {
     groupSummaryTitle: "Resumen del grupo",
