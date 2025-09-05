@@ -51,6 +51,6 @@ export const userOrganizationMappingsTranslations: Record<
     usernameLabel: "ユーザー名",
     fetchButton: "取得",
     noOrganizationsMessage: "ユーザーは組織に属していません",
-    removeUserOrganizationMappingButton: "ユーザー組織マッピングを削除",
+    removeUserOrganizationMappingButton: "ユーザーと組織の紐付けを削除する",
   },
 };

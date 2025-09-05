@@ -102,9 +102,9 @@ export const conversationReviewTranslations: Record<
   ja: {
     posting: "投稿中...",
     post: "投稿",
-    addSeedOpinions: "種子意見を追加",
+    addSeedOpinions: "意見の種を追加",
     seedOpinionsDescription:
-      "異なる視点の範囲で8から15個の意見を播種することをお勧めします。これは早期参加に強力な影響を与えます。",
+      "様々な視点からで8から15個の意見を投稿（種植え）することをお勧めします。これは初期段階の参加に強力な効果をもたらします。",
     add: "追加",
     inputTextPlaceholder: "テキストを入力",
     opinionCannotBeEmpty: "意見を入力してください",

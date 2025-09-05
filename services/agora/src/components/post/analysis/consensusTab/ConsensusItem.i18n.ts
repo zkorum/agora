@@ -48,7 +48,7 @@ export const consensusItemTranslations: Record<
   ja: {
     agree: "同意",
     pass: "わからない",
-    disagree: "不同意",
-    noVote: "不投票",
+    disagree: "同意しない",
+    noVote: "投票しない",
   },
 };

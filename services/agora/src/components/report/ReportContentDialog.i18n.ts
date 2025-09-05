@@ -97,7 +97,7 @@ export const reportContentDialogTranslations: Record<
       "コミュニティの改善にご協力いただき、ありがとうございます。この{reportType}にどのような問題がありますか？",
     thanksForFeedbackTitle: "フィードバックをありがとうございます！",
     flaggingReasonText:
-      "なぜこの{reportType}を{selectedReason}としてフラグ付けしていますか？",
+      "なぜこの{reportType}を{selectedReason}としてフラグを立てているのですか？",
     addExplanationLabel: "説明を追加",
     skipButton: "スキップ",
     submitButton: "送信",

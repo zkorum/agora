@@ -63,12 +63,12 @@ export const step5ExperienceTranslations: Record<
     braveSpaceDescription: "被標記為反社會的內容會顯示給我，並帶有警告。",
   },
   ja: {
-    title: "Agora をどのように体験したいですか",
+    title: "Agoraをどのように体験するかお選びください",
     safeSpaceTitle: "安全な空間",
     safeSpaceDescription:
-      "反社会的（挑発や不寛容）とフラグ付けされたコンテンツは、フィードから削除されます。削除されたコンテンツを確認したい場合は、投稿の moderation 履歴を確認できます。",
+      "反社会的（挑発や不寛容）とフラグが立てられたコンテンツは、フィードから削除されます。削除されたコンテンツを確認したい場合は、投稿の moderation 履歴を確認できます。",
     braveSpaceTitle: "勇敢な空間",
     braveSpaceDescription:
-      "反社会的とフラグ付けされたコンテンツは、警告とともに表示されます。",
+      "反社会的とフラグが立てられたコンテンツは、警告とともに表示されます。",
   },
 };

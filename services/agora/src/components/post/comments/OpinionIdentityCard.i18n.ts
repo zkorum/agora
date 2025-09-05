@@ -25,6 +25,6 @@ export const opinionIdentityCardTranslations: Record<
     seedOpinion: "種子意見",
   },
   ja: {
-    seedOpinion: "シード意見",
+    seedOpinion: "意見の種",
   },
 };

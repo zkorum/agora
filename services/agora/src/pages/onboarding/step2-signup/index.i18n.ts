@@ -54,9 +54,9 @@ export const step2SignupOnboardingTranslations: Record<
     verifyWithPhone: "使用手機號驗證",
   },
   ja: {
-    pageTitle: "Agora は純粋な人間を目指しています",
+    pageTitle: "Agoraは人間のみを対象とすることを目指す",
     description:
-      "半分以上のインターネットトラフィックはロボットから来ています。そのため、ユーザーを検証するので、あなたは人と議論しているのではなく、ロボットが世界支配を計画しているのです！",
+      "インターネットトラフィックの半分以上はボットによるものです。だからこそユーザー認証を実施し、世界征服を企むロボットではなく、人間同士が議論できるようにしているのです！",
     verifyAnonymously: "匿名検証",
     verifyWithPhone: "携帯電話で検証",
   },

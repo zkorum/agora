@@ -102,7 +102,7 @@ export const newConversationControlBarTranslations: Record<
     public: "パブリック",
     requiresLogin: "ログインが必要",
     guestParticipation: "ゲスト参加",
-    makePublicNever: "公開：決して",
+    makePublicNever: "公開：Never",
     makePublic: "公開：{date}",
     removePoll: "投票を削除",
     addPoll: "投票を追加",

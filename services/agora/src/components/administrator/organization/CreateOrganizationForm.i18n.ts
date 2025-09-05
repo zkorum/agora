@@ -78,7 +78,7 @@ export const createOrganizationFormTranslations: Record<
     imagePathLabel: "画像パス（ファイル名または https パス）",
     fileNameExample: "ファイル名：avatar_default_0.png",
     fullPathExample:
-      "完全パス：https://agoracitizen.network/images/big_logo_agora.png",
+      "完全なパス：https://agoracitizen.network/images/big_logo_agora.png",
     websiteUrlLabel: "ウェブサイトURL",
     addOrganizationButton: "組織を追加",
   },

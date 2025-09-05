@@ -33,8 +33,8 @@ export const newConversationRouteGuardTranslations: Record<
     draftWillBeHere: "您的草稿對話將在您返回時在此處。",
   },
   ja: {
-    saveConversationDraft: "会話を草稿として保存しますか？",
+    saveConversationDraft: "会話を下書きとして保存しますか？",
     draftWillBeHere:
-      "あなたの草稿の会話はあなたが戻ってきたときにここにあります。",
+      "戻ってきたら、下書きした会話がここに表示されます。",
   },
 };
