@@ -22,6 +22,6 @@ export const staticIconTranslations: Record<string, StaticIconTranslations> = {
     stars: "星星",
   },
   ja: {
-    stars: "星",
+    stars: "スター",
   },
 };

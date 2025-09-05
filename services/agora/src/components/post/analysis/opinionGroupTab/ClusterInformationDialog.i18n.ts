@@ -49,9 +49,9 @@ export const clusterInformationDialogTranslations: Record<
       "我們使用機器學習來識別不同的思想流派。這是與 pol.is 相同的算法，pol.is 是 Computational Democracy 開發的開放源碼的 wiki 調查工具。",
   },
   ja: {
-    title: "共識グループ",
+    title: "合意形成グループ",
     description1:
-      "共識グループは、人々が意見に対して同意しているか、不同意しているかに基づいて作成されます。",
+      "合意形成グループは、人々が意見に対して同意しているか、同意していないかに基づいて作成されます。",
     description2:
       "我々は機械学習を使用して、異なる思想流派を識別します。これは、 Computational Democracy によって開発されたオープンソースの wiki 調査ツール pol.is によって使用されるのと同じアルゴリズムです。",
   },

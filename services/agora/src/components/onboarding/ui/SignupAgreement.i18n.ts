@@ -47,7 +47,7 @@ export const signupAgreementTranslations: Record<
   },
   ja: {
     agreementText: "ログインすることで、私たちの",
-    termsOfService: "利用規約",
+    termsOfService: "サービスの利用規約",
     and: "と",
     privacyPolicy: "プライバシーポリシー",
   },

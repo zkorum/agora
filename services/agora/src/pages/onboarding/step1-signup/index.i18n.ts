@@ -40,8 +40,8 @@ export const signupOnboardingTranslations: Record<
       "在一個日益兩極化的世界中，Agora 努力重新人性化並去兩極化公民對話，以解決關鍵社會問題。",
   },
   ja: {
-    pageTitle: "Agora が存在する理由",
+    pageTitle: "Agora が何故存在するのか？",
     description:
-      "増大する二極化の世界で、Agora は市民の対話を再人間化し、二極化を解消することを目指しています。",
+      "分極化が進む世界において、アゴラは重要な社会問題に関する市民対話を人間味あるものにし、分極化を解消するよう努めています。",
   },
 };

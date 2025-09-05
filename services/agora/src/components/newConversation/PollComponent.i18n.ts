@@ -49,7 +49,7 @@ export const pollComponentTranslations: Record<
   ja: {
     addPoll: "投票を追加",
     option: "オプション",
-    inputOptionText: "オプションテキストを入力",
+    inputOptionText: "オプションのテキストを入力",
     addOption: "オプションを追加",
   },
 };

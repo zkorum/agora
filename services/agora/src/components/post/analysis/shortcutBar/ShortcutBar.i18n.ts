@@ -58,10 +58,10 @@ export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
       groups: "群組",
     },
     ja: {
-      summary: "要約",
+      summary: "サマリー",
       me: "私",
       commonGround: "共通点",
-      majority: "多数",
+      majority: "マジョリティ",
       divisive: "分かれる",
       groups: "グループ",
     },

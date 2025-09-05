@@ -27,6 +27,6 @@ export const spokenLanguagesSettingsTranslations: Record<
     pageTitle: "口語語言",
   },
   ja: {
-    pageTitle: "口語言語",
+    pageTitle: "話される言語",
   },
 };

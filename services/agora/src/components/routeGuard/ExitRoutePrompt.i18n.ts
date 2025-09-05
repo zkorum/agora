@@ -33,7 +33,7 @@ export const exitRoutePromptTranslations: Record<
     discard: "丟棄",
   },
   ja: {
-    saveAsDraft: "草稿として保存",
+    saveAsDraft: "下書きとして保存",
     discard: "破棄",
   },
 };

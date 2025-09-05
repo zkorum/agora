@@ -116,11 +116,11 @@ export const languagesSettingsTranslations: Record<
   ja: {
     pageTitle: "言語",
     displayLanguageLabel: "表示言語",
-    spokenLanguagesLabel: "口語言語",
+    spokenLanguagesLabel: "話される言語",
     displayLanguageTitle: "表示言語",
     displayLanguageDescription:
       "あなたの Agora アプリのヘッダー、ボタン、その他のテキストのお好みの言語",
-    additionalLanguagesTitle: "追加言語",
+    additionalLanguagesTitle: "追加の言語",
     additionalLanguagesDescription: "Agora で見たい言語",
     englishFallback: "英語",
     noneSelected: "未選択",
