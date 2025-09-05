@@ -54,7 +54,7 @@ export const commentActionBarTranslations: Record<
     agree: "同意",
     voteChangeDisabled: "投票更改暂时禁用",
     disagreeAriaLabel: "不同意此评论。当前不同意数：",
-    passAriaLabel: "跳过此评论。当前跳过数：",
+    passAriaLabel: "对该观点不确定。当前不确定数：",
     agreeAriaLabel: "同意此评论。当前同意数：",
   },
   "zh-Hant": {
@@ -63,7 +63,7 @@ export const commentActionBarTranslations: Record<
     agree: "同意",
     voteChangeDisabled: "投票更改暫時禁用",
     disagreeAriaLabel: "不同意此評論。當前不同意數：",
-    passAriaLabel: "對該觀點不確定。當前數量：",
+    passAriaLabel: "對該觀點不確定。當前不確定數：",
     agreeAriaLabel: "同意此評論。當前同意數：",
   },
   ja: {
