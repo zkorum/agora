@@ -20,8 +20,7 @@ export const commentComposerTranslations: Record<
   ar: {
     placeholder: "أضف رأيك الخاص",
     postButton: "نشر",
-    conversationLockedError:
-      "لا يمكن إنشاء رأي لأن المحادثة مقفلة",
+    conversationLockedError: "لا يمكن إنشاء رأي لأن المحادثة مقفلة",
     createOpinionError: "خطأ أثناء محاولة إنشاء رأي جديد",
   },
   es: {

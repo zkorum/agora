@@ -24,8 +24,7 @@ export const visibilityOptionsDialogTranslations: Record<
     publicDescription:
       "ستكون هذه المحادثة مرئية لجميع المستخدمين في موجز أغورا الرئيسي",
     privateTitle: "خاص",
-    privateDescription:
-      "مرئية فقط لأولئك الذين تشاركهم رابطاً أو رمز QR",
+    privateDescription: "مرئية فقط لأولئك الذين تشاركهم رابطاً أو رمز QR",
   },
   es: {
     publicTitle: "Público",

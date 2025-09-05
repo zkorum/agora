@@ -4,7 +4,7 @@
 
 ### NPM
 
-Recommended: Install [nvm](https://github.com/nvm-sh/nvm)  and install npm LTS using `nvm install lts/*` and make this default.
+Recommended: Install [nvm](https://github.com/nvm-sh/nvm) and install npm LTS using `nvm install lts/*` and make this default.
 
 Or follow [npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/)
 
@@ -28,7 +28,6 @@ Run:
 yarn prepare
 ```
 
-
 ## Start the app in development mode (hot-code reloading, error reporting, etc.)
 
 Remember to first load the environment files in `.env` file by running `. ./.env`.
@@ -40,7 +39,7 @@ cp env.example .env
 
 Take note of the two VITE_DEV_AUTHORIZED_PHONES which will enable you to login to the Agora client.
 
-Start the app with: 
+Start the app with:
 `yarn dev` in the `services/agora` directory or running `make dev-app` at the root of this project.
 
 ## Logos
