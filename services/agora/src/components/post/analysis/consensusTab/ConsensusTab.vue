@@ -7,6 +7,8 @@
           :title="t('commonGroundTitle')"
         >
           <template #action-button>
+            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+            <!-- Tab switching should be keyboard accessible for users with motor disabilities -->
             <div @click="switchTab()">
               <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
             </div>

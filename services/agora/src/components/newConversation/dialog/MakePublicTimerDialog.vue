@@ -2,6 +2,8 @@
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer>
       <div class="timer-options">
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Timer option selection should be keyboard accessible for users with motor disabilities -->
         <div
           v-for="(option, index) in timerOptions"
           :key="index"

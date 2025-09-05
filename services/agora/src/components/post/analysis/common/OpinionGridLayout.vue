@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
+    <!-- Opinion analysis grid items should be keyboard navigable for users who rely on assistive technologies -->
     <div class="container" @click="$emit('click')">
       <div>
         <slot name="content" />

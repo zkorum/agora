@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+    <!-- Footer navigation items should be keyboard accessible for users with motor disabilities -->
     <div class="container" @click="scrollToTop()">
       <TopMenuWrapper>
         <div class="gridContainer">

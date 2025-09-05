@@ -7,6 +7,8 @@
           :key="commentItem.opinionItem.opinionSlugId"
         >
           <ZKHoverEffect :enable-hover="true">
+            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+            <!-- Comment item click areas should be keyboard navigable for users with motor disabilities -->
             <div
               class="commentItemStyle hoverColor"
               @click="

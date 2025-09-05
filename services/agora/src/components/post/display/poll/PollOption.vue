@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
+    <!-- This poll option should be focusable and keyboard navigable for users who rely on assistive technologies -->
     <div
       class="commonBase commonBefore"
       :class="{
