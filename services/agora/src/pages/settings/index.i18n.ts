@@ -48,8 +48,7 @@ export const settingsTranslations: Record<
     moderatorOrganization: "المشرف - المنظمة",
     componentTesting: "🔧 اختبار المكونات",
     accountDeleted: "تم حذف الحساب",
-    accountDeletionFailed:
-      "عذراً! فشل حذف الحساب. يرجى المحاولة مرة أخرى",
+    accountDeletionFailed: "عذراً! فشل حذف الحساب. يرجى المحاولة مرة أخرى",
   },
   es: {
     pageTitle: "Configuración",

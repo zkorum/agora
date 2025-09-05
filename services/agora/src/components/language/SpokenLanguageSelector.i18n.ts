@@ -34,8 +34,7 @@ export const spokenLanguageSelectorTranslations: Record<
     searchLanguages: "البحث عن اللغات...",
     noLanguagesFound: "لم يتم العثور على لغات",
     allLanguagesSelected: "تم اختيار جميع اللغات",
-    cannotRemoveLastLanguage:
-      "يجب أن تكون لديك لغة واحدة مُختارة على الأقل",
+    cannotRemoveLastLanguage: "يجب أن تكون لديك لغة واحدة مُختارة على الأقل",
     failedToSaveLanguages: "فشل في حفظ تفضيلات اللغة",
     failedToLoadLanguages: "فشل في تحميل تفضيلات اللغة",
   },

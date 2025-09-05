@@ -33,8 +33,7 @@ export const modeChangeConfirmationDialogTranslations: Record<
     title: "العنوان",
     bodyText: "نص المحتوى",
     pollOptions: "خيارات الاستطلاع",
-    settingsPreserved:
-      "سيتم الاحتفاظ بإعدادات الخصوصية واختيار المنظمة.",
+    settingsPreserved: "سيتم الاحتفاظ بإعدادات الخصوصية واختيار المنظمة.",
     cancel: "إلغاء",
     continue: "متابعة",
   },
