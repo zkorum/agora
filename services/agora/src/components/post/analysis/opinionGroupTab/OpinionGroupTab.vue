@@ -26,6 +26,8 @@
 
           <ClusterInformationDialog v-model="showClusterInformation" />
 
+          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+          <!-- Cluster selection areas should be keyboard navigable for users with motor disabilities -->
           <div
             v-for="(imgItem, imageIndex) in activeCluster.imgList"
             :key="imageIndex"

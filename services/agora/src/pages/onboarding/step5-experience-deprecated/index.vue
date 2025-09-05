@@ -25,6 +25,8 @@
       </template>
 
       <template #body>
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Experience selection options should be keyboard navigable for users with disabilities -->
         <div @click="selectedOption('safe-space')">
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">
@@ -39,6 +41,8 @@
           </ZKHoverEffect>
         </div>
 
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Experience selection options should be keyboard navigable for users with disabilities -->
         <div @click="selectedOption('brave-space')">
           <ZKHoverEffect :enable-hover="true">
             <ZKCard padding="1rem">

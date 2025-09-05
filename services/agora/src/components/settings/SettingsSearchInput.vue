@@ -9,6 +9,8 @@
         class="search-input"
         type="text"
       />
+      <!-- TODO: ACCESSIBILITY - Change <PrimeInputIcon> to <button> element for keyboard accessibility -->
+      <!-- Clear search button should be keyboard accessible for users with motor disabilities -->
       <PrimeInputIcon
         v-if="modelValue"
         class="pi pi-times cursor-pointer clear-icon"

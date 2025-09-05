@@ -1,5 +1,7 @@
 <template>
   <div class="options-list">
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+    <!-- Dialog options should be keyboard navigable for users with motor disabilities -->
     <div
       v-for="(option, index) in options"
       :key="index"

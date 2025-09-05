@@ -35,6 +35,8 @@
             />
           </div>
 
+          <!-- TODO: ACCESSIBILITY - Change <div> wrapper to semantic <button> or add proper ARIA attributes -->
+          <!-- Tab navigation should be keyboard accessible for users with motor disabilities -->
           <div class="tabItem" @click="selectedTab('new')">
             <ZKTab
               :text="t('new')"

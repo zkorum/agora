@@ -8,6 +8,8 @@
         :to="iconItem.route"
         custom
       >
+        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+        <!-- Footer navigation items should be keyboard accessible for users with motor disabilities -->
         <div
           class="iconStyle navigation-link"
           @click="handleNavigationClick($event, iconItem, navigate)"

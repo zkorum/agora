@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+    <!-- Settings menu item should be keyboard navigable for users with motor disabilities -->
     <div
       class="menu-item"
       :class="{
