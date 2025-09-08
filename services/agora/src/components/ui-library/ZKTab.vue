@@ -1,4 +1,6 @@
 <template>
+  <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
+  <!-- Tab elements should be keyboard navigable and have proper ARIA attributes for assistive technologies -->
   <div
     class="tabStyle"
     :class="{

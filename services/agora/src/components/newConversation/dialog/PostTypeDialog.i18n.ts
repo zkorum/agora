@@ -20,11 +20,9 @@ export const postTypeDialogTranslations: Record<
   },
   ar: {
     newConversation: "محادثة جديدة",
-    newConversationDescription:
-      "إنشاء موضوع محادثة جديد للنقاش.",
+    newConversationDescription: "إنشاء موضوع محادثة جديد للنقاش.",
     importFromPolis: "استيراد من بوليس",
-    importFromPolisDescription:
-      "استيراد ومتابعة محادثة بوليس موجودة.",
+    importFromPolisDescription: "استيراد ومتابعة محادثة بوليس موجودة.",
   },
   es: {
     newConversation: "Nueva Conversación",

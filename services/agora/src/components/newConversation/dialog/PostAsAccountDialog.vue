@@ -1,6 +1,8 @@
 <template>
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer>
+      <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+      <!-- Account option selection should be keyboard accessible for users with motor disabilities -->
       <div
         class="account-option"
         :class="{
@@ -19,6 +21,8 @@
         <span class="account-name">{{ profileData.userName }}</span>
       </div>
 
+      <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+      <!-- Organization account option selection should be keyboard accessible for users with motor disabilities -->
       <div
         v-for="organization in profileData.organizationList"
         :key="organization.name"

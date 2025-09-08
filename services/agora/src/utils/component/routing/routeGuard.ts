@@ -1,11 +1,7 @@
 import type { Ref } from "vue";
 import { onUnmounted, ref } from "vue";
-import type {
-  RouteLocationNormalized} from "vue-router";
-import {
-  onBeforeRouteLeave,
-  useRouter,
-} from "vue-router";
+import type { RouteLocationNormalized } from "vue-router";
+import { onBeforeRouteLeave, useRouter } from "vue-router";
 
 /**
  * Callback function to execute before actually leaving the route

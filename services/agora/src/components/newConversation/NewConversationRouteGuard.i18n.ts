@@ -14,8 +14,7 @@ export const newConversationRouteGuardTranslations: Record<
   },
   ar: {
     saveConversationDraft: "حفظ المحادثة كمسودة؟",
-    draftWillBeHere:
-      "ستكون مسودة محادثتك هنا عند عودتك.",
+    draftWillBeHere: "ستكون مسودة محادثتك هنا عند عودتك.",
   },
   es: {
     saveConversationDraft: "¿Guardar conversación como borrador?",

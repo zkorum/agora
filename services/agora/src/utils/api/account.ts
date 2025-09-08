@@ -1,17 +1,9 @@
 import { api } from "boot/axios";
-import type {
-  ApiV1UserUsernameUpdatePostRequest} from "src/api";
-import {
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
+import type { ApiV1UserUsernameUpdatePostRequest } from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useNotify } from "../ui/notify";
-import type {
-  AxiosErrorResponse,
-  AxiosSuccessResponse} from "./common";
-import {
-  useCommonApi,
-} from "./common";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
+import { useCommonApi } from "./common";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";

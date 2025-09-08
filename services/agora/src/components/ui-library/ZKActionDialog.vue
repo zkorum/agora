@@ -8,6 +8,8 @@
         </div>
 
         <div class="action-list">
+          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+          <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
           <div
             v-for="action in actions"
             :key="action.id"

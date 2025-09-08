@@ -1,11 +1,7 @@
 import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import type {
-  ApiV1NotificationFetchPostRequest} from "src/api";
-import {
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
+import type { ApiV1NotificationFetchPostRequest } from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
 import type { NotificationItem } from "src/shared/types/zod";

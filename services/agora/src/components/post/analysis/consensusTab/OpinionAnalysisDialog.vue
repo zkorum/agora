@@ -162,6 +162,8 @@
             </table>
           </div>
 
+          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+          <!-- View original comment link should be keyboard accessible for users with motor disabilities -->
           <div class="view-original" @click="viewOriginalComment">
             {{ t("viewOriginal") }}
           </div>

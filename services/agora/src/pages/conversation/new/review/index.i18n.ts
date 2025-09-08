@@ -40,11 +40,9 @@ export const conversationReviewTranslations: Record<
     add: "إضافة",
     inputTextPlaceholder: "أدخل النص",
     opinionCannotBeEmpty: "لا يمكن أن يكون الرأي فارغًا",
-    opinionExceedsLimit:
-      "الرأي يتجاوز حد الـ {limit} حرف ({count}/{limit})",
+    opinionExceedsLimit: "الرأي يتجاوز حد الـ {limit} حرف ({count}/{limit})",
     opinionDuplicate: "هذا الرأي مكرر",
-    errorCreatingConversation:
-      "خطأ أثناء محاولة إنشاء محادثة جديدة",
+    errorCreatingConversation: "خطأ أثناء محاولة إنشاء محادثة جديدة",
   },
   es: {
     posting: "Publicando...",

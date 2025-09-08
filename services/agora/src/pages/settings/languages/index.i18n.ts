@@ -43,8 +43,7 @@ export const languagesSettingsTranslations: Record<
     displayLanguageDescription:
       "لغتك المفضلة لرؤوس صفحات تطبيق أجورا والأزرار والنصوص الأخرى",
     additionalLanguagesTitle: "لغات إضافية",
-    additionalLanguagesDescription:
-      "للمحتوى الذي ترغب في رؤيته على أجورا",
+    additionalLanguagesDescription: "للمحتوى الذي ترغب في رؤيته على أجورا",
     englishFallback: "الإنجليزية",
     noneSelected: "لا يوجد اختيار",
     and: "و",
