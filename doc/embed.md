@@ -17,7 +17,7 @@ Either directly within HTML or using some external plugin that does this job for
 Modify `src` with the URL copied during the Step 1:
 
 ```
-<iframe style="aspect-ratio: 1/1; width:100%" scrolling="no" src="https://agoracitizen.network/feed/conversation/ss_4Cg/embed" title="Agora Citizen Network" frameborder="0" allow="clipboard-write; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe style="aspect-ratio: 1/3; width:100%" scrolling="no" src="https://agoracitizen.network/feed/conversation/ss_4Cg/embed" title="Agora Citizen Network" frameborder="0" allow="clipboard-write; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
 
 Important note: if you're using WordPress.com Free plan, this will not work because WordPress.com removes all the custom iframes before publishing (except from established platforms such as YouTube) for security reasons (<https://wordpress.com/forums/topic/iframe-not-displaying/>).
