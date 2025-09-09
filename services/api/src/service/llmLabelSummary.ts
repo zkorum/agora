@@ -119,6 +119,12 @@ export async function updateAiLabelsAndSummaries({
         db,
         conversationInsightsWithOpinionIds,
     });
+    log.info(
+        `[Repness] conversationInsights for conversationId='${String(
+            conversationId,
+        )}' and for polisContentId='${String(polisContentId)}', conversationInsights=${JSON.stringify(conversationInsights)}}`,
+    );
+
     const genLabelSummaryOutput = await invokeRemoteModel({
         conversationId,
         polisContentId,
@@ -133,7 +139,7 @@ export async function updateAiLabelsAndSummaries({
     log.info(
         `[LLM] Received Label and Summary Prompt results for conversationId='${String(
             conversationId,
-        )}' and polisContentId='${String(polisContentId)}: ${JSON.stringify(genLabelSummaryOutput)}`,
+        )}' and polisContentId='${String(polisContentId)}': ${JSON.stringify(genLabelSummaryOutput)}`,
     );
     await updateClustersLabelsAndSummaries({
         db,

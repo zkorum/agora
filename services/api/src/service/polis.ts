@@ -90,35 +90,21 @@ interface GetAndUpdatePolisMathProps {
 
 interface LoadPolisMathResultsProps {
     db: PostgresDatabase;
-    conversationTitle: string;
-    conversationBody: string | undefined;
     polisMathResults: MathResults;
     conversationSlugId: string;
     conversationId: number;
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
 }
 
-async function loadPolisMathResults({
+async function doLoadPolisMathResults({
     db,
     conversationSlugId,
     conversationId,
-    conversationTitle,
-    conversationBody,
     polisMathResults,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
-}: LoadPolisMathResultsProps) {
+}: LoadPolisMathResultsProps): Promise<{
+    clustersInsightsForLlm: Record<string, ClusterInsightsWithOpinionIds>;
+    polisContentId: number;
+    minNumberOfClusters: number;
+}> {
     const polisContentQuery = await db
         .insert(polisContentTable)
         .values({
@@ -127,14 +113,6 @@ async function loadPolisMathResults({
         })
         .returning({ polisContentId: polisContentTable.id });
     const polisContentId = polisContentQuery[0].polisContentId;
-    await db
-        .update(conversationTable)
-        .set({
-            currentPolisContentId: polisContentId,
-            updatedAt: nowZeroMs(),
-        })
-        .where(eq(conversationTable.id, conversationId));
-
     let setClauseCommentPriority = {};
     let setClauseGroupAwareConsensusAgree = {};
     let setClauseGroupAwareConsensusDisagree = {};
@@ -481,11 +459,18 @@ async function loadPolisMathResults({
                 );
             }
         }
+        log.info(
+            `[Repness] for conversationId='${String(
+                conversationId,
+            )}' and for polisContentId='${String(polisContentId)}', clustersInsightsForLlm=${JSON.stringify(clustersInsightsForLlm)}\n${repnesses.map((rep) => JSON.stringify(rep)).join(", ")}`,
+        );
         if (repnesses.length > 0) {
             await db.insert(polisClusterOpinionTable).values(repnesses);
         } else {
             log.warn(
-                `[Math] No repnesses to insert in polisClusterOpinionTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
+                `[Math] No repnesses to insert in polisClusterOpinionTable for conversationId='${String(
+                    conversationId,
+                )}' and for polisContentId='${String(polisContentId)}' for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
             );
         }
 
@@ -870,33 +855,39 @@ async function loadPolisMathResults({
             );
     }
 
-    if (awsAiLabelSummaryEnable && minNumberOfClusters >= 2) {
-        // only run the AI if there are at least 2 clusters
-        const conversationInsightsWithOpinionIds: ConversationInsightsWithOpinionIds =
-            {
-                conversationTitle,
-                conversationBody,
-                clusters: clustersInsightsForLlm,
-            };
-        try {
-            await llmService.updateAiLabelsAndSummaries({
-                db: db,
-                conversationId: conversationId,
-                polisContentId,
-                conversationInsightsWithOpinionIds,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
+    return { clustersInsightsForLlm, polisContentId, minNumberOfClusters };
+}
+
+async function loadPolisMathResults({
+    db,
+    conversationSlugId,
+    conversationId,
+    polisMathResults,
+}: LoadPolisMathResultsProps): Promise<{
+    clustersInsightsForLlm: Record<string, ClusterInsightsWithOpinionIds>;
+    polisContentId: number;
+    minNumberOfClusters: number;
+}> {
+    let doTransaction = true;
+    if (db instanceof PgTransaction) {
+        doTransaction = false;
+    }
+    if (doTransaction) {
+        return await db.transaction(async (tx) => {
+            return await doLoadPolisMathResults({
+                db: tx,
+                conversationSlugId,
+                conversationId,
+                polisMathResults,
             });
-        } catch (e: unknown) {
-            log.error(
-                e,
-                `[LLM]: Error while trying to update the AI Label and Summary for conversationSlugId=${conversationSlugId}`,
-            );
-        }
+        });
+    } else {
+        return await doLoadPolisMathResults({
+            db: db,
+            conversationSlugId,
+            conversationId,
+            polisMathResults,
+        });
     }
 }
 
@@ -933,20 +924,27 @@ export async function getAndUpdatePolisMath({
 
     const { conversationTitle, conversationBody } =
         await postService.getConversationContent({ db, conversationId });
-    let doTransaction = true;
-    if (db instanceof PgTransaction) {
-        doTransaction = false;
-    }
-    if (doTransaction) {
-        await db.transaction(async (tx) => {
-            await loadPolisMathResults({
-                db: tx,
-                conversationSlugId,
-                conversationId,
+    const { clustersInsightsForLlm, polisContentId, minNumberOfClusters } =
+        await loadPolisMathResults({
+            db: db,
+            conversationSlugId,
+            conversationId,
+            polisMathResults,
+        });
+    if (awsAiLabelSummaryEnable && minNumberOfClusters >= 2) {
+        // only run the AI if there are at least 2 clusters
+        const conversationInsightsWithOpinionIds: ConversationInsightsWithOpinionIds =
+            {
                 conversationTitle,
                 conversationBody,
-                polisMathResults,
-                awsAiLabelSummaryEnable,
+                clusters: clustersInsightsForLlm,
+            };
+        try {
+            await llmService.updateAiLabelsAndSummaries({
+                db: db,
+                conversationId: conversationId,
+                polisContentId,
+                conversationInsightsWithOpinionIds,
                 awsAiLabelSummaryRegion,
                 awsAiLabelSummaryModelId,
                 awsAiLabelSummaryTemperature,
@@ -954,24 +952,23 @@ export async function getAndUpdatePolisMath({
                 awsAiLabelSummaryMaxTokens,
                 awsAiLabelSummaryPrompt,
             });
-        });
-    } else {
-        await loadPolisMathResults({
-            db,
-            conversationSlugId,
-            conversationId,
-            conversationTitle,
-            conversationBody,
-            polisMathResults,
-            awsAiLabelSummaryEnable,
-            awsAiLabelSummaryRegion,
-            awsAiLabelSummaryModelId,
-            awsAiLabelSummaryTemperature,
-            awsAiLabelSummaryTopP,
-            awsAiLabelSummaryMaxTokens,
-            awsAiLabelSummaryPrompt,
-        });
+        } catch (e: unknown) {
+            log.error(
+                e,
+                `[LLM]: Error while trying to update the AI Label and Summary for conversationSlugId=${conversationSlugId}`,
+            );
+        }
     }
+    // TODO: do that one every 2 minutes per conversation so as not to run into sync issues
+    // plus improving performance
+    // actually update the polisContent once we have the AI
+    await db
+        .update(conversationTable)
+        .set({
+            currentPolisContentId: polisContentId,
+            updatedAt: nowZeroMs(),
+        })
+        .where(eq(conversationTable.id, conversationId));
 }
 
 interface GetClusterIdByUserAndConvProps {

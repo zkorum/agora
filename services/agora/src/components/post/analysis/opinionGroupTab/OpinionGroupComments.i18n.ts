@@ -29,14 +29,14 @@ export const opinionGroupCommentsTranslations: Record<
     noOpinionsMessage: "No hay opiniones disponibles para este grupo.",
     thisGroup: "Este grupo",
     allOthers: "Todos los demás",
-    allOtherGroups: "Todos los otros grupos",
+    allOtherGroups: "Los otros grupos",
   },
   fr: {
     opinionsTitle: "Opinions",
     noOpinionsMessage: "Aucune opinion disponible pour ce groupe.",
     thisGroup: "Ce groupe",
     allOthers: "Tous les autres",
-    allOtherGroups: "Tous les autres groupes",
+    allOtherGroups: "Les autres groupes",
   },
   "zh-Hans": {
     opinionsTitle: "意见",

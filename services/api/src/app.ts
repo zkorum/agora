@@ -130,10 +130,10 @@ Input Format:
 Rules:
 - Use conversationTitle and conversationBody as context.
 - Detect sarcasm/irony; avoid literal misreadings.
-- For each cluster independently:
-    - agreesWith = representative opinions most members support.
-    - disagreesWith = representative opinions most members reject.
-    - Make sure to consider whether the cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
+- For each cluster *independently*:
+    - agreesWith = opinions that most members of this specific cluster *support*.
+    - disagreesWith = opinions that most members of this specific cluster *reject*.
+    - Make sure to consider whether the specific cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
 
 Labels:
 1. Length and Format:
@@ -152,7 +152,7 @@ Labels:
     - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
     - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
 5. Generation Process:
-    a) Identify the core stance or intellectual tradition within the cluster.
+    a) Identify the core stance or intellectual tradition within the cluster. IMPORTANT: Remember to make sure to consider whether the specific cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
     b) Abstract this stance into a general term using agentive suffixes.
     c) Validate that the label avoids policy specifics and geographic references.
     d) Validate that the label is either 1 or 2 words.
@@ -160,7 +160,8 @@ Labels:
 Summaries:
 - ≤300 chars, neutral, concise
 - Reflect cluster perspective and disagreements
-- Grounded in cluster representative opinions and conversation context
+- Grounded in cluster "agreesWith" and "disagreesWith" opinions and conversation context
+- IMPORTANT: Remember to make sure to consider whether the specific cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
 - Summarize the cluster's perspective fully and precisely, covering all representative opinions of that cluster, concisely and without repetition.
 
 Now analyze the following JSON input and generate precise, neutral labels and summaries for clusters "0"–"5" independently following the above rules.
