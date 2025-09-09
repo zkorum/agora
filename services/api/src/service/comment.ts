@@ -962,68 +962,57 @@ export async function fetchAnalysisByConversationSlugId({
     conversationSlugId: string;
     personalizationUserId?: string;
 }): Promise<ConversationAnalysis> {
-    return await db.transaction(
-        async (tx) => {
-            const { getPolisMetadata } = useCommonPost();
-            const polisMetadata = await getPolisMetadata({
-                db: tx,
-                conversationSlugId,
-                personalizationUserId,
-            });
-            if (polisMetadata === undefined) {
-                return {
-                    polisContentId: undefined,
-                    consensus: [],
-                    controversial: [],
-                    clusters: {},
-                };
-            }
-            const consensusOpinions = await fetchOpinionsByConversationSlugId({
-                db: tx,
-                postSlugId: conversationSlugId,
-                fetchTarget: "group-aware-consensus",
-                personalizationUserId,
-            });
-            const controversialOpinions =
-                await fetchOpinionsByConversationSlugId({
-                    db: tx,
-                    postSlugId: conversationSlugId,
-                    fetchTarget: "controversial",
-                    personalizationUserId,
-                });
-            const polisClusters: PolisClusters = {};
-            for (const [key, clusterMetadata] of Object.entries(
-                polisMetadata.clustersMetadata,
-            )) {
-                // without casting, record key is otherwise always a string
-                //
-                const clusterKey =
-                    key as keyof typeof polisMetadata.clustersMetadata;
-                const representativeOpinions =
-                    await fetchOpinionsByConversationSlugId({
-                        db: tx,
-                        postSlugId: conversationSlugId,
-                        fetchTarget: "cluster",
-                        clusterKey: clusterKey,
-                        personalizationUserId,
-                    });
-                polisClusters[clusterKey] = {
-                    ...clusterMetadata,
-                    representative: Array.from(representativeOpinions.values()),
-                };
-            }
-            return {
-                polisContentId: polisMetadata.polisContentId,
-                consensus: Array.from(consensusOpinions.values()),
-                controversial: Array.from(controversialOpinions.values()),
-                clusters: polisClusters,
-            };
-        },
-        // ensure that no intermediate transactions will alter select between each other
-        {
-            isolationLevel: "repeatable read",
-        },
-    );
+    const { getPolisMetadata } = useCommonPost();
+    const polisMetadata = await getPolisMetadata({
+        db: db,
+        conversationSlugId,
+        personalizationUserId,
+    });
+    if (polisMetadata === undefined) {
+        return {
+            polisContentId: undefined,
+            consensus: [],
+            controversial: [],
+            clusters: {},
+        };
+    }
+    const consensusOpinions = await fetchOpinionsByConversationSlugId({
+        db: db,
+        postSlugId: conversationSlugId,
+        fetchTarget: "group-aware-consensus",
+        personalizationUserId,
+    });
+    const controversialOpinions = await fetchOpinionsByConversationSlugId({
+        db: db,
+        postSlugId: conversationSlugId,
+        fetchTarget: "controversial",
+        personalizationUserId,
+    });
+    const polisClusters: PolisClusters = {};
+    for (const [key, clusterMetadata] of Object.entries(
+        polisMetadata.clustersMetadata,
+    )) {
+        // without casting, record key is otherwise always a string
+        //
+        const clusterKey = key as keyof typeof polisMetadata.clustersMetadata;
+        const representativeOpinions = await fetchOpinionsByConversationSlugId({
+            db: db,
+            postSlugId: conversationSlugId,
+            fetchTarget: "cluster",
+            clusterKey: clusterKey,
+            personalizationUserId,
+        });
+        polisClusters[clusterKey] = {
+            ...clusterMetadata,
+            representative: Array.from(representativeOpinions.values()),
+        };
+    }
+    return {
+        polisContentId: polisMetadata.polisContentId,
+        consensus: Array.from(consensusOpinions.values()),
+        controversial: Array.from(controversialOpinions.values()),
+        clusters: polisClusters,
+    };
 }
 
 async function getPostIdFromPostSlugId(
