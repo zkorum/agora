@@ -10,7 +10,7 @@
 
       <template #body>
         <EmptyStateMessage
-          v-if="props.polis.clusters.length <= 1"
+          v-if="Object.keys(props.clusters).length <= 1"
           :message="t('notEnoughGroupsMessage')"
         />
         <div v-else class="container">
@@ -41,7 +41,9 @@
           >
             <!-- TODO: Integration the show me label -->
             <div
-              v-if="props.polis.clusters[imageIndex].isUserInCluster"
+              v-if="
+                props.clusters[String(imageIndex) as PolisKey]?.isUserInCluster
+              "
               class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
             >
               <q-icon name="mdi-account-outline" />
@@ -70,18 +72,22 @@
                   <div class="clusterOverlayFontBold">
                     {{
                       formatClusterLabel(
-                        props.polis.clusters[imageIndex].key,
+                        String(imageIndex) as PolisKey,
                         false,
-                        props.polis.clusters[imageIndex].aiLabel
+                        props.clusters[String(imageIndex) as PolisKey]?.aiLabel
                       )
                     }}
                   </div>
                   <div class="clusterGroupSize">
                     <q-icon name="mdi-account-supervisor-outline" />
-                    {{ props.polis.clusters[imageIndex].numUsers }} ({{
+                    {{
+                      props.clusters[String(imageIndex) as PolisKey]?.numUsers
+                    }}
+                    ({{
                       formatPercentage(
                         calculatePercentage(
-                          props.polis.clusters[imageIndex].numUsers,
+                          props.clusters[String(imageIndex) as PolisKey]! // I know it's not undefined here by construction
+                            .numUsers,
                           totalParticipantCount
                         )
                       )
@@ -93,9 +99,9 @@
           </div>
         </div>
 
-        <template v-if="props.polis.clusters.length > 1">
+        <template v-if="Object.keys(props.clusters).length > 1">
           <OpinionGroupSelector
-            :cluster-metadata-list="props.polis.clusters"
+            :cluster-metadata-list="props.clusters"
             :selected-cluster-key="currentClusterTab"
             @changed-cluster-key="currentClusterTab = $event"
           />
@@ -107,10 +113,9 @@
           />
 
           <OpinionGroupComments
-            :polis="props.polis"
             :conversation-slug-id="props.conversationSlugId"
             :item-list="
-              props.itemListPerClusterKey[currentClusterTab] ??
+              props.clusters[currentClusterTab]?.representative ??
               ([] as OpinionItem[])
             "
             :current-cluster-tab="currentClusterTab"
@@ -125,8 +130,8 @@
 
 <script setup lang="ts">
 import type {
-  ExtendedConversationPolis,
   OpinionItem,
+  PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
@@ -151,8 +156,7 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
-  itemListPerClusterKey: Partial<Record<PolisKey, OpinionItem[]>>;
-  polis: ExtendedConversationPolis;
+  clusters: Partial<PolisClusters>;
   totalParticipantCount: number;
 }>();
 
@@ -161,17 +165,17 @@ const { t } = useComponentI18n<OpinionGroupTabTranslations>(
 );
 
 const hasUngroupedParticipants = computed(() => {
-  if (props.polis.clusters.length === 0) {
+  if (Object.keys(props.clusters).length === 0) {
     return false;
   }
-  const totalGroupParticipants = Object.values(props.polis.clusters).reduce(
+  const totalGroupParticipants = Object.values(props.clusters).reduce(
     (sum, cluster) => sum + cluster.numUsers,
     0
   );
   return props.totalParticipantCount > totalGroupParticipants;
 });
 
-const currentClusterTab = ref<PolisKey>(props.polis.clusters[0]?.key || "0");
+const currentClusterTab = ref<PolisKey>("0");
 
 const showClusterInformation = ref(false);
 
@@ -345,8 +349,11 @@ if (!result.success) {
 } // TODO: do this properly...
 
 let targetClusterIndex = 0;
-if (props.polis.clusters.length >= 2 && props.polis.clusters.length <= 6) {
-  targetClusterIndex = props.polis.clusters.length - 2;
+if (
+  Object.keys(props.clusters).length >= 2 &&
+  Object.keys(props.clusters).length <= 6
+) {
+  targetClusterIndex = Object.keys(props.clusters).length - 2;
 }
 const activeCluster = ref<ClusterConfig>(clusterConfig[targetClusterIndex]);
 
@@ -357,8 +364,8 @@ watch(currentClusterTab, () => {
 });
 
 const currentAiSummary = computed(() => {
-  if (currentClusterTab.value in props.polis.clusters) {
-    return props.polis.clusters[currentClusterTab.value].aiSummary;
+  if (currentClusterTab.value in props.clusters) {
+    return props.clusters[currentClusterTab.value]?.aiSummary;
   }
   return undefined;
 });

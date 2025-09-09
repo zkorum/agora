@@ -1,7 +1,10 @@
 <template>
   <div>
-    <div v-if="clusterMetadataList.length > 1" class="container">
-      <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
+    <div v-if="Object.keys(clusterMetadataList).length > 1" class="container">
+      <div
+        v-for="clusterItem in Object.values(clusterMetadataList)"
+        :key="clusterItem.key"
+      >
         <ZKTab
           :text="
             formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
@@ -17,11 +20,11 @@
 
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
-import type { ClusterMetadata, PolisKey } from "src/shared/types/zod";
+import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 
 defineProps<{
-  clusterMetadataList: ClusterMetadata[];
+  clusterMetadataList: Partial<PolisClusters>;
   selectedClusterKey: PolisKey;
 }>();
 

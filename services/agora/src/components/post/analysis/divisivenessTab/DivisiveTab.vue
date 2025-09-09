@@ -18,7 +18,9 @@
 
       <template #body>
         <EmptyStateMessage
-          v-if="itemList.length === 0"
+          v-if="
+            itemList.length === 0 || Object.keys(props.clusters).length <= 1
+          "
           :message="t('noDivisiveOpinionsMessage')"
         />
         <ConsensusItem
@@ -41,7 +43,7 @@ import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   divisiveTabTranslations,
@@ -52,6 +54,7 @@ const props = defineProps<{
   conversationSlugId: string;
   itemList: OpinionItem[];
   compactMode: boolean;
+  clusters: Partial<PolisClusters>;
 }>();
 
 const currentTab = defineModel<ShortcutItem>();

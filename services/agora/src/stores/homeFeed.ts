@@ -53,9 +53,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       hasVoted: false,
       votedIndex: 0,
     },
-    polis: {
-      clusters: [],
-    },
   };
 
   let fullHomeFeedList: ExtendedConversation[] = [];

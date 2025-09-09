@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import type { OpinionItem } from "src/shared/types/zod";
-import type { ExtendedConversationPolis, PolisKey } from "src/shared/types/zod";
+import type { PolisKey } from "src/shared/types/zod";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
@@ -56,7 +56,6 @@ const props = defineProps<{
   conversationSlugId: string;
   itemList: OpinionItem[];
   currentClusterTab: PolisKey;
-  polis: ExtendedConversationPolis;
   hasUngroupedParticipants: boolean;
 }>();
 

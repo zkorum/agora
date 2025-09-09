@@ -102,35 +102,35 @@ export async function loadImportedPolisConversation({
         );
         trimmedTitle = `${trimmedTitle}${ellipsis}`;
     }
-    return await db.transaction(async (tx) => {
-        // TODO: add ownername and other info in DB for future use, and don't add the above info directly in the description, but do it in the UI
-        const { conversationSlugId, conversationId, conversationContentId } =
-            await postService.createNewPost({
-                db: tx,
-                conversationTitle: trimmedTitle,
-                conversationBody: conversationBody,
-                pollingOptionList: null,
-                authorId: authorId,
-                didWrite: didWrite,
-                proof: proof,
-                indexConversationAt: indexConversationAt,
-                postAsOrganization: postAsOrganization,
-                isIndexed: isIndexed,
-                isLoginRequired: isLoginRequired,
-                seedOpinionList: [],
-                importUrl: polisUrl,
-                importConversationUrl: conversationUrl,
-                importExportUrl: reportUrl,
-                importCreatedAt: importCreatedAt,
-                importAuthor: toUnionUndefined(ownername),
-            });
+    // NOTE: cannot be a transaction as it's too long-lasting
+    const { conversationSlugId, conversationId, conversationContentId } =
+        await postService.createNewPost({
+            db: db,
+            conversationTitle: trimmedTitle,
+            conversationBody: conversationBody,
+            pollingOptionList: null,
+            authorId: authorId,
+            didWrite: didWrite,
+            proof: proof,
+            indexConversationAt: indexConversationAt,
+            postAsOrganization: postAsOrganization,
+            isIndexed: isIndexed,
+            isLoginRequired: isLoginRequired,
+            seedOpinionList: [],
+            importUrl: polisUrl,
+            importConversationUrl: conversationUrl,
+            importExportUrl: reportUrl,
+            importCreatedAt: importCreatedAt,
+            importAuthor: toUnionUndefined(ownername),
+        });
+    try {
         const {
             userIdPerParticipantId,
             participantCount,
             voteCount,
             opinionCount,
         } = await userService.bulkInsertUsersFromExternalPolisConvo({
-            db: tx,
+            db: db,
             importedPolisConversation,
             conversationSlugId,
         });
@@ -153,7 +153,7 @@ export async function loadImportedPolisConversation({
         }
         const { opinionIdPerStatementId, opinionContentIdPerOpinionId } =
             await commentService.bulkInsertOpinionsFromExternalPolisConvo({
-                db: tx,
+                db: db,
                 importedPolisConversation,
                 conversationId,
                 conversationSlugId,
@@ -161,7 +161,7 @@ export async function loadImportedPolisConversation({
                 userIdPerParticipantId,
             });
         await voteService.bulkInsertVotesFromExternalPolisConvo({
-            db: tx,
+            db: db,
             importedPolisConversation,
             opinionIdPerStatementId,
             opinionContentIdPerOpinionId,
@@ -169,12 +169,25 @@ export async function loadImportedPolisConversation({
             conversationSlugId,
         });
         await postService.updateParticipantCount({
-            db: tx,
+            db: db,
             conversationId,
             participantCount: participantCount,
             opinionCount: opinionCount,
             voteCount: voteCount,
         });
         return { conversationSlugId, conversationId, conversationContentId };
-    });
+    } catch (e) {
+        // TODO: make incremental transactions, implement batch mechanisms to allow for resuming importing that failed midway
+        log.warn(
+            "Error while updating imported conversations, marking the incomplete imported conversation as deleted",
+        );
+        await postService.deletePostBySlugId({
+            proof: proof,
+            db: db,
+            didWrite: didWrite,
+            conversationSlugId: conversationSlugId,
+            userId: authorId,
+        });
+        throw e;
+    }
 }

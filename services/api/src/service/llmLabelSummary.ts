@@ -1,11 +1,9 @@
 import { log } from "@/app.js";
 import {
-    conversationContentTable,
     conversationTable,
     polisClusterTable,
     polisContentTable,
 } from "@/schema.js";
-import { toUnionUndefined } from "@/shared/shared.js";
 import {
     zodGenLabelSummaryOutputLoose,
     zodGenLabelSummaryOutputStrict,
@@ -20,7 +18,7 @@ import {
     ConverseCommand,
     type Message,
 } from "@aws-sdk/client-bedrock-runtime";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { type JSONObject } from "extract-first-json";
 import * as commentService from "./comment.js";
@@ -28,6 +26,8 @@ import * as commentService from "./comment.js";
 interface UpdateAiLabelsAndSummariesProps {
     db: PostgresJsDatabase;
     conversationId: number;
+    polisContentId: number;
+    conversationInsightsWithOpinionIds: ConversationInsightsWithOpinionIds;
     awsAiLabelSummaryRegion: string;
     awsAiLabelSummaryModelId: string;
     awsAiLabelSummaryTemperature: string;
@@ -36,20 +36,78 @@ interface UpdateAiLabelsAndSummariesProps {
     awsAiLabelSummaryPrompt: string;
 }
 
-interface ClusterInsights {
+export interface ClusterInsights {
     agreesWith: string[];
     disagreesWith: string[];
 }
 
-interface ConversationInsights {
+export interface ClusterInsightsWithOpinionIds {
+    agreesWith: number[];
+    disagreesWith: number[];
+}
+
+export interface ConversationInsights {
     conversationTitle: string;
     conversationBody?: string;
     clusters: Record<string, ClusterInsights>;
 }
 
+export interface ConversationInsightsWithOpinionIds {
+    conversationTitle: string;
+    conversationBody?: string;
+    clusters: Record<string, ClusterInsightsWithOpinionIds>;
+}
+
+async function getConversationInsightsFrom({
+    db,
+    conversationInsightsWithOpinionIds,
+}: {
+    db: PostgresJsDatabase;
+    conversationInsightsWithOpinionIds: ConversationInsightsWithOpinionIds;
+}): Promise<ConversationInsights> {
+    const opinionIds = new Set<number>();
+    const clusterInsightsWithOpinionIdsPerCluster =
+        conversationInsightsWithOpinionIds.clusters;
+    for (const clusterInsightsWithOpinionIds of Object.values(
+        clusterInsightsWithOpinionIdsPerCluster,
+    )) {
+        for (const opinionId of clusterInsightsWithOpinionIds.agreesWith) {
+            opinionIds.add(opinionId);
+        }
+        for (const opinionId of clusterInsightsWithOpinionIds.disagreesWith) {
+            opinionIds.add(opinionId);
+        }
+    }
+    const opinionContentsByIds = await commentService.getOpinionContentsFromIds(
+        {
+            db,
+            opinionIds: Array.from(opinionIds),
+        },
+    );
+    const clusters: Record<string, ClusterInsights> = {};
+    for (const [polisKey, clusterInsightsWithOpinionIds] of Object.entries(
+        conversationInsightsWithOpinionIds.clusters,
+    )) {
+        clusters[polisKey] = {
+            agreesWith: clusterInsightsWithOpinionIds.agreesWith.map(
+                (opinionId) => opinionContentsByIds[opinionId],
+            ),
+            disagreesWith: clusterInsightsWithOpinionIds.disagreesWith.map(
+                (opinionId) => opinionContentsByIds[opinionId],
+            ),
+        };
+    }
+    return {
+        ...conversationInsightsWithOpinionIds,
+        clusters: clusters,
+    };
+}
+
 export async function updateAiLabelsAndSummaries({
     db,
     conversationId,
+    polisContentId,
+    conversationInsightsWithOpinionIds,
     awsAiLabelSummaryRegion,
     awsAiLabelSummaryModelId,
     awsAiLabelSummaryTemperature,
@@ -57,12 +115,13 @@ export async function updateAiLabelsAndSummaries({
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
 }: UpdateAiLabelsAndSummariesProps): Promise<void> {
-    const conversationInsights = await getConversationInsights({
+    const conversationInsights = await getConversationInsightsFrom({
         db,
-        conversationId,
+        conversationInsightsWithOpinionIds,
     });
     const genLabelSummaryOutput = await invokeRemoteModel({
         conversationId,
+        polisContentId,
         conversationInsights,
         awsAiLabelSummaryRegion,
         awsAiLabelSummaryModelId,
@@ -72,13 +131,14 @@ export async function updateAiLabelsAndSummaries({
         awsAiLabelSummaryPrompt,
     });
     log.info(
-        `[LLM] Received Label and Summary Prompt results for conversation ${String(
+        `[LLM] Received Label and Summary Prompt results for conversationId='${String(
             conversationId,
-        )}: ${JSON.stringify(genLabelSummaryOutput)}`,
+        )}' and polisContentId='${String(polisContentId)}: ${JSON.stringify(genLabelSummaryOutput)}`,
     );
     await updateClustersLabelsAndSummaries({
         db,
         conversationId,
+        polisContentId,
         aiClustersLabelsAndSummaries: genLabelSummaryOutput.clusters,
     });
 }
@@ -86,6 +146,7 @@ export async function updateAiLabelsAndSummaries({
 interface UpdateClustersLabelsAndSummariesProps {
     db: PostgresJsDatabase;
     conversationId: number;
+    polisContentId: number;
     aiClustersLabelsAndSummaries:
         | GenLabelSummaryOutputClusterStrict
         | GenLabelSummaryOutputClusterLoose;
@@ -94,6 +155,7 @@ interface UpdateClustersLabelsAndSummariesProps {
 async function updateClustersLabelsAndSummaries({
     db,
     conversationId,
+    polisContentId,
     aiClustersLabelsAndSummaries,
 }: UpdateClustersLabelsAndSummariesProps): Promise<void> {
     for (const key of Object.keys(
@@ -114,7 +176,7 @@ async function updateClustersLabelsAndSummaries({
             ON "c"."id" = "p"."conversation_id"
           WHERE "pc"."key" = ${key}
             AND "p"."conversation_id" = ${conversationId}
-            AND "p"."id" = "c"."current_polis_content_id"
+            AND "p"."id" = ${polisContentId}
             AND "pc"."polis_content_id" = "p"."id";
         `);
     }
@@ -122,6 +184,7 @@ async function updateClustersLabelsAndSummaries({
 
 interface InvokeRemoteModelProps {
     conversationId: number;
+    polisContentId: number;
     conversationInsights: ConversationInsights;
     awsAiLabelSummaryRegion: string;
     awsAiLabelSummaryModelId: string;
@@ -133,6 +196,7 @@ interface InvokeRemoteModelProps {
 
 async function invokeRemoteModel({
     conversationId,
+    polisContentId,
     conversationInsights,
     awsAiLabelSummaryRegion,
     awsAiLabelSummaryModelId,
@@ -164,9 +228,9 @@ async function invokeRemoteModel({
         region: awsAiLabelSummaryRegion,
     });
     log.info(
-        `[LLM] Sending Generate Label and Summary Prompt for conversation ${String(
+        `[LLM] Sending Generate Label and Summary Prompt for conversationId='${String(
             conversationId,
-        )}:\n${userPrompt}`,
+        )}' and polisContentId='${String(polisContentId)}':\n${userPrompt}`,
     );
     const response = await client.send(command);
     const message = response.output?.message;
@@ -178,7 +242,9 @@ async function invokeRemoteModel({
             : undefined;
     if (modelResponseStr === undefined) {
         throw new Error(
-            `[LLM]: Unable to parse AWS Bedrock response: '${JSON.stringify(
+            `[LLM]: Unable to parse AWS Bedrock response for conversationId='${String(
+                conversationId,
+            )}' and polisContentId='${String(polisContentId)}': '${JSON.stringify(
                 response,
             )}'`,
         );
@@ -192,7 +258,9 @@ async function invokeRemoteModel({
     } else {
         log.warn(
             resultStrict.error,
-            `[LLM]: Unable to parse AI Label and Summary output object using strict mode:\n'${JSON.stringify(
+            `[LLM]: Unable to parse AI Label and Summary output object using strict mode for conversationId='${String(
+                conversationId,
+            )}' and polisContentId='${String(polisContentId)}:\n'${JSON.stringify(
                 modelResponse,
             )}'`,
         );
@@ -201,273 +269,13 @@ async function invokeRemoteModel({
     const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
     if (!resultLoose.success) {
         throw new Error(
-            `[LLM]: Unable to parse AI Label and Summary output object using loose mode:\n'${JSON.stringify(
+            `[LLM]: Unable to parse AI Label and Summary output object using loose mode for conversationId='${String(
+                conversationId,
+            )}' and polisContentId='${String(polisContentId)}:\n'${JSON.stringify(
                 modelResponse,
             )}'`,
             { cause: resultLoose.error },
         );
     }
     return resultLoose.data;
-}
-
-interface GetConversationInsightsProps {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}
-
-async function getConversationInsights({
-    db,
-    conversationId,
-}: GetConversationInsightsProps): Promise<ConversationInsights> {
-    const conversationDataResults = await db
-        .select({
-            conversationTitle: conversationContentTable.title,
-            participantCount: conversationTable.participantCount,
-            conversationBody: conversationContentTable.body,
-        })
-        .from(conversationTable)
-        .innerJoin(
-            conversationContentTable,
-            eq(conversationContentTable.id, conversationTable.currentContentId),
-        )
-        .where(eq(conversationTable.id, conversationId));
-    if (conversationDataResults.length === 0) {
-        throw new Error(
-            "Conversation requested for creation of AI labels and summaries was not found",
-        );
-    }
-    const { conversationTitle, conversationBody } = conversationDataResults[0];
-    const coreOpinions = await getCoreOpinions({
-        db,
-        conversationId,
-    });
-    return {
-        conversationTitle,
-        conversationBody: toUnionUndefined(conversationBody),
-        ...coreOpinions,
-    };
-}
-
-interface CoreOpinions {
-    clusters: Record<string, ClusterInsights>;
-}
-
-interface GetCoreOpinionsProps {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}
-
-async function getCoreOpinions({
-    db,
-    conversationId,
-}: GetCoreOpinionsProps): Promise<CoreOpinions> {
-    const cluster0Opinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "representative",
-        clusterKey: "0",
-        limit: 5,
-    });
-    const cluster1Opinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "representative",
-        clusterKey: "1",
-        limit: 5,
-    });
-    const cluster2Opinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "representative",
-        clusterKey: "2",
-        limit: 5,
-    });
-    const cluster3Opinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "representative",
-        clusterKey: "3",
-        limit: 5,
-    });
-    const cluster4Opinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "representative",
-        clusterKey: "4",
-        limit: 5,
-    });
-    const cluster5Opinions = await commentService.fetchOpinionsByPostId({
-        db,
-        postId: conversationId,
-        filterTarget: "representative",
-        clusterKey: "5",
-        limit: 5,
-    });
-
-    const clusters: Record<string, ClusterInsights> = {};
-    if (cluster0Opinions.size !== 0) {
-        const cluster0ArrayOpinions = Array.from(cluster0Opinions.values());
-        const representativeOpinionsForCluster0 = cluster0ArrayOpinions.map(
-            (opinion) => {
-                const clusterStat = opinion.clustersStats.find(
-                    (stat) => stat.key === "0",
-                );
-                if (clusterStat?.repfulFor === undefined) {
-                    throw new Error(
-                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 0: clusterStat=${JSON.stringify(clusterStat)}`,
-                    );
-                }
-                return {
-                    opinion: opinion.opinion,
-                    repfulFor: clusterStat.repfulFor,
-                };
-            },
-        );
-        clusters["0"] = {
-            agreesWith: representativeOpinionsForCluster0
-                .filter((opinion) => opinion.repfulFor === "agree")
-                .map((opinion) => opinion.opinion),
-            disagreesWith: representativeOpinionsForCluster0
-                .filter((opinion) => opinion.repfulFor === "disagree")
-                .map((opinion) => opinion.opinion),
-        };
-    }
-    if (cluster1Opinions.size !== 0) {
-        const cluster1ArrayOpinions = Array.from(cluster1Opinions.values());
-        const representativeOpinionsForCluster1 = cluster1ArrayOpinions.map(
-            (opinion) => {
-                const clusterStat = opinion.clustersStats.find(
-                    (stat) => stat.key === "1",
-                );
-                if (clusterStat?.repfulFor === undefined) {
-                    throw new Error(
-                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 1: clusterStat=${JSON.stringify(clusterStat)}`,
-                    );
-                }
-                return {
-                    opinion: opinion.opinion,
-                    repfulFor: clusterStat.repfulFor,
-                };
-            },
-        );
-        clusters["1"] = {
-            agreesWith: representativeOpinionsForCluster1
-                .filter((opinion) => opinion.repfulFor === "agree")
-                .map((opinion) => opinion.opinion),
-            disagreesWith: representativeOpinionsForCluster1
-                .filter((opinion) => opinion.repfulFor === "disagree")
-                .map((opinion) => opinion.opinion),
-        };
-    }
-    if (cluster2Opinions.size !== 0) {
-        const cluster2ArrayOpinions = Array.from(cluster2Opinions.values());
-        const representativeOpinionsForCluster2 = cluster2ArrayOpinions.map(
-            (opinion) => {
-                const clusterStat = opinion.clustersStats.find(
-                    (stat) => stat.key === "2",
-                );
-                if (clusterStat?.repfulFor === undefined) {
-                    throw new Error(
-                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 2: clusterStat=${JSON.stringify(clusterStat)}`,
-                    );
-                }
-                return {
-                    opinion: opinion.opinion,
-                    repfulFor: clusterStat.repfulFor,
-                };
-            },
-        );
-        clusters["2"] = {
-            agreesWith: representativeOpinionsForCluster2
-                .filter((opinion) => opinion.repfulFor === "agree")
-                .map((opinion) => opinion.opinion),
-            disagreesWith: representativeOpinionsForCluster2
-                .filter((opinion) => opinion.repfulFor === "disagree")
-                .map((opinion) => opinion.opinion),
-        };
-    }
-    if (cluster3Opinions.size !== 0) {
-        const cluster3ArrayOpinions = Array.from(cluster3Opinions.values());
-        const representativeOpinionsForCluster3 = cluster3ArrayOpinions.map(
-            (opinion) => {
-                const clusterStat = opinion.clustersStats.find(
-                    (stat) => stat.key === "3",
-                );
-                if (clusterStat?.repfulFor === undefined) {
-                    throw new Error(
-                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 3: clusterStat=${JSON.stringify(clusterStat)}`,
-                    );
-                }
-                return {
-                    opinion: opinion.opinion,
-                    repfulFor: clusterStat.repfulFor,
-                };
-            },
-        );
-        clusters["3"] = {
-            agreesWith: representativeOpinionsForCluster3
-                .filter((opinion) => opinion.repfulFor === "agree")
-                .map((opinion) => opinion.opinion),
-            disagreesWith: representativeOpinionsForCluster3
-                .filter((opinion) => opinion.repfulFor === "disagree")
-                .map((opinion) => opinion.opinion),
-        };
-    }
-    if (cluster4Opinions.size !== 0) {
-        const cluster4ArrayOpinions = Array.from(cluster4Opinions.values());
-        const representativeOpinionsForCluster4 = cluster4ArrayOpinions.map(
-            (opinion) => {
-                const clusterStat = opinion.clustersStats.find(
-                    (stat) => stat.key === "4",
-                );
-                if (clusterStat?.repfulFor === undefined) {
-                    throw new Error(
-                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 4: clusterStat=${JSON.stringify(clusterStat)}`,
-                    );
-                }
-                return {
-                    opinion: opinion.opinion,
-                    repfulFor: clusterStat.repfulFor,
-                };
-            },
-        );
-        clusters["4"] = {
-            agreesWith: representativeOpinionsForCluster4
-                .filter((opinion) => opinion.repfulFor === "agree")
-                .map((opinion) => opinion.opinion),
-            disagreesWith: representativeOpinionsForCluster4
-                .filter((opinion) => opinion.repfulFor === "disagree")
-                .map((opinion) => opinion.opinion),
-        };
-    }
-    if (cluster5Opinions.size !== 0) {
-        const cluster5ArrayOpinions = Array.from(cluster5Opinions.values());
-        const representativeOpinionsForCluster5 = cluster5ArrayOpinions.map(
-            (opinion) => {
-                const clusterStat = opinion.clustersStats.find(
-                    (stat) => stat.key === "5",
-                );
-                if (clusterStat?.repfulFor === undefined) {
-                    throw new Error(
-                        `[LLM] Representative opinion opinionSlugId=${opinion.opinionSlugId} has no corresponding stat or the stat has not repful data for cluster 5: clusterStat=${JSON.stringify(clusterStat)}`,
-                    );
-                }
-                return {
-                    opinion: opinion.opinion,
-                    repfulFor: clusterStat.repfulFor,
-                };
-            },
-        );
-        clusters["5"] = {
-            agreesWith: representativeOpinionsForCluster5
-                .filter((opinion) => opinion.repfulFor === "agree")
-                .map((opinion) => opinion.opinion),
-            disagreesWith: representativeOpinionsForCluster5
-                .filter((opinion) => opinion.repfulFor === "disagree")
-                .map((opinion) => opinion.opinion),
-        };
-    }
-    return {
-        clusters,
-    };
 }
