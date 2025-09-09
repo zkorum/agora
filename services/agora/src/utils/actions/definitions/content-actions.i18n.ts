@@ -2,6 +2,7 @@ export interface ActionsTranslations {
   report: string;
   muteUser: string;
   delete: string;
+  edit: string;
   moderate: string;
   userReports: string;
   share: string;
@@ -20,6 +21,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "Report",
     muteUser: "Mute User",
     delete: "Delete",
+    edit: "Edit",
     moderate: "Moderate",
     userReports: "User Reports",
     share: "Share",
@@ -37,6 +39,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "إبلاغ",
     muteUser: "كتم المستخدم",
     delete: "حذف",
+    edit: "تعديل",
     moderate: "إدارة المحتوى",
     userReports: "إبلاغات المستخدمين",
     share: "مشاركة",
@@ -54,6 +57,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "Reportar",
     muteUser: "Silenciar Usuario",
     delete: "Eliminar",
+    edit: "Editar",
     moderate: "Moderar",
     userReports: "Reportes de Usuario",
     share: "Compartir",
@@ -71,6 +75,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "Signaler",
     muteUser: "Mettre en Sourdine",
     delete: "Supprimer",
+    edit: "Modifier",
     moderate: "Modérer",
     userReports: "Rapports d'Utilisateur",
     share: "Partager",
@@ -89,6 +94,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "举报",
     muteUser: "屏蔽用户",
     delete: "删除",
+    edit: "编辑",
     moderate: "审核",
     userReports: "用户举报",
     share: "分享",
@@ -105,6 +111,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "舉報",
     muteUser: "屏蔽用戶",
     delete: "刪除",
+    edit: "編輯",
     moderate: "審核",
     userReports: "用戶舉報",
     share: "分享",
@@ -121,6 +128,7 @@ export const actionsTranslations: Record<string, ActionsTranslations> = {
     report: "報告",
     muteUser: "ユーザーをミュート",
     delete: "削除",
+    edit: "編集",
     moderate: "審査",
     userReports: "ユーザー報告",
     share: "共有",

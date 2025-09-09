@@ -132,6 +132,7 @@ export function useContentActions() {
       moderatePostCallback: () => void | Promise<void>;
       moderationHistoryCallback: () => void | Promise<void>;
       copyEmbedLinkCallback: () => void | Promise<void>;
+      editPostCallback: () => void | Promise<void>;
     }
   ): void => {
     const context = createActionContext(
@@ -156,11 +157,14 @@ export function useContentActions() {
       report: t("report"),
       muteUser: t("muteUser"),
       delete: t("delete"),
+      edit: t("edit"),
       moderationHistory: t("moderationHistory"),
       embedLink: t("embedLink"),
       moderate: t("moderate"),
       userReports: t("userReports"),
     };
+
+    const editPostCallback = callbacks.editPostCallback || (() => Promise.resolve());
 
     const availableActions = getAvailablePostActions(
       context,
@@ -171,6 +175,7 @@ export function useContentActions() {
       callbacks.moderationHistoryCallback,
       callbacks.copyEmbedLinkCallback,
       deletePostCallback,
+      editPostCallback,
       postTranslations
     );
 

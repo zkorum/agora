@@ -11,9 +11,10 @@
           :class="{ compactBackground: compactMode }"
         >
           <PostContent
-            :extended-post-data="conversationData"
+            :extended-post-data="conversationLocal"
             :compact-mode="compactMode"
             @open-moderation-history="openModerationHistory()"
+            @save-edit="onSaveEdit"
           />
 
           <PostActionBar
@@ -29,25 +30,25 @@
             <AnalysisPage
               v-if="currentTab == 'analysis'"
               :conversation-slug-id="
-                props.conversationData.metadata.conversationSlugId
+                conversationLocal.metadata.conversationSlugId
               "
               :participant-count="
-                props.conversationData.metadata.participantCount
+                conversationLocal.metadata.participantCount
               "
-              :polis="props.conversationData.polis"
+              :polis="conversationLocal.polis"
             />
 
             <CommentSection
               v-if="currentTab == 'comment'"
               ref="opinionSectionRef"
-              :post-slug-id="conversationData.metadata.conversationSlugId"
-              :polis="conversationData.polis"
+              :post-slug-id="conversationLocal.metadata.conversationSlugId"
+              :polis="conversationLocal.polis"
               :is-post-locked="
-                conversationData.metadata.moderation.status == 'moderated'
+                conversationLocal.metadata.moderation.status == 'moderated'
               "
               :login-required-to-participate="
-                conversationData.metadata.isIndexed ||
-                conversationData.metadata.isLoginRequired
+                conversationLocal.metadata.isIndexed ||
+                conversationLocal.metadata.isLoginRequired
               "
               @deleted="decrementOpinionCount()"
               @participant-count-delta="
@@ -63,10 +64,10 @@
 
       <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
         <CommentComposer
-          :post-slug-id="conversationData.metadata.conversationSlugId"
+          :post-slug-id="conversationLocal.metadata.conversationSlugId"
           :login-required-to-participate="
-            conversationData.metadata.isIndexed ||
-            conversationData.metadata.isLoginRequired
+            conversationLocal.metadata.isIndexed ||
+            conversationLocal.metadata.isLoginRequired
           "
           @submitted-comment="
             (opinionSlugId: string) => submittedComment(opinionSlugId)
@@ -94,6 +95,9 @@ const props = defineProps<{
   conversationData: ExtendedConversation;
   compactMode: boolean;
 }>();
+
+// Local mutable copy for optimistic updates
+const conversationLocal = ref<ExtendedConversation>(props.conversationData);
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,
 });
@@ -106,13 +110,13 @@ const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
 
 const participantCountLocal = ref(
-  props.conversationData.metadata.participantCount
+  conversationLocal.value.metadata.participantCount
 );
 const hasMore = ref(true);
 
 const isPostLocked =
-  props.conversationData.metadata.moderation.status === "moderated" &&
-  props.conversationData.metadata.moderation.action === "lock";
+  conversationLocal.value.metadata.moderation.status === "moderated" &&
+  conversationLocal.value.metadata.moderation.action === "lock";
 
 function onLoad(index: number, done: () => void) {
   if (opinionSectionRef.value) {
@@ -127,6 +131,18 @@ function openModerationHistory() {
   } else {
     console.warn("Opinion section reference is undefined");
   }
+}
+
+// Handle edit save from dialog - optimistic UI update
+function onSaveEdit(payload: { title: string; body: string }) {
+  conversationLocal.value = {
+    ...conversationLocal.value,
+    payload: {
+      ...conversationLocal.value.payload,
+      title: payload.title,
+      body: payload.body,
+    },
+  };
 }
 
 function decrementOpinionCount() {

@@ -81,7 +81,7 @@ import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
 
-const emit = defineEmits(["openModerationHistory"]);
+const emit = defineEmits(["openModerationHistory", "edit"]);
 
 const props = defineProps<{
   authorVerified: boolean;
@@ -168,6 +168,11 @@ async function copyEmbedLinkCallback() {
   await webShare.share("Embed: Agora Conversation", embedUrl);
 }
 
+function editPostCallback() {
+  emit('edit');
+}
+
+
 function clickedMoreIcon() {
   // Show post actions using the new system
   postActions.showPostActions(props.postSlugId, props.posterUserName, {
@@ -177,6 +182,7 @@ function clickedMoreIcon() {
     moderatePostCallback,
     moderationHistoryCallback,
     copyEmbedLinkCallback,
+    editPostCallback,
   });
 }
 

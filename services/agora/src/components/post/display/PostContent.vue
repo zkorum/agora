@@ -8,6 +8,14 @@
       :organization-url="extendedPostData.metadata.organization?.imageUrl || ''"
       :organization-name="extendedPostData.metadata.organization?.name || ''"
       @open-moderation-history="$emit('openModerationHistory')"
+      @edit="onOpenEditDialog"
+    />
+
+    <EditPostDialog
+      v-model="showEditDialog"
+      :initial-title="extendedPostData.payload.title"
+      :initial-body="extendedPostData.payload.body || ''"
+      @save="onSaveEdit"
     />
 
     <div class="postDiv">
@@ -61,19 +69,32 @@
 
 <script setup lang="ts">
 import PostMetadata from "./PostMetadata.vue";
+import EditPostDialog from "./EditPostDialog.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
 import PollWrapper from "./poll/PollWrapper.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import { ref } from 'vue';
 
-defineEmits(["openModerationHistory"]);
+const emit = defineEmits(["openModerationHistory", "saveEdit"]);
 
 defineProps<{
   extendedPostData: ExtendedConversation;
   compactMode: boolean;
 }>();
+
+const showEditDialog = ref(false);
+
+function onOpenEditDialog() {
+  showEditDialog.value = true;
+}
+
+function onSaveEdit(payload: { title: string; body: string }) {
+  // Bubble up to the parent (page) to actually perform the save via API
+  emit('saveEdit', payload);
+}
 </script>
 
 <style scoped lang="scss">

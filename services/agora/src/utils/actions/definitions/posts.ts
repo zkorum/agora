@@ -12,6 +12,7 @@ interface PostActionTranslations {
   report: string;
   muteUser: string;
   delete: string;
+  edit: string;
   moderationHistory: string;
   embedLink: string;
   moderate: string;
@@ -29,9 +30,18 @@ export function getPostActions(
   moderationHistoryCallback: () => void | Promise<void>,
   copyEmbedLinkCallback: () => void | Promise<void>,
   deletePostCallback: () => void | Promise<void>,
+  editPostCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
   return [
+    {
+      id: "edit",
+      label: translations.edit,
+      icon: "mdi-pencil",
+      handler: editPostCallback,
+      isVisible: (context: ContentActionContext) =>
+        context.userRole === "owner" && !context.isEmbeddedMode,
+    },
     {
       id: "report",
       label: translations.report,
@@ -106,6 +116,7 @@ export function getAvailablePostActions(
   moderationHistoryCallback: () => void | Promise<void>,
   copyEmbedLinkCallback: () => void | Promise<void>,
   deletePostCallback: () => void | Promise<void>,
+  editPostCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
   const allActions = getPostActions(
@@ -116,6 +127,7 @@ export function getAvailablePostActions(
     moderationHistoryCallback,
     copyEmbedLinkCallback,
     deletePostCallback,
+    editPostCallback,
     translations
   );
 
