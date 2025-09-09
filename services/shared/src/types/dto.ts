@@ -36,6 +36,7 @@ import {
     zodLinkType,
     zodPolisUrl,
     zodLanguagePreferences,
+    zodPolisClusters,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -137,6 +138,19 @@ export class Dto {
         })
         .strict();
     static fetchOpinionsResponse = z.array(zodOpinionItem);
+    static fetchAnalysisRequest = z
+        .object({
+            conversationSlugId: zodSlugId, // z.object() does not exist :(
+        })
+        .strict();
+    static fetchAnalysisResponse = z
+        .object({
+            polisContentId: z.number().int().nonnegative().optional(), // for logging/debugging purpose, undefined if no polis calculated
+            consensus: z.array(zodOpinionItem),
+            controversial: z.array(zodOpinionItem),
+            clusters: zodPolisClusters,
+        })
+        .strict();
     static fetchHiddenOpinionsRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
@@ -625,3 +639,4 @@ export type GetLanguagePreferencesResponse = z.infer<
 export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
+export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;

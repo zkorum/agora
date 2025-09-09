@@ -14,18 +14,31 @@ import {
     polisClusterOpinionTable,
 } from "@/schema.js";
 import type {
+    ConversationAnalysis,
     CreateCommentResponse,
     GetOpinionBySlugIdListResponse,
 } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, and, isNull, isNotNull, ne, SQL } from "drizzle-orm";
+import {
+    desc,
+    eq,
+    sql,
+    and,
+    isNull,
+    isNotNull,
+    ne,
+    SQL,
+    inArray,
+} from "drizzle-orm";
 import type {
+    ClusterMetadata,
     ClusterStats,
     CommentFeedFilter,
     ModerationReason,
     OpinionItem,
     OpinionItemPerSlugId,
     OpinionModerationAction,
+    PolisClusters,
     PolisKey,
     SlugId,
 } from "@/shared/types/zod.js";
@@ -36,7 +49,7 @@ import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import type { AxiosInstance } from "axios";
-import { alias, PgTransaction } from "drizzle-orm/pg-core";
+import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
 import * as polisService from "@/service/polis.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
@@ -430,8 +443,6 @@ export async function fetchOpinionsByPostId({
             polisCluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
             polisCluster0NumDisagrees: opinionTable.polisCluster0NumDisagrees,
             polisCluster0NumPasses: opinionTable.polisCluster0NumPasses,
-            polisCluster0RepfulFor:
-                polisClusterOpinionTableAlias0.agreementType,
             polisCluster1Id: polisClusterTableAlias1.id,
             polisCluster1Key: polisClusterTableAlias1.key,
             polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
@@ -439,8 +450,6 @@ export async function fetchOpinionsByPostId({
             polisCluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
             polisCluster1NumDisagrees: opinionTable.polisCluster1NumDisagrees,
             polisCluster1NumPasses: opinionTable.polisCluster1NumPasses,
-            polisCluster1RepfulFor:
-                polisClusterOpinionTableAlias1.agreementType,
             polisCluster2Id: polisClusterTableAlias2.id,
             polisCluster2Key: polisClusterTableAlias2.key,
             polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
@@ -448,8 +457,6 @@ export async function fetchOpinionsByPostId({
             polisCluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
             polisCluster2NumDisagrees: opinionTable.polisCluster2NumDisagrees,
             polisCluster2NumPasses: opinionTable.polisCluster2NumPasses,
-            polisCluster2RepfulFor:
-                polisClusterOpinionTableAlias2.agreementType,
             polisCluster3Id: polisClusterTableAlias3.id,
             polisCluster3Key: polisClusterTableAlias3.key,
             polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
@@ -457,8 +464,6 @@ export async function fetchOpinionsByPostId({
             polisCluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
             polisCluster3NumDisagrees: opinionTable.polisCluster3NumDisagrees,
             polisCluster3NumPasses: opinionTable.polisCluster3NumPasses,
-            polisCluster3RepfulFor:
-                polisClusterOpinionTableAlias3.agreementType,
             polisCluster4Id: polisClusterTableAlias4.id,
             polisCluster4Key: polisClusterTableAlias4.key,
             polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
@@ -466,8 +471,6 @@ export async function fetchOpinionsByPostId({
             polisCluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
             polisCluster4NumDisagrees: opinionTable.polisCluster4NumDisagrees,
             polisCluster4NumPasses: opinionTable.polisCluster4NumPasses,
-            polisCluster4RepfulFor:
-                polisClusterOpinionTableAlias4.agreementType,
             polisCluster5Id: polisClusterTableAlias5.id,
             polisCluster5Key: polisClusterTableAlias5.key,
             polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
@@ -475,8 +478,6 @@ export async function fetchOpinionsByPostId({
             polisCluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
             polisCluster5NumDisagrees: opinionTable.polisCluster5NumDisagrees,
             polisCluster5NumPasses: opinionTable.polisCluster5NumPasses,
-            polisCluster5RepfulFor:
-                polisClusterOpinionTableAlias5.agreementType,
             opinionAuthorPolisClusterId: polisClusterUserTable.polisClusterId,
         })
         .from(opinionTable)
@@ -617,9 +618,6 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster0NumAgrees,
                 numDisagrees: opinionResponse.polisCluster0NumDisagrees,
                 numPasses: opinionResponse.polisCluster0NumPasses,
-                repfulFor: toUnionUndefined(
-                    opinionResponse.polisCluster0RepfulFor,
-                ),
             });
         }
         if (
@@ -639,9 +637,6 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster1NumAgrees,
                 numDisagrees: opinionResponse.polisCluster1NumDisagrees,
                 numPasses: opinionResponse.polisCluster1NumPasses,
-                repfulFor: toUnionUndefined(
-                    opinionResponse.polisCluster1RepfulFor,
-                ),
             });
         }
         if (
@@ -661,9 +656,6 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster2NumAgrees,
                 numDisagrees: opinionResponse.polisCluster2NumDisagrees,
                 numPasses: opinionResponse.polisCluster2NumPasses,
-                repfulFor: toUnionUndefined(
-                    opinionResponse.polisCluster2RepfulFor,
-                ),
             });
         }
         if (
@@ -683,9 +675,6 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster3NumAgrees,
                 numDisagrees: opinionResponse.polisCluster3NumDisagrees,
                 numPasses: opinionResponse.polisCluster3NumPasses,
-                repfulFor: toUnionUndefined(
-                    opinionResponse.polisCluster3RepfulFor,
-                ),
             });
         }
         if (
@@ -705,9 +694,6 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster4NumAgrees,
                 numDisagrees: opinionResponse.polisCluster4NumDisagrees,
                 numPasses: opinionResponse.polisCluster4NumPasses,
-                repfulFor: toUnionUndefined(
-                    opinionResponse.polisCluster4RepfulFor,
-                ),
             });
         }
         if (
@@ -727,9 +713,6 @@ export async function fetchOpinionsByPostId({
                 numAgrees: opinionResponse.polisCluster5NumAgrees,
                 numDisagrees: opinionResponse.polisCluster5NumDisagrees,
                 numPasses: opinionResponse.polisCluster5NumPasses,
-                repfulFor: toUnionUndefined(
-                    opinionResponse.polisCluster5RepfulFor,
-                ),
             });
         }
         const item: OpinionItem = {
@@ -968,6 +951,79 @@ export async function fetchOpinionsByOpinionSlugIdList({
     }
 
     return opinionItemList;
+}
+
+export async function fetchAnalysisByConversationSlugId({
+    db,
+    conversationSlugId,
+    personalizationUserId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    personalizationUserId?: string;
+}): Promise<ConversationAnalysis> {
+    return await db.transaction(
+        async (tx) => {
+            const { getPolisMetadata } = useCommonPost();
+            const polisMetadata = await getPolisMetadata({
+                db: tx,
+                conversationSlugId,
+                personalizationUserId,
+            });
+            if (polisMetadata === undefined) {
+                return {
+                    polisContentId: undefined,
+                    consensus: [],
+                    controversial: [],
+                    clusters: {},
+                };
+            }
+            const consensusOpinions = await fetchOpinionsByConversationSlugId({
+                db: tx,
+                postSlugId: conversationSlugId,
+                fetchTarget: "group-aware-consensus",
+                personalizationUserId,
+            });
+            const controversialOpinions =
+                await fetchOpinionsByConversationSlugId({
+                    db: tx,
+                    postSlugId: conversationSlugId,
+                    fetchTarget: "controversial",
+                    personalizationUserId,
+                });
+            const polisClusters: PolisClusters = {};
+            for (const [key, clusterMetadata] of Object.entries(
+                polisMetadata.clustersMetadata,
+            )) {
+                // without casting, record key is otherwise always a string
+                //
+                const clusterKey =
+                    key as keyof typeof polisMetadata.clustersMetadata;
+                const representativeOpinions =
+                    await fetchOpinionsByConversationSlugId({
+                        db: tx,
+                        postSlugId: conversationSlugId,
+                        fetchTarget: "cluster",
+                        clusterKey: clusterKey,
+                        personalizationUserId,
+                    });
+                polisClusters[clusterKey] = {
+                    ...clusterMetadata,
+                    representative: Array.from(representativeOpinions.values()),
+                };
+            }
+            return {
+                polisContentId: polisMetadata.polisContentId,
+                consensus: Array.from(consensusOpinions.values()),
+                controversial: Array.from(controversialOpinions.values()),
+                clusters: polisClusters,
+            };
+        },
+        // ensure that no intermediate transactions will alter select between each other
+        {
+            isolationLevel: "repeatable read",
+        },
+    );
 }
 
 async function getPostIdFromPostSlugId(
@@ -1508,15 +1564,38 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
         };
     }
 
-    let doTransaction = true;
-    if (db instanceof PgTransaction) {
-        doTransaction = false;
+    // we don't use transactions because it's too heavy
+    return await doImportOpinions(db);
+}
+
+type OpinionContentById = Record<number, string>;
+
+export async function getOpinionContentsFromIds({
+    db,
+    opinionIds,
+}: {
+    db: PostgresJsDatabase;
+    opinionIds: number[];
+}): Promise<OpinionContentById> {
+    const results = await db
+        .select({
+            opinionId: opinionTable.id,
+            content: opinionContentTable.content,
+        })
+        .from(opinionTable)
+        .innerJoin(
+            opinionContentTable,
+            eq(opinionContentTable.id, opinionTable.currentContentId),
+        )
+        .where(inArray(opinionTable.id, opinionIds));
+    if (results.length === 0) {
+        throw httpErrors.notFound(
+            `Cannot find opinionIds=${opinionIds.join(", ")}`,
+        );
     }
-    if (doTransaction) {
-        return await db.transaction(async (tx) => {
-            return await doImportOpinions(tx);
-        });
-    } else {
-        return await doImportOpinions(db);
+    const opinionContentById: OpinionContentById = {};
+    for (const result of results) {
+        opinionContentById[result.opinionId] = result.content;
     }
+    return opinionContentById;
 }

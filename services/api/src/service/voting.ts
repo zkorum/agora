@@ -813,17 +813,8 @@ export async function bulkInsertVotesFromExternalPolisConvo({
         }
     }
 
-    let doTransaction = true;
-    if (db instanceof PgTransaction) {
-        doTransaction = false;
-    }
-    if (doTransaction) {
-        await db.transaction(async (tx) => {
-            await doImportVotes(tx);
-        });
-    } else {
-        await doImportVotes(db);
-    }
+    // we don't use transactions because it's too heavy
+    await doImportVotes(db);
 }
 
 export async function castVoteForOpinionSlugId({

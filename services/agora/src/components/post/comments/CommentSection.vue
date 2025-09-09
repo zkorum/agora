@@ -38,11 +38,7 @@ import type { CommentTabFilters } from "src/utils/api/comment";
 import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
-import type {
-  ExtendedConversationPolis,
-  VotingAction,
-  VotingOption,
-} from "src/shared/types/zod";
+import type { VotingAction, VotingOption } from "src/shared/types/zod";
 import { type OpinionItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./group/CommentGroup.vue";
@@ -70,7 +66,6 @@ const emit = defineEmits([
 
 const props = defineProps<{
   postSlugId: string;
-  polis: ExtendedConversationPolis;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
 }>();

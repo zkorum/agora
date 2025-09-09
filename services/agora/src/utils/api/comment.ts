@@ -2,8 +2,9 @@ import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import type {
   ApiV1OpinionCreatePost200Response,
+  ApiV1OpinionFetchAnalysisByConversationPost200Response,
+  ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
   ApiV1OpinionFetchBySlugIdListPostRequest,
-  ApiV1OpinionFetchRepresentativeByConversationPost200Response,
 } from "src/api";
 import {
   type ApiV1OpinionCreatePostRequest,
@@ -15,7 +16,7 @@ import {
 } from "src/api";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
 import { useCommonApi } from "./common";
-import type { PolisKey } from "src/shared/types/zod";
+import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import {
   type OpinionItem,
   type moderationStatusOptionsType,
@@ -267,13 +268,17 @@ export function useBackendCommentApi() {
     return opnionItemList;
   }
 
-  async function fetchConsensusItemList(params: {
+  async function fetchAnalysisData(params: {
     conversationSlugId: string;
-  }): Promise<OpinionItem[]> {
-    let data: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>;
+  }): Promise<{
+    consensus: OpinionItem[];
+    controversial: OpinionItem[];
+    polisClusters: Partial<PolisClusters>;
+  }> {
+    let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
     if (isGuestOrLoggedIn.value) {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchConsensusByConversationPost(
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisByConversationPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
@@ -281,7 +286,7 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchConsensusByConversationPost(
+      ).apiV1OpinionFetchAnalysisByConversationPost(
         params,
         createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
       );
@@ -291,147 +296,56 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchConsensusByConversationPost(
+      ).apiV1OpinionFetchAnalysisByConversationPost(
         params,
         createRawAxiosRequestConfig({})
       );
       data = response.data;
     }
-    const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
-      return {
-        ...val,
-        createdAt: new Date(val.createdAt),
-        updatedAt: new Date(val.updatedAt),
-      };
-    });
-    return opinionAnalysisItem;
-  }
+    const clusters: Partial<PolisClusters> = {};
 
-  async function fetchMajorityItemList(params: {
-    conversationSlugId: string;
-  }): Promise<OpinionItem[]> {
-    let data: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>;
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchMajorityByConversationPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchMajorityByConversationPost(
-        params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
-      );
-      data = response.data;
-    } else {
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchMajorityByConversationPost(
-        params,
-        createRawAxiosRequestConfig({})
-      );
-      data = response.data;
-    }
-    const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
-      return {
-        ...val,
-        createdAt: new Date(val.createdAt),
-        updatedAt: new Date(val.updatedAt),
-      };
-    });
-    return opinionAnalysisItem;
-  }
-
-  async function fetchControversialItemList(params: {
-    conversationSlugId: string;
-  }): Promise<OpinionItem[]> {
-    let data: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>;
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchControversialByConversationPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchControversialByConversationPost(
-        params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
-      );
-      data = response.data;
-    } else {
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchControversialByConversationPost(
-        params,
-        createRawAxiosRequestConfig({})
-      );
-      data = response.data;
-    }
-    const opinionAnalysisItem: OpinionItem[] = data.map((val) => {
-      return {
-        ...val,
-        createdAt: new Date(val.createdAt),
-        updatedAt: new Date(val.updatedAt),
-      };
-    });
-    return opinionAnalysisItem;
-  }
-
-  async function fetchAllRepresentativeItemLists(params: {
-    conversationSlugId: string;
-  }): Promise<Partial<Record<PolisKey, OpinionItem[]>>> {
-    let data: ApiV1OpinionFetchRepresentativeByConversationPost200Response;
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchRepresentativeByConversationPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchRepresentativeByConversationPost(
-        params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
-      );
-      data = response.data;
-    } else {
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchRepresentativeByConversationPost(
-        params,
-        createRawAxiosRequestConfig({})
-      );
-      data = response.data;
-    }
-    const opinionAnalysisItems: Partial<Record<PolisKey, OpinionItem[]>> = {};
-
-    Object.entries(data).forEach(
+    Object.entries(data.clusters).forEach(
       ([key, val]: [
         PolisKey,
-        Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>,
+        ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
       ]) => {
-        opinionAnalysisItems[key] = val.map((item) => ({
+        const representative: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem> =
+          val.representative;
+        const representativeItems = representative.map((item) => ({
           ...item,
           createdAt: new Date(item.createdAt),
           updatedAt: new Date(item.updatedAt),
         }));
+        clusters[key] = {
+          ...val,
+          representative: representativeItems,
+        };
       }
     );
-    return opinionAnalysisItems;
+
+    const opinionConsensusItem: OpinionItem[] = data.consensus.map((val) => {
+      return {
+        ...val,
+        createdAt: new Date(val.createdAt),
+        updatedAt: new Date(val.updatedAt),
+      };
+    });
+
+    const opinionControversialItem: OpinionItem[] = data.controversial.map(
+      (val) => {
+        return {
+          ...val,
+          createdAt: new Date(val.createdAt),
+          updatedAt: new Date(val.updatedAt),
+        };
+      }
+    );
+
+    return {
+      consensus: opinionConsensusItem,
+      controversial: opinionControversialItem,
+      polisClusters: clusters,
+    };
   }
 
   return {
@@ -440,9 +354,6 @@ export function useBackendCommentApi() {
     fetchHiddenCommentsForPost,
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,
-    fetchConsensusItemList,
-    fetchMajorityItemList,
-    fetchControversialItemList,
-    fetchAllRepresentativeItemLists,
+    fetchAnalysisData,
   };
 }

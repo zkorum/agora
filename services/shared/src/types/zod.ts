@@ -321,18 +321,6 @@ export const zodOpinionContent = z
             message: "The HTML body's character count had exceeded the limit",
         },
     );
-export const zodClusterMetadata = z.object({
-    key: zodPolisKey,
-    numUsers: z.number().int().nonnegative(),
-    aiLabel: z.string().optional(),
-    aiSummary: z.string().optional(),
-    isUserInCluster: z.boolean(),
-});
-export const zodConversationPolis = z
-    .object({
-        clusters: zodClusterMetadata.array(),
-    })
-    .strict();
 export const zodAgreementType = z.enum(["agree", "disagree"]);
 export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
 export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
@@ -344,7 +332,6 @@ export const zodClusterStats = z.object({
     numAgrees: z.number().int().nonnegative(),
     numDisagrees: z.number().int().nonnegative(),
     numPasses: z.number().int().nonnegative(),
-    repfulFor: zodAgreementType.optional(), // if undefined, it's not a representative opinion for the given cluster
 });
 export const zodOpinionItem = z
     .object({
@@ -362,6 +349,34 @@ export const zodOpinionItem = z
         isSeed: z.boolean(),
     })
     .strict();
+export const zodClusterMetadata = z
+    .object({
+        key: zodPolisKey,
+        numUsers: z.number().int().nonnegative(),
+        aiLabel: z.string().optional(),
+        aiSummary: z.string().optional(),
+        isUserInCluster: z.boolean(),
+    })
+    .strict();
+
+export const zodPolisClusters = z.record(
+    zodPolisKey,
+    z
+        .object({
+            key: zodPolisKey,
+            numUsers: z.number().int().nonnegative(),
+            aiLabel: z.string().optional(),
+            aiSummary: z.string().optional(),
+            isUserInCluster: z.boolean(),
+            representative: z.array(zodOpinionItem),
+        })
+        .strict(),
+);
+export const zodPolisClustersMetadata = z.record(
+    zodPolisKey,
+    zodClusterMetadata,
+);
+
 export const zodOpinionItemPerSlugId = z.map(zodSlugId, zodOpinionItem);
 export const zodUserInteraction = z
     .object({
@@ -374,7 +389,6 @@ export const zodExtendedConversationData = z
         metadata: zodConversationMetadata,
         payload: zodConversationDataWithResult,
         interaction: zodUserInteraction,
-        polis: zodConversationPolis,
     })
     .strict();
 export const zodExtendedConversationDataWithId = z
@@ -382,7 +396,6 @@ export const zodExtendedConversationDataWithId = z
         metadata: zodConversationMetadataWithId,
         payload: zodConversationDataWithResult,
         interaction: zodUserInteraction,
-        polis: zodConversationPolis,
     })
     .strict();
 export const zodExtendedConversationPerSlugId = z.map(
@@ -913,12 +926,10 @@ export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
-export type ExtendedConversationPolis = z.infer<typeof zodConversationPolis>;
 export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
 export type CommentContent = z.infer<typeof zodOpinionContent>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;
-export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ExtendedOpinion = z.infer<typeof zodExtendedOpinionData>;
 export type ExtendedOpinionWithConvId = z.infer<
     typeof zodExtendedOpinionDataWithConvId
@@ -986,3 +997,6 @@ export type LanguagePreferences = z.infer<typeof zodLanguagePreferences>;
 export type LinkType = z.infer<typeof zodLinkType>;
 export type PolisUrl = z.infer<typeof zodPolisUrl>;
 export type AgreementType = z.infer<typeof zodAgreementType>;
+export type PolisClusters = z.infer<typeof zodPolisClusters>;
+export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
+export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;

@@ -19,7 +19,7 @@ import type { AxiosInstance } from "axios";
 import * as authUtilService from "@/service/authUtil.js";
 import * as polisService from "@/service/polis.js";
 import * as importService from "@/service/import.js";
-import { processHtmlBody } from "@/shared/shared.js";
+import { processHtmlBody, toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/common/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
@@ -496,4 +496,34 @@ export async function updateParticipantCount({
         .update(conversationTable)
         .set(updateValues)
         .where(eq(conversationTable.id, conversationId));
+}
+
+export async function getConversationContent({
+    db,
+    conversationId,
+}: {
+    db: PostgresDatabase;
+    conversationId: number;
+}): Promise<{ conversationTitle: string; conversationBody?: string }> {
+    const results = await db
+        .select({
+            conversationTitle: conversationContentTable.title,
+            conversationBody: conversationContentTable.body,
+        })
+        .from(conversationTable)
+        .innerJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
+        .where(eq(conversationTable.id, conversationId));
+    if (results.length === 0) {
+        throw httpErrors.notFound(
+            `Conversation id ${String(conversationId)} cannot be found`,
+        );
+    }
+    const { conversationBody, conversationTitle } = results[0];
+    return {
+        conversationTitle,
+        conversationBody: toUnionUndefined(conversationBody),
+    };
 }

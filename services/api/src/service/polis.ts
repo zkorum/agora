@@ -28,11 +28,16 @@ import {
 } from "@/shared/types/polis.js";
 import * as llmService from "@/service/llmLabelSummary.js";
 import * as userService from "@/service/user.js";
+import * as postService from "./post.js";
 import { PgTransaction } from "drizzle-orm/pg-core";
 import type { GetMathRequest } from "@/shared/types/dto.js";
 import { extractPolisIdFromUrl } from "@/shared/utils/polis.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonPost } from "./common.js";
+import type {
+    ClusterInsightsWithOpinionIds,
+    ConversationInsightsWithOpinionIds,
+} from "@/service/llmLabelSummary.js";
 
 interface PolisGetMathResultsProps {
     axiosPolis: AxiosInstance;
@@ -85,6 +90,8 @@ interface GetAndUpdatePolisMathProps {
 
 interface LoadPolisMathResultsProps {
     db: PostgresDatabase;
+    conversationTitle: string;
+    conversationBody: string | undefined;
     polisMathResults: MathResults;
     conversationSlugId: string;
     conversationId: number;
@@ -101,6 +108,8 @@ async function loadPolisMathResults({
     db,
     conversationSlugId,
     conversationId,
+    conversationTitle,
+    conversationBody,
     polisMathResults,
     awsAiLabelSummaryEnable,
     awsAiLabelSummaryRegion,
@@ -366,6 +375,10 @@ async function loadPolisMathResults({
             db,
             polisParticipantIds: participantIds,
         });
+    const clustersInsightsForLlm: Record<
+        string,
+        ClusterInsightsWithOpinionIds
+    > = {};
     for (let clusterKey = 0; clusterKey < minNumberOfClusters; clusterKey++) {
         const repnessEntry = polisMathResults.repness[clusterKey];
         const groupCommentStatsEntry =
@@ -418,6 +431,10 @@ async function loadPolisMathResults({
                 continue;
             }
         }
+        clustersInsightsForLlm[polisClusterKeyStr] = {
+            agreesWith: [],
+            disagreesWith: [],
+        };
         const polisClusterQuery = await db
             .insert(polisClusterTable)
             .values({
@@ -443,8 +460,9 @@ async function loadPolisMathResults({
                 `[Math] No members to insert in polisClusterUserTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
             );
         }
-        const repnesses = repnessEntry.map((repness) => {
-            return {
+        const repnesses = [];
+        for (const repness of repnessEntry) {
+            repnesses.push({
                 polisContentId: polisContentId,
                 polisClusterId: polisClusterId,
                 opinionId: repness.tid,
@@ -452,8 +470,17 @@ async function loadPolisMathResults({
                 probabilityAgreement: repness["p-success"],
                 numAgreement: repness["n-success"],
                 rawRepness: repness,
-            };
-        });
+            });
+            if (repness["repful-for"] === "agree") {
+                clustersInsightsForLlm[polisClusterKeyStr].agreesWith.push(
+                    repness.tid,
+                );
+            } else {
+                clustersInsightsForLlm[polisClusterKeyStr].disagreesWith.push(
+                    repness.tid,
+                );
+            }
+        }
         if (repnesses.length > 0) {
             await db.insert(polisClusterOpinionTable).values(repnesses);
         } else {
@@ -845,10 +872,18 @@ async function loadPolisMathResults({
 
     if (awsAiLabelSummaryEnable && minNumberOfClusters >= 2) {
         // only run the AI if there are at least 2 clusters
+        const conversationInsightsWithOpinionIds: ConversationInsightsWithOpinionIds =
+            {
+                conversationTitle,
+                conversationBody,
+                clusters: clustersInsightsForLlm,
+            };
         try {
             await llmService.updateAiLabelsAndSummaries({
                 db: db,
                 conversationId: conversationId,
+                polisContentId,
+                conversationInsightsWithOpinionIds,
                 awsAiLabelSummaryRegion,
                 awsAiLabelSummaryModelId,
                 awsAiLabelSummaryTemperature,
@@ -896,6 +931,8 @@ export async function getAndUpdatePolisMath({
         return;
     }
 
+    const { conversationTitle, conversationBody } =
+        await postService.getConversationContent({ db, conversationId });
     let doTransaction = true;
     if (db instanceof PgTransaction) {
         doTransaction = false;
@@ -906,6 +943,8 @@ export async function getAndUpdatePolisMath({
                 db: tx,
                 conversationSlugId,
                 conversationId,
+                conversationTitle,
+                conversationBody,
                 polisMathResults,
                 awsAiLabelSummaryEnable,
                 awsAiLabelSummaryRegion,
@@ -921,6 +960,8 @@ export async function getAndUpdatePolisMath({
             db,
             conversationSlugId,
             conversationId,
+            conversationTitle,
+            conversationBody,
             polisMathResults,
             awsAiLabelSummaryEnable,
             awsAiLabelSummaryRegion,

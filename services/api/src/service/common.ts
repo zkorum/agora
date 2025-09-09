@@ -16,10 +16,11 @@ import type {
     ConversationMetadata,
     ExtendedConversationPayload,
     PollOptionWithResult,
-    ExtendedConversationPolis,
     ExtendedConversationPerSlugId,
     ExtendedConversation,
     FeedSortAlgorithm,
+    PolisClustersMetadata,
+    ClusterMetadata,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, count, isNotNull, isNull } from "drizzle-orm";
@@ -30,7 +31,6 @@ import { createPostModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as polisService from "@/service/polis.js";
-import type { ClusterMetadata } from "@/shared/types/zod.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 
@@ -239,13 +239,6 @@ export function useCommonPost() {
     }: FetchPostItemsProps): Promise<ExtendedConversationPerSlugId> {
         let postItems;
 
-        const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0 ");
-        const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1 ");
-        const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2 ");
-        const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3 ");
-        const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4 ");
-        const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
-
         const postItemsQuery = db
             .select({
                 title: conversationContentTable.title,
@@ -285,32 +278,6 @@ export function useCommonPost() {
                 moderationReason: conversationModerationTable.moderationReason,
                 moderationCreatedAt: conversationModerationTable.createdAt,
                 moderationUpdatedAt: conversationModerationTable.updatedAt,
-                // polis
-                polisContentId: polisContentTable.id,
-                polisCluster0Id: polisClusterTableAlias0.id,
-                polisCluster0AiLabel: polisClusterTableAlias0.aiLabel,
-                polisCluster0AiSummary: polisClusterTableAlias0.aiSummary,
-                polisCluster0NumUsers: polisClusterTableAlias0.numUsers,
-                polisCluster1Id: polisClusterTableAlias1.id,
-                polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
-                polisCluster1AiSummary: polisClusterTableAlias1.aiSummary,
-                polisCluster1NumUsers: polisClusterTableAlias1.numUsers,
-                polisCluster2Id: polisClusterTableAlias2.id,
-                polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
-                polisCluster2AiSummary: polisClusterTableAlias2.aiSummary,
-                polisCluster2NumUsers: polisClusterTableAlias2.numUsers,
-                polisCluster3Id: polisClusterTableAlias3.id,
-                polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
-                polisCluster3AiSummary: polisClusterTableAlias3.aiSummary,
-                polisCluster3NumUsers: polisClusterTableAlias3.numUsers,
-                polisCluster4Id: polisClusterTableAlias4.id,
-                polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
-                polisCluster4AiSummary: polisClusterTableAlias4.aiSummary,
-                polisCluster4NumUsers: polisClusterTableAlias4.numUsers,
-                polisCluster5Id: polisClusterTableAlias5.id,
-                polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
-                polisCluster5AiSummary: polisClusterTableAlias5.aiSummary,
-                polisCluster5NumUsers: polisClusterTableAlias5.numUsers,
             })
             .from(conversationTable)
             .innerJoin(
@@ -333,73 +300,6 @@ export function useCommonPost() {
                 eq(
                     conversationContentTable.id,
                     pollTable.conversationContentId,
-                ),
-            )
-            .leftJoin(
-                polisContentTable,
-                eq(
-                    polisContentTable.id,
-                    conversationTable.currentPolisContentId,
-                ),
-            )
-            .leftJoin(
-                polisClusterTableAlias0,
-                and(
-                    eq(
-                        polisClusterTableAlias0.polisContentId,
-                        polisContentTable.id,
-                    ),
-                    eq(polisClusterTableAlias0.key, "0"),
-                ),
-            )
-            .leftJoin(
-                polisClusterTableAlias1,
-                and(
-                    eq(
-                        polisClusterTableAlias1.polisContentId,
-                        polisContentTable.id,
-                    ),
-                    eq(polisClusterTableAlias1.key, "1"),
-                ),
-            )
-            .leftJoin(
-                polisClusterTableAlias2,
-                and(
-                    eq(
-                        polisClusterTableAlias2.polisContentId,
-                        polisContentTable.id,
-                    ),
-                    eq(polisClusterTableAlias2.key, "2"),
-                ),
-            )
-            .leftJoin(
-                polisClusterTableAlias3,
-                and(
-                    eq(
-                        polisClusterTableAlias3.polisContentId,
-                        polisContentTable.id,
-                    ),
-                    eq(polisClusterTableAlias3.key, "3"),
-                ),
-            )
-            .leftJoin(
-                polisClusterTableAlias4,
-                and(
-                    eq(
-                        polisClusterTableAlias4.polisContentId,
-                        polisContentTable.id,
-                    ),
-                    eq(polisClusterTableAlias4.key, "4"),
-                ),
-            )
-            .leftJoin(
-                polisClusterTableAlias5,
-                and(
-                    eq(
-                        polisClusterTableAlias5.polisContentId,
-                        polisContentTable.id,
-                    ),
-                    eq(polisClusterTableAlias5.key, "5"),
                 ),
             )
             .leftJoin(
@@ -483,135 +383,6 @@ export function useCommonPost() {
                         : undefined,
             };
 
-            let polis: ExtendedConversationPolis;
-            if (postItem.polisContentId !== null) {
-                let clusterIdUserBelongsTo;
-                if (personalizedUserId !== undefined) {
-                    clusterIdUserBelongsTo =
-                        await polisService.getClusterIdByUserAndConv({
-                            db,
-                            userId: personalizedUserId,
-                            polisContentId: postItem.polisContentId,
-                        });
-                }
-                const clusters: ClusterMetadata[] = [];
-                if (
-                    postItem.polisCluster0Id !== null &&
-                    postItem.polisCluster0NumUsers !== null
-                ) {
-                    const cluster0: ClusterMetadata = {
-                        key: "0",
-                        aiLabel: toUnionUndefined(
-                            postItem.polisCluster0AiLabel,
-                        ),
-                        aiSummary: toUnionUndefined(
-                            postItem.polisCluster0AiSummary,
-                        ),
-                        isUserInCluster:
-                            clusterIdUserBelongsTo === postItem.polisCluster0Id,
-                        numUsers: postItem.polisCluster0NumUsers,
-                    };
-                    clusters.push(cluster0);
-                }
-                if (
-                    postItem.polisCluster1Id !== null &&
-                    postItem.polisCluster1NumUsers !== null
-                ) {
-                    const cluster: ClusterMetadata = {
-                        key: "1",
-                        aiLabel: toUnionUndefined(
-                            postItem.polisCluster1AiLabel,
-                        ),
-                        aiSummary: toUnionUndefined(
-                            postItem.polisCluster1AiSummary,
-                        ),
-                        isUserInCluster:
-                            clusterIdUserBelongsTo === postItem.polisCluster1Id,
-                        numUsers: postItem.polisCluster1NumUsers,
-                    };
-                    clusters.push(cluster);
-                }
-                if (
-                    postItem.polisCluster2Id !== null &&
-                    postItem.polisCluster2NumUsers !== null
-                ) {
-                    const cluster: ClusterMetadata = {
-                        key: "2",
-                        aiLabel: toUnionUndefined(
-                            postItem.polisCluster2AiLabel,
-                        ),
-                        aiSummary: toUnionUndefined(
-                            postItem.polisCluster2AiSummary,
-                        ),
-                        isUserInCluster:
-                            clusterIdUserBelongsTo === postItem.polisCluster2Id,
-                        numUsers: postItem.polisCluster2NumUsers,
-                    };
-                    clusters.push(cluster);
-                }
-                if (
-                    postItem.polisCluster3Id !== null &&
-                    postItem.polisCluster3NumUsers !== null
-                ) {
-                    const cluster: ClusterMetadata = {
-                        key: "3",
-                        aiLabel: toUnionUndefined(
-                            postItem.polisCluster3AiLabel,
-                        ),
-                        aiSummary: toUnionUndefined(
-                            postItem.polisCluster3AiSummary,
-                        ),
-                        isUserInCluster:
-                            clusterIdUserBelongsTo === postItem.polisCluster3Id,
-                        numUsers: postItem.polisCluster3NumUsers,
-                    };
-                    clusters.push(cluster);
-                }
-                if (
-                    postItem.polisCluster4Id !== null &&
-                    postItem.polisCluster4NumUsers !== null
-                ) {
-                    const cluster: ClusterMetadata = {
-                        key: "4",
-                        aiLabel: toUnionUndefined(
-                            postItem.polisCluster4AiLabel,
-                        ),
-                        aiSummary: toUnionUndefined(
-                            postItem.polisCluster4AiSummary,
-                        ),
-                        isUserInCluster:
-                            clusterIdUserBelongsTo === postItem.polisCluster4Id,
-                        numUsers: postItem.polisCluster4NumUsers,
-                    };
-                    clusters.push(cluster);
-                }
-                if (
-                    postItem.polisCluster5Id !== null &&
-                    postItem.polisCluster5NumUsers !== null
-                ) {
-                    const cluster: ClusterMetadata = {
-                        key: "5",
-                        aiLabel: toUnionUndefined(
-                            postItem.polisCluster5AiLabel,
-                        ),
-                        aiSummary: toUnionUndefined(
-                            postItem.polisCluster5AiSummary,
-                        ),
-                        isUserInCluster:
-                            clusterIdUserBelongsTo === postItem.polisCluster5Id,
-                        numUsers: postItem.polisCluster5NumUsers,
-                    };
-                    clusters.push(cluster);
-                }
-                polis = {
-                    clusters: clusters,
-                };
-            } else {
-                polis = {
-                    clusters: [],
-                };
-            }
-
             let payload: ExtendedConversationPayload;
             if (
                 postItem.option1 !== null &&
@@ -682,7 +453,6 @@ export function useCommonPost() {
                         hasVoted: false,
                         votedIndex: 0,
                     },
-                    polis: polis,
                 });
             }
         }
@@ -745,6 +515,230 @@ export function useCommonPost() {
         }
 
         return extendedConversationMap;
+    }
+
+    async function getPolisMetadata({
+        db,
+        conversationSlugId,
+        personalizationUserId,
+    }: {
+        db: PostgresJsDatabase;
+        conversationSlugId: string;
+        personalizationUserId?: string;
+    }): Promise<
+        | { polisContentId: number; clustersMetadata: PolisClustersMetadata }
+        | undefined
+    > {
+        const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0 ");
+        const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1 ");
+        const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2 ");
+        const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3 ");
+        const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4 ");
+        const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5 ");
+
+        const results = await db
+            .select({
+                // polis
+                polisContentId: polisContentTable.id,
+                polisCluster0Id: polisClusterTableAlias0.id,
+                polisCluster0AiLabel: polisClusterTableAlias0.aiLabel,
+                polisCluster0AiSummary: polisClusterTableAlias0.aiSummary,
+                polisCluster0NumUsers: polisClusterTableAlias0.numUsers,
+                polisCluster1Id: polisClusterTableAlias1.id,
+                polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
+                polisCluster1AiSummary: polisClusterTableAlias1.aiSummary,
+                polisCluster1NumUsers: polisClusterTableAlias1.numUsers,
+                polisCluster2Id: polisClusterTableAlias2.id,
+                polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
+                polisCluster2AiSummary: polisClusterTableAlias2.aiSummary,
+                polisCluster2NumUsers: polisClusterTableAlias2.numUsers,
+                polisCluster3Id: polisClusterTableAlias3.id,
+                polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
+                polisCluster3AiSummary: polisClusterTableAlias3.aiSummary,
+                polisCluster3NumUsers: polisClusterTableAlias3.numUsers,
+                polisCluster4Id: polisClusterTableAlias4.id,
+                polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
+                polisCluster4AiSummary: polisClusterTableAlias4.aiSummary,
+                polisCluster4NumUsers: polisClusterTableAlias4.numUsers,
+                polisCluster5Id: polisClusterTableAlias5.id,
+                polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
+                polisCluster5AiSummary: polisClusterTableAlias5.aiSummary,
+                polisCluster5NumUsers: polisClusterTableAlias5.numUsers,
+            })
+            .from(conversationTable)
+            .innerJoin(
+                polisContentTable,
+                eq(
+                    polisContentTable.id,
+                    conversationTable.currentPolisContentId,
+                ),
+            )
+            .leftJoin(
+                polisClusterTableAlias0,
+                and(
+                    eq(
+                        polisClusterTableAlias0.polisContentId,
+                        polisContentTable.id,
+                    ),
+                    eq(polisClusterTableAlias0.key, "0"),
+                ),
+            )
+            .leftJoin(
+                polisClusterTableAlias1,
+                and(
+                    eq(
+                        polisClusterTableAlias1.polisContentId,
+                        polisContentTable.id,
+                    ),
+                    eq(polisClusterTableAlias1.key, "1"),
+                ),
+            )
+            .leftJoin(
+                polisClusterTableAlias2,
+                and(
+                    eq(
+                        polisClusterTableAlias2.polisContentId,
+                        polisContentTable.id,
+                    ),
+                    eq(polisClusterTableAlias2.key, "2"),
+                ),
+            )
+            .leftJoin(
+                polisClusterTableAlias3,
+                and(
+                    eq(
+                        polisClusterTableAlias3.polisContentId,
+                        polisContentTable.id,
+                    ),
+                    eq(polisClusterTableAlias3.key, "3"),
+                ),
+            )
+            .leftJoin(
+                polisClusterTableAlias4,
+                and(
+                    eq(
+                        polisClusterTableAlias4.polisContentId,
+                        polisContentTable.id,
+                    ),
+                    eq(polisClusterTableAlias4.key, "4"),
+                ),
+            )
+            .leftJoin(
+                polisClusterTableAlias5,
+                and(
+                    eq(
+                        polisClusterTableAlias5.polisContentId,
+                        polisContentTable.id,
+                    ),
+                    eq(polisClusterTableAlias5.key, "5"),
+                ),
+            )
+            .where(eq(conversationTable.slugId, conversationSlugId));
+
+        if (results.length === 0) {
+            return undefined;
+        }
+        const postItem = results[0];
+
+        const clustersMetadata: PolisClustersMetadata = {};
+
+        let clusterIdUserBelongsTo;
+        if (personalizationUserId !== undefined) {
+            clusterIdUserBelongsTo =
+                await polisService.getClusterIdByUserAndConv({
+                    db,
+                    userId: personalizationUserId,
+                    polisContentId: postItem.polisContentId,
+                });
+        }
+        if (
+            postItem.polisCluster0Id !== null &&
+            postItem.polisCluster0NumUsers !== null
+        ) {
+            const cluster: ClusterMetadata = {
+                key: "0",
+                aiLabel: toUnionUndefined(postItem.polisCluster0AiLabel),
+                aiSummary: toUnionUndefined(postItem.polisCluster0AiSummary),
+                isUserInCluster:
+                    clusterIdUserBelongsTo === postItem.polisCluster0Id,
+                numUsers: postItem.polisCluster0NumUsers,
+            };
+            clustersMetadata["0"] = cluster;
+        }
+        if (
+            postItem.polisCluster1Id !== null &&
+            postItem.polisCluster1NumUsers !== null
+        ) {
+            const cluster: ClusterMetadata = {
+                key: "1",
+                aiLabel: toUnionUndefined(postItem.polisCluster1AiLabel),
+                aiSummary: toUnionUndefined(postItem.polisCluster1AiSummary),
+                isUserInCluster:
+                    clusterIdUserBelongsTo === postItem.polisCluster1Id,
+                numUsers: postItem.polisCluster1NumUsers,
+            };
+            clustersMetadata["1"] = cluster;
+        }
+        if (
+            postItem.polisCluster2Id !== null &&
+            postItem.polisCluster2NumUsers !== null
+        ) {
+            const cluster: ClusterMetadata = {
+                key: "2",
+                aiLabel: toUnionUndefined(postItem.polisCluster2AiLabel),
+                aiSummary: toUnionUndefined(postItem.polisCluster2AiSummary),
+                isUserInCluster:
+                    clusterIdUserBelongsTo === postItem.polisCluster2Id,
+                numUsers: postItem.polisCluster2NumUsers,
+            };
+            clustersMetadata["2"] = cluster;
+        }
+        if (
+            postItem.polisCluster3Id !== null &&
+            postItem.polisCluster3NumUsers !== null
+        ) {
+            const cluster: ClusterMetadata = {
+                key: "3",
+                aiLabel: toUnionUndefined(postItem.polisCluster3AiLabel),
+                aiSummary: toUnionUndefined(postItem.polisCluster3AiSummary),
+                isUserInCluster:
+                    clusterIdUserBelongsTo === postItem.polisCluster3Id,
+                numUsers: postItem.polisCluster3NumUsers,
+            };
+            clustersMetadata["3"] = cluster;
+        }
+        if (
+            postItem.polisCluster4Id !== null &&
+            postItem.polisCluster4NumUsers !== null
+        ) {
+            const cluster: ClusterMetadata = {
+                key: "4",
+                aiLabel: toUnionUndefined(postItem.polisCluster4AiLabel),
+                aiSummary: toUnionUndefined(postItem.polisCluster4AiSummary),
+                isUserInCluster:
+                    clusterIdUserBelongsTo === postItem.polisCluster4Id,
+                numUsers: postItem.polisCluster4NumUsers,
+            };
+            clustersMetadata["4"] = cluster;
+        }
+        if (
+            postItem.polisCluster5Id !== null &&
+            postItem.polisCluster5NumUsers !== null
+        ) {
+            const cluster: ClusterMetadata = {
+                key: "5",
+                aiLabel: toUnionUndefined(postItem.polisCluster5AiLabel),
+                aiSummary: toUnionUndefined(postItem.polisCluster5AiSummary),
+                isUserInCluster:
+                    clusterIdUserBelongsTo === postItem.polisCluster5Id,
+                numUsers: postItem.polisCluster5NumUsers,
+            };
+            clustersMetadata["5"] = cluster;
+        }
+        return {
+            polisContentId: postItem.polisContentId,
+            clustersMetadata,
+        };
     }
 
     function createCompactHtmlBody(htmlString: string) {
@@ -876,6 +870,7 @@ export function useCommonPost() {
         getOpinionCountBypassCache,
         getVoteCountBypassCache,
         updateCountsBypassCache,
+        getPolisMetadata,
     };
 }
 

@@ -34,14 +34,12 @@
               :participant-count="
                 props.conversationData.metadata.participantCount
               "
-              :polis="props.conversationData.polis"
             />
 
             <CommentSection
               v-if="currentTab == 'comment'"
               ref="opinionSectionRef"
               :post-slug-id="conversationData.metadata.conversationSlugId"
-              :polis="conversationData.polis"
               :is-post-locked="
                 conversationData.metadata.moderation.status == 'moderated'
               "

@@ -15,6 +15,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="consensusItemList"
           :compact-mode="currentTab === 'Summary'"
+          :clusters="clusters"
         />
       </div>
 
@@ -27,6 +28,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="divisiveItemList"
           :compact-mode="currentTab === 'Summary'"
+          :clusters="clusters"
         />
       </div>
 
@@ -36,8 +38,7 @@
       >
         <OpinionGroupTab
           :conversation-slug-id="props.conversationSlugId"
-          :item-list-per-cluster-key="representativeItemListPerClusterKey"
-          :polis="props.polis"
+          :clusters="clusters"
           :total-participant-count="props.participantCount"
         />
       </div>
@@ -46,11 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  ExtendedConversationPolis,
-  OpinionItem,
-  PolisKey,
-} from "src/shared/types/zod";
+import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
@@ -60,26 +57,19 @@ import { ref, onMounted } from "vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
 
 const props = defineProps<{
-  polis: ExtendedConversationPolis;
   participantCount: number;
   conversationSlugId: string;
 }>();
 
 const isLoading = ref<boolean>(true);
 
-const {
-  fetchConsensusItemList,
-  fetchControversialItemList,
-  fetchAllRepresentativeItemLists,
-} = useBackendCommentApi();
+const { fetchAnalysisData } = useBackendCommentApi();
 
 const currentTab = ref<ShortcutItem>("Summary");
 
 const consensusItemList = ref<OpinionItem[]>([]);
 const divisiveItemList = ref<OpinionItem[]>([]);
-const representativeItemListPerClusterKey = ref<
-  Partial<Record<PolisKey, OpinionItem[]>>
->({});
+const clusters = ref<Partial<PolisClusters>>({});
 
 async function loadItemLists({
   conversationSlugId,
@@ -87,16 +77,13 @@ async function loadItemLists({
   conversationSlugId: string;
 }): Promise<void> {
   isLoading.value = true;
-  consensusItemList.value = await fetchConsensusItemList({
+  const { consensus, controversial, polisClusters } = await fetchAnalysisData({
     conversationSlugId,
   });
-  divisiveItemList.value = await fetchControversialItemList({
-    conversationSlugId,
-  });
-  representativeItemListPerClusterKey.value =
-    await fetchAllRepresentativeItemLists({
-      conversationSlugId,
-    });
+
+  consensusItemList.value = consensus;
+  divisiveItemList.value = controversial;
+  clusters.value = polisClusters;
 }
 
 onMounted(async () => {
