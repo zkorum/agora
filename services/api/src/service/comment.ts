@@ -31,7 +31,6 @@ import {
     inArray,
 } from "drizzle-orm";
 import type {
-    ClusterMetadata,
     ClusterStats,
     CommentFeedFilter,
     ModerationReason,
