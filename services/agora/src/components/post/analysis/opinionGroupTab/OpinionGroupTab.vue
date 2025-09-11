@@ -44,17 +44,6 @@
               toggleClusterSelection(String(imageIndex) as PolisKey)
             "
           >
-            <!-- TODO: Integration the show me label -->
-            <div
-              v-if="
-                props.clusters[String(imageIndex) as PolisKey]?.isUserInCluster
-              "
-              class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
-            >
-              <q-icon name="mdi-account-outline" />
-              {{ t("meLabel") }}
-            </div>
-
             <div :style="{ position: 'relative' }">
               <img
                 :src="
@@ -91,6 +80,16 @@
                         )
                       )
                     }})
+                  </div>
+                  <div
+                    v-if="
+                      props.clusters[String(imageIndex) as PolisKey]
+                        ?.isUserInCluster
+                    "
+                    class="meIndicator"
+                  >
+                    <q-icon name="mdi-account-outline" />
+                    {{ t("meLabel") }}
                   </div>
                 </div>
               </div>
@@ -193,152 +192,147 @@ const zodClusterConfig = z.object({
 type ClusterConfig = z.infer<typeof zodClusterConfig>;
 
 const clusterConfig: ClusterConfig[] = [
-  // 2 clusters - side by side layout
   {
     numNodes: 2,
     imgList: [
       {
         clusterWidthPercent: 35,
-        top: 20,
-        left: 12,
+        top: 15,
+        left: 11,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 33,
-        top: 23,
-        left: 53,
+        clusterWidthPercent: 32,
+        top: 25,
+        left: 48,
         isSelected: false,
       },
     ],
   },
-  // 3 clusters - triangle formation
   {
     numNodes: 3,
     imgList: [
       {
-        clusterWidthPercent: 32,
-        top: 12,
-        left: 34,
+        clusterWidthPercent: 35,
+        top: 7,
+        left: 30,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 32,
-        top: 55,
-        left: 17,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 32,
-        top: 55,
-        left: 51,
-        isSelected: false,
-      },
-    ],
-  },
-  // 4 clusters - square formation
-  {
-    numNodes: 4,
-    imgList: [
-      {
-        clusterWidthPercent: 30,
-        top: 8,
+        clusterWidthPercent: 35,
+        top: 45,
         left: 15,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 8,
-        left: 55,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 30,
-        top: 62,
-        left: 15,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 30,
-        top: 62,
-        left: 55,
-        isSelected: false,
-      },
-    ],
-  },
-  // 5 clusters - pentagon formation
-  {
-    numNodes: 5,
-    imgList: [
-      {
-        clusterWidthPercent: 28,
-        top: 5,
-        left: 36,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 28,
-        top: 25,
-        left: 10,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 28,
-        top: 25,
-        left: 62,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 28,
-        top: 65,
-        left: 20,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 28,
-        top: 65,
+        clusterWidthPercent: 35,
+        top: 51,
         left: 52,
         isSelected: false,
       },
     ],
   },
-  // 6 clusters - hexagon formation
+  {
+    numNodes: 4,
+    imgList: [
+      {
+        clusterWidthPercent: 30,
+        top: 10,
+        left: 15,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 5,
+        left: 44,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 55,
+        left: 13,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 51,
+        left: 42,
+        isSelected: false,
+      },
+    ],
+  },
+  {
+    numNodes: 5,
+    imgList: [
+      {
+        clusterWidthPercent: 30,
+        top: 1,
+        left: 14,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 7,
+        left: 42,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 41,
+        left: 4,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 41,
+        left: 29,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 43,
+        left: 58,
+        isSelected: false,
+      },
+    ],
+  },
   {
     numNodes: 6,
     imgList: [
       {
-        clusterWidthPercent: 26,
-        top: 8,
-        left: 20,
+        clusterWidthPercent: 28,
+        top: 6,
+        left: 14,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 26,
-        top: 8,
-        left: 54,
+        clusterWidthPercent: 35,
+        top: 6,
+        left: 42,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 26,
-        top: 35,
-        left: 8,
+        clusterWidthPercent: 23,
+        top: 37,
+        left: 13,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 26,
-        top: 35,
-        left: 66,
+        clusterWidthPercent: 30,
+        top: 32,
+        left: 33,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 26,
-        top: 62,
-        left: 20,
+        clusterWidthPercent: 23,
+        top: 45,
+        left: 65,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 26,
-        top: 62,
-        left: 54,
+        clusterWidthPercent: 35,
+        top: 75,
+        left: 30,
         isSelected: false,
       },
     ],
@@ -444,21 +438,7 @@ function composeImagePath(
 .container {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
-  max-width: min(500px, 90vw);
-  margin: 0 auto;
-  background: transparent;
-
-  // Responsive sizing
-  @media (max-width: 768px) {
-    max-width: 95vw;
-    aspect-ratio: 1.1;
-  }
-
-  @media (max-width: 480px) {
-    max-width: 100vw;
-    aspect-ratio: 1.2;
-  }
+  padding: 30%;
 }
 
 .imageStyle {
@@ -477,23 +457,6 @@ function composeImagePath(
     outline-offset: 4px;
     border-radius: 8px;
   }
-}
-
-.clusterMeFlex {
-  display: flex;
-  gap: clamp(0.25rem, 1vw, 0.5rem);
-  align-items: center;
-  justify-content: center;
-}
-
-.clusterMeLabel {
-  position: absolute;
-  top: 0px;
-  right: 16px;
-  background-color: #007bff;
-  color: black;
-  z-index: 100;
-  transform: translateX(50%);
 }
 
 .borderStyle {
@@ -545,6 +508,18 @@ function composeImagePath(
   white-space: nowrap;
   font-size: clamp(0.6rem, 2vw, 0.75rem);
   color: #666;
+}
+
+.meIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  color: #007bff;
+  font-weight: 600;
+  text-align: center;
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
+  margin-top: clamp(0.125rem, 0.5vw, 0.25rem);
 }
 
 .infoIcon {
