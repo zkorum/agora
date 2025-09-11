@@ -26,8 +26,6 @@
 
           <ClusterInformationDialog v-model="showClusterInformation" />
 
-          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-          <!-- Cluster selection areas should be keyboard navigable for users with motor disabilities -->
           <div
             v-for="(imgItem, imageIndex) in activeCluster.imgList"
             :key="imageIndex"
@@ -36,20 +34,17 @@
               width: imgItem.clusterWidthPercent + '%',
               top: imgItem.top + '%',
               left: imgItem.left + '%',
+              zIndex: imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
             }"
+            role="button"
+            tabindex="0"
+            :aria-label="getClusterAriaLabel(String(imageIndex) as PolisKey)"
+            :aria-pressed="imgItem.isSelected"
             @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
+            @keydown.enter="
+              toggleClusterSelection(String(imageIndex) as PolisKey)
+            "
           >
-            <!-- TODO: Integration the show me label -->
-            <div
-              v-if="
-                props.clusters[String(imageIndex) as PolisKey]?.isUserInCluster
-              "
-              class="clusterMeLabel borderStyle clusterMeFlex dynamicFont"
-            >
-              <q-icon name="mdi-account-outline" />
-              {{ t("meLabel") }}
-            </div>
-
             <div :style="{ position: 'relative' }">
               <img
                 :src="
@@ -63,10 +58,7 @@
               />
               <div
                 class="clusterNameOverlay borderStyle dynamicFont"
-                :style="{
-                  top: '30%',
-                  left: '22%',
-                }"
+                :class="{ selected: imgItem.isSelected }"
               >
                 <div class="clusterLabelFlex">
                   <div class="clusterOverlayFontBold">
@@ -92,6 +84,16 @@
                         )
                       )
                     }})
+                  </div>
+                  <div
+                    v-if="
+                      props.clusters[String(imageIndex) as PolisKey]
+                        ?.isUserInCluster
+                    "
+                    class="meIndicator"
+                  >
+                    <q-icon name="mdi-account-outline" />
+                    {{ t("meLabel") }}
                   </div>
                 </div>
               </div>
@@ -215,21 +217,21 @@ const clusterConfig: ClusterConfig[] = [
     numNodes: 3,
     imgList: [
       {
-        clusterWidthPercent: 30,
-        top: 14,
+        clusterWidthPercent: 35,
+        top: 7,
         left: 30,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 50,
-        left: 22,
+        clusterWidthPercent: 35,
+        top: 45,
+        left: 15,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
+        clusterWidthPercent: 35,
         top: 51,
-        left: 50,
+        left: 52,
         isSelected: false,
       },
     ],
@@ -309,8 +311,8 @@ const clusterConfig: ClusterConfig[] = [
       },
       {
         clusterWidthPercent: 35,
-        top: 10,
-        left: 40,
+        top: 6,
+        left: 42,
         isSelected: false,
       },
       {
@@ -386,11 +388,40 @@ function clearAllSelection() {
   });
 }
 
+function getClusterAriaLabel(clusterKey: PolisKey): string {
+  const cluster = props.clusters[clusterKey];
+  if (!cluster) {
+    return `${t("groupsTitle")} ${Number(clusterKey) + 1}`;
+  }
+
+  const clusterLabel = formatClusterLabel(clusterKey, false, cluster.aiLabel);
+  const userCount = cluster.numUsers;
+  const percentage = formatPercentage(
+    calculatePercentage(userCount, props.totalParticipantCount)
+  );
+  const isSelected = currentClusterTab.value === clusterKey;
+  const isUserInCluster = cluster.isUserInCluster;
+
+  let ariaLabel = `${clusterLabel}, ${userCount} participants (${percentage})`;
+
+  if (isUserInCluster) {
+    ariaLabel += `, ${t("meLabel")}`;
+  }
+
+  if (isSelected) {
+    ariaLabel += ", selected";
+  } else {
+    ariaLabel += ", press Enter to select";
+  }
+
+  return ariaLabel;
+}
+
 function composeImagePath(
   isSelected: boolean,
   index: number,
   clusterNumber: number
-) {
+): string {
   const imgSuffix = isSelected ? "-on" : "-off";
   const version = "-v2";
 
@@ -412,76 +443,100 @@ function composeImagePath(
   position: relative;
   width: 100%;
   padding: 30%;
+  margin-bottom: 2rem;
 }
 
 .imageStyle {
   position: absolute;
-}
-
-.imageStyle:hover {
   cursor: pointer;
-}
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
 
-.clusterMeFlex {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
+  &:hover {
+    filter: brightness(1.05);
+  }
 
-.clusterMeLabel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  background-color: white;
-  z-index: 100;
+  &:focus-visible {
+    outline: 3px solid #007bff;
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
 }
 
 .borderStyle {
-  border-radius: 1rem;
-  border-style: solid;
-  border-width: 1px;
-  border-color: lightgray;
-  background-color: white;
-  padding-top: min(0.5rem, 1vw);
-  padding-bottom: min(0.5rem, 1vw);
-  padding-left: min(1rem, 3vw);
-  padding-right: min(1rem, 3vw);
+  border-radius: clamp(0.5rem, 2vw, 1rem);
+  border: 1px solid #f0f0f0;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  padding: clamp(0.25rem, 1.5vw, 0.75rem) clamp(0.5rem, 2vw, 1rem);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .dynamicFont {
-  font-size: min(0.8rem, 3vw);
+  font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+  line-height: 1.2;
 }
 
 .clusterNameOverlay {
   position: absolute;
-  top: 0;
-  left: 0;
   user-select: none;
+  pointer-events: none;
+  // z-index is now handled dynamically via style binding
+
+  // Center the overlay relative to the cluster
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  // Ensure overlay stays within bounds
+  max-width: 80%;
+
+  &.selected {
+    border-color: $primary;
+    background-color: rgb(233, 243, 255);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
 }
 
 .clusterOverlayFontBold {
   font-weight: 600;
+  text-align: center;
+  margin-bottom: clamp(0.125rem, 0.5vw, 0.25rem);
 }
 
 .clusterLabelFlex {
   display: flex;
-  flex-wrap: nowrap;
   flex-direction: column;
   align-items: center;
+  gap: clamp(0.125rem, 0.5vw, 0.25rem);
 }
 
 .clusterGroupSize {
   display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  gap: min(0.5rem, 1vw);
   align-items: center;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   white-space: nowrap;
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
+  color: #666;
+}
+
+.meIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  color: #007bff;
+  font-weight: 600;
+  text-align: center;
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
+  margin-top: clamp(0.125rem, 0.5vw, 0.25rem);
 }
 
 .infoIcon {
   position: absolute;
-  right: 1rem;
-  top: 1rem;
+  right: clamp(0.5rem, 2vw, 1rem);
+  top: clamp(0.5rem, 2vw, 1rem);
+  z-index: 50;
 }
 </style>

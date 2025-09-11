@@ -7,6 +7,7 @@ import Button from "primevue/button";
 import Card from "primevue/card";
 import Chip from "primevue/chip";
 import DatePicker from "primevue/datepicker";
+import Select from "primevue/select";
 import InputOtp from "primevue/inputotp";
 import InputText from "primevue/inputtext";
 import IconField from "primevue/iconfield";
@@ -57,6 +58,7 @@ export default defineBoot(({ app }) => {
   app.component("PrimeCard", Card);
   app.component("PrimeChip", Chip);
   app.component("PrimeDatePicker", DatePicker);
+  app.component("PrimeSelect", Select);
   app.component("PrimeInputOtp", InputOtp);
   app.component("PrimeInputText", InputText);
   app.component("PrimeIconField", IconField);
