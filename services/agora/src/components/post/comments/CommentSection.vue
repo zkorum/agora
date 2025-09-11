@@ -1,35 +1,37 @@
 <template>
-  <div>
-    <div class="container">
-      <div class="commentSectionToolbar">
-        <div class="commentSortingSelector">
-          <CommentSortingSelector
-            :filter-value="currentFilter"
-            @changed-algorithm="
-              (filterValue: CommentFilterOptions) =>
-                handleUserFilterChange(filterValue)
-            "
-          />
+  <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
+    <div>
+      <div class="container">
+        <div class="commentSectionToolbar">
+          <div class="commentSortingSelector">
+            <CommentSortingSelector
+              :filter-value="currentFilter"
+              @changed-algorithm="
+                (filterValue: CommentFilterOptions) =>
+                  handleUserFilterChange(filterValue)
+              "
+            />
+          </div>
         </div>
-      </div>
 
-      <CommentGroup
-        :comment-item-list="visibleOpinions"
-        :is-loading="isLoading"
-        :post-slug-id="postSlugId"
-        :initial-comment-slug-id="highlightedOpinionId"
-        :comment-slug-id-liked-map="opinionVoteMap"
-        :is-post-locked="isPostLocked"
-        :login-required-to-participate="props.loginRequiredToParticipate"
-        @deleted="handleOpinionDeleted()"
-        @muted-comment="handleOpinionMuted()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-      />
+        <CommentGroup
+          :comment-item-list="visibleOpinions"
+          :is-loading="isLoading"
+          :post-slug-id="postSlugId"
+          :initial-comment-slug-id="highlightedOpinionId"
+          :comment-slug-id-liked-map="opinionVoteMap"
+          :is-post-locked="isPostLocked"
+          :login-required-to-participate="props.loginRequiredToParticipate"
+          @deleted="handleOpinionDeleted()"
+          @muted-comment="handleOpinionMuted()"
+          @change-vote="
+            (vote: VotingAction, opinionSlugId: string) =>
+              changeVote(vote, opinionSlugId)
+          "
+        />
+      </div>
     </div>
-  </div>
+  </q-infinite-scroll>
 </template>
 
 <script setup lang="ts">
@@ -57,12 +59,7 @@ import {
   type CommentSectionTranslations,
 } from "./CommentSection.i18n";
 
-const emit = defineEmits([
-  "deleted",
-  "hasMoreChanged",
-  "loadingStateChanged",
-  "participantCountDelta",
-]);
+const emit = defineEmits(["deleted", "participantCountDelta"]);
 
 const props = defineProps<{
   postSlugId: string;
@@ -408,20 +405,16 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
   }
 }
 
+// Handle infinite scroll load event
+function onLoad(index: number, done: () => void) {
+  loadMore();
+  done();
+}
+
 // Expose load more functionality for parent component
 function triggerLoadMore() {
   loadMore();
 }
-
-// Watch hasMore changes and emit to parent
-watch(hasMore, (newHasMore) => {
-  emit("hasMoreChanged", newHasMore);
-});
-
-// Watch loading state changes and emit to parent
-watch(isLoading, (newIsLoading) => {
-  emit("loadingStateChanged", newIsLoading);
-});
 
 defineExpose({
   openModerationHistory,
