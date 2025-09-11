@@ -26,8 +26,6 @@
 
           <ClusterInformationDialog v-model="showClusterInformation" />
 
-          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-          <!-- Cluster selection areas should be keyboard navigable for users with motor disabilities -->
           <div
             v-for="(imgItem, imageIndex) in activeCluster.imgList"
             :key="imageIndex"
@@ -37,7 +35,14 @@
               top: imgItem.top + '%',
               left: imgItem.left + '%',
             }"
+            role="button"
+            tabindex="0"
+            :aria-label="getClusterAriaLabel(String(imageIndex) as PolisKey)"
+            :aria-pressed="imgItem.isSelected"
             @click="toggleClusterSelection(String(imageIndex) as PolisKey)"
+            @keydown.enter="
+              toggleClusterSelection(String(imageIndex) as PolisKey)
+            "
           >
             <!-- TODO: Integration the show me label -->
             <div
@@ -61,13 +66,7 @@
                 "
                 :style="{ width: '100%' }"
               />
-              <div
-                class="clusterNameOverlay borderStyle dynamicFont"
-                :style="{
-                  top: '30%',
-                  left: '22%',
-                }"
-              >
+              <div class="clusterNameOverlay borderStyle dynamicFont">
                 <div class="clusterLabelFlex">
                   <div class="clusterOverlayFontBold">
                     {{
@@ -194,147 +193,152 @@ const zodClusterConfig = z.object({
 type ClusterConfig = z.infer<typeof zodClusterConfig>;
 
 const clusterConfig: ClusterConfig[] = [
+  // 2 clusters - side by side layout
   {
     numNodes: 2,
     imgList: [
       {
         clusterWidthPercent: 35,
-        top: 15,
-        left: 11,
+        top: 20,
+        left: 12,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 32,
-        top: 25,
-        left: 48,
+        clusterWidthPercent: 33,
+        top: 23,
+        left: 53,
         isSelected: false,
       },
     ],
   },
+  // 3 clusters - triangle formation
   {
     numNodes: 3,
     imgList: [
       {
-        clusterWidthPercent: 30,
-        top: 14,
-        left: 30,
+        clusterWidthPercent: 32,
+        top: 12,
+        left: 34,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 50,
-        left: 22,
+        clusterWidthPercent: 32,
+        top: 55,
+        left: 17,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 51,
-        left: 50,
+        clusterWidthPercent: 32,
+        top: 55,
+        left: 51,
         isSelected: false,
       },
     ],
   },
+  // 4 clusters - square formation
   {
     numNodes: 4,
     imgList: [
       {
         clusterWidthPercent: 30,
-        top: 10,
+        top: 8,
         left: 15,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 5,
-        left: 44,
+        top: 8,
+        left: 55,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 55,
-        left: 13,
+        top: 62,
+        left: 15,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 51,
-        left: 42,
+        top: 62,
+        left: 55,
         isSelected: false,
       },
     ],
   },
+  // 5 clusters - pentagon formation
   {
     numNodes: 5,
     imgList: [
       {
-        clusterWidthPercent: 30,
-        top: 1,
-        left: 14,
+        clusterWidthPercent: 28,
+        top: 5,
+        left: 36,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 7,
-        left: 42,
+        clusterWidthPercent: 28,
+        top: 25,
+        left: 10,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 41,
-        left: 4,
+        clusterWidthPercent: 28,
+        top: 25,
+        left: 62,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 41,
-        left: 29,
+        clusterWidthPercent: 28,
+        top: 65,
+        left: 20,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 43,
-        left: 58,
+        clusterWidthPercent: 28,
+        top: 65,
+        left: 52,
         isSelected: false,
       },
     ],
   },
+  // 6 clusters - hexagon formation
   {
     numNodes: 6,
     imgList: [
       {
-        clusterWidthPercent: 28,
-        top: 6,
-        left: 14,
+        clusterWidthPercent: 26,
+        top: 8,
+        left: 20,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 35,
-        top: 10,
-        left: 40,
+        clusterWidthPercent: 26,
+        top: 8,
+        left: 54,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 23,
-        top: 37,
-        left: 13,
+        clusterWidthPercent: 26,
+        top: 35,
+        left: 8,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 32,
-        left: 33,
+        clusterWidthPercent: 26,
+        top: 35,
+        left: 66,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 23,
-        top: 45,
-        left: 65,
+        clusterWidthPercent: 26,
+        top: 62,
+        left: 20,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 35,
-        top: 75,
-        left: 30,
+        clusterWidthPercent: 26,
+        top: 62,
+        left: 54,
         isSelected: false,
       },
     ],
@@ -386,11 +390,40 @@ function clearAllSelection() {
   });
 }
 
+function getClusterAriaLabel(clusterKey: PolisKey): string {
+  const cluster = props.clusters[clusterKey];
+  if (!cluster) {
+    return `${t("groupsTitle")} ${Number(clusterKey) + 1}`;
+  }
+
+  const clusterLabel = formatClusterLabel(clusterKey, false, cluster.aiLabel);
+  const userCount = cluster.numUsers;
+  const percentage = formatPercentage(
+    calculatePercentage(userCount, props.totalParticipantCount)
+  );
+  const isSelected = currentClusterTab.value === clusterKey;
+  const isUserInCluster = cluster.isUserInCluster;
+
+  let ariaLabel = `${clusterLabel}, ${userCount} participants (${percentage})`;
+
+  if (isUserInCluster) {
+    ariaLabel += `, ${t("meLabel")}`;
+  }
+
+  if (isSelected) {
+    ariaLabel += ", selected";
+  } else {
+    ariaLabel += ", press Enter to select";
+  }
+
+  return ariaLabel;
+}
+
 function composeImagePath(
   isSelected: boolean,
   index: number,
   clusterNumber: number
-) {
+): string {
   const imgSuffix = isSelected ? "-on" : "-off";
   const version = "-v2";
 
@@ -411,77 +444,113 @@ function composeImagePath(
 .container {
   position: relative;
   width: 100%;
-  padding: 30%;
+  aspect-ratio: 1;
+  max-width: min(500px, 90vw);
+  margin: 0 auto;
+  background: transparent;
+
+  // Responsive sizing
+  @media (max-width: 768px) {
+    max-width: 95vw;
+    aspect-ratio: 1.1;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 100vw;
+    aspect-ratio: 1.2;
+  }
 }
 
 .imageStyle {
   position: absolute;
-}
-
-.imageStyle:hover {
   cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #007bff;
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
 }
 
 .clusterMeFlex {
   display: flex;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   align-items: center;
+  justify-content: center;
 }
 
 .clusterMeLabel {
   position: absolute;
-  top: 0;
-  left: 0;
-  background-color: white;
+  top: 0px;
+  right: 16px;
+  background-color: #007bff;
+  color: black;
   z-index: 100;
+  transform: translateX(50%);
 }
 
 .borderStyle {
-  border-radius: 1rem;
-  border-style: solid;
-  border-width: 1px;
-  border-color: lightgray;
-  background-color: white;
-  padding-top: min(0.5rem, 1vw);
-  padding-bottom: min(0.5rem, 1vw);
-  padding-left: min(1rem, 3vw);
-  padding-right: min(1rem, 3vw);
+  border-radius: clamp(0.5rem, 2vw, 1rem);
+  border: 1px solid #e0e0e0;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  padding: clamp(0.25rem, 1.5vw, 0.75rem) clamp(0.5rem, 2vw, 1rem);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .dynamicFont {
-  font-size: min(0.8rem, 3vw);
+  font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+  line-height: 1.2;
 }
 
 .clusterNameOverlay {
   position: absolute;
-  top: 0;
-  left: 0;
   user-select: none;
+  pointer-events: none;
+  z-index: 10;
+
+  // Center the overlay relative to the cluster
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  // Ensure overlay stays within bounds
+  max-width: 80%;
 }
 
 .clusterOverlayFontBold {
   font-weight: 600;
+  text-align: center;
+  margin-bottom: clamp(0.125rem, 0.5vw, 0.25rem);
 }
 
 .clusterLabelFlex {
   display: flex;
-  flex-wrap: nowrap;
   flex-direction: column;
   align-items: center;
+  gap: clamp(0.125rem, 0.5vw, 0.25rem);
 }
 
 .clusterGroupSize {
   display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  gap: min(0.5rem, 1vw);
   align-items: center;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   white-space: nowrap;
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
+  color: #666;
 }
 
 .infoIcon {
   position: absolute;
-  right: 1rem;
-  top: 1rem;
+  right: clamp(0.5rem, 2vw, 1rem);
+  top: clamp(0.5rem, 2vw, 1rem);
+  z-index: 50;
 }
 </style>
