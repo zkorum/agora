@@ -1,77 +1,68 @@
 <template>
   <div>
-    <q-infinite-scroll
-      :offset="2000"
-      :disable="compactMode || !hasMore"
-      @load="onLoad"
-    >
-      <ZKHoverEffect :enable-hover="compactMode">
-        <div
-          class="container standardStyle"
-          :class="{ compactBackground: compactMode }"
-        >
-          <PostContent
-            :extended-post-data="conversationData"
-            :compact-mode="compactMode"
-            @open-moderation-history="openModerationHistory()"
-          />
-
-          <PostActionBar
-            v-model="currentTab"
-            :compact-mode="compactMode"
-            :opinion-count="
-              conversationData.metadata.opinionCount + opinionCountOffset
-            "
-            @share="shareClicked()"
-          />
-
-          <div v-if="!compactMode">
-            <AnalysisPage
-              v-if="currentTab == 'analysis'"
-              :conversation-slug-id="
-                props.conversationData.metadata.conversationSlugId
-              "
-              :participant-count="
-                props.conversationData.metadata.participantCount
-              "
-            />
-
-            <CommentSection
-              v-if="currentTab == 'comment'"
-              ref="opinionSectionRef"
-              :post-slug-id="conversationData.metadata.conversationSlugId"
-              :is-post-locked="
-                conversationData.metadata.moderation.status == 'moderated'
-              "
-              :login-required-to-participate="
-                conversationData.metadata.isIndexed ||
-                conversationData.metadata.isLoginRequired
-              "
-              @deleted="decrementOpinionCount()"
-              @participant-count-delta="
-                (delta: number) => (participantCountLocal += delta)
-              "
-              @has-more-changed="
-                (newHasMore: boolean) => (hasMore = newHasMore)
-              "
-            />
-          </div>
-        </div>
-      </ZKHoverEffect>
-
-      <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
-        <CommentComposer
-          :post-slug-id="conversationData.metadata.conversationSlugId"
-          :login-required-to-participate="
-            conversationData.metadata.isIndexed ||
-            conversationData.metadata.isLoginRequired
-          "
-          @submitted-comment="
-            (opinionSlugId: string) => submittedComment(opinionSlugId)
-          "
+    <ZKHoverEffect :enable-hover="compactMode">
+      <div
+        class="container standardStyle"
+        :class="{ compactBackground: compactMode }"
+      >
+        <PostContent
+          :extended-post-data="conversationData"
+          :compact-mode="compactMode"
+          @open-moderation-history="openModerationHistory()"
         />
-      </FloatingBottomContainer>
-    </q-infinite-scroll>
+
+        <PostActionBar
+          v-model="currentTab"
+          :compact-mode="compactMode"
+          :opinion-count="
+            conversationData.metadata.opinionCount + opinionCountOffset
+          "
+          @share="shareClicked()"
+        />
+
+        <div v-if="!compactMode">
+          <AnalysisPage
+            v-if="currentTab == 'analysis'"
+            :conversation-slug-id="
+              props.conversationData.metadata.conversationSlugId
+            "
+            :participant-count="
+              props.conversationData.metadata.participantCount
+            "
+          />
+
+          <CommentSection
+            v-if="currentTab == 'comment'"
+            ref="opinionSectionRef"
+            :post-slug-id="conversationData.metadata.conversationSlugId"
+            :is-post-locked="
+              conversationData.metadata.moderation.status == 'moderated'
+            "
+            :login-required-to-participate="
+              conversationData.metadata.isIndexed ||
+              conversationData.metadata.isLoginRequired
+            "
+            @deleted="decrementOpinionCount()"
+            @participant-count-delta="
+              (delta: number) => (participantCountLocal += delta)
+            "
+          />
+        </div>
+      </div>
+    </ZKHoverEffect>
+
+    <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
+      <CommentComposer
+        :post-slug-id="conversationData.metadata.conversationSlugId"
+        :login-required-to-participate="
+          conversationData.metadata.isIndexed ||
+          conversationData.metadata.isLoginRequired
+        "
+        @submitted-comment="
+          (opinionSlugId: string) => submittedComment(opinionSlugId)
+        "
+      />
+    </FloatingBottomContainer>
   </div>
 </template>
 
@@ -106,18 +97,10 @@ const { getConversationUrl } = useConversationUrl();
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
-const hasMore = ref(true);
 
 const isPostLocked =
   props.conversationData.metadata.moderation.status === "moderated" &&
   props.conversationData.metadata.moderation.action === "lock";
-
-function onLoad(index: number, done: () => void) {
-  if (opinionSectionRef.value) {
-    opinionSectionRef.value.triggerLoadMore();
-  }
-  done();
-}
 
 function openModerationHistory() {
   if (opinionSectionRef.value) {
