@@ -34,6 +34,7 @@
               width: imgItem.clusterWidthPercent + '%',
               top: imgItem.top + '%',
               left: imgItem.left + '%',
+              zIndex: imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
             }"
             role="button"
             tabindex="0"
@@ -465,7 +466,7 @@ function composeImagePath(
 
 .borderStyle {
   border-radius: clamp(0.5rem, 2vw, 1rem);
-  border: 1px solid #e0e0e0;
+  border: 1px solid #f0f0f0;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
   padding: clamp(0.25rem, 1.5vw, 0.75rem) clamp(0.5rem, 2vw, 1rem);
@@ -481,7 +482,7 @@ function composeImagePath(
   position: absolute;
   user-select: none;
   pointer-events: none;
-  z-index: 10;
+  // z-index is now handled dynamically via style binding
 
   // Center the overlay relative to the cluster
   top: 50%;
@@ -492,7 +493,7 @@ function composeImagePath(
   max-width: 80%;
 
   &.selected {
-    border-color: #007bff;
+    border-color: $primary;
     background-color: rgb(233, 243, 255);
     box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
   }
