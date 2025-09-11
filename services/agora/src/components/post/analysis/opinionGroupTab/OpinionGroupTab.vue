@@ -55,7 +55,10 @@
                 "
                 :style="{ width: '100%' }"
               />
-              <div class="clusterNameOverlay borderStyle dynamicFont">
+              <div
+                class="clusterNameOverlay borderStyle dynamicFont"
+                :class="{ selected: imgItem.isSelected }"
+              >
                 <div class="clusterLabelFlex">
                   <div class="clusterOverlayFontBold">
                     {{
@@ -439,6 +442,7 @@ function composeImagePath(
   position: relative;
   width: 100%;
   padding: 30%;
+  margin-bottom: 2rem;
 }
 
 .imageStyle {
@@ -486,6 +490,12 @@ function composeImagePath(
 
   // Ensure overlay stays within bounds
   max-width: 80%;
+
+  &.selected {
+    border-color: #007bff;
+    background-color: rgb(233, 243, 255);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
 }
 
 .clusterOverlayFontBold {

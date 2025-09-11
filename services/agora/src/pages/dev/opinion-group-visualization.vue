@@ -109,12 +109,12 @@ const totalParticipantCount = computed(() => {
 
 // Mock data generators
 const clusterLabels = [
-  "Progressive",
-  "Conservative",
-  "Moderate",
-  "Independent",
-  "Pragmatic",
-  "Idealistic",
+  "Social Progressive",
+  "Traditional Conservative",
+  "Centrist Moderate",
+  "Independent Thinker",
+  "Practical Realist",
+  "Visionary Idealist",
 ];
 
 const clusterSummaries = [
