@@ -218,7 +218,7 @@ const navigateToNextMode = toggleNextMode;
 .group-selector {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .group-name {
@@ -235,7 +235,7 @@ const navigateToNextMode = toggleNextMode;
 .header-flex-style {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: space-between;
 }
 </style>
