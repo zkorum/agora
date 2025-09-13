@@ -2,6 +2,8 @@ import { useWindowSize } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { onMounted, ref, watch } from "vue";
 
+const DRAWER_BREAKPOINT = 1000;
+
 export const useNavigationStore = defineStore("navigation", () => {
   const { width } = useWindowSize();
 
@@ -17,7 +19,7 @@ export const useNavigationStore = defineStore("navigation", () => {
   });
 
   function updateDrawers() {
-    if (width.value > 1000) {
+    if (width.value > DRAWER_BREAKPOINT) {
       drawerBehavior.value = "desktop";
       showMobileDrawer.value = true;
     } else {
