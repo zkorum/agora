@@ -5,7 +5,21 @@
         <AnalysisTitleHeader
           :show-star-in-title="false"
           :title="t('groupsTitle')"
-        />
+        >
+          <template #action-button>
+            <ZKButton
+              button-type="icon"
+              aria-label="Information about opinion groups"
+              @click="showClusterInformation = true"
+            >
+              <ZKIcon
+                color="#6d6a74"
+                name="mdi-information-outline"
+                size="1.2rem"
+              />
+            </ZKButton>
+          </template>
+        </AnalysisTitleHeader>
       </template>
 
       <template #body>
@@ -47,6 +61,8 @@
         </template>
       </template>
     </AnalysisSectionWrapper>
+
+    <ClusterInformationDialog v-model="showClusterInformation" />
   </div>
 </template>
 
@@ -69,6 +85,9 @@ import {
   opinionGroupTabTranslations,
   type OpinionGroupTabTranslations,
 } from "./OpinionGroupTab.i18n";
+import ClusterInformationDialog from "./ClusterInformationDialog.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -92,6 +111,7 @@ const hasUngroupedParticipants = computed(() => {
 });
 
 const currentClusterTab = ref<PolisKey>("0");
+const showClusterInformation = ref(false);
 
 const currentAiSummary = computed(() => {
   if (currentClusterTab.value in props.clusters) {

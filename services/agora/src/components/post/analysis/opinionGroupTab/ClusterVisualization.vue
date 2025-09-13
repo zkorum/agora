@@ -1,13 +1,5 @@
 <template>
   <div class="container">
-    <div class="infoIcon">
-      <ZKButton button-type="icon" @click="showClusterInformation = true">
-        <ZKIcon color="#6d6a74" name="mdi-information-outline" size="1.2rem" />
-      </ZKButton>
-    </div>
-
-    <ClusterInformationDialog v-model="showClusterInformation" />
-
     <div
       v-for="(imgItem, imageIndex) in activeClusterConfig.imgList"
       :key="imageIndex"
@@ -83,9 +75,6 @@ import { calculatePercentage } from "src/shared/common/util";
 import { formatPercentage } from "src/utils/common";
 import { ref, watch } from "vue";
 import { z } from "zod";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   clusterVisualizationTranslations,
@@ -105,8 +94,6 @@ const emit = defineEmits<{
 const { t } = useComponentI18n<ClusterVisualizationTranslations>(
   clusterVisualizationTranslations
 );
-
-const showClusterInformation = ref(false);
 
 // Cluster configuration data
 const zodClusterImg = z.object({
@@ -129,13 +116,13 @@ const clusterConfigs: ClusterConfig[] = [
     imgList: [
       {
         clusterWidthPercent: 45,
-        top: 10,
+        top: 15,
         left: 2,
         isSelected: false,
       },
       {
         clusterWidthPercent: 45,
-        top: 15,
+        top: 25,
         left: 50,
         isSelected: false,
       },
@@ -385,7 +372,6 @@ watch(
   position: relative;
   width: 100%;
   padding: 40%;
-  margin-bottom: 2rem;
 }
 
 .imageStyle {
@@ -472,12 +458,5 @@ watch(
   text-align: center;
   font-size: clamp(0.6rem, 2vw, 0.75rem);
   margin-top: clamp(0.125rem, 0.5vw, 0.25rem);
-}
-
-.infoIcon {
-  position: absolute;
-  right: clamp(0.5rem, 2vw, 1rem);
-  top: clamp(0.5rem, 2vw, 1rem);
-  z-index: 50;
 }
 </style>
