@@ -131,6 +131,7 @@ import {
   conversationReviewTranslations,
   type ConversationReviewTranslations,
 } from "./index.i18n";
+import { useNavigationStore } from "src/stores/navigation";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
@@ -151,6 +152,7 @@ const opinionErrors = ref<Record<number, string>>({});
 const opinionRefs = ref<Record<number, HTMLElement>>({});
 
 const { createNewConversationIntention } = useLoginIntentionStore();
+const navigationStore = useNavigationStore();
 
 const { t } = useComponentI18n<ConversationReviewTranslations>(
   conversationReviewTranslations
@@ -339,6 +341,9 @@ async function onSubmit() {
       conversationDraft.value = createEmptyDraft();
 
       await loadPostData();
+
+      // Set navigation context to indicate user came from conversation creation
+      navigationStore.setConversationCreationContext(true);
 
       await router.replace({
         name: "/conversation/[postSlugId]",

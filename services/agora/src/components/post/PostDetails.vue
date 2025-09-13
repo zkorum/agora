@@ -1,10 +1,11 @@
 <template>
   <div>
-    <ZKHoverEffect :enable-hover="compactMode">
-      <div
-        class="container standardStyle"
-        :class="{ compactBackground: compactMode }"
-      >
+    <ZKHoverEffect
+      :enable-hover="compactMode"
+      :background-color="compactMode ? 'white' : undefined"
+      hover-background-color="#e2e8f0"
+    >
+      <div class="container standardStyle">
         <PostContent
           :extended-post-data="conversationData"
           :compact-mode="compactMode"
@@ -148,15 +149,6 @@ async function shareClicked() {
   display: flex;
   gap: 1rem;
   flex-direction: column;
-}
-
-.compactBackground {
-  background-color: white;
-  transition: $mouse-hover-transition;
-}
-
-.compactBackground:hover {
-  background-color: $mouse-hover-color;
 }
 
 .standardStyle {
