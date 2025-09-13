@@ -39,11 +39,18 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import { useConversationData } from "src/composables/useConversationData";
-import { ref } from "vue";
+import { ref, onBeforeUnmount } from "vue";
+import { useNavigationStore } from "src/stores/navigation";
 
 const currentTab = ref<"comment" | "analysis">("comment");
 const { conversationData, hasConversationData, refreshConversation } =
   useConversationData();
+const navigationStore = useNavigationStore();
+
+// Clear conversation creation context when leaving this page
+onBeforeUnmount(() => {
+  navigationStore.clearConversationCreationContext();
+});
 </script>
 
 <style scoped lang="scss"></style>

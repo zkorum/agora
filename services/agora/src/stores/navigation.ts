@@ -9,6 +9,7 @@ export const useNavigationStore = defineStore("navigation", () => {
 
   const showMobileDrawer = ref(false);
   const drawerBehavior = ref<"desktop" | "mobile">("mobile");
+  const cameFromConversationCreation = ref(false);
 
   onMounted(() => {
     updateDrawers();
@@ -28,5 +29,19 @@ export const useNavigationStore = defineStore("navigation", () => {
     }
   }
 
-  return { showMobileDrawer, drawerBehavior };
+  function setConversationCreationContext(value: boolean) {
+    cameFromConversationCreation.value = value;
+  }
+
+  function clearConversationCreationContext() {
+    cameFromConversationCreation.value = false;
+  }
+
+  return {
+    showMobileDrawer,
+    drawerBehavior,
+    cameFromConversationCreation,
+    setConversationCreationContext,
+    clearConversationCreationContext,
+  };
 });
