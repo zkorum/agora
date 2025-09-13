@@ -37,6 +37,7 @@
 
         <template v-if="Object.keys(props.clusters).length > 1">
           <OpinionGroupSelector
+            v-if="drawerBehavior == 'desktop'"
             :cluster-metadata-list="props.clusters"
             :selected-cluster-key="currentClusterTab"
             @changed-cluster-key="currentClusterTab = $event"
@@ -73,6 +74,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import { computed, ref } from "vue";
+import { storeToRefs } from "pinia";
 import ClusterVisualization from "./ClusterVisualization.vue";
 import OpinionGroupSelector from "./OpinionGroupSelector.vue";
 import GroupConsensusSummary from "./GroupConsensusSummary.vue";
@@ -88,6 +90,7 @@ import {
 import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useNavigationStore } from "src/stores/navigation";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -98,6 +101,8 @@ const props = defineProps<{
 const { t } = useComponentI18n<OpinionGroupTabTranslations>(
   opinionGroupTabTranslations
 );
+
+const { drawerBehavior } = storeToRefs(useNavigationStore());
 
 const hasUngroupedParticipants = computed(() => {
   if (Object.keys(props.clusters).length === 0) {

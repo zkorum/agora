@@ -372,6 +372,7 @@ watch(
   position: relative;
   width: 100%;
   padding: 40%;
+  margin-bottom: 1rem;
 }
 
 .imageStyle {
