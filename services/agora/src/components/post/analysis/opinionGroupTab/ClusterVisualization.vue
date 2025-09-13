@@ -128,15 +128,15 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 2,
     imgList: [
       {
-        clusterWidthPercent: 40,
-        top: 15,
-        left: 6,
+        clusterWidthPercent: 45,
+        top: 10,
+        left: 2,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 40,
-        top: 27,
-        left: 48,
+        clusterWidthPercent: 45,
+        top: 15,
+        left: 50,
         isSelected: false,
       },
     ],
@@ -145,20 +145,20 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 3,
     imgList: [
       {
-        clusterWidthPercent: 35,
-        top: 7,
-        left: 30,
+        clusterWidthPercent: 45,
+        top: 5,
+        left: 28,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 35,
-        top: 45,
-        left: 15,
+        clusterWidthPercent: 45,
+        top: 42,
+        left: 4,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 35,
-        top: 51,
+        clusterWidthPercent: 45,
+        top: 50,
         left: 52,
         isSelected: false,
       },
@@ -168,27 +168,27 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 4,
     imgList: [
       {
-        clusterWidthPercent: 30,
-        top: 10,
-        left: 15,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 30,
+        clusterWidthPercent: 40,
         top: 5,
-        left: 44,
+        left: 8,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 55,
-        left: 13,
+        clusterWidthPercent: 40,
+        top: 2,
+        left: 52,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 30,
-        top: 51,
-        left: 42,
+        clusterWidthPercent: 40,
+        top: 52,
+        left: 5,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 40,
+        top: 50,
+        left: 48,
         isSelected: false,
       },
     ],
@@ -197,33 +197,33 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 5,
     imgList: [
       {
-        clusterWidthPercent: 30,
-        top: 1,
-        left: 14,
+        clusterWidthPercent: 40,
+        top: 8,
+        left: 10,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 40,
+        top: 12,
+        left: 52,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 7,
-        left: 42,
+        top: 50,
+        left: 5,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 41,
-        left: 4,
+        top: 55,
+        left: 35,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 41,
-        left: 29,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 30,
-        top: 43,
-        left: 58,
+        top: 55,
+        left: 65,
         isSelected: false,
       },
     ],
@@ -232,38 +232,38 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 6,
     imgList: [
       {
-        clusterWidthPercent: 28,
-        top: 6,
-        left: 14,
-        isSelected: false,
-      },
-      {
         clusterWidthPercent: 35,
-        top: 6,
-        left: 42,
+        top: 5,
+        left: 10,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 23,
-        top: 37,
-        left: 13,
+        clusterWidthPercent: 40,
+        top: 8,
+        left: 45,
         isSelected: false,
       },
       {
         clusterWidthPercent: 30,
-        top: 32,
-        left: 33,
-        isSelected: false,
-      },
-      {
-        clusterWidthPercent: 23,
-        top: 45,
-        left: 65,
+        top: 35,
+        left: 5,
         isSelected: false,
       },
       {
         clusterWidthPercent: 35,
-        top: 75,
+        top: 35,
+        left: 32,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 30,
+        top: 40,
+        left: 70,
+        isSelected: false,
+      },
+      {
+        clusterWidthPercent: 40,
+        top: 73,
         left: 30,
         isSelected: false,
       },
@@ -384,7 +384,7 @@ watch(
 .container {
   position: relative;
   width: 100%;
-  padding: 30%;
+  padding: 40%;
   margin-bottom: 2rem;
 }
 
