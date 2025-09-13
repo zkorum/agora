@@ -20,7 +20,6 @@ interface ZKHoverEffectProps {
   backgroundColor?: string;
   hoverBackgroundColor?: string;
   cursor?: "pointer" | "default";
-  transition?: string;
   borderRadius?: string;
 }
 
@@ -28,7 +27,6 @@ const props = withDefaults(defineProps<ZKHoverEffectProps>(), {
   cursor: "pointer",
   backgroundColor: undefined,
   hoverBackgroundColor: "#e2e8f0", // $mouse-hover-color
-  transition: "background-color 0.3s ease", // $mouse-hover-transition
   borderRadius: undefined,
 });
 
@@ -36,7 +34,7 @@ const transitionStyles = computed(() => {
   const styles: Record<string, string> = {};
 
   if (props.enableHover) {
-    styles.transition = props.transition;
+    styles.transition = "background-color 0.2s ease"; // $mouse-hover-transition
   }
 
   return styles;
