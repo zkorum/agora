@@ -36,7 +36,11 @@
               :key="notificationItem.slugId"
               @click="redirectPage(notificationItem.routeTarget)"
             >
-              <ZKHoverEffect :enable-hover="true">
+              <ZKHoverEffect
+                :enable-hover="true"
+                background-color="white"
+                hover-background-color="#e2e8f0"
+              >
                 <div class="notificationItemBase">
                   <ZKIcon
                     :name="getIconFromNotificationType(notificationItem.type)"
@@ -191,12 +195,6 @@ async function redirectPage(routeTarget: RouteTarget) {
   display: flex;
   gap: 0.5rem;
   padding: $container-padding;
-  background-color: white;
-  transition: $mouse-hover-transition;
-}
-
-.notificationItemBase:hover {
-  background-color: $mouse-hover-color;
 }
 
 .notificationRightPortion {

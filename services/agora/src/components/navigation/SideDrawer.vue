@@ -37,7 +37,11 @@
                 )
               "
             >
-              <ZKHoverEffect :enable-hover="true">
+              <ZKHoverEffect
+                :enable-hover="true"
+                hover-background-color="#f3f4f6"
+                border-radius="15px"
+              >
                 <div
                   class="settingItemStyle"
                   :class="{
@@ -242,13 +246,8 @@ function handleAuthenticatedRouteClick(
   padding-right: 1rem;
   padding-top: 0.8rem;
   padding-bottom: 0.8rem;
-  border-radius: 15px;
   font-size: 1rem;
   height: 3.5rem;
-}
-
-.settingItemStyle:hover {
-  background-color: #f3f4f6;
 }
 
 .usernameBar {
