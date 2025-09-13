@@ -3,17 +3,26 @@
 @font-face {
   font-family: AlbertSans;
   font-style: normal;
-  src: url("./fonts/Albert_Sans/AlbertSans-VariableFont_wght.ttf");
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/Albert_Sans/AlbertSans-VariableFont_wght.ttf")
+    format("truetype-variations");
 }
 @font-face {
   font-family: AlbertSans;
   font-style: italic;
-  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf");
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf")
+    format("truetype-variations");
 }
 @font-face {
   font-family: AlbertSans;
   font-style: oblique;
-  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf");
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf")
+    format("truetype-variations");
 }
 
 body {
@@ -32,6 +41,7 @@ body {
     "Segoe UI Symbol",
     sans-serif;
   font-optical-sizing: auto;
+  font-synthesis: none;
   font-size: 0.9rem;
   background-color: $app-background-color;
   color: rgb(24, 28, 31);
