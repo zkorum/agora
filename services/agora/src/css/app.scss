@@ -25,6 +25,26 @@
     format("truetype-variations");
 }
 
+/* CSS Custom Properties for responsive font weights */
+:root {
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+}
+
+/* Mobile-optimized font weights */
+@media screen and (max-width: 768px) {
+  :root {
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 600; /* Reduced from 700 for mobile */
+    --font-weight-heavy: 650; /* Reduced from 800 for mobile */
+  }
+}
+
 body {
   /* inspiration from existing apps for the fallback list */
   font-family:

@@ -357,7 +357,7 @@ watch(
 
 .wordCountWarning {
   color: $negative;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .bodySizeWarningIcon {

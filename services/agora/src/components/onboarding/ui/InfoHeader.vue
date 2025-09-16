@@ -38,6 +38,6 @@ defineProps<{
 
 .title {
   font-size: 1.2rem;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 </style>

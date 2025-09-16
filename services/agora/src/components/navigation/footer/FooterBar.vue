@@ -148,7 +148,7 @@ function handleNavigationClick(
   flex-direction: column;
   align-items: center;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .container {
