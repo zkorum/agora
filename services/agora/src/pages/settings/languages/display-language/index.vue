@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("pageTitle") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -60,7 +52,7 @@
 
 <script setup lang="ts">
 import type { ComputedRef } from "vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";

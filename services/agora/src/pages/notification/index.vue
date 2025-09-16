@@ -9,17 +9,11 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="false"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="true"
-        :fixed-height="true"
-      >
-        <template #middle>
+      <HomeMenuBar>
+        <template #center>
           <div>{{ t("notifications") }}</div>
         </template>
-      </DefaultMenuBar>
+      </HomeMenuBar>
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
@@ -101,7 +95,7 @@ import { useNotificationStore } from "src/stores/notification";
 import { useBackendNotificationApi } from "src/utils/api/notification";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useComponentI18n } from "src/composables/useComponentI18n";

@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle> {{ topicCode }} </template>
-      </DefaultMenuBar>
+      <EntityMenuBar :entity-name="topicCode" :show-back="true" />
     </template>
 
     <WidthWrapper :enable="true"> {{ t("loadPostsHere") }} </WidthWrapper>
@@ -25,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { EntityMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { onMounted, ref } from "vue";

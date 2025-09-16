@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle> {{ t("privacyPolicy") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('privacyPolicy')" :center-content="true" />
     </template>
 
     <div>
@@ -34,7 +26,7 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/useComponentI18n";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import {
   privacyPolicyTranslations,

@@ -9,14 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-      </DefaultMenuBar>
+      <StandardMenuBar :title="''" :center-content="false" />
     </template>
 
     <q-pull-to-refresh @refresh="refreshConversation">
@@ -34,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
