@@ -16,14 +16,6 @@
   src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf")
     format("truetype-variations");
 }
-@font-face {
-  font-family: AlbertSans;
-  font-style: oblique;
-  font-display: swap;
-  font-weight: 100 900;
-  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf")
-    format("truetype-variations");
-}
 
 /* CSS Custom Properties for responsive font weights */
 :root {
@@ -111,8 +103,8 @@ html {
   strong,
   b,
   .font-bold {
-    font-weight: 600;
-    -webkit-font-smoothing: subpixel-antialiased;
+    font-weight: var(--font-weight-bold);
+    -webkit-font-smoothing: antialiased;
   }
 
   /* Mobile heading optimizations */
