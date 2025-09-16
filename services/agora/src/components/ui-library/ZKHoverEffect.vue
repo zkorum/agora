@@ -5,15 +5,18 @@
       backgroundHoverEffect: enableHover && hoverBackgroundColor,
       baseBackgroundEffect: backgroundColor,
       borderRadiusEffect: borderRadius,
+      touchInteractionEffect: enableHover,
     }"
-    :style="transitionStyles"
+    :style="optimizedTransitionStyles"
+    @touchstart="handleTouchStart"
+    @touchend="handleTouchEnd"
   >
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 interface ZKHoverEffectProps {
   enableHover: boolean;
@@ -30,15 +33,33 @@ const props = withDefaults(defineProps<ZKHoverEffectProps>(), {
   borderRadius: undefined,
 });
 
-const transitionStyles = computed(() => {
-  const styles: Record<string, string> = {};
+// Touch interaction state
+const isTouchPressed = ref<boolean>(false);
 
-  if (props.enableHover) {
-    styles.transition = "background-color 0.2s ease"; // $mouse-hover-transition
+// Optimized computed property with proper TypeScript typing for Vue StyleValue
+const optimizedTransitionStyles = computed(() => {
+  // Only compute when enableHover changes - prevents unnecessary re-renders
+  if (!props.enableHover) {
+    return {};
   }
 
-  return styles;
+  return {
+    transition: "background-color 0.2s ease", // $mouse-hover-transition
+  };
 });
+
+// Touch interaction handlers for mobile devices
+const handleTouchStart = (): void => {
+  if (props.enableHover) {
+    isTouchPressed.value = true;
+  }
+};
+
+const handleTouchEnd = (): void => {
+  if (props.enableHover) {
+    isTouchPressed.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -50,6 +71,19 @@ const transitionStyles = computed(() => {
   border-radius: v-bind("props.borderRadius");
 }
 
+/* Touch interaction optimization for mobile devices */
+.touchInteractionEffect {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Touch active state for visual feedback */
+.touchInteractionEffect:active {
+  background-color: v-bind("props.hoverBackgroundColor");
+  cursor: v-bind("props.cursor");
+}
+
 @media (hover: hover) and (pointer: fine) {
   .desktopHoverEffect:hover {
     cursor: v-bind("props.cursor");
@@ -58,5 +92,15 @@ const transitionStyles = computed(() => {
   .backgroundHoverEffect:hover {
     background-color: v-bind("props.hoverBackgroundColor");
   }
+}
+
+.desktopHoverEffect:focus,
+.desktopHoverEffect:focus-visible {
+  cursor: v-bind("props.cursor");
+}
+
+.backgroundHoverEffect:focus,
+.backgroundHoverEffect:focus-visible {
+  background-color: v-bind("props.hoverBackgroundColor");
 }
 </style>
