@@ -1,9 +1,9 @@
 <template>
-  <NavigationButton icon="ci:chevron-left" aria-label="Go back" />
+  <ZKNavigationButton icon="ci:chevron-left" aria-label="Go back" />
 </template>
 
 <script setup lang="ts">
-import NavigationButton from "src/components/ui-library/NavigationButton.vue";
+import ZKNavigationButton from "src/components/ui-library/ZKNavigationButton.vue";
 </script>
 
 <style scoped></style>

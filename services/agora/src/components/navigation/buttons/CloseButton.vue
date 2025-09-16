@@ -1,9 +1,9 @@
 <template>
-  <NavigationButton icon="pi pi-times" aria-label="Close" />
+  <ZKNavigationButton icon="pi pi-times" aria-label="Close" />
 </template>
 
 <script setup lang="ts">
-import NavigationButton from "src/components/ui-library/NavigationButton.vue";
+import ZKNavigationButton from "src/components/ui-library/ZKNavigationButton.vue";
 </script>
 
 <style scoped></style>

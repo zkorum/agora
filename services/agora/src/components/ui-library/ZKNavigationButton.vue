@@ -1,6 +1,6 @@
 <template>
   <button
-    class="navigation-button"
+    class="zk-navigation-button"
     :disabled="disabled"
     v-bind="$attrs"
     @click="handleClick"
@@ -59,7 +59,7 @@ function handleTouchEnd(event: TouchEvent) {
 <style scoped lang="scss">
 @import "src/css/hover-effects";
 
-.navigation-button {
+.zk-navigation-button {
   // Reset default button styles
   border: none;
   background: none;
