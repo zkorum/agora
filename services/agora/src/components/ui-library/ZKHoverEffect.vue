@@ -29,7 +29,7 @@ interface ZKHoverEffectProps {
 const props = withDefaults(defineProps<ZKHoverEffectProps>(), {
   cursor: "pointer",
   backgroundColor: undefined,
-  hoverBackgroundColor: "#e2e8f0", // $mouse-hover-color
+  hoverBackgroundColor: "#e2e8f0", // $hover-background-color
   borderRadius: undefined,
 });
 

@@ -54,7 +54,7 @@ $button-background-color: #e7e7ff;
 $app-background-color: #f6f5f8;
 
 $mouse-hover-color: #e2e8f0;
-$mouse-hover-transition: background-color 0.3s ease;
+$mouse-hover-transition: background-color 0.2s ease;
 
 $feed-flex-gap: 0.5rem;
 
@@ -88,3 +88,6 @@ $feed-flex-gap: 0.5rem;
 
 $gradient-hero: linear-gradient(#6b4eff, #4f92f6);
 $container-padding: 1.5rem;
+
+// Import hover effects styles to make mixins available globally
+@import "./hover-effects";

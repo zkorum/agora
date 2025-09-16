@@ -1,0 +1,66 @@
+// Hover Effects and Interaction States
+// Extracted from ZKHoverEffect.vue and unified across all components
+
+// Base hover effect colors
+$hover-background-color: #e2e8f0; // Same as $mouse-hover-color
+$selected-background-color: rgba(25, 118, 210, 0.12);
+$selected-hover-background-color: rgba(25, 118, 210, 0.16);
+
+// Hover effect timing (standardized to ZKHoverEffect's 0.2s)
+$hover-transition: background-color 0.2s ease;
+
+// Touch interaction mixin for mobile optimization
+@mixin touch-interaction-optimizations {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+// Unified hover effects mixin
+@mixin hover-effects(
+  $normal-color: $hover-background-color,
+  $selected-color: null
+) {
+  transition: $hover-transition;
+  @include touch-interaction-optimizations;
+
+  // Touch active state for mobile devices
+  &:active {
+    background-color: $normal-color;
+  }
+
+  // Desktop hover with proper media query to avoid issues on touch devices
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: $normal-color;
+    }
+  }
+
+  // Focus states for accessibility
+  &:focus,
+  &:focus-visible {
+    background-color: $normal-color;
+  }
+
+  // Selected state with hover if provided
+  @if $selected-color {
+    &.selected {
+      background-color: $selected-background-color;
+
+      &:active {
+        background-color: $selected-color;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          background-color: $selected-color;
+        }
+      }
+
+      &:focus,
+      &:focus-visible {
+        background-color: $selected-color;
+      }
+    }
+  }
+}

@@ -60,21 +60,10 @@ function selectOption(option: OptionItem): void {
   border-radius: 8px;
   cursor: pointer;
   border: 1px solid transparent;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.option-item:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.option-item.selected {
-  background-color: rgba(25, 118, 210, 0.12);
-
-  &:hover {
-    background-color: rgba(25, 118, 210, 0.16);
-  }
+  @include hover-effects(
+    $hover-background-color,
+    $selected-hover-background-color
+  );
 }
 
 .option-header {
