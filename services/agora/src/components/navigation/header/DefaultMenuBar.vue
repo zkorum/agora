@@ -24,15 +24,14 @@
                 />
               </div>
 
-              <ZKButton
+              <ZKIconButton
                 v-if="
                   !isGuestOrLoggedIn &&
                   !isCapacitor &&
                   drawerBehavior == 'mobile'
                 "
-                button-type="standardButton"
                 icon="mdi-menu"
-                text-color="black"
+                icon-color="black"
                 @click="menuButtonClicked()"
               />
             </div>
@@ -76,6 +75,7 @@
 
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import BackButton from "../buttons/BackButton.vue";
 import { type DefaultMenuBarProps } from "src/utils/model/props";
 import TopMenuWrapper from "./TopMenuWrapper.vue";

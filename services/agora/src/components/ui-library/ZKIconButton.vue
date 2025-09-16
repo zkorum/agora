@@ -1,25 +1,28 @@
 <template>
   <button
-    class="zk-navigation-button"
+    class="zk-icon-button"
     :disabled="disabled"
     v-bind="$attrs"
     @click="handleClick"
     @touchend="handleTouchEnd"
   >
-    <ZKIcon :name="icon" size="1.2rem" color="7D7A85" />
+    <ZKIcon :name="icon" :size="iconSize" :color="iconColor" />
   </button>
 </template>
 
 <script setup lang="ts">
 import ZKIcon from "./ZKIcon.vue";
-import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 
 interface Props {
   icon: string;
+  iconSize?: string;
+  iconColor?: string;
   disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  iconSize: "1.2rem",
+  iconColor: "7D7A85",
   disabled: false,
 });
 
@@ -31,18 +34,9 @@ const emit = defineEmits<{
   click: [event: MouseEvent];
 }>();
 
-const goBackButtonHandler = useGoBackButtonHandler();
-
-async function handleClick(event: MouseEvent) {
+function handleClick(event: MouseEvent) {
   if (props.disabled) return;
-
-  // Emit click event for custom handlers
   emit("click", event);
-
-  // If no custom handler prevented default, use navigation handler
-  if (!event.defaultPrevented) {
-    await goBackButtonHandler.safeNavigateBack();
-  }
 }
 
 function handleTouchEnd(event: TouchEvent) {
@@ -59,14 +53,14 @@ function handleTouchEnd(event: TouchEvent) {
 <style scoped lang="scss">
 @import "src/css/hover-effects";
 
-.zk-navigation-button {
+.zk-icon-button {
   // Reset default button styles
   border: none;
   background: none;
   cursor: pointer;
   outline: none;
 
-  // Apply navigation button styling
+  // Apply icon button styling
   padding: 0.6rem 0.8rem;
   border-radius: 16px;
   color: $color-text-strong;
