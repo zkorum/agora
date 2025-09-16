@@ -9,14 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-      </DefaultMenuBar>
+      <StandardMenuBar :title="''" :center-content="false" />
     </template>
 
     <div class="container">
@@ -81,7 +74,7 @@ import {
 } from "src/utils/component/moderations";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   opinionModerationTranslations,

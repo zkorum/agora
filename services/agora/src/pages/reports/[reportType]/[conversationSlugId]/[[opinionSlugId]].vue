@@ -9,14 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-      </DefaultMenuBar>
+      <StandardMenuBar :title="''" :center-content="false" />
     </template>
 
     <div class="container">
@@ -77,7 +70,7 @@ import type { UserReportItem } from "src/shared/types/zod";
 import { useTimeAgo } from "@vueuse/core";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   userReportsViewerTranslations,

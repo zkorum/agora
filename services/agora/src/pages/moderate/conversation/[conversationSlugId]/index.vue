@@ -9,14 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-      </DefaultMenuBar>
+      <StandardMenuBar :title="''" :center-content="false" />
     </template>
 
     <div class="container">
@@ -92,7 +85,7 @@ import {
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import {
   conversationModerationTranslations,

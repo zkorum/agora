@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("pageTitle") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -27,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SpokenLanguageSelector from "src/components/language/SpokenLanguageSelector.vue";
 import { useComponentI18n } from "src/composables/useComponentI18n";

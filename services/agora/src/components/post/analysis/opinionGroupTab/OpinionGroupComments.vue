@@ -204,7 +204,7 @@ const navigateToNextMode = toggleNextMode;
 
 .title {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   margin: 0;
   color: #434149;
 }
@@ -223,7 +223,7 @@ const navigateToNextMode = toggleNextMode;
 
 .group-name {
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .no-comments {

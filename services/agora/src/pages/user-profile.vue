@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle> {{ t("userProfile") }} </template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('userProfile')" :center-content="true" />
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
@@ -71,7 +63,7 @@ import { useRoute, useRouter } from "vue-router";
 import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import type { RouteRecordName } from "vue-router";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";

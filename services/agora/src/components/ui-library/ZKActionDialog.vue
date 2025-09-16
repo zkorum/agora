@@ -105,7 +105,7 @@ watch(showDialog, (newValue) => {
   .dialog-title {
     margin: 0 0 0.5rem 0;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     color: $color-text-strong;
   }
 
@@ -130,13 +130,7 @@ watch(showDialog, (newValue) => {
   border-radius: 8px;
   cursor: pointer;
   border: 1px solid transparent;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+  @include hover-effects($hover-background-color);
 }
 
 .action-warning {
@@ -169,7 +163,7 @@ watch(showDialog, (newValue) => {
 
 .action-label {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: $color-text-strong;
   margin-bottom: 0.25rem;
 }

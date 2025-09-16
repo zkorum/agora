@@ -44,7 +44,7 @@ const handleClick = () => {
   cursor: pointer;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #6d6a74;
   border-radius: 4px;
   transition: background-color 0.2s;

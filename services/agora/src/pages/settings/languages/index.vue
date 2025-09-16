@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("pageTitle") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -46,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
@@ -127,7 +119,7 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
 
 .section-title {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: #1f2937;
 }
 

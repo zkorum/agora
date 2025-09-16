@@ -36,7 +36,7 @@ defineEmits<{
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   font-size: 1rem;
   background: #6b4eff;
   background-color: #e7e7ff;

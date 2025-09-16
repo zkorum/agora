@@ -9,15 +9,9 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="false"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="true"
-        :fixed-height="true"
-      >
-        <template #middle> {{ t("exploreTopics") }} </template>
-      </DefaultMenuBar>
+      <HomeMenuBar>
+        <template #center>{{ t("exploreTopics") }}</template>
+      </HomeMenuBar>
     </template>
 
     <div class="topicContainer">
@@ -58,7 +52,7 @@
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { HomeMenuBar } from "src/components/navigation/header/variants";
 import FollowButton from "src/components/features/topics/FollowButton.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -114,7 +108,7 @@ async function clickedFollowButton(
 }
 
 .generalStyle {
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   font-size: 1rem;
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;

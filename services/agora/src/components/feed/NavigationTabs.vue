@@ -27,7 +27,7 @@ defineProps<{
   padding-right: 0.5rem;
   padding-top: 0.3rem;
   padding-bottom: 0.3rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #7d7a85;
   user-select: none;
 }

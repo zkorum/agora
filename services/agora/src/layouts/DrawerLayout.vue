@@ -5,14 +5,14 @@
         :reveal="enableHeaderReveal"
         :model-value="props.generalProps.enableHeader"
         class="headerStyle"
-        @reveal="captureHeaderReval"
+        @reveal="captureHeaderReveal"
       >
         <slot name="header"></slot>
       </q-header>
 
       <q-footer
         v-if="drawerBehavior == 'mobile' && props.generalProps.enableFooter"
-        v-model="revealHeader"
+        :reveal="revealHeader"
         class="footerBackground"
       >
         <FooterBar />
@@ -35,10 +35,8 @@
 
       <q-drawer
         v-model="showMobileDrawer"
-        show-if-above
         :behavior="drawerBehavior"
         :width="300"
-        :breakpoint="700"
         :overlay="drawerBehavior == 'mobile'"
         :no-swipe-open="noSwipeOpen"
         bordered
@@ -76,7 +74,7 @@ setTimeout(() => {
   enableHeaderReveal.value = true;
 }, 500);
 
-function captureHeaderReval(reveal: boolean) {
+function captureHeaderReveal(reveal: boolean) {
   if (drawerBehavior.value == "mobile") {
     revealHeader.value = reveal;
   }

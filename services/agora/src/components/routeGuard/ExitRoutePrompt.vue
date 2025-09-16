@@ -39,6 +39,6 @@ const { t } = useComponentI18n<ExitRoutePromptTranslations>(
 <style lang="scss" scoped>
 .dialogTitle {
   font-size: 1.4rem;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 </style>

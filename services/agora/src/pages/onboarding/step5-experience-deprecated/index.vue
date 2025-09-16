@@ -93,7 +93,7 @@ function selectedOption(option: "safe-space" | "brave-space") {
 <style scoped lang="scss">
 .optionTitle {
   font-size: 1.2rem;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .optionWrapper {

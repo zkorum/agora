@@ -104,19 +104,14 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
   gap: 1rem;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
   min-height: 56px;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+  @include hover-effects(
+    $hover-background-color,
+    $selected-hover-background-color
+  );
 
   &--selected {
-    background-color: rgba(25, 118, 210, 0.12);
-
-    &:hover {
-      background-color: rgba(25, 118, 210, 0.16);
-    }
+    @extend .selected;
   }
 }
 
@@ -127,7 +122,7 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
 
 .account-name {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;

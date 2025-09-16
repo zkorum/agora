@@ -137,7 +137,7 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 }
 
 .titleStyle {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .buttonGrid {
@@ -149,7 +149,7 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
 }
 
 .buttonItem {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   display: flex;
   align-items: center;
   line-height: normal;

@@ -337,7 +337,7 @@ watch(
 <style scoped lang="scss">
 .title-style {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
@@ -357,7 +357,7 @@ watch(
 
 .wordCountWarning {
   color: $negative;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .bodySizeWarningIcon {
@@ -412,6 +412,6 @@ watch(
 }
 
 .large-text-input :deep(.q-field__native) {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 </style>

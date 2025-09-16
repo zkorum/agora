@@ -6,11 +6,15 @@
           v-for="commentItem in profileData.userCommentList"
           :key="commentItem.opinionItem.opinionSlugId"
         >
-          <ZKHoverEffect :enable-hover="true">
+          <ZKHoverEffect
+            :enable-hover="true"
+            background-color="white"
+            hover-background-color="#e2e8f0"
+          >
             <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
             <!-- Comment item click areas should be keyboard navigable for users with motor disabilities -->
             <div
-              class="commentItemStyle hoverColor"
+              class="commentItemStyle"
               @click="
                 openComment(
                   commentItem.conversationData.metadata.conversationSlugId,
@@ -117,7 +121,7 @@ async function commentDeleted() {
   white-space: nowrap;
   overflow: hidden;
   font-size: 1.2rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .container {
@@ -131,7 +135,6 @@ async function commentDeleted() {
   flex-direction: column;
   gap: 1rem;
   padding: $container-padding;
-  background-color: white;
 }
 
 .topRowFlex {
@@ -143,13 +146,5 @@ async function commentDeleted() {
 .emptyMessage {
   padding: 2rem;
   text-align: center;
-}
-
-.hoverColor {
-  transition: $mouse-hover-transition;
-}
-
-.hoverColor:hover {
-  background-color: $mouse-hover-color;
 }
 </style>

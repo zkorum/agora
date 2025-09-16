@@ -9,21 +9,15 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-menu-button="true"
-        :has-back-button="false"
-        :has-close-button="false"
-        :has-login-button="true"
-        :fixed-height="false"
-      >
-        <template #middle>
+      <HomeMenuBar>
+        <template #center>
           <img
             v-if="drawerBehavior == 'mobile'"
             :src="agoraLogo"
             class="agoraLogoStyle"
           />
         </template>
-      </DefaultMenuBar>
+      </HomeMenuBar>
 
       <WidthWrapper :enable="true">
         <div class="tabCluster">
@@ -59,7 +53,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { HomeMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
@@ -103,7 +97,7 @@ function selectedTab(tab: HomeFeedSortOption) {
   flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   font-size: 1rem;
   padding-bottom: 0.8rem;
 }

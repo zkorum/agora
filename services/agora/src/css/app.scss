@@ -3,17 +3,38 @@
 @font-face {
   font-family: AlbertSans;
   font-style: normal;
-  src: url("./fonts/Albert_Sans/AlbertSans-VariableFont_wght.ttf");
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/Albert_Sans/AlbertSans-VariableFont_wght.ttf")
+    format("truetype-variations");
 }
 @font-face {
   font-family: AlbertSans;
   font-style: italic;
-  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf");
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf")
+    format("truetype-variations");
 }
-@font-face {
-  font-family: AlbertSans;
-  font-style: oblique;
-  src: url("./fonts/Albert_Sans/AlbertSans-Italic-VariableFont_wght.ttf");
+
+/* CSS Custom Properties for responsive font weights */
+:root {
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+}
+
+/* Mobile-optimized font weights */
+@media screen and (max-width: 768px) {
+  :root {
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 600; /* Reduced from 700 for mobile */
+    --font-weight-heavy: 650; /* Reduced from 800 for mobile */
+  }
 }
 
 body {
@@ -32,10 +53,23 @@ body {
     "Segoe UI Symbol",
     sans-serif;
   font-optical-sizing: auto;
+  font-synthesis: none;
   font-size: 0.9rem;
   background-color: $app-background-color;
   color: rgb(24, 28, 31);
   line-height: normal;
+
+  /* Mobile-specific font optimizations */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1;
+  font-variant-ligatures: common-ligatures;
 }
 
 a {
@@ -45,4 +79,56 @@ a {
 html {
   overscroll-behavior: none;
   overflow-y: scroll;
+}
+
+/* Mobile-specific font optimizations */
+@media screen and (max-width: 768px) {
+  body {
+    /* Enhanced mobile font rendering */
+    font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+
+    /* Mobile WebKit optimizations */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+
+    /* Improved text selection on mobile */
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+  }
+
+  /* Mobile-specific font weight optimization */
+  strong,
+  b,
+  .font-bold {
+    font-weight: var(--font-weight-bold);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mobile heading optimizations */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1,
+      "calt" 1;
+  }
+
+  /* Mobile button text optimization */
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 }

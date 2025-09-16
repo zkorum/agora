@@ -11,9 +11,6 @@ export interface GeneralProps {
 }
 
 export interface DefaultMenuBarProps {
-  hasMenuButton: boolean;
-  hasLoginButton: boolean;
-  hasBackButton: boolean;
-  hasCloseButton: boolean;
-  fixedHeight: boolean;
+  centerContent?: boolean; // Forces perfect visual centering
+  clickToScrollTop?: boolean; // Default: true
 }

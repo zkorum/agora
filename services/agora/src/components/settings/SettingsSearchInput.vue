@@ -88,14 +88,14 @@ defineExpose({
     outline: none;
     background: transparent;
     font-size: 16px;
-    font-weight: 400;
+    font-weight: var(--font-weight-normal);
     color: #1a1a1a;
     line-height: 1.4;
     box-shadow: none;
 
     &::placeholder {
       color: #666;
-      font-weight: 400;
+      font-weight: var(--font-weight-normal);
     }
 
     &:focus {

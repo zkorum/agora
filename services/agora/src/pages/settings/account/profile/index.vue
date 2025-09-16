@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("pageTitle") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -34,7 +26,7 @@
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/useComponentI18n";
 import UsernameChange from "src/components/account/UsernameChange.vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -53,7 +45,7 @@ const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 <style scoped lang="scss">
 .titleStyle {
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   padding-bottom: 1rem;
 }
 

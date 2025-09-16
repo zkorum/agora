@@ -152,7 +152,7 @@ defineExpose({
 
 .title {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
 }
 
@@ -170,7 +170,7 @@ defineExpose({
 
 .examples-title {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
   margin: 0 0 0.5rem 0;
 }
@@ -211,7 +211,7 @@ defineExpose({
 .terms-link {
   color: #1976d2;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 
   &:hover {
     text-decoration: underline;

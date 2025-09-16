@@ -84,7 +84,7 @@ const showInformationDialog = ref(false);
 
 .titleString {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .messageBody {
@@ -94,7 +94,7 @@ const showInformationDialog = ref(false);
 }
 
 .titleStyle {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   font-size: 1.1rem;
 }
 </style>

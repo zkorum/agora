@@ -101,7 +101,7 @@ watch(showDialog, (newValue) => {
   .dialog-title {
     margin: 0 0 1rem 0;
     font-size: 1.1rem;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     color: $color-text-strong;
   }
 

@@ -1,6 +1,5 @@
 export interface DefaultMenuBarTranslations {
   logIn: string;
-  [key: string]: string;
 }
 
 export const defaultMenuBarTranslations: Record<

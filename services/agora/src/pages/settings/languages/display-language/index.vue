@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("pageTitle") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -60,7 +52,7 @@
 
 <script setup lang="ts">
 import type { ComputedRef } from "vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
@@ -152,7 +144,7 @@ onMounted(async () => {
 
 .language-name {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #1a1a1a;
   line-height: 1.4;
 }
@@ -161,7 +153,7 @@ onMounted(async () => {
   font-size: 14px;
   color: #666;
   line-height: 1.3;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
 }
 
 .checkmark-container {

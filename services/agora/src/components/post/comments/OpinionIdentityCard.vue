@@ -46,6 +46,6 @@ defineProps<{
 
 .seed-label {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 </style>

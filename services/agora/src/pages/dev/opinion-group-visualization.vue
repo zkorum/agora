@@ -9,15 +9,10 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("opinionGroupVisualization") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar
+        :title="t('opinionGroupVisualization')"
+        :center-content="true"
+      />
     </template>
 
     <div class="container">
@@ -71,7 +66,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
 import { useComponentI18n } from "src/composables/useComponentI18n";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";
 import type {
@@ -196,7 +191,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 
   .section-icon {
     color: $primary;
@@ -217,7 +212,7 @@ onMounted(() => {
 }
 
 .control-label {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: $grey-9;
 }
 

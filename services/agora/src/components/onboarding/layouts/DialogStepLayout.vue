@@ -51,7 +51,7 @@ const { t } = useComponentI18n<DialogStepLayoutTranslations>(
 
 .title {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: #1a1a1a;
   padding-bottom: 1rem;
 }

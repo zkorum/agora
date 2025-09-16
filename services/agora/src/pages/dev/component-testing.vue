@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle>{{ t("componentTesting") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('componentTesting')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -72,7 +64,7 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/useComponentI18n";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
 import { useRouter } from "vue-router";
@@ -111,7 +103,7 @@ function navigateToVisualization(): void {
   align-items: center;
   gap: 0.5rem;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 
   .section-icon {
     color: $primary;

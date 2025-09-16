@@ -9,15 +9,7 @@
     }"
   >
     <template #header>
-      <DefaultMenuBar
-        :has-back-button="true"
-        :has-close-button="false"
-        :has-login-button="false"
-        :has-menu-button="false"
-        :fixed-height="true"
-      >
-        <template #middle> {{ t("administrator") }}</template>
-      </DefaultMenuBar>
+      <StandardMenuBar :title="t('administrator')" :center-content="true" />
     </template>
 
     <div class="container">
@@ -41,7 +33,7 @@ import { useComponentI18n } from "src/composables/useComponentI18n";
 import CreateOrganizationForm from "src/components/administrator/organization/CreateOrganizationForm.vue";
 import DeleteOrganizationForm from "src/components/administrator/organization/DeleteOrganizationForm.vue";
 import UserOrganizationMappings from "src/components/administrator/organization/UserOrganizationMappings.vue";
-import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import {
