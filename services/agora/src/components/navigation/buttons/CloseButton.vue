@@ -1,22 +1,9 @@
 <template>
-  <ZKButton
-    button-type="standardButton"
-    icon="mdi-close"
-    text-color="color-text-strong"
-    flat
-    @click="buttonClicked()"
-  />
+  <NavigationButton icon="pi pi-times" aria-label="Close" />
 </template>
 
 <script setup lang="ts">
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-
-const goBackButtonHandler = useGoBackButtonHandler();
-
-async function buttonClicked() {
-  await goBackButtonHandler.safeNavigateBack();
-}
+import NavigationButton from "src/components/ui-library/NavigationButton.vue";
 </script>
 
 <style scoped></style>
