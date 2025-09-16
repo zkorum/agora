@@ -95,7 +95,7 @@ const buttonStyles = computed(() => {
 
 .zk-gradient-button__label {
   font-style: normal;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   font-size: 0.95rem;
   display: flex;
   align-items: center;

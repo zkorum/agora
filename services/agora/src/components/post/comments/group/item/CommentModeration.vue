@@ -93,7 +93,7 @@ const { t } = useComponentI18n<CommentModerationTranslations>(
 }
 
 .moderatedFont {
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   color: #6d6a74;
 }
 

@@ -34,7 +34,7 @@ const showDialog = defineModel<boolean>({ required: true });
 <style lang="scss" scoped>
 .title {
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   padding-bottom: 1rem;
 }
 </style>

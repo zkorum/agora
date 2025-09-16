@@ -126,7 +126,7 @@ function removeOption(index: number) {
 
 .poll-title-text {
   font-size: 1.25rem;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   color: $color-text-strong;
 }
 
@@ -158,7 +158,7 @@ function removeOption(index: number) {
 
 .option-label {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #666;
   margin-bottom: 0.25rem;
 }
@@ -233,7 +233,7 @@ function removeOption(index: number) {
 .add-option-button {
   border-radius: 16px !important;
   padding: 0.875rem 1.75rem !important;
-  font-weight: 500 !important;
+  font-weight: var(--font-weight-medium) !important;
   font-size: 1rem !important;
   border-color: $primary !important;
 

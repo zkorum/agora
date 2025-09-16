@@ -428,7 +428,7 @@ watch(
 }
 
 .clusterOverlayFontBold {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   text-align: center;
   margin-bottom: clamp(0.125rem, 0.5vw, 0.25rem);
 }
@@ -455,7 +455,7 @@ watch(
   justify-content: center;
   gap: clamp(0.25rem, 1vw, 0.5rem);
   color: #007bff;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   text-align: center;
   font-size: clamp(0.6rem, 2vw, 0.75rem);
   margin-top: clamp(0.125rem, 0.5vw, 0.25rem);

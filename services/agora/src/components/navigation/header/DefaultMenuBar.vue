@@ -107,11 +107,11 @@ const { t } = useComponentI18n<DefaultMenuBarTranslations>(
   defaultMenuBarTranslations
 );
 
-function menuButtonClicked() {
+function menuButtonClicked(): void {
   showMobileDrawer.value = !showMobileDrawer.value;
 }
 
-function scrollToTop() {
+function scrollToTop(): void {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 </script>
@@ -149,7 +149,7 @@ function scrollToTop() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   font-size: 1rem;
   color: black;
 }

@@ -62,7 +62,7 @@ defineProps<{
   align-items: center;
   justify-content: space-between;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   padding: 1rem;
   transition: background-color 0.3s ease;
@@ -129,12 +129,12 @@ defineProps<{
 
 .menu-item__label {
   font-size: clamp(1rem, 2.5vw, 1rem);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   line-height: 1.4;
 }
 
 .menu-item__value {
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   color: #6b7280;
   line-height: 1.3;
   font-size: clamp(1rem, 2vw, 0.875rem);

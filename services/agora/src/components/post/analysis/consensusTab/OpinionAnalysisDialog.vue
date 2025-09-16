@@ -272,7 +272,7 @@ async function viewOriginalComment() {
 
 .dialog-title {
   font-size: 1.5rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .dialog-content {
@@ -311,7 +311,7 @@ async function viewOriginalComment() {
 }
 
 .group-name {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   max-width: 40%;
 }
 
@@ -332,7 +332,7 @@ async function viewOriginalComment() {
 
 .view-original {
   color: #6d6a74;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   text-align: center;
   cursor: pointer;
   padding: 0.5rem;

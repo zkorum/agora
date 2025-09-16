@@ -31,6 +31,6 @@ const { t } = useComponentI18n<SignupAgreementTranslations>(
 .hrefLink > a {
   color: $primary;
   text-decoration: underline;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 </style>

@@ -300,7 +300,7 @@ defineExpose({
 
 .section-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: #1a1a1a;
   margin-bottom: 1rem;
   margin-left: 0.5rem;
@@ -333,7 +333,7 @@ defineExpose({
 
 .language-name {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #1a1a1a;
   line-height: 1.4;
 }
@@ -342,7 +342,7 @@ defineExpose({
   font-size: 14px;
   color: #666;
   line-height: 1.3;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
 }
 
 .action-container {

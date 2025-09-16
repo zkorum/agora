@@ -119,7 +119,7 @@ function confirmSelection(): void {
   h3 {
     margin: 0 0 0.5rem 0;
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     color: #1f2937;
   }
 
@@ -173,7 +173,7 @@ function confirmSelection(): void {
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
