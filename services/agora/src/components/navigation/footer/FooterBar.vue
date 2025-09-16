@@ -1,6 +1,10 @@
 <template>
   <div>
-    <div class="flexIcons container">
+    <nav
+      class="flexIcons container"
+      aria-label="Footer navigation"
+      role="navigation"
+    >
       <RouterLink
         v-for="iconItem in bottomIconList"
         :key="iconItem.name"
@@ -8,17 +12,25 @@
         :to="iconItem.route"
         custom
       >
-        <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-        <!-- Footer navigation items should be keyboard accessible for users with motor disabilities -->
-        <div
+        <button
           class="iconStyle navigation-link"
-          @click="handleNavigationClick($event, iconItem, navigate)"
+          :aria-label="`Navigate to ${iconItem.name}`"
+          :aria-current="route.name === iconItem.route ? 'page' : undefined"
+          @click="handleNavigationClick({ _event: $event, iconItem, navigate })"
+          @keydown.enter="
+            handleNavigationClick({ _event: $event, iconItem, navigate })
+          "
+          @keydown.space.prevent="
+            handleNavigationClick({ _event: $event, iconItem, navigate })
+          "
         >
           <div class="iconDiv">
             <NewNotificationIndicator
               v-if="iconItem.route === '/notification/'"
             />
             <ZKStyledIcon
+              class="icon-container"
+              :class="{ 'icon-active': route.name === iconItem.route }"
               :svg-string="
                 route.name === iconItem.route
                   ? iconItem.filled
@@ -27,19 +39,15 @@
             />
           </div>
 
-          <div
-            :style="{
-              color: route.name === iconItem.route ? '#6B4EFF' : '#7D7A85',
-            }"
-          >
-            <ZKStyledText
-              :text="iconItem.name"
-              :add-gradient="route.name === iconItem.route"
-            />
-          </div>
-        </div>
+          <ZKStyledText
+            class="icon-label"
+            :class="{ 'label-active': route.name === iconItem.route }"
+            :text="iconItem.name"
+            :add-gradient="route.name === iconItem.route"
+          />
+        </button>
       </RouterLink>
-    </div>
+    </nav>
 
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
@@ -88,7 +96,7 @@ const notificationIconFilled =
 const exploreIconStandard =
   '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M20.0002 20.0002L15.6572 15.6572M15.6572 15.6572C16.4001 14.9143 16.9894 14.0324 17.3914 13.0618C17.7935 12.0911 18.0004 11.0508 18.0004 10.0002C18.0004 8.9496 17.7935 7.90929 17.3914 6.93866C16.9894 5.96803 16.4001 5.08609 15.6572 4.34321C14.9143 3.60032 14.0324 3.01103 13.0618 2.60898C12.0911 2.20693 11.0508 2 10.0002 2C8.9496 2 7.90929 2.20693 6.93866 2.60898C5.96803 3.01103 5.08609 3.60032 4.34321 4.34321C2.84288 5.84354 2 7.87842 2 10.0002C2 12.122 2.84288 14.1569 4.34321 15.6572C5.84354 17.1575 7.87842 18.0004 10.0002 18.0004C12.122 18.0004 14.1569 17.1575 15.6572 15.6572Z" stroke="url(#paint0_linear_2_3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>\n<defs>\n<linearGradient id="paint0_linear_2_3" x1="9.4588" y1="12.3126" x2="21.0936" y2="17.6905" gradientUnits="userSpaceOnUse">\n<stop stop-color="#CDCBD3"/>\n<stop offset="1" stop-color="#CDCBD3"/>\n</linearGradient>\n</defs>\n</svg>\n';
 const exploreIconFilled =
-  '<svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M21 21.7219L16.657 17.3789M16.657 17.3789C17.3999 16.636 17.9892 15.7541 18.3912 14.7834C18.7933 13.8128 19.0002 12.7725 19.0002 11.7219C19.0002 10.6713 18.7933 9.63097 18.3913 8.66034C17.9892 7.68971 17.3999 6.80777 16.657 6.06489C15.9141 5.322 15.0322 4.73271 14.0616 4.33066C13.0909 3.92861 12.0506 3.72168 11 3.72168C9.94942 3.72168 8.90911 3.92861 7.93848 4.33066C6.96785 4.73271 6.08591 5.322 5.34302 6.06489C3.84269 7.56522 2.99982 9.6001 2.99982 11.7219C2.99982 13.8437 3.84269 15.8786 5.34302 17.3789C6.84335 18.8792 8.87824 19.7221 11 19.7221C13.1218 19.7221 15.1567 18.8792 16.657 17.3789Z" stroke="url(#paint0_linear_19123_653)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>\n<defs>\n<linearGradient id="paint0_linear_19123_653" x1="10.4586" y1="14.0343" x2="22.0934" y2="19.4122" gradientUnits="userSpaceOnUse">\n<stop stop-color="#6B4EFF"/>\n<stop offset="1" stop-color="#4F92F6"/>\n</linearGradient>\n</defs>\n</svg>\n';
+  '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M20.0002 20.0002L15.6572 15.6572M15.6572 15.6572C16.4001 14.9143 16.9894 14.0324 17.3914 13.0618C17.7935 12.0911 18.0004 11.0508 18.0004 10.0002C18.0004 8.9496 17.7935 7.90929 17.3914 6.93866C16.9894 5.96803 16.4001 5.08609 15.6572 4.34321C14.9143 3.60032 14.0324 3.01103 13.0618 2.60898C12.0911 2.20693 11.0508 2 10.0002 2C8.9496 2 7.90929 2.20693 6.93866 2.60898C5.96803 3.01103 5.08609 3.60032 4.34321 4.34321C2.84288 5.84354 2 7.87842 2 10.0002C2 12.122 2.84288 14.1569 4.34321 15.6572C5.84354 17.1575 7.87842 18.0004 10.0002 18.0004C12.122 18.0004 14.1569 17.1575 15.6572 15.6572Z" stroke="url(#paint0_linear_19123_653)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>\n<defs>\n<linearGradient id="paint0_linear_19123_653" x1="9.4588" y1="12.3126" x2="21.0936" y2="17.6905" gradientUnits="userSpaceOnUse">\n<stop stop-color="#6B4EFF"/>\n<stop offset="1" stop-color="#4F92F6"/>\n</linearGradient>\n</defs>\n</svg>\n';
 
 const bottomIconList: BottomIcon[] = [
   {
@@ -117,11 +125,15 @@ const bottomIconList: BottomIcon[] = [
 const route = useRoute();
 const showLoginDialog = ref(false);
 
-function handleNavigationClick(
-  event: Event,
-  iconItem: BottomIcon,
-  navigate: () => void
-) {
+function handleNavigationClick({
+  _event,
+  iconItem,
+  navigate,
+}: {
+  _event: Event;
+  iconItem: BottomIcon;
+  navigate: () => void;
+}): void {
   if (iconItem.requireAuth && isGuestOrLoggedIn.value === false) {
     showLoginDialog.value = true;
   } else if (route.name === iconItem.route) {
@@ -144,27 +156,84 @@ function handleNavigationClick(
   padding: 0.6rem;
   cursor: pointer;
   display: flex;
-  gap: 0.2rem;
   flex-direction: column;
   align-items: center;
   font-size: 12px;
   font-weight: var(--font-weight-bold);
+  border: 2px solid transparent; // Reserve space to prevent pixel shifting
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+  background: transparent;
+  color: inherit;
 }
 
 .container {
+  color: $color-text-weak;
   background-color: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .iconDiv {
   position: relative;
   width: 2rem;
+  height: 2rem;
   display: flex;
   justify-content: center;
+  align-items: center;
+}
+
+.iconDiv :deep(svg) {
+  width: 22px;
+  height: 22px;
+  max-width: 22px;
+  max-height: 22px;
+}
+
+.icon-container {
+  transition: transform 0.2s ease-in-out;
+
+  .iconStyle:hover & {
+    transform: scale(1.05);
+  }
+}
+
+.icon-label {
+  transition: color 0.2s ease-in-out;
+  font-weight: var(--font-weight-bold);
 }
 
 .navigation-link {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
+}
+
+// Accessibility improvements for high contrast mode
+@media (prefers-contrast: high) {
+  .iconStyle {
+    border-color: currentColor;
+
+    &:focus {
+      border-color: currentColor;
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+// Reduced motion preference
+@media (prefers-reduced-motion: reduce) {
+  .iconStyle,
+  .icon-container,
+  .icon-label {
+    transition: none;
+  }
+
+  .iconStyle:hover {
+    transform: none;
+  }
+
+  .iconStyle:hover .icon-container {
+    transform: none;
+  }
 }
 </style>
