@@ -27,6 +27,7 @@
             )
           "
           :style="{ width: '100%' }"
+          draggable="false"
         />
         <div
           class="clusterNameOverlay borderStyle dynamicFont"
@@ -115,14 +116,14 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 2,
     imgList: [
       {
-        clusterWidthPercent: 45,
+        clusterWidthPercent: 47,
         top: 15,
         left: 2,
         isSelected: false,
       },
       {
-        clusterWidthPercent: 45,
-        top: 25,
+        clusterWidthPercent: 42,
+        top: 28,
         left: 50,
         isSelected: false,
       },
@@ -381,6 +382,17 @@ watch(
   transition:
     transform 0.2s ease,
     filter 0.2s ease;
+
+  // Prevent unwanted drag and selection behaviors
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: manipulation;
+
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none; // Prevent image from receiving pointer events directly
+  }
 
   &:hover {
     filter: brightness(1.05);
