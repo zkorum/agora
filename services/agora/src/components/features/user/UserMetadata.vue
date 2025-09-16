@@ -40,7 +40,7 @@ defineProps<{
 <style lang="scss" scoped>
 .usernameStyle {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #0a0714;
 }
 

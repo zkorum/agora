@@ -47,7 +47,7 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
   padding: 0.25rem 0.75rem;
   border-radius: 5px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   width: fit-content;
   display: inline-flex;
   align-items: center;
@@ -57,7 +57,7 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
 
 .conversation-title {
   font-size: 1.2rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #0a0714;
   line-height: 1.3;
 }

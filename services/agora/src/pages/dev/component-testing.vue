@@ -111,7 +111,7 @@ function navigateToVisualization(): void {
   align-items: center;
   gap: 0.5rem;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 
   .section-icon {
     color: $primary;

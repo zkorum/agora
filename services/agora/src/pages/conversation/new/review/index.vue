@@ -375,7 +375,7 @@ async function onSubmit() {
 
 .section-title {
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   margin: 0;
   color: #333;
 }

@@ -121,7 +121,7 @@ async function commentDeleted() {
   white-space: nowrap;
   overflow: hidden;
   font-size: 1.2rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .container {

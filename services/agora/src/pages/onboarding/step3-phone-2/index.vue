@@ -376,7 +376,7 @@ async function changePhoneNumber() {
 }
 
 .phoneNumberStyle {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .otpDiv {

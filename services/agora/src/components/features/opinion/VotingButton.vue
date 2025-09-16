@@ -56,7 +56,7 @@ defineEmits<{
   border: none;
   border-radius: 16px;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -105,7 +105,7 @@ defineEmits<{
 
 .vote-count-label {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 
   &--agree {
     color: #6b4eff;

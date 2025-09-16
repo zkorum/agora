@@ -114,7 +114,7 @@ async function clickedFollowButton(
 }
 
 .generalStyle {
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   font-size: 1rem;
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;

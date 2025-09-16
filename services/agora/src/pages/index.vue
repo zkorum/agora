@@ -103,7 +103,7 @@ function selectedTab(tab: HomeFeedSortOption) {
   flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   font-size: 1rem;
   padding-bottom: 0.8rem;
 }

@@ -127,7 +127,7 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
 
 .section-title {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: #1f2937;
 }
 

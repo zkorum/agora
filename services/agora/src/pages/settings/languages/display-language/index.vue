@@ -152,7 +152,7 @@ onMounted(async () => {
 
 .language-name {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: #1a1a1a;
   line-height: 1.4;
 }
@@ -161,7 +161,7 @@ onMounted(async () => {
   font-size: 14px;
   color: #666;
   line-height: 1.3;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
 }
 
 .checkmark-container {

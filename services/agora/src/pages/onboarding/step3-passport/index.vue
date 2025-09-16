@@ -460,7 +460,7 @@ async function goToPhoneVerification() {
 
 .hrefColor {
   color: $primary;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   text-decoration: underline;
 }
 

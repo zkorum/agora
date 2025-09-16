@@ -196,7 +196,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 
   .section-icon {
     color: $primary;
@@ -217,7 +217,7 @@ onMounted(() => {
 }
 
 .control-label {
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   color: $grey-9;
 }
 
