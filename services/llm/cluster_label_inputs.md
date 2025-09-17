@@ -1,6 +1,6 @@
 # JSON Input Samples
 
-Some sample JSON inputs used during LLM testing.
+Some sample JSON inputs used to test LLM-based cluster labeling.
 
 
 ## Table of Contents
