@@ -38,6 +38,7 @@
     "@dicebear/core": "^9.2.2",
     "@primeuix/themes": "^1.2.1",
     "@quasar/extras": "^1.17.0",
+    "@tanstack/vue-query": "^5.89.0",
     "@ucans/ucans": "^0.12.0",
     "@vueuse/core": "^13.1.0",
     "@vueuse/integrations": "^13.1.0",

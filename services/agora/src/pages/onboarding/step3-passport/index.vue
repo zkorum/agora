@@ -175,7 +175,7 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   passportOnboardingTranslations,
   type PassportOnboardingTranslations,

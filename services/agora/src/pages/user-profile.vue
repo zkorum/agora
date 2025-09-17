@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { useUserStore } from "src/stores/user";
 import { onMounted, ref, watch } from "vue";

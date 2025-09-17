@@ -86,8 +86,8 @@ import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginI
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import PollOption from "./PollOption.vue";
-import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   pollWrapperTranslations,
   type PollWrapperTranslations,

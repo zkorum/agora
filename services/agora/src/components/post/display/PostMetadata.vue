@@ -79,7 +79,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 
 const emit = defineEmits(["openModerationHistory"]);
 

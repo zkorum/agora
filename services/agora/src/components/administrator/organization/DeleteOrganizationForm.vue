@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { onMounted, ref } from "vue";

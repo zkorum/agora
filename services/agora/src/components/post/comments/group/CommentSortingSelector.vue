@@ -47,7 +47,7 @@ import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useUserStore } from "src/stores/user";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, onMounted, ref, watch } from "vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentSortingSelectorTranslations,
   type CommentSortingSelectorTranslations,

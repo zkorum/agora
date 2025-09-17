@@ -67,7 +67,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 import { useRoute } from "vue-router";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   footerBarTranslations,
   type FooterBarTranslations,

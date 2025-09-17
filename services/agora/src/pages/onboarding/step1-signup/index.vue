@@ -29,7 +29,7 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useRouter } from "vue-router";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   signupOnboardingTranslations,
   type SignupOnboardingTranslations,

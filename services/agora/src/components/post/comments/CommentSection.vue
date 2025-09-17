@@ -36,8 +36,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, nextTick } from "vue";
-import type { CommentTabFilters } from "src/utils/api/comment";
-import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendVoteApi } from "src/utils/api/vote";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { VotingAction, VotingOption } from "src/shared/types/zod";
@@ -50,10 +48,14 @@ import { useRouter, useRoute } from "vue-router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import { useOpinionScrollable } from "src/composables/useOpinionScrollable";
-import { useOpinionFiltering } from "src/composables/useOpinionFiltering";
-import { useOpinionAgreements } from "src/composables/useOpinionAgreements";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useOpinionScrollable } from "src/composables/ui/useOpinionScrollable";
+import { useOpinionFiltering } from "src/composables/ui/useOpinionFiltering";
+import { useOpinionAgreements } from "src/composables/ui/useOpinionAgreements";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  useCommentsQuery,
+  useHiddenCommentsQuery,
+} from "src/composables/api/useCommentQueries";
 import {
   commentSectionTranslations,
   type CommentSectionTranslations,
@@ -79,14 +81,36 @@ const opinionSlugIdQuery = useRouteQuery("opinion", "", {
   transform: String,
 });
 const { showNotifyMessage } = useNotify();
-const { fetchCommentsForPost, fetchHiddenCommentsForPost } =
-  useBackendCommentApi();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
 );
+
+// TanStack Query hooks for different comment filters
+const commentsNewQuery = useCommentsQuery({
+  conversationSlugId: props.postSlugId,
+  filter: "new",
+  enabled: true,
+});
+
+const commentsDiscoverQuery = useCommentsQuery({
+  conversationSlugId: props.postSlugId,
+  filter: "discover",
+  enabled: true,
+});
+
+const commentsModeratedQuery = useCommentsQuery({
+  conversationSlugId: props.postSlugId,
+  filter: "moderated",
+  enabled: true,
+});
+
+const hiddenCommentsQuery = useHiddenCommentsQuery({
+  conversationSlugId: props.postSlugId,
+  enabled: profileData.value.isModerator,
+});
 
 // Opinion scrolling functionality
 const { loadMore, hasMore, visibleOpinions, initializeOpinionList } =
@@ -102,30 +126,67 @@ const { findOpinionFilter } = useOpinionFiltering();
 // Internal vote map management
 const opinionVoteMap = ref<Map<string, VotingOption>>(new Map());
 
-const isLoadingNew = ref<boolean>(true);
-const isLoadingDiscover = ref<boolean>(true);
-const isLoadingModerated = ref<boolean>(true);
-const isLoadingHidden = ref<boolean>(true);
-
+// Computed loading states from TanStack Query
 const isLoading = computed(() => {
   switch (currentFilter.value) {
     case "discover":
-      return isLoadingDiscover.value;
+      return commentsDiscoverQuery.isPending.value;
     case "new":
-      return isLoadingNew.value;
+      return commentsNewQuery.isPending.value;
     case "moderated":
-      return isLoadingModerated.value;
+      return commentsModeratedQuery.isPending.value;
     case "hidden":
-      return isLoadingHidden.value;
+      return hiddenCommentsQuery.isPending.value;
     default:
-      return isLoadingDiscover.value;
+      return commentsDiscoverQuery.isPending.value;
   }
 });
 
-let opinionsNew: OpinionItem[] = [];
-let opinionsDiscover: OpinionItem[] = [];
-let opinionsModerated: OpinionItem[] = [];
-let opinionsHidden: OpinionItem[] = [];
+// Computed data from TanStack Query
+const opinionsNew = computed(() => commentsNewQuery.data.value || []);
+const opinionsDiscover = computed(() => commentsDiscoverQuery.data.value || []);
+const opinionsModerated = computed(
+  () => commentsModeratedQuery.data.value || []
+);
+const opinionsHidden = computed(() => hiddenCommentsQuery.data.value || []);
+
+// Watch for when query data becomes available after mount
+watch(opinionsDiscover, (newData, oldData) => {
+  if (!isComponentMounted.value || !newData) {
+    return;
+  }
+  // Only trigger if this is the active filter and data has actually changed
+  if (currentFilter.value === "discover" && newData !== oldData) {
+    updateOpinionList("discover");
+  }
+});
+
+watch(opinionsNew, (newData, oldData) => {
+  if (!isComponentMounted.value || !newData) {
+    return;
+  }
+  if (currentFilter.value === "new" && newData !== oldData) {
+    updateOpinionList("new");
+  }
+});
+
+watch(opinionsModerated, (newData, oldData) => {
+  if (!isComponentMounted.value || !newData) {
+    return;
+  }
+  if (currentFilter.value === "moderated" && newData !== oldData) {
+    updateOpinionList("moderated");
+  }
+});
+
+watch(opinionsHidden, (newData, oldData) => {
+  if (!isComponentMounted.value || !newData) {
+    return;
+  }
+  if (currentFilter.value === "hidden" && newData !== oldData) {
+    updateOpinionList("hidden");
+  }
+});
 
 watch(currentFilter, (newFilter) => {
   if (!isComponentMounted.value) {
@@ -148,46 +209,24 @@ function updateOpinionList(filter: CommentFilterOptions) {
 function getOpinionDataForFilter(filter: CommentFilterOptions): OpinionItem[] {
   switch (filter) {
     case "new":
-      return opinionsNew;
+      return opinionsNew.value;
     case "discover":
-      return opinionsDiscover;
+      return opinionsDiscover.value;
     case "hidden":
-      return opinionsHidden;
+      return opinionsHidden.value;
     case "moderated":
-      return opinionsModerated;
+      return opinionsModerated.value;
     default:
-      return opinionsDiscover;
+      return opinionsDiscover.value;
   }
 }
 
 onMounted(async () => {
-  await Promise.all([initializeOpinionData(), fetchUserVotingData()]);
-
+  await fetchUserVotingData();
   await setupHighlightFromRoute();
-
   await clearRouteQueryParameters();
-
-  updateOpinionList(currentFilter.value);
-
   isComponentMounted.value = true;
 });
-
-async function initializeOpinionData() {
-  await Promise.all([
-    initializeModeratorData(),
-    fetchOpinionList("new"),
-    fetchOpinionList("discover"),
-    fetchOpinionList("moderated"),
-  ]);
-}
-
-async function initializeModeratorData() {
-  if (profileData.value.isModerator) {
-    isLoadingHidden.value = true;
-    await fetchHiddenOpinions();
-    isLoadingHidden.value = false;
-  }
-}
 
 async function clearRouteQueryParameters() {
   if (Object.keys(route.query).length > 0) {
@@ -213,68 +252,6 @@ async function fetchUserVotingData() {
   }
 }
 
-async function fetchHiddenOpinions() {
-  if (props.postSlugId.length > 0) {
-    const response = await fetchHiddenCommentsForPost(props.postSlugId);
-    if (response != null) {
-      opinionsHidden = response;
-    }
-  }
-}
-
-async function fetchOpinionList(filter: CommentTabFilters) {
-  if (props.postSlugId.length === 0) {
-    return;
-  }
-
-  setLoadingStateForFilter(filter, true);
-
-  const response = await fetchCommentsForPost(
-    props.postSlugId,
-    filter,
-    undefined
-  );
-
-  if (response != null) {
-    switch (filter) {
-      case "moderated":
-        opinionsModerated = response;
-        break;
-      case "new":
-        opinionsNew = response;
-        break;
-      case "discover":
-        opinionsDiscover = response;
-        break;
-      case "hidden":
-        opinionsHidden = response;
-        break;
-    }
-  }
-
-  setLoadingStateForFilter(filter, false);
-}
-
-function setLoadingStateForFilter(
-  filter: CommentTabFilters,
-  isLoading: boolean
-) {
-  switch (filter) {
-    case "moderated":
-      isLoadingModerated.value = isLoading;
-      break;
-    case "new":
-      isLoadingNew.value = isLoading;
-      break;
-    case "discover":
-      isLoadingDiscover.value = isLoading;
-      break;
-    case "hidden":
-      isLoadingHidden.value = isLoading;
-      break;
-  }
-}
-
 async function setupHighlightFromRoute() {
   const opinionSlugId = opinionSlugIdQuery.value;
   if (opinionSlugId && opinionSlugId.trim() !== "") {
@@ -291,10 +268,10 @@ async function highlightOpinionAndScroll(opinionSlugId: string) {
 
   const targetFilter = findOpinionFilter(
     opinionSlugId,
-    opinionsNew,
-    opinionsDiscover,
-    opinionsModerated,
-    opinionsHidden,
+    opinionsNew.value,
+    opinionsDiscover.value,
+    opinionsModerated.value,
+    opinionsHidden.value,
     isLoggedIn.value,
     profileData.value.isModerator
   );
@@ -337,10 +314,11 @@ function scrollToOpinion(opinionSlugId: string) {
 }
 
 async function refreshAndHighlightOpinion(opinionSlugId: string) {
+  // Invalidate TanStack Query caches to refetch data
   await Promise.all([
-    fetchOpinionList("new"),
-    fetchOpinionList("discover"),
-    fetchOpinionList("moderated"),
+    commentsNewQuery.refetch(),
+    commentsDiscoverQuery.refetch(),
+    commentsModeratedQuery.refetch(),
   ]);
 
   await highlightOpinionAndScroll(opinionSlugId);
@@ -358,12 +336,24 @@ function handleUserFilterChange(filterValue: CommentFilterOptions) {
 }
 
 async function handleOpinionMuted() {
-  await initializeOpinionData();
+  // Refetch all comment data since opinions may have moved between filters
+  await Promise.all([
+    commentsNewQuery.refetch(),
+    commentsDiscoverQuery.refetch(),
+    commentsModeratedQuery.refetch(),
+    hiddenCommentsQuery.refetch(),
+  ]);
 }
 
 async function handleOpinionDeleted() {
   emit("deleted");
-  await initializeOpinionData();
+  // Refetch all comment data since the deleted opinion should be removed
+  await Promise.all([
+    commentsNewQuery.refetch(),
+    commentsDiscoverQuery.refetch(),
+    commentsModeratedQuery.refetch(),
+    hiddenCommentsQuery.refetch(),
+  ]);
   updateOpinionList(currentFilter.value);
 }
 

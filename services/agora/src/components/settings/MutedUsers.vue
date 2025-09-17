@@ -52,7 +52,7 @@ import type { UserMuteItem } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { ref, onMounted } from "vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   mutedUsersTranslations,
   type MutedUsersTranslations,

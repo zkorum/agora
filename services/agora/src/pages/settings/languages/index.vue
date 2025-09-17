@@ -45,7 +45,7 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { getLanguageByCode } from "src/utils/language";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   languagesSettingsTranslations,
   type LanguagesSettingsTranslations,

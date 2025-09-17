@@ -32,7 +32,7 @@ import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import CustomTimerDialog from "./CustomTimerDialog.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   makePublicTimerDialogTranslations,
   type MakePublicTimerDialogTranslations,

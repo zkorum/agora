@@ -77,7 +77,7 @@ import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import type { RouteLocationNormalized } from "vue-router";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentComposerTranslations,
   type CommentComposerTranslations,

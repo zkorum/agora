@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";

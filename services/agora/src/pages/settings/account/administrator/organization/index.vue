@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import CreateOrganizationForm from "src/components/administrator/organization/CreateOrganizationForm.vue";
 import DeleteOrganizationForm from "src/components/administrator/organization/DeleteOrganizationForm.vue";
 import UserOrganizationMappings from "src/components/administrator/organization/UserOrganizationMappings.vue";

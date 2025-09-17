@@ -22,7 +22,7 @@
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import SpokenLanguageSelector from "src/components/language/SpokenLanguageSelector.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   spokenLanguagesSettingsTranslations,
   type SpokenLanguagesSettingsTranslations,

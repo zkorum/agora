@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { useDateFormat } from "@vueuse/core";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   moderationTimeTranslations,
   type ModerationTimeTranslations,
