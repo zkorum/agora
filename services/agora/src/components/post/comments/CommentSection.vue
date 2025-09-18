@@ -226,6 +226,9 @@ onMounted(async () => {
   await setupHighlightFromRoute();
   await clearRouteQueryParameters();
   isComponentMounted.value = true;
+
+  // Explicitly initialize the opinion list
+  updateOpinionList(currentFilter.value);
 });
 
 async function clearRouteQueryParameters() {
