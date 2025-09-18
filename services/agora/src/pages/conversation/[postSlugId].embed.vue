@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
-import { useConversationData } from "src/composables/api/useConversationData";
+import { useConversationData } from "src/composables/conversation/useConversationData";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { ref } from "vue";
