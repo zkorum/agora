@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ConversationModerationTranslations {
   moderateConversation: string;
   action: string;
@@ -6,11 +8,10 @@ export interface ConversationModerationTranslations {
   modify: string;
   moderate: string;
   withdraw: string;
-  [key: string]: string;
 }
 
 export const conversationModerationTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ConversationModerationTranslations
 > = {
   en: {

@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ClusterInformationDialogTranslations {
   title: string;
   description1: string;
@@ -5,7 +7,7 @@ export interface ClusterInformationDialogTranslations {
 }
 
 export const clusterInformationDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ClusterInformationDialogTranslations
 > = {
   en: {

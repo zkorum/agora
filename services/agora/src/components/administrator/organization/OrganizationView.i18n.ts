@@ -1,12 +1,13 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface OrganizationViewTranslations {
   deleteOrganizationButton: string;
   usernameLabel: string;
   addUserToOrganizationButton: string;
-  [key: string]: string;
 }
 
 export const organizationViewTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   OrganizationViewTranslations
 > = {
   en: {

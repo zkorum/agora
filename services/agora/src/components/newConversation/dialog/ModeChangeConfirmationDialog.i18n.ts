@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ModeChangeConfirmationDialogTranslations {
   switchToImportMode: string;
   switchingWillClear: string;
@@ -7,11 +9,10 @@ export interface ModeChangeConfirmationDialogTranslations {
   settingsPreserved: string;
   cancel: string;
   continue: string;
-  [key: string]: string;
 }
 
 export const modeChangeConfirmationDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ModeChangeConfirmationDialogTranslations
 > = {
   en: {

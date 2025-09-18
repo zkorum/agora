@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface UseCommentQueriesTranslations {
   commentDeletedSuccessfully: string;
   failedToDeleteComment: string;
 }
 
 export const useCommentQueriesTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   UseCommentQueriesTranslations
 > = {
   en: {

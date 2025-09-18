@@ -1,11 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ExitRoutePromptTranslations {
   saveAsDraft: string;
   discard: string;
-  [key: string]: string;
 }
 
 export const exitRoutePromptTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ExitRoutePromptTranslations
 > = {
   en: {

@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface InteractionTabTranslations {
   analysis: string;
-  [key: string]: string;
 }
 
 export const interactionTabTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   InteractionTabTranslations
 > = {
   en: {

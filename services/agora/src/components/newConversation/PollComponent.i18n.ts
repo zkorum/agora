@@ -1,13 +1,14 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PollComponentTranslations {
   addPoll: string;
   option: string;
   inputOptionText: string;
   addOption: string;
-  [key: string]: string;
 }
 
 export const pollComponentTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   PollComponentTranslations
 > = {
   en: {

@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ContentPreferenceTranslations {
   contentPreference: string;
-  [key: string]: string;
 }
 
 export const contentPreferenceTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ContentPreferenceTranslations
 > = {
   en: {

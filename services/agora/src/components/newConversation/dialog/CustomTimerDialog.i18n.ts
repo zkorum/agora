@@ -1,13 +1,14 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CustomTimerDialogTranslations {
   selectCustomTime: string;
   chooseWhenPublic: string;
   back: string;
   confirm: string;
-  [key: string]: string;
 }
 
 export const customTimerDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CustomTimerDialogTranslations
 > = {
   en: {

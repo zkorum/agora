@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface SignupAgreementTranslations {
   agreementText: string;
   termsOfService: string;
@@ -6,7 +8,7 @@ export interface SignupAgreementTranslations {
 }
 
 export const signupAgreementTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   SignupAgreementTranslations
 > = {
   en: {

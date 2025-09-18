@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PostLockedMessageTranslations {
   lockedMessage: string;
   editButton: string;
 }
 
 export const postLockedMessageTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   PostLockedMessageTranslations
 > = {
   en: {

@@ -1,14 +1,15 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CommentSortingSelectorTranslations {
   filterTitle: string;
   discover: string;
   new: string;
   moderationHistory: string;
   hidden: string;
-  [key: string]: string;
 }
 
 export const commentSortingSelectorTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CommentSortingSelectorTranslations
 > = {
   en: {

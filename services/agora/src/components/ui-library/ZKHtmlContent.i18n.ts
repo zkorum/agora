@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ZKHtmlContentTranslations {
   postContentPreview: string;
   postContent: string;
 }
 
 export const zkHtmlContentTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ZKHtmlContentTranslations
 > = {
   en: {
