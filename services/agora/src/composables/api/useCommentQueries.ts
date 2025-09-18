@@ -3,10 +3,9 @@ import { useBackendCommentApi } from "src/utils/api/comment";
 import type { CommentTabFilters } from "src/utils/api/comment";
 import type { PolisKey } from "src/shared/types/zod";
 import type { AxiosErrorResponse } from "src/utils/api/common";
-import { getErrorMessage, isTimeoutError } from "src/utils/api/common";
+import { getErrorMessage, shouldRetryError } from "src/utils/api/common";
 import { useNotify } from "src/utils/ui/notify";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { watch } from "vue";
 import {
   useCommentQueriesTranslations,
   type UseCommentQueriesTranslations,
@@ -24,7 +23,6 @@ export function useCommentsQuery({
   enabled?: boolean;
 }) {
   const { fetchCommentsForPost } = useBackendCommentApi();
-  const { showNotifyMessage } = useNotify();
 
   const query = useQuery({
     queryKey: ["comments", conversationSlugId, filter, clusterKey],
@@ -33,21 +31,17 @@ export function useCommentsQuery({
     staleTime: 1000 * 60 * 2, // 2 minutes for comments
   });
 
-  // Handle timeout notifications when error occurs
-  watch(
-    () => query.error.value,
-    (error) => {
-      if (error && (error as AxiosErrorResponse).code) {
-        const axiosError = error as AxiosErrorResponse;
-        if (isTimeoutError(axiosError.code)) {
-          showNotifyMessage(getErrorMessage(axiosError));
-        }
-      }
-    },
-    { immediate: true }
-  );
-
-  return query;
+  return {
+    ...query,
+    // Expose additional error context for UI
+    hasError: query.isError,
+    errorMessage: query.error.value
+      ? getErrorMessage(query.error.value as AxiosErrorResponse)
+      : null,
+    isRetryable: query.error.value
+      ? shouldRetryError((query.error.value as AxiosErrorResponse)?.code)
+      : false,
+  };
 }
 
 export function useHiddenCommentsQuery({
@@ -59,12 +53,23 @@ export function useHiddenCommentsQuery({
 }) {
   const { fetchHiddenCommentsForPost } = useBackendCommentApi();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["hiddenComments", conversationSlugId],
     queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
     enabled: enabled && conversationSlugId.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes for hidden comments
   });
+
+  return {
+    ...query,
+    hasError: query.isError,
+    errorMessage: query.error.value
+      ? getErrorMessage(query.error.value as AxiosErrorResponse)
+      : null,
+    isRetryable: query.error.value
+      ? shouldRetryError((query.error.value as AxiosErrorResponse)?.code)
+      : false,
+  };
 }
 
 export function useAnalysisQuery({
@@ -75,7 +80,6 @@ export function useAnalysisQuery({
   enabled?: boolean;
 }) {
   const { fetchAnalysisData } = useBackendCommentApi();
-  const { showNotifyMessage } = useNotify();
 
   const query = useQuery({
     queryKey: ["analysis", conversationSlugId],
@@ -84,21 +88,16 @@ export function useAnalysisQuery({
     staleTime: 1000 * 60 * 10, // 10 minutes for analysis data
   });
 
-  // Handle timeout notifications for heavy analysis operations
-  watch(
-    () => query.error.value,
-    (error) => {
-      if (error && (error as AxiosErrorResponse).code) {
-        const axiosError = error as AxiosErrorResponse;
-        if (isTimeoutError(axiosError.code)) {
-          showNotifyMessage(getErrorMessage(axiosError));
-        }
-      }
-    },
-    { immediate: true }
-  );
-
-  return query;
+  return {
+    ...query,
+    hasError: query.isError,
+    errorMessage: query.error.value
+      ? getErrorMessage(query.error.value as AxiosErrorResponse)
+      : null,
+    isRetryable: query.error.value
+      ? shouldRetryError((query.error.value as AxiosErrorResponse)?.code)
+      : false,
+  };
 }
 
 export function useCreateCommentMutation() {
