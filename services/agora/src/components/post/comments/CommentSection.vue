@@ -17,6 +17,9 @@
         <CommentGroup
           :comment-item-list="visibleOpinions"
           :is-loading="isLoading"
+          :has-error="hasError"
+          :error-message="errorMessage"
+          :is-retrying="isRetrying"
           :post-slug-id="postSlugId"
           :initial-comment-slug-id="highlightedOpinionId"
           :comment-slug-id-liked-map="opinionVoteMap"
@@ -24,6 +27,7 @@
           :login-required-to-participate="props.loginRequiredToParticipate"
           @deleted="handleOpinionDeleted()"
           @muted-comment="handleOpinionMuted()"
+          @retry-load-comments="handleRetryLoadComments()"
           @change-vote="
             (vote: VotingAction, opinionSlugId: string) =>
               changeVote(vote, opinionSlugId)
@@ -139,6 +143,66 @@ const isLoading = computed(() => {
       return hiddenCommentsQuery.isPending.value;
     default:
       return commentsDiscoverQuery.isPending.value;
+  }
+});
+
+// Computed error states from TanStack Query
+const hasError = computed(() => {
+  switch (currentFilter.value) {
+    case "discover":
+      return commentsDiscoverQuery.hasError.value;
+    case "new":
+      return commentsNewQuery.hasError.value;
+    case "moderated":
+      return commentsModeratedQuery.hasError.value;
+    case "hidden":
+      return hiddenCommentsQuery.hasError.value;
+    default:
+      return commentsDiscoverQuery.hasError.value;
+  }
+});
+
+const errorMessage = computed(() => {
+  switch (currentFilter.value) {
+    case "discover":
+      return commentsDiscoverQuery.errorMessage;
+    case "new":
+      return commentsNewQuery.errorMessage;
+    case "moderated":
+      return commentsModeratedQuery.errorMessage;
+    case "hidden":
+      return hiddenCommentsQuery.errorMessage;
+    default:
+      return commentsDiscoverQuery.errorMessage;
+  }
+});
+
+const isRetrying = computed(() => {
+  switch (currentFilter.value) {
+    case "discover":
+      return (
+        commentsDiscoverQuery.isRefetching.value &&
+        commentsDiscoverQuery.hasError.value
+      );
+    case "new":
+      return (
+        commentsNewQuery.isRefetching.value && commentsNewQuery.hasError.value
+      );
+    case "moderated":
+      return (
+        commentsModeratedQuery.isRefetching.value &&
+        commentsModeratedQuery.hasError.value
+      );
+    case "hidden":
+      return (
+        hiddenCommentsQuery.isRefetching.value &&
+        hiddenCommentsQuery.hasError.value
+      );
+    default:
+      return (
+        commentsDiscoverQuery.isRefetching.value &&
+        commentsDiscoverQuery.hasError.value
+      );
   }
 });
 
@@ -392,6 +456,27 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
   }
 }
 
+// Handle manual retry for failed API calls
+function handleRetryLoadComments(): void {
+  switch (currentFilter.value) {
+    case "discover":
+      void commentsDiscoverQuery.refetch();
+      break;
+    case "new":
+      void commentsNewQuery.refetch();
+      break;
+    case "moderated":
+      void commentsModeratedQuery.refetch();
+      break;
+    case "hidden":
+      void hiddenCommentsQuery.refetch();
+      break;
+    default:
+      void commentsDiscoverQuery.refetch();
+      break;
+  }
+}
+
 // Handle infinite scroll load event
 function onLoad(index: number, done: () => void) {
   loadMore();
@@ -408,6 +493,7 @@ defineExpose({
   refreshAndHighlightOpinion,
   triggerLoadMore,
   changeVote,
+  handleRetryLoadComments,
 });
 </script>
 
