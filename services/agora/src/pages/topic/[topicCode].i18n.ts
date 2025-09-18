@@ -1,8 +1,10 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface TopicPageTranslations {
   loadPostsHere: string;
 }
 
-export const topicPageTranslations: Record<string, TopicPageTranslations> = {
+export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicPageTranslations> = {
   en: {
     loadPostsHere: "Load posts here",
   },

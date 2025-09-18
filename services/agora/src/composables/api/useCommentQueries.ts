@@ -5,7 +5,12 @@ import type { PolisKey } from "src/shared/types/zod";
 import type { AxiosErrorResponse } from "src/utils/api/common";
 import { getErrorMessage, isTimeoutError } from "src/utils/api/common";
 import { useNotify } from "src/utils/ui/notify";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { watch } from "vue";
+import {
+  useCommentQueriesTranslations,
+  type UseCommentQueriesTranslations,
+} from "./useCommentQueries.i18n";
 
 export function useCommentsQuery({
   conversationSlugId,
@@ -133,6 +138,9 @@ export function useDeleteCommentMutation() {
   const { deleteCommentBySlugId } = useBackendCommentApi();
   const queryClient = useQueryClient();
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<UseCommentQueriesTranslations>(
+    useCommentQueriesTranslations
+  );
 
   return useMutation({
     mutationFn: (commentSlugId: string) => deleteCommentBySlugId(commentSlugId),
@@ -144,13 +152,13 @@ export function useDeleteCommentMutation() {
       void queryClient.invalidateQueries({
         queryKey: ["hiddenComments"],
       });
-      showNotifyMessage("Comment deleted successfully");
+      showNotifyMessage(t("commentDeletedSuccessfully"));
     },
     onError: (error: AxiosErrorResponse) => {
       if (error?.code) {
         showNotifyMessage(getErrorMessage(error));
       } else {
-        showNotifyMessage("Failed to delete comment. Please try again.");
+        showNotifyMessage(t("failedToDeleteComment"));
       }
     },
   });

@@ -10,6 +10,11 @@ import {
 } from "../crypto/ucan/operation";
 import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  commonApiTranslations,
+  type CommonApiTranslations,
+} from "./common.i18n";
 
 export type KeyAction = "overwrite" | "get" | "create";
 
@@ -68,48 +73,6 @@ export function isCancellationError(code: AxiosErrorCode): boolean {
   return code === "ERR_CANCELED";
 }
 
-export function getErrorMessage(error: AxiosErrorResponse): string {
-  if (isTimeoutError(error.code)) {
-    return "Request timed out. The server is taking longer than expected to respond.";
-  }
-
-  if (isNetworkError(error.code)) {
-    return "Network error. Please check your internet connection and try again.";
-  }
-
-  if (isCancellationError(error.code)) {
-    return "Request was canceled.";
-  }
-
-  // Specific error messages for each code
-  switch (error.code) {
-    case "ERR_BAD_REQUEST":
-      return "Invalid request. Please check your input and try again.";
-    case "ERR_BAD_RESPONSE":
-      return "Server error. Please try again later.";
-    case "ERR_FR_TOO_MANY_REDIRECTS":
-      return "Too many redirects. Please contact support if this continues.";
-    case "ERR_BAD_OPTION":
-    case "ERR_BAD_OPTION_VALUE":
-      return "Configuration error. Please refresh the page and try again.";
-    case "ERR_DEPRECATED":
-      return "This feature is no longer supported. Please update your app.";
-    case "ERR_NOT_SUPPORT":
-      return "This operation is not supported in your current environment.";
-    case "ERR_INVALID_URL":
-      return "Invalid request URL. Please contact support.";
-    case "ERR_NETWORK":
-      return "Network error. Please check your internet connection and try again.";
-    case "ERR_CANCELED":
-      return "Request was canceled.";
-    case "ECONNABORTED":
-    case "ETIMEDOUT":
-      return "Request timed out. The server is taking longer than expected to respond.";
-    default:
-      return error.message || "An unexpected error occurred. Please try again.";
-  }
-}
-
 export function shouldRetryError(code: AxiosErrorCode): boolean {
   // Retry timeouts, network errors, and server errors
   // Don't retry client errors or cancellations
@@ -124,6 +87,7 @@ export function useCommonApi() {
   const $q = useQuasar();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<CommonApiTranslations>(commonApiTranslations);
 
   const STANDARD_TIMEOUT_MS = 8000;
   const EXTENDED_TIMEOUT_MS = 20000;
@@ -138,12 +102,54 @@ export function useCommonApi() {
     defaultMessage: string;
   }
 
+  function getErrorMessage(error: AxiosErrorResponse): string {
+    if (isTimeoutError(error.code)) {
+      return t("timeoutError");
+    }
+
+    if (isNetworkError(error.code)) {
+      return t("networkError");
+    }
+
+    if (isCancellationError(error.code)) {
+      return t("requestCanceled");
+    }
+
+    // Specific error messages for each code
+    switch (error.code) {
+      case "ERR_BAD_REQUEST":
+        return t("invalidRequest");
+      case "ERR_BAD_RESPONSE":
+        return t("serverError");
+      case "ERR_FR_TOO_MANY_REDIRECTS":
+        return t("tooManyRedirects");
+      case "ERR_BAD_OPTION":
+      case "ERR_BAD_OPTION_VALUE":
+        return t("configurationError");
+      case "ERR_DEPRECATED":
+        return t("featureNotSupported");
+      case "ERR_NOT_SUPPORT":
+        return t("operationNotSupported");
+      case "ERR_INVALID_URL":
+        return t("invalidUrl");
+      case "ERR_NETWORK":
+        return t("networkError");
+      case "ERR_CANCELED":
+        return t("requestCanceled");
+      case "ECONNABORTED":
+      case "ETIMEDOUT":
+        return t("timeoutError");
+      default:
+        return error.message || t("unexpectedError");
+    }
+  }
+
   function handleAxiosErrorStatusCodes({
     axiosErrorCode,
     defaultMessage,
-  }: HandleAxiosStatusCodesProps) {
+  }: HandleAxiosStatusCodesProps): void {
     if (axiosErrorCode == "ECONNABORTED") {
-      showNotifyMessage("No internet connection");
+      showNotifyMessage(t("noInternetConnection"));
     } else {
       showNotifyMessage(defaultMessage);
     }
@@ -243,5 +249,51 @@ export function useCommonApi() {
     buildEncodedUcan,
     createAxiosErrorResponse,
     handleAxiosErrorStatusCodes,
+    getErrorMessage,
   };
+}
+
+// Standalone version for backwards compatibility
+export function getErrorMessage(error: AxiosErrorResponse): string {
+  const { t } = useComponentI18n<CommonApiTranslations>(commonApiTranslations);
+
+  if (isTimeoutError(error.code)) {
+    return t("timeoutError");
+  }
+
+  if (isNetworkError(error.code)) {
+    return t("networkError");
+  }
+
+  if (isCancellationError(error.code)) {
+    return t("requestCanceled");
+  }
+
+  // Specific error messages for each code
+  switch (error.code) {
+    case "ERR_BAD_REQUEST":
+      return t("invalidRequest");
+    case "ERR_BAD_RESPONSE":
+      return t("serverError");
+    case "ERR_FR_TOO_MANY_REDIRECTS":
+      return t("tooManyRedirects");
+    case "ERR_BAD_OPTION":
+    case "ERR_BAD_OPTION_VALUE":
+      return t("configurationError");
+    case "ERR_DEPRECATED":
+      return t("featureNotSupported");
+    case "ERR_NOT_SUPPORT":
+      return t("operationNotSupported");
+    case "ERR_INVALID_URL":
+      return t("invalidUrl");
+    case "ERR_NETWORK":
+      return t("networkError");
+    case "ERR_CANCELED":
+      return t("requestCanceled");
+    case "ECONNABORTED":
+    case "ETIMEDOUT":
+      return t("timeoutError");
+    default:
+      return error.message || t("unexpectedError");
+  }
 }

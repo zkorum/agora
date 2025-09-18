@@ -348,15 +348,9 @@ async function handleOpinionMuted() {
   ]);
 }
 
-async function handleOpinionDeleted() {
+function handleOpinionDeleted() {
   emit("deleted");
-  // Refetch all comment data since the deleted opinion should be removed
-  await Promise.all([
-    commentsNewQuery.refetch(),
-    commentsDiscoverQuery.refetch(),
-    commentsModeratedQuery.refetch(),
-    hiddenCommentsQuery.refetch(),
-  ]);
+  // TanStack Query mutation automatically handles cache invalidation
   updateOpinionList(currentFilter.value);
 }
 

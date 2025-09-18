@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface TopicsTranslations {
   exploreTopics: string;
   following: string;
   follow: string;
 }
 
-export const topicsTranslations: Record<string, TopicsTranslations> = {
+export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTranslations> = {
   en: {
     exploreTopics: "Explore Topics",
     following: "Following",
