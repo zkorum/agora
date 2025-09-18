@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CommentActionBarTranslations {
   disagree: string;
   pass: string;
@@ -9,7 +11,7 @@ export interface CommentActionBarTranslations {
 }
 
 export const commentActionBarTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CommentActionBarTranslations
 > = {
   en: {

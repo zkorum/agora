@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ConsensusItemTranslations {
   agree: string;
   pass: string;
@@ -6,7 +8,7 @@ export interface ConsensusItemTranslations {
 }
 
 export const consensusItemTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ConsensusItemTranslations
 > = {
   en: {

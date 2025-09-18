@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface EmbedAccountWidgetTranslations {
   logoutButton: string;
   logoutTooltip: string;
 }
 
 export const embedAccountWidgetTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   EmbedAccountWidgetTranslations
 > = {
   en: {

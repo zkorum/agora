@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface OpinionAnalysisDialogTranslations {
   title: string;
   agree: string;
@@ -9,7 +11,7 @@ export interface OpinionAnalysisDialogTranslations {
 }
 
 export const opinionAnalysisDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   OpinionAnalysisDialogTranslations
 > = {
   en: {

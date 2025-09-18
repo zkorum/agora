@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface AnalysisActionButtonTranslations {
   learnMore: string;
   viewMore: string;
 }
 
 export const analysisActionButtonTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   AnalysisActionButtonTranslations
 > = {
   en: {

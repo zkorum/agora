@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface Step4UsernameTranslations {
   title: string;
   howToAppear: string;
@@ -5,7 +7,7 @@ export interface Step4UsernameTranslations {
 }
 
 export const step4UsernameTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   Step4UsernameTranslations
 > = {
   en: {

@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ConversationReviewTranslations {
   posting: string;
   post: string;
@@ -9,11 +11,10 @@ export interface ConversationReviewTranslations {
   opinionExceedsLimit: string;
   opinionDuplicate: string;
   errorCreatingConversation: string;
-  [key: string]: string;
 }
 
 export const conversationReviewTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ConversationReviewTranslations
 > = {
   en: {

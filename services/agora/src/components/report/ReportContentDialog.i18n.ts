@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ReportContentDialogTranslations {
   submitReportTitle: string;
   improveCommunityText: string;
@@ -8,11 +10,10 @@ export interface ReportContentDialogTranslations {
   submitButton: string;
   reportTypeConversation: string;
   reportTypeOpinion: string;
-  [key: string]: string;
 }
 
 export const reportContentDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ReportContentDialogTranslations
 > = {
   en: {

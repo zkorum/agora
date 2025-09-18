@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CommentSectionTranslations {
   opinionNotFound: string;
   opinionRemovedByModerators: string;
 }
 
 export const commentSectionTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CommentSectionTranslations
 > = {
   en: {

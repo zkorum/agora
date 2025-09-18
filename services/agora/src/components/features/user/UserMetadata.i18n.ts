@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface UserMetadataTranslations {
   idVerified: string;
-  [key: string]: string;
 }
 
 export const userMetadataTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   UserMetadataTranslations
 > = {
   en: {

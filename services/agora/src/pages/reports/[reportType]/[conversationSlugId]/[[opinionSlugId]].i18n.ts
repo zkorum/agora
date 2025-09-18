@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface UserReportsViewerTranslations {
   userReportsViewer: string;
   openConversation: string;
@@ -17,7 +19,7 @@ export interface UserReportsViewerTranslations {
 }
 
 export const userReportsViewerTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   UserReportsViewerTranslations
 > = {
   en: {

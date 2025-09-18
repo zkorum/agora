@@ -1,13 +1,14 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PostTypeDialogTranslations {
   newConversation: string;
   newConversationDescription: string;
   importFromPolis: string;
   importFromPolisDescription: string;
-  [key: string]: string;
 }
 
 export const postTypeDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   PostTypeDialogTranslations
 > = {
   en: {

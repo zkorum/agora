@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface SpokenLanguageStepTranslations {
   title: string;
   nextButton: string;
 }
 
 export const spokenLanguageStepTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   SpokenLanguageStepTranslations
 > = {
   en: {

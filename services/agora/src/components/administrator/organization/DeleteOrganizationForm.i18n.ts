@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface DeleteOrganizationFormTranslations {
   noOrganizationsMessage: string;
-  [key: string]: string;
 }
 
 export const deleteOrganizationFormTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   DeleteOrganizationFormTranslations
 > = {
   en: {

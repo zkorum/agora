@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface StartConversationButtonLongTranslations {
   buttonText: string;
-  [key: string]: string;
 }
 
 export const startConversationButtonLongTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   StartConversationButtonLongTranslations
 > = {
   en: {

@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface OpinionModerationTranslations {
   title: string;
   actionLabel: string;
@@ -9,7 +11,7 @@ export interface OpinionModerationTranslations {
 }
 
 export const opinionModerationTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   OpinionModerationTranslations
 > = {
   en: {

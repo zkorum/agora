@@ -1,9 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CommentGroupTranslations {
   noOpinionsMessage: string;
 }
 
 export const commentGroupTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CommentGroupTranslations
 > = {
   en: {

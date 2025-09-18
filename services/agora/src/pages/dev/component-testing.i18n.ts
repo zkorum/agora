@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ComponentTestingTranslations {
   componentTesting: string;
   preferencesDialog: string;
@@ -9,7 +11,7 @@ export interface ComponentTestingTranslations {
 }
 
 export const componentTestingTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ComponentTestingTranslations
 > = {
   en: {
