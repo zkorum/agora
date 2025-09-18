@@ -58,11 +58,10 @@ import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useBackendCommentApi } from "src/utils/api/comment";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import { useDeleteCommentMutation } from "src/composables/api/useCommentQueries";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
-import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
@@ -83,8 +82,6 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const webShare = useWebShare();
 
-const { showNotifyMessage } = useNotify();
-
 // Use the new content actions system
 const commentActions = useContentActions();
 
@@ -93,7 +90,7 @@ const showReportDialog = ref(false);
 const router = useRouter();
 
 const { muteUser } = useBackendUserMuteApi();
-const { deleteCommentBySlugId } = useBackendCommentApi();
+const deleteCommentMutation = useDeleteCommentMutation();
 
 const showLoginDialog = ref(false);
 
@@ -152,14 +149,12 @@ async function moderateCommentCallback() {
   });
 }
 
-async function deleteCommentCallback() {
-  const response = await deleteCommentBySlugId(props.commentItem.opinionSlugId);
-  if (response) {
-    showNotifyMessage(t("opinionDeleted"));
-    emit("deleted");
-  } else {
-    showNotifyMessage(t("failedToDeleteOpinion"));
-  }
+function deleteCommentCallback() {
+  deleteCommentMutation.mutate(props.commentItem.opinionSlugId, {
+    onSuccess: () => {
+      emit("deleted");
+    },
+  });
 }
 
 function optionButtonClicked() {

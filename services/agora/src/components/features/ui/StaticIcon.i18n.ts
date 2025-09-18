@@ -1,8 +1,10 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface StaticIconTranslations {
   stars: string;
 }
 
-export const staticIconTranslations: Record<string, StaticIconTranslations> = {
+export const staticIconTranslations: Record<SupportedDisplayLanguageCodes, StaticIconTranslations> = {
   en: {
     stars: "Stars",
   },

@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PollWrapperTranslations {
   results: string;
   vote: string;
   votes: string;
 }
 
-export const pollWrapperTranslations: Record<string, PollWrapperTranslations> =
+export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, PollWrapperTranslations> =
   {
     en: {
       results: "Results",

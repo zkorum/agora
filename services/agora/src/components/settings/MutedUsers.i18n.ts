@@ -1,9 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface MutedUsersTranslations {
   title: string;
   emptyMessage: string;
 }
 
-export const mutedUsersTranslations: Record<string, MutedUsersTranslations> = {
+export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, MutedUsersTranslations> = {
   en: {
     title: "Muted users",
     emptyMessage: "You have no muted users",
