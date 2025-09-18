@@ -59,7 +59,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   useCommentsQuery,
   useHiddenCommentsQuery,
-} from "src/composables/api/useCommentQueries";
+} from "src/utils/api/comment/useCommentQueries";
 import {
   commentSectionTranslations,
   type CommentSectionTranslations,

@@ -54,7 +54,7 @@ import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import { ref, onMounted } from "vue";
-import { useBackendCommentApi } from "src/utils/api/comment";
+import { useBackendCommentApi } from "src/utils/api/comment/comment";
 
 const props = defineProps<{
   participantCount: number;
