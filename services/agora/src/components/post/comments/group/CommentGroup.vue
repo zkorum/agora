@@ -1,45 +1,22 @@
 <template>
-  <div>
-    <!-- Loading state -->
-    <div v-if="isLoading && !hasError" class="noCommentMessage">
-      <q-spinner-gears size="50px" color="primary" />
-      <div class="loadingText">{{ t("loadingComments") }}</div>
-    </div>
-
-    <!-- Retrying state -->
-    <div v-if="isRetrying" class="noCommentMessage">
-      <q-spinner-gears size="50px" color="primary" />
-      <div class="loadingText">{{ t("retrying") }}</div>
-    </div>
-
-    <!-- Error state -->
-    <CommentLoadingError
-      v-if="hasError && !isLoading && !isRetrying"
-      :title="t('commentsLoadFailed')"
-      :message="errorMessage"
-      :default-message="t('unexpectedErrorRetry')"
-      :show-retry="true"
-      :retry-label="t('retryLoadComments')"
-      :is-retrying="isRetrying"
-      icon="error_outline"
-      icon-color="negative"
-      @retry="handleRetryClick"
-    />
-
-    <!-- Empty state (no errors, not loading) -->
-    <div
-      v-if="commentItemList.length === 0 && !isLoading && !hasError"
-      class="noCommentMessage"
-    >
-      <q-icon name="forum" size="50px" color="grey-5" />
-      <div class="emptyText">{{ t("noOpinionsMessage") }}</div>
-    </div>
-
-    <!-- Success state with data -->
-    <div
-      v-if="commentItemList.length > 0 && !isLoading"
-      class="commentListFlex"
-    >
+  <AsyncDataHandler
+    :is-loading="isLoading"
+    :has-error="hasError"
+    :error-message="errorMessage"
+    :is-retrying="isRetrying"
+    :is-empty="isEmpty"
+    :show-retry="true"
+    :loading-text="t('loadingComments')"
+    :retrying-text="t('retrying')"
+    :error-title="t('commentsLoadFailed')"
+    :default-error-message="t('unexpectedErrorRetry')"
+    :empty-text="t('noOpinionsMessage')"
+    :retry-label="t('retryLoadComments')"
+    empty-icon="forum"
+    empty-icon-color="grey-5"
+    @retry="handleRetryClick"
+  >
+    <div class="commentListFlex">
       <ZKCard
         v-for="commentItem in commentItemList"
         :id="commentItem.opinionSlugId"
@@ -66,10 +43,11 @@
         />
       </ZKCard>
     </div>
-  </div>
+  </AsyncDataHandler>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type {
   OpinionItem,
   VotingAction,
@@ -77,7 +55,7 @@ import type {
 } from "src/shared/types/zod";
 import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import CommentLoadingError from "../ui/CommentLoadingError.vue";
+import AsyncDataHandler from "src/components/ui-library/AsyncDataHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentGroupTranslations,
@@ -99,7 +77,7 @@ function changeVote(vote: VotingAction, opinionSlugId: string) {
   emit("changeVote", vote, opinionSlugId);
 }
 
-defineProps<{
+const props = defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
   initialCommentSlugId: string;
@@ -111,6 +89,8 @@ defineProps<{
   isRetrying: boolean;
   loginRequiredToParticipate: boolean;
 }>();
+
+const isEmpty = computed(() => props.commentItemList.length === 0);
 
 function deletedComment() {
   emit("deleted");
@@ -126,24 +106,6 @@ function handleRetryClick(): void {
 </script>
 
 <style scoped lang="scss">
-.noCommentMessage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding-top: 4rem;
-  text-align: center;
-}
-
-.loadingText,
-.emptyText {
-  font-size: 1rem;
-  color: var(--q-dark);
-  opacity: 0.7;
-  margin-top: 1rem;
-}
-
 .commentListFlex {
   display: flex;
   flex-direction: column;
