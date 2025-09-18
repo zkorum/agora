@@ -73,7 +73,7 @@ import {
   moderationReasonMapping,
 } from "src/utils/component/moderations";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { useBackendCommentApi } from "src/utils/api/comment";
+import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {

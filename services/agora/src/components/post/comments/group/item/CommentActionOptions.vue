@@ -59,7 +59,7 @@ import type { OpinionItem } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
-import { useDeleteCommentMutation } from "src/composables/api/useCommentQueries";
+import { useDeleteCommentMutation } from "src/utils/api/comment/useCommentQueries";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { ref } from "vue";

@@ -13,17 +13,17 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
-import { useCommonApi } from "./common";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
+import { useCommonApi } from "../common";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import {
   type OpinionItem,
   type moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import { useNotify } from "../ui/notify";
+import { useNotify } from "../../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
-import { useBackendAuthApi } from "./auth";
+import { useBackendAuthApi } from "../auth";
 
 export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden";
 

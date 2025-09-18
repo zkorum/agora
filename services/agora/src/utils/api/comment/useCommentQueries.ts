@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
-import { useBackendCommentApi } from "src/utils/api/comment";
-import type { CommentTabFilters } from "src/utils/api/comment";
+import { useBackendCommentApi } from "./comment";
+import type { CommentTabFilters } from "./comment";
 import type { PolisKey } from "src/shared/types/zod";
-import type { AxiosErrorResponse } from "src/utils/api/common";
-import { getErrorMessage, shouldRetryError } from "src/utils/api/common";
-import { useNotify } from "src/utils/ui/notify";
+import type { AxiosErrorResponse } from "../common";
+import { getErrorMessage, shouldRetryError } from "../common";
+import { useNotify } from "../../ui/notify";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   useCommentQueriesTranslations,
