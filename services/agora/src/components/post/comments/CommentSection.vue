@@ -132,6 +132,11 @@ const opinionVoteMap = ref<Map<string, VotingOption>>(new Map());
 
 // Computed loading states from TanStack Query
 const isLoading = computed(() => {
+  // Show loading during initial mount to prevent empty state flash
+  if (!isComponentMounted.value) {
+    return true;
+  }
+
   switch (currentFilter.value) {
     case "discover":
       return commentsDiscoverQuery.isPending.value;
