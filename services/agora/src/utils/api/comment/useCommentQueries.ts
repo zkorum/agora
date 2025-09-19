@@ -3,7 +3,7 @@ import { useBackendCommentApi } from "./comment";
 import type { CommentTabFilters } from "./comment";
 import type { PolisKey } from "src/shared/types/zod";
 import type { AxiosErrorResponse } from "../common";
-import { getErrorMessage, shouldRetryError } from "../common";
+import { getErrorMessage } from "../common";
 import { useNotify } from "../../ui/notify";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -24,24 +24,13 @@ export function useCommentsQuery({
 }) {
   const { fetchCommentsForPost } = useBackendCommentApi();
 
-  const query = useQuery({
+  return useQuery({
     queryKey: ["comments", conversationSlugId, filter, clusterKey],
     queryFn: () => fetchCommentsForPost(conversationSlugId, filter, clusterKey),
     enabled: enabled && conversationSlugId.length > 0,
     staleTime: 1000 * 60 * 2, // 2 minutes for comments
+    retry: false, // Disable auto-retry
   });
-
-  return {
-    ...query,
-    // Expose additional error context for UI
-    hasError: query.isError,
-    errorMessage: query.error.value
-      ? getErrorMessage(query.error.value as AxiosErrorResponse)
-      : null,
-    isRetryable: query.error.value
-      ? shouldRetryError((query.error.value as AxiosErrorResponse)?.code)
-      : false,
-  };
 }
 
 export function useHiddenCommentsQuery({
@@ -53,23 +42,13 @@ export function useHiddenCommentsQuery({
 }) {
   const { fetchHiddenCommentsForPost } = useBackendCommentApi();
 
-  const query = useQuery({
+  return useQuery({
     queryKey: ["hiddenComments", conversationSlugId],
     queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
     enabled: enabled && conversationSlugId.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes for hidden comments
+    retry: false, // Disable auto-retry
   });
-
-  return {
-    ...query,
-    hasError: query.isError,
-    errorMessage: query.error.value
-      ? getErrorMessage(query.error.value as AxiosErrorResponse)
-      : null,
-    isRetryable: query.error.value
-      ? shouldRetryError((query.error.value as AxiosErrorResponse)?.code)
-      : false,
-  };
 }
 
 export function useAnalysisQuery({
@@ -81,23 +60,13 @@ export function useAnalysisQuery({
 }) {
   const { fetchAnalysisData } = useBackendCommentApi();
 
-  const query = useQuery({
+  return useQuery({
     queryKey: ["analysis", conversationSlugId],
     queryFn: () => fetchAnalysisData({ conversationSlugId }),
     enabled: enabled && conversationSlugId.length > 0,
     staleTime: 1000 * 60 * 10, // 10 minutes for analysis data
+    retry: false, // Disable auto-retry
   });
-
-  return {
-    ...query,
-    hasError: query.isError,
-    errorMessage: query.error.value
-      ? getErrorMessage(query.error.value as AxiosErrorResponse)
-      : null,
-    isRetryable: query.error.value
-      ? shouldRetryError((query.error.value as AxiosErrorResponse)?.code)
-      : false,
-  };
 }
 
 export function useCreateCommentMutation() {
@@ -113,23 +82,31 @@ export function useCreateCommentMutation() {
       commentBody: string;
       conversationSlugId: string;
     }) => createNewComment(commentBody, conversationSlugId),
-    onSuccess: (_data, variables) => {
-      // Invalidate and refetch comments for this conversation
-      void queryClient.invalidateQueries({
-        queryKey: ["comments", variables.conversationSlugId],
-      });
-      // Also invalidate analysis data as it might change
-      void queryClient.invalidateQueries({
-        queryKey: ["analysis", variables.conversationSlugId],
-      });
+    onSuccess: (data, variables) => {
+      // Only proceed if the comment creation was successful
+      if (data.success) {
+        // Invalidate and refetch comments for this conversation
+        void queryClient.invalidateQueries({
+          queryKey: ["comments", variables.conversationSlugId],
+        });
+        // Also invalidate analysis data as it might change
+        void queryClient.invalidateQueries({
+          queryKey: ["analysis", variables.conversationSlugId],
+        });
+      } else {
+        // Handle business logic failures (like conversation_locked)
+        showNotifyMessage(`Failed to create comment: ${data.reason}`);
+      }
     },
     onError: (error: AxiosErrorResponse) => {
+      // Handle technical errors (network, server errors, etc.)
       if (error?.code) {
         showNotifyMessage(getErrorMessage(error));
       } else {
         showNotifyMessage("Failed to create comment. Please try again.");
       }
     },
+    retry: false, // Disable auto-retry
   });
 }
 
@@ -160,6 +137,7 @@ export function useDeleteCommentMutation() {
         showNotifyMessage(t("failedToDeleteComment"));
       }
     },
+    retry: false, // Disable auto-retry
   });
 }
 
