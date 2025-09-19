@@ -3,8 +3,12 @@
     <!-- Loading state -->
     <div v-if="isLoading && !hasError" class="asyncStateMessage">
       <slot name="loading">
-        <q-spinner-dots size="50px" color="primary" />
-        <div class="stateText">{{ loadingText || t("loading") }}</div>
+        <q-spinner-dots
+          v-if="config.loading?.showSpinner !== false"
+          size="50px"
+          color="primary"
+        />
+        <div class="stateText">{{ config.loading?.text || t("loading") }}</div>
       </slot>
     </div>
 
@@ -12,7 +16,9 @@
     <div v-if="isRetrying" class="asyncStateMessage">
       <slot name="retrying">
         <q-spinner-dots size="50px" color="primary" />
-        <div class="stateText">{{ retryingText || t("retrying") }}</div>
+        <div class="stateText">
+          {{ config.retrying?.text || t("retrying") }}
+        </div>
       </slot>
     </div>
 
@@ -23,20 +29,26 @@
         :error-message="errorMessage"
         :handle-retry="handleRetry"
       >
-        <q-icon :name="errorIcon" size="50px" :color="errorIconColor" />
+        <q-icon
+          :name="config.error?.icon || 'error_outline'"
+          size="50px"
+          :color="config.error?.iconColor || 'negative'"
+        />
         <div class="errorContent">
-          <div class="errorTitle">{{ errorTitle || t("errorTitle") }}</div>
+          <div class="errorTitle">
+            {{ config.error?.title || t("errorTitle") }}
+          </div>
           <div v-if="errorMessage" class="errorDetail">{{ errorMessage }}</div>
-          <div v-else-if="defaultErrorMessage" class="errorDetail">
-            {{ defaultErrorMessage }}
+          <div v-else-if="config.error?.message" class="errorDetail">
+            {{ config.error.message }}
           </div>
           <div v-else class="errorDetail">
             {{ t("defaultErrorMessage") }}
           </div>
         </div>
         <PrimeButton
-          v-if="showRetry"
-          :label="retryLabel || t('retry')"
+          v-if="shouldShowRetryButton"
+          :label="config.error?.retryButtonText || t('retry')"
           icon="pi pi-refresh"
           :loading="isRetrying"
           severity="primary"
@@ -48,17 +60,23 @@
 
     <!-- Empty state (no errors, not loading) -->
     <div
-      v-if="isEmpty && !isLoading && !hasError && !isRetrying"
+      v-if="computedIsEmpty && !isLoading && !hasError && !isRetrying"
       class="asyncStateMessage"
     >
       <slot name="empty">
-        <q-icon :name="emptyIcon" size="50px" :color="emptyIconColor" />
-        <div class="stateText">{{ emptyText || t("emptyMessage") }}</div>
+        <q-icon
+          :name="config.empty?.icon || 'inbox'"
+          size="50px"
+          :color="config.empty?.iconColor || 'grey-5'"
+        />
+        <div class="stateText">
+          {{ config.empty?.text || t("emptyMessage") }}
+        </div>
       </slot>
     </div>
 
     <!-- Success state with data -->
-    <div v-if="!isEmpty && !isLoading">
+    <div v-if="!computedIsEmpty && !isLoading">
       <slot />
     </div>
   </div>
@@ -77,84 +95,136 @@ const { t } = useComponentI18n<AsyncStateHandlerTranslations>(
   asyncStateHandlerTranslations
 );
 
-const emit = defineEmits(["retry"]);
+type ConstrainedQueryType = Pick<
+  UseQueryReturnType<unknown, Error>,
+  "isPending" | "isError" | "error" | "isRefetching" | "data" | "refetch"
+>;
 
-const props = withDefaults(
-  defineProps<{
-    query: UseQueryReturnType<unknown, Error>;
-    // Optional customization props
-    loadingText?: string;
-    retryingText?: string;
-    errorTitle?: string;
-    defaultErrorMessage?: string;
-    emptyText?: string;
-    retryLabel?: string;
-    // Icon customization
-    errorIcon?: string;
-    errorIconColor?: string;
-    emptyIcon?: string;
-    emptyIconColor?: string;
-    // Optional override for empty state logic
-    customIsEmpty?: boolean;
-    // Optional override for retry functionality
-    isRetryable?: boolean;
-  }>(),
-  {
-    loadingText: undefined,
-    retryingText: undefined,
-    errorTitle: undefined,
-    defaultErrorMessage: undefined,
-    emptyText: undefined,
-    retryLabel: undefined,
-    errorIcon: "error_outline",
-    errorIconColor: "negative",
-    emptyIcon: "inbox",
-    emptyIconColor: "grey-5",
-    customIsEmpty: undefined,
-    isRetryable: undefined,
-  }
-);
+interface LoadingConfig {
+  readonly text?: string;
+  readonly showSpinner?: boolean;
+}
 
-// Automatically extract states from the query using native Tanstack Query types
-const isLoading = computed(() => props.query.isPending.value);
-const hasError = computed(() => props.query.isError.value);
-const errorMessage = computed(() => {
+interface ErrorConfig {
+  readonly title?: string;
+  readonly message?: string;
+  readonly icon?: string;
+  readonly iconColor?: string;
+  readonly showRetryButton?: boolean;
+  readonly retryButtonText?: string;
+}
+
+interface EmptyConfig {
+  readonly text?: string;
+  readonly icon?: string;
+  readonly iconColor?: string;
+}
+
+interface RetryingConfig {
+  readonly text?: string;
+}
+
+interface AsyncStateConfig {
+  readonly loading?: LoadingConfig;
+  readonly error?: ErrorConfig;
+  readonly empty?: EmptyConfig;
+  readonly retrying?: RetryingConfig;
+}
+
+// Vue 3 best practice: Proper emit typing
+const emit = defineEmits<{
+  retry: [];
+}>();
+
+interface Props {
+  query: ConstrainedQueryType;
+  config?: AsyncStateConfig;
+  isEmpty?: boolean | (() => boolean);
+  onRetry?: () => void | Promise<void>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  config: () => ({}),
+  isEmpty: undefined,
+  onRetry: undefined,
+});
+
+const isLoading = computed((): boolean => props.query.isPending.value);
+const hasError = computed((): boolean => props.query.isError.value);
+const isRetrying = computed((): boolean => props.query.isRefetching.value);
+
+const errorMessage = computed((): string | null => {
   if (!props.query.error.value) return null;
-  // Handle different error types
+
   const error = props.query.error.value;
+
+  // Handle Error instances first
   if (error instanceof Error) {
     return error.message;
   }
+
+  // Handle string errors
   if (typeof error === "string") {
     return error;
   }
-  // For other error types, try to extract message property if it exists
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message: unknown }).message;
-    return typeof message === "string" ? message : "An error occurred";
-  }
-  // Fallback for primitive error types
-  return "An error occurred";
-});
-const isRetrying = computed(() => props.query.isRefetching.value);
-const isEmpty = computed(() =>
-  props.customIsEmpty !== undefined
-    ? props.customIsEmpty
-    : !props.query.data.value
-);
-const showRetry = computed(
-  () =>
-    props.isRetryable !== undefined
-      ? props.isRetryable
-      : props.query.isError.value // Default: allow retry if there's an error
-);
 
-function handleRetry(): void {
-  if (props.query.refetch) {
-    void props.query.refetch();
+  // Handle objects with message property
+  if (
+    error !== null &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
   }
-  // Still emit retry event for any custom handling
-  emit("retry");
+
+  return null;
+});
+
+const computedIsEmpty = computed((): boolean => {
+  if (props.isEmpty === undefined) {
+    // Default logic: empty if no data
+    return !props.query.data.value;
+  }
+
+  if (typeof props.isEmpty === "function") {
+    return props.isEmpty();
+  }
+
+  return props.isEmpty;
+});
+
+const shouldShowRetryButton = computed((): boolean => {
+  // If explicitly configured, use that setting
+  if (props.config.error?.showRetryButton !== undefined) {
+    return props.config.error.showRetryButton;
+  }
+
+  // Default: show retry button if there's an error
+  return hasError.value;
+});
+
+async function handleRetry(): Promise<void> {
+  try {
+    // Call custom retry handler if provided
+    if (props.onRetry) {
+      await props.onRetry();
+    } else {
+      // Default behavior: refetch the query
+      if (props.query.refetch) {
+        await props.query.refetch();
+      }
+    }
+  } catch (retryError: unknown) {
+    const errorMsg =
+      retryError instanceof Error
+        ? retryError.message
+        : "Unknown retry error occurred";
+    console.error("Retry failed:", errorMsg);
+  } finally {
+    // Always emit retry event for any additional handling
+    emit("retry");
+  }
 }
 </script>
 
