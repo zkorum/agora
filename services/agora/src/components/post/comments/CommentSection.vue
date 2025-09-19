@@ -14,25 +14,32 @@
           </div>
         </div>
 
-        <CommentGroup
-          :comment-item-list="visibleOpinions"
-          :is-loading="isLoading"
-          :has-error="hasError"
-          :error-message="errorMessage"
-          :is-retrying="isRetrying"
-          :post-slug-id="postSlugId"
-          :initial-comment-slug-id="highlightedOpinionId"
-          :comment-slug-id-liked-map="opinionVoteMap"
-          :is-post-locked="isPostLocked"
-          :login-required-to-participate="props.loginRequiredToParticipate"
-          @deleted="handleOpinionDeleted()"
-          @muted-comment="handleOpinionMuted()"
-          @retry-load-comments="handleRetryLoadComments()"
-          @change-vote="
-            (vote: VotingAction, opinionSlugId: string) =>
-              changeVote(vote, opinionSlugId)
-          "
-        />
+        <AsyncStateHandler
+          :query="activeQuery"
+          :custom-is-empty="visibleOpinions.length === 0"
+          loading-text="Loading comments..."
+          retrying-text="Retrying..."
+          error-title="Failed to load comments"
+          empty-text="No comments available"
+          retry-label="Retry loading comments"
+          empty-icon="forum"
+          empty-icon-color="grey-5"
+        >
+          <CommentGroup
+            :comment-item-list="visibleOpinions"
+            :post-slug-id="postSlugId"
+            :initial-comment-slug-id="highlightedOpinionId"
+            :comment-slug-id-liked-map="opinionVoteMap"
+            :is-post-locked="isPostLocked"
+            :login-required-to-participate="props.loginRequiredToParticipate"
+            @deleted="handleOpinionDeleted()"
+            @muted-comment="handleOpinionMuted()"
+            @change-vote="
+              (vote: VotingAction, opinionSlugId: string) =>
+                changeVote(vote, opinionSlugId)
+            "
+          />
+        </AsyncStateHandler>
       </div>
     </div>
   </q-infinite-scroll>
@@ -46,6 +53,7 @@ import type { VotingAction, VotingOption } from "src/shared/types/zod";
 import { type OpinionItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./group/CommentGroup.vue";
+import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouteQuery } from "@vueuse/router";
 import { useRouter, useRoute } from "vue-router";
@@ -130,84 +138,19 @@ const { findOpinionFilter } = useOpinionFiltering();
 // Internal vote map management
 const opinionVoteMap = ref<Map<string, VotingOption>>(new Map());
 
-// Computed loading states from TanStack Query
-const isLoading = computed(() => {
-  // Show loading during initial mount to prevent empty state flash
-  if (!isComponentMounted.value) {
-    return true;
-  }
-
+// Active query based on current filter
+const activeQuery = computed(() => {
   switch (currentFilter.value) {
     case "discover":
-      return commentsDiscoverQuery.isPending.value;
+      return commentsDiscoverQuery;
     case "new":
-      return commentsNewQuery.isPending.value;
+      return commentsNewQuery;
     case "moderated":
-      return commentsModeratedQuery.isPending.value;
+      return commentsModeratedQuery;
     case "hidden":
-      return hiddenCommentsQuery.isPending.value;
+      return hiddenCommentsQuery;
     default:
-      return commentsDiscoverQuery.isPending.value;
-  }
-});
-
-// Computed error states from TanStack Query
-const hasError = computed(() => {
-  switch (currentFilter.value) {
-    case "discover":
-      return commentsDiscoverQuery.hasError.value;
-    case "new":
-      return commentsNewQuery.hasError.value;
-    case "moderated":
-      return commentsModeratedQuery.hasError.value;
-    case "hidden":
-      return hiddenCommentsQuery.hasError.value;
-    default:
-      return commentsDiscoverQuery.hasError.value;
-  }
-});
-
-const errorMessage = computed(() => {
-  switch (currentFilter.value) {
-    case "discover":
-      return commentsDiscoverQuery.errorMessage;
-    case "new":
-      return commentsNewQuery.errorMessage;
-    case "moderated":
-      return commentsModeratedQuery.errorMessage;
-    case "hidden":
-      return hiddenCommentsQuery.errorMessage;
-    default:
-      return commentsDiscoverQuery.errorMessage;
-  }
-});
-
-const isRetrying = computed(() => {
-  switch (currentFilter.value) {
-    case "discover":
-      return (
-        commentsDiscoverQuery.isRefetching.value &&
-        commentsDiscoverQuery.hasError.value
-      );
-    case "new":
-      return (
-        commentsNewQuery.isRefetching.value && commentsNewQuery.hasError.value
-      );
-    case "moderated":
-      return (
-        commentsModeratedQuery.isRefetching.value &&
-        commentsModeratedQuery.hasError.value
-      );
-    case "hidden":
-      return (
-        hiddenCommentsQuery.isRefetching.value &&
-        hiddenCommentsQuery.hasError.value
-      );
-    default:
-      return (
-        commentsDiscoverQuery.isRefetching.value &&
-        commentsDiscoverQuery.hasError.value
-      );
+      return commentsDiscoverQuery;
   }
 });
 

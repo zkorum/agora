@@ -1,13 +1,5 @@
 <template>
-  <AsyncStateHandler
-    :is-loading="analysisQuery.isLoading.value"
-    :has-error="analysisQuery.hasError.value"
-    :error-message="analysisQuery.errorMessage"
-    :is-retrying="analysisQuery.isRefetching.value"
-    :is-empty="!analysisQuery.data.value"
-    :show-retry="analysisQuery.isRetryable"
-    @retry="handleRetry"
-  >
+  <AsyncStateHandler :query="analysisQuery">
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
@@ -72,10 +64,6 @@ const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationSlugId,
   enabled: true,
 });
-
-function handleRetry(): void {
-  void analysisQuery.refetch();
-}
 </script>
 
 <style lang="scss" scoped>
