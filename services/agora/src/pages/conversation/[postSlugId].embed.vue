@@ -2,7 +2,6 @@
   <EmbedLayout>
     <PostDetails
       v-if="hasConversationData"
-      :key="String(isGuestOrLoggedIn)"
       v-model="currentTab"
       :conversation-data="conversationData"
       :compact-mode="false"
