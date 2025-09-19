@@ -17,11 +17,11 @@
         <AsyncStateHandler
           :query="activeQuery"
           :custom-is-empty="visibleOpinions.length === 0"
-          loading-text="Loading comments..."
-          retrying-text="Retrying..."
-          error-title="Failed to load comments"
-          empty-text="No comments available"
-          retry-label="Retry loading comments"
+          :loading-text="t('loadingOpinions')"
+          :retrying-text="t('retrying')"
+          :error-title="t('failedToLoadOpinions')"
+          :empty-text="t('noOpinionsAvailable')"
+          :retry-label="t('retryLoadingOpinions')"
           empty-icon="forum"
           empty-icon-color="grey-5"
         >
