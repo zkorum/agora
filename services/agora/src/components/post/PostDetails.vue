@@ -24,6 +24,7 @@
         <div v-if="!compactMode">
           <AnalysisPage
             v-if="currentTab == 'analysis'"
+            ref="analysisPageRef"
             :conversation-slug-id="
               props.conversationData.metadata.conversationSlugId
             "
@@ -71,7 +72,7 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -87,6 +88,7 @@ const currentTab = defineModel<"comment" | "analysis">({
 });
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
@@ -125,6 +127,11 @@ async function submittedComment(opinionSlugId: string): Promise<void> {
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
   }
+
+  // Refresh analysis data since new opinion affects analysis results
+  if (analysisPageRef.value) {
+    await analysisPageRef.value.refreshData();
+  }
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string): void {
@@ -143,6 +150,44 @@ async function shareClicked(): Promise<void> {
     sharePostUrl
   );
 }
+
+async function refreshChildComponents(): Promise<void> {
+  // Reset local state that might have drifted from backend changes
+  opinionCountOffset.value = 0;
+  participantCountLocal.value =
+    props.conversationData.metadata.participantCount;
+
+  const refreshPromises: Promise<void>[] = [];
+
+  // Refresh CommentSection data (includes vote data refresh)
+  if (opinionSectionRef.value) {
+    refreshPromises.push(opinionSectionRef.value.refreshData());
+  }
+
+  // Refresh AnalysisPage data
+  if (analysisPageRef.value) {
+    refreshPromises.push(analysisPageRef.value.refreshData());
+  }
+
+  // Wait for all refreshes to complete
+  await Promise.all(refreshPromises);
+}
+
+// Watch for tab changes and refresh data when switching tabs
+watch(currentTab, async (newTab) => {
+  if (!props.compactMode) {
+    // Refresh the newly active tab's data
+    if (newTab === "comment" && opinionSectionRef.value) {
+      await opinionSectionRef.value.refreshData();
+    } else if (newTab === "analysis" && analysisPageRef.value) {
+      await analysisPageRef.value.refreshData();
+    }
+  }
+});
+
+defineExpose({
+  refreshChildComponents,
+});
 </script>
 
 <style scoped lang="scss">
