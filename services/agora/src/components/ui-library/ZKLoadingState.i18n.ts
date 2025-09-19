@@ -1,6 +1,6 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
-export interface AsyncDataHandlerTranslations {
+export interface ZKLoadingStateTranslations {
   loading: string;
   retrying: string;
   errorTitle: string;
@@ -9,9 +9,9 @@ export interface AsyncDataHandlerTranslations {
   retry: string;
 }
 
-export const asyncDataHandlerTranslations: Record<
+export const zkLoadingStateTranslations: Record<
   SupportedDisplayLanguageCodes,
-  AsyncDataHandlerTranslations
+  ZKLoadingStateTranslations
 > = {
   en: {
     loading: "Loading...",
