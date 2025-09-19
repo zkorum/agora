@@ -89,7 +89,7 @@
     "typescript": "5.5.4",
     "unplugin-vue-router": "^0.15.0",
     "vite-plugin-checker": "^0.10.3",
-    "vue-tsc": "^2.2.12"
+    "vue-tsc": "^3.0.7"
   },
   "engines": {
     "node": "^24 || ^22 || ^20",
