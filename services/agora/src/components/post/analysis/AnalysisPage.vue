@@ -1,5 +1,5 @@
 <template>
-  <AsyncStateHandler :query="analysisQuery">
+  <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
@@ -52,11 +52,20 @@ import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { ref } from "vue";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  analysisPageTranslations,
+  type AnalysisPageTranslations,
+} from "./AnalysisPage.i18n";
 
 const props = defineProps<{
   participantCount: number;
   conversationSlugId: string;
 }>();
+
+const { t } = useComponentI18n<AnalysisPageTranslations>(
+  analysisPageTranslations
+);
 
 const currentTab = ref<ShortcutItem>("Summary");
 
@@ -64,6 +73,23 @@ const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationSlugId,
   enabled: true,
 });
+
+const asyncStateConfig = {
+  loading: {
+    text: t("loadingAnalysis"),
+  },
+  retrying: {
+    text: t("retryingAnalysis"),
+  },
+  error: {
+    title: t("analysisErrorTitle"),
+    message: t("analysisErrorMessage"),
+    retryButtonText: t("retryAnalysis"),
+  },
+  empty: {
+    text: t("noAnalysisData"),
+  },
+};
 </script>
 
 <style lang="scss" scoped>
