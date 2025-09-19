@@ -3,7 +3,7 @@
     <!-- Loading state -->
     <div v-if="isLoading && !hasError" class="asyncStateMessage">
       <slot name="loading">
-        <q-spinner-gears size="50px" color="primary" />
+        <q-spinner-dots size="50px" color="primary" />
         <div class="stateText">{{ loadingText || t("loading") }}</div>
       </slot>
     </div>
@@ -11,7 +11,7 @@
     <!-- Retrying state -->
     <div v-if="isRetrying" class="asyncStateMessage">
       <slot name="retrying">
-        <q-spinner-gears size="50px" color="primary" />
+        <q-spinner-dots size="50px" color="primary" />
         <div class="stateText">{{ retryingText || t("retrying") }}</div>
       </slot>
     </div>
