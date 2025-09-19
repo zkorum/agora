@@ -1,27 +1,12 @@
 <template>
-  <div v-if="analysisQuery.isLoading.value" class="analysisLoading">
-    <q-spinner-gears size="50px" color="primary" />
-  </div>
-  <div v-if="analysisQuery.hasError.value" class="analysisError">
-    <div class="errorContainer">
-      <q-icon name="error_outline" size="48px" color="negative" />
-      <p class="errorMessage">{{ analysisQuery.errorMessage }}</p>
-      <q-btn
-        v-if="analysisQuery.isRetryable"
-        color="primary"
-        :loading="analysisQuery.isRefetching.value"
-        @click="() => analysisQuery.refetch()"
-      >
-        Retry
-      </q-btn>
-    </div>
-  </div>
-  <div
-    v-if="
-      !analysisQuery.isLoading.value &&
-      !analysisQuery.hasError.value &&
-      analysisQuery.data.value
-    "
+  <AsyncStateHandler
+    :is-loading="analysisQuery.isLoading.value"
+    :has-error="analysisQuery.hasError.value"
+    :error-message="analysisQuery.errorMessage"
+    :is-retrying="analysisQuery.isRefetching.value"
+    :is-empty="!analysisQuery.data.value"
+    :show-retry="analysisQuery.isRetryable"
+    @retry="handleRetry"
   >
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
@@ -63,7 +48,7 @@
         />
       </div>
     </div>
-  </div>
+  </AsyncStateHandler>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +57,7 @@ import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
+import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { ref } from "vue";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 
@@ -86,6 +72,10 @@ const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationSlugId,
   enabled: true,
 });
+
+function handleRetry(): void {
+  void analysisQuery.refetch();
+}
 </script>
 
 <style lang="scss" scoped>
@@ -108,33 +98,5 @@ const analysisQuery = useAnalysisQuery({
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
-}
-
-.analysisLoading {
-  display: flex;
-  justify-content: center;
-  padding-top: 4rem;
-}
-
-.analysisError {
-  display: flex;
-  justify-content: center;
-  padding-top: 4rem;
-}
-
-.errorContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 2rem;
-  text-align: center;
-}
-
-.errorMessage {
-  font-size: 1rem;
-  color: #dc2626;
-  margin: 0;
-  font-weight: var(--font-weight-semibold);
 }
 </style>
