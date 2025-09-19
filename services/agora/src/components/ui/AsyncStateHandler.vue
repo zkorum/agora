@@ -66,6 +66,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   asyncStateHandlerTranslations,
@@ -78,19 +79,9 @@ const { t } = useComponentI18n<AsyncStateHandlerTranslations>(
 
 const emit = defineEmits(["retry"]);
 
-interface QueryLike {
-  isLoading: { value: boolean };
-  hasError: boolean | { value: boolean };
-  errorMessage: string | null;
-  isRefetching: { value: boolean };
-  data: { value: unknown };
-  isRetryable: boolean;
-  refetch: () => Promise<unknown>;
-}
-
 const props = withDefaults(
   defineProps<{
-    query: QueryLike;
+    query: UseQueryReturnType<unknown, Error>;
     // Optional customization props
     loadingText?: string;
     retryingText?: string;
@@ -105,6 +96,8 @@ const props = withDefaults(
     emptyIconColor?: string;
     // Optional override for empty state logic
     customIsEmpty?: boolean;
+    // Optional override for retry functionality
+    isRetryable?: boolean;
   }>(),
   {
     loadingText: undefined,
@@ -118,24 +111,43 @@ const props = withDefaults(
     emptyIcon: "inbox",
     emptyIconColor: "grey-5",
     customIsEmpty: undefined,
+    isRetryable: undefined,
   }
 );
 
-// Automatically extract states from the query
-const isLoading = computed(() => props.query.isLoading.value);
-const hasError = computed(() =>
-  typeof props.query.hasError === "boolean"
-    ? props.query.hasError
-    : props.query.hasError.value
-);
-const errorMessage = computed(() => props.query.errorMessage);
+// Automatically extract states from the query using native Tanstack Query types
+const isLoading = computed(() => props.query.isPending.value);
+const hasError = computed(() => props.query.isError.value);
+const errorMessage = computed(() => {
+  if (!props.query.error.value) return null;
+  // Handle different error types
+  const error = props.query.error.value;
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  // For other error types, try to extract message property if it exists
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "An error occurred";
+  }
+  // Fallback for primitive error types
+  return "An error occurred";
+});
 const isRetrying = computed(() => props.query.isRefetching.value);
 const isEmpty = computed(() =>
   props.customIsEmpty !== undefined
     ? props.customIsEmpty
     : !props.query.data.value
 );
-const showRetry = computed(() => props.query.isRetryable);
+const showRetry = computed(
+  () =>
+    props.isRetryable !== undefined
+      ? props.isRetryable
+      : props.query.isError.value // Default: allow retry if there's an error
+);
 
 function handleRetry(): void {
   if (props.query.refetch) {
