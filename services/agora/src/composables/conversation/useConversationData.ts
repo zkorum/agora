@@ -66,21 +66,18 @@ export function useConversationData() {
       });
     }
 
-    // Clear old data and start loading
-    conversationData.value = emptyPost;
-
     try {
       const response = await fetchPostBySlugId(slugId, isGuestOrLoggedIn.value);
       if (response != null) {
         conversationData.value = response;
         return true;
       } else {
-        conversationData.value = emptyPost;
+        // Keep existing data on failure instead of clearing
         return false;
       }
     } catch (error) {
       console.error("Failed to load conversation data:", error);
-      conversationData.value = emptyPost;
+      // Keep existing data on error instead of clearing
       return false;
     }
   }
