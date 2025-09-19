@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -23,10 +23,7 @@ export function useConversationData() {
 
   // Simple reactive state
   const conversationData = ref<ExtendedConversation>(emptyPost);
-
-  const hasConversationData = computed(
-    () => conversationData.value.metadata.conversationSlugId !== ""
-  );
+  const hasConversationData = ref(false);
 
   // Clear intentions on initialization
   clearVotingIntention();
@@ -52,7 +49,10 @@ export function useConversationData() {
 
   async function loadConversationData() {
     const slugId = getConversationSlugId();
-    if (!slugId) return false;
+    if (!slugId) {
+      hasConversationData.value = false;
+      return false;
+    }
 
     // Wait for auth to be initialized
     if (!isAuthInitialized.value) {
@@ -70,14 +70,17 @@ export function useConversationData() {
       const response = await fetchPostBySlugId(slugId, isGuestOrLoggedIn.value);
       if (response != null) {
         conversationData.value = response;
+        hasConversationData.value = true;
         return true;
       } else {
         // Keep existing data on failure instead of clearing
+        hasConversationData.value = false;
         return false;
       }
     } catch (error) {
       console.error("Failed to load conversation data:", error);
       // Keep existing data on error instead of clearing
+      hasConversationData.value = false;
       return false;
     }
   }
@@ -91,17 +94,6 @@ export function useConversationData() {
     }, 500);
   }
 
-  // Watch for route parameter changes to load new conversation data
-  watch(
-    () => (route.params as { postSlugId?: string | string[] }).postSlugId,
-    async (newSlugId, oldSlugId) => {
-      if (newSlugId && newSlugId !== oldSlugId) {
-        await loadConversationData();
-      }
-    },
-    { immediate: false }
-  );
-
   onMounted(async () => {
     await loadConversationData();
   });
@@ -109,8 +101,6 @@ export function useConversationData() {
   return {
     // State
     conversationData,
-
-    // Computed
     hasConversationData,
 
     // Actions
