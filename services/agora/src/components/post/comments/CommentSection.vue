@@ -67,6 +67,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   useCommentsQuery,
   useHiddenCommentsQuery,
+  useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import {
   commentSectionTranslations,
@@ -99,6 +100,9 @@ const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
 );
+
+// Get invalidation utilities
+const { invalidateAll } = useInvalidateCommentQueries();
 
 // TanStack Query hooks for different comment filters
 const commentsNewQuery = useCommentsQuery({
@@ -362,16 +366,10 @@ function scrollToOpinion(opinionSlugId: string) {
 }
 
 async function refreshAndHighlightOpinion(opinionSlugId: string) {
-  // Invalidate TanStack Query caches to refetch data
-  await Promise.all([
-    commentsNewQuery.refetch(),
-    commentsDiscoverQuery.refetch(),
-    commentsModeratedQuery.refetch(),
-  ]);
+  // Use centralized refresh method
+  await refreshData();
 
   await highlightOpinionAndScroll(opinionSlugId);
-
-  updateOpinionList(currentFilter.value);
 }
 
 function openModerationHistory() {
@@ -384,13 +382,8 @@ function handleUserFilterChange(filterValue: CommentFilterOptions) {
 }
 
 async function handleOpinionMuted() {
-  // Refetch all comment data since opinions may have moved between filters
-  await Promise.all([
-    commentsNewQuery.refetch(),
-    commentsDiscoverQuery.refetch(),
-    commentsModeratedQuery.refetch(),
-    hiddenCommentsQuery.refetch(),
-  ]);
+  // Use centralized refresh method to refetch all data
+  await refreshData();
 }
 
 function handleOpinionDeleted() {
@@ -470,13 +463,9 @@ function triggerLoadMore() {
 }
 
 async function refreshData(): Promise<void> {
-  // Refetch all comment queries to get fresh data
-  await Promise.all([
-    commentsNewQuery.refetch(),
-    commentsDiscoverQuery.refetch(),
-    commentsModeratedQuery.refetch(),
-    hiddenCommentsQuery.refetch(),
-  ]);
+  // Use utility function to invalidate all comment and analysis queries
+  // This ensures fresh network requests regardless of staleTime
+  invalidateAll(props.postSlugId);
 
   // Refresh user voting data to ensure vote map is current
   await fetchUserVotingData();

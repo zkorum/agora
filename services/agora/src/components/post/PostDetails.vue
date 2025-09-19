@@ -83,9 +83,7 @@ const props = defineProps<{
   conversationData: ExtendedConversation;
   compactMode: boolean;
 }>();
-const currentTab = defineModel<"comment" | "analysis">({
-  required: true,
-});
+const currentTab = ref<"comment" | "analysis">("comment");
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
@@ -130,7 +128,7 @@ async function submittedComment(opinionSlugId: string): Promise<void> {
 
   // Refresh analysis data since new opinion affects analysis results
   if (analysisPageRef.value) {
-    await analysisPageRef.value.refreshData();
+    analysisPageRef.value.refreshData();
   }
 }
 
@@ -166,7 +164,7 @@ async function refreshChildComponents(): Promise<void> {
 
   // Refresh AnalysisPage data
   if (analysisPageRef.value) {
-    refreshPromises.push(analysisPageRef.value.refreshData());
+    analysisPageRef.value.refreshData();
   }
 
   // Wait for all refreshes to complete
@@ -176,11 +174,11 @@ async function refreshChildComponents(): Promise<void> {
 // Watch for tab changes and refresh data when switching tabs
 watch(currentTab, async (newTab) => {
   if (!props.compactMode) {
-    // Refresh the newly active tab's data
+    // Refresh the newly active tab's data with forced network requests
     if (newTab === "comment" && opinionSectionRef.value) {
       await opinionSectionRef.value.refreshData();
     } else if (newTab === "analysis" && analysisPageRef.value) {
-      await analysisPageRef.value.refreshData();
+      analysisPageRef.value.refreshData();
     }
   }
 });
