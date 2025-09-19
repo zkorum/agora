@@ -10,7 +10,6 @@ export interface AsyncStateHandlerTestTranslations {
   simulateRetrying: string;
   resetState: string;
   basicExample: string;
-  customizedExample: string;
   configApiExample: string;
   customRetryExample: string;
   functionEmptyExample: string;
@@ -38,7 +37,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "Retrying",
     resetState: "Reset",
     basicExample: "Basic Example",
-    customizedExample: "Customized Example",
     configApiExample: "Config API Example",
     customRetryExample: "Custom Retry Example",
     functionEmptyExample: "Function Empty Example",
@@ -61,7 +59,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "إعادة المحاولة",
     resetState: "إعادة تعيين",
     basicExample: "مثال أساسي",
-    customizedExample: "مثال مخصص",
     configApiExample: "مثال واجهة التكوين",
     customRetryExample: "مثال إعادة المحاولة المخصص",
     functionEmptyExample: "مثال الوظيفة الفارغة",
@@ -84,7 +81,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "Reintentando",
     resetState: "Restablecer",
     basicExample: "Ejemplo Básico",
-    customizedExample: "Ejemplo Personalizado",
     configApiExample: "Ejemplo de API de Configuración",
     customRetryExample: "Ejemplo de Reintento Personalizado",
     functionEmptyExample: "Ejemplo de Función Vacía",
@@ -107,7 +103,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "Nouvelle tentative",
     resetState: "Réinitialiser",
     basicExample: "Exemple de Base",
-    customizedExample: "Exemple Personnalisé",
     configApiExample: "Exemple d'API de Configuration",
     customRetryExample: "Exemple de Nouvelle Tentative Personnalisée",
     functionEmptyExample: "Exemple de Fonction Vide",
@@ -130,7 +125,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "重试中",
     resetState: "重置",
     basicExample: "基本示例",
-    customizedExample: "自定义示例",
     configApiExample: "配置API示例",
     customRetryExample: "自定义重试示例",
     functionEmptyExample: "函数空状态示例",
@@ -153,7 +147,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "重試中",
     resetState: "重設",
     basicExample: "基本範例",
-    customizedExample: "自定義範例",
     configApiExample: "配置API範例",
     customRetryExample: "自定義重試範例",
     functionEmptyExample: "函數空狀態範例",
@@ -176,7 +169,6 @@ export const asyncStateHandlerTestTranslations: Record<
     simulateRetrying: "再試行中",
     resetState: "リセット",
     basicExample: "基本例",
-    customizedExample: "カスタマイズ例",
     configApiExample: "設定API例",
     customRetryExample: "カスタム再試行例",
     functionEmptyExample: "関数空状態例",
