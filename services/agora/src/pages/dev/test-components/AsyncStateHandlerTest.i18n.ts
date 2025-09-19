@@ -11,6 +11,9 @@ export interface AsyncStateHandlerTestTranslations {
   resetState: string;
   basicExample: string;
   customizedExample: string;
+  configApiExample: string;
+  customRetryExample: string;
+  functionEmptyExample: string;
   withCustomSlots: string;
   currentState: string;
   sampleData: string;
@@ -36,6 +39,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "Reset",
     basicExample: "Basic Example",
     customizedExample: "Customized Example",
+    configApiExample: "Config API Example",
+    customRetryExample: "Custom Retry Example",
+    functionEmptyExample: "Function Empty Example",
     withCustomSlots: "With Custom Slots",
     currentState: "Current State",
     sampleData: "Sample data loaded successfully!",
@@ -56,6 +62,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "إعادة تعيين",
     basicExample: "مثال أساسي",
     customizedExample: "مثال مخصص",
+    configApiExample: "مثال واجهة التكوين",
+    customRetryExample: "مثال إعادة المحاولة المخصص",
+    functionEmptyExample: "مثال الوظيفة الفارغة",
     withCustomSlots: "مع فتحات مخصصة",
     currentState: "الحالة الحالية",
     sampleData: "تم تحميل البيانات النموذجية بنجاح!",
@@ -76,6 +85,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "Restablecer",
     basicExample: "Ejemplo Básico",
     customizedExample: "Ejemplo Personalizado",
+    configApiExample: "Ejemplo de API de Configuración",
+    customRetryExample: "Ejemplo de Reintento Personalizado",
+    functionEmptyExample: "Ejemplo de Función Vacía",
     withCustomSlots: "Con Slots Personalizados",
     currentState: "Estado Actual",
     sampleData: "¡Datos de muestra cargados exitosamente!",
@@ -96,6 +108,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "Réinitialiser",
     basicExample: "Exemple de Base",
     customizedExample: "Exemple Personnalisé",
+    configApiExample: "Exemple d'API de Configuration",
+    customRetryExample: "Exemple de Nouvelle Tentative Personnalisée",
+    functionEmptyExample: "Exemple de Fonction Vide",
     withCustomSlots: "Avec Slots Personnalisés",
     currentState: "État Actuel",
     sampleData: "Données d'exemple chargées avec succès!",
@@ -116,6 +131,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "重置",
     basicExample: "基本示例",
     customizedExample: "自定义示例",
+    configApiExample: "配置API示例",
+    customRetryExample: "自定义重试示例",
+    functionEmptyExample: "函数空状态示例",
     withCustomSlots: "使用自定义插槽",
     currentState: "当前状态",
     sampleData: "示例数据加载成功！",
@@ -136,6 +154,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "重設",
     basicExample: "基本範例",
     customizedExample: "自定義範例",
+    configApiExample: "配置API範例",
+    customRetryExample: "自定義重試範例",
+    functionEmptyExample: "函數空狀態範例",
     withCustomSlots: "使用自定義插槽",
     currentState: "當前狀態",
     sampleData: "範例資料載入成功！",
@@ -156,6 +177,9 @@ export const asyncStateHandlerTestTranslations: Record<
     resetState: "リセット",
     basicExample: "基本例",
     customizedExample: "カスタマイズ例",
+    configApiExample: "設定API例",
+    customRetryExample: "カスタム再試行例",
+    functionEmptyExample: "関数空状態例",
     withCustomSlots: "カスタムスロット付き",
     currentState: "現在の状態",
     sampleData: "サンプルデータが正常に読み込まれました！",

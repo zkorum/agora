@@ -83,23 +83,52 @@
 
         <!-- Customized Example -->
         <div class="example-section">
-          <h4>{{ t("customizedExample") }}</h4>
+          <h4>{{ t("configApiExample") }}</h4>
           <div class="example-content">
             <AsyncStateHandler
               :query="customQuery"
-              :loading-text="t('customLoadingText')"
-              :error-title="t('customErrorMessage')"
-              :empty-text="t('customEmptyText')"
-              :retry-label="t('customRetryText')"
-              error-icon="pi pi-times-circle"
-              error-icon-color="red-600"
-              empty-icon="pi pi-database"
-              empty-icon-color="blue-500"
+              :config="customConfig"
               @retry="handleCustomRetry"
             >
               <div class="success-content">
                 <i class="pi pi-star success-icon"></i>
-                <p>{{ t("sampleData") }} ({{ t("customizedExample") }})</p>
+                <p>{{ t("sampleData") }} ({{ t("configApiExample") }})</p>
+              </div>
+            </AsyncStateHandler>
+          </div>
+        </div>
+
+        <!-- Custom Retry Handler Example -->
+        <div class="example-section">
+          <h4>{{ t("customRetryExample") }}</h4>
+          <div class="example-content">
+            <AsyncStateHandler
+              :query="retryQuery"
+              :config="retryConfig"
+              :on-retry="customRetryHandler"
+              @retry="onRetryEmitted"
+            >
+              <div class="success-content">
+                <i class="pi pi-refresh success-icon"></i>
+                <p>{{ t("sampleData") }} ({{ t("customRetryExample") }})</p>
+              </div>
+            </AsyncStateHandler>
+          </div>
+        </div>
+
+        <!-- Function-based Empty State Example -->
+        <div class="example-section">
+          <h4>{{ t("functionEmptyExample") }}</h4>
+          <div class="example-content">
+            <AsyncStateHandler
+              :query="functionEmptyQuery"
+              :config="functionEmptyConfig"
+              :is-empty="customEmptyFunction"
+            >
+              <div class="success-content">
+                <i class="pi pi-function success-icon"></i>
+                <p>{{ t("sampleData") }} ({{ t("functionEmptyExample") }})</p>
+                <p>Items: {{ mockItems.length }}</p>
               </div>
             </AsyncStateHandler>
           </div>
@@ -184,6 +213,7 @@ interface MockQueryInterface {
 }
 
 const currentState = ref<MockState>("idle");
+const mockItems = ref<string[]>([]);
 
 // Create mock query objects that satisfy the minimal interface AsyncStateHandler needs
 function createMockQuery(state: MockState): MockQueryInterface {
@@ -208,6 +238,7 @@ const basicQuery = computed(
       Error
     >
 );
+
 const customQuery = computed(
   () =>
     createMockQuery(currentState.value) as unknown as UseQueryReturnType<
@@ -215,6 +246,23 @@ const customQuery = computed(
       Error
     >
 );
+
+const retryQuery = computed(
+  () =>
+    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
+      unknown,
+      Error
+    >
+);
+
+const functionEmptyQuery = computed(
+  () =>
+    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
+      unknown,
+      Error
+    >
+);
+
 const slotsQuery = computed(
   () =>
     createMockQuery(currentState.value) as unknown as UseQueryReturnType<
@@ -222,6 +270,45 @@ const slotsQuery = computed(
       Error
     >
 );
+
+// New Config API examples
+const customConfig = computed(() => ({
+  loading: {
+    text: t("customLoadingText"),
+    showSpinner: true,
+  },
+  error: {
+    title: t("customErrorMessage"),
+    icon: "pi pi-times-circle",
+    iconColor: "red-600",
+    retryButtonText: t("customRetryText"),
+    showRetryButton: true,
+  },
+  empty: {
+    text: t("customEmptyText"),
+    icon: "pi pi-database",
+    iconColor: "blue-500",
+  },
+  retrying: {
+    text: "Please wait, retrying...",
+  },
+}));
+
+const retryConfig = computed(() => ({
+  error: {
+    title: "Custom Retry Handler Demo",
+    retryButtonText: "Custom Retry",
+    showRetryButton: true,
+  },
+}));
+
+const functionEmptyConfig = computed(() => ({
+  empty: {
+    text: "No items found (function-based check)",
+    icon: "pi pi-list",
+    iconColor: "orange-500",
+  },
+}));
 
 const currentStateDisplay = computed(() => {
   const stateMap: Record<MockState, string> = {
@@ -247,16 +334,40 @@ const currentStateSeverity = computed(() => {
   return severityMap[currentState.value];
 });
 
+// Function-based empty state detection
+const customEmptyFunction = (): boolean => {
+  return mockItems.value.length === 0;
+};
+
+// Custom retry handler function
+const customRetryHandler = async (): Promise<void> => {
+  console.log("Custom retry handler executed!");
+  // Simulate async operation
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Add some mock items
+  mockItems.value.push(`Item ${Date.now()}`);
+};
+
 function simulateState(state: MockState): void {
   currentState.value = state;
+  if (state === "success") {
+    mockItems.value = ["Sample Item 1", "Sample Item 2"];
+  } else if (state === "empty") {
+    mockItems.value = [];
+  }
 }
 
 function resetState(): void {
   currentState.value = "idle";
+  mockItems.value = [];
 }
 
 function handleCustomRetry(): void {
-  console.log("Custom retry handler called");
+  console.log("Custom retry handler called (config example)");
+}
+
+function onRetryEmitted(): void {
+  console.log("Retry event emitted!");
 }
 </script>
 
