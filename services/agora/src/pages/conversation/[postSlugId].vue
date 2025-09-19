@@ -17,7 +17,6 @@
         <PostDetails
           v-if="hasConversationData"
           ref="postDetailsRef"
-          v-model="currentTab"
           :conversation-data="conversationData"
           :compact-mode="false"
         />
@@ -35,7 +34,6 @@ import { useConversationData } from "src/composables/conversation/useConversatio
 import { ref, onBeforeUnmount } from "vue";
 import { useNavigationStore } from "src/stores/navigation";
 
-const currentTab = ref<"comment" | "analysis">("comment");
 const postDetailsRef = ref<InstanceType<typeof PostDetails>>();
 const { conversationData, hasConversationData, refreshConversation } =
   useConversationData();
