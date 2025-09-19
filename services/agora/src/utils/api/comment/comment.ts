@@ -1,26 +1,22 @@
 import { api } from "boot/axios";
-import type {
-  ApiV1OpinionCreatePost200Response,
-  ApiV1OpinionFetchAnalysisByConversationPost200Response,
-  ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
-  ApiV1OpinionFetchBySlugIdListPostRequest,
-} from "src/api";
 import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchByConversationPostRequest,
   type ApiV1OpinionFetchHiddenByConversationPostRequest,
+  type ApiV1OpinionFetchBySlugIdListPostRequest,
   type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
+  type ApiV1OpinionFetchAnalysisByConversationPost200Response,
+  type ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
 import { useCommonApi } from "../common";
-import type { PolisClusters, PolisKey } from "src/shared/types/zod";
-import {
-  type OpinionItem,
-  type moderationStatusOptionsType,
+import type {
+  PolisKey,
+  OpinionItem,
+  PolisClusters,
+  moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import { useNotify } from "../../ui/notify";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
 import { useBackendAuthApi } from "../auth";
@@ -28,15 +24,9 @@ import { useBackendAuthApi } from "../auth";
 export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden";
 
 export function useBackendCommentApi() {
-  const {
-    buildEncodedUcan,
-    createRawAxiosRequestConfig,
-    createAxiosErrorResponse,
-  } = useCommonApi();
+  const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { updateAuthState } = useBackendAuthApi();
-
-  const { showNotifyMessage } = useNotify();
 
   function createLocalCommentObject(
     webCommentItemList: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem[]
@@ -73,23 +63,56 @@ export function useBackendCommentApi() {
     return parsedCommentItemList;
   }
 
-  async function fetchHiddenCommentsForPost(postSlugId: string) {
-    try {
-      const params: ApiV1OpinionFetchHiddenByConversationPostRequest = {
-        conversationSlugId: postSlugId,
-      };
+  async function fetchHiddenCommentsForPost(
+    postSlugId: string
+  ): Promise<OpinionItem[]> {
+    const params: ApiV1OpinionFetchHiddenByConversationPostRequest = {
+      conversationSlugId: postSlugId,
+    };
 
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionFetchHiddenByConversationPost(
+        params
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionFetchHiddenByConversationPost(
+      params,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "extended",
+      })
+    );
+
+    return createLocalCommentObject(response.data);
+  }
+
+  async function fetchCommentsForPost(
+    postSlugId: string,
+    filter: CommentTabFilters,
+    clusterKey: PolisKey | undefined
+  ): Promise<OpinionItem[]> {
+    const params: ApiV1OpinionFetchByConversationPostRequest = {
+      conversationSlugId: postSlugId,
+      filter: filter,
+      clusterKey: clusterKey,
+    };
+
+    if (isGuestOrLoggedIn.value) {
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchHiddenByConversationPost(
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
           params
         );
       const encodedUcan = await buildEncodedUcan(url, options);
-
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchHiddenByConversationPost(
+      ).apiV1OpinionFetchByConversationPost(
         params,
         createRawAxiosRequestConfig({
           encodedUcan: encodedUcan,
@@ -97,156 +120,72 @@ export function useBackendCommentApi() {
         })
       );
 
-      const postList: OpinionItem[] = [];
-      response.data.forEach((item) => {
-        const moderationStatus = item.moderation
-          .status as moderationStatusOptionsType;
-
-        postList.push({
-          opinion: item.opinion,
-          opinionSlugId: item.opinionSlugId,
-          createdAt: new Date(item.createdAt),
-          numParticipants: item.numParticipants,
-          numDisagrees: item.numDisagrees,
-          numAgrees: item.numAgrees,
-          numPasses: item.numPasses,
-          updatedAt: new Date(item.updatedAt),
-          username: String(item.username),
-          isSeed: item.isSeed,
-          moderation: {
-            status: moderationStatus,
-            action: item.moderation.action,
-            explanation: item.moderation.explanation,
-            reason: item.moderation.reason,
-            createdAt: new Date(item.moderation.createdAt),
-            updatedAt: new Date(item.moderation.updatedAt),
-          },
-          clustersStats: item.clustersStats,
-        });
-      });
-
-      return postList;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to fetch comments for post: " + postSlugId);
-      return null;
-    }
-  }
-
-  async function fetchCommentsForPost(
-    postSlugId: string,
-    filter: CommentTabFilters,
-    clusterKey: PolisKey | undefined
-  ) {
-    try {
-      const params: ApiV1OpinionFetchByConversationPostRequest = {
-        conversationSlugId: postSlugId,
-        filter: filter,
-        clusterKey: clusterKey,
-      };
-
-      if (isGuestOrLoggedIn.value) {
-        const { url, options } =
-          await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
-            params
-          );
-        const encodedUcan = await buildEncodedUcan(url, options);
-        const response = await DefaultApiFactory(
-          undefined,
-          undefined,
-          api
-        ).apiV1OpinionFetchByConversationPost(
-          params,
-          createRawAxiosRequestConfig({
-            encodedUcan: encodedUcan,
-            timeoutProfile: "extended",
-          })
-        );
-        return createLocalCommentObject(response.data);
-      } else {
-        const response = await DefaultApiFactory(
-          undefined,
-          undefined,
-          api
-        ).apiV1OpinionFetchByConversationPost(
-          params,
-          createRawAxiosRequestConfig({ timeoutProfile: "extended" })
-        );
-        return createLocalCommentObject(response.data);
-      }
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage(
-        "Failed to fetch opinions for conversation: " + postSlugId
-      );
-      return null;
-    }
-  }
-
-  type CreateNewCommentSuccessResponse =
-    AxiosSuccessResponse<ApiV1OpinionCreatePost200Response>;
-
-  type CreateNewCommentResponse =
-    | CreateNewCommentSuccessResponse
-    | AxiosErrorResponse;
-
-  async function createNewComment(
-    commentBody: string,
-    postSlugId: string
-  ): Promise<CreateNewCommentResponse> {
-    try {
-      const params: ApiV1OpinionCreatePostRequest = {
-        opinionBody: commentBody,
-        conversationSlugId: postSlugId,
-      };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
+      return createLocalCommentObject(response.data);
+    } else {
       const response = await DefaultApiFactory(
         undefined,
         undefined,
         api
-      ).apiV1OpinionCreatePost(
+      ).apiV1OpinionFetchByConversationPost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+        createRawAxiosRequestConfig({ timeoutProfile: "extended" })
       );
 
-      if (response.data.success) {
-        // TODO: properly manage errors in backend and return login status to update to
-        await updateAuthState({ partialLoginStatus: { isKnown: true } });
-      }
-      return {
-        data: response.data,
-        status: "success",
-      };
-    } catch (e) {
-      return createAxiosErrorResponse(e);
+      return createLocalCommentObject(response.data);
     }
   }
 
-  async function deleteCommentBySlugId(commentSlugId: string) {
-    try {
-      const params = {
-        opinionSlugId: commentSlugId,
-      };
+  async function createNewComment(
+    commentBody: string,
+    postSlugId: string
+  ): Promise<{ success: boolean; opinionSlugId?: string; reason?: string }> {
+    const params: ApiV1OpinionCreatePostRequest = {
+      opinionBody: commentBody,
+      conversationSlugId: postSlugId,
+    };
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionDeletePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(undefined, undefined, api).apiV1OpinionDeletePost(
-        params,
-        createRawAxiosRequestConfig({
-          encodedUcan: encodedUcan,
-          timeoutProfile: "standard",
-        })
-      );
-      return true;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to delete comment: " + commentSlugId);
-      return false;
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionCreatePost(
+      params,
+      createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+    );
+
+    if (response.data.success) {
+      // TODO: properly manage errors in backend and return login status to update to
+      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      return {
+        success: true,
+        opinionSlugId: response.data.opinionSlugId,
+      };
+    } else {
+      return {
+        success: false,
+        reason: response.data.reason,
+      };
     }
+  }
+
+  async function deleteCommentBySlugId(commentSlugId: string): Promise<void> {
+    const params = {
+      opinionSlugId: commentSlugId,
+    };
+
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionDeletePost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    await DefaultApiFactory(undefined, undefined, api).apiV1OpinionDeletePost(
+      params,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "standard",
+      })
+    );
   }
 
   async function fetchOpinionsBySlugIdList(
@@ -265,12 +204,12 @@ export function useBackendCommentApi() {
       createRawAxiosRequestConfig({})
     );
 
-    const opnionItemList: OpinionItem[] = [];
+    const opinionItemList: OpinionItem[] = [];
     for (const item of response.data) {
-      opnionItemList.push(createLocalCommentObject([item])[0]);
+      opinionItemList.push(createLocalCommentObject([item])[0]);
     }
 
-    return opnionItemList;
+    return opinionItemList;
   }
 
   async function fetchAnalysisData(params: {
@@ -310,6 +249,7 @@ export function useBackendCommentApi() {
       );
       data = response.data;
     }
+
     const clusters: Partial<PolisClusters> = {};
 
     Object.entries(data.clusters).forEach(
