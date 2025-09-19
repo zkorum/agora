@@ -16,7 +16,7 @@
 
         <AsyncStateHandler
           :query="activeQuery"
-          :custom-is-empty="visibleOpinions.length === 0"
+          :custom-is-empty="customIsEmpty"
           :loading-text="t('loadingOpinions')"
           :retrying-text="t('retrying')"
           :error-title="t('failedToLoadOpinions')"
@@ -162,40 +162,73 @@ const opinionsModerated = computed(
 );
 const opinionsHidden = computed(() => hiddenCommentsQuery.data.value || []);
 
-// Watch for when query data becomes available after mount
+// Improved empty state logic that properly handles cached data
+const customIsEmpty = computed(() => {
+  const query = activeQuery.value;
+
+  // Only show empty state if query succeeded but returned no data
+  if (
+    query.isSuccess.value &&
+    (!query.data.value || query.data.value.length === 0)
+  ) {
+    return true;
+  }
+
+  // If we have cached data but visibleOpinions isn't populated yet, don't show empty
+  if (query.data.value && query.data.value.length > 0) {
+    return false;
+  }
+
+  // Default: check visibleOpinions for edge cases
+  return visibleOpinions.value.length === 0;
+});
+
+// Watch for when query data becomes available - populate immediately for cached data
 watch(opinionsDiscover, (newData, oldData) => {
-  if (!isComponentMounted.value || !newData) {
+  if (!newData) {
     return;
   }
-  // Only trigger if this is the active filter and data has actually changed
-  if (currentFilter.value === "discover" && newData !== oldData) {
+  // Trigger update for current filter or if component not mounted yet (cached data)
+  if (
+    currentFilter.value === "discover" &&
+    (newData !== oldData || !isComponentMounted.value)
+  ) {
     updateOpinionList("discover");
   }
 });
 
 watch(opinionsNew, (newData, oldData) => {
-  if (!isComponentMounted.value || !newData) {
+  if (!newData) {
     return;
   }
-  if (currentFilter.value === "new" && newData !== oldData) {
+  if (
+    currentFilter.value === "new" &&
+    (newData !== oldData || !isComponentMounted.value)
+  ) {
     updateOpinionList("new");
   }
 });
 
 watch(opinionsModerated, (newData, oldData) => {
-  if (!isComponentMounted.value || !newData) {
+  if (!newData) {
     return;
   }
-  if (currentFilter.value === "moderated" && newData !== oldData) {
+  if (
+    currentFilter.value === "moderated" &&
+    (newData !== oldData || !isComponentMounted.value)
+  ) {
     updateOpinionList("moderated");
   }
 });
 
 watch(opinionsHidden, (newData, oldData) => {
-  if (!isComponentMounted.value || !newData) {
+  if (!newData) {
     return;
   }
-  if (currentFilter.value === "hidden" && newData !== oldData) {
+  if (
+    currentFilter.value === "hidden" &&
+    (newData !== oldData || !isComponentMounted.value)
+  ) {
     updateOpinionList("hidden");
   }
 });

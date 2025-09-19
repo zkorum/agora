@@ -1,7 +1,7 @@
 import { ref, type Ref } from "vue";
 import type { OpinionItem } from "src/shared/types/zod";
 
-const PAGINATION_BATCH_SIZE = 10;
+const PAGINATION_BATCH_SIZE = 5;
 
 export function useOpinionScrollable() {
   const allOpinions = ref<OpinionItem[]>([]);
