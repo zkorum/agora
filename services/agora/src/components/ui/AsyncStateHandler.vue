@@ -47,7 +47,10 @@
     </div>
 
     <!-- Empty state (no errors, not loading) -->
-    <div v-if="isEmpty && !isLoading && !hasError" class="asyncStateMessage">
+    <div
+      v-if="isEmpty && !isLoading && !hasError && !isRetrying"
+      class="asyncStateMessage"
+    >
       <slot name="empty">
         <q-icon :name="emptyIcon" size="50px" :color="emptyIconColor" />
         <div class="stateText">{{ emptyText || t("emptyMessage") }}</div>
