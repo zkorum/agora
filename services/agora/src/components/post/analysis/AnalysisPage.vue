@@ -1,8 +1,28 @@
 <template>
-  <div v-if="isLoading" class="analysisLoading">
+  <div v-if="analysisQuery.isLoading.value" class="analysisLoading">
     <q-spinner-gears size="50px" color="primary" />
   </div>
-  <div v-if="!isLoading">
+  <div v-if="analysisQuery.hasError.value" class="analysisError">
+    <div class="errorContainer">
+      <q-icon name="error_outline" size="48px" color="negative" />
+      <p class="errorMessage">{{ analysisQuery.errorMessage }}</p>
+      <q-btn
+        v-if="analysisQuery.isRetryable"
+        color="primary"
+        :loading="analysisQuery.isRefetching.value"
+        @click="() => analysisQuery.refetch()"
+      >
+        Retry
+      </q-btn>
+    </div>
+  </div>
+  <div
+    v-if="
+      !analysisQuery.isLoading.value &&
+      !analysisQuery.hasError.value &&
+      analysisQuery.data.value
+    "
+  >
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
@@ -13,9 +33,9 @@
         <ConsensusTab
           v-model="currentTab"
           :conversation-slug-id="props.conversationSlugId"
-          :item-list="consensusItemList"
+          :item-list="analysisQuery.data.value?.consensus || []"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="clusters"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
         />
       </div>
 
@@ -26,9 +46,9 @@
         <DivisiveTab
           v-model="currentTab"
           :conversation-slug-id="props.conversationSlugId"
-          :item-list="divisiveItemList"
+          :item-list="analysisQuery.data.value?.controversial || []"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="clusters"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
         />
       </div>
 
@@ -38,7 +58,7 @@
       >
         <OpinionGroupTab
           :conversation-slug-id="props.conversationSlugId"
-          :clusters="clusters"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
           :total-participant-count="props.participantCount"
         />
       </div>
@@ -47,48 +67,24 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
-import { ref, onMounted } from "vue";
-import { useBackendCommentApi } from "src/utils/api/comment/comment";
+import { ref } from "vue";
+import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 
 const props = defineProps<{
   participantCount: number;
   conversationSlugId: string;
 }>();
 
-const isLoading = ref<boolean>(true);
-
-const { fetchAnalysisData } = useBackendCommentApi();
-
 const currentTab = ref<ShortcutItem>("Summary");
 
-const consensusItemList = ref<OpinionItem[]>([]);
-const divisiveItemList = ref<OpinionItem[]>([]);
-const clusters = ref<Partial<PolisClusters>>({});
-
-async function loadItemLists({
-  conversationSlugId,
-}: {
-  conversationSlugId: string;
-}): Promise<void> {
-  isLoading.value = true;
-  const { consensus, controversial, polisClusters } = await fetchAnalysisData({
-    conversationSlugId,
-  });
-
-  consensusItemList.value = consensus;
-  divisiveItemList.value = controversial;
-  clusters.value = polisClusters;
-}
-
-onMounted(async () => {
-  await loadItemLists({ conversationSlugId: props.conversationSlugId });
-  isLoading.value = false;
+const analysisQuery = useAnalysisQuery({
+  conversationSlugId: props.conversationSlugId,
+  enabled: true,
 });
 </script>
 
@@ -118,5 +114,27 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   padding-top: 4rem;
+}
+
+.analysisError {
+  display: flex;
+  justify-content: center;
+  padding-top: 4rem;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.errorMessage {
+  font-size: 1rem;
+  color: #dc2626;
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
 }
 </style>
