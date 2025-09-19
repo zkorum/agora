@@ -221,8 +221,10 @@ export function useBackendAuthApi() {
       if (forceRefresh || oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn)
         if (newIsGuestOrLoggedIn) {
           console.log(
-            "Loading authenticated modules upon detecting new login or guest user"
+            "Clearing query cache and loading authenticated modules upon detecting new login or guest user"
           );
+          // Clear all TanStack Query cache data to ensure fresh start for new user session
+          queryClient.clear();
           await loadAuthenticatedModules();
         } else {
           console.log("Cleaning data from logging out");
