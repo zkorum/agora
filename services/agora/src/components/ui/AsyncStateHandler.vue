@@ -64,12 +64,12 @@
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  zkLoadingStateTranslations,
-  type ZKLoadingStateTranslations,
-} from "./ZKLoadingState.i18n";
+  asyncStateHandlerTranslations,
+  type AsyncStateHandlerTranslations,
+} from "./AsyncStateHandler.i18n";
 
-const { t } = useComponentI18n<ZKLoadingStateTranslations>(
-  zkLoadingStateTranslations
+const { t } = useComponentI18n<AsyncStateHandlerTranslations>(
+  asyncStateHandlerTranslations
 );
 
 const emit = defineEmits(["retry"]);
