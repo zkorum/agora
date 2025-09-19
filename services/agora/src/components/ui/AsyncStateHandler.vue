@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   asyncStateHandlerTranslations,
@@ -74,15 +75,20 @@ const { t } = useComponentI18n<AsyncStateHandlerTranslations>(
 
 const emit = defineEmits(["retry"]);
 
-withDefaults(
+interface QueryLike {
+  isLoading: { value: boolean };
+  hasError: boolean | { value: boolean };
+  errorMessage: string | null;
+  isRefetching: { value: boolean };
+  data: { value: unknown };
+  isRetryable: boolean;
+  refetch: () => Promise<unknown>;
+}
+
+const props = withDefaults(
   defineProps<{
-    isLoading: boolean;
-    hasError: boolean;
-    errorMessage?: string | null;
-    isRetrying: boolean;
-    isEmpty: boolean;
-    showRetry?: boolean;
-    // Custom text overrides
+    query: QueryLike;
+    // Optional customization props
     loadingText?: string;
     retryingText?: string;
     errorTitle?: string;
@@ -94,10 +100,10 @@ withDefaults(
     errorIconColor?: string;
     emptyIcon?: string;
     emptyIconColor?: string;
+    // Optional override for empty state logic
+    customIsEmpty?: boolean;
   }>(),
   {
-    errorMessage: null,
-    showRetry: true,
     loadingText: undefined,
     retryingText: undefined,
     errorTitle: undefined,
@@ -108,10 +114,31 @@ withDefaults(
     errorIconColor: "negative",
     emptyIcon: "inbox",
     emptyIconColor: "grey-5",
+    customIsEmpty: undefined,
   }
 );
 
+// Automatically extract states from the query
+const isLoading = computed(() => props.query.isLoading.value);
+const hasError = computed(() =>
+  typeof props.query.hasError === "boolean"
+    ? props.query.hasError
+    : props.query.hasError.value
+);
+const errorMessage = computed(() => props.query.errorMessage);
+const isRetrying = computed(() => props.query.isRefetching.value);
+const isEmpty = computed(() =>
+  props.customIsEmpty !== undefined
+    ? props.customIsEmpty
+    : !props.query.data.value
+);
+const showRetry = computed(() => props.query.isRetryable);
+
 function handleRetry(): void {
+  if (props.query.refetch) {
+    void props.query.refetch();
+  }
+  // Still emit retry event for any custom handling
   emit("retry");
 }
 </script>
