@@ -1,4 +1,5 @@
 import { api } from "boot/axios";
+import { queryClient } from "boot/vue-query";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {
@@ -255,6 +256,9 @@ export function useBackendAuthApi() {
     shouldClearLanguagePreferences: boolean;
   }) {
     const platform: "mobile" | "web" = getPlatform($q.platform);
+
+    // Clear all TanStack Query cache data
+    queryClient.clear();
 
     await deleteDid(platform);
     resetDraft();
