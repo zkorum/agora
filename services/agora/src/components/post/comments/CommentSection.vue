@@ -469,12 +469,29 @@ function triggerLoadMore() {
   loadMore();
 }
 
+async function refreshData(): Promise<void> {
+  // Refetch all comment queries to get fresh data
+  await Promise.all([
+    commentsNewQuery.refetch(),
+    commentsDiscoverQuery.refetch(),
+    commentsModeratedQuery.refetch(),
+    hiddenCommentsQuery.refetch(),
+  ]);
+
+  // Refresh user voting data to ensure vote map is current
+  await fetchUserVotingData();
+
+  // Update the current opinion list with fresh data
+  updateOpinionList(currentFilter.value);
+}
+
 defineExpose({
   openModerationHistory,
   refreshAndHighlightOpinion,
   triggerLoadMore,
   changeVote,
   handleRetryLoadComments,
+  refreshData,
 });
 </script>
 

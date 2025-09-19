@@ -90,6 +90,14 @@ const asyncStateConfig = {
     text: t("noAnalysisData"),
   },
 };
+
+async function refreshData(): Promise<void> {
+  await analysisQuery.refetch();
+}
+
+defineExpose({
+  refreshData,
+});
 </script>
 
 <style lang="scss" scoped>
