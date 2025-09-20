@@ -241,6 +241,9 @@ watch(currentFilter, (newFilter) => {
     return;
   }
 
+  // Reset target opinion when filter changes
+  targetOpinion.value = null;
+
   updateOpinionList(newFilter);
 });
 
