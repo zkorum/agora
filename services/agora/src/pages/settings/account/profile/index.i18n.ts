@@ -1,10 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ProfileSettingsTranslations {
   pageTitle: string;
   changeUsernameTitle: string;
 }
 
 export const profileSettingsTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   ProfileSettingsTranslations
 > = {
   en: {

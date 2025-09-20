@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PostActionBarTranslations {
   share: string;
-  [key: string]: string;
 }
 
 export const postActionBarTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   PostActionBarTranslations
 > = {
   en: {

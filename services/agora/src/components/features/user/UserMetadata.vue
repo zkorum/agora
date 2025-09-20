@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import DisplayUsername from "src/components/features/user/DisplayUsername.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   userMetadataTranslations,
   type UserMetadataTranslations,

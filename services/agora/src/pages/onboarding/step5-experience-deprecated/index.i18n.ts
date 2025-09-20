@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface Step5ExperienceTranslations {
   title: string;
   safeSpaceTitle: string;
@@ -7,7 +9,7 @@ export interface Step5ExperienceTranslations {
 }
 
 export const step5ExperienceTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   Step5ExperienceTranslations
 > = {
   en: {

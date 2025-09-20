@@ -14,7 +14,7 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   defaultMenuBarTranslations,
   type DefaultMenuBarTranslations,

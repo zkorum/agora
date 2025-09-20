@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface UserProfileTranslations {
   userProfile: string;
   conversations: string;
@@ -5,7 +7,7 @@ export interface UserProfileTranslations {
   opinionTab: string;
 }
 
-export const userProfileTranslations: Record<string, UserProfileTranslations> =
+export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, UserProfileTranslations> =
   {
     en: {
       userProfile: "User Profile",

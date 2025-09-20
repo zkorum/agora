@@ -4,65 +4,91 @@ import { defineStore } from "pinia";
 export const useNewOpinionDraftsStore = defineStore("newOpinionDrafts", () => {
   interface ConversationDraftItem {
     body: string;
-    editedAt: Date;
+    editedAt: string; // Changed to string for better serialization
   }
 
-  // Key: Conversation slug ID
-  const draftMap = new Map<string, ConversationDraftItem>();
+  // Use plain object instead of Map for localStorage compatibility
+  const defaultDraftMap: Record<string, ConversationDraftItem> = {};
 
-  const opinionDraftMap = useStorage("opinionDraft", draftMap);
+  const opinionDraftMap = useStorage(
+    "opinionDraft",
+    defaultDraftMap,
+    localStorage,
+    {
+      serializer: {
+        read: (v: string) => {
+          try {
+            const parsed = JSON.parse(v);
+            return parsed || {};
+          } catch {
+            return {};
+          }
+        },
+        write: (v: Record<string, ConversationDraftItem>) => JSON.stringify(v),
+      },
+    }
+  );
 
   function clearOpinionDrafts() {
-    draftMap.clear();
+    opinionDraftMap.value = {};
   }
 
   function getOpinionDraft(conversationSlugId: string) {
-    const draft = opinionDraftMap.value.get(conversationSlugId);
-    return draft;
+    const draft = opinionDraftMap.value[conversationSlugId];
+    if (draft) {
+      // Convert string back to Date for backward compatibility
+      return {
+        ...draft,
+        editedAt: new Date(draft.editedAt),
+      };
+    }
+    return undefined;
   }
 
   function deleteOpinionDraft(conversationSlugId: string) {
-    const deletedValue = opinionDraftMap.value.delete(conversationSlugId);
-    if (!deletedValue) {
-      console.error(
-        "Failed to delete conversation slug ID from the map structure: " +
-          conversationSlugId
-      );
-    }
+    // Simply delete the property - no error needed for non-existent keys
+    delete opinionDraftMap.value[conversationSlugId];
   }
 
   function deleteExcessiveOpinionDrafts() {
-    const numOpinions = opinionDraftMap.value.size;
+    const draftEntries = Object.entries(opinionDraftMap.value);
+    const numOpinions = draftEntries.length;
+
     if (numOpinions >= 1000) {
       let oldestDraftSlugId = "";
       let oldestDraftDate = new Date();
 
-      for (const [
-        conversationSlugId,
-        draftItem,
-      ] of opinionDraftMap.value.entries()) {
-        if (draftItem.editedAt.getTime() < oldestDraftDate.getTime()) {
+      for (const [conversationSlugId, draftItem] of draftEntries) {
+        const typedDraftItem = draftItem as ConversationDraftItem;
+        const draftDate = new Date(typedDraftItem.editedAt);
+        if (draftDate.getTime() < oldestDraftDate.getTime()) {
           oldestDraftSlugId = conversationSlugId;
-          oldestDraftDate = draftItem.editedAt;
+          oldestDraftDate = draftDate;
         }
       }
 
-      deleteOpinionDraft(oldestDraftSlugId);
+      if (oldestDraftSlugId) {
+        deleteOpinionDraft(oldestDraftSlugId);
+      }
     }
   }
 
   function saveOpinionDraft(opinionSlugId: string, opinionBody: string) {
     const draft = getOpinionDraft(opinionSlugId);
-    if (draft == undefined) {
+    const currentTime = new Date().toISOString();
+
+    if (draft === undefined) {
       deleteExcessiveOpinionDrafts();
 
-      opinionDraftMap.value.set(opinionSlugId, {
+      opinionDraftMap.value[opinionSlugId] = {
         body: opinionBody,
-        editedAt: new Date(),
-      });
+        editedAt: currentTime,
+      };
     } else {
-      draft.body = opinionBody;
-      draft.editedAt = new Date();
+      opinionDraftMap.value[opinionSlugId] = {
+        body: opinionBody,
+        editedAt: currentTime,
+      };
     }
   }
 

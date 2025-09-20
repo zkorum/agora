@@ -24,6 +24,7 @@
         <div v-if="!compactMode">
           <AnalysisPage
             v-if="currentTab == 'analysis'"
+            ref="analysisPageRef"
             :conversation-slug-id="
               props.conversationData.metadata.conversationSlugId
             "
@@ -36,9 +37,7 @@
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :is-post-locked="
-              conversationData.metadata.moderation.status == 'moderated'
-            "
+            :is-post-locked="isPostLocked"
             :login-required-to-participate="
               conversationData.metadata.isIndexed ||
               conversationData.metadata.isLoginRequired
@@ -73,7 +72,7 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -84,11 +83,10 @@ const props = defineProps<{
   conversationData: ExtendedConversation;
   compactMode: boolean;
 }>();
-const currentTab = defineModel<"comment" | "analysis">({
-  required: true,
-});
+const currentTab = ref<"comment" | "analysis">("comment");
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
@@ -99,11 +97,14 @@ const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
 
-const isPostLocked =
-  props.conversationData.metadata.moderation.status === "moderated" &&
-  props.conversationData.metadata.moderation.action === "lock";
+const isPostLocked = computed((): boolean => {
+  return (
+    props.conversationData.metadata.moderation.status === "moderated" &&
+    props.conversationData.metadata.moderation.action === "lock"
+  );
+});
 
-function openModerationHistory() {
+function openModerationHistory(): void {
   if (opinionSectionRef.value) {
     opinionSectionRef.value.openModerationHistory();
   } else {
@@ -111,11 +112,11 @@ function openModerationHistory() {
   }
 }
 
-function decrementOpinionCount() {
+function decrementOpinionCount(): void {
   opinionCountOffset.value -= 1;
 }
 
-async function submittedComment(opinionSlugId: string) {
+async function submittedComment(opinionSlugId: string): Promise<void> {
   opinionCountOffset.value += 1;
   // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
   // Change this if you change this behaviour.
@@ -124,16 +125,21 @@ async function submittedComment(opinionSlugId: string) {
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
   }
+
+  // Refresh analysis data since new opinion affects analysis results
+  if (analysisPageRef.value) {
+    analysisPageRef.value.refreshData();
+  }
 }
 
-function changeVote(vote: VotingAction, opinionSlugId: string) {
+function changeVote(vote: VotingAction, opinionSlugId: string): void {
   // Delegate all vote logic to CommentSection
   if (opinionSectionRef.value) {
     opinionSectionRef.value.changeVote(vote, opinionSlugId);
   }
 }
 
-async function shareClicked() {
+async function shareClicked(): Promise<void> {
   const sharePostUrl = getConversationUrl(
     props.conversationData.metadata.conversationSlugId
   );
@@ -142,6 +148,44 @@ async function shareClicked() {
     sharePostUrl
   );
 }
+
+async function refreshChildComponents(): Promise<void> {
+  // Reset local state that might have drifted from backend changes
+  opinionCountOffset.value = 0;
+  participantCountLocal.value =
+    props.conversationData.metadata.participantCount;
+
+  const refreshPromises: Promise<void>[] = [];
+
+  // Refresh CommentSection data (includes vote data refresh)
+  if (opinionSectionRef.value) {
+    refreshPromises.push(opinionSectionRef.value.refreshData());
+  }
+
+  // Refresh AnalysisPage data
+  if (analysisPageRef.value) {
+    analysisPageRef.value.refreshData();
+  }
+
+  // Wait for all refreshes to complete
+  await Promise.all(refreshPromises);
+}
+
+// Watch for tab changes and refresh data when switching tabs
+watch(currentTab, async (newTab) => {
+  if (!props.compactMode) {
+    // Refresh the newly active tab's data with forced network requests
+    if (newTab === "comment" && opinionSectionRef.value) {
+      await opinionSectionRef.value.refreshData();
+    } else if (newTab === "analysis" && analysisPageRef.value) {
+      analysisPageRef.value.refreshData();
+    }
+  }
+});
+
+defineExpose({
+  refreshChildComponents,
+});
 </script>
 
 <style scoped lang="scss">

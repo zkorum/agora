@@ -51,7 +51,7 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { storeToRefs } from "pinia";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, computed } from "vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   topicSelectionStepTranslations,
   type TopicSelectionStepTranslations,

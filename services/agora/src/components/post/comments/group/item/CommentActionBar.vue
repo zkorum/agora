@@ -62,8 +62,8 @@ import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 import VotingButton from "src/components/features/opinion/VotingButton.vue";
-import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentActionBarTranslations,
   type CommentActionBarTranslations,

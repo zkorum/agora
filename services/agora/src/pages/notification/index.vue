@@ -98,7 +98,7 @@ import { useRouter } from "vue-router";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   notificationTranslations,
   type NotificationTranslations,

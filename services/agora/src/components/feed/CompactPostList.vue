@@ -104,7 +104,7 @@ import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
 import WidthWrapper from "../navigation/WidthWrapper.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   compactPostListTranslations,
   type CompactPostListTranslations,

@@ -13,61 +13,20 @@
     </template>
 
     <div class="container">
-      <PrimeCard class="test-section-card">
-        <template #title>
-          <div class="section-header">
-            <i class="pi pi-cog section-icon"></i>
-            <span>{{ t("preferencesDialog") }}</span>
-          </div>
-        </template>
-        <template #content>
-          <p class="section-description">
-            {{ t("preferencesDialogDescription") }}
-          </p>
-
-          <div class="button-container">
-            <PrimeButton
-              :label="t('openPreferencesDialogButton')"
-              icon="pi pi-external-link"
-              class="test-button"
-              @click="openPreferencesDialog"
-            />
-          </div>
-        </template>
-      </PrimeCard>
-
-      <PrimeCard class="test-section-card">
-        <template #title>
-          <div class="section-header">
-            <i class="pi pi-chart-bar section-icon"></i>
-            <span>{{ t("opinionGroupVisualization") }}</span>
-          </div>
-        </template>
-        <template #content>
-          <p class="section-description">
-            {{ t("opinionGroupVisualizationDescription") }}
-          </p>
-
-          <div class="button-container">
-            <PrimeButton
-              :label="t('openVisualizationButton')"
-              icon="pi pi-eye"
-              class="test-button"
-              @click="navigateToVisualization"
-            />
-          </div>
-        </template>
-      </PrimeCard>
+      <PreferencesDialogTest />
+      <OpinionGroupVisualizationTest />
+      <AsyncStateHandlerTest />
     </div>
   </DrawerLayout>
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
-import { useRouter } from "vue-router";
+import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";
+import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
+import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
 import {
   componentTestingTranslations,
   type ComponentTestingTranslations,
@@ -76,15 +35,6 @@ import {
 const { t } = useComponentI18n<ComponentTestingTranslations>(
   componentTestingTranslations
 );
-
-const preferencesStore = useOnboardingPreferencesStore();
-const { openPreferencesDialog } = preferencesStore;
-
-const router = useRouter();
-
-function navigateToVisualization(): void {
-  void router.push("/dev/opinion-group-visualization");
-}
 </script>
 
 <style scoped lang="scss">

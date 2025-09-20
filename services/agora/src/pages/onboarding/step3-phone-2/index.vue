@@ -101,7 +101,7 @@ import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultIm
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   step3Phone2Translations,
   type Step3Phone2Translations,

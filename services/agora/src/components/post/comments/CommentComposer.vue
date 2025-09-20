@@ -71,13 +71,12 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
-import { useBackendCommentApi } from "src/utils/api/comment";
-import { useCommonApi } from "src/utils/api/common";
+import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import type { RouteLocationNormalized } from "vue-router";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentComposerTranslations,
   type CommentComposerTranslations,
@@ -130,8 +129,6 @@ const {
   proceedWithNavigation,
   isRouteLockedCheck,
 } = useRouteGuard(() => characterCount.value > 0, onBeforeRouteLeaveCallback);
-
-const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const characterProgress = computed(() => {
   return (characterCount.value / MAX_LENGTH_OPINION) * 100;
@@ -212,29 +209,32 @@ async function submitPostClicked() {
   } else {
     isSubmissionLoading.value = true;
 
-    const response = await createNewComment(
-      opinionBody.value,
-      props.postSlugId
-    );
+    try {
+      const response = await createNewComment(
+        opinionBody.value,
+        props.postSlugId
+      );
 
-    isSubmissionLoading.value = false;
+      isSubmissionLoading.value = false;
 
-    if (response.status == "success") {
-      if (!response.data.success) {
-        if (response.data.reason == "conversation_locked") {
-          showNotifyMessage(t("conversationLockedError"));
-        }
-      } else {
-        emit("submittedComment", response.data.opinionSlugId);
+      if (response.success && response.opinionSlugId) {
+        // Successfully created comment
+        emit("submittedComment", response.opinionSlugId);
         innerFocus.value = false;
         opinionBody.value = "";
         characterCount.value = 0;
+        unlockRoute(); // Clear the draft since we successfully submitted
+        deleteOpinionDraft(props.postSlugId);
+      } else {
+        // Business logic failure (e.g., conversation_locked)
+        if (response.reason === "conversation_locked") {
+          showNotifyMessage(t("conversationLockedError"));
+        }
       }
-    } else {
-      handleAxiosErrorStatusCodes({
-        axiosErrorCode: response.code,
-        defaultMessage: t("createOpinionError"),
-      });
+    } catch {
+      // Technical errors (network, server errors, etc.) are handled by TanStack Query
+      isSubmissionLoading.value = false;
+      showNotifyMessage(t("createOpinionError"));
     }
   }
 }

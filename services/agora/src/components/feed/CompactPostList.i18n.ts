@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CompactPostListTranslations {
   emptyStateTitle: string;
   emptyStateDescription: string;
@@ -7,7 +9,7 @@ export interface CompactPostListTranslations {
 }
 
 export const compactPostListTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CompactPostListTranslations
 > = {
   en: {

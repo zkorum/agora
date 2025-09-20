@@ -81,8 +81,8 @@ export function determineUserRole(
   isModerator: boolean,
   isLoggedIn: boolean
 ): ContentActionContext["userRole"] {
-  if (isOwner) return "owner";
   if (isModerator) return "moderator";
+  if (isOwner) return "owner";
   if (isLoggedIn) return "user";
   return "anonymous";
 }

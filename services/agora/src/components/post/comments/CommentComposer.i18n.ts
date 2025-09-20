@@ -1,13 +1,14 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CommentComposerTranslations {
   placeholder: string;
   postButton: string;
   conversationLockedError: string;
   createOpinionError: string;
-  [key: string]: string;
 }
 
 export const commentComposerTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CommentComposerTranslations
 > = {
   en: {

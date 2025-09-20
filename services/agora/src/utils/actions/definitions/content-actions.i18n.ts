@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ActionsTranslations {
   report: string;
   muteUser: string;
@@ -15,7 +17,7 @@ export interface ActionsTranslations {
   confirmGenericAction: string;
 }
 
-export const actionsTranslations: Record<string, ActionsTranslations> = {
+export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsTranslations> = {
   en: {
     report: "Report",
     muteUser: "Mute User",

@@ -43,7 +43,7 @@ import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { useRouter } from "vue-router";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { welcomeTranslations, type WelcomeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<WelcomeTranslations>(welcomeTranslations);

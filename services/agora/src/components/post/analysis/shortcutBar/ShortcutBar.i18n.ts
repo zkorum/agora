@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface ShortcutBarTranslations {
   summary: string;
   me: string;
@@ -7,7 +9,7 @@ export interface ShortcutBarTranslations {
   groups: string;
 }
 
-export const shortcutBarTranslations: Record<string, ShortcutBarTranslations> =
+export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, ShortcutBarTranslations> =
   {
     en: {
       summary: "Summary",

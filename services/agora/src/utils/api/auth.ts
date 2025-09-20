@@ -1,4 +1,5 @@
 import { api } from "boot/axios";
+import { queryClient } from "boot/vue-query";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {
@@ -220,8 +221,10 @@ export function useBackendAuthApi() {
       if (forceRefresh || oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn)
         if (newIsGuestOrLoggedIn) {
           console.log(
-            "Loading authenticated modules upon detecting new login or guest user"
+            "Clearing query cache and loading authenticated modules upon detecting new login or guest user"
           );
+          // Clear all TanStack Query cache data to ensure fresh start for new user session
+          queryClient.clear();
           await loadAuthenticatedModules();
         } else {
           console.log("Cleaning data from logging out");
@@ -255,6 +258,9 @@ export function useBackendAuthApi() {
     shouldClearLanguagePreferences: boolean;
   }) {
     const platform: "mobile" | "web" = getPlatform($q.platform);
+
+    // Clear all TanStack Query cache data
+    queryClient.clear();
 
     await deleteDid(platform);
     resetDraft();

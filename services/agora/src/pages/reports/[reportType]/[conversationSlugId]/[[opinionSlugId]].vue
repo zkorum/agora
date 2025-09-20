@@ -71,7 +71,7 @@ import { useTimeAgo } from "@vueuse/core";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   userReportsViewerTranslations,
   type UserReportsViewerTranslations,

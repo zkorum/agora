@@ -183,7 +183,7 @@ import { calculatePercentage } from "src/shared/common/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
 import { useRouterNavigation } from "src/utils/router/navigation";
 import { computed } from "vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   opinionAnalysisDialogTranslations,
   type OpinionAnalysisDialogTranslations,

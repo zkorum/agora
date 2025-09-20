@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface NewConversationControlBarTranslations {
   asLabel: string;
   importFromPolis: string;
@@ -13,7 +15,7 @@ export interface NewConversationControlBarTranslations {
 }
 
 export const newConversationControlBarTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   NewConversationControlBarTranslations
 > = {
   en: {

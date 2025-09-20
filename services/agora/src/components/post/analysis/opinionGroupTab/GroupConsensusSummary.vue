@@ -38,7 +38,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { PolisKey } from "src/shared/types/zod";
 import { ref } from "vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   groupConsensusSummaryTranslations,
   type GroupConsensusSummaryTranslations,

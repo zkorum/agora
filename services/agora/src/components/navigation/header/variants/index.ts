@@ -7,4 +7,4 @@ export { default as EntityMenuBar } from "./EntityMenuBar.vue";
 
 // Re-export the base component and actions
 export { default as DefaultMenuBar } from "../DefaultMenuBar.vue";
-export { useMenuBarActions } from "src/composables/useMenuBarActions";
+export { useMenuBarActions } from "src/composables/ui/useMenuBarActions";

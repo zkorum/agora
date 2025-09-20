@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface MakePublicTimerDialogTranslations {
   never: string;
   after24Hours: string;
@@ -5,11 +7,10 @@ export interface MakePublicTimerDialogTranslations {
   after1Week: string;
   after1Month: string;
   custom: string;
-  [key: string]: string;
 }
 
 export const makePublicTimerDialogTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   MakePublicTimerDialogTranslations
 > = {
   en: {
