@@ -86,7 +86,7 @@
     "eslint-plugin-vue": "^10.4.0",
     "globals": "^16.4.0",
     "prettier": "^3.4.2",
-    "typescript": "5.5.4",
+    "typescript": "5.9.2",
     "unplugin-vue-router": "^0.15.0",
     "vite-plugin-checker": "^0.10.3",
     "vue-tsc": "^3.0.7"
