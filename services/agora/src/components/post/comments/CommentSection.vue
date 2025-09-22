@@ -60,8 +60,8 @@ import { useRouter, useRoute } from "vue-router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useUserStore } from "src/stores/user";
-import { useOpinionScrollable } from "src/composables/ui/useOpinionScrollable";
 import { useOpinionAgreements } from "src/composables/ui/useOpinionAgreements";
+import { useComputedPagination } from "src/composables/ui/useComputedPagination";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -127,9 +127,18 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   enabled: profileData.value.isModerator,
 });
 
-// Opinion scrolling functionality
-const { loadMore, hasMore, visibleOpinions, initializeOpinionList } =
-  useOpinionScrollable();
+// Computed data source based on current filter
+const currentOpinionData = computed(() =>
+  getOpinionDataForFilter(currentFilter.value)
+);
+
+// Use computed pagination for infinite scrolling
+const {
+  visibleItems: visibleOpinions,
+  hasMore,
+  loadMore,
+  resetPagination,
+} = useComputedPagination(currentOpinionData);
 
 // Opinion agreements functionality
 const { addOpinionAgreement, removeOpinionAgreement } =
@@ -165,7 +174,7 @@ const opinionsModerated = computed(
 );
 const opinionsHidden = computed(() => hiddenCommentsQuery.data.value || []);
 
-// Improved empty state logic that properly handles cached data
+// Simplified empty state logic that works directly with TanStack Query
 const customIsEmpty = computed(() => {
   const query = activeQuery.value;
 
@@ -177,66 +186,12 @@ const customIsEmpty = computed(() => {
     return true;
   }
 
-  // If we have cached data but visibleOpinions isn't populated yet, don't show empty
-  if (query.data.value && query.data.value.length > 0) {
-    return false;
-  }
-
-  // Default: check visibleOpinions for edge cases
-  return visibleOpinions.value.length === 0;
+  // Always use TanStack Query data for empty check - no race conditions
+  return false;
 });
 
-// Watch for when query data becomes available - populate immediately for cached data
-watch(opinionsDiscover, (newData, oldData) => {
-  if (!newData) {
-    return;
-  }
-  // Trigger update for current filter or if component not mounted yet (cached data)
-  if (
-    currentFilter.value === "discover" &&
-    (newData !== oldData || !isComponentMounted.value)
-  ) {
-    updateOpinionList("discover");
-  }
-});
-
-watch(opinionsNew, (newData, oldData) => {
-  if (!newData) {
-    return;
-  }
-  if (
-    currentFilter.value === "new" &&
-    (newData !== oldData || !isComponentMounted.value)
-  ) {
-    updateOpinionList("new");
-  }
-});
-
-watch(opinionsModerated, (newData, oldData) => {
-  if (!newData) {
-    return;
-  }
-  if (
-    currentFilter.value === "moderated" &&
-    (newData !== oldData || !isComponentMounted.value)
-  ) {
-    updateOpinionList("moderated");
-  }
-});
-
-watch(opinionsHidden, (newData, oldData) => {
-  if (!newData) {
-    return;
-  }
-  if (
-    currentFilter.value === "hidden" &&
-    (newData !== oldData || !isComponentMounted.value)
-  ) {
-    updateOpinionList("hidden");
-  }
-});
-
-watch(currentFilter, (newFilter) => {
+// Watch for filter changes to reset pagination
+watch(currentFilter, () => {
   if (!isComponentMounted.value) {
     return;
   }
@@ -244,13 +199,9 @@ watch(currentFilter, (newFilter) => {
   // Reset target opinion when filter changes
   targetOpinion.value = null;
 
-  updateOpinionList(newFilter);
+  // Reset pagination to start from the beginning
+  resetPagination();
 });
-
-function updateOpinionList(filter: CommentFilterOptions) {
-  const opinionData = getOpinionDataForFilter(filter);
-  initializeOpinionList(opinionData);
-}
 
 function getOpinionDataForFilter(filter: CommentFilterOptions): OpinionItem[] {
   switch (filter) {
@@ -272,9 +223,6 @@ onMounted(async () => {
   await setupHighlightFromRoute();
   await clearRouteQueryParameters();
   isComponentMounted.value = true;
-
-  // Explicitly initialize the opinion list
-  updateOpinionList(currentFilter.value);
 });
 
 async function clearRouteQueryParameters() {
@@ -352,7 +300,7 @@ async function handleOpinionMuted() {
 function handleOpinionDeleted() {
   emit("deleted");
   // TanStack Query mutation automatically handles cache invalidation
-  updateOpinionList(currentFilter.value);
+  // No need to update list - computed pagination handles this automatically
 }
 
 function changeVote(vote: VotingAction, opinionSlugId: string) {
@@ -433,8 +381,7 @@ async function refreshData(): Promise<void> {
   // Refresh user voting data to ensure vote map is current
   await fetchUserVotingData();
 
-  // Update the current opinion list with fresh data
-  updateOpinionList(currentFilter.value);
+  // No need to update list - computed pagination handles this automatically
 }
 
 defineExpose({
