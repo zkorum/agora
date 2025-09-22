@@ -14,6 +14,13 @@
           </div>
         </div>
 
+        <!-- Opinion not found banner -->
+        <OpinionNotFoundBanner
+          :is-visible="opinionNotFoundState.isVisible"
+          :opinion-id="opinionNotFoundState.opinionId"
+          @dismiss="dismissOpinionNotFoundBanner"
+        />
+
         <AsyncStateHandler
           :query="activeQuery"
           :custom-is-empty="customIsEmpty"
@@ -54,7 +61,7 @@ import { type OpinionItem } from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
 import CommentGroup from "./group/CommentGroup.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import { useNotify } from "src/utils/ui/notify";
+import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
 import { useRouteQuery } from "@vueuse/router";
 import { useRouter, useRoute } from "vue-router";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
@@ -86,13 +93,21 @@ const currentFilter = ref<CommentFilterOptions>("discover");
 const isComponentMounted = ref(false);
 const targetOpinion = ref<OpinionItem | null>(null);
 
+// Opinion not found banner state
+const opinionNotFoundState = ref<{
+  isVisible: boolean;
+  opinionId: string | null;
+}>({
+  isVisible: false,
+  opinionId: null,
+});
+
 const { profileData } = storeToRefs(useUserStore());
 const router = useRouter();
 const route = useRoute();
 const opinionSlugIdQuery = useRouteQuery("opinion", "", {
   transform: String,
 });
-const { showNotifyMessage } = useNotify();
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -256,7 +271,7 @@ async function setupHighlightFromRoute() {
   }
 }
 
-async function fetchTargetOpinion(opinionSlugId: string) {
+async function fetchTargetOpinion(opinionSlugId: string): Promise<void> {
   console.log("Fetching target opinion:", opinionSlugId);
 
   if (opinionSlugId === "") {
@@ -267,12 +282,16 @@ async function fetchTargetOpinion(opinionSlugId: string) {
     const opinions = await fetchOpinionsBySlugIdList([opinionSlugId]);
     if (opinions.length > 0) {
       targetOpinion.value = opinions[0];
+      // Clear any existing banner when opinion is found
+      dismissOpinionNotFoundBanner();
     } else {
-      showNotifyMessage(t("opinionNotFound") + " " + opinionSlugId);
+      // Show banner instead of notification to avoid string concatenation
+      showOpinionNotFoundBanner(opinionSlugId);
     }
   } catch (error) {
     console.error("Error fetching target opinion:", error);
-    showNotifyMessage(t("opinionNotFound") + " " + opinionSlugId);
+    // Show banner instead of notification to avoid string concatenation
+    showOpinionNotFoundBanner(opinionSlugId);
   }
 }
 
@@ -382,6 +401,21 @@ async function refreshData(): Promise<void> {
   await fetchUserVotingData();
 
   // No need to update list - computed pagination handles this automatically
+}
+
+// Banner management functions
+function dismissOpinionNotFoundBanner(): void {
+  opinionNotFoundState.value = {
+    isVisible: false,
+    opinionId: null,
+  };
+}
+
+function showOpinionNotFoundBanner(opinionSlugId: string): void {
+  opinionNotFoundState.value = {
+    isVisible: true,
+    opinionId: opinionSlugId,
+  };
 }
 
 defineExpose({
