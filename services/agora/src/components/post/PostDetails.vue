@@ -72,7 +72,7 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -163,6 +163,10 @@ async function refreshChildComponents(): Promise<void> {
   // Wait for all refreshes to complete
   await Promise.all(refreshPromises);
 }
+
+onMounted(async () => {
+  await refreshChildComponents();
+});
 
 // Watch for tab changes and refresh data when switching tabs
 watch(currentTab, async (newTab) => {
