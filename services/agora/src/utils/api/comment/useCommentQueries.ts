@@ -28,7 +28,8 @@ export function useCommentsQuery({
     queryKey: ["comments", conversationSlugId, filter, clusterKey],
     queryFn: () => fetchCommentsForPost(conversationSlugId, filter, clusterKey),
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 2, // 2 minutes for comments
+    staleTime: 1000 * 60 * 2, // 2 minutes - primarily for internal filter switching
+    // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
 }
@@ -46,7 +47,8 @@ export function useHiddenCommentsQuery({
     queryKey: ["hiddenComments", conversationSlugId],
     queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 5, // 5 minutes for hidden comments
+    staleTime: 1000 * 60 * 5, // 5 minutes - primarily for internal filter switching
+    // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
 }
@@ -64,7 +66,8 @@ export function useAnalysisQuery({
     queryKey: ["analysis", conversationSlugId],
     queryFn: () => fetchAnalysisData({ conversationSlugId }),
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 2, // 2 minutes for analysis data
+    staleTime: 1000 * 60 * 2, // 2 minutes - provides caching for repeated access
+    // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
 }
