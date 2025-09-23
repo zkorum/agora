@@ -14,7 +14,7 @@ export default defineConfig((ctx) => {
   if (ctx.prod && process.env.VITE_STAGING !== "true") {
     boot.push("sentry");
   }
-  boot.push(...["i18n", "axios", "primevue", "maz-ui"]);
+  boot.push(...["i18n", "axios", "primevue", "maz-ui", "vue-query"]);
   console.log("Loaded boot files", boot);
 
   return {

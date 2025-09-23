@@ -1,5 +1,5 @@
 import type { UserReportReason } from "src/shared/types/zod";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   userReportsTranslations,
   type UserReportsTranslations,

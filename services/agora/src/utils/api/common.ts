@@ -1,3 +1,4 @@
+import type { AxiosError } from "axios";
 import { type RawAxiosRequestConfig } from "axios";
 import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
@@ -12,28 +13,111 @@ import { useNotify } from "../ui/notify";
 
 export type KeyAction = "overwrite" | "get" | "create";
 
+export type ApiTimeoutProfile = "standard" | "extended";
+
+export type AxiosErrorCode =
+  | typeof AxiosError.ERR_FR_TOO_MANY_REDIRECTS
+  | typeof AxiosError.ERR_BAD_OPTION_VALUE
+  | typeof AxiosError.ERR_BAD_OPTION
+  | typeof AxiosError.ERR_NETWORK
+  | typeof AxiosError.ERR_DEPRECATED
+  | typeof AxiosError.ERR_BAD_RESPONSE
+  | typeof AxiosError.ERR_BAD_REQUEST
+  | typeof AxiosError.ERR_NOT_SUPPORT
+  | typeof AxiosError.ERR_INVALID_URL
+  | typeof AxiosError.ERR_CANCELED
+  | typeof AxiosError.ECONNABORTED
+  | typeof AxiosError.ETIMEDOUT;
+
 export interface AxiosSuccessResponse<T> {
   data: T;
   status: "success";
 }
 
-export type AxiosErrorCodes =
-  | "ERR_FR_TOO_MANY_REDIRECTS"
-  | "ERR_BAD_OPTION_VALUE"
-  | "ERR_BAD_OPTION"
-  | "ERR_NETWORK"
-  | "ERR_DEPRECATED"
-  | "ERR_BAD_RESPONSE"
-  | "ERR_BAD_REQUEST"
-  | "ERR_CANCELED"
-  | "ECONNABORTED"
-  | "ETIMEDOUT";
-
 export interface AxiosErrorResponse {
   status: "error";
   message: string;
   name: string;
-  code: AxiosErrorCodes;
+  code: AxiosErrorCode;
+}
+
+// Error categorization utilities
+export function isTimeoutError(code: AxiosErrorCode): boolean {
+  return code === "ECONNABORTED" || code === "ETIMEDOUT";
+}
+
+export function isNetworkError(code: AxiosErrorCode): boolean {
+  return code === "ERR_NETWORK" || code === "ECONNABORTED";
+}
+
+export function isClientError(code: AxiosErrorCode): boolean {
+  return (
+    code === "ERR_BAD_REQUEST" ||
+    code === "ERR_BAD_OPTION" ||
+    code === "ERR_BAD_OPTION_VALUE" ||
+    code === "ERR_INVALID_URL" ||
+    code === "ERR_NOT_SUPPORT"
+  );
+}
+
+export function isServerError(code: AxiosErrorCode): boolean {
+  return code === "ERR_BAD_RESPONSE";
+}
+
+export function isCancellationError(code: AxiosErrorCode): boolean {
+  return code === "ERR_CANCELED";
+}
+
+export function getErrorMessage(error: AxiosErrorResponse): string {
+  if (isTimeoutError(error.code)) {
+    return "Request timed out. The server is taking longer than expected to respond.";
+  }
+
+  if (isNetworkError(error.code)) {
+    return "Network error. Please check your internet connection and try again.";
+  }
+
+  if (isCancellationError(error.code)) {
+    return "Request was canceled.";
+  }
+
+  // Specific error messages for each code
+  switch (error.code) {
+    case "ERR_BAD_REQUEST":
+      return "Invalid request. Please check your input and try again.";
+    case "ERR_BAD_RESPONSE":
+      return "Server error. Please try again later.";
+    case "ERR_FR_TOO_MANY_REDIRECTS":
+      return "Too many redirects. Please contact support if this continues.";
+    case "ERR_BAD_OPTION":
+    case "ERR_BAD_OPTION_VALUE":
+      return "Configuration error. Please refresh the page and try again.";
+    case "ERR_DEPRECATED":
+      return "This feature is no longer supported. Please update your app.";
+    case "ERR_NOT_SUPPORT":
+      return "This operation is not supported in your current environment.";
+    case "ERR_INVALID_URL":
+      return "Invalid request URL. Please contact support.";
+    case "ERR_NETWORK":
+      return "Network error. Please check your internet connection and try again.";
+    case "ERR_CANCELED":
+      return "Request was canceled.";
+    case "ECONNABORTED":
+    case "ETIMEDOUT":
+      return "Request timed out. The server is taking longer than expected to respond.";
+    default:
+      return error.message || "An unexpected error occurred. Please try again.";
+  }
+}
+
+export function shouldRetryError(code: AxiosErrorCode): boolean {
+  // Retry timeouts, network errors, and server errors
+  // Don't retry client errors or cancellations
+  return (
+    isTimeoutError(code) ||
+    code === "ERR_NETWORK" ||
+    code === "ERR_BAD_RESPONSE"
+  );
 }
 
 export function useCommonApi() {
@@ -41,15 +125,16 @@ export function useCommonApi() {
 
   const { showNotifyMessage } = useNotify();
 
-  const API_TIMEOUT_LIMIT_MS = 8000;
+  const STANDARD_TIMEOUT_MS = 8000;
+  const EXTENDED_TIMEOUT_MS = 20000;
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
-    timeoutMs?: number;
+    timeoutProfile?: ApiTimeoutProfile;
   }
 
   interface HandleAxiosStatusCodesProps {
-    axiosErrorCode: AxiosErrorCodes;
+    axiosErrorCode: AxiosErrorCode;
     defaultMessage: string;
   }
 
@@ -84,9 +169,20 @@ export function useCommonApi() {
     }
   }
 
+  function getTimeoutForProfile(profile: ApiTimeoutProfile): number {
+    switch (profile) {
+      case "standard":
+        return STANDARD_TIMEOUT_MS;
+      case "extended":
+        return EXTENDED_TIMEOUT_MS;
+      default:
+        return STANDARD_TIMEOUT_MS;
+    }
+  }
+
   function createRawAxiosRequestConfig({
     encodedUcan,
-    timeoutMs,
+    timeoutProfile = "standard",
   }: CreateRawAxiosRequestConfigProps): RawAxiosRequestConfig {
     return {
       headers: encodedUcan
@@ -94,7 +190,7 @@ export function useCommonApi() {
             ...buildAuthorizationHeader(encodedUcan),
           }
         : undefined,
-      timeout: timeoutMs ?? API_TIMEOUT_LIMIT_MS,
+      timeout: getTimeoutForProfile(timeoutProfile),
     };
   }
 

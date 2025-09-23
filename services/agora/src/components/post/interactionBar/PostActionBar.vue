@@ -28,7 +28,7 @@
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
 import InteractionTab from "./InteractionTab.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   postActionBarTranslations,
   type PostActionBarTranslations,

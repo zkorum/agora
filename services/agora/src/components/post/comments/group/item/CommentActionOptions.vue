@@ -65,8 +65,8 @@ import { useContentActions } from "src/utils/actions/definitions/content-actions
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useConversationLoginIntentions } from "src/composables/useConversationLoginIntentions";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentActionOptionsTranslations,
   type CommentActionOptionsTranslations,

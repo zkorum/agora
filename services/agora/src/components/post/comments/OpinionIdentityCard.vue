@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   opinionIdentityCardTranslations,
   type OpinionIdentityCardTranslations,

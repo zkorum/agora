@@ -40,7 +40,7 @@ import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   consensusItemTranslations,
   type ConsensusItemTranslations,

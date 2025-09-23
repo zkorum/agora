@@ -1345,6 +1345,28 @@
   resolved "https://registry.yarnpkg.com/@stablelib/wipe/-/wipe-1.0.1.tgz#d21401f1d59ade56a62e139462a97f104ed19a36"
   integrity sha512-WfqfX/eXGiAd3RJe4VU2snh/ZPwtSjLG4ynQ/vYzvghTh7dHFcI1wl+nrkWG6lGhukOxOsUHfv8dUXr58D0ayg==
 
+"@tanstack/match-sorter-utils@^8.19.4":
+  version "8.19.4"
+  resolved "https://registry.yarnpkg.com/@tanstack/match-sorter-utils/-/match-sorter-utils-8.19.4.tgz#dacf772b5d94f4684f10dbeb2518cf72dccab8a5"
+  integrity sha512-Wo1iKt2b9OT7d+YGhvEPD3DXvPv2etTusIMhMUoG7fbhmxcXCtIjJDEygy91Y2JFlwGyjqiBPRozme7UD8hoqg==
+  dependencies:
+    remove-accents "0.5.0"
+
+"@tanstack/query-core@5.89.0":
+  version "5.89.0"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.89.0.tgz#67862fa9aa036942b1906bc51385115a2bbec45a"
+  integrity sha512-joFV1MuPhSLsKfTzwjmPDrp8ENfZ9N23ymFu07nLfn3JCkSHy0CFgsyhHTJOmWaumC/WiNIKM0EJyduCF/Ih/Q==
+
+"@tanstack/vue-query@^5.89.0":
+  version "5.89.0"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-query/-/vue-query-5.89.0.tgz#a5b9183e2fbe33d4269f18ea7fa6a0b4d5b226dd"
+  integrity sha512-VCzZLqT+psMKd2KVEtST1SOPqvCTMMTvWg3HsCfx/ZxzmdEwL5qZ3LISTQoeQ6dsoZ5b6EzqMG4AIcVI3w3YIA==
+  dependencies:
+    "@tanstack/match-sorter-utils" "^8.19.4"
+    "@tanstack/query-core" "5.89.0"
+    "@vue/devtools-api" "^6.6.3"
+    vue-demi "^0.14.10"
+
 "@types/body-parser@*":
   version "1.19.5"
   resolved "https://registry.yarnpkg.com/@types/body-parser/-/body-parser-1.19.5.tgz#04ce9a3b677dc8bd681a17da1ab9835dc9d3ede4"
@@ -1792,7 +1814,7 @@
     de-indent "^1.0.2"
     he "^1.2.0"
 
-"@vue/devtools-api@^6.5.0", "@vue/devtools-api@^6.6.4":
+"@vue/devtools-api@^6.5.0", "@vue/devtools-api@^6.6.3", "@vue/devtools-api@^6.6.4":
   version "6.6.4"
   resolved "https://registry.yarnpkg.com/@vue/devtools-api/-/devtools-api-6.6.4.tgz#cbe97fe0162b365edc1dba80e173f90492535343"
   integrity sha512-sGhTPMuXqZ1rVOk32RylztWkfXTRhuS7vgAKv0zjqk8gbsHkJ7xfFf+jbySxt7tWObEJwyKaHMikV/WGDiQm8g==
@@ -4627,6 +4649,11 @@ relateurl@^0.2.7:
   resolved "https://registry.yarnpkg.com/relateurl/-/relateurl-0.2.7.tgz#54dbf377e51440aca90a4cd274600d3ff2d888a9"
   integrity sha512-G08Dxvm4iDN3MLM0EsP62EDV9IuhXPR6blNz6Utcp7zyV3tr4HVNINt6MpaRWbxoOHT3Q7YN2P+jaHX8vUbgog==
 
+remove-accents@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/remove-accents/-/remove-accents-0.5.0.tgz#77991f37ba212afba162e375b627631315bed687"
+  integrity sha512-8g3/Otx1eJaVD12e31UbJj1YzdtVvzH85HV7t+9MJYk/u3XmkOUJ5Ys9wQrf9PCPK8+xn4ymzqYCiZl6QWKn+A==
+
 require-directory@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/require-directory/-/require-directory-2.1.1.tgz#8c64ad5fd30dab1c976e2344ffe7f792a6a6df42"
@@ -5511,6 +5538,11 @@ vscode-uri@^3.0.8, vscode-uri@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-3.1.0.tgz#dd09ec5a66a38b5c3fffc774015713496d14e09c"
   integrity sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==
+
+vue-demi@^0.14.10:
+  version "0.14.10"
+  resolved "https://registry.yarnpkg.com/vue-demi/-/vue-demi-0.14.10.tgz#afc78de3d6f9e11bf78c55e8510ee12814522f04"
+  integrity sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==
 
 vue-eslint-parser@^10.2.0:
   version "10.2.0"

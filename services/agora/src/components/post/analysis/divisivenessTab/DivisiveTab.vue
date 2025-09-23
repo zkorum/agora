@@ -44,7 +44,7 @@ import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   divisiveTabTranslations,
   type DivisiveTabTranslations,

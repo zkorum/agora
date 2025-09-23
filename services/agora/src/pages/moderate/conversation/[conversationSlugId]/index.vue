@@ -86,7 +86,7 @@ import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendPostApi } from "src/utils/api/post";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   conversationModerationTranslations,
   type ConversationModerationTranslations,

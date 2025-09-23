@@ -221,7 +221,7 @@ export function useBackendPostApi() {
         params,
         createRawAxiosRequestConfig({
           encodedUcan: encodedUcan,
-          timeoutMs: 60000,
+          timeoutProfile: "extended",
         })
       );
 

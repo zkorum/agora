@@ -1,5 +1,4 @@
 import { api } from "boot/axios";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import type {
   ApiV1OpinionCreatePost200Response,
   ApiV1OpinionFetchAnalysisByConversationPost200Response,
@@ -90,11 +89,13 @@ export function useBackendCommentApi() {
         undefined,
         undefined,
         api
-      ).apiV1OpinionFetchHiddenByConversationPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+      ).apiV1OpinionFetchHiddenByConversationPost(
+        params,
+        createRawAxiosRequestConfig({
+          encodedUcan: encodedUcan,
+          timeoutProfile: "extended",
+        })
+      );
 
       const postList: OpinionItem[] = [];
       response.data.forEach((item) => {
@@ -154,18 +155,23 @@ export function useBackendCommentApi() {
           undefined,
           undefined,
           api
-        ).apiV1OpinionFetchByConversationPost(params, {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        });
+        ).apiV1OpinionFetchByConversationPost(
+          params,
+          createRawAxiosRequestConfig({
+            encodedUcan: encodedUcan,
+            timeoutProfile: "extended",
+          })
+        );
         return createLocalCommentObject(response.data);
       } else {
         const response = await DefaultApiFactory(
           undefined,
           undefined,
           api
-        ).apiV1OpinionFetchByConversationPost(params, {});
+        ).apiV1OpinionFetchByConversationPost(
+          params,
+          createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+        );
         return createLocalCommentObject(response.data);
       }
     } catch (e) {
@@ -230,11 +236,10 @@ export function useBackendCommentApi() {
       const encodedUcan = await buildEncodedUcan(url, options);
       await DefaultApiFactory(undefined, undefined, api).apiV1OpinionDeletePost(
         params,
-        {
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        }
+        createRawAxiosRequestConfig({
+          encodedUcan: encodedUcan,
+          timeoutProfile: "standard",
+        })
       );
       return true;
     } catch (e) {
@@ -288,7 +293,10 @@ export function useBackendCommentApi() {
         api
       ).apiV1OpinionFetchAnalysisByConversationPost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+        createRawAxiosRequestConfig({
+          encodedUcan: encodedUcan,
+          timeoutProfile: "extended",
+        })
       );
       data = response.data;
     } else {
@@ -298,7 +306,7 @@ export function useBackendCommentApi() {
         api
       ).apiV1OpinionFetchAnalysisByConversationPost(
         params,
-        createRawAxiosRequestConfig({})
+        createRawAxiosRequestConfig({ timeoutProfile: "extended" })
       );
       data = response.data;
     }

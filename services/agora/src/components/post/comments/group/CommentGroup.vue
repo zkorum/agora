@@ -51,7 +51,7 @@ import type {
 } from "src/shared/types/zod";
 import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   commentGroupTranslations,
   type CommentGroupTranslations,

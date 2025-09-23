@@ -82,7 +82,7 @@ import OpinionGroupComments from "./OpinionGroupComments.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   opinionGroupTabTranslations,
   type OpinionGroupTabTranslations,

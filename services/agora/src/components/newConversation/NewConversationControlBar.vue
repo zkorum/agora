@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useUserStore } from "src/stores/user";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";

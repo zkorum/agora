@@ -29,7 +29,7 @@ interface ConfirmationDialogState {
   pendingAction: ContentAction | null;
   pendingActionContext: ContentActionContext | null;
 }
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   actionsTranslations,
   type ActionsTranslations,

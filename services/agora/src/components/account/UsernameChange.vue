@@ -48,7 +48,7 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import { useNotify } from "src/utils/ui/notify";
 import { useCommonApi } from "src/utils/api/common";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   usernameChangeTranslations,
   type UsernameChangeTranslations,

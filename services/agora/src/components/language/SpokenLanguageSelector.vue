@@ -117,7 +117,7 @@
 import type { ComputedRef } from "vue";
 import { computed, ref, onMounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   spokenLanguageSelectorTranslations,
   type SpokenLanguageSelectorTranslations,

@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";

@@ -31,7 +31,7 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
-import { useConversationData } from "src/composables/useConversationData";
+import { useConversationData } from "src/composables/api/useConversationData";
 import { ref, onBeforeUnmount } from "vue";
 import { useNavigationStore } from "src/stores/navigation";
 
