@@ -73,3 +73,6 @@ typed-router.d.ts
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Sentry Config File
+.env.sentry-build-plugin

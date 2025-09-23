@@ -9,5 +9,6 @@ declare namespace NodeJS {
     VITE_BACK_DID: string;
     VITE_USE_DUMMY_ACCESS: "true" | "false";
     VITE_IS_ORG_IMPORT_ONLY: "true" | "false";
+    VITE_STAGING: "true" | "false" | undefined;
   }
 }
