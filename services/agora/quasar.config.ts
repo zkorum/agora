@@ -3,12 +3,18 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 import { defineConfig } from "#q-app/wrappers";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 import "dotenv/config";
 
 export default defineConfig((ctx) => {
   const publicDir = "/feed";
+  const boot = [];
+  if (ctx.prod && process.env.VITE_STAGING !== "true") {
+    boot.push("sentry");
+  }
+  boot.push(...["i18n", "axios", "primevue", "maz-ui"]);
 
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -17,10 +23,7 @@ export default defineConfig((ctx) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot:
-      ctx.modeName === "capacitor"
-        ? ["i18n", "axios", "primevue", "maz-ui"]
-        : ["i18n", "axios", "primevue", "maz-ui"],
+    boot: boot,
 
     bin: {
       windowsAndroidStudio:
@@ -51,6 +54,7 @@ export default defineConfig((ctx) => {
       target: {
         browser: ["es2022", "firefox115", "chrome115", "safari14"],
         node: "node20",
+        sourcemap: "true", // should be just boolean true, see https://github.com/quasarframework/quasar/issues/14589
       },
 
       // typescript: {
@@ -68,9 +72,28 @@ export default defineConfig((ctx) => {
 
       // publicPath: ctx.dev ? "/" : "/feed/",
       publicPath: publicDir + "/", // we serve this behind a global nginx configured to serve the app at /feed/
-      // extendViteConf(viteConf, _params) {
-      //   viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
-      // },
+      extendViteConf(viteConf, _params) {
+        if (viteConf.plugins === undefined) {
+          viteConf.plugins = [
+            // Put the Sentry vite plugin after all other plugins
+            sentryVitePlugin({
+              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+              org: "zkorum",
+              project: "javascript-vue",
+            }),
+          ];
+        } else {
+          viteConf.plugins.push(
+            // Put the Sentry vite plugin after all other plugins
+            sentryVitePlugin({
+              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+              org: "zkorum",
+              project: "javascript-vue",
+            })
+          );
+        }
+        // viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
+      },
       // analyze: true,
       // See
       // https://quasar.dev/quasar-cli-webpack/handling-process-env/#using-dotenv
@@ -82,6 +105,7 @@ export default defineConfig((ctx) => {
         VITE_BACK_DID: process.env.VITE_BACK_DID,
         VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,
         VITE_IS_ORG_IMPORT_ONLY: process.env.VITE_IS_ORG_IMPORT_ONLY,
+        VITE_STAGING: process.env.VITE_STAGING,
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
