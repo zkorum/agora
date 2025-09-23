@@ -64,7 +64,7 @@ export function useAnalysisQuery({
     queryKey: ["analysis", conversationSlugId],
     queryFn: () => fetchAnalysisData({ conversationSlugId }),
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 10, // 10 minutes for analysis data
+    staleTime: 1000 * 60 * 2, // 2 minutes for analysis data
     retry: false, // Disable auto-retry
   });
 }

@@ -23,7 +23,7 @@
 
         <div v-if="!compactMode">
           <AnalysisPage
-            v-if="currentTab == 'analysis'"
+            v-show="currentTab == 'analysis'"
             ref="analysisPageRef"
             :conversation-slug-id="
               props.conversationData.metadata.conversationSlugId
@@ -34,7 +34,7 @@
           />
 
           <CommentSection
-            v-if="currentTab == 'comment'"
+            v-show="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
             :is-post-locked="isPostLocked"
