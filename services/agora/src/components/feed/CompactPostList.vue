@@ -99,7 +99,7 @@ import PostDetails from "../post/PostDetails.vue";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useWindowFocus, useWindowScroll } from "@vueuse/core";
+import { useDocumentVisibility, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/authentication";
 import ZKButton from "../ui-library/ZKButton.vue";
@@ -121,7 +121,7 @@ const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
 
 const router = useRouter();
 
-const windowFocused = useWindowFocus();
+const documentVisibility = useDocumentVisibility();
 
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
@@ -137,8 +137,8 @@ onMounted(async () => {
   await hasNewPostCheck();
 });
 
-watch(windowFocused, async () => {
-  if (windowFocused.value) {
+watch(documentVisibility, async () => {
+  if (documentVisibility.value === "visible") {
     await hasNewPostCheck();
   }
 });
