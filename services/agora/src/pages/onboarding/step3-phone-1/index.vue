@@ -30,7 +30,7 @@
                 There are no solution to fix the issue but since it doesn't affect production
                 it can be safely ignored.
               -->
-              <MazInputPhoneNumber
+              <MazPhoneNumberInput
                 v-model="phoneData.phoneNumber"
                 v-model:country-code="phoneData.countryCode"
                 :success="phoneData.isValid"
@@ -38,10 +38,10 @@
                 show-code-on-list
                 :placeholder="t('phoneNumberPlaceholder')"
                 required
-                auto-format="disabled"
-                :validation-error="false"
+                :auto-format="false"
+                no-validation-error
                 aria-describedby="phone-error"
-                @data="onPhoneUpdate"
+                @update="onPhoneUpdate"
                 @country-code="onCountryCodeUpdate"
                 @blur="onPhoneBlur"
               />
@@ -113,8 +113,8 @@ import {
   type SupportedCountryCallingCode,
 } from "src/shared/types/zod";
 import { isPhoneNumberTypeSupported } from "src/shared/shared";
-import type { MazInputPhoneNumberData } from "maz-ui/components/MazInputPhoneNumber";
-import MazInputPhoneNumber from "maz-ui/components/MazInputPhoneNumber";
+import type { Results } from "maz-ui/components/MazPhoneNumberInput";
+import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   phoneOnboardingTranslations,
@@ -231,7 +231,7 @@ function validatePhoneNumber(
   return { isValid: true, parsedNumber, callingCode: callingCode.data };
 }
 
-function onPhoneUpdate(_results: MazInputPhoneNumberData) {
+function onPhoneUpdate(_results: Results) {
   phoneData.hasAttemptedSubmission = false;
   clearErrors();
 
