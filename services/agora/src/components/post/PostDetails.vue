@@ -18,6 +18,7 @@
           :opinion-count="
             conversationData.metadata.opinionCount + opinionCountOffset
           "
+          :is-loading="isCurrentTabLoading"
           @share="shareClicked()"
         />
 
@@ -102,6 +103,21 @@ const isPostLocked = computed((): boolean => {
     props.conversationData.metadata.moderation.status === "moderated" &&
     props.conversationData.metadata.moderation.action === "lock"
   );
+});
+
+// Track loading states from child components
+const isCurrentTabLoading = computed((): boolean => {
+  if (props.compactMode) {
+    return false; // No loading indicator needed in compact mode
+  }
+
+  if (currentTab.value === "comment") {
+    return opinionSectionRef.value?.isLoading ?? false;
+  } else if (currentTab.value === "analysis") {
+    return analysisPageRef.value?.isLoading ?? false;
+  }
+
+  return false;
 });
 
 function openModerationHistory(): void {

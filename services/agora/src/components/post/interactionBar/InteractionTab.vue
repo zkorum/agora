@@ -16,6 +16,11 @@
         :should-underline-on-highlight="true"
         @click="clickedTab('analysis')"
       />
+
+      <!-- Loading indicator -->
+      <div v-if="isLoading" class="loadingIndicator">
+        <q-spinner color="primary" size="1.2rem" />
+      </div>
     </div>
   </div>
 </template>
@@ -32,6 +37,7 @@ const model = defineModel<"comment" | "analysis">({ required: true });
 const props = defineProps<{
   opinionCount: number;
   compactMode: boolean;
+  isLoading?: boolean;
 }>();
 
 const { t } = useComponentI18n<InteractionTabTranslations>(
@@ -50,5 +56,12 @@ function clickedTab(tabKey: "comment" | "analysis") {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.loadingIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

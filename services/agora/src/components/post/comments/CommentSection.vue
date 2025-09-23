@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import CommentGroup from "./group/CommentGroup.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
@@ -150,6 +150,10 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
+  isLoading: computed(
+    () =>
+      activeQuery.value.isPending.value || activeQuery.value.isRefetching.value
+  ),
 });
 </script>
 

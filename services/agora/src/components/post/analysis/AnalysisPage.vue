@@ -50,7 +50,7 @@ import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import {
   useAnalysisQuery,
   useInvalidateCommentQueries,
@@ -105,6 +105,9 @@ function refreshData(): void {
 
 defineExpose({
   refreshData,
+  isLoading: computed(
+    () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
+  ),
 });
 </script>
 
