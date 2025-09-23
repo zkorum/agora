@@ -1,7 +1,10 @@
 <template>
   <div class="async-state-handler">
     <!-- Error state -->
-    <div v-if="hasError && !isLoading && !isRetrying" class="asyncStateMessage">
+    <div
+      v-if="isError && !isPending && !isRefetching"
+      class="asyncStateMessage"
+    >
       <slot
         name="error"
         :error-message="errorMessage"
@@ -39,7 +42,7 @@
 
     <!-- Empty state (no errors, not loading) -->
     <div
-      v-else-if="computedIsEmpty && !isLoading && !hasError && !isRetrying"
+      v-else-if="computedIsEmpty && !isPending && !isError && !isRefetching"
       class="asyncStateMessage"
     >
       <slot name="empty">
@@ -58,7 +61,7 @@
     <div
       v-else
       class="contentWrapper"
-      :class="{ 'is-loading': isLoading || isRetrying }"
+      :class="{ 'is-loading': isPending || isRefetching }"
     >
       <slot />
     </div>
@@ -131,9 +134,9 @@ const props = withDefaults(defineProps<Props>(), {
   onRetry: undefined,
 });
 
-const isLoading = computed((): boolean => props.query.isPending.value);
-const hasError = computed((): boolean => props.query.isError.value);
-const isRetrying = computed((): boolean => props.query.isRefetching.value);
+const isPending = computed((): boolean => props.query.isPending.value);
+const isError = computed((): boolean => props.query.isError.value);
+const isRefetching = computed((): boolean => props.query.isRefetching.value);
 
 const errorMessage = computed((): string | null => {
   if (!props.query.error.value) return null;
@@ -183,7 +186,7 @@ const shouldShowRetryButton = computed((): boolean => {
   }
 
   // Default: show retry button if there's an error
-  return hasError.value;
+  return isError.value;
 });
 
 async function handleRetry(): Promise<void> {
