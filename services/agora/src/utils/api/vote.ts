@@ -8,74 +8,59 @@ import { api } from "boot/axios";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import { type VotingAction } from "src/shared/types/zod";
-import { useNotify } from "../ui/notify";
 import type { FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
 
 export function useBackendVoteApi() {
   const { buildEncodedUcan } = useCommonApi();
 
-  const { showNotifyMessage } = useNotify();
-
   async function castVoteForComment(
     commentSlugId: string,
     votingAction: VotingAction
-  ) {
-    try {
-      const params: ApiV1VoteCastPostRequest = {
-        opinionSlugId: commentSlugId,
-        chosenOption: votingAction,
-      };
+  ): Promise<boolean> {
+    const params: ApiV1VoteCastPostRequest = {
+      opinionSlugId: commentSlugId,
+      chosenOption: votingAction,
+    };
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1VoteCastPost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1VoteCastPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1VoteCastPost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1VoteCastPost(params, {
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
 
-      return response;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to cast vote for the comment.");
-      return false;
-    }
+    return !!response; // Return true if response exists
   }
 
   async function fetchUserVotesForPostSlugIds(
     postSlugIdList: string[]
-  ): Promise<undefined | FetchUserVotesForPostSlugIdsResponse> {
-    try {
-      const params: ApiV1UserVoteGetByConversationsPostRequest = {
-        conversationSlugIdList: postSlugIdList,
-      };
+  ): Promise<FetchUserVotesForPostSlugIdsResponse> {
+    const params: ApiV1UserVoteGetByConversationsPostRequest = {
+      conversationSlugIdList: postSlugIdList,
+    };
 
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1UserVoteGetByConversationsPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1UserVoteGetByConversationsPost(params, {
-        headers: {
-          ...buildAuthorizationHeader(encodedUcan),
-        },
-      });
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1UserVoteGetByConversationsPost(
+        params
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1UserVoteGetByConversationsPost(params, {
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
 
-      return response.data;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage("Failed to fetch user's personal votes for the post.");
-      return undefined;
-    }
+    return response.data || []; // Return data or empty array
   }
 
   return { fetchUserVotesForPostSlugIds, castVoteForComment };

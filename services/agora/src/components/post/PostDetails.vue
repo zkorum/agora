@@ -76,7 +76,7 @@ import { ref, computed, watch } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
+import type { ExtendedConversation } from "src/shared/types/zod";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 
 const props = defineProps<{
@@ -118,9 +118,9 @@ function decrementOpinionCount(): void {
 
 async function submittedComment(opinionSlugId: string): Promise<void> {
   opinionCountOffset.value += 1;
-  // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
-  // Change this if you change this behaviour.
-  changeVote("agree", opinionSlugId);
+  // Note: The backend auto-agrees on opinion submission, but with the new local state
+  // management approach, each CommentActionBar will handle its own vote state independently
+  // when the user votes on their newly created opinion.
 
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
@@ -129,13 +129,6 @@ async function submittedComment(opinionSlugId: string): Promise<void> {
   // Refresh analysis data since new opinion affects analysis results
   if (analysisPageRef.value) {
     analysisPageRef.value.refreshData();
-  }
-}
-
-function changeVote(vote: VotingAction, opinionSlugId: string): void {
-  // Delegate all vote logic to CommentSection
-  if (opinionSectionRef.value) {
-    opinionSectionRef.value.changeVote(vote, opinionSlugId);
   }
 }
 

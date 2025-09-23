@@ -36,15 +36,14 @@
             :comment-item-list="visibleOpinions"
             :post-slug-id="postSlugId"
             :highlighted-opinion="targetOpinion"
-            :comment-slug-id-liked-map="opinionVoteMap"
+            :voting-utilities="{
+              userVotes,
+              castVote,
+            }"
             :is-post-locked="isPostLocked"
             :login-required-to-participate="props.loginRequiredToParticipate"
             @deleted="handleOpinionDeleted()"
             @muted-comment="handleOpinionMuted()"
-            @change-vote="
-              (vote: VotingAction, opinionSlugId: string) =>
-                changeVote(vote, opinionSlugId)
-            "
           />
         </AsyncStateHandler>
       </div>
@@ -54,7 +53,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import type { VotingAction } from "src/shared/types/zod";
 import CommentGroup from "./group/CommentGroup.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
@@ -122,11 +120,7 @@ const { visibleOpinions, hasMore, onLoad, triggerLoadMore } =
     targetOpinion,
   });
 
-const {
-  opinionVoteMap,
-  changeVote: handleVoteChange,
-  fetchUserVotingData,
-} = useOpinionVoting({
+const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   postSlugId: props.postSlugId,
   visibleOpinions,
 });
@@ -150,19 +144,10 @@ function handleOpinionDeleted(): void {
   emit("deleted");
 }
 
-function changeVote(vote: VotingAction, opinionSlugId: string): void {
-  const participantDelta = handleVoteChange(vote, opinionSlugId);
-
-  if (participantDelta !== 0) {
-    emit("participantCountDelta", participantDelta);
-  }
-}
-
 defineExpose({
   openModerationHistory,
   refreshAndHighlightOpinion,
   triggerLoadMore,
-  changeVote,
   handleRetryLoadComments,
   refreshData,
 });

@@ -6,8 +6,8 @@
         :label="t('disagree')"
         :is-selected="userVoteAction === 'disagree'"
         :disabled="isPostLocked"
-        :set-aria-label="`${t('disagreeAriaLabel')} ${props.commentItem.numDisagrees}`"
-        :vote-count="props.commentItem.numDisagrees"
+        :set-aria-label="`${t('disagreeAriaLabel')} ${localNumDisagrees}`"
+        :vote-count="localNumDisagrees"
         :percentage="formatPercentage(relativeTotalPercentageDisagrees)"
         :show-vote-count="userCastedVote"
         @click="castPersonalVote(props.commentItem.opinionSlugId, 'disagree')"
@@ -18,8 +18,8 @@
         :label="t('pass')"
         :is-selected="userVoteAction === 'pass'"
         :disabled="isPostLocked"
-        :set-aria-label="`${t('passAriaLabel')} ${props.commentItem.numPasses}`"
-        :vote-count="props.commentItem.numPasses"
+        :set-aria-label="`${t('passAriaLabel')} ${localNumPasses}`"
+        :vote-count="localNumPasses"
         :percentage="formatPercentage(relativeTotalPercentagePasses)"
         :show-vote-count="userCastedVote"
         @click="castPersonalVote(props.commentItem.opinionSlugId, 'pass')"
@@ -30,8 +30,8 @@
         :label="t('agree')"
         :is-selected="userVoteAction === 'agree'"
         :disabled="isPostLocked"
-        :set-aria-label="`${t('agreeAriaLabel')} ${props.commentItem.numAgrees}`"
-        :vote-count="props.commentItem.numAgrees"
+        :set-aria-label="`${t('agreeAriaLabel')} ${localNumAgrees}`"
+        :vote-count="localNumAgrees"
         :percentage="formatPercentage(relativeTotalPercentageAgrees)"
         :show-vote-count="userCastedVote"
         @click="castPersonalVote(props.commentItem.opinionSlugId, 'agree')"
@@ -54,13 +54,13 @@ import {
   type VotingAction,
   type VotingOption,
 } from "src/shared/types/zod";
+import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { useBackendVoteApi } from "src/utils/api/vote";
 import { calculatePercentage } from "src/shared/common/util";
 import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import VotingButton from "src/components/features/opinion/VotingButton.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -72,19 +72,21 @@ import {
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
-  commentSlugIdLikedMap: Map<string, VotingOption>;
+  votingUtilities: OpinionVotingUtilities;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
 }>();
 
-const emit = defineEmits(["changeVote"]);
+// Local state management
+const localUserVote = ref<VotingOption | undefined>(undefined);
+const localNumAgrees = ref(0);
+const localNumDisagrees = ref(0);
+const localNumPasses = ref(0);
 
 const showLoginDialog = ref(false);
 const { setOpinionAgreementIntention } = useConversationLoginIntentions();
 
 const { showNotifyMessage } = useNotify();
-
-const { castVoteForComment } = useBackendVoteApi();
 const { updateAuthState } = useBackendAuthApi();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
@@ -92,32 +94,42 @@ const { t } = useComponentI18n<CommentActionBarTranslations>(
   commentActionBarTranslations
 );
 
+// Initialize local state from props and global user votes
+onMounted(() => {
+  // Initialize vote counts from props
+  localNumAgrees.value = props.commentItem.numAgrees;
+  localNumDisagrees.value = props.commentItem.numDisagrees;
+  localNumPasses.value = props.commentItem.numPasses;
+
+  // Initialize user vote from global state
+  const existingVote = props.votingUtilities.userVotes.find(
+    (vote) => vote.opinionSlugId === props.commentItem.opinionSlugId
+  );
+  localUserVote.value = existingVote?.votingAction;
+});
+
 const userCastedVote = computed(() => {
-  return props.commentSlugIdLikedMap.has(props.commentItem.opinionSlugId);
+  return localUserVote.value !== undefined;
 });
 
 const userVoteAction = computed(() => {
-  return props.commentSlugIdLikedMap.get(props.commentItem.opinionSlugId);
+  return localUserVote.value;
 });
 
 const totalVotes = computed(() => {
-  return (
-    props.commentItem.numAgrees +
-    props.commentItem.numDisagrees +
-    props.commentItem.numPasses
-  );
+  return localNumAgrees.value + localNumDisagrees.value + localNumPasses.value;
 });
 
 const relativeTotalPercentageAgrees = computed(() => {
-  return calculatePercentage(props.commentItem.numAgrees, totalVotes.value);
+  return calculatePercentage(localNumAgrees.value, totalVotes.value);
 });
 
 const relativeTotalPercentageDisagrees = computed(() => {
-  return calculatePercentage(props.commentItem.numDisagrees, totalVotes.value);
+  return calculatePercentage(localNumDisagrees.value, totalVotes.value);
 });
 
 const relativeTotalPercentagePasses = computed(() => {
-  return calculatePercentage(props.commentItem.numPasses, totalVotes.value);
+  return calculatePercentage(localNumPasses.value, totalVotes.value);
 });
 
 function onLoginCallback() {
@@ -125,37 +137,71 @@ function onLoginCallback() {
 }
 
 async function castPersonalVote(
-  commentSlugId: string,
+  opinionSlugId: string,
   voteAction: VotingAction
-) {
+): Promise<void> {
   if (props.loginRequiredToParticipate && !isLoggedIn.value) {
     showLoginDialog.value = true;
     return;
   }
 
-  let targetState: VotingAction = "cancel";
-  const originalSelection = props.commentSlugIdLikedMap.get(commentSlugId);
+  const currentVote = localUserVote.value;
 
-  if (originalSelection === undefined) {
-    targetState = voteAction;
-  } else {
-    // temporarily disabling changing vote, until it is supported in external polis system
+  // Check if user is trying to change their vote (currently disabled)
+  if (currentVote !== undefined && currentVote !== voteAction) {
     showNotifyMessage(t("voteChangeDisabled"));
     return;
   }
 
-  emit("changeVote", targetState);
+  // Don't allow clicking the same vote again
+  if (currentVote === voteAction) {
+    return;
+  }
 
-  const response = await castVoteForComment(commentSlugId, targetState);
-  // TODO: refactor backend to return error and reason if any, and react appropriately
-  if (!response) {
-    // Revert
-    emit(
-      "changeVote",
-      originalSelection !== undefined ? originalSelection : "cancel"
+  // Store original state for rollback
+  const originalVote = localUserVote.value;
+  const originalNumAgrees = localNumAgrees.value;
+  const originalNumDisagrees = localNumDisagrees.value;
+  const originalNumPasses = localNumPasses.value;
+
+  // Apply optimistic updates locally
+  if (voteAction !== "cancel") {
+    localUserVote.value = voteAction;
+
+    // Update vote counts
+    if (voteAction === "agree") {
+      localNumAgrees.value++;
+    } else if (voteAction === "disagree") {
+      localNumDisagrees.value++;
+    } else if (voteAction === "pass") {
+      localNumPasses.value++;
+    }
+  }
+
+  try {
+    const success = await props.votingUtilities.castVote(
+      opinionSlugId,
+      voteAction
     );
-  } else {
-    await updateAuthState({ partialLoginStatus: { isKnown: true } });
+
+    if (success) {
+      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      // Keep the optimistic changes
+    } else {
+      // Revert optimistic changes
+      localUserVote.value = originalVote;
+      localNumAgrees.value = originalNumAgrees;
+      localNumDisagrees.value = originalNumDisagrees;
+      localNumPasses.value = originalNumPasses;
+      showNotifyMessage(t("voteFailed"));
+    }
+  } catch {
+    // Revert optimistic changes
+    localUserVote.value = originalVote;
+    localNumAgrees.value = originalNumAgrees;
+    localNumDisagrees.value = originalNumDisagrees;
+    localNumPasses.value = originalNumPasses;
+    showNotifyMessage(t("voteFailed"));
   }
 }
 </script>
