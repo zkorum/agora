@@ -9,6 +9,7 @@ export default boot(({ app }) => {
   app.use(MazUi, {
     theme: {
       preset: mazUi, // Using default mazUi preset
+      colorMode: "light",
     },
     // Translations can be added later if needed
     // translations: {
