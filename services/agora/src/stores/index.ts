@@ -1,4 +1,5 @@
 import { defineStore } from "#q-app/wrappers";
+import { createSentryPiniaPlugin } from "@sentry/vue";
 import { createPinia } from "pinia";
 import { type Router } from "vue-router";
 
@@ -15,5 +16,6 @@ declare module "pinia" {
 
 export default defineStore((/* { ssrContext } */) => {
   const pinia = createPinia();
+  pinia.use(createSentryPiniaPlugin());
   return pinia;
 });

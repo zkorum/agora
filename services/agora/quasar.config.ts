@@ -15,6 +15,7 @@ export default defineConfig((ctx) => {
     boot.push("sentry");
   }
   boot.push(...["i18n", "axios", "primevue", "maz-ui"]);
+  console.log("Loaded boot files", boot);
 
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -51,10 +52,10 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
+      sourcemap: true, // should be just boolean true, see https://github.com/quasarframework/quasar/issues/14589
       target: {
         browser: ["es2022", "firefox115", "chrome115", "safari14"],
         node: "node20",
-        sourcemap: "true", // should be just boolean true, see https://github.com/quasarframework/quasar/issues/14589
       },
 
       // typescript: {
@@ -73,24 +74,26 @@ export default defineConfig((ctx) => {
       // publicPath: ctx.dev ? "/" : "/feed/",
       publicPath: publicDir + "/", // we serve this behind a global nginx configured to serve the app at /feed/
       extendViteConf(viteConf, _params) {
-        if (viteConf.plugins === undefined) {
-          viteConf.plugins = [
-            // Put the Sentry vite plugin after all other plugins
-            sentryVitePlugin({
-              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
-              org: "zkorum",
-              project: "javascript-vue",
-            }),
-          ];
-        } else {
-          viteConf.plugins.push(
-            // Put the Sentry vite plugin after all other plugins
-            sentryVitePlugin({
-              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
-              org: "zkorum",
-              project: "javascript-vue",
-            })
-          );
+        if (process.env.VITE_STAGING !== "true" && ctx.prod) {
+          if (viteConf.plugins === undefined) {
+            viteConf.plugins = [
+              // Put the Sentry vite plugin after all other plugins
+              sentryVitePlugin({
+                authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+                org: "zkorum",
+                project: "agora-app",
+              }),
+            ];
+          } else {
+            viteConf.plugins.push(
+              // Put the Sentry vite plugin after all other plugins
+              sentryVitePlugin({
+                authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+                org: "zkorum",
+                project: "agora-app",
+              })
+            );
+          }
         }
         // viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
       },
