@@ -1,23 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+import { computed } from "vue";
+import { storeToRefs } from "pinia";
 import { useBackendVoteApi } from "../vote";
+import { useAuthenticationStore } from "src/stores/authentication";
 import type { VotingAction } from "src/shared/types/zod";
 import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
 import { useNotify } from "../../ui/notify";
 
-export function useUserVotesQuery({
-  postSlugId,
-  enabled = true,
-}: {
-  postSlugId: string;
-  enabled?: boolean;
-}) {
+export function useUserVotesQuery({ postSlugId }: { postSlugId: string }) {
   const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
+  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
   return useQuery({
     queryKey: ["userVotes", postSlugId],
     queryFn: () => fetchUserVotesForPostSlugIds([postSlugId]),
-    enabled: enabled && postSlugId.length > 0,
+    enabled: computed(() => postSlugId.length > 0 && isGuestOrLoggedIn.value),
     staleTime: 1000 * 60 * 5, // 5 minutes like comments
     retry: false, // Disable auto-retry
   });

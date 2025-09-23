@@ -1,11 +1,11 @@
 import { computed, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { useAuthenticationStore } from "src/stores/authentication";
 import type { VotingAction, OpinionItem } from "src/shared/types/zod";
 import {
   useUserVotesQuery,
   useVoteMutation,
 } from "src/utils/api/vote/useVoteQueries";
+import { useAuthenticationStore } from "src/stores/authentication";
 import type { UserVote } from "./types";
 
 export interface UseOpinionVotingParams {
@@ -25,12 +25,12 @@ export interface UseOpinionVotingReturn {
 export function useOpinionVoting({
   postSlugId,
 }: UseOpinionVotingParams): UseOpinionVotingReturn {
+  // Get authentication status
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
   // Use TanStack Query for vote data
   const userVotesQuery = useUserVotesQuery({
     postSlugId,
-    enabled: isGuestOrLoggedIn.value,
   });
 
   // Use TanStack Query mutation for voting
@@ -57,7 +57,10 @@ export function useOpinionVoting({
   }
 
   async function fetchUserVotingData(): Promise<void> {
-    await userVotesQuery.refetch();
+    // Only fetch user voting data if user is authenticated
+    if (isGuestOrLoggedIn.value) {
+      await userVotesQuery.refetch();
+    }
   }
 
   return {

@@ -40,6 +40,24 @@
       </slot>
     </div>
 
+    <!-- Loading state (first time loading with no data) -->
+    <div
+      v-else-if="isPending && computedIsEmpty && !isError"
+      class="asyncStateMessage"
+    >
+      <slot name="loading">
+        <q-spinner
+          v-if="config.loading?.showSpinner !== false"
+          size="50px"
+          color="primary"
+        />
+        <q-icon v-else :name="'hourglass_empty'" size="50px" color="primary" />
+        <div class="stateText">
+          {{ config.loading?.text || t("loading") }}
+        </div>
+      </slot>
+    </div>
+
     <!-- Empty state (no errors, not loading) -->
     <div
       v-else-if="computedIsEmpty && !isPending && !isError && !isRefetching"
@@ -233,11 +251,6 @@ async function handleRetry(): Promise<void> {
   position: relative;
   width: 100%;
   transition: opacity 0.3s ease-in-out;
-
-  &.is-loading {
-    opacity: 0.6; /* Dim content to ~60% during loading */
-    pointer-events: none; /* Disable interactions during loading */
-  }
 }
 
 .stateText {
