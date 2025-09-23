@@ -1,27 +1,5 @@
 <template>
-  <div>
-    <!-- Loading state -->
-    <div v-if="isLoading && !hasError" class="asyncStateMessage">
-      <slot name="loading">
-        <q-spinner-dots
-          v-if="config.loading?.showSpinner !== false"
-          size="50px"
-          color="primary"
-        />
-        <div class="stateText">{{ config.loading?.text || t("loading") }}</div>
-      </slot>
-    </div>
-
-    <!-- Retrying state -->
-    <div v-if="isRetrying" class="asyncStateMessage">
-      <slot name="retrying">
-        <q-spinner-dots size="50px" color="primary" />
-        <div class="stateText">
-          {{ config.retrying?.text || t("retrying") }}
-        </div>
-      </slot>
-    </div>
-
+  <div class="async-state-handler">
     <!-- Error state -->
     <div v-if="hasError && !isLoading && !isRetrying" class="asyncStateMessage">
       <slot
@@ -38,7 +16,9 @@
           <div class="errorTitle">
             {{ config.error?.title || t("errorTitle") }}
           </div>
-          <div v-if="errorMessage" class="errorDetail">{{ errorMessage }}</div>
+          <div v-if="errorMessage" class="errorDetail">
+            {{ errorMessage }}
+          </div>
           <div v-else-if="config.error?.message" class="errorDetail">
             {{ config.error.message }}
           </div>
@@ -50,7 +30,6 @@
           v-if="shouldShowRetryButton"
           :label="config.error?.retryButtonText || t('retry')"
           icon="pi pi-refresh"
-          :loading="isRetrying"
           severity="primary"
           class="retryButton"
           @click="handleRetry"
@@ -60,7 +39,7 @@
 
     <!-- Empty state (no errors, not loading) -->
     <div
-      v-if="computedIsEmpty && !isLoading && !hasError && !isRetrying"
+      v-else-if="computedIsEmpty && !isLoading && !hasError && !isRetrying"
       class="asyncStateMessage"
     >
       <slot name="empty">
@@ -75,8 +54,12 @@
       </slot>
     </div>
 
-    <!-- Success state with data -->
-    <div v-if="!computedIsEmpty && !isLoading">
+    <!-- Success state with data or loading state -->
+    <div
+      v-else
+      class="contentWrapper"
+      :class="{ 'is-loading': isLoading || isRetrying }"
+    >
       <slot />
     </div>
   </div>
@@ -131,7 +114,6 @@ interface AsyncStateConfig {
   readonly retrying?: RetryingConfig;
 }
 
-// Vue 3 best practice: Proper emit typing
 const emit = defineEmits<{
   retry: [];
 }>();
@@ -229,6 +211,11 @@ async function handleRetry(): Promise<void> {
 </script>
 
 <style scoped lang="scss">
+.async-state-handler {
+  position: relative;
+  min-height: 60px; /* Minimum height to prevent layout collapse */
+}
+
 .asyncStateMessage {
   display: flex;
   flex-direction: column;
@@ -237,6 +224,17 @@ async function handleRetry(): Promise<void> {
   gap: 1rem;
   padding-top: 4rem;
   text-align: center;
+}
+
+.contentWrapper {
+  position: relative;
+  width: 100%;
+  transition: opacity 0.3s ease-in-out;
+
+  &.is-loading {
+    opacity: 0.6; /* Dim content to ~60% during loading */
+    pointer-events: none; /* Disable interactions during loading */
+  }
 }
 
 .stateText {
