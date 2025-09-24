@@ -2,7 +2,7 @@
   <div class="async-state-handler">
     <!-- Error state -->
     <div
-      v-if="isError && !isPending && !isRefetching"
+      v-if="isError && !isPending && !isRefetching && !isRetryPending"
       class="asyncStateMessage"
     >
       <slot
@@ -37,6 +37,21 @@
           class="retryButton"
           @click="handleRetry"
         />
+      </slot>
+    </div>
+
+    <!-- Retry loading state (with delay to prevent flashing) -->
+    <div v-else-if="isRetryPending" class="asyncStateMessage">
+      <slot name="loading">
+        <q-spinner
+          v-if="config.loading?.showSpinner !== false"
+          size="50px"
+          color="primary"
+        />
+        <q-icon v-else :name="'hourglass_empty'" size="50px" color="primary" />
+        <div class="stateText">
+          {{ config.retrying?.text || config.loading?.text || t("loading") }}
+        </div>
       </slot>
     </div>
 
@@ -87,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -152,6 +167,9 @@ const props = withDefaults(defineProps<Props>(), {
   onRetry: undefined,
 });
 
+// Reactive state to track retry loading with delay
+const isRetryPending = ref(false);
+
 const isPending = computed((): boolean => props.query.isPending.value);
 const isError = computed((): boolean => props.query.isError.value);
 const isRefetching = computed((): boolean => props.query.isRefetching.value);
@@ -208,7 +226,13 @@ const shouldShowRetryButton = computed((): boolean => {
 });
 
 async function handleRetry(): Promise<void> {
+  // Immediately set retry pending to show loading state and prevent flash
+  isRetryPending.value = true;
+
   try {
+    // Small delay to ensure smooth transition and prevent flash
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     // Call custom retry handler if provided
     if (props.onRetry) {
       await props.onRetry();
@@ -225,6 +249,8 @@ async function handleRetry(): Promise<void> {
         : "Unknown retry error occurred";
     console.error("Retry failed:", errorMsg);
   } finally {
+    // Reset retry pending state
+    isRetryPending.value = false;
     // Always emit retry event for any additional handling
     emit("retry");
   }
