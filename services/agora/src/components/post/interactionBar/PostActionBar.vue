@@ -72,12 +72,6 @@ defineEmits(["share"]);
   gap: 0.75rem;
 }
 
-.loadingIndicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .shareButtonContentContainer {
   gap: 0.3rem;
   display: flex;
