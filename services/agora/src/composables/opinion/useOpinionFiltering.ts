@@ -1,16 +1,15 @@
 import { computed, ref, type Ref, type ComputedRef } from "vue";
-import { storeToRefs } from "pinia";
-import { useUserStore } from "src/stores/user";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import {
-  useCommentsQuery,
-  useHiddenCommentsQuery,
-} from "src/utils/api/comment/useCommentQueries";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 
 export interface UseOpinionFilteringParams {
-  conversationSlugId: string;
+  preloadedQueries: {
+    commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsModeratedQuery: UseQueryReturnType<OpinionItem[], Error>;
+    hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
+  };
 }
 
 export interface UseOpinionFilteringReturn {
@@ -25,38 +24,18 @@ export interface UseOpinionFilteringReturn {
   handleUserFilterChange: (filterValue: CommentFilterOptions) => void;
   getOpinionDataForFilter: (filter: CommentFilterOptions) => OpinionItem[];
   handleRetryLoadComments: () => void;
-  smartRefreshAll: () => Promise<void>;
 }
 
 export function useOpinionFiltering({
-  conversationSlugId,
+  preloadedQueries,
 }: UseOpinionFilteringParams): UseOpinionFilteringReturn {
-  const { profileData } = storeToRefs(useUserStore());
   const currentFilter = ref<CommentFilterOptions>("discover");
 
-  // TanStack Query hooks for different comment filters
-  const commentsNewQuery = useCommentsQuery({
-    conversationSlugId,
-    filter: "new",
-    enabled: true,
-  });
-
-  const commentsDiscoverQuery = useCommentsQuery({
-    conversationSlugId,
-    filter: "discover",
-    enabled: true,
-  });
-
-  const commentsModeratedQuery = useCommentsQuery({
-    conversationSlugId,
-    filter: "moderated",
-    enabled: true,
-  });
-
-  const hiddenCommentsQuery = useHiddenCommentsQuery({
-    conversationSlugId,
-    enabled: profileData.value.isModerator,
-  });
+  // Use the preloaded queries directly
+  const commentsNewQuery = preloadedQueries.commentsNewQuery;
+  const commentsDiscoverQuery = preloadedQueries.commentsDiscoverQuery;
+  const commentsModeratedQuery = preloadedQueries.commentsModeratedQuery;
+  const hiddenCommentsQuery = preloadedQueries.hiddenCommentsQuery;
 
   // Active query based on current filter
   const activeQuery = computed(() => {
@@ -151,31 +130,6 @@ export function useOpinionFiltering({
     }
   }
 
-  // Smart refresh that respects staleTime (2 minutes)
-  // Only refetches if data is actually stale, reducing unnecessary API calls
-  async function smartRefreshAll(): Promise<void> {
-    const refetchPromises: Promise<unknown>[] = [];
-
-    // Only refetch queries that are actually stale
-    if (commentsNewQuery.isStale.value) {
-      refetchPromises.push(commentsNewQuery.refetch());
-    }
-    if (commentsDiscoverQuery.isStale.value) {
-      refetchPromises.push(commentsDiscoverQuery.refetch());
-    }
-    if (commentsModeratedQuery.isStale.value) {
-      refetchPromises.push(commentsModeratedQuery.refetch());
-    }
-    if (hiddenCommentsQuery.isStale.value) {
-      refetchPromises.push(hiddenCommentsQuery.refetch());
-    }
-
-    // Wait for all stale queries to refetch
-    if (refetchPromises.length > 0) {
-      await Promise.all(refetchPromises);
-    }
-  }
-
   return {
     currentFilter,
     activeQuery,
@@ -188,6 +142,5 @@ export function useOpinionFiltering({
     handleUserFilterChange,
     getOpinionDataForFilter,
     handleRetryLoadComments,
-    smartRefreshAll,
   };
 }

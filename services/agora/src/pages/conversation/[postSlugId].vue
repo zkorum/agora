@@ -41,13 +41,11 @@ const navigationStore = useNavigationStore();
 
 function handleRefresh(done: () => void): void {
   refreshConversation(() => {
-    // After conversation data is refreshed, also refresh child components
-    void (async () => {
-      if (postDetailsRef.value) {
-        await postDetailsRef.value.refreshChildComponents();
-      }
-      done();
-    })();
+    // After conversation data is refreshed, also refresh all tab data
+    if (postDetailsRef.value) {
+      postDetailsRef.value.refreshAllData();
+    }
+    done();
   });
 }
 

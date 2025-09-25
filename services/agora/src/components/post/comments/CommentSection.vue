@@ -68,6 +68,8 @@ import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
+import type { OpinionItem } from "src/shared/types/zod";
 
 const emit = defineEmits(["deleted", "participantCountDelta", "voteCast"]);
 
@@ -75,6 +77,12 @@ const props = defineProps<{
   postSlugId: string;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
+  preloadedQueries: {
+    commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsModeratedQuery: UseQueryReturnType<OpinionItem[], Error>;
+    hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
+  };
 }>();
 
 const isComponentMounted = ref(false);
@@ -94,9 +102,8 @@ const {
   customIsEmpty,
   handleUserFilterChange,
   handleRetryLoadComments,
-  smartRefreshAll,
 } = useOpinionFiltering({
-  conversationSlugId: props.postSlugId,
+  preloadedQueries: props.preloadedQueries,
 });
 
 const refreshData = async (): Promise<void> => {
@@ -152,7 +159,6 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
-  smartRefresh: smartRefreshAll,
   isLoading: computed(
     () =>
       activeQuery.value.isPending.value || activeQuery.value.isRefetching.value

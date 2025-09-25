@@ -159,6 +159,12 @@ export function useInvalidateCommentQueries() {
         queryKey: ["analysis", conversationSlugId],
       });
     },
+    markAnalysisAsStale: (conversationSlugId: string) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["analysis", conversationSlugId],
+        refetchType: "none", // Mark as stale but don't refetch immediately
+      });
+    },
     invalidateAll: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
         queryKey: ["comments", conversationSlugId],

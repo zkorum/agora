@@ -25,7 +25,7 @@ export function useUserVotesQuery({ postSlugId }: { postSlugId: string }) {
 export function useVoteMutation(postSlugId: string) {
   const { castVoteForComment } = useBackendVoteApi();
   const { showNotifyMessage } = useNotify();
-  const { invalidateAnalysis } = useInvalidateCommentQueries();
+  const { markAnalysisAsStale } = useInvalidateCommentQueries();
 
   return useMutation({
     mutationFn: ({
@@ -46,9 +46,9 @@ export function useVoteMutation(postSlugId: string) {
     },
 
     onSuccess: () => {
-      // Invalidate analysis data immediately when a vote is cast
-      // This ensures fresh data when users switch to the analysis tab
-      invalidateAnalysis(postSlugId);
+      // Mark analysis data as stale when a vote is cast without refetching immediately
+      // This ensures data is considered outdated but only refetches when the user actually visits the analysis tab
+      markAnalysisAsStale(postSlugId);
     },
 
     retry: false, // Disable auto-retry

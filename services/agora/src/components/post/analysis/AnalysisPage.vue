@@ -51,19 +51,25 @@ import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { ref, computed } from "vue";
-import {
-  useAnalysisQuery,
-  useInvalidateCommentQueries,
-} from "src/utils/api/comment/useCommentQueries";
+import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   analysisPageTranslations,
   type AnalysisPageTranslations,
 } from "./AnalysisPage.i18n";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
+import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
+
+type AnalysisData = {
+  consensus: OpinionItem[];
+  controversial: OpinionItem[];
+  polisClusters: Partial<PolisClusters>;
+};
 
 const props = defineProps<{
   participantCount: number;
   conversationSlugId: string;
+  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
 }>();
 
 const { t } = useComponentI18n<AnalysisPageTranslations>(
@@ -75,10 +81,8 @@ const { invalidateAnalysis } = useInvalidateCommentQueries();
 
 const currentTab = ref<ShortcutItem>("Summary");
 
-const analysisQuery = useAnalysisQuery({
-  conversationSlugId: props.conversationSlugId,
-  enabled: true,
-});
+// Use the passed-in analysis query instead of creating our own
+const analysisQuery = props.analysisQuery;
 
 const asyncStateConfig = {
   loading: {
@@ -103,18 +107,8 @@ function refreshData(): void {
   invalidateAnalysis(props.conversationSlugId);
 }
 
-// Smart refresh that respects staleTime (2 minutes)
-// Only refetches if data is actually stale, reducing unnecessary API calls
-async function smartRefresh(): Promise<void> {
-  // Only refetch if the analysis query is actually stale
-  if (analysisQuery.isStale.value) {
-    await analysisQuery.refetch();
-  }
-}
-
 defineExpose({
   refreshData,
-  smartRefresh,
   isLoading: computed(
     () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
   ),

@@ -32,6 +32,7 @@
             :participant-count="
               props.conversationData.metadata.participantCount
             "
+            :analysis-query="analysisQuery"
           />
 
           <CommentSection
@@ -43,6 +44,12 @@
               conversationData.metadata.isIndexed ||
               conversationData.metadata.isLoginRequired
             "
+            :preloaded-queries="{
+              commentsDiscoverQuery,
+              commentsNewQuery,
+              commentsModeratedQuery,
+              hiddenCommentsQuery,
+            }"
             @deleted="decrementOpinionCount()"
             @participant-count-delta="
               (delta: number) => (participantCountLocal += delta)
@@ -79,6 +86,12 @@ import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
+import {
+  useAnalysisQuery,
+  useCommentsQuery,
+  useHiddenCommentsQuery,
+  useInvalidateCommentQueries,
+} from "src/utils/api/comment/useCommentQueries";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -93,10 +106,41 @@ const opinionCountOffset = ref(0);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
+const { invalidateAnalysis } = useInvalidateCommentQueries();
 
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
+
+// Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
+const analysisQuery = useAnalysisQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  enabled: !props.compactMode,
+});
+
+// Preload comment queries for all filter types (only if not in compact mode)
+const commentsDiscoverQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "discover",
+  enabled: !props.compactMode,
+});
+
+const commentsNewQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "new",
+  enabled: !props.compactMode,
+});
+
+const commentsModeratedQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "moderated",
+  enabled: !props.compactMode,
+});
+
+const hiddenCommentsQuery = useHiddenCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  enabled: !props.compactMode,
+});
 
 const isPostLocked = computed((): boolean => {
   return (
@@ -114,7 +158,8 @@ const isCurrentTabLoading = computed((): boolean => {
   if (currentTab.value === "comment") {
     return opinionSectionRef.value?.isLoading ?? false;
   } else if (currentTab.value === "analysis") {
-    return analysisPageRef.value?.isLoading ?? false;
+    // Use the preloaded analysis query loading state
+    return analysisQuery.isPending.value || analysisQuery.isRefetching.value;
   }
 
   return false;
@@ -145,6 +190,9 @@ async function submittedComment(opinionSlugId: string): Promise<void> {
   // Refresh analysis data since new opinion affects analysis results
   if (analysisPageRef.value) {
     analysisPageRef.value.refreshData();
+  } else {
+    // If analysis page is not rendered, refresh via query invalidation
+    invalidateAnalysis(props.conversationData.metadata.conversationSlugId);
   }
 }
 
@@ -158,45 +206,60 @@ async function shareClicked(): Promise<void> {
   );
 }
 
-async function refreshChildComponents(): Promise<void> {
-  // Reset local state that might have drifted from backend changes
-  opinionCountOffset.value = 0;
+onMounted(() => {
+  // Reset local state
   participantCountLocal.value =
     props.conversationData.metadata.participantCount;
 
-  const refreshPromises: Promise<void>[] = [];
-
-  // Refresh CommentSection data (includes vote data refresh)
-  if (opinionSectionRef.value) {
-    refreshPromises.push(opinionSectionRef.value.refreshData());
-  }
-
-  // Refresh AnalysisPage data
-  if (analysisPageRef.value) {
-    analysisPageRef.value.refreshData();
-  }
-
-  // Wait for all refreshes to complete
-  await Promise.all(refreshPromises);
-}
-
-onMounted(async () => {
-  await refreshChildComponents();
+  refreshAllData();
 });
 
 // Watch for tab changes and refresh data when switching tabs
 watch(currentTab, async (newTab) => {
   if (!props.compactMode) {
-    if (newTab === "comment" && opinionSectionRef.value) {
-      await opinionSectionRef.value.smartRefresh();
-    } else if (newTab === "analysis" && analysisPageRef.value) {
-      await analysisPageRef.value.smartRefresh();
+    if (newTab === "comment") {
+      // Check and refetch comment queries if they are stale
+      const commentQueries = [
+        commentsDiscoverQuery,
+        commentsNewQuery,
+        commentsModeratedQuery,
+        hiddenCommentsQuery,
+      ];
+
+      const staleQueries = commentQueries.filter(
+        (query) => query.isStale.value
+      );
+      await Promise.all(staleQueries.map((query) => query.refetch()));
+    } else if (newTab === "analysis") {
+      // Check and refetch analysis query if it is stale
+      if (analysisQuery.isStale.value) {
+        await analysisQuery.refetch();
+      }
     }
   }
 });
 
+function refreshAllData(): void {
+  // Reset local state
+  opinionCountOffset.value = 0;
+  participantCountLocal.value =
+    props.conversationData.metadata.participantCount;
+
+  // Refresh analysis data
+  invalidateAnalysis(props.conversationData.metadata.conversationSlugId);
+
+  // Refresh comment data if the component is rendered
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.refreshData();
+  }
+}
+
 defineExpose({
-  refreshChildComponents,
+  // General function to refresh all tab data
+  refreshAllData,
+  // Specific method to manually refresh analysis data if needed
+  refreshAnalysis: () =>
+    invalidateAnalysis(props.conversationData.metadata.conversationSlugId),
 });
 </script>
 
