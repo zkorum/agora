@@ -1,9 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface OpinionIdentityCardTranslations {
   seedOpinion: string;
 }
 
 export const opinionIdentityCardTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   OpinionIdentityCardTranslations
 > = {
   en: {

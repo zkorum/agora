@@ -1,9 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface SettingsSearchInputTranslations {
   searchPlaceholder: string;
 }
 
 export const settingsSearchInputTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   SettingsSearchInputTranslations
 > = {
   en: {

@@ -1,11 +1,12 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface NewConversationRouteGuardTranslations {
   saveConversationDraft: string;
   draftWillBeHere: string;
-  [key: string]: string;
 }
 
 export const newConversationRouteGuardTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   NewConversationRouteGuardTranslations
 > = {
   en: {
@@ -34,7 +35,6 @@ export const newConversationRouteGuardTranslations: Record<
   },
   ja: {
     saveConversationDraft: "会話を下書きとして保存しますか？",
-    draftWillBeHere:
-      "戻ってきたら、下書きした会話がここに表示されます。",
+    draftWillBeHere: "戻ってきたら、下書きした会話がここに表示されます。",
   },
 };

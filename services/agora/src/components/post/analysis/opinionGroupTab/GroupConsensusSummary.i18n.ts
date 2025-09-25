@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface GroupConsensusSummaryTranslations {
   groupSummaryTitle: string;
   aiSummaryTitle: string;
@@ -5,7 +7,7 @@ export interface GroupConsensusSummaryTranslations {
 }
 
 export const groupConsensusSummaryTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   GroupConsensusSummaryTranslations
 > = {
   en: {

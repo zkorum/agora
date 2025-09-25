@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface PrivacyPolicyTranslations {
   privacyPolicy: string;
   referTo: string;
@@ -5,7 +7,7 @@ export interface PrivacyPolicyTranslations {
 }
 
 export const privacyPolicyTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   PrivacyPolicyTranslations
 > = {
   en: {

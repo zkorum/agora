@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface OpinionGroupVisualizationTranslations {
   opinionGroupVisualization: string;
   visualizationControls: string;
@@ -6,7 +8,7 @@ export interface OpinionGroupVisualizationTranslations {
 }
 
 export const opinionGroupVisualizationTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   OpinionGroupVisualizationTranslations
 > = {
   en: {

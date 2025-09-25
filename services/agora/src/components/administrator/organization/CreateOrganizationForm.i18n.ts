@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CreateOrganizationFormTranslations {
   nameLabel: string;
   descriptionLabel: string;
@@ -9,7 +11,7 @@ export interface CreateOrganizationFormTranslations {
 }
 
 export const createOrganizationFormTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CreateOrganizationFormTranslations
 > = {
   en: {

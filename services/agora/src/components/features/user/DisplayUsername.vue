@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   displayUsernameTranslations,
   type DisplayUsernameTranslations,

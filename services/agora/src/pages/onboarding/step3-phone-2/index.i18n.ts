@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface Step3Phone2Translations {
   title: string;
   instructions: string;
@@ -17,7 +19,7 @@ export interface Step3Phone2Translations {
   restrictedPhoneType: string;
 }
 
-export const step3Phone2Translations: Record<string, Step3Phone2Translations> =
+export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step3Phone2Translations> =
   {
     en: {
       title: "Enter the 6-digit code",

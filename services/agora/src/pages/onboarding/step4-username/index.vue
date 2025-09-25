@@ -47,7 +47,7 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   step4UsernameTranslations,
   type Step4UsernameTranslations,

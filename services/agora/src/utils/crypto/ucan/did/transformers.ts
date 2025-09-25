@@ -57,6 +57,7 @@ export function didToPublicKey(
   const didWithoutPrefix = did.substr(BASE58_DID_PREFIX.length);
   const magicalBuf = uint8arrays.fromString(didWithoutPrefix, "base58btc");
   const result = Object.entries(crypto.did.keyTypes).find(([_key, attr]) =>
+    // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs ArrayBuffer compatibility
     hasPrefix(magicalBuf, attr.magicBytes)
   );
 

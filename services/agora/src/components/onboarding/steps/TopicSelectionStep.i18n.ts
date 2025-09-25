@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface TopicSelectionStepTranslations {
   title: string;
   backButton: string;
@@ -5,7 +7,7 @@ export interface TopicSelectionStepTranslations {
 }
 
 export const topicSelectionStepTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   TopicSelectionStepTranslations
 > = {
   en: {

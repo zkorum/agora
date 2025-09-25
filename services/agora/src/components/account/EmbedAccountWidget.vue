@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useAuthSetup } from "src/utils/auth/setup";

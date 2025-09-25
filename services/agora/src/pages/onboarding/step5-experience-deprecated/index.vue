@@ -68,7 +68,7 @@ import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   step5ExperienceTranslations,
   type Step5ExperienceTranslations,

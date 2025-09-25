@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DialogStepLayout from "src/components/onboarding/layouts/DialogStepLayout.vue";
 import SpokenLanguageSelector from "src/components/language/SpokenLanguageSelector.vue";
 import {

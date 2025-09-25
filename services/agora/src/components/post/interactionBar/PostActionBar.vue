@@ -1,10 +1,11 @@
 <template>
   <div class="buttonClusterBar" :class="{ buttonClusterBorder: !compactMode }">
-    <div>
+    <div class="leftSection">
       <InteractionTab
         v-model="currentTab"
         :compact-mode="props.compactMode"
         :opinion-count="opinionCount"
+        :is-loading="isLoading"
       />
     </div>
 
@@ -28,7 +29,7 @@
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
 import InteractionTab from "./InteractionTab.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   postActionBarTranslations,
   type PostActionBarTranslations,
@@ -37,6 +38,7 @@ import {
 const props = defineProps<{
   compactMode: boolean;
   opinionCount: number;
+  isLoading?: boolean;
 }>();
 
 const currentTab = defineModel<"comment" | "analysis">({
@@ -62,6 +64,12 @@ defineEmits(["share"]);
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: #e2e1e7;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .shareButtonContentContainer {

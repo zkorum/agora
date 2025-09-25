@@ -22,7 +22,7 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   topicPageTranslations,
   type TopicPageTranslations,

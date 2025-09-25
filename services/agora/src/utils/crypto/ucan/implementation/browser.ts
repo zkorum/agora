@@ -35,6 +35,7 @@ export function importAesKey(
 ): Promise<CryptoKey> {
   return webcrypto.subtle.importKey(
     "raw",
+    // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
     key,
     {
       name: alg,
@@ -55,7 +56,8 @@ export async function aesDecrypt(
     ? key
     : await importAesKey(key, alg);
   const decrypted = iv
-    ? await webcrypto.subtle.decrypt({ name: alg, iv }, cryptoKey, encrypted)
+    ? // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
+      await webcrypto.subtle.decrypt({ name: alg, iv }, cryptoKey, encrypted)
     : // the keystore version prefixes the `iv` into the cipher text
       await keystoreAES.decryptBytes(encrypted, cryptoKey, { alg });
 
@@ -74,7 +76,8 @@ export async function aesEncrypt(
 
   // the keystore version prefixes the `iv` into the cipher text
   const encrypted = iv
-    ? await webcrypto.subtle.encrypt({ name: alg, iv }, cryptoKey, data)
+    ? // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
+      await webcrypto.subtle.encrypt({ name: alg, iv }, cryptoKey, data)
     : await keystoreAES.encryptBytes(data, cryptoKey, { alg });
 
   return new Uint8Array(encrypted);
@@ -128,6 +131,7 @@ export async function rsaVerify({
     signature,
     await webcrypto.subtle.importKey(
       "spki",
+      // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
       publicKey,
       { name: keystoreIDB.RSA_WRITE_ALG, hash: RSA_HASHING_ALGORITHM },
       false,
@@ -144,6 +148,7 @@ export const hash = {
 };
 
 export async function sha256(bytes: Uint8Array): Promise<Uint8Array> {
+  // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
   return new Uint8Array(await webcrypto.subtle.digest("sha-256", bytes));
 }
 
@@ -338,6 +343,7 @@ export function importRsaKey(
 ): Promise<CryptoKey> {
   return webcrypto.subtle.importKey(
     "spki",
+    // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
     key,
     { name: RSA_ALGORITHM, hash: RSA_HASHING_ALGORITHM },
     false,
@@ -356,6 +362,7 @@ export async function rsaDecrypt(
     typeChecks.isCryptoKey(privateKey)
       ? privateKey
       : await importRsaKey(privateKey, ["decrypt"]),
+    // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
     data
   );
 
@@ -375,6 +382,7 @@ export async function rsaEncrypt(
       name: RSA_ALGORITHM,
     },
     key,
+    // @ts-expect-error - TypeScript 5.9.2 stricter type checking for Uint8Array vs BufferSource compatibility
     message
   );
 

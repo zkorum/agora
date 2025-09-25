@@ -16,13 +16,18 @@
         :should-underline-on-highlight="true"
         @click="clickedTab('analysis')"
       />
+
+      <!-- Loading indicator -->
+      <div v-if="isLoading" class="loadingIndicator">
+        <q-spinner color="primary" size="1.2rem" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   interactionTabTranslations,
   type InteractionTabTranslations,
@@ -32,6 +37,7 @@ const model = defineModel<"comment" | "analysis">({ required: true });
 const props = defineProps<{
   opinionCount: number;
   compactMode: boolean;
+  isLoading?: boolean;
 }>();
 
 const { t } = useComponentI18n<InteractionTabTranslations>(
@@ -50,5 +56,12 @@ function clickedTab(tabKey: "comment" | "analysis") {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.loadingIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

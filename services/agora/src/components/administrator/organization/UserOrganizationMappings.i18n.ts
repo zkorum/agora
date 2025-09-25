@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface UserOrganizationMappingsTranslations {
   usernameLabel: string;
   fetchButton: string;
@@ -6,7 +8,7 @@ export interface UserOrganizationMappingsTranslations {
 }
 
 export const userOrganizationMappingsTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   UserOrganizationMappingsTranslations
 > = {
   en: {

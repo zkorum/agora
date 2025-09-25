@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";

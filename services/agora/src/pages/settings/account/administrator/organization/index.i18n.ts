@@ -1,10 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface AdministratorOrganizationTranslations {
   administrator: string;
-  [key: string]: string;
 }
 
 export const administratorOrganizationTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   AdministratorOrganizationTranslations
 > = {
   en: {

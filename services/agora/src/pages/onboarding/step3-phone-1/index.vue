@@ -115,7 +115,7 @@ import {
 import { isPhoneNumberTypeSupported } from "src/shared/shared";
 import type { Results } from "maz-ui/components/MazPhoneNumberInput";
 import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   phoneOnboardingTranslations,
   type PhoneOnboardingTranslations,

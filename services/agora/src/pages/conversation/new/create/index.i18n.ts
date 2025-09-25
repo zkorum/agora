@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface CreateConversationTranslations {
   importButton: string;
   nextButton: string;
@@ -6,7 +8,7 @@ export interface CreateConversationTranslations {
 }
 
 export const createConversationTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   CreateConversationTranslations
 > = {
   en: {

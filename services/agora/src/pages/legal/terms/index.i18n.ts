@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface TermsOfServiceTranslations {
   termsOfService: string;
   referTo: string;
@@ -5,7 +7,7 @@ export interface TermsOfServiceTranslations {
 }
 
 export const termsOfServiceTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   TermsOfServiceTranslations
 > = {
   en: {

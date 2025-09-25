@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface NotificationTranslations {
   notifications: string;
   endOfFeed: string;
@@ -8,7 +10,7 @@ export interface NotificationTranslations {
 }
 
 export const notificationTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   NotificationTranslations
 > = {
   en: {

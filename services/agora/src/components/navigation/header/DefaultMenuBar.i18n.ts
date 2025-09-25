@@ -1,9 +1,11 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface DefaultMenuBarTranslations {
   logIn: string;
 }
 
 export const defaultMenuBarTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   DefaultMenuBarTranslations
 > = {
   en: {

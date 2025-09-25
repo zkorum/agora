@@ -30,7 +30,7 @@ import type { PossibleIntentions } from "src/stores/loginIntention";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useRouter } from "vue-router";
 import DialogContainer from "./DialogContainer.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   preLoginIntentionDialogTranslations,
   type PreLoginIntentionDialogTranslations,

@@ -18,31 +18,38 @@
           :opinion-count="
             conversationData.metadata.opinionCount + opinionCountOffset
           "
+          :is-loading="isCurrentTabLoading"
           @share="shareClicked()"
         />
 
         <div v-if="!compactMode">
           <AnalysisPage
             v-if="currentTab == 'analysis'"
+            ref="analysisPageRef"
             :conversation-slug-id="
               props.conversationData.metadata.conversationSlugId
             "
             :participant-count="
               props.conversationData.metadata.participantCount
             "
+            :analysis-query="analysisQuery"
           />
 
           <CommentSection
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :is-post-locked="
-              conversationData.metadata.moderation.status == 'moderated'
-            "
+            :is-post-locked="isPostLocked"
             :login-required-to-participate="
               conversationData.metadata.isIndexed ||
               conversationData.metadata.isLoginRequired
             "
+            :preloaded-queries="{
+              commentsDiscoverQuery,
+              commentsNewQuery,
+              commentsModeratedQuery,
+              hiddenCommentsQuery,
+            }"
             @deleted="decrementOpinionCount()"
             @participant-count-delta="
               (delta: number) => (participantCountLocal += delta)
@@ -73,37 +80,93 @@ import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
-import { ref } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import type { ExtendedConversation, VotingAction } from "src/shared/types/zod";
+import type { ExtendedConversation } from "src/shared/types/zod";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
+import {
+  useAnalysisQuery,
+  useCommentsQuery,
+  useHiddenCommentsQuery,
+  useInvalidateCommentQueries,
+} from "src/utils/api/comment/useCommentQueries";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
   compactMode: boolean;
 }>();
-const currentTab = defineModel<"comment" | "analysis">({
-  required: true,
-});
+const currentTab = ref<"comment" | "analysis">("comment");
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
+const { invalidateAnalysis, forceRefreshAnalysis } =
+  useInvalidateCommentQueries();
 
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
 
-const isPostLocked =
-  props.conversationData.metadata.moderation.status === "moderated" &&
-  props.conversationData.metadata.moderation.action === "lock";
+// Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
+const analysisQuery = useAnalysisQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  enabled: !props.compactMode,
+});
 
-function openModerationHistory() {
+// Preload comment queries for all filter types (only if not in compact mode)
+const commentsDiscoverQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "discover",
+  enabled: !props.compactMode,
+});
+
+const commentsNewQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "new",
+  enabled: !props.compactMode,
+});
+
+const commentsModeratedQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "moderated",
+  enabled: !props.compactMode,
+});
+
+const hiddenCommentsQuery = useHiddenCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  enabled: !props.compactMode,
+});
+
+const isPostLocked = computed((): boolean => {
+  return (
+    props.conversationData.metadata.moderation.status === "moderated" &&
+    props.conversationData.metadata.moderation.action === "lock"
+  );
+});
+
+// Track loading states from child components
+const isCurrentTabLoading = computed((): boolean => {
+  if (props.compactMode) {
+    return false; // No loading indicator needed in compact mode
+  }
+
+  if (currentTab.value === "comment") {
+    return opinionSectionRef.value?.isLoading ?? false;
+  } else if (currentTab.value === "analysis") {
+    // Use the preloaded analysis query loading state
+    return analysisQuery.isPending.value || analysisQuery.isRefetching.value;
+  }
+
+  return false;
+});
+
+function openModerationHistory(): void {
   if (opinionSectionRef.value) {
     opinionSectionRef.value.openModerationHistory();
   } else {
@@ -111,29 +174,26 @@ function openModerationHistory() {
   }
 }
 
-function decrementOpinionCount() {
+function decrementOpinionCount(): void {
   opinionCountOffset.value -= 1;
 }
 
-async function submittedComment(opinionSlugId: string) {
+async function submittedComment(opinionSlugId: string): Promise<void> {
   opinionCountOffset.value += 1;
-  // WARN: we know that the backend auto-agrees on opinion submission--that's why we do the following.
-  // Change this if you change this behaviour.
-  changeVote("agree", opinionSlugId);
+  // Note: The backend auto-agrees on opinion submission, but with the new local state
+  // management approach, each CommentActionBar will handle its own vote state independently
+  // when the user votes on their newly created opinion.
 
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
   }
+
+  // Force refresh analysis data since new opinion affects analysis results
+  // Always use forceRefreshAnalysis to ensure cache expires completely
+  forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
 }
 
-function changeVote(vote: VotingAction, opinionSlugId: string) {
-  // Delegate all vote logic to CommentSection
-  if (opinionSectionRef.value) {
-    opinionSectionRef.value.changeVote(vote, opinionSlugId);
-  }
-}
-
-async function shareClicked() {
+async function shareClicked(): Promise<void> {
   const sharePostUrl = getConversationUrl(
     props.conversationData.metadata.conversationSlugId
   );
@@ -142,6 +202,62 @@ async function shareClicked() {
     sharePostUrl
   );
 }
+
+onMounted(() => {
+  // Reset local state
+  participantCountLocal.value =
+    props.conversationData.metadata.participantCount;
+
+  refreshAllData();
+});
+
+// Watch for tab changes and refresh data when switching tabs
+watch(currentTab, async (newTab) => {
+  if (!props.compactMode) {
+    if (newTab === "comment") {
+      // Check and refetch comment queries if they are stale
+      const commentQueries = [
+        commentsDiscoverQuery,
+        commentsNewQuery,
+        commentsModeratedQuery,
+        hiddenCommentsQuery,
+      ];
+
+      const staleQueries = commentQueries.filter(
+        (query) => query.isStale.value
+      );
+      await Promise.all(staleQueries.map((query) => query.refetch()));
+    } else if (newTab === "analysis") {
+      // Check and refetch analysis query if it is stale
+      if (analysisQuery.isStale.value) {
+        await analysisQuery.refetch();
+      }
+    }
+  }
+});
+
+function refreshAllData(): void {
+  // Reset local state
+  opinionCountOffset.value = 0;
+  participantCountLocal.value =
+    props.conversationData.metadata.participantCount;
+
+  // Refresh analysis data
+  invalidateAnalysis(props.conversationData.metadata.conversationSlugId);
+
+  // Refresh comment data if the component is rendered
+  if (opinionSectionRef.value) {
+    opinionSectionRef.value.refreshData();
+  }
+}
+
+defineExpose({
+  // General function to refresh all tab data
+  refreshAllData,
+  // Specific method to manually refresh analysis data if needed
+  refreshAnalysis: () =>
+    invalidateAnalysis(props.conversationData.metadata.conversationSlugId),
+});
 </script>
 
 <style scoped lang="scss">

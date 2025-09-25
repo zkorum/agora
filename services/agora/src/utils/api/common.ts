@@ -1,3 +1,4 @@
+import type { AxiosError } from "axios";
 import { type RawAxiosRequestConfig } from "axios";
 import { useQuasar } from "quasar";
 import { getPlatform } from "src/utils/common";
@@ -9,56 +10,146 @@ import {
 } from "../crypto/ucan/operation";
 import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  commonApiTranslations,
+  type CommonApiTranslations,
+} from "./common.i18n";
 
 export type KeyAction = "overwrite" | "get" | "create";
+
+export type ApiTimeoutProfile = "standard" | "extended";
+
+export type AxiosErrorCode =
+  | typeof AxiosError.ERR_FR_TOO_MANY_REDIRECTS
+  | typeof AxiosError.ERR_BAD_OPTION_VALUE
+  | typeof AxiosError.ERR_BAD_OPTION
+  | typeof AxiosError.ERR_NETWORK
+  | typeof AxiosError.ERR_DEPRECATED
+  | typeof AxiosError.ERR_BAD_RESPONSE
+  | typeof AxiosError.ERR_BAD_REQUEST
+  | typeof AxiosError.ERR_NOT_SUPPORT
+  | typeof AxiosError.ERR_INVALID_URL
+  | typeof AxiosError.ERR_CANCELED
+  | typeof AxiosError.ECONNABORTED
+  | typeof AxiosError.ETIMEDOUT;
 
 export interface AxiosSuccessResponse<T> {
   data: T;
   status: "success";
 }
 
-export type AxiosErrorCodes =
-  | "ERR_FR_TOO_MANY_REDIRECTS"
-  | "ERR_BAD_OPTION_VALUE"
-  | "ERR_BAD_OPTION"
-  | "ERR_NETWORK"
-  | "ERR_DEPRECATED"
-  | "ERR_BAD_RESPONSE"
-  | "ERR_BAD_REQUEST"
-  | "ERR_CANCELED"
-  | "ECONNABORTED"
-  | "ETIMEDOUT";
-
 export interface AxiosErrorResponse {
   status: "error";
   message: string;
   name: string;
-  code: AxiosErrorCodes;
+  code: AxiosErrorCode;
+}
+
+// Error categorization utilities
+export function isTimeoutError(code: AxiosErrorCode): boolean {
+  return code === "ECONNABORTED" || code === "ETIMEDOUT";
+}
+
+export function isNetworkError(code: AxiosErrorCode): boolean {
+  return code === "ERR_NETWORK" || code === "ECONNABORTED";
+}
+
+export function isClientError(code: AxiosErrorCode): boolean {
+  return (
+    code === "ERR_BAD_REQUEST" ||
+    code === "ERR_BAD_OPTION" ||
+    code === "ERR_BAD_OPTION_VALUE" ||
+    code === "ERR_INVALID_URL" ||
+    code === "ERR_NOT_SUPPORT"
+  );
+}
+
+export function isServerError(code: AxiosErrorCode): boolean {
+  return code === "ERR_BAD_RESPONSE";
+}
+
+export function isCancellationError(code: AxiosErrorCode): boolean {
+  return code === "ERR_CANCELED";
+}
+
+export function shouldRetryError(code: AxiosErrorCode): boolean {
+  // Retry timeouts, network errors, and server errors
+  // Don't retry client errors or cancellations
+  return (
+    isTimeoutError(code) ||
+    code === "ERR_NETWORK" ||
+    code === "ERR_BAD_RESPONSE"
+  );
 }
 
 export function useCommonApi() {
   const $q = useQuasar();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<CommonApiTranslations>(commonApiTranslations);
 
-  const API_TIMEOUT_LIMIT_MS = 8000;
+  const STANDARD_TIMEOUT_MS = 8000;
+  const EXTENDED_TIMEOUT_MS = 20000;
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
-    timeoutMs?: number;
+    timeoutProfile?: ApiTimeoutProfile;
   }
 
   interface HandleAxiosStatusCodesProps {
-    axiosErrorCode: AxiosErrorCodes;
+    axiosErrorCode: AxiosErrorCode;
     defaultMessage: string;
+  }
+
+  function getErrorMessage(error: AxiosErrorResponse): string {
+    if (isTimeoutError(error.code)) {
+      return t("timeoutError");
+    }
+
+    if (isNetworkError(error.code)) {
+      return t("networkError");
+    }
+
+    if (isCancellationError(error.code)) {
+      return t("requestCanceled");
+    }
+
+    // Specific error messages for each code
+    switch (error.code) {
+      case "ERR_BAD_REQUEST":
+        return t("invalidRequest");
+      case "ERR_BAD_RESPONSE":
+        return t("serverError");
+      case "ERR_FR_TOO_MANY_REDIRECTS":
+        return t("tooManyRedirects");
+      case "ERR_BAD_OPTION":
+      case "ERR_BAD_OPTION_VALUE":
+        return t("configurationError");
+      case "ERR_DEPRECATED":
+        return t("featureNotSupported");
+      case "ERR_NOT_SUPPORT":
+        return t("operationNotSupported");
+      case "ERR_INVALID_URL":
+        return t("invalidUrl");
+      case "ERR_NETWORK":
+        return t("networkError");
+      case "ERR_CANCELED":
+        return t("requestCanceled");
+      case "ECONNABORTED":
+      case "ETIMEDOUT":
+        return t("timeoutError");
+      default:
+        return error.message || t("unexpectedError");
+    }
   }
 
   function handleAxiosErrorStatusCodes({
     axiosErrorCode,
     defaultMessage,
-  }: HandleAxiosStatusCodesProps) {
+  }: HandleAxiosStatusCodesProps): void {
     if (axiosErrorCode == "ECONNABORTED") {
-      showNotifyMessage("No internet connection");
+      showNotifyMessage(t("noInternetConnection"));
     } else {
       showNotifyMessage(defaultMessage);
     }
@@ -84,9 +175,20 @@ export function useCommonApi() {
     }
   }
 
+  function getTimeoutForProfile(profile: ApiTimeoutProfile): number {
+    switch (profile) {
+      case "standard":
+        return STANDARD_TIMEOUT_MS;
+      case "extended":
+        return EXTENDED_TIMEOUT_MS;
+      default:
+        return STANDARD_TIMEOUT_MS;
+    }
+  }
+
   function createRawAxiosRequestConfig({
     encodedUcan,
-    timeoutMs,
+    timeoutProfile = "standard",
   }: CreateRawAxiosRequestConfigProps): RawAxiosRequestConfig {
     return {
       headers: encodedUcan
@@ -94,7 +196,7 @@ export function useCommonApi() {
             ...buildAuthorizationHeader(encodedUcan),
           }
         : undefined,
-      timeout: timeoutMs ?? API_TIMEOUT_LIMIT_MS,
+      timeout: getTimeoutForProfile(timeoutProfile),
     };
   }
 
@@ -147,5 +249,51 @@ export function useCommonApi() {
     buildEncodedUcan,
     createAxiosErrorResponse,
     handleAxiosErrorStatusCodes,
+    getErrorMessage,
   };
+}
+
+// Standalone version for backwards compatibility
+export function getErrorMessage(error: AxiosErrorResponse): string {
+  const { t } = useComponentI18n<CommonApiTranslations>(commonApiTranslations);
+
+  if (isTimeoutError(error.code)) {
+    return t("timeoutError");
+  }
+
+  if (isNetworkError(error.code)) {
+    return t("networkError");
+  }
+
+  if (isCancellationError(error.code)) {
+    return t("requestCanceled");
+  }
+
+  // Specific error messages for each code
+  switch (error.code) {
+    case "ERR_BAD_REQUEST":
+      return t("invalidRequest");
+    case "ERR_BAD_RESPONSE":
+      return t("serverError");
+    case "ERR_FR_TOO_MANY_REDIRECTS":
+      return t("tooManyRedirects");
+    case "ERR_BAD_OPTION":
+    case "ERR_BAD_OPTION_VALUE":
+      return t("configurationError");
+    case "ERR_DEPRECATED":
+      return t("featureNotSupported");
+    case "ERR_NOT_SUPPORT":
+      return t("operationNotSupported");
+    case "ERR_INVALID_URL":
+      return t("invalidUrl");
+    case "ERR_NETWORK":
+      return t("networkError");
+    case "ERR_CANCELED":
+      return t("requestCanceled");
+    case "ECONNABORTED":
+    case "ETIMEDOUT":
+      return t("timeoutError");
+    default:
+      return error.message || t("unexpectedError");
+  }
 }

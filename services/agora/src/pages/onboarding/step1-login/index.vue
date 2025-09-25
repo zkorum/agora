@@ -48,7 +48,7 @@ import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   loginOnboardingTranslations,
   type LoginOnboardingTranslations,

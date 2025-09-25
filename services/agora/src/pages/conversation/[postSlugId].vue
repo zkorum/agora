@@ -12,12 +12,11 @@
       <StandardMenuBar :title="''" :center-content="false" />
     </template>
 
-    <q-pull-to-refresh @refresh="refreshConversation">
+    <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
         <PostDetails
           v-if="hasConversationData"
-          :key="conversationData.metadata.lastReactedAt.toISOString()"
-          v-model="currentTab"
+          ref="postDetailsRef"
           :conversation-data="conversationData"
           :compact-mode="false"
         />
@@ -31,14 +30,24 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
-import { useConversationData } from "src/composables/useConversationData";
+import { useConversationData } from "src/composables/conversation/useConversationData";
 import { ref, onBeforeUnmount } from "vue";
 import { useNavigationStore } from "src/stores/navigation";
 
-const currentTab = ref<"comment" | "analysis">("comment");
+const postDetailsRef = ref<InstanceType<typeof PostDetails>>();
 const { conversationData, hasConversationData, refreshConversation } =
   useConversationData();
 const navigationStore = useNavigationStore();
+
+function handleRefresh(done: () => void): void {
+  refreshConversation(() => {
+    // After conversation data is refreshed, also refresh all tab data
+    if (postDetailsRef.value) {
+      postDetailsRef.value.refreshAllData();
+    }
+    done();
+  });
+}
 
 // Clear conversation creation context when leaving this page
 onBeforeUnmount(() => {

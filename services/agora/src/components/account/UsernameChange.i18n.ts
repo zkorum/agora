@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface UsernameChangeTranslations {
   usernameLabel: string;
   updateButton: string;
@@ -5,11 +7,10 @@ export interface UsernameChangeTranslations {
   usernameAlreadyInUse: string;
   usernameCurrentlyInUse: string;
   submitError: string;
-  [key: string]: string;
 }
 
 export const usernameChangeTranslations: Record<
-  string,
+  SupportedDisplayLanguageCodes,
   UsernameChangeTranslations
 > = {
   en: {

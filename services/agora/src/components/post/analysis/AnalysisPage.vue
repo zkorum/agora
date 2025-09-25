@@ -1,8 +1,5 @@
 <template>
-  <div v-if="isLoading" class="analysisLoading">
-    <q-spinner-gears size="50px" color="primary" />
-  </div>
-  <div v-if="!isLoading">
+  <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
@@ -13,9 +10,9 @@
         <ConsensusTab
           v-model="currentTab"
           :conversation-slug-id="props.conversationSlugId"
-          :item-list="consensusItemList"
+          :item-list="analysisQuery.data.value?.consensus || []"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="clusters"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
         />
       </div>
 
@@ -26,9 +23,9 @@
         <DivisiveTab
           v-model="currentTab"
           :conversation-slug-id="props.conversationSlugId"
-          :item-list="divisiveItemList"
+          :item-list="analysisQuery.data.value?.controversial || []"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="clusters"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
         />
       </div>
 
@@ -38,57 +35,72 @@
       >
         <OpinionGroupTab
           :conversation-slug-id="props.conversationSlugId"
-          :clusters="clusters"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
           :total-participant-count="props.participantCount"
         />
       </div>
     </div>
-  </div>
+  </AsyncStateHandler>
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
-import { ref, onMounted } from "vue";
-import { useBackendCommentApi } from "src/utils/api/comment";
+import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import { ref, computed } from "vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  analysisPageTranslations,
+  type AnalysisPageTranslations,
+} from "./AnalysisPage.i18n";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
+import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
+
+type AnalysisData = {
+  consensus: OpinionItem[];
+  controversial: OpinionItem[];
+  polisClusters: Partial<PolisClusters>;
+};
 
 const props = defineProps<{
   participantCount: number;
   conversationSlugId: string;
+  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
 }>();
 
-const isLoading = ref<boolean>(true);
-
-const { fetchAnalysisData } = useBackendCommentApi();
+const { t } = useComponentI18n<AnalysisPageTranslations>(
+  analysisPageTranslations
+);
 
 const currentTab = ref<ShortcutItem>("Summary");
 
-const consensusItemList = ref<OpinionItem[]>([]);
-const divisiveItemList = ref<OpinionItem[]>([]);
-const clusters = ref<Partial<PolisClusters>>({});
+// Use the passed-in analysis query instead of creating our own
+const analysisQuery = props.analysisQuery;
 
-async function loadItemLists({
-  conversationSlugId,
-}: {
-  conversationSlugId: string;
-}): Promise<void> {
-  isLoading.value = true;
-  const { consensus, controversial, polisClusters } = await fetchAnalysisData({
-    conversationSlugId,
-  });
+const asyncStateConfig = {
+  loading: {
+    text: t("loadingAnalysis"),
+  },
+  retrying: {
+    text: t("retryingAnalysis"),
+  },
+  error: {
+    title: t("analysisErrorTitle"),
+    message: t("analysisErrorMessage"),
+    retryButtonText: t("retryAnalysis"),
+  },
+  empty: {
+    text: t("noAnalysisData"),
+  },
+};
 
-  consensusItemList.value = consensus;
-  divisiveItemList.value = controversial;
-  clusters.value = polisClusters;
-}
-
-onMounted(async () => {
-  await loadItemLists({ conversationSlugId: props.conversationSlugId });
-  isLoading.value = false;
+defineExpose({
+  isLoading: computed(
+    () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
+  ),
 });
 </script>
 
@@ -112,11 +124,5 @@ onMounted(async () => {
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
-}
-
-.analysisLoading {
-  display: flex;
-  justify-content: center;
-  padding-top: 4rem;
 }
 </style>

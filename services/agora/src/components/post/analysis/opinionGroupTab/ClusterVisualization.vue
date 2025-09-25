@@ -27,10 +27,14 @@
             )
           "
           :style="{ width: '100%' }"
+          draggable="false"
         />
         <div
           class="clusterNameOverlay borderStyle dynamicFont"
           :class="{ selected: imgItem.isSelected }"
+          :style="{
+            transform: `translate(-50%, calc(-50% + ${imgItem.labelOffsetY}px))`,
+          }"
         >
           <div class="clusterLabelFlex">
             <div class="clusterOverlayFontBold">
@@ -75,7 +79,7 @@ import { calculatePercentage } from "src/shared/common/util";
 import { formatPercentage } from "src/utils/common";
 import { ref, watch } from "vue";
 import { z } from "zod";
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   clusterVisualizationTranslations,
   type ClusterVisualizationTranslations,
@@ -101,6 +105,7 @@ const zodClusterImg = z.object({
   top: z.number(),
   left: z.number(),
   isSelected: z.boolean(),
+  labelOffsetY: z.number(),
 });
 
 const zodClusterConfig = z.object({
@@ -115,16 +120,18 @@ const clusterConfigs: ClusterConfig[] = [
     numNodes: 2,
     imgList: [
       {
-        clusterWidthPercent: 45,
+        clusterWidthPercent: 47,
         top: 15,
         left: 2,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
-        clusterWidthPercent: 45,
-        top: 25,
+        clusterWidthPercent: 42,
+        top: 28,
         left: 50,
         isSelected: false,
+        labelOffsetY: 0,
       },
     ],
   },
@@ -136,18 +143,21 @@ const clusterConfigs: ClusterConfig[] = [
         top: 5,
         left: 28,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 45,
         top: 42,
         left: 4,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 45,
         top: 50,
         left: 52,
         isSelected: false,
+        labelOffsetY: 0,
       },
     ],
   },
@@ -159,24 +169,28 @@ const clusterConfigs: ClusterConfig[] = [
         top: 5,
         left: 8,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 40,
         top: 2,
         left: 52,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
-        clusterWidthPercent: 40,
+        clusterWidthPercent: 44,
         top: 52,
         left: 5,
         isSelected: false,
+        labelOffsetY: -10,
       },
       {
         clusterWidthPercent: 40,
         top: 50,
         left: 48,
         isSelected: false,
+        labelOffsetY: 0,
       },
     ],
   },
@@ -188,30 +202,35 @@ const clusterConfigs: ClusterConfig[] = [
         top: 8,
         left: 10,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 40,
         top: 12,
         left: 52,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 30,
         top: 50,
         left: 5,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
-        clusterWidthPercent: 30,
-        top: 55,
-        left: 35,
+        clusterWidthPercent: 35,
+        top: 52,
+        left: 33,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
-        clusterWidthPercent: 30,
+        clusterWidthPercent: 32,
         top: 55,
-        left: 65,
+        left: 68,
         isSelected: false,
+        labelOffsetY: 0,
       },
     ],
   },
@@ -223,36 +242,42 @@ const clusterConfigs: ClusterConfig[] = [
         top: 5,
         left: 10,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 40,
         top: 8,
         left: 45,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 30,
         top: 35,
         left: 5,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 35,
         top: 35,
         left: 32,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 30,
         top: 40,
         left: 70,
         isSelected: false,
+        labelOffsetY: 0,
       },
       {
         clusterWidthPercent: 40,
         top: 73,
         left: 30,
         isSelected: false,
+        labelOffsetY: 0,
       },
     ],
   },
@@ -382,6 +407,17 @@ watch(
     transform 0.2s ease,
     filter 0.2s ease;
 
+  // Prevent unwanted drag and selection behaviors
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: manipulation;
+
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none; // Prevent image from receiving pointer events directly
+  }
+
   &:hover {
     filter: brightness(1.05);
   }
@@ -415,7 +451,6 @@ watch(
   // Center the overlay relative to the cluster
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
 
   // Ensure overlay stays within bounds
   max-width: 80%;

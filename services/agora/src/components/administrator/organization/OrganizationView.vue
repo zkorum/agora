@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/useComponentI18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
