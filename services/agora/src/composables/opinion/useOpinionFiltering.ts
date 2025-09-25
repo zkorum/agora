@@ -25,6 +25,7 @@ export interface UseOpinionFilteringReturn {
   handleUserFilterChange: (filterValue: CommentFilterOptions) => void;
   getOpinionDataForFilter: (filter: CommentFilterOptions) => OpinionItem[];
   handleRetryLoadComments: () => void;
+  smartRefreshAll: () => Promise<void>;
 }
 
 export function useOpinionFiltering({
@@ -150,6 +151,31 @@ export function useOpinionFiltering({
     }
   }
 
+  // Smart refresh that respects staleTime (2 minutes)
+  // Only refetches if data is actually stale, reducing unnecessary API calls
+  async function smartRefreshAll(): Promise<void> {
+    const refetchPromises: Promise<unknown>[] = [];
+
+    // Only refetch queries that are actually stale
+    if (commentsNewQuery.isStale.value) {
+      refetchPromises.push(commentsNewQuery.refetch());
+    }
+    if (commentsDiscoverQuery.isStale.value) {
+      refetchPromises.push(commentsDiscoverQuery.refetch());
+    }
+    if (commentsModeratedQuery.isStale.value) {
+      refetchPromises.push(commentsModeratedQuery.refetch());
+    }
+    if (hiddenCommentsQuery.isStale.value) {
+      refetchPromises.push(hiddenCommentsQuery.refetch());
+    }
+
+    // Wait for all stale queries to refetch
+    if (refetchPromises.length > 0) {
+      await Promise.all(refetchPromises);
+    }
+  }
+
   return {
     currentFilter,
     activeQuery,
@@ -162,5 +188,6 @@ export function useOpinionFiltering({
     handleUserFilterChange,
     getOpinionDataForFilter,
     handleRetryLoadComments,
+    smartRefreshAll,
   };
 }

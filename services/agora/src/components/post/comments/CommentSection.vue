@@ -94,6 +94,7 @@ const {
   customIsEmpty,
   handleUserFilterChange,
   handleRetryLoadComments,
+  smartRefreshAll,
 } = useOpinionFiltering({
   conversationSlugId: props.postSlugId,
 });
@@ -150,6 +151,7 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
+  smartRefresh: smartRefreshAll,
   isLoading: computed(
     () =>
       activeQuery.value.isPending.value || activeQuery.value.isRefetching.value

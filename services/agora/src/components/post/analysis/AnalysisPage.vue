@@ -103,8 +103,18 @@ function refreshData(): void {
   invalidateAnalysis(props.conversationSlugId);
 }
 
+// Smart refresh that respects staleTime (2 minutes)
+// Only refetches if data is actually stale, reducing unnecessary API calls
+async function smartRefresh(): Promise<void> {
+  // Only refetch if the analysis query is actually stale
+  if (analysisQuery.isStale.value) {
+    await analysisQuery.refetch();
+  }
+}
+
 defineExpose({
   refreshData,
+  smartRefresh,
   isLoading: computed(
     () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
   ),

@@ -187,11 +187,12 @@ onMounted(async () => {
 // Watch for tab changes and refresh data when switching tabs
 watch(currentTab, async (newTab) => {
   if (!props.compactMode) {
-    // Refresh the newly active tab's data with forced network requests
+    // Smart refresh that respects staleTime (2 minutes)
+    // Only refetches if data is actually stale, reducing unnecessary API calls
     if (newTab === "comment" && opinionSectionRef.value) {
-      await opinionSectionRef.value.refreshData();
+      await opinionSectionRef.value.smartRefresh();
     } else if (newTab === "analysis" && analysisPageRef.value) {
-      analysisPageRef.value.refreshData();
+      await analysisPageRef.value.smartRefresh();
     }
   }
 });
