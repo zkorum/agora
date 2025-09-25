@@ -23,14 +23,8 @@
 
         <AsyncStateHandler
           :query="activeQuery"
-          :custom-is-empty="customIsEmpty"
-          :loading-text="t('loadingOpinions')"
-          :retrying-text="t('retrying')"
-          :error-title="t('failedToLoadOpinions')"
-          :empty-text="t('noOpinionsAvailable')"
-          :retry-label="t('retryLoadingOpinions')"
-          empty-icon="forum"
-          empty-icon-color="grey-5"
+          :is-empty="customIsEmpty"
+          :config="asyncStateConfig"
         >
           <CommentGroup
             :comment-item-list="visibleOpinions"
@@ -133,6 +127,26 @@ const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   visibleOpinions,
   onVoteCast: () => emit("voteCast"),
 });
+
+// AsyncStateHandler configuration
+const asyncStateConfig = computed(() => ({
+  loading: {
+    text: t("loadingOpinions"),
+  },
+  retrying: {
+    text: t("retrying"),
+  },
+  error: {
+    title: t("failedToLoadOpinions"),
+    retryButtonText: t("retryLoadingOpinions"),
+    showRetryButton: true,
+  },
+  empty: {
+    text: t("noOpinionsAvailable"),
+    icon: "forum",
+    iconColor: "grey-5",
+  },
+}));
 
 onMounted(async (): Promise<void> => {
   await fetchUserVotingData();
