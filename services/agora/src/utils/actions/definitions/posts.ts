@@ -47,9 +47,7 @@ export function getPostActions(
       variant: "warning",
       handler: muteUserCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole !== "owner" &&
-        context.isLoggedIn &&
-        !context.isEmbeddedMode,
+        !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
     },
     {
       id: "delete",
@@ -58,7 +56,7 @@ export function getPostActions(
       variant: "destructive",
       handler: deletePostCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole === "owner" && !context.isEmbeddedMode,
+        context.isOwner && !context.isEmbeddedMode,
     },
     {
       id: "moderationHistory",
@@ -81,7 +79,7 @@ export function getPostActions(
       variant: "warning",
       handler: moderatePostCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole === "moderator" && !context.isEmbeddedMode,
+        context.isModerator && !context.isEmbeddedMode,
     },
     {
       id: "userReports",
@@ -89,7 +87,7 @@ export function getPostActions(
       icon: "mdi-account-alert",
       handler: openUserReportsCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole === "moderator" && !context.isEmbeddedMode,
+        context.isModerator && !context.isEmbeddedMode,
     },
   ];
 }
