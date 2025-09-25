@@ -15,25 +15,21 @@ export function useActionPermissions(): ContentActionPermissionCheckers {
   const canDelete = (context: ContentActionContext): boolean => {
     if (context.targetType === "post") {
       // For posts, can only delete if owner and not in embedded mode
-      return context.userRole === "owner" && !context.isEmbeddedMode;
+      return context.isOwner && !context.isEmbeddedMode;
     } else {
       // For comments, can delete if owner (regardless of embed mode)
-      return context.userRole === "owner";
+      return context.isOwner;
     }
   };
 
   const canModerate = (context: ContentActionContext): boolean => {
     // Can moderate if user is a moderator and not in embedded mode
-    return context.userRole === "moderator" && !context.isEmbeddedMode;
+    return context.isModerator && !context.isEmbeddedMode;
   };
 
   const canMute = (context: ContentActionContext): boolean => {
     // Can mute if not the owner, user is logged in, and not in embedded mode
-    return (
-      context.userRole !== "owner" &&
-      context.isLoggedIn &&
-      !context.isEmbeddedMode
-    );
+    return !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode;
   };
 
   const canReport = (): boolean => {
@@ -48,7 +44,7 @@ export function useActionPermissions(): ContentActionPermissionCheckers {
 
   const canViewUserReports = (context: ContentActionContext): boolean => {
     // Only moderators can view user reports, and not in embedded mode
-    return context.userRole === "moderator" && !context.isEmbeddedMode;
+    return context.isModerator && !context.isEmbeddedMode;
   };
 
   const canViewModerationHistory = (): boolean => {
@@ -74,20 +70,6 @@ export function useActionPermissions(): ContentActionPermissionCheckers {
 }
 
 /**
- * Helper function to determine user role based on context
- */
-export function determineUserRole(
-  isOwner: boolean,
-  isModerator: boolean,
-  isLoggedIn: boolean
-): ContentActionContext["userRole"] {
-  if (isModerator) return "moderator";
-  if (isOwner) return "owner";
-  if (isLoggedIn) return "user";
-  return "anonymous";
-}
-
-/**
  * Helper function to create action context
  */
 export function createActionContext(
@@ -100,12 +82,12 @@ export function createActionContext(
   isEmbeddedMode: boolean
 ): ContentActionContext {
   const isOwner = currentUser === targetAuthor;
-  const userRole = determineUserRole(isOwner, isModerator, isLoggedIn);
 
   return {
-    userRole,
-    isEmbeddedMode,
+    isOwner,
+    isModerator,
     isLoggedIn,
+    isEmbeddedMode,
     targetType,
     targetId,
     targetAuthor,

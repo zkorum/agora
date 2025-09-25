@@ -45,9 +45,7 @@ export function getCommentActions(
       variant: "warning",
       handler: muteUserCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole !== "owner" &&
-        context.isLoggedIn &&
-        !context.isEmbeddedMode,
+        !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
     },
     {
       id: "delete",
@@ -55,8 +53,7 @@ export function getCommentActions(
       icon: "mdi-delete",
       variant: "destructive",
       handler: deleteCommentCallback,
-      isVisible: (context: ContentActionContext) =>
-        context.userRole === "owner",
+      isVisible: (context: ContentActionContext) => context.isOwner,
     },
     {
       id: "moderate",
@@ -65,7 +62,7 @@ export function getCommentActions(
       variant: "warning",
       handler: moderateCommentCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole === "moderator" && !context.isEmbeddedMode,
+        context.isModerator && !context.isEmbeddedMode,
     },
     {
       id: "userReports",
@@ -73,7 +70,7 @@ export function getCommentActions(
       icon: "mdi-account-alert",
       handler: openUserReportsCallback,
       isVisible: (context: ContentActionContext) =>
-        context.userRole === "moderator" && !context.isEmbeddedMode,
+        context.isModerator && !context.isEmbeddedMode,
     },
     {
       id: "share",

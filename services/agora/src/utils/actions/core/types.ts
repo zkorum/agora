@@ -14,9 +14,10 @@ export interface BaseContentAction {
 
 // Context for determining available content actions
 export interface ContentActionContext {
-  userRole: "owner" | "moderator" | "user" | "anonymous";
-  isEmbeddedMode: boolean;
+  isOwner: boolean;
+  isModerator: boolean;
   isLoggedIn: boolean;
+  isEmbeddedMode: boolean;
   targetType: "post" | "comment";
   targetId: string;
   targetAuthor: string;
