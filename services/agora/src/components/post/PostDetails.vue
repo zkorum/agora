@@ -24,7 +24,7 @@
 
         <div v-if="!compactMode">
           <AnalysisPage
-            v-show="currentTab == 'analysis'"
+            v-if="currentTab == 'analysis'"
             ref="analysisPageRef"
             :conversation-slug-id="
               props.conversationData.metadata.conversationSlugId
@@ -35,7 +35,7 @@
           />
 
           <CommentSection
-            v-show="currentTab == 'comment'"
+            v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
             :is-post-locked="isPostLocked"
@@ -47,7 +47,6 @@
             @participant-count-delta="
               (delta: number) => (participantCountLocal += delta)
             "
-            @vote-cast="markVotingOccurred()"
           />
         </div>
       </div>
@@ -91,7 +90,6 @@ const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
-const hasVotingOccurred = ref(false);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
@@ -132,14 +130,6 @@ function openModerationHistory(): void {
 
 function decrementOpinionCount(): void {
   opinionCountOffset.value -= 1;
-}
-
-function markVotingOccurred(): void {
-  hasVotingOccurred.value = true;
-}
-
-function resetVotingFlag(): void {
-  hasVotingOccurred.value = false;
 }
 
 async function submittedComment(opinionSlugId: string): Promise<void> {
@@ -200,14 +190,7 @@ watch(currentTab, async (newTab) => {
     if (newTab === "comment" && opinionSectionRef.value) {
       await opinionSectionRef.value.smartRefresh();
     } else if (newTab === "analysis" && analysisPageRef.value) {
-      if (hasVotingOccurred.value) {
-        // Force refresh analysis only if voting occurred
-        analysisPageRef.value.refreshData();
-        resetVotingFlag(); // Reset flag after refresh
-      } else {
-        // Use smart refresh to respect staleTime if no voting occurred
-        await analysisPageRef.value.smartRefresh();
-      }
+      await analysisPageRef.value.smartRefresh();
     }
   }
 });

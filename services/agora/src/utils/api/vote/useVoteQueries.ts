@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useBackendVoteApi } from "../vote";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useInvalidateCommentQueries } from "../comment/useCommentQueries";
 import type { VotingAction } from "src/shared/types/zod";
 import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
@@ -21,9 +22,10 @@ export function useUserVotesQuery({ postSlugId }: { postSlugId: string }) {
   });
 }
 
-export function useVoteMutation(_postSlugId: string) {
+export function useVoteMutation(postSlugId: string) {
   const { castVoteForComment } = useBackendVoteApi();
   const { showNotifyMessage } = useNotify();
+  const { invalidateAnalysis } = useInvalidateCommentQueries();
 
   return useMutation({
     mutationFn: ({
@@ -43,7 +45,11 @@ export function useVoteMutation(_postSlugId: string) {
       }
     },
 
-    onSuccess: () => {},
+    onSuccess: () => {
+      // Invalidate analysis data immediately when a vote is cast
+      // This ensures fresh data when users switch to the analysis tab
+      invalidateAnalysis(postSlugId);
+    },
 
     retry: false, // Disable auto-retry
   });
