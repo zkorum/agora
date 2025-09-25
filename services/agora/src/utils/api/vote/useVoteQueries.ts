@@ -43,10 +43,7 @@ export function useVoteMutation(_postSlugId: string) {
       }
     },
 
-    onSuccess: () => {
-      // No query invalidation - use optimistic updates only
-      // Server data consistency is not maintained to reduce API calls
-    },
+    onSuccess: () => {},
 
     retry: false, // Disable auto-retry
   });

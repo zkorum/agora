@@ -11,6 +11,7 @@ import type { UserVote } from "./types";
 export interface UseOpinionVotingParams {
   postSlugId: string;
   visibleOpinions: Ref<OpinionItem[]>;
+  onVoteCast?: () => void;
 }
 
 export interface UseOpinionVotingReturn {
@@ -24,6 +25,7 @@ export interface UseOpinionVotingReturn {
 
 export function useOpinionVoting({
   postSlugId,
+  onVoteCast,
 }: UseOpinionVotingParams): UseOpinionVotingReturn {
   // Get authentication status
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
@@ -50,6 +52,12 @@ export function useOpinionVoting({
         opinionSlugId,
         voteAction,
       });
+
+      // Call the callback after successful vote
+      if (onVoteCast) {
+        onVoteCast();
+      }
+
       return true;
     } catch {
       return false;

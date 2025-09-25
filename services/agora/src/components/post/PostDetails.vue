@@ -47,6 +47,7 @@
             @participant-count-delta="
               (delta: number) => (participantCountLocal += delta)
             "
+            @vote-cast="markVotingOccurred()"
           />
         </div>
       </div>
@@ -90,6 +91,7 @@ const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
+const hasVotingOccurred = ref(false);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
@@ -130,6 +132,14 @@ function openModerationHistory(): void {
 
 function decrementOpinionCount(): void {
   opinionCountOffset.value -= 1;
+}
+
+function markVotingOccurred(): void {
+  hasVotingOccurred.value = true;
+}
+
+function resetVotingFlag(): void {
+  hasVotingOccurred.value = false;
 }
 
 async function submittedComment(opinionSlugId: string): Promise<void> {
@@ -187,12 +197,17 @@ onMounted(async () => {
 // Watch for tab changes and refresh data when switching tabs
 watch(currentTab, async (newTab) => {
   if (!props.compactMode) {
-    // Smart refresh that respects staleTime (2 minutes)
-    // Only refetches if data is actually stale, reducing unnecessary API calls
     if (newTab === "comment" && opinionSectionRef.value) {
       await opinionSectionRef.value.smartRefresh();
     } else if (newTab === "analysis" && analysisPageRef.value) {
-      await analysisPageRef.value.smartRefresh();
+      if (hasVotingOccurred.value) {
+        // Force refresh analysis only if voting occurred
+        analysisPageRef.value.refreshData();
+        resetVotingFlag(); // Reset flag after refresh
+      } else {
+        // Use smart refresh to respect staleTime if no voting occurred
+        await analysisPageRef.value.smartRefresh();
+      }
     }
   }
 });

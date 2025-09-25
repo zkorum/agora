@@ -69,7 +69,7 @@ import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
 
-const emit = defineEmits(["deleted", "participantCountDelta"]);
+const emit = defineEmits(["deleted", "participantCountDelta", "voteCast"]);
 
 const props = defineProps<{
   postSlugId: string;
@@ -124,6 +124,7 @@ const { visibleOpinions, hasMore, onLoad, triggerLoadMore } =
 const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   postSlugId: props.postSlugId,
   visibleOpinions,
+  onVoteCast: () => emit("voteCast"),
 });
 
 onMounted(async (): Promise<void> => {
