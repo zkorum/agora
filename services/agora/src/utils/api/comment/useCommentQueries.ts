@@ -159,6 +159,18 @@ export function useInvalidateCommentQueries() {
         queryKey: ["analysis", conversationSlugId],
       });
     },
+    forceRefreshAnalysis: (conversationSlugId: string) => {
+      // Force immediate refetch bypassing staleTime completely
+      void queryClient.invalidateQueries({
+        queryKey: ["analysis", conversationSlugId],
+        refetchType: "active", // Force active queries to refetch immediately
+      });
+
+      // Also trigger immediate refetch for any matching queries
+      void queryClient.refetchQueries({
+        queryKey: ["analysis", conversationSlugId],
+      });
+    },
     markAnalysisAsStale: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
         queryKey: ["analysis", conversationSlugId],

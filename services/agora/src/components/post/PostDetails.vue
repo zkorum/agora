@@ -106,7 +106,8 @@ const opinionCountOffset = ref(0);
 
 const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
-const { invalidateAnalysis } = useInvalidateCommentQueries();
+const { invalidateAnalysis, forceRefreshAnalysis } =
+  useInvalidateCommentQueries();
 
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
@@ -187,13 +188,9 @@ async function submittedComment(opinionSlugId: string): Promise<void> {
     await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);
   }
 
-  // Refresh analysis data since new opinion affects analysis results
-  if (analysisPageRef.value) {
-    analysisPageRef.value.refreshData();
-  } else {
-    // If analysis page is not rendered, refresh via query invalidation
-    invalidateAnalysis(props.conversationData.metadata.conversationSlugId);
-  }
+  // Force refresh analysis data since new opinion affects analysis results
+  // Always use forceRefreshAnalysis to ensure cache expires completely
+  forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
 }
 
 async function shareClicked(): Promise<void> {

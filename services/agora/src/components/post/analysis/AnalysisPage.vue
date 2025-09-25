@@ -51,7 +51,6 @@ import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { ref, computed } from "vue";
-import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   analysisPageTranslations,
@@ -76,9 +75,6 @@ const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
 
-// Get invalidation utilities
-const { invalidateAnalysis } = useInvalidateCommentQueries();
-
 const currentTab = ref<ShortcutItem>("Summary");
 
 // Use the passed-in analysis query instead of creating our own
@@ -101,14 +97,7 @@ const asyncStateConfig = {
   },
 };
 
-function refreshData(): void {
-  // Use utility function to invalidate analysis queries
-  // This ensures fresh network requests regardless of staleTime
-  invalidateAnalysis(props.conversationSlugId);
-}
-
 defineExpose({
-  refreshData,
   isLoading: computed(
     () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
   ),
