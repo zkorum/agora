@@ -1,13 +1,10 @@
 <template>
   <div class="bodyContainer">
-    <img :src="clusterExampleImagePath" class="imageStyle" />
+    <img src="/images/onboarding/clusterExample.png" class="imageStyle" />
   </div>
 </template>
 
-<script setup lang="ts">
-const clusterExampleImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/clusterExample.png";
-</script>
+<script setup lang="ts"></script>
 
 <style scoped lang="scss">
 .imageStyle {

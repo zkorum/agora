@@ -1,13 +1,10 @@
 <template>
   <div class="bodyContainer">
-    <img :src="brandImagePath" class="imageStyle" />
+    <img src="/images/onboarding/brandButterflies.png" class="imageStyle" />
   </div>
 </template>
 
-<script setup lang="ts">
-const brandImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/brandButterflies.png";
-</script>
+<script setup lang="ts"></script>
 
 <style scoped lang="scss">
 .imageStyle {

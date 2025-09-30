@@ -13,7 +13,7 @@
         <template #center>
           <img
             v-if="drawerBehavior == 'mobile'"
-            :src="agoraLogo"
+            src="/images/icons/agora-wings.svg"
             class="agoraLogoStyle"
           />
         </template>
@@ -66,8 +66,6 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { homeTranslations, type HomeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
-
-const agoraLogo = process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
 
