@@ -5,7 +5,7 @@
         <div
           class="backgroundContainer"
           :style="{
-            backgroundImage: 'url(' + welcomeBackgroundImagePath + ')',
+            backgroundImage: 'url(/images/onboarding/background.webp)',
           }"
         >
           <q-page>
@@ -26,10 +26,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-const welcomeBackgroundImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
-</script>
+<script setup lang="ts"></script>
 
 <style scoped lang="scss">
 .backgroundContainer {

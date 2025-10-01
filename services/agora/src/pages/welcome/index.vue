@@ -1,9 +1,9 @@
 <template>
   <div
     class="container"
-    :style="{ backgroundImage: 'url(' + welcomeBackgroundImagePath + ')' }"
+    :style="{ backgroundImage: 'url(/images/onboarding/background.webp)' }"
   >
-    <img :src="brandImagePath" class="welcomeImage" />
+    <img src="/images/onboarding/brand.webp" class="welcomeImage" />
     <div v-if="!isLoggedIn" class="buttonFlex">
       <ZKGradientButton :label="t('signUp')" @click="gotoNextRoute(false)" />
 
@@ -49,12 +49,6 @@ import { welcomeTranslations, type WelcomeTranslations } from "./index.i18n";
 const { t } = useComponentI18n<WelcomeTranslations>(welcomeTranslations);
 
 const router = useRouter();
-
-const brandImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/brand.webp";
-
-const welcomeBackgroundImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/background.webp";
 
 const { onboardingMode } = storeToRefs(onboardingFlowStore());
 

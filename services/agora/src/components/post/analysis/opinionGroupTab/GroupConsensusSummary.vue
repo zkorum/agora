@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container">
-      <div><img :src="starIcon" class="iconStyle" /></div>
+      <div><img src="/images/icons/stars.svg" class="iconStyle" /></div>
       <div class="messageBody">
         <div class="titleBar">
           <div class="titleString">{{ summaryTitle }}</div>
@@ -54,8 +54,6 @@ const { t } = useComponentI18n<GroupConsensusSummaryTranslations>(
 );
 
 const summaryTitle = t("groupSummaryTitle");
-
-const starIcon = process.env.VITE_PUBLIC_DIR + "/images/icons/stars.svg";
 
 const showInformationDialog = ref(false);
 </script>

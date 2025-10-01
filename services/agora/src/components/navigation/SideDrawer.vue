@@ -3,8 +3,8 @@
     <div class="container">
       <div>
         <div v-if="drawerBehavior == 'desktop'" class="logoDiv">
-          <img :src="drawerIconLogo1" class="logoStyle1" />
-          <img :src="drawerIconLogo2" class="logoStyle2" />
+          <img src="/images/icons/agora-wings.svg" class="logoStyle1" />
+          <img src="/images/icons/agora-text.svg" class="logoStyle2" />
         </div>
 
         <div v-if="isGuestOrLoggedIn" class="usernameBar">
@@ -115,11 +115,6 @@ import DisplayUsername from "../features/user/DisplayUsername.vue";
 const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
-
-const drawerIconLogo1 =
-  process.env.VITE_PUBLIC_DIR + "/images/icons/agora-wings.svg";
-const drawerIconLogo2 =
-  process.env.VITE_PUBLIC_DIR + "/images/icons/agora-text.svg";
 
 const route = useRoute();
 
