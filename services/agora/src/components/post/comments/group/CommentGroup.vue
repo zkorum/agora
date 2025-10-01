@@ -25,11 +25,8 @@
       class="commentItemBackground"
       :class="{
         highlightCommentItem: isHighlightedComment(commentItem),
-        'focused-comment': focusedCommentId === commentItem.opinionSlugId,
       }"
       @keydown="handleKeyNavigation($event, index)"
-      @focus="onCommentFocus(commentItem)"
-      @blur="onCommentBlur(commentItem)"
     >
       <!-- Hidden metadata for screen readers -->
       <div :id="`comment-meta-${commentItem.opinionSlugId}`" class="sr-only">
@@ -61,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from "vue";
+import { computed, nextTick } from "vue";
 import type { OpinionItem, VotingAction } from "src/shared/types/zod";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import CommentItem from "./item/CommentItem.vue";
@@ -77,9 +74,6 @@ const props = defineProps<{
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
 }>();
-
-// Reactive state for focus management
-const focusedCommentId = ref<string | null>(null);
 
 const finalCommentList = computed((): OpinionItem[] => {
   const result: OpinionItem[] = [];
@@ -184,22 +178,6 @@ async function focusCommentById(commentId: string): Promise<void> {
 }
 
 /**
- * Handles comment focus events
- */
-function onCommentFocus(commentItem: OpinionItem): void {
-  focusedCommentId.value = commentItem.opinionSlugId;
-}
-
-/**
- * Handles comment blur events
- */
-function onCommentBlur(commentItem: OpinionItem): void {
-  if (focusedCommentId.value === commentItem.opinionSlugId) {
-    focusedCommentId.value = null;
-  }
-}
-
-/**
  * Emits vote change event
  */
 function changeVote(vote: VotingAction, opinionSlugId: string): void {
@@ -230,33 +208,12 @@ function mutedComment(): void {
 
 .commentItemBackground {
   background-color: white;
-  transition:
-    box-shadow 0.2s ease,
-    outline 0.2s ease;
-
-  // Focus styles for keyboard navigation
-  &:focus {
-    outline: 2px solid $primary;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba($primary, 0.1);
-  }
-
-  // Enhanced focus indicator for better visibility
-  &:focus-visible {
-    outline: 3px solid $primary;
-    outline-offset: 3px;
-    box-shadow: 0 0 0 6px rgba($primary, 0.15);
-  }
 }
 
 .highlightCommentItem {
   border-style: solid;
   border-color: $primary;
   border-width: 2px;
-}
-
-.focused-comment {
-  background-color: rgba($primary, 0.04);
 }
 
 // Screen reader only content - visually hidden but accessible to screen readers
@@ -277,18 +234,6 @@ function mutedComment(): void {
   .highlightCommentItem {
     border-width: 3px;
     border-color: currentColor;
-  }
-
-  .commentItemBackground:focus {
-    outline-width: 3px;
-    outline-color: currentColor;
-  }
-}
-
-// Reduced motion preferences
-@media (prefers-reduced-motion: reduce) {
-  .commentItemBackground {
-    transition: none;
   }
 }
 </style>
