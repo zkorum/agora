@@ -19,6 +19,7 @@
             conversationData.metadata.opinionCount + opinionCountOffset
           "
           :participant-count="participantCountLocal"
+          :vote-count="voteCount"
           :is-loading="isCurrentTabLoading"
           @share="shareClicked()"
         />
@@ -113,6 +114,9 @@ const { invalidateAnalysis, forceRefreshAnalysis } =
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
+const voteCount = computed(() => {
+  return props.conversationData.metadata.voteCount || 0;
+});
 
 // Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({

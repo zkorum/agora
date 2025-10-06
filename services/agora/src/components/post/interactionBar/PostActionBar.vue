@@ -10,6 +10,12 @@
     </div>
 
     <div class="rightSection">
+
+      <div class="voteCountContainer">
+        <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
+        <span>{{ formatAmount(voteCount) }}</span>
+      </div>
+
       <div class="participantCountContainer">
         <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
         <span>{{ formatAmount(participantCount) }}</span>
@@ -44,6 +50,7 @@ const props = defineProps<{
   compactMode: boolean;
   opinionCount: number;
   participantCount: number;
+  voteCount: number;
   isLoading?: boolean;
 }>();
 
@@ -90,6 +97,13 @@ defineEmits(["share"]);
   color: #7d7a85;
 }
 .shareButtonContentContainer {
+  gap: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7d7a85;
+}
+.voteCountContainer {
   gap: 0.3rem;
   display: flex;
   align-items: center;
