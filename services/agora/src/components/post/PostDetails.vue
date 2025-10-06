@@ -19,6 +19,7 @@
             conversationData.metadata.opinionCount + opinionCountOffset
           "
           :participant-count="participantCountLocal"
+          :vote-count="props.conversationData.metadata.voteCount"
           :is-loading="isCurrentTabLoading"
           @share="shareClicked()"
         />
