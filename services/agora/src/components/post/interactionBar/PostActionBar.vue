@@ -11,7 +11,7 @@
 
     <div class="rightSection">
       <div class="participantCountContainer">
-        <ZKIcon color="#7D7A85" name="ph:users" size="1rem" />
+        <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
         <span>{{ formatAmount(participantCount) }}</span>
       </div>
       <ZKButton
