@@ -9,7 +9,11 @@
       />
     </div>
 
-    <div>
+    <div class="rightSection">
+      <div class="participantCountContainer">
+        <ZKIcon color="#7D7A85" name="ph:users" size="1rem" />
+        <span>{{ formatAmount(participantCount) }}</span>
+      </div>
       <ZKButton
         button-type="standardButton"
         @click.stop.prevent="$emit('share')"
@@ -34,10 +38,12 @@ import {
   postActionBarTranslations,
   type PostActionBarTranslations,
 } from "./PostActionBar.i18n";
+import { formatAmount } from "src/utils/common";
 
 const props = defineProps<{
   compactMode: boolean;
   opinionCount: number;
+  participantCount: number;
   isLoading?: boolean;
 }>();
 
@@ -71,7 +77,18 @@ defineEmits(["share"]);
   align-items: center;
   gap: 0.75rem;
 }
-
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.participantCountContainer {
+  gap: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7d7a85;
+}
 .shareButtonContentContainer {
   gap: 0.3rem;
   display: flex;
