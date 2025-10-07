@@ -93,6 +93,101 @@ export default defineConfig((ctx) => {
             );
           }
         }
+
+        // Configure manual chunks for better code splitting
+        if (!viteConf.build) {
+          viteConf.build = {};
+        }
+        if (!viteConf.build.rollupOptions) {
+          viteConf.build.rollupOptions = {};
+        }
+
+        // Ensure output is an object (not an array) and add manual chunks configuration
+        const outputOptions = Array.isArray(viteConf.build.rollupOptions.output)
+          ? viteConf.build.rollupOptions.output[0] || {}
+          : viteConf.build.rollupOptions.output || {};
+
+        outputOptions.manualChunks = (id: string) => {
+          // Core Vue ecosystem
+          if (
+            id.includes("node_modules/vue/") ||
+            id.includes("node_modules/@vue/") ||
+            id.includes("node_modules/vue-router/") ||
+            id.includes("node_modules/pinia/") ||
+            id.includes("node_modules/vue-i18n/")
+          ) {
+            return "vue-vendor";
+          }
+
+          // PrimeVue
+          if (
+            id.includes("node_modules/primevue/") ||
+            id.includes("node_modules/@primeuix/") ||
+            id.includes("node_modules/primeicons/")
+          ) {
+            return "primevue";
+          }
+
+          // Quasar
+          if (id.includes("node_modules/quasar/")) {
+            return "quasar";
+          }
+
+          // Maz UI
+          if (id.includes("node_modules/maz-ui/")) {
+            return "maz-ui";
+          }
+
+          // Sentry
+          if (id.includes("node_modules/@sentry/")) {
+            return "sentry";
+          }
+
+          // UI utilities
+          if (
+            id.includes("node_modules/@dicebear/") ||
+            id.includes("node_modules/swiper/")
+          ) {
+            return "ui-utils";
+          }
+
+          // Data & API utilities
+          if (
+            id.includes("node_modules/@tanstack/vue-query") ||
+            id.includes("node_modules/axios/") ||
+            id.includes("node_modules/zod/")
+          ) {
+            return "data-utils";
+          }
+
+          // VueUse composables
+          if (id.includes("node_modules/@vueuse/")) {
+            return "vueuse";
+          }
+
+          // Text processing utilities
+          if (
+            id.includes("node_modules/linkifyjs/") ||
+            id.includes("node_modules/linkify-html/") ||
+            id.includes("node_modules/sanitize-html/")
+          ) {
+            return "text-utils";
+          }
+
+          // Phone number utilities
+          if (id.includes("node_modules/libphonenumber-js/")) {
+            return "phone-utils";
+          }
+
+          // QR code generation
+          if (id.includes("node_modules/qrcode/")) {
+            return "qrcode";
+          }
+        };
+
+        // Set the output back to the configuration
+        viteConf.build.rollupOptions.output = outputOptions;
+
         // viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
       },
       // analyze: true,
