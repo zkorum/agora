@@ -1,13 +1,10 @@
 <template>
   <div class="bodyContainer">
-    <img :src="rarimoExampleImagePath" class="imageStyle" />
+    <img src="/images/onboarding/rarimoExample.png" class="imageStyle" />
   </div>
 </template>
 
-<script setup lang="ts">
-const rarimoExampleImagePath =
-  process.env.VITE_PUBLIC_DIR + "/images/onboarding/rarimoExample.png";
-</script>
+<script setup lang="ts"></script>
 
 <style scoped lang="scss">
 .imageStyle {

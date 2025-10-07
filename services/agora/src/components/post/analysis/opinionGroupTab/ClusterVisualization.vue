@@ -364,16 +364,7 @@ function composeImagePath(
   const imgSuffix = isSelected ? "-on" : "-off";
   const version = "-v2";
 
-  return (
-    process.env.VITE_PUBLIC_DIR +
-    "/images/cluster/cluster" +
-    clusterNumber +
-    "-" +
-    (index + 1) +
-    imgSuffix +
-    version +
-    ".svg"
-  );
+  return `/images/cluster/cluster${clusterNumber}-${index + 1}${imgSuffix}${version}.svg`;
 }
 
 // Watch for changes in currentClusterTab to update visualization

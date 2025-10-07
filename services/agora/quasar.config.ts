@@ -10,7 +10,6 @@ import { visualizer } from "rollup-plugin-visualizer";
 import "dotenv/config";
 
 export default defineConfig((ctx) => {
-  const publicDir = "/feed";
   const boot = [];
   if (ctx.prod && process.env.VITE_STAGING !== "true") {
     boot.push("sentry");
@@ -72,8 +71,7 @@ export default defineConfig((ctx) => {
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      // publicPath: ctx.dev ? "/" : "/feed/",
-      publicPath: publicDir + "/", // we serve this behind a global nginx configured to serve the app at /feed/
+      publicPath: "/",
       extendViteConf(viteConf, _params) {
         if (viteConf.plugins === undefined) {
           viteConf.plugins = [];
@@ -448,7 +446,6 @@ export default defineConfig((ctx) => {
       // https://github.com/quasarframework/quasar/discussions/15303#discussioncomment-5904464
       // https://vite.dev/config/
       env: {
-        VITE_PUBLIC_DIR: publicDir,
         VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
         VITE_BACK_DID: process.env.VITE_BACK_DID,
         VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,

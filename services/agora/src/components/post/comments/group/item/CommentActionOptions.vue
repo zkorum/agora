@@ -124,13 +124,10 @@ async function openUserReportsCallback() {
 }
 
 async function shareOpinionCallback() {
-  const sharePostUrl =
-    window.location.origin +
-    process.env.VITE_PUBLIC_DIR +
-    "/conversation/" +
-    props.postSlugId +
-    "?opinion=" +
-    props.commentItem.opinionSlugId;
+  const sharePostUrl = new URL(
+    `/conversation/${props.postSlugId}?opinion=${props.commentItem.opinionSlugId}`,
+    window.location.origin
+  ).href;
   await webShare.share(t("agoraOpinion"), sharePostUrl);
 }
 

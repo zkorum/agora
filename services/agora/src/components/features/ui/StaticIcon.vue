@@ -1,5 +1,5 @@
 <template>
-  <img :src="starIcon" :alt="t('stars')" :style="{ height: props.size }" />
+  <img :src="props.src" :alt="t('stars')" :style="{ height: props.size }" />
 </template>
 
 <script setup lang="ts">
@@ -15,8 +15,6 @@ const props = defineProps<{
 }>();
 
 const { t } = useComponentI18n<StaticIconTranslations>(staticIconTranslations);
-
-const starIcon = process.env.VITE_PUBLIC_DIR + props.src;
 </script>
 
 <style lang="scss" scoped></style>
