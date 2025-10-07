@@ -25,7 +25,7 @@ const configSchema = z.object({
     IMAGES_SERVICE_BASE_URL: z
         .string()
         .url()
-        .default("https://staging.agoracitizen.network/images/"),
+        .default("https://staging.agoracitizen.app/images/"),
     SERVER_URL_DEV: z
         .string()
         .url()
@@ -33,15 +33,13 @@ const configSchema = z.object({
     SERVER_URL_STAGING: z
         .string()
         .url()
-        .default(`https://staging.agoracitizen.network`),
-    SERVER_URL_PROD: z.string().url().default(`https://agoracitizen.network`),
+        .default(`https://staging.agoracitizen.app`),
+    SERVER_URL_PROD: z.string().url().default(`https://www.agoracitizen.app`),
     SERVER_DID_DEV: zodDidWeb.default(
         `did:web:localhost%3A${defaultPort.toString()}`,
     ),
-    SERVER_DID_STAGING: zodDidWeb.default(
-        `did:web:staging.agoracitizen.network`,
-    ),
-    SERVER_DID_PROD: zodDidWeb.default(`did:web:agoracitizen.network`),
+    SERVER_DID_STAGING: zodDidWeb.default(`did:web:staging.agoracitizen.app`),
+    SERVER_DID_PROD: zodDidWeb.default(`did:web:www.agoracitizen.app`),
     EMAIL_OTP_MAX_ATTEMPT_AMOUNT: z.number().int().min(1).max(5).default(3),
     THROTTLE_SMS_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
