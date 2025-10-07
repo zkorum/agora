@@ -88,7 +88,7 @@
     "prettier": "^3.4.2",
     "typescript": "5.9.2",
     "unplugin-vue-router": "^0.15.0",
-    "vite-plugin-checker": "^0.10.3",
+    "vite-plugin-checker": "^0.11.0",
     "vue-tsc": "^3.0.7"
   },
   "engines": {
