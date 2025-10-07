@@ -76,6 +76,3 @@ typed-router.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
-
-# Chunk visualizer
-stats.html
