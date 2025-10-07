@@ -9,6 +9,7 @@ export interface SettingsTranslations {
   language: string;
   privacyPolicy: string;
   termsOfService: string;
+  communityGuidelines: string;
   logOut: string;
   moderatorOrganization: string;
   componentTesting: string;
@@ -29,6 +30,7 @@ export const settingsTranslations: Record<
     language: "Language",
     privacyPolicy: "Privacy Policy",
     termsOfService: "Terms of Service",
+    communityGuidelines: "Community Guidelines",
     logOut: "Log Out",
     moderatorOrganization: "Moderator - Organization",
     componentTesting: "🔧 Component Testing",
@@ -44,6 +46,7 @@ export const settingsTranslations: Record<
     language: "اللغة",
     privacyPolicy: "سياسة الخصوصية",
     termsOfService: "شروط الخدمة",
+    communityGuidelines: "إرشادات المجتمع",
     logOut: "تسجيل الخروج",
     moderatorOrganization: "المشرف - المنظمة",
     componentTesting: "🔧 اختبار المكونات",
@@ -59,6 +62,7 @@ export const settingsTranslations: Record<
     language: "Idioma",
     privacyPolicy: "Política de privacidad",
     termsOfService: "Términos de servicio",
+    communityGuidelines: "Directrices de la comunidad",
     logOut: "Cerrar sesión",
     moderatorOrganization: "Moderador - Organización",
     componentTesting: "🔧 Pruebas de componentes",
@@ -75,6 +79,7 @@ export const settingsTranslations: Record<
     language: "Langue",
     privacyPolicy: "Politique de confidentialité",
     termsOfService: "Conditions d'utilisation",
+    communityGuidelines: "Règles de la communauté",
     logOut: "Se déconnecter",
     moderatorOrganization: "Modérateur - Organisation",
     componentTesting: "🔧 Tests de composants",
@@ -91,6 +96,7 @@ export const settingsTranslations: Record<
     language: "语言",
     privacyPolicy: "隐私政策",
     termsOfService: "服务条款",
+    communityGuidelines: "社区准则",
     logOut: "登出",
     moderatorOrganization: "版主 - 组织",
     componentTesting: "🔧 组件测试",
@@ -106,6 +112,7 @@ export const settingsTranslations: Record<
     language: "語言",
     privacyPolicy: "隱私政策",
     termsOfService: "服務條款",
+    communityGuidelines: "社群準則",
     logOut: "登出",
     moderatorOrganization: "版主 - 組織",
     componentTesting: "🔧 組件測試",
@@ -121,6 +128,7 @@ export const settingsTranslations: Record<
     language: "言語",
     privacyPolicy: "プライバシーポリシー",
     termsOfService: "利用規約",
+    communityGuidelines: "コミュニティガイドライン",
     logOut: "ログアウト",
     moderatorOrganization: "モデレーター - 組織",
     componentTesting: "🔧 コンポーネントテスト",
