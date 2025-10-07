@@ -5,6 +5,7 @@
 import { defineConfig } from "#q-app/wrappers";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
+
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 import "dotenv/config";
@@ -73,26 +74,15 @@ export default defineConfig((ctx) => {
 
       publicPath: "/",
       extendViteConf(viteConf, _params) {
+        // Ensure plugins array exists before adding any plugins
         if (viteConf.plugins === undefined) {
           viteConf.plugins = [];
         }
 
-        // Add bundle visualizer in production builds (but outside dist folder)
-        if (ctx.prod) {
-          viteConf.plugins.push(
-            visualizer({
-              filename: "stats.html", // Root of project, not in dist/
-              open: false,
-              gzipSize: true,
-              brotliSize: true,
-              template: "treemap",
-            })
-          );
-        }
-
+        // Add Sentry plugin in production (non-staging) builds
+        // Note: Sentry should be added after all other plugins
         if (process.env.VITE_STAGING !== "true" && ctx.prod) {
           viteConf.plugins.push(
-            // Put the Sentry vite plugin after all other plugins
             sentryVitePlugin({
               authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
               org: "zkorum",
@@ -101,235 +91,112 @@ export default defineConfig((ctx) => {
           );
         }
 
-        // Manual chunking disabled - causes circular dependency errors in production
-        // Let Vite handle code splitting automatically via dynamic route imports
-        /*
-        if (!viteConf.build) viteConf.build = {};
-        if (!viteConf.build.rollupOptions) viteConf.build.rollupOptions = {};
-        if (!viteConf.build.rollupOptions.output) {
-          viteConf.build.rollupOptions.output = {};
+        // Add bundle visualizer in production builds
+        if (ctx.prod) {
+          viteConf.plugins.push(
+            visualizer({
+              filename: "dist/stats.html",
+              open: false,
+              gzipSize: true,
+              brotliSize: true,
+            })
+          );
         }
 
-        if (Array.isArray(viteConf.build.rollupOptions.output)) {
-          viteConf.build.rollupOptions.output.forEach((output) => {
-            output.manualChunks = (id) => {
-              // Only split route-specific vendors that are NOT used in:
-              // - Boot files (axios, @sentry, @tanstack, primevue, maz-ui, vue-i18n)
-              // - Stores (quasar, @vueuse, pinia)
-              // - Widely-imported shared utilities (localforage, sanitize-html, linkify, libphonenumber-js, zod)
-              // - Core framework (vue, vue-router, pinia)
-
-              // Safe to split - only used for avatar generation in specific component
-              if (id.includes("node_modules/@dicebear"))
-                return "vendor-dicebear";
-
-              // Safe to split - crypto libs used only in auth/crypto flows
-              if (id.includes("node_modules/@stablelib"))
-                return "vendor-stablelib";
-              if (id.includes("node_modules/@zkorum/keystore-idb"))
-                return "vendor-keystore-idb";
-              if (id.includes("node_modules/multiformats"))
-                return "vendor-multiformats";
-              if (id.includes("node_modules/tweetnacl"))
-                return "vendor-tweetnacl";
-              if (id.includes("node_modules/big-integer"))
-                return "vendor-big-integer";
-              if (id.includes("node_modules/@ucans")) return "vendor-ucans";
-
-              // DON'T split stores, utils, shared, or layouts - they create circular dependencies
-              // These are loaded at app initialization and must be in the main bundle or route chunks
-              // Only split large, route-specific component directories
-
-              // Split application code by directory - be more granular
-              if (id.includes("/src/components/")) {
-                if (id.includes("/src/components/feed/"))
-                  return "components-feed";
-
-                // Split authentication by subdirectory
-                if (id.includes("/src/components/authentication/intention/"))
-                  return "components-auth-intention";
-                if (id.includes("/src/components/authentication/"))
-                  return "components-auth";
-
-                if (id.includes("/src/components/report/"))
-                  return "components-report";
-
-                // Split features by subdirectory
-                if (id.includes("/src/components/features/opinion/"))
-                  return "components-features-opinion";
-                if (id.includes("/src/components/features/"))
-                  return "components-features";
-
-                if (id.includes("/src/components/ui-library/"))
-                  return "components-ui";
-
-                // Split navigation by subdirectory
-                if (id.includes("/src/components/navigation/header/"))
-                  return "components-nav-header";
-                if (id.includes("/src/components/navigation/footer/"))
-                  return "components-nav-footer";
-                if (id.includes("/src/components/navigation/"))
-                  return "components-nav";
-
-                // Split post/analysis by subdirectory
-                if (
-                  id.includes("/src/components/post/analysis/opinionGroupTab/")
-                )
-                  return "components-post-analysis-opiniongroup";
-                if (id.includes("/src/components/post/analysis/consensusTab/"))
-                  return "components-post-analysis-consensus";
-                if (
-                  id.includes("/src/components/post/analysis/divisivenessTab/")
-                )
-                  return "components-post-analysis-divisiveness";
-                if (id.includes("/src/components/post/analysis/"))
-                  return "components-post-analysis";
-
-                // Split post/comments by subdirectory
-                if (id.includes("/src/components/post/comments/group/"))
-                  return "components-post-comments-group";
-                if (id.includes("/src/components/post/comments/"))
-                  return "components-post-comments";
-
-                // Split other post subdirectories
-                if (id.includes("/src/components/post/common/"))
-                  return "components-post-common";
-                if (id.includes("/src/components/post/display/"))
-                  return "components-post-display";
-                if (id.includes("/src/components/post/interactionBar/"))
-                  return "components-post-interaction";
-                if (id.includes("/src/components/post/"))
-                  return "components-post";
-
-                if (id.includes("/src/components/conversation/"))
-                  return "components-conversation";
-                if (id.includes("/src/components/opinion/"))
-                  return "components-opinion";
-                if (id.includes("/src/components/moderation/"))
-                  return "components-moderation";
-                if (id.includes("/src/components/settings/"))
-                  return "components-settings";
-
-                // Don't bundle remaining components - let Vite split them per route
-                return undefined;
-              }
-
-              // Don't manually split these - let Vite handle them automatically per route:
-              // - layouts: loaded at app initialization
-              // - stores: eagerly loaded, create circular dependencies
-              // - composables: widely imported across components
-              // - utils: widely imported shared utilities
-              // - shared: fundamental utilities used everywhere
-              //
-              // Vite will automatically split them as part of route chunks
-            };
-          });
-        } else {
-          viteConf.build.rollupOptions.output.manualChunks = (id) => {
-            // Only split route-specific vendors that are NOT used in:
-            // - Boot files (axios, @sentry, @tanstack, primevue, maz-ui, vue-i18n)
-            // - Stores (quasar, @vueuse, pinia)
-            // - Widely-imported shared utilities (localforage, sanitize-html, linkify, libphonenumber-js, zod)
-            // - Core framework (vue, vue-router, pinia)
-
-            // Safe to split - only used for avatar generation in specific component
-            if (id.includes("node_modules/@dicebear"))
-              return "vendor-dicebear";
-
-            // Safe to split - crypto libs used only in auth/crypto flows
-            if (id.includes("node_modules/@stablelib"))
-              return "vendor-stablelib";
-            if (id.includes("node_modules/@zkorum/keystore-idb"))
-              return "vendor-keystore-idb";
-            if (id.includes("node_modules/multiformats"))
-              return "vendor-multiformats";
-            if (id.includes("node_modules/tweetnacl"))
-              return "vendor-tweetnacl";
-            if (id.includes("node_modules/big-integer"))
-              return "vendor-big-integer";
-            if (id.includes("node_modules/@ucans")) return "vendor-ucans";
-
-            // Split application code by directory - be more granular
-            if (id.includes("/src/components/")) {
-              if (id.includes("/src/components/feed/"))
-                return "components-feed";
-
-              // Split authentication by subdirectory
-              if (id.includes("/src/components/authentication/intention/"))
-                return "components-auth-intention";
-              if (id.includes("/src/components/authentication/"))
-                return "components-auth";
-
-              if (id.includes("/src/components/report/"))
-                return "components-report";
-
-              // Split features by subdirectory
-              if (id.includes("/src/components/features/opinion/"))
-                return "components-features-opinion";
-              if (id.includes("/src/components/features/"))
-                return "components-features";
-
-              if (id.includes("/src/components/ui-library/"))
-                return "components-ui";
-
-              // Split navigation by subdirectory
-              if (id.includes("/src/components/navigation/header/"))
-                return "components-nav-header";
-              if (id.includes("/src/components/navigation/footer/"))
-                return "components-nav-footer";
-              if (id.includes("/src/components/navigation/"))
-                return "components-nav";
-
-              // Split post/analysis by subdirectory
-              if (id.includes("/src/components/post/analysis/opinionGroupTab/"))
-                return "components-post-analysis-opiniongroup";
-              if (id.includes("/src/components/post/analysis/consensusTab/"))
-                return "components-post-analysis-consensus";
-              if (id.includes("/src/components/post/analysis/divisivenessTab/"))
-                return "components-post-analysis-divisiveness";
-              if (id.includes("/src/components/post/analysis/"))
-                return "components-post-analysis";
-
-              // Split post/comments by subdirectory
-              if (id.includes("/src/components/post/comments/group/"))
-                return "components-post-comments-group";
-              if (id.includes("/src/components/post/comments/"))
-                return "components-post-comments";
-
-              // Split other post subdirectories
-              if (id.includes("/src/components/post/common/"))
-                return "components-post-common";
-              if (id.includes("/src/components/post/display/"))
-                return "components-post-display";
-              if (id.includes("/src/components/post/interactionBar/"))
-                return "components-post-interaction";
-              if (id.includes("/src/components/post/"))
-                return "components-post";
-
-              if (id.includes("/src/components/conversation/"))
-                return "components-conversation";
-              if (id.includes("/src/components/opinion/"))
-                return "components-opinion";
-              if (id.includes("/src/components/moderation/"))
-                return "components-moderation";
-              if (id.includes("/src/components/settings/"))
-                return "components-settings";
-
-              // Don't bundle remaining components - let Vite split them per route
-              return undefined;
-            }
-
-            // Don't manually split these - let Vite handle them automatically per route:
-            // - layouts: loaded at app initialization
-            // - stores: eagerly loaded, create circular dependencies
-            // - composables: widely imported across components
-            // - utils: widely imported shared utilities
-            // - shared: fundamental utilities used everywhere
-            //
-            // Vite will automatically split them as part of route chunks
-          };
+        // Configure manual chunks for better code splitting
+        if (!viteConf.build) {
+          viteConf.build = {};
         }
-        */
+        if (!viteConf.build.rollupOptions) {
+          viteConf.build.rollupOptions = {};
+        }
+
+        // Ensure output is an object (not an array) and add manual chunks configuration
+        const outputOptions = Array.isArray(viteConf.build.rollupOptions.output)
+          ? viteConf.build.rollupOptions.output[0] || {}
+          : viteConf.build.rollupOptions.output || {};
+
+        outputOptions.manualChunks = (id: string) => {
+          // Core Vue ecosystem
+          if (
+            id.includes("node_modules/vue/") ||
+            id.includes("node_modules/@vue/") ||
+            id.includes("node_modules/vue-router/") ||
+            id.includes("node_modules/pinia/") ||
+            id.includes("node_modules/vue-i18n/")
+          ) {
+            return "vue-vendor";
+          }
+
+          // PrimeVue
+          if (
+            id.includes("node_modules/primevue/") ||
+            id.includes("node_modules/@primeuix/") ||
+            id.includes("node_modules/primeicons/")
+          ) {
+            return "primevue";
+          }
+
+          // Quasar
+          if (id.includes("node_modules/quasar/")) {
+            return "quasar";
+          }
+
+          // Maz UI
+          if (id.includes("node_modules/maz-ui/")) {
+            return "maz-ui";
+          }
+
+          // Sentry
+          if (id.includes("node_modules/@sentry/")) {
+            return "sentry";
+          }
+
+          // UI utilities
+          if (
+            id.includes("node_modules/@dicebear/") ||
+            id.includes("node_modules/swiper/")
+          ) {
+            return "ui-utils";
+          }
+
+          // Data & API utilities
+          if (
+            id.includes("node_modules/@tanstack/vue-query") ||
+            id.includes("node_modules/axios/") ||
+            id.includes("node_modules/zod/")
+          ) {
+            return "data-utils";
+          }
+
+          // VueUse composables
+          if (id.includes("node_modules/@vueuse/")) {
+            return "vueuse";
+          }
+
+          // Text processing utilities
+          if (
+            id.includes("node_modules/linkifyjs/") ||
+            id.includes("node_modules/linkify-html/") ||
+            id.includes("node_modules/sanitize-html/")
+          ) {
+            return "text-utils";
+          }
+
+          // Phone number utilities
+          if (id.includes("node_modules/libphonenumber-js/")) {
+            return "phone-utils";
+          }
+
+          // QR code generation
+          if (id.includes("node_modules/qrcode/")) {
+            return "qrcode";
+          }
+        };
+
+        // Set the output back to the configuration
+        viteConf.build.rollupOptions.output = outputOptions;
+
         // viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
       },
       // analyze: true,
@@ -407,9 +274,8 @@ export default defineConfig((ctx) => {
       plugins: ["BottomSheet", "Dialog", "Notify", "Loading"],
     },
 
-    animations: [], // --- import only animations you need for better tree-shaking
+    animations: [], // --- includes all animations
     // https://v2.quasar.dev/options/animations
-    // animations: [],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#sourcefiles
     // sourceFiles: {

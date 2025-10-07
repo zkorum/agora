@@ -1,5 +1,5 @@
-import { api } from "boot/axios";
-import { queryClient } from "boot/vue-query";
+import { api } from "./client";
+import { queryClient } from "../query/client";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {

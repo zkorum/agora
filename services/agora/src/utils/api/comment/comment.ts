@@ -1,4 +1,4 @@
-import { api } from "boot/axios";
+import { api } from "../client";
 import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchByConversationPostRequest,

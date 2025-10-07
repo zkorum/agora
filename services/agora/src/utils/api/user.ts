@@ -4,7 +4,7 @@ import {
   type ApiV1UserOpinionFetchPostRequest,
   type ApiV1UserConversationFetchPostRequest,
 } from "src/api";
-import { api } from "boot/axios";
+import { api } from "./client";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import type {

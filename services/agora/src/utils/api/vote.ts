@@ -4,7 +4,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import { api } from "boot/axios";
+import { api } from "./client";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import { type VotingAction } from "src/shared/types/zod";
