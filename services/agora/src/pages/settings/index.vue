@@ -107,6 +107,12 @@ const aboutSettings: SettingsInterface[] = [
     to: "/legal/terms/",
     style: "none",
   },
+  {
+    type: "navigation",
+    label: t("communityGuidelines"),
+    to: "/legal/guidelines/",
+    style: "none",
+  },
 ];
 
 const logoutSettings: SettingsInterface[] = [
