@@ -4,6 +4,8 @@
 
 import { defineConfig } from "#q-app/wrappers";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import { visualizer } from "rollup-plugin-visualizer";
+
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 import "dotenv/config";
@@ -72,26 +74,33 @@ export default defineConfig((ctx) => {
 
       publicPath: "/",
       extendViteConf(viteConf, _params) {
+        // Ensure plugins array exists before adding any plugins
+        if (viteConf.plugins === undefined) {
+          viteConf.plugins = [];
+        }
+
+        // Add Sentry plugin in production (non-staging) builds
+        // Note: Sentry should be added after all other plugins
         if (process.env.VITE_STAGING !== "true" && ctx.prod) {
-          if (viteConf.plugins === undefined) {
-            viteConf.plugins = [
-              // Put the Sentry vite plugin after all other plugins
-              sentryVitePlugin({
-                authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
-                org: "zkorum",
-                project: "agora-app",
-              }),
-            ];
-          } else {
-            viteConf.plugins.push(
-              // Put the Sentry vite plugin after all other plugins
-              sentryVitePlugin({
-                authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
-                org: "zkorum",
-                project: "agora-app",
-              })
-            );
-          }
+          viteConf.plugins.push(
+            sentryVitePlugin({
+              authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+              org: "zkorum",
+              project: "agora-app",
+            })
+          );
+        }
+
+        // Add bundle visualizer in production builds
+        if (ctx.prod) {
+          viteConf.plugins.push(
+            visualizer({
+              filename: "dist/stats.html",
+              open: false,
+              gzipSize: true,
+              brotliSize: true,
+            })
+          );
         }
 
         // Configure manual chunks for better code splitting
@@ -265,9 +274,8 @@ export default defineConfig((ctx) => {
       plugins: ["BottomSheet", "Dialog", "Notify", "Loading"],
     },
 
-    animations: "all", // --- includes all animations
+    animations: [], // --- includes all animations
     // https://v2.quasar.dev/options/animations
-    // animations: [],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#sourcefiles
     // sourceFiles: {
