@@ -101,53 +101,29 @@ export default defineConfig((ctx) => {
           );
         }
 
-        // Add manual chunking for better code splitting
+        // Manual chunking disabled - causes circular dependency errors in production
+        // Let Vite handle code splitting automatically via dynamic route imports
+        /*
         if (!viteConf.build) viteConf.build = {};
         if (!viteConf.build.rollupOptions) viteConf.build.rollupOptions = {};
         if (!viteConf.build.rollupOptions.output) {
           viteConf.build.rollupOptions.output = {};
         }
 
-        // If it's an array, modify each entry; if it's an object, modify it directly
         if (Array.isArray(viteConf.build.rollupOptions.output)) {
           viteConf.build.rollupOptions.output.forEach((output) => {
             output.manualChunks = (id) => {
-              // Split large vendors into separate chunks
-              if (id.includes("node_modules/quasar")) return "vendor-quasar";
-              if (id.includes("node_modules/@sentry")) return "vendor-sentry";
-              if (id.includes("node_modules/primevue"))
-                return "vendor-primevue";
-              if (id.includes("node_modules/swiper")) return "vendor-swiper";
+              // Only split route-specific vendors that are NOT used in:
+              // - Boot files (axios, @sentry, @tanstack, primevue, maz-ui, vue-i18n)
+              // - Stores (quasar, @vueuse, pinia)
+              // - Widely-imported shared utilities (localforage, sanitize-html, linkify, libphonenumber-js, zod)
+              // - Core framework (vue, vue-router, pinia)
+
+              // Safe to split - only used for avatar generation in specific component
               if (id.includes("node_modules/@dicebear"))
                 return "vendor-dicebear";
-              if (id.includes("node_modules/@tanstack"))
-                return "vendor-tanstack";
-              if (id.includes("node_modules/@vueuse")) return "vendor-vueuse";
-              if (id.includes("node_modules/maz-ui")) return "vendor-maz";
-              if (id.includes("node_modules/vue-i18n")) return "vendor-i18n";
-              if (id.includes("node_modules/pinia")) return "vendor-pinia";
-              if (id.includes("node_modules/vue-router"))
-                return "vendor-vue-router";
-              if (
-                id.includes("node_modules/@vue") ||
-                id.includes("node_modules/vue/")
-              )
-                return "vendor-vue";
-              if (id.includes("node_modules/axios")) return "vendor-axios";
-              // Split heavy dependencies used by shared.ts
-              if (id.includes("node_modules/localforage"))
-                return "vendor-localforage";
-              if (id.includes("node_modules/sanitize-html"))
-                return "vendor-sanitize-html";
-              if (
-                id.includes("node_modules/linkify") ||
-                id.includes("node_modules/linkifyjs")
-              )
-                return "vendor-linkify";
-              if (id.includes("node_modules/libphonenumber-js"))
-                return "vendor-libphonenumber";
-              if (id.includes("node_modules/zod")) return "vendor-zod";
-              // Split crypto and utils-related vendors
+
+              // Safe to split - crypto libs used only in auth/crypto flows
               if (id.includes("node_modules/@stablelib"))
                 return "vendor-stablelib";
               if (id.includes("node_modules/@zkorum/keystore-idb"))
@@ -159,6 +135,10 @@ export default defineConfig((ctx) => {
               if (id.includes("node_modules/big-integer"))
                 return "vendor-big-integer";
               if (id.includes("node_modules/@ucans")) return "vendor-ucans";
+
+              // DON'T split stores, utils, shared, or layouts - they create circular dependencies
+              // These are loaded at app initialization and must be in the main bundle or route chunks
+              // Only split large, route-specific component directories
 
               // Split application code by directory - be more granular
               if (id.includes("/src/components/")) {
@@ -233,86 +213,30 @@ export default defineConfig((ctx) => {
                 // Don't bundle remaining components - let Vite split them per route
                 return undefined;
               }
-              if (id.includes("/src/layouts/")) return "layouts";
 
-              // Split stores by feature
-              if (id.includes("/src/stores/authentication"))
-                return "stores-authentication";
-              if (id.includes("/src/stores/loginIntention"))
-                return "stores-loginintention";
-              if (id.includes("/src/stores/")) return "stores-other";
-
-              // Split composables by feature
-              if (id.includes("/src/composables/auth/"))
-                return "composables-auth";
-              if (id.includes("/src/composables/opinion/"))
-                return "composables-opinion";
-              if (id.includes("/src/composables/ui/")) return "composables-ui";
-              if (id.includes("/src/composables/")) return "composables-other";
-
-              // Split utils deeper by subdirectory
-              if (id.includes("/src/utils/api/auth")) return "utils-api-auth";
-              if (id.includes("/src/utils/api/comment/"))
-                return "utils-api-comment";
-              if (id.includes("/src/utils/api/muteUser"))
-                return "utils-api-muteuser";
-              if (id.includes("/src/utils/api/")) return "utils-api-other";
-              if (id.includes("/src/utils/actions/")) return "utils-actions";
-              if (id.includes("/src/utils/share/")) return "utils-share";
-              if (id.includes("/src/utils/ui/")) return "utils-ui";
-              if (id.includes("/src/utils/auth/")) return "utils-auth";
-              if (id.includes("/src/utils/component/"))
-                return "utils-component";
-              if (id.includes("/src/utils/crypto/")) return "utils-crypto";
-              if (id.includes("/src/utils/router/")) return "utils-router";
-              if (id.includes("/src/utils/")) return "utils-other";
-
-              // Split shared code by directory
-              if (id.includes("/src/shared/types/")) return "shared-types";
-              if (id.includes("/src/shared/common/")) return "shared-common";
-              if (id.includes("/src/shared/did/")) return "shared-did";
-              if (id.includes("/src/shared/ucan/")) return "shared-ucan";
-              if (id.includes("/src/shared/utils/")) return "shared-utils";
-              if (id.includes("/src/shared/")) return "shared-other";
-
-              // Let Vite handle other node_modules automatically for better splitting
+              // Don't manually split these - let Vite handle them automatically per route:
+              // - layouts: loaded at app initialization
+              // - stores: eagerly loaded, create circular dependencies
+              // - composables: widely imported across components
+              // - utils: widely imported shared utilities
+              // - shared: fundamental utilities used everywhere
+              //
+              // Vite will automatically split them as part of route chunks
             };
           });
         } else {
           viteConf.build.rollupOptions.output.manualChunks = (id) => {
-            // Split large vendors into separate chunks
-            if (id.includes("node_modules/quasar")) return "vendor-quasar";
-            if (id.includes("node_modules/@sentry")) return "vendor-sentry";
-            if (id.includes("node_modules/primevue")) return "vendor-primevue";
-            if (id.includes("node_modules/swiper")) return "vendor-swiper";
-            if (id.includes("node_modules/@dicebear")) return "vendor-dicebear";
-            if (id.includes("node_modules/@tanstack")) return "vendor-tanstack";
-            if (id.includes("node_modules/@vueuse")) return "vendor-vueuse";
-            if (id.includes("node_modules/maz-ui")) return "vendor-maz";
-            if (id.includes("node_modules/vue-i18n")) return "vendor-i18n";
-            if (id.includes("node_modules/pinia")) return "vendor-pinia";
-            if (id.includes("node_modules/vue-router"))
-              return "vendor-vue-router";
-            if (
-              id.includes("node_modules/@vue") ||
-              id.includes("node_modules/vue/")
-            )
-              return "vendor-vue";
-            if (id.includes("node_modules/axios")) return "vendor-axios";
-            // Split heavy dependencies used by shared.ts
-            if (id.includes("node_modules/localforage"))
-              return "vendor-localforage";
-            if (id.includes("node_modules/sanitize-html"))
-              return "vendor-sanitize-html";
-            if (
-              id.includes("node_modules/linkify") ||
-              id.includes("node_modules/linkifyjs")
-            )
-              return "vendor-linkify";
-            if (id.includes("node_modules/libphonenumber-js"))
-              return "vendor-libphonenumber";
-            if (id.includes("node_modules/zod")) return "vendor-zod";
-            // Split crypto and utils-related vendors
+            // Only split route-specific vendors that are NOT used in:
+            // - Boot files (axios, @sentry, @tanstack, primevue, maz-ui, vue-i18n)
+            // - Stores (quasar, @vueuse, pinia)
+            // - Widely-imported shared utilities (localforage, sanitize-html, linkify, libphonenumber-js, zod)
+            // - Core framework (vue, vue-router, pinia)
+
+            // Safe to split - only used for avatar generation in specific component
+            if (id.includes("node_modules/@dicebear"))
+              return "vendor-dicebear";
+
+            // Safe to split - crypto libs used only in auth/crypto flows
             if (id.includes("node_modules/@stablelib"))
               return "vendor-stablelib";
             if (id.includes("node_modules/@zkorum/keystore-idb"))
@@ -394,50 +318,18 @@ export default defineConfig((ctx) => {
               // Don't bundle remaining components - let Vite split them per route
               return undefined;
             }
-            if (id.includes("/src/layouts/")) return "layouts";
 
-            // Split stores by feature
-            if (id.includes("/src/stores/authentication"))
-              return "stores-authentication";
-            if (id.includes("/src/stores/loginIntention"))
-              return "stores-loginintention";
-            if (id.includes("/src/stores/")) return "stores-other";
-
-            // Split composables by feature
-            if (id.includes("/src/composables/auth/"))
-              return "composables-auth";
-            if (id.includes("/src/composables/opinion/"))
-              return "composables-opinion";
-            if (id.includes("/src/composables/ui/")) return "composables-ui";
-            if (id.includes("/src/composables/")) return "composables-other";
-
-            // Split utils deeper by subdirectory
-            if (id.includes("/src/utils/api/auth")) return "utils-api-auth";
-            if (id.includes("/src/utils/api/comment/"))
-              return "utils-api-comment";
-            if (id.includes("/src/utils/api/muteUser"))
-              return "utils-api-muteuser";
-            if (id.includes("/src/utils/api/")) return "utils-api-other";
-            if (id.includes("/src/utils/actions/")) return "utils-actions";
-            if (id.includes("/src/utils/share/")) return "utils-share";
-            if (id.includes("/src/utils/ui/")) return "utils-ui";
-            if (id.includes("/src/utils/auth/")) return "utils-auth";
-            if (id.includes("/src/utils/component/")) return "utils-component";
-            if (id.includes("/src/utils/crypto/")) return "utils-crypto";
-            if (id.includes("/src/utils/router/")) return "utils-router";
-            if (id.includes("/src/utils/")) return "utils-other";
-
-            // Split shared code by directory
-            if (id.includes("/src/shared/types/")) return "shared-types";
-            if (id.includes("/src/shared/common/")) return "shared-common";
-            if (id.includes("/src/shared/did/")) return "shared-did";
-            if (id.includes("/src/shared/ucan/")) return "shared-ucan";
-            if (id.includes("/src/shared/utils/")) return "shared-utils";
-            if (id.includes("/src/shared/")) return "shared-other";
-
-            // Let Vite handle other node_modules automatically for better splitting
+            // Don't manually split these - let Vite handle them automatically per route:
+            // - layouts: loaded at app initialization
+            // - stores: eagerly loaded, create circular dependencies
+            // - composables: widely imported across components
+            // - utils: widely imported shared utilities
+            // - shared: fundamental utilities used everywhere
+            //
+            // Vite will automatically split them as part of route chunks
           };
         }
+        */
         // viteConf.base = ""; // @see https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470 - otherwise the browser doesn't find index.html!
       },
       // analyze: true,
