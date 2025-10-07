@@ -1,4 +1,4 @@
-import { api } from "boot/axios";
+import { api } from "./client";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
 import { useCommonApi } from "./common";

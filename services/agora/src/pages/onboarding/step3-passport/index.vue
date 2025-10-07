@@ -161,7 +161,7 @@ import { onMounted, ref, watch } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
 import { useCommonApi, type KeyAction } from "src/utils/api/common";
-import { api } from "src/boot/axios";
+import { api } from "src/utils/api/client";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted } from "vue";

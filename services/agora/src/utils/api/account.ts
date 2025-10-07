@@ -1,4 +1,4 @@
-import { api } from "boot/axios";
+import { api } from "./client";
 import type { ApiV1UserUsernameUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useNotify } from "../ui/notify";

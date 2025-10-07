@@ -1,4 +1,4 @@
-import { axios, api } from "boot/axios";
+import { axiosInstance, api } from "./client";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import type {
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
@@ -78,7 +78,7 @@ export function useBackendPostApi() {
     } catch (error) {
       const DEFAULT_ERROR = "Failed to fetch conversation by slug ID.";
       console.error(error);
-      if (axios.isAxiosError(error)) {
+      if (axiosInstance.isAxiosError(error)) {
         if (error.status == 400) {
           showNotifyMessage("Conversation resource not found.");
         } else {

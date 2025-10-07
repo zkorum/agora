@@ -1,4 +1,4 @@
-import { api } from "boot/axios";
+import { api } from "./client";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import type { ApiV1NotificationFetchPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
