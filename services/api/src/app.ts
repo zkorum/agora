@@ -39,7 +39,7 @@ const configSchema = z.object({
         `did:web:localhost%3A${defaultPort.toString()}`,
     ),
     SERVER_DID_STAGING: zodDidWeb.default(`did:web:staging.agoracitizen.app`),
-    SERVER_DID_PROD: zodDidWeb.default(`did:web:www.agoracitizen.app`),
+    SERVER_DID_PROD: zodDidWeb.default(`did:web:agoracitizen.app`),
     EMAIL_OTP_MAX_ATTEMPT_AMOUNT: z.number().int().min(1).max(5).default(3),
     THROTTLE_SMS_SECONDS_INTERVAL: z.number().int().min(5).default(10),
     MINUTES_BEFORE_SMS_OTP_EXPIRY: z.number().int().min(3).max(60).default(10),
