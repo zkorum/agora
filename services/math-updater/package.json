@@ -32,6 +32,7 @@
         "drizzle-orm": "^0.39.3",
         "extract-first-json": "^2.0.2",
         "libphonenumber-js": "^1.12.23",
+        "p-limit": "^7.1.1",
         "parse-json-object": "^3.0.1",
         "pg-boss": "^10.1.5",
         "pino": "^9.6.0",
