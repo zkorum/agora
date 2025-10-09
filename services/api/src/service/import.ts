@@ -11,6 +11,9 @@ import {
     MAX_LENGTH_TITLE,
     toUnionUndefined,
 } from "@/shared/shared.js";
+import { conversationTable } from "@/shared-backend/schema.js";
+import { nowZeroMs } from "@/shared/util.js";
+import { eq } from "drizzle-orm";
 
 interface LoadImportedPolisConversationProps {
     db: PostgresDatabase;
@@ -39,6 +42,7 @@ export async function loadImportedPolisConversation({
     isLoginRequired,
     isIndexed,
 }: LoadImportedPolisConversationProps): Promise<ConversationIds> {
+    const now = nowZeroMs();
     // create conversation
     const ownername = importedPolisConversation.conversation_data.ownername;
     const importCreatedAt =
@@ -175,6 +179,13 @@ export async function loadImportedPolisConversation({
             opinionCount: opinionCount,
             voteCount: voteCount,
         });
+        await db
+            .update(conversationTable)
+            .set({
+                needsMathUpdate: true,
+                mathUpdateRequestedAt: now,
+            })
+            .where(eq(conversationTable.id, conversationId));
         return { conversationSlugId, conversationId, conversationContentId };
     } catch (e) {
         // TODO: make incremental transactions, implement batch mechanisms to allow for resuming importing that failed midway

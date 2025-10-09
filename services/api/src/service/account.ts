@@ -1,5 +1,5 @@
 import { log } from "@/app.js";
-import { userTable } from "@/shared-backend/schema.js";
+import { conversationTable, userTable } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { getAllUserComments, getUserPosts, getUserVotes } from "./user.js";
@@ -9,9 +9,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import { logout } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
-import type { AxiosInstance } from "axios";
 import { castVoteForOpinionSlugIdFromUserId } from "./voting.js";
-import * as polisService from "@/service/polis.js";
 import { useCommonPost } from "./common.js";
 
 interface CheckUserNameExistProps {
@@ -614,14 +612,6 @@ interface DeleteAccountProps {
     didWrite: string;
     userId: string;
     baseImageServiceUrl: string;
-    axiosPolis?: AxiosInstance;
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
     voteNotifMilestones: number[];
 }
 
@@ -632,14 +622,6 @@ export async function deleteUserAccount({
     proof,
     didWrite,
     baseImageServiceUrl,
-    axiosPolis,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
     voteNotifMilestones,
 }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
@@ -759,30 +741,14 @@ export async function deleteUserAccount({
             db,
             conversationSlugId: affectedConversation.conversationSlugId,
         });
-        if (axiosPolis !== undefined) {
-            const votes = await polisService.getPolisVotes({
-                db,
-                conversationId: affectedConversation.conversationId,
-                conversationSlugId: affectedConversation.conversationSlugId,
-            });
-            polisService
-                .getAndUpdatePolisMath({
-                    db: db,
-                    conversationSlugId: affectedConversation.conversationSlugId,
-                    conversationId: affectedConversation.conversationId,
-                    axiosPolis,
-                    votes,
-                    awsAiLabelSummaryEnable,
-                    awsAiLabelSummaryRegion,
-                    awsAiLabelSummaryModelId,
-                    awsAiLabelSummaryTemperature,
-                    awsAiLabelSummaryTopP,
-                    awsAiLabelSummaryMaxTokens,
-                    awsAiLabelSummaryPrompt,
-                })
-                .catch((e: unknown) => {
-                    log.error(e);
-                });
-        }
+        await db
+            .update(conversationTable)
+            .set({
+                needsMathUpdate: true,
+                mathUpdateRequestedAt: nowZeroMs(),
+            })
+            .where(
+                eq(conversationTable.id, affectedConversation.conversationId),
+            );
     }
 }

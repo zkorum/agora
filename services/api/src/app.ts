@@ -57,6 +57,7 @@ const configSchema = sharedConfigSchema.extend({
     BASE_EVENT_ID: z.string().min(20).default("63957849393154643868"),
     NOSTR_PROOF_CHANNEL_EVENT_ID: z.string().optional(), // if undefined, then nostr functionalities are disabled
     NOSTR_DEFAULT_RELAY_URL: z.string().url().default("wss://nos.lol"),
+    POLIS_BASE_URL: z.string().url().optional(),
     POLIS_CONV_TO_IMPORT_ON_RUN: z.undefined().or(
         z
             .string()
