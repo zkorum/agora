@@ -3,7 +3,7 @@ import {
     opinionModerationTable,
     conversationModerationTable,
     conversationTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import type {
@@ -14,11 +14,8 @@ import type {
     ModerationReason,
 } from "@/shared/types/zod.js";
 import { eq } from "drizzle-orm";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
-import type { AxiosInstance } from "axios";
-import * as polisService from "@/service/polis.js";
-import { log } from "@/app.js";
 
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
@@ -79,14 +76,6 @@ interface ModerateByCommentSlugIdProps {
     moderationReason: ModerationReason;
     moderationExplanation: string;
     userId: string;
-    axiosPolis?: AxiosInstance;
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
 }
 
 export async function moderateByCommentSlugId({
@@ -96,14 +85,6 @@ export async function moderateByCommentSlugId({
     userId,
     moderationExplanation,
     moderationAction,
-    axiosPolis,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
 }: ModerateByCommentSlugIdProps) {
     const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
     const { opinionId, conversationSlugId } =
@@ -144,36 +125,17 @@ export async function moderateByCommentSlugId({
     const { updateCountsBypassCache } = useCommonPost();
     await updateCountsBypassCache({ db, conversationSlugId });
 
-    // update math
     const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
         db,
         opinionSlugId: commentSlugId,
     });
-    if (axiosPolis !== undefined) {
-        const votes = await polisService.getPolisVotes({
-            db,
-            conversationId,
-            conversationSlugId,
-        });
-        polisService
-            .getAndUpdatePolisMath({
-                db: db,
-                conversationSlugId,
-                conversationId,
-                axiosPolis,
-                votes,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
-            })
-            .catch((e: unknown) => {
-                log.error(e);
-            });
-    }
+    await db
+        .update(conversationTable)
+        .set({
+            needsMathUpdate: true,
+            mathUpdateRequestedAt: nowZeroMs(),
+        })
+        .where(eq(conversationTable.id, conversationId));
 }
 
 interface FetchModerationReportByPostSlugIdProps {
@@ -292,27 +254,11 @@ export async function withdrawModerationReportByPostSlugId({
 interface WithdrawModerationReportByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
-    axiosPolis?: AxiosInstance;
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
 }
 
 export async function withdrawModerationReportByCommentSlugId({
     db,
     commentSlugId,
-    axiosPolis,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
 }: WithdrawModerationReportByCommentSlugIdProps) {
     const { getCommentIdFromCommentSlugId } = useCommonComment();
     const commentId = await getCommentIdFromCommentSlugId({
@@ -340,36 +286,17 @@ export async function withdrawModerationReportByCommentSlugId({
     const { updateCountsBypassCache } = useCommonPost();
     await updateCountsBypassCache({ db, conversationSlugId });
 
-    // update math
     const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
         db,
         opinionSlugId: commentSlugId,
     });
-    if (axiosPolis !== undefined) {
-        const votes = await polisService.getPolisVotes({
-            db,
-            conversationId,
-            conversationSlugId,
-        });
-        polisService
-            .getAndUpdatePolisMath({
-                db: db,
-                conversationSlugId,
-                conversationId,
-                axiosPolis,
-                votes,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
-            })
-            .catch((e: unknown) => {
-                log.error(e);
-            });
-    }
+    await db
+        .update(conversationTable)
+        .set({
+            needsMathUpdate: true,
+            mathUpdateRequestedAt: nowZeroMs(),
+        })
+        .where(eq(conversationTable.id, conversationId));
 }
 
 export function createPostModerationPropertyObject(

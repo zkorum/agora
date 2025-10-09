@@ -1,6 +1,6 @@
 import { log } from "./app.js";
-import { stringToBytes } from "./shared/common/arrbufs.js";
-import { base64 } from "./shared/common/index.js";
+import { encode } from "./shared-app-api/base64.js";
+import { stringToBytes } from "./shared/arrbufs.js";
 
 // see https://nodejs.org/api/crypto.html for reasons behind dynamic ESM import
 type CryptoModule = typeof import("node:crypto");
@@ -24,7 +24,7 @@ export function generateRandomHex(): string {
 export function generateRandomSlugId(): string {
     const randomBytes = new Uint8Array(4); // this accounts to pow(2, 8*4) = 429 Billions possibilities
     crypto.webcrypto.getRandomValues(randomBytes);
-    return base64.encode(randomBytes); // generates a 6 char-long slug
+    return encode(randomBytes); // generates a 6 char-long slug
 }
 
 // Generate cryptographically random 6 digits code for email validation.

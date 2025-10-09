@@ -12,7 +12,7 @@ import {
     opinionReportTable,
     conversationReportTable,
     userTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import { desc, eq } from "drizzle-orm";
 import type { FetchUserReportsByPostSlugIdResponse } from "@/shared/types/dto.js";
 

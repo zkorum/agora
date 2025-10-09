@@ -40,24 +40,40 @@ Install:
 
 ## Services
 
-### Agora
+For detailed information about each service, licenses, and documentation, see [COPYING-README.md](./COPYING-README.md).
 
-A Quasar application (frontend)
+### Frontend
 
-### Api
+**[Agora](./services/agora)** - A Quasar application (Vue.js frontend) providing the user interface for Agora Citizen Network.
 
-A Fastify application supported by a PostgreSQL database (backend).
+### Backend Services
 
-### Python bridge
+**[API](./services/api)** - A Fastify application supported by a PostgreSQL database. Main backend API handling user requests, authentication, voting, and conversation management.
 
-A Flask application to enable the Node backend to communicate with the data science libraries written in Python ([reddwarf](https://github.com/polis-community/red-dwarf) especially).
+**[Math Updater](./services/math-updater)** - Background worker service that periodically updates Polis clustering mathematics and generates AI-powered cluster insights using LLM models.
+
+**[Python Bridge](./services/python-bridge)** - A Flask application enabling the Node.js backend to communicate with Python data science libraries, particularly [reddwarf](https://github.com/polis-community/red-dwarf) for clustering algorithms.
+
+### Shared Libraries
+
+**[Shared](./services/shared)** - Common TypeScript code shared across all services.
+
+**[Shared App-API](./services/shared-app-api)** - TypeScript code shared specifically between the frontend (agora) and API service.
+
+**[Shared Backend](./services/shared-backend)** - Backend-specific code shared between API and worker services (like math-updater). Synced via rsync to maintain consistency.
+
+### Development Tools
+
+**[LLM](./services/llm)** - LLM prompts and Python scripts for AI-related development.
+
+**[NLP](./services/nlp)** - Natural language processing utilities and tools.
 
 ### OpenAPI
 
-We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding front.
+We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding frontend client.
 
 ### Getting started
-Please read README's in `/agora`, `/api`, and `/python-bridge`
+Please read READMEs in `/services/agora`, `/services/api`, `/services/math-updater`, and `/services/python-bridge`
 
 ### Run in dev mode
 

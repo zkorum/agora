@@ -1,4 +1,4 @@
-import { userMutePreferenceTable, userTable } from "@/schema.js";
+import { userMutePreferenceTable, userTable } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonUser } from "./common.js";
 import { and, eq } from "drizzle-orm";

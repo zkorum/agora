@@ -6,7 +6,7 @@ import {
     opinionTable,
     notificationTable,
     userTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
 import { and, desc, eq, lt } from "drizzle-orm";

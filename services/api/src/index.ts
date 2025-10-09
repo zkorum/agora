@@ -9,10 +9,7 @@ import fastifyCors from "@fastify/cors";
 import fastifySensible from "@fastify/sensible";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
-import {
-    drizzle,
-    type PostgresJsDatabase as PostgresDatabase,
-} from "drizzle-orm/postgres-js";
+import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { type FastifyRequest } from "fastify";
 import {
     jsonSchemaTransform,
@@ -21,9 +18,7 @@ import {
     type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import fs from "fs";
-import postgres from "postgres";
 import { config, log, server } from "./app.js";
-import { DrizzleFastifyLogger } from "./logger.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
@@ -38,7 +33,7 @@ import { Relay, useWebSocketImplementation } from "nostr-tools/relay";
 import {
     httpMethodToAbility,
     httpUrlToResourcePointer,
-} from "./shared/ucan/ucan.js";
+} from "./shared-app-api/ucan/ucan.js";
 import {
     deleteOpinionBySlugId,
     fetchAnalysisByConversationSlugId,
@@ -76,7 +71,6 @@ import {
     withdrawModerationReportByCommentSlugId,
     withdrawModerationReportByPostSlugId,
 } from "./service/moderation.js";
-import { nowZeroMs } from "./shared/common/util.js";
 import {
     createUserReportByCommentSlugId,
     createUserReportByPostSlugId,
@@ -92,10 +86,6 @@ import {
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 import twilio from "twilio";
-import {
-    GetSecretValueCommand,
-    SecretsManagerClient,
-} from "@aws-sdk/client-secrets-manager";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -118,6 +108,8 @@ import {
     getLanguagePreferences,
     updateLanguagePreferences,
 } from "./service/language.js";
+import { createDb } from "./shared-backend/db.js";
+import { nowZeroMs } from "./shared/util.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
@@ -287,94 +279,7 @@ server.setErrorHandler((error, _request, reply) => {
 // await node.start();
 // await node.waitForPeers([Protocols.LightPush]);
 
-let client;
-if (
-    config.NODE_ENV === "production" &&
-    config.AWS_SECRET_ID !== undefined &&
-    config.AWS_SECRET_REGION !== undefined &&
-    config.DB_HOST !== undefined
-) {
-    const awsSecretsManagerClient = new SecretsManagerClient({
-        region: config.AWS_SECRET_REGION,
-    });
-    try {
-        const response = await awsSecretsManagerClient.send(
-            new GetSecretValueCommand({
-                SecretId: config.AWS_SECRET_ID,
-            }),
-        );
-        if (!response.SecretString) {
-            if (response.SecretBinary) {
-                log.error("Unexpected binary format for the secret");
-                process.exit(1);
-            } else {
-                log.error("No secret found");
-                process.exit(1);
-            }
-        }
-        try {
-            const credentials: object = JSON.parse(
-                response.SecretString,
-            ) as object;
-            if (
-                !("username" in credentials) ||
-                typeof credentials.username !== "string"
-            ) {
-                log.error(
-                    "Field 'username' is not in the secrets or is not a string",
-                );
-                process.exit(1);
-            }
-            if (
-                !("password" in credentials) ||
-                typeof credentials.password !== "string"
-            ) {
-                log.error(
-                    "Field 'password' is not in the secrets or is not a string",
-                );
-                process.exit(1);
-            }
-            client = postgres({
-                host: config.DB_HOST,
-                port: config.DB_PORT,
-                database: config.DB_NAME,
-                username: credentials.username,
-                password: credentials.password,
-                ssl: "require",
-                connect_timeout: 10,
-            });
-        } catch (error) {
-            log.error(error);
-            log.error(
-                "Unable to parse received SecretString in JSON or connect to DB",
-            );
-            process.exit(1);
-        }
-    } catch (e) {
-        log.error(e);
-        log.error("Unable to receive response from AWS Secrets Manager");
-        process.exit(1);
-    }
-} else if (config.CONNECTION_STRING !== undefined) {
-    try {
-        client = postgres(config.CONNECTION_STRING, {
-            connect_timeout: 10,
-        });
-    } catch (e) {
-        log.error("Unable to connect to the database");
-        log.error(e);
-        process.exit(1);
-    }
-} else {
-    log.error(
-        "CONNECTION_STRING cannot be undefined in any mode except production",
-    );
-    process.exit(1);
-}
-
-export const db = drizzle(client, {
-    logger: new DrizzleFastifyLogger(log),
-});
+const db = await createDb(config, log);
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -867,19 +772,6 @@ server.after(() => {
                 moderationAction: request.body.moderationAction,
                 moderationExplanation: request.body.moderationExplanation,
                 userId: deviceStatus.userId,
-                axiosPolis: axiosPolis,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
             });
         },
     });
@@ -946,19 +838,6 @@ server.after(() => {
             await withdrawModerationReportByCommentSlugId({
                 db: db,
                 commentSlugId: request.body.opinionSlugId,
-                axiosPolis: axiosPolis,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
             });
         },
     });
@@ -1228,20 +1107,7 @@ server.after(() => {
                 proof: encodedUcan,
                 votingAction: request.body.chosenOption,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
-                axiosPolis: axiosPolis,
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 now: now,
             });
             reply.send(castVoteResponse);
@@ -1353,19 +1219,6 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 proof: encodedUcan,
                 didWrite: didWrite,
-                axiosPolis: axiosPolis,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
             });
             reply.send();
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -1408,20 +1261,7 @@ server.after(() => {
                 didWrite: didWrite,
                 proof: encodedUcan,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
-                axiosPolis: axiosPolis,
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 now: now,
                 isSeed: false,
             });

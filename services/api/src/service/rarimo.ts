@@ -1,6 +1,6 @@
 // This file, along with the integration of the Rarimo protocol into Agora, was originally developed with funding from the European Union’s Horizon Europe 2020 research and innovation program, as part of the NGI SARGASSO project under grant agreement No. 101092887.
 
-import { deviceTable, zkPassportTable } from "@/schema.js";
+import { deviceTable, zkPassportTable } from "@/shared-backend/schema.js";
 import type {
     GenerateVerificationLink200,
     VerifyUserStatusAndAuthenticate200,
@@ -12,7 +12,7 @@ import {
 import { type AxiosInstance } from "axios";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
 import {
     getZKPAuthenticationType,
     loginKnownDeviceWithZKP,

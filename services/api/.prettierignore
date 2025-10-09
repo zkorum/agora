@@ -3,4 +3,6 @@ drizzle
 openap-zkorum.json
 pnpm-lock.yaml
 src/shared/**/*
+src/shared-backend/**/*
+src/shared-app-api/**/*
 

@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { calculatePercentage } from "src/shared/common/util";
+import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { ref, watch } from "vue";
 import { z } from "zod";

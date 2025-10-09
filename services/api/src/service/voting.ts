@@ -6,14 +6,12 @@ import {
     voteTable,
     notificationTable,
     notificationOpinionVoteTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and, desc, isNotNull, SQL, inArray } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import type { VotingAction, VotingOption } from "@/shared/types/zod.js";
 import { useCommonComment, useCommonPost } from "./common.js";
-import type { AxiosInstance } from "axios";
-import * as polisService from "@/service/polis.js";
 import { log } from "@/app.js";
 import { insertNewVoteNotification } from "./notification.js";
 import * as authUtilService from "@/service/authUtil.js";
@@ -25,7 +23,7 @@ import type {
     OpinionIdPerStatementId,
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
     db: PostgresJsDatabase;
@@ -77,15 +75,7 @@ interface CastVoteForOpinionSlugIdProps {
     proof: string;
     votingAction: VotingAction;
     userAgent: string;
-    axiosPolis?: AxiosInstance;
     voteNotifMilestones: number[];
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
     now: Date;
 }
 
@@ -97,15 +87,7 @@ interface CastVoteForOpinionSlugIdFromUserIdProps {
     proof: string;
     votingAction: VotingAction;
     userId: string;
-    axiosPolis?: AxiosInstance;
     voteNotifMilestones: number[];
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
     optionalConversationSlugId?: string;
     optionalConversationId?: number;
     optionalConversationContentId?: number | null;
@@ -121,15 +103,7 @@ export async function castVoteForOpinionSlugIdFromUserId({
     proof,
     votingAction,
     userId,
-    axiosPolis,
     voteNotifMilestones,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
     optionalConversationId,
     optionalConversationSlugId,
     optionalConversationContentId,
@@ -365,6 +339,8 @@ export async function castVoteForOpinionSlugIdFromUserId({
                         voteCount: conversationVoteCount - 1,
                         participantCount: conversationParticipantCount - 1,
                         lastReactedAt: now,
+                        needsMathUpdate: true,
+                        mathUpdateRequestedAt: now,
                     })
                     .where(eq(conversationTable.id, conversationId));
             } else {
@@ -521,6 +497,14 @@ export async function castVoteForOpinionSlugIdFromUserId({
                 }
             }
         }
+
+        await db
+            .update(conversationTable)
+            .set({
+                needsMathUpdate: true,
+                mathUpdateRequestedAt: now,
+            })
+            .where(eq(conversationTable.id, conversationId));
     }
 
     let doTransaction = true;
@@ -533,32 +517,6 @@ export async function castVoteForOpinionSlugIdFromUserId({
         });
     } else {
         await doUpdateCastVote(db);
-    }
-
-    if (axiosPolis !== undefined) {
-        const votes = await polisService.getPolisVotes({
-            db,
-            conversationId,
-            conversationSlugId,
-        });
-        polisService
-            .getAndUpdatePolisMath({
-                db: db,
-                conversationSlugId,
-                conversationId: conversationId,
-                axiosPolis,
-                votes,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
-            })
-            .catch((e: unknown) => {
-                log.error(e);
-            });
     }
 
     return true;
@@ -824,15 +782,7 @@ export async function castVoteForOpinionSlugId({
     proof,
     votingAction,
     userAgent,
-    axiosPolis,
     voteNotifMilestones,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
     now,
 }: CastVoteForOpinionSlugIdProps): Promise<boolean> {
     const { conversationSlugId, conversationId } =
@@ -868,15 +818,7 @@ export async function castVoteForOpinionSlugId({
         proof,
         votingAction,
         userId,
-        axiosPolis,
         voteNotifMilestones,
-        awsAiLabelSummaryEnable,
-        awsAiLabelSummaryRegion,
-        awsAiLabelSummaryModelId,
-        awsAiLabelSummaryTemperature,
-        awsAiLabelSummaryTopP,
-        awsAiLabelSummaryMaxTokens,
-        awsAiLabelSummaryPrompt,
         optionalConversationId: conversationId,
         optionalConversationSlugId: conversationSlugId,
         optionalConversationContentId: conversationContentId,

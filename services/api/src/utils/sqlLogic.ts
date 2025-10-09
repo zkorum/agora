@@ -1,4 +1,4 @@
-import { opinionTable } from "@/schema.js";
+import { opinionTable } from "@/shared-backend/schema.js";
 import { SQL, and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 

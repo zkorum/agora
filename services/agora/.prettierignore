@@ -7,3 +7,5 @@ node_modules
 src/shared
 src/api
 src-capacitor
+src/shared/**/*
+src/shared-app-api/**/*

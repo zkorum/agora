@@ -1,11 +1,11 @@
 import { log } from "@/app.js";
-import { userTable } from "@/schema.js";
+import { userTable } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { getAllUserComments, getUserPosts, getUserVotes } from "./user.js";
 import { deleteOpinionBySlugId } from "./comment.js";
 import { deletePostBySlugId } from "./post.js";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
 import { logout } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
@@ -684,15 +684,7 @@ export async function deleteUserAccount({
                 proof,
                 userId,
                 votingAction: "cancel",
-                axiosPolis,
                 voteNotifMilestones,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
             });
         }
 
@@ -710,13 +702,6 @@ export async function deleteUserAccount({
                 opinionSlugId: comment.opinionItem.opinionSlugId,
                 didWrite: didWrite,
                 userId: userId,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
             });
         }
 

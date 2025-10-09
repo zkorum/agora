@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import {
     userSpokenLanguagesTable,
     userDisplayLanguageTable,
-} from "../schema.js";
+} from "@/shared-backend/schema.js";
 import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,

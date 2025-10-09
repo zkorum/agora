@@ -9,7 +9,7 @@ import {
     polisClusterTable,
     polisClusterUserTable,
     voteTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type {
     OpinionItem,

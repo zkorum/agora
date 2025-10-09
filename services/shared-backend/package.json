@@ -1,0 +1,31 @@
+{
+    "name": "@zkorum/agora-shared-backend",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Shared backend code for API and worker services",
+    "main": "index.js",
+    "scripts": {
+        "sync": "bash scripts/rsync_and_sed.sh",
+        "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
+        "format:check": "prettier . --check"
+    },
+    "keywords": [
+        "shared",
+        "backend"
+    ],
+    "author": "ZKorum SAS <hello@zkorum.com>",
+    "license": "AGPL-3.0",
+    "dependencies": {
+        "@aws-sdk/client-secrets-manager": "^3.906.0",
+        "drizzle-orm": "^0.39.3",
+        "fastify": "^5.6.1",
+        "postgres": "^3.4.5",
+        "zod": "^3.24.4"
+    },
+    "devDependencies": {
+        "@types/node": "^20.17.47",
+        "pino": "^9.6.0",
+        "prettier": "^3.5.3",
+        "typescript": "^5.8.3"
+    }
+}

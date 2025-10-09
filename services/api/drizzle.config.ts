@@ -11,7 +11,7 @@ const config = drizzleConfigSchema.parse(process.env);
 export default defineConfig({
     out: "./drizzle",
     dialect: "postgresql",
-    schema: "./src/schema.ts",
+    schema: "./src/shared-backend/schema.ts",
 
     driver: "pglite",
     dbCredentials: {

@@ -112,7 +112,6 @@ import {
   zodSupportedCountryCallingCode,
   type SupportedCountryCallingCode,
 } from "src/shared/types/zod";
-import { isPhoneNumberTypeSupported } from "src/shared/shared";
 import type { Results } from "maz-ui/components/MazPhoneNumberInput";
 import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -120,6 +119,7 @@ import {
   phoneOnboardingTranslations,
   type PhoneOnboardingTranslations,
 } from "./index.i18n";
+import { isPhoneNumberTypeSupported } from "src/shared-app-api/phone";
 
 const { t } = useComponentI18n<PhoneOnboardingTranslations>(
   phoneOnboardingTranslations

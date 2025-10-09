@@ -1,6 +1,6 @@
 // import { promises as fs } from "fs"; // 'fs/promises' not available in node 12
 // import { parse } from "csv-parse";
-// import { userTable } from "@/schema.js";
+// import { userTable } from "@/shared-backend/schema.js";
 // import { generateRandomSlugId, generateUUID } from "@/crypto.js";
 // import * as polisService from "@/service/polis.js";
 // import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
