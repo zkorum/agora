@@ -51,7 +51,8 @@ Configuration is managed via environment variables. See `env.example` for requir
 ### Math Updater Settings
 
 - `MATH_UPDATER_SCAN_INTERVAL_MS`: How often to scan for conversations needing updates (default: 2000ms = 2 seconds, min: 2000ms)
-- `MATH_UPDATER_PROCESS_CONCURRENCY`: Number of concurrent math update jobs (default: 10, max: 50)
+- `MATH_UPDATER_BATCH_SIZE`: Number of jobs to fetch per batch from the queue. Also determines database connection pool size (batch size + 5) (default: 10, max: 50)
+- `MATH_UPDATER_JOB_CONCURRENCY`: Number of jobs that execute concurrently within each batch. Limits concurrent heavy database operations to protect the database server (default: 3, max: 10)
 - `MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS`: Minimum time between updates for a single conversation (default: 20000ms = 20 seconds, min: 5000ms)
 
 ### AWS Configuration (for AI labels/summaries)

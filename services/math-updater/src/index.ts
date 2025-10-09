@@ -14,6 +14,7 @@ import axios, { AxiosInstance } from "axios";
 import { createDb } from "./shared-backend/db.js";
 import { sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import pLimit from "p-limit";
 
 /**
  * Delete all scan-conversations jobs using SQL
@@ -55,7 +56,7 @@ async function main() {
     const boss = new PgBoss({
         connectionString: config.CONNECTION_STRING,
         application_name: "agora-math-updater",
-        max: config.MATH_UPDATER_PROCESS_CONCURRENCY + 5, // Concurrency + overhead for pg-boss operations
+        max: config.MATH_UPDATER_BATCH_SIZE + 5, // Batch size + overhead for pg-boss operations
     });
 
     boss.on("error", (error) => {
@@ -79,18 +80,55 @@ async function main() {
     await boss.work(
         "update-conversation-math",
         {
-            batchSize: config.MATH_UPDATER_PROCESS_CONCURRENCY,
+            batchSize: config.MATH_UPDATER_BATCH_SIZE,
         },
         async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
+            // Keep only one job per conversationId, selecting the one with the most recent mathUpdateRequestedAt
+            const jobsByConversation = new Map<
+                number,
+                PgBoss.Job<UpdateConversationMathData>
+            >();
+
+            for (const job of jobs) {
+                if (!job.data.conversationId) continue;
+
+                const existing = jobsByConversation.get(
+                    job.data.conversationId,
+                );
+
+                if (existing === undefined) {
+                    jobsByConversation.set(job.data.conversationId, job);
+                } else {
+                    const existingDate = existing.data.mathUpdateRequestedAt
+                        ? new Date(
+                              existing.data.mathUpdateRequestedAt,
+                          ).getTime()
+                        : 0;
+                    const currentDate = job.data.mathUpdateRequestedAt
+                        ? new Date(job.data.mathUpdateRequestedAt).getTime()
+                        : 0;
+
+                    if (currentDate > existingDate) {
+                        jobsByConversation.set(job.data.conversationId, job);
+                    }
+                }
+            }
+
+            const jobsToRun = Array.from(jobsByConversation.values());
+
+            // Process jobs with controlled concurrency to protect the database
+            const limit = pLimit(config.MATH_UPDATER_JOB_CONCURRENCY);
             await Promise.all(
-                jobs.map((job) =>
-                    updateConversationMathHandler(job, db, axiosPolis),
+                jobsToRun.map((job) =>
+                    limit(() =>
+                        updateConversationMathHandler(job, db, axiosPolis),
+                    ),
                 ),
             );
         },
     );
     log.info(
-        `[Math Updater] Registered update-conversation-math worker (concurrency: ${config.MATH_UPDATER_PROCESS_CONCURRENCY})`,
+        `[Math Updater] Registered update-conversation-math worker (batch size: ${config.MATH_UPDATER_BATCH_SIZE}, concurrency: ${config.MATH_UPDATER_JOB_CONCURRENCY})`,
     );
 
     // Register scan-conversations worker
