@@ -64,11 +64,20 @@ export async function scanConversationsJob(
 
         // Enqueue each conversation for processing
         for (const conversation of conversations) {
-            await boss.send("update-conversation-math", {
-                conversationId: conversation.id,
-                conversationSlugId: conversation.slugId,
-                mathUpdateRequestedAt: conversation.mathUpdateRequestedAt,
-            });
+            await boss.send(
+                "update-conversation-math",
+                {
+                    conversationId: conversation.id,
+                    conversationSlugId: conversation.slugId,
+                    mathUpdateRequestedAt: conversation.mathUpdateRequestedAt,
+                },
+                {
+                    // Use singletonKey to prevent duplicate jobs for the same conversation
+                    singletonKey: `update-math-${conversation.id}`,
+                    // if a job is throttled it will be sent in the next slot (debounced)
+                    singletonSeconds: 15, // same conversation events will be ignored for the next 15 seconds
+                },
+            );
 
             log.debug(
                 `[Scan] Enqueued conversation ${conversation.slugId} (id: ${conversation.id})`,
