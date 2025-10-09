@@ -52,12 +52,60 @@ async function main() {
     const db = await createDb(config, log);
     log.info("[Math Updater] Database connection established");
 
-    // Initialize pg-boss
-    const boss = new PgBoss({
-        connectionString: config.CONNECTION_STRING,
+    // Initialize pg-boss with AWS Secrets support
+    const pgBossCommonConfig = {
         application_name: "agora-math-updater",
         max: config.MATH_UPDATER_BATCH_SIZE + 5, // Batch size + overhead for pg-boss operations
-    });
+    };
+
+    let pgBossConfig;
+    if (
+        config.NODE_ENV === "production" &&
+        config.AWS_SECRET_ID !== undefined &&
+        config.AWS_SECRET_REGION !== undefined &&
+        config.DB_HOST !== undefined
+    ) {
+        // Fetch credentials from AWS Secrets Manager
+        const { SecretsManagerClient, GetSecretValueCommand } = await import(
+            "@aws-sdk/client-secrets-manager"
+        );
+        const awsSecretsManagerClient = new SecretsManagerClient({
+            region: config.AWS_SECRET_REGION,
+        });
+
+        const response = await awsSecretsManagerClient.send(
+            new GetSecretValueCommand({
+                SecretId: config.AWS_SECRET_ID,
+            }),
+        );
+
+        if (!response.SecretString) {
+            log.error("[Math Updater] No secret found in AWS Secrets Manager");
+            process.exit(1);
+        }
+
+        const credentials = JSON.parse(response.SecretString) as {
+            username: string;
+            password: string;
+        };
+
+        pgBossConfig = {
+            ...pgBossCommonConfig,
+            host: config.DB_HOST,
+            port: config.DB_PORT,
+            database: config.DB_NAME,
+            user: credentials.username,
+            password: credentials.password,
+            ssl: { rejectUnauthorized: false },
+        };
+    } else {
+        pgBossConfig = {
+            ...pgBossCommonConfig,
+            connectionString: config.CONNECTION_STRING,
+        };
+    }
+
+    const boss = new PgBoss(pgBossConfig);
 
     boss.on("error", (error) => {
         log.error(error, "[Math Updater] pg-boss error");
@@ -83,43 +131,11 @@ async function main() {
             batchSize: config.MATH_UPDATER_BATCH_SIZE,
         },
         async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
-            // Keep only one job per conversationId, selecting the one with the most recent mathUpdateRequestedAt
-            const jobsByConversation = new Map<
-                number,
-                PgBoss.Job<UpdateConversationMathData>
-            >();
-
-            for (const job of jobs) {
-                if (!job.data.conversationId) continue;
-
-                const existing = jobsByConversation.get(
-                    job.data.conversationId,
-                );
-
-                if (existing === undefined) {
-                    jobsByConversation.set(job.data.conversationId, job);
-                } else {
-                    const existingDate = existing.data.mathUpdateRequestedAt
-                        ? new Date(
-                              existing.data.mathUpdateRequestedAt,
-                          ).getTime()
-                        : 0;
-                    const currentDate = job.data.mathUpdateRequestedAt
-                        ? new Date(job.data.mathUpdateRequestedAt).getTime()
-                        : 0;
-
-                    if (currentDate > existingDate) {
-                        jobsByConversation.set(job.data.conversationId, job);
-                    }
-                }
-            }
-
-            const jobsToRun = Array.from(jobsByConversation.values());
-
             // Process jobs with controlled concurrency to protect the database
+            // No deduplication needed - singletonKey ensures one job per conversation
             const limit = pLimit(config.MATH_UPDATER_JOB_CONCURRENCY);
             await Promise.all(
-                jobsToRun.map((job) =>
+                jobs.map((job) =>
                     limit(() =>
                         updateConversationMathHandler(job, db, axiosPolis),
                     ),
