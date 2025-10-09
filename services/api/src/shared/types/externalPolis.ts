@@ -1,4 +1,4 @@
-/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
+/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 // unused
 import { z } from "zod";
 import { stringToJSONSchema, zodMathResults } from "./polis.js";

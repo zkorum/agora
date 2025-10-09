@@ -1,4 +1,4 @@
-/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
+/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 export function isValidPolisUrl(url: string): boolean {
     try {
         const { conversationId, reportId } = extractPolisIdFromUrl(url);

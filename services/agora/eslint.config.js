@@ -110,7 +110,7 @@ export default defineConfigWithVueTs(
 
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_" },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
 
       // useful to know, but too verbose https://stackoverflow.com/a/63488201/11046178

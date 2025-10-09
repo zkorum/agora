@@ -15,10 +15,10 @@ import {
     voteContentTable,
     userTable,
     opinionModerationTable,
-} from "@/schema.js";
-import { polisClusterTable } from "@/schema.js";
+    polisClusterTable,
+} from "@/shared-backend/schema.js";
 import { and, eq, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
 import {
     type ImportPolisResults,
     type MathResults,

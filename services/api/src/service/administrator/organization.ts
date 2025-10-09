@@ -1,4 +1,7 @@
-import { organizationTable, userOrganizationMappingTable } from "@/schema.js";
+import {
+    organizationTable,
+    userOrganizationMappingTable,
+} from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { and, eq } from "drizzle-orm";
 import { useCommonUser } from "../common.js";

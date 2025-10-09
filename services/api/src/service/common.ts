@@ -10,7 +10,7 @@ import {
     organizationTable,
     voteTable,
     opinionModerationTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
     ConversationMetadata,

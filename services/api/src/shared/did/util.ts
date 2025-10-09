@@ -1,4 +1,4 @@
-/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MOFIFY THIS FILE DIRECTLY! **** **/
+/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import * as uint8arrays from "uint8arrays";
 
 export const BASE58_DID_PREFIX = "did:key:z";

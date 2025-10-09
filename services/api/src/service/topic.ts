@@ -1,4 +1,4 @@
-import { followedTopicTable, topicTable } from "@/schema.js";
+import { followedTopicTable, topicTable } from "@/shared-backend/schema.js";
 import type {
     GetAllTopicsResponse,
     GetUserFollowedTopicCodesResponse,

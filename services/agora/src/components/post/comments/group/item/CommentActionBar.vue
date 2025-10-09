@@ -57,7 +57,7 @@ import {
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { calculatePercentage } from "src/shared/common/util";
+import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, onMounted } from "vue";

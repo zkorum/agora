@@ -12,7 +12,7 @@ import {
     polisClusterTable,
     polisClusterUserTable,
     polisClusterOpinionTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import type {
     ConversationAnalysis,
     CreateCommentResponse,
@@ -43,14 +43,12 @@ import type {
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
-import { processHtmlBody, toUnionUndefined } from "@/shared/shared.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
-import type { AxiosInstance } from "axios";
 import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
-import * as polisService from "@/service/polis.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
 import {
     isSqlWhereMajority,
@@ -69,7 +67,8 @@ import type {
     StatementIdPerOpinionSlugId,
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
+import { processHtmlBody } from "@/shared-app-api/html.js";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -1041,15 +1040,7 @@ interface PostNewOpinionProps {
     didWrite: string;
     proof: string;
     userAgent: string;
-    axiosPolis: AxiosInstance | undefined;
     voteNotifMilestones: number[];
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
     now: Date;
     isSeed: boolean;
 }
@@ -1062,15 +1053,7 @@ export async function postNewOpinion({
     proof,
     userAgent,
     now,
-    axiosPolis,
     voteNotifMilestones,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
     isSeed,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     const { getPostMetadataFromSlugId, getOpinionCountBypassCache } =
@@ -1179,6 +1162,8 @@ export async function postNewOpinion({
             .set({
                 opinionCount: conversationOpinionCount + 1,
                 lastReactedAt: now,
+                needsMathUpdate: true,
+                mathUpdateRequestedAt: now,
             })
             .where(eq(conversationTable.slugId, conversationSlugId));
 
@@ -1225,15 +1210,7 @@ export async function postNewOpinion({
                 proof: proof,
                 votingAction: "agree",
                 userAgent: userAgent,
-                axiosPolis: axiosPolis,
                 voteNotifMilestones,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
                 now: now,
             });
         }
@@ -1252,14 +1229,6 @@ interface DeleteCommentBySlugIdProps {
     userId: string;
     proof: string;
     didWrite: string;
-    axiosPolis?: AxiosInstance;
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
 }
 
 export async function deleteOpinionBySlugId({
@@ -1269,14 +1238,6 @@ export async function deleteOpinionBySlugId({
     userId,
     proof,
     didWrite,
-    axiosPolis,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
 }: DeleteCommentBySlugIdProps): Promise<void> {
     const { isOpinionDeleted } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -1332,31 +1293,14 @@ export async function deleteOpinionBySlugId({
         conversationSlugId,
         lastReactedAt: now,
     });
-    if (axiosPolis !== undefined) {
-        const votes = await polisService.getPolisVotes({
-            db,
-            conversationId,
-            conversationSlugId,
-        });
-        polisService
-            .getAndUpdatePolisMath({
-                db: db,
-                conversationSlugId,
-                conversationId: conversationId,
-                axiosPolis,
-                votes,
-                awsAiLabelSummaryEnable,
-                awsAiLabelSummaryRegion,
-                awsAiLabelSummaryModelId,
-                awsAiLabelSummaryTemperature,
-                awsAiLabelSummaryTopP,
-                awsAiLabelSummaryMaxTokens,
-                awsAiLabelSummaryPrompt,
-            })
-            .catch((e: unknown) => {
-                log.error(e);
-            });
-    }
+
+    await db
+        .update(conversationTable)
+        .set({
+            needsMathUpdate: true,
+            mathUpdateRequestedAt: now,
+        })
+        .where(eq(conversationTable.id, conversationId));
 }
 
 export async function bulkInsertOpinionsFromExternalPolisConvo({

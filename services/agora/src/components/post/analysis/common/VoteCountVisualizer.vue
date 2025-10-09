@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { calculatePercentage } from "src/shared/common/util";
+import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";

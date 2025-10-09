@@ -1,4 +1,4 @@
-import { conversationTable } from "@/schema.js";
+import { conversationTable } from "@/shared-backend/schema.js";
 import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,

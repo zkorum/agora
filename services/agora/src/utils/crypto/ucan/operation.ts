@@ -2,15 +2,14 @@
 import { publicKeyToDid } from "src/shared/did/util";
 import { type SupportedPlatform } from "src/utils/common";
 import { SecureSigning } from "@zkorum/capacitor-secure-signing";
-import { base64Decode } from "src/shared/common/base64";
 import { getWebCryptoStore } from "../store";
 import * as DID from "./did/index";
 import * as ucans from "@ucans/ucans";
 import {
   httpMethodToAbility,
   httpPathnameToResourcePointer,
-} from "src/shared/ucan/ucan";
-import { base64 } from "src/shared/common";
+} from "src/shared-app-api/ucan/ucan";
+import { base64Decode, base64Encode } from "src/shared-app-api/base64";
 
 interface CreateDidReturn {
   did: string;
@@ -160,9 +159,9 @@ async function buildMobileUcan({
       sign: async (msg: Uint8Array) => {
         const { signature } = await SecureSigning.sign({
           prefixedKey: prefixedKey,
-          data: base64.base64Encode(msg),
+          data: base64Encode(msg),
         });
-        return base64.base64Decode(signature);
+        return base64Decode(signature);
       },
     })
     .toAudience(process.env.VITE_BACK_DID)

@@ -1,0 +1,1 @@
+CREATE INDEX "conversation_math_update_scan_idx" ON "conversation" USING btree ("needs_math_update","last_math_update_at") WHERE "conversation"."needs_math_update" = true;

@@ -3,7 +3,7 @@ import {
     opinionTable,
     polisClusterOpinionTable,
     polisClusterTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import { eq, inArray, isNull, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 

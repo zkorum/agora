@@ -1,4 +1,4 @@
-import { deviceTable } from "@/schema.js";
+import { deviceTable } from "@/shared-backend/schema.js";
 import { and, eq, ne, type TablesRelationalConfig } from "drizzle-orm";
 import type { PgTransaction, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";

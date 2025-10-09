@@ -3,7 +3,7 @@ import {
     pollResponseProofTable,
     pollResponseTable,
     pollTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import type { HttpErrors } from "@fastify/sensible";

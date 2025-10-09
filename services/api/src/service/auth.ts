@@ -10,8 +10,8 @@ import {
     zkPassportTable,
     phoneTable,
     userTable,
-} from "@/schema.js";
-import { nowZeroMs } from "@/shared/common/util.js";
+} from "@/shared-backend/schema.js";
+import { nowZeroMs } from "@/shared/util.js";
 import type {
     AuthenticateRequestBody,
     AuthenticateResponse,
@@ -19,20 +19,17 @@ import type {
 } from "@/shared/types/dto.js";
 import { eq, and, TransactionRollbackError } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { base64 } from "@/shared/common/index.js";
 import parsePhoneNumberFromString, {
     type CountryCode,
 } from "libphonenumber-js/max";
 import { log } from "@/app.js";
-import {
-    PEPPER_VERSION,
-    isPhoneNumberTypeSupported,
-    toUnionUndefined,
-} from "@/shared/shared.js";
+import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
 import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
 import * as authUtilService from "@/service/authUtil.js";
 import twilio from "twilio";
+import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
+import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
@@ -1082,12 +1079,12 @@ async function generatePhoneHash({
     peppers,
     pepperVersion,
 }: GeneratePhoneHashProps): Promise<string> {
-    const pepper = base64.base64Decode(peppers[pepperVersion]); // we don't rotate peppers yet
+    const pepper = base64Decode(peppers[pepperVersion]); // we don't rotate peppers yet
     const hash = await hashWithSalt({
         value: phoneNumber,
         salt: pepper,
     });
-    const phoneHash = base64.base64Encode(hash);
+    const phoneHash = base64Encode(hash);
     return phoneHash;
 }
 
@@ -1232,12 +1229,12 @@ export async function updateAuthAttemptCode({
         throw httpErrors.badRequest("Test code shall not be sent via sms");
     }
     const pepperVersion = 0;
-    const pepper = base64.base64Decode(peppers[pepperVersion]); // we don't rotate peppers yet
+    const pepper = base64Decode(peppers[pepperVersion]); // we don't rotate peppers yet
     const hash = await hashWithSalt({
         value: authenticateRequestBody.phoneNumber,
         salt: pepper,
     });
-    const phoneHash = base64.base64Encode(hash);
+    const phoneHash = base64Encode(hash);
     const isThrottled = await isThrottledByPhoneHash(
         db,
         phoneHash,

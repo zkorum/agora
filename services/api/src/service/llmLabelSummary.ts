@@ -3,7 +3,7 @@ import {
     conversationTable,
     polisClusterTable,
     polisContentTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import {
     zodGenLabelSummaryOutputLoose,
     zodGenLabelSummaryOutputStrict,

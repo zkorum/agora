@@ -7,7 +7,7 @@ import {
     conversationProofTable,
     conversationTable,
     userTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import { eq, sql, and } from "drizzle-orm";
 import type { ImportConversationResponse } from "@/shared/types/dto.js";
 import { generateRandomSlugId } from "@/crypto.js";
@@ -19,10 +19,11 @@ import type { AxiosInstance } from "axios";
 import * as authUtilService from "@/service/authUtil.js";
 import * as polisService from "@/service/polis.js";
 import * as importService from "@/service/import.js";
-import { processHtmlBody, toUnionUndefined } from "@/shared/shared.js";
+import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
-import { nowZeroMs } from "@/shared/common/util.js";
+import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
+import { processHtmlBody } from "@/shared-app-api/html.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -306,20 +307,7 @@ export async function createNewPost({
                 didWrite,
                 proof,
                 userAgent: "Seed Opinion Creation",
-                axiosPolis: undefined, // no auto vote opinions for seed comments
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 now,
                 isSeed: true,
             });

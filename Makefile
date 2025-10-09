@@ -7,11 +7,25 @@ generate:
 		-g typescript-axios \
 		-o /local/services/agora/src/api
 
-sync:
+sync: sync-all sync-app-api sync-backend
+
+sync-all:
 	cd services/shared && pnpm run sync
+
+sync-app-api:
+	cd services/shared-app-api && pnpm run sync
+
+sync-backend:
+	cd services/shared-backend && pnpm run sync
 
 dev-sync:
 	watchman-make -p 'services/shared/src/**/*.ts' -t sync
+
+dev-sync-app-api:
+	watchman-make -p 'services/shared-app-api/src/**/*.ts' -t sync-app-api
+
+dev-sync-backend:
+	watchman-make -p 'services/shared-backend/src/**/*.ts' -t sync-backend
 
 dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
@@ -20,7 +34,10 @@ dev-app:
 	cd services/agora && yarn dev 
 
 dev-api:
-	cd services/api && pnpm start:dev  
+	cd services/api && pnpm start:dev
+
+dev-math-updater:
+	cd services/math-updater && pnpm start:dev
 
 dev-polis:
 	cd services/python-bridge && source .venv/bin/activate && flask --app main run
