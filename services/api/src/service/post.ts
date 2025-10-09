@@ -57,13 +57,6 @@ interface ImportPostProps {
     isIndexed: boolean;
     isLoginRequired: boolean;
     isOrgImportOnly: boolean;
-    awsAiLabelSummaryEnable: boolean;
-    awsAiLabelSummaryRegion: string;
-    awsAiLabelSummaryModelId: string;
-    awsAiLabelSummaryTemperature: string;
-    awsAiLabelSummaryTopP: string;
-    awsAiLabelSummaryMaxTokens: string;
-    awsAiLabelSummaryPrompt: string;
 }
 
 export async function importConversation({
@@ -78,13 +71,6 @@ export async function importConversation({
     isLoginRequired,
     isIndexed,
     isOrgImportOnly,
-    awsAiLabelSummaryEnable,
-    awsAiLabelSummaryRegion,
-    awsAiLabelSummaryModelId,
-    awsAiLabelSummaryTemperature,
-    awsAiLabelSummaryTopP,
-    awsAiLabelSummaryMaxTokens,
-    awsAiLabelSummaryPrompt,
 }: ImportPostProps): Promise<ImportConversationResponse> {
     if (
         (postAsOrganization === undefined || postAsOrganization === "") &&
@@ -112,7 +98,7 @@ export async function importConversation({
             polisUrl: polisUrl,
             axiosPolis: axiosPolis,
         });
-    const { conversationId, conversationSlugId } =
+    const { conversationSlugId } =
         await importService.loadImportedPolisConversation({
             db,
             importedPolisConversation,
@@ -126,26 +112,6 @@ export async function importConversation({
             isLoginRequired,
             isIndexed,
         });
-    const votes = await polisService.getPolisVotes({
-        db,
-        conversationId,
-        conversationSlugId,
-    });
-    await polisService.getAndUpdatePolisMath({
-        db: db,
-        conversationSlugId: conversationSlugId,
-        conversationId: conversationId,
-        axiosPolis,
-        votes: votes,
-        awsAiLabelSummaryEnable,
-        awsAiLabelSummaryRegion,
-        awsAiLabelSummaryModelId,
-        awsAiLabelSummaryTemperature,
-        awsAiLabelSummaryTopP,
-        awsAiLabelSummaryMaxTokens,
-        awsAiLabelSummaryPrompt,
-    });
-
     return {
         conversationSlugId: conversationSlugId,
     };

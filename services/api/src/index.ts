@@ -1792,18 +1792,6 @@ server.after(() => {
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
                 isOrgImportOnly: config.IS_ORG_IMPORT_ONLY,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
             });
         },
     });
@@ -1917,19 +1905,6 @@ server.after(() => {
                 didWrite: didWrite,
                 userId: deviceStatus.userId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                axiosPolis: axiosPolis,
-                awsAiLabelSummaryEnable:
-                    config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-                    (config.NODE_ENV === "production" ||
-                        config.NODE_ENV === "staging"),
-                awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-                awsAiLabelSummaryModelId: config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-                awsAiLabelSummaryTemperature:
-                    config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-                awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-                awsAiLabelSummaryMaxTokens:
-                    config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-                awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
                 voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
             });
             reply.send();
