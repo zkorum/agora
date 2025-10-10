@@ -18,12 +18,7 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
         .int()
         .min(2000)
         .default(2000),
-    MATH_UPDATER_BATCH_SIZE: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(50)
-        .default(10),
+    MATH_UPDATER_BATCH_SIZE: z.coerce.number().int().min(1).max(50).default(10),
     MATH_UPDATER_JOB_CONCURRENCY: z.coerce
         .number()
         .int()
