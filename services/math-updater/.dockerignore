@@ -1,0 +1,10 @@
+node_modules/
+dist/
+scripts/
+jest.config.json
+tests/
+drizzle/
+private.dev.key
+public.dev.key
+.env
+flyway.conf

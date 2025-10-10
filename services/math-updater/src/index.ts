@@ -41,7 +41,9 @@ async function deleteOldScanJobs(db: PostgresJsDatabase): Promise<void> {
 }
 
 async function main() {
-    log.info("[Math Updater] Starting math-updater service...");
+    log.info(
+        `[Math Updater] Starting math-updater service (AI: ${config.AWS_AI_LABEL_SUMMARY_ENABLE ? "enabled" : "disabled"})...`,
+    );
 
     const axiosPolis: AxiosInstance = axios.create({
         baseURL: config.POLIS_BASE_URL,
