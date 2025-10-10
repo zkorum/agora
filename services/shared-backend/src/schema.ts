@@ -571,6 +571,13 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
     "5",
 ]);
 
+// Export status for CSV exports
+export const exportStatusEnum = pgEnum("export_status_enum", [
+    "processing",
+    "completed",
+    "failed",
+]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -1750,13 +1757,6 @@ export const polisClusterOpinionTable = pgTable(
         ),
     ],
 );
-
-// Export status for CSV exports
-export const exportStatusEnum = pgEnum("export_status_enum", [
-    "processing",
-    "completed",
-    "failed",
-]);
 
 // Conversation exports table for CSV export feature
 export const conversationExportTable = pgTable(

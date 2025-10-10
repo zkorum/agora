@@ -9,7 +9,7 @@ import {
     opinionTable,
     opinionContentTable,
     userTable,
-} from "@/schema.js";
+} from "@/shared-backend/schema.js";
 import { format } from "fast-csv";
 import { uploadToS3, generatePresignedUrl } from "./s3.js";
 import { nanoid } from "nanoid";
