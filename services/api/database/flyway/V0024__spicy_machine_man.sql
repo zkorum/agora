@@ -20,5 +20,4 @@ ALTER TABLE "conversation_export" ADD CONSTRAINT "conversation_export_conversati
 CREATE INDEX "conversation_export_conversation_idx" ON "conversation_export" USING btree ("conversation_id");--> statement-breakpoint
 CREATE INDEX "conversation_export_status_idx" ON "conversation_export" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "conversation_export_deleted_idx" ON "conversation_export" USING btree ("is_deleted");--> statement-breakpoint
-CREATE INDEX "conversation_export_created_idx" ON "conversation_export" USING btree ("created_at");--> statement-breakpoint
-ALTER TABLE "polis_content" DROP COLUMN "ai_summary";
+CREATE INDEX "conversation_export_created_idx" ON "conversation_export" USING btree ("created_at");
