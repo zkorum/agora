@@ -1,5 +1,5 @@
 {
-  "id": "ae5d4918-48c1-47f3-b6a9-d23d8e6dff1f",
+  "id": "407621c4-3699-4a99-8b7c-1c44b9e4cefd",
   "prevId": "4d9181dc-df5a-4979-82f9-76bf1048f92b",
   "version": "7",
   "dialect": "postgresql",
@@ -254,6 +254,12 @@
             "cycle": false
           }
         },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "integer",
@@ -416,7 +422,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "conversation_export_slug_id_unique": {
+          "name": "conversation_export_slug_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -36,7 +36,7 @@ export function useBackendConversationExportApi() {
     );
 
     return response.data.map((item) => ({
-      exportId: item.exportId,
+      exportSlugId: item.exportSlugId,
       status: item.status,
       createdAt: new Date(item.createdAt),
       downloadUrl: item.downloadUrl,
@@ -70,18 +70,18 @@ export function useBackendConversationExportApi() {
     );
 
     return {
-      exportId: response.data.exportId,
+      exportSlugId: response.data.exportSlugId,
       status: response.data.status,
       estimatedCompletionTime: new Date(response.data.estimatedCompletionTime),
     };
   }
 
   async function fetchExportStatus(
-    exportId: number
+    exportSlugId: string
   ): Promise<GetConversationExportStatusResponse> {
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationExportStatusExportIdGet(
-        exportId
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportStatusExportSlugIdGet(
+        exportSlugId
       );
     const encodedUcan = await buildEncodedUcan(url, options);
 
@@ -89,8 +89,8 @@ export function useBackendConversationExportApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationExportStatusExportIdGet(
-      exportId,
+    ).apiV1ConversationExportStatusExportSlugIdGet(
+      exportSlugId,
       createRawAxiosRequestConfig({
         encodedUcan: encodedUcan,
         timeoutProfile: "standard",
@@ -98,7 +98,7 @@ export function useBackendConversationExportApi() {
     );
 
     return {
-      exportId: response.data.exportId,
+      exportSlugId: response.data.exportSlugId,
       status: response.data.status,
       conversationSlugId: response.data.conversationSlugId,
       downloadUrl: response.data.downloadUrl,

@@ -1763,6 +1763,7 @@ export const conversationExportTable = pgTable(
     "conversation_export",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
