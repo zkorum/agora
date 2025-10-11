@@ -9,6 +9,7 @@ export interface ActionsTranslations {
   share: string;
   moderationHistory: string;
   embedLink: string;
+  exportConversation: string;
   cancel: string;
   confirm: string;
   confirmDeletePost: string;
@@ -17,7 +18,10 @@ export interface ActionsTranslations {
   confirmGenericAction: string;
 }
 
-export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsTranslations> = {
+export const actionsTranslations: Record<
+  SupportedDisplayLanguageCodes,
+  ActionsTranslations
+> = {
   en: {
     report: "Report",
     muteUser: "Mute User",
@@ -27,6 +31,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "Share",
     moderationHistory: "Moderation History",
     embedLink: "Copy Embed Link",
+    exportConversation: "Export Conversation",
     cancel: "Cancel",
     confirm: "Confirm",
     confirmDeletePost: "Are you sure you want to delete this conversation?",
@@ -44,6 +49,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "مشاركة",
     moderationHistory: "سجل الإدارة",
     embedLink: "نسخ رابط التضمين",
+    exportConversation: "تصدير المحادثة",
     cancel: "إلغاء",
     confirm: "تأكيد",
     confirmDeletePost: "هل أنت متأكد أنك تريد حذف هذه المحادثة؟",
@@ -61,6 +67,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "Compartir",
     moderationHistory: "Historial de Moderación",
     embedLink: "Copiar Enlace de Inserción",
+    exportConversation: "Exportar Conversación",
     cancel: "Cancelar",
     confirm: "Confirmar",
     confirmDeletePost: "¿Está seguro de que desea eliminar esta conversación?",
@@ -78,6 +85,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "Partager",
     moderationHistory: "Historique de Modération",
     embedLink: "Copier le Lien d'Intégration",
+    exportConversation: "Exporter la Conversation",
     cancel: "Annuler",
     confirm: "Confirmer",
     confirmDeletePost:
@@ -96,6 +104,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "分享",
     moderationHistory: "审核历史",
     embedLink: "复制嵌入链接",
+    exportConversation: "导出对话",
     cancel: "取消",
     confirm: "确认",
     confirmDeletePost: "您确定要删除此对话吗？",
@@ -112,6 +121,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "分享",
     moderationHistory: "審核歷史",
     embedLink: "複製嵌入連結",
+    exportConversation: "匯出對話",
     cancel: "取消",
     confirm: "確認",
     confirmDeletePost: "您確定要刪除此對話嗎？",
@@ -128,6 +138,7 @@ export const actionsTranslations: Record<SupportedDisplayLanguageCodes, ActionsT
     share: "共有",
     moderationHistory: "審査履歴",
     embedLink: "埋め込みリンクをコピー",
+    exportConversation: "会話をエクスポート",
     cancel: "キャンセル",
     confirm: "確認",
     confirmDeletePost: "この会話を削除してもよろしいですか？",

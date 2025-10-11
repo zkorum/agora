@@ -152,7 +152,12 @@ async function processConversationExport({
             `Conversation export ${exportId.toString()} completed successfully`,
         );
     } catch (error: unknown) {
-        log.error(`Error processing export ${exportId.toString()}:`, error);
+        if (error instanceof Error) {
+            log.error(`Error message: ${error.message}`);
+            if (error.stack) {
+                log.error(`Stack trace: ${error.stack}`); // Full stack trace
+            }
+        }
 
         // Update export record with error
         await db
