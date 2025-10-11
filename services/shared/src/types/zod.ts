@@ -35,6 +35,7 @@ export const zodModerationReason = z.enum([
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
+export const zodExportStatus = z.enum(["processing", "completed", "failed"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -1000,3 +1001,4 @@ export type AgreementType = z.infer<typeof zodAgreementType>;
 export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
+export type ExportStatus = z.infer<typeof zodExportStatus>;

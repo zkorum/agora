@@ -572,6 +572,13 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
     "5",
 ]);
 
+// Export status for CSV exports
+export const exportStatusEnum = pgEnum("export_status_enum", [
+    "processing",
+    "completed",
+    "failed",
+]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -1749,5 +1756,50 @@ export const polisClusterOpinionTable = pgTable(
             "check_perc_btwn_0_and_1",
             sql`${table.probabilityAgreement} BETWEEN 0 and 1`,
         ),
+    ],
+);
+
+// Conversation exports table for CSV export feature
+export const conversationExportTable = pgTable(
+    "conversation_export",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        status: exportStatusEnum("status").notNull().default("processing"),
+        s3Key: text("s3_key"), // null until completed
+        s3Url: text("s3_url"), // null until completed (pre-signed URL)
+        s3UrlExpiresAt: timestamp("s3_url_expires_at", {
+            mode: "date",
+            precision: 0,
+        }), // when pre-signed URL expires
+        fileSize: integer("file_size"), // bytes, null until completed
+        opinionCount: integer("opinion_count"), // null until completed
+        errorMessage: text("error_message"), // populated if status="failed"
+        expiresAt: timestamp("expires_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(), // export record expiry (30 days)
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_export_conversation_idx").on(t.conversationId),
+        index("conversation_export_status_idx").on(t.status),
+        index("conversation_export_deleted_idx").on(t.isDeleted),
+        index("conversation_export_created_idx").on(t.createdAt),
     ],
 );
