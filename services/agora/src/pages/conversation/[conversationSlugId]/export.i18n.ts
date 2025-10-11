@@ -15,7 +15,6 @@ export interface ExportPageTranslations {
   statusCompleted: string;
   statusFailed: string;
   download: string;
-  expiresAt: string;
   exportFailed: string;
 }
 
@@ -40,7 +39,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "Completed",
     statusFailed: "Failed",
     download: "Download",
-    expiresAt: "Expires",
     exportFailed: "Export failed. Please try requesting a new export.",
   },
   ar: {
@@ -59,7 +57,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "مكتمل",
     statusFailed: "فشل",
     download: "تنزيل",
-    expiresAt: "تنتهي الصلاحية",
     exportFailed: "فشل التصدير. يرجى محاولة طلب تصدير جديد.",
   },
   es: {
@@ -81,7 +78,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "Completado",
     statusFailed: "Fallido",
     download: "Descargar",
-    expiresAt: "Caduca",
     exportFailed:
       "La exportación falló. Intenta solicitar una nueva exportación.",
   },
@@ -104,7 +100,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "Terminé",
     statusFailed: "Échec",
     download: "Télécharger",
-    expiresAt: "Expire",
     exportFailed:
       "L'exportation a échoué. Veuillez essayer de demander une nouvelle exportation.",
   },
@@ -123,7 +118,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "已完成",
     statusFailed: "失败",
     download: "下载",
-    expiresAt: "过期时间",
     exportFailed: "导出失败。请尝试请求新的导出。",
   },
   "zh-Hant": {
@@ -141,7 +135,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "已完成",
     statusFailed: "失敗",
     download: "下載",
-    expiresAt: "到期時間",
     exportFailed: "匯出失敗。請嘗試請求新的匯出。",
   },
   ja: {
@@ -163,7 +156,6 @@ export const exportPageTranslations: Record<
     statusCompleted: "完了",
     statusFailed: "失敗",
     download: "ダウンロード",
-    expiresAt: "有効期限",
     exportFailed:
       "エクスポートが失敗しました。新しいエクスポートをリクエストしてください。",
   },
