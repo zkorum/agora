@@ -37,6 +37,7 @@ import {
     zodPolisUrl,
     zodLanguagePreferences,
     zodPolisClusters,
+    zodExportStatus,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -572,7 +573,7 @@ export class Dto {
     static getConversationExportStatusResponse = z
         .object({
             exportId: z.number().int().positive(),
-            status: z.enum(["processing", "completed", "failed"]),
+            status: zodExportStatus,
             conversationSlugId: zodSlugId,
             downloadUrl: z.string().url().optional(),
             urlExpiresAt: z.date().optional(),
@@ -591,7 +592,7 @@ export class Dto {
         z
             .object({
                 exportId: z.number().int().positive(),
-                status: z.enum(["processing", "completed", "failed"]),
+                status: zodExportStatus,
                 createdAt: z.date(),
                 downloadUrl: z.string().url().optional(),
                 urlExpiresAt: z.date().optional(),
