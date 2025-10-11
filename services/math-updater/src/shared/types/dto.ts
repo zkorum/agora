@@ -40,6 +40,7 @@ import {
     zodLanguagePreferences,
     zodPolisClusters,
     zodEventSlug,
+    zodExportStatus,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -667,7 +668,7 @@ export class Dto {
     static getConversationExportStatusResponse = z
         .object({
             exportId: z.number().int().positive(),
-            status: z.enum(["processing", "completed", "failed"]),
+            status: zodExportStatus,
             conversationSlugId: zodSlugId,
             downloadUrl: z.string().url().optional(),
             urlExpiresAt: z.date().optional(),
@@ -686,7 +687,7 @@ export class Dto {
         z
             .object({
                 exportId: z.number().int().positive(),
-                status: z.enum(["processing", "completed", "failed"]),
+                status: zodExportStatus,
                 createdAt: z.date(),
                 downloadUrl: z.string().url().optional(),
                 urlExpiresAt: z.date().optional(),

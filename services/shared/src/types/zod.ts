@@ -37,6 +37,7 @@ export const zodModerationReason = z.enum([
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
+export const zodExportStatus = z.enum(["processing", "completed", "failed"]);
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -1005,6 +1006,7 @@ export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type EventSlug = z.infer<typeof zodEventSlug>;
+export type ExportStatus = z.infer<typeof zodExportStatus>;
 
 // Rarimo ZK Proof Validation Schemas
 // Based on Rarimo circuit spec: https://github.com/rarimo/passport-zk-circuits

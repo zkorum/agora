@@ -174,7 +174,7 @@ function removeOption(index: number) {
   font-size: 1rem;
   padding: 1rem 1.25rem;
   padding-right: 4rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid $color-border-weak;
   border-radius: 16px;
   background-color: #f8f9fa;
   transition: all 0.3s ease;
@@ -192,7 +192,7 @@ function removeOption(index: number) {
 
   &:focus {
     border-color: #007bff;
-    background-color: white;
+    background-color: $color-background-default;
     outline: none;
   }
 }
