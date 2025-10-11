@@ -5,9 +5,9 @@ import { httpErrors } from "@fastify/sensible";
 import {
     conversationExportTable,
     conversationTable,
-    conversationContentTable,
     opinionTable,
     opinionContentTable,
+    opinionModerationTable,
     userTable,
 } from "@/shared-backend/schema.js";
 import { format } from "fast-csv";
@@ -186,40 +186,39 @@ interface GenerateConversationCsvReturn {
 }
 
 /**
- * Generate CSV file for conversation.
+ * Escape CSV field according to RFC 4180.
+ * Wraps text in double quotes and escapes internal quotes by doubling them.
+ */
+function escapeCsvField(text: string): string {
+    const escaped = text.replace(/"/g, '""');
+    return `"${escaped}"`;
+}
+
+/**
+ * Format date as human-readable string for Polis export.
+ * Example: "Sat Nov 17 05:09:36 WIB 2018"
+ */
+function formatDatetime(date: Date): string {
+    return date.toString();
+}
+
+/**
+ * Generate CSV file for conversation following Polis specification.
  */
 async function generateConversationCsv({
     db,
     conversationId,
-    conversationSlugId,
 }: GenerateConversationCsvParams): Promise<GenerateConversationCsvReturn> {
-    // Fetch conversation details with content
-    const conversationData = await db
-        .select({
-            title: conversationContentTable.title,
-            createdAt: conversationTable.createdAt,
-        })
-        .from(conversationTable)
-        .leftJoin(
-            conversationContentTable,
-            eq(conversationTable.currentContentId, conversationContentTable.id),
-        )
-        .where(eq(conversationTable.id, conversationId))
-        .limit(1);
-
-    const conversation = conversationData[0];
-
-    // Fetch all opinions for this conversation
+    // Fetch all opinions for this conversation with moderation status
     const opinions = await db
         .select({
-            opinionSlugId: opinionTable.slugId,
-            authorUsername: userTable.username,
+            opinionId: opinionTable.id,
+            authorParticipantId: userTable.polisParticipantId,
             content: opinionContentTable.content,
             createdAt: opinionTable.createdAt,
             numAgrees: opinionTable.numAgrees,
             numDisagrees: opinionTable.numDisagrees,
-            numPasses: opinionTable.numPasses,
-            isSeed: opinionTable.isSeed,
+            moderationId: opinionModerationTable.id,
         })
         .from(opinionTable)
         .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
@@ -227,36 +226,27 @@ async function generateConversationCsv({
             opinionContentTable,
             eq(opinionTable.currentContentId, opinionContentTable.id),
         )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionTable.id, opinionModerationTable.opinionId),
+        )
         .where(eq(opinionTable.conversationId, conversationId))
         .orderBy(opinionTable.createdAt);
 
-    // Generate CSV
+    // Generate CSV rows following Polis spec
     const rows = opinions.map((opinion) => ({
-        opinion_id: opinion.opinionSlugId,
-        conversation_id: conversationSlugId,
-        author_username: opinion.authorUsername,
-        content: opinion.content,
-        created_at: opinion.createdAt.toISOString(),
-        num_agrees: opinion.numAgrees,
-        num_disagrees: opinion.numDisagrees,
-        num_passes: opinion.numPasses,
-        is_seed: opinion.isSeed,
+        timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
+        datetime: formatDatetime(opinion.createdAt),
+        "comment-id": opinion.opinionId,
+        "author-id": opinion.authorParticipantId,
+        agrees: opinion.numAgrees,
+        disagrees: opinion.numDisagrees,
+        moderated: opinion.moderationId !== null ? 1 : 0,
+        "comment-body": escapeCsvField(opinion.content),
     }));
 
     const csvStream = format({ headers: true });
     const chunks: Buffer[] = [];
-
-    // Add metadata as comments at the top
-    const metadata = [
-        `# Conversation Export`,
-        `# Title: ${conversation.title ?? ""}`,
-        `# Created: ${conversation.createdAt.toISOString()}`,
-        `# Export Date: ${new Date().toISOString()}`,
-        `# Total Opinions: ${opinions.length.toString()}`,
-        ``,
-    ].join("\n");
-
-    chunks.push(Buffer.from(metadata + "\n"));
 
     csvStream.on("data", (chunk: Buffer) => {
         chunks.push(chunk);
