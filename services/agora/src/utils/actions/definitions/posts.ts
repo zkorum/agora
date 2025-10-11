@@ -16,6 +16,7 @@ interface PostActionTranslations {
   embedLink: string;
   moderate: string;
   userReports: string;
+  exportConversation: string;
 }
 
 /**
@@ -29,6 +30,7 @@ export function getPostActions(
   moderationHistoryCallback: () => void | Promise<void>,
   copyEmbedLinkCallback: () => void | Promise<void>,
   deletePostCallback: () => void | Promise<void>,
+  exportConversationCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
   return [
@@ -89,6 +91,14 @@ export function getPostActions(
       isVisible: (context: ContentActionContext) =>
         context.isModerator && !context.isEmbeddedMode,
     },
+    {
+      id: "exportConversation",
+      label: translations.exportConversation,
+      icon: "mdi-download",
+      handler: exportConversationCallback,
+      isVisible: (context: ContentActionContext) =>
+        context.isLoggedIn && !context.isEmbeddedMode,
+    },
   ];
 }
 
@@ -104,6 +114,7 @@ export function getAvailablePostActions(
   moderationHistoryCallback: () => void | Promise<void>,
   copyEmbedLinkCallback: () => void | Promise<void>,
   deletePostCallback: () => void | Promise<void>,
+  exportConversationCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
   const allActions = getPostActions(
@@ -114,6 +125,7 @@ export function getAvailablePostActions(
     moderationHistoryCallback,
     copyEmbedLinkCallback,
     deletePostCallback,
+    exportConversationCallback,
     translations
   );
 

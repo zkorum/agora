@@ -40,6 +40,7 @@ import {
     zodLanguagePreferences,
     zodPolisClusters,
     zodEventSlug,
+    zodExportStatus,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -585,6 +586,54 @@ export class Dto {
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
         })
         .strict();
+
+    // Conversation export
+    static requestConversationExportRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static requestConversationExportResponse = z
+        .object({
+            exportId: z.number().int().positive(),
+            status: z.literal("processing"),
+            estimatedCompletionTime: z.date(),
+        })
+        .strict();
+    static getConversationExportStatusRequest = z
+        .object({
+            exportId: z.number().int().positive(),
+        })
+        .strict();
+    static getConversationExportStatusResponse = z
+        .object({
+            exportId: z.number().int().positive(),
+            status: zodExportStatus,
+            conversationSlugId: zodSlugId,
+            downloadUrl: z.string().url().optional(),
+            urlExpiresAt: z.date().optional(),
+            fileSize: z.number().int().positive().optional(),
+            opinionCount: z.number().int().nonnegative().optional(),
+            errorMessage: z.string().optional(),
+            createdAt: z.date(),
+        })
+        .strict();
+    static getConversationExportHistoryRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationExportHistoryResponse = z.array(
+        z
+            .object({
+                exportId: z.number().int().positive(),
+                status: zodExportStatus,
+                createdAt: z.date(),
+                downloadUrl: z.string().url().optional(),
+                urlExpiresAt: z.date().optional(),
+            })
+            .strict(),
+    );
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -680,3 +729,21 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
+export type RequestConversationExportRequest = z.infer<
+    typeof Dto.requestConversationExportRequest
+>;
+export type RequestConversationExportResponse = z.infer<
+    typeof Dto.requestConversationExportResponse
+>;
+export type GetConversationExportStatusRequest = z.infer<
+    typeof Dto.getConversationExportStatusRequest
+>;
+export type GetConversationExportStatusResponse = z.infer<
+    typeof Dto.getConversationExportStatusResponse
+>;
+export type GetConversationExportHistoryRequest = z.infer<
+    typeof Dto.getConversationExportHistoryRequest
+>;
+export type GetConversationExportHistoryResponse = z.infer<
+    typeof Dto.getConversationExportHistoryResponse
+>;
