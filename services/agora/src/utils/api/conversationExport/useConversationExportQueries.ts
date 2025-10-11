@@ -15,20 +15,6 @@ export function useExportHistoryQuery({
     queryFn: () => fetchExportHistory(conversationSlugId),
     enabled: enabled && conversationSlugId.length > 0,
     staleTime: 0, // Always stale - exports can change frequently
-    refetchInterval: (query) => {
-      // Auto-refetch if any completed export has a URL expiring in less than 30 minutes
-      const hasExpiringUrl = query.state.data?.some((item) => {
-        if (item.status !== "completed" || !item.urlExpiresAt) {
-          return false;
-        }
-        const expiryTime = new Date(item.urlExpiresAt).getTime();
-        const now = Date.now();
-        const thirtyMinutesInMs = 30 * 60 * 1000;
-        return expiryTime - now < thirtyMinutesInMs;
-      });
-
-      return hasExpiringUrl ? 10000 : false;
-    },
     retry: false,
   });
 }
