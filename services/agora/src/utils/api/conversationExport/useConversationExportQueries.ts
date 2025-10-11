@@ -14,13 +14,28 @@ export function useExportHistoryQuery({
     queryKey: ["exportHistory", conversationSlugId],
     queryFn: () => fetchExportHistory(conversationSlugId),
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 30, // 30 seconds - exports can change frequently during processing
+    staleTime: 0, // Always stale - exports can change frequently during processing
     refetchInterval: (query) => {
-      // Auto-refetch every 10 seconds if there are processing exports
+      // Auto-refetch every 5 seconds if there are processing exports
       const hasProcessing = query.state.data?.some(
         (item) => item.status === "processing"
       );
-      return hasProcessing ? 10000 : false;
+      if (hasProcessing) {
+        return 5000;
+      }
+
+      // Auto-refetch if any completed export has a URL expiring in less than 30 minutes
+      const hasExpiringUrl = query.state.data?.some((item) => {
+        if (item.status !== "completed" || !item.urlExpiresAt) {
+          return false;
+        }
+        const expiryTime = new Date(item.urlExpiresAt).getTime();
+        const now = Date.now();
+        const thirtyMinutesInMs = 30 * 60 * 1000;
+        return expiryTime - now < thirtyMinutesInMs;
+      });
+
+      return hasExpiringUrl ? 10000 : false;
     },
     retry: false,
   });
@@ -56,7 +71,7 @@ export function useExportStatusQuery({
     queryKey: ["exportStatus", exportId],
     queryFn: () => fetchExportStatus(exportId),
     enabled: enabled && exportId > 0,
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 0, // Always stale
     refetchInterval: (query) => {
       // Auto-refetch every 10 seconds if status is processing
       return query.state.data?.status === "processing" ? 10000 : false;

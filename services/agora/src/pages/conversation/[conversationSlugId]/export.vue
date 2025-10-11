@@ -85,16 +85,6 @@
                     @click="handleDownload(exportItem.downloadUrl!)"
                   />
                   <div
-                    v-if="
-                      exportItem.status === 'completed' &&
-                      exportItem.urlExpiresAt
-                    "
-                    class="expiry-info"
-                  >
-                    {{ t("expiresAt") }}:
-                    {{ formatDate(exportItem.urlExpiresAt) }}
-                  </div>
-                  <div
                     v-if="exportItem.status === 'failed'"
                     class="failed-message"
                   >
@@ -157,7 +147,7 @@ function handleDownload(url: string): void {
 }
 
 function formatDate(date: Date): string {
-  return useDateFormat(date, "MMM D, YYYY HH:mm").value;
+  return useDateFormat(date, "MMM D, YYYY HH:mm z").value;
 }
 
 function getStatusColor(status: ExportStatus): string {
@@ -284,11 +274,6 @@ function getStatusLabel(status: ExportStatus): string {
   @media (min-width: 768px) {
     align-items: flex-end;
   }
-}
-
-.expiry-info {
-  font-size: 0.85rem;
-  color: $color-text-weak;
 }
 
 .failed-message {
