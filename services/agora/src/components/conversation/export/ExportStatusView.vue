@@ -145,7 +145,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useDateFormat } from "@vueuse/core";
+import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useExportStatusQuery } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -154,6 +156,7 @@ import {
   type ExportStatusViewTranslations,
 } from "./ExportStatusView.i18n";
 import type { ExportStatus } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 interface Props {
   exportSlugId: string;
@@ -165,9 +168,12 @@ const { t } = useComponentI18n<ExportStatusViewTranslations>(
   exportStatusViewTranslations
 );
 
+const authStore = useAuthenticationStore();
+const { isAuthInitialized } = storeToRefs(authStore);
+
 const exportStatusQuery = useExportStatusQuery({
   exportSlugId: props.exportSlugId,
-  enabled: true,
+  enabled: computed(() => isAuthInitialized.value),
 });
 
 function handleDownload(url: string): void {
