@@ -14,22 +14,6 @@
 
     <WidthWrapper :enable="true">
       <div class="export-status-page">
-        <div class="back-link">
-          <RouterLink
-            :to="{
-              name: '/conversation/[conversationSlugId]/export',
-              params: { conversationSlugId: conversationSlugId },
-            }"
-          >
-            <PrimeButton
-              :label="t('backToHistory')"
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              text
-            />
-          </RouterLink>
-        </div>
-
         <ExportStatusView :export-slug-id="exportSlugId" />
       </div>
     </WidthWrapper>
@@ -53,15 +37,6 @@ const { t } = useComponentI18n<ExportStatusPageTranslations>(
   exportStatusPageTranslations
 );
 
-const conversationSlugIdParam = useRouteParams("conversationSlugId");
-const conversationSlugId = computed(() => {
-  const value = conversationSlugIdParam.value;
-  if (Array.isArray(value)) {
-    return value[0] || "";
-  }
-  return value || "";
-});
-
 const exportIdParam = useRouteParams("exportId");
 const exportSlugId = computed(() => {
   const value = exportIdParam.value;
@@ -78,10 +53,5 @@ const exportSlugId = computed(() => {
   flex-direction: column;
   gap: 2rem;
   padding: 1rem 0;
-}
-
-.back-link {
-  display: flex;
-  align-items: center;
 }
 </style>
