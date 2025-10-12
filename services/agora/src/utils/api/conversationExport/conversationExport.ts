@@ -71,8 +71,6 @@ export function useBackendConversationExportApi() {
 
     return {
       exportSlugId: response.data.exportSlugId,
-      status: response.data.status,
-      estimatedCompletionTime: new Date(response.data.estimatedCompletionTime),
     };
   }
 

@@ -6530,22 +6530,10 @@
                                         "exportSlugId": {
                                             "type": "string",
                                             "maxLength": 10
-                                        },
-                                        "status": {
-                                            "type": "string",
-                                            "enum": [
-                                                "processing"
-                                            ]
-                                        },
-                                        "estimatedCompletionTime": {
-                                            "type": "string",
-                                            "format": "date-time"
                                         }
                                     },
                                     "required": [
-                                        "exportSlugId",
-                                        "status",
-                                        "estimatedCompletionTime"
+                                        "exportSlugId"
                                     ],
                                     "additionalProperties": false
                                 }

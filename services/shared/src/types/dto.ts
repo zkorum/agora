@@ -655,8 +655,6 @@ export class Dto {
     static requestConversationExportResponse = z
         .object({
             exportSlugId: zodSlugId,
-            status: z.literal("processing"),
-            estimatedCompletionTime: z.date(),
         })
         .strict();
     static getConversationExportStatusRequest = z

@@ -13,17 +13,16 @@ import {
 import { format } from "fast-csv";
 import { uploadToS3, generatePresignedUrl } from "./s3.js";
 import { nanoid } from "nanoid";
+import type {
+    RequestConversationExportResponse,
+    GetConversationExportStatusResponse,
+    GetConversationExportHistoryResponse,
+} from "@/shared/types/dto.js";
 
 interface RequestConversationExportParams {
     db: PostgresDatabase;
     conversationSlugId: string;
     userId: string;
-}
-
-interface RequestConversationExportReturn {
-    exportSlugId: string;
-    status: "processing";
-    estimatedCompletionTime: Date;
 }
 
 /**
@@ -32,7 +31,7 @@ interface RequestConversationExportReturn {
 export async function requestConversationExport({
     db,
     conversationSlugId,
-}: RequestConversationExportParams): Promise<RequestConversationExportReturn> {
+}: RequestConversationExportParams): Promise<RequestConversationExportResponse> {
     // Verify conversation exists
     const conversation = await db
         .select({ id: conversationTable.id })
@@ -67,9 +66,6 @@ export async function requestConversationExport({
             slugId: conversationExportTable.slugId,
         });
 
-    // Estimate completion time (2 minutes for now, can be adjusted based on conversation size)
-    const estimatedCompletionTime = new Date(now.getTime() + 2 * 60 * 1000);
-
     // Start background processing (don't await)
     processConversationExport({
         db,
@@ -82,8 +78,6 @@ export async function requestConversationExport({
 
     return {
         exportSlugId: exportRecord.slugId,
-        status: "processing",
-        estimatedCompletionTime,
     };
 }
 
@@ -282,25 +276,13 @@ interface GetConversationExportStatusParams {
     userId: string;
 }
 
-interface GetConversationExportStatusReturn {
-    exportSlugId: string;
-    status: "processing" | "completed" | "failed";
-    conversationSlugId: string;
-    downloadUrl?: string;
-    urlExpiresAt?: Date;
-    fileSize?: number;
-    opinionCount?: number;
-    errorMessage?: string;
-    createdAt: Date;
-}
-
 /**
  * Get export status and download URL.
  */
 export async function getConversationExportStatus({
     db,
     exportSlugId,
-}: GetConversationExportStatusParams): Promise<GetConversationExportStatusReturn> {
+}: GetConversationExportStatusParams): Promise<GetConversationExportStatusResponse> {
     const exportRecordList = await db
         .select({
             slugId: conversationExportTable.slugId,
@@ -351,23 +333,13 @@ interface GetConversationExportHistoryParams {
     userId: string;
 }
 
-interface ConversationExportHistoryItem {
-    exportSlugId: string;
-    status: "processing" | "completed" | "failed";
-    createdAt: Date;
-    downloadUrl?: string;
-    urlExpiresAt?: Date;
-}
-
 /**
  * Get export history for a conversation.
  */
 export async function getConversationExportHistory({
     db,
     conversationSlugId,
-}: GetConversationExportHistoryParams): Promise<
-    ConversationExportHistoryItem[]
-> {
+}: GetConversationExportHistoryParams): Promise<GetConversationExportHistoryResponse> {
     const exports = await db
         .select({
             exportSlugId: conversationExportTable.slugId,
