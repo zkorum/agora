@@ -3,11 +3,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface ExportStatusViewTranslations {
   loadingStatus: string;
   errorLoadingStatus: string;
-  statusProcessing: string;
-  statusCompleted: string;
-  statusFailed: string;
   processingMessage: string;
-  completedMessage: string;
   failedMessage: string;
   urlExpiresSoon: string;
   download: string;
@@ -28,12 +24,8 @@ export const exportStatusViewTranslations: Record<
   en: {
     loadingStatus: "Loading export status...",
     errorLoadingStatus: "Failed to load export status",
-    statusProcessing: "Processing",
-    statusCompleted: "Completed",
-    statusFailed: "Failed",
     processingMessage:
       "Your export is being processed. This page will update automatically.",
-    completedMessage: "Your export is ready for download!",
     failedMessage:
       "The export failed. Please return to the export history page and request a new export.",
     urlExpiresSoon: "Download URL expires soon! Download now.",
@@ -50,12 +42,8 @@ export const exportStatusViewTranslations: Record<
   ar: {
     loadingStatus: "جارٍ تحميل حالة التصدير...",
     errorLoadingStatus: "فشل تحميل حالة التصدير",
-    statusProcessing: "قيد المعالجة",
-    statusCompleted: "مكتمل",
-    statusFailed: "فشل",
     processingMessage:
       "جارٍ معالجة التصدير الخاص بك. سيتم تحديث هذه الصفحة تلقائيًا.",
-    completedMessage: "التصدير الخاص بك جاهز للتنزيل!",
     failedMessage:
       "فشل التصدير. يرجى العودة إلى صفحة سجل التصدير وطلب تصدير جديد.",
     urlExpiresSoon: "ينتهي رابط التنزيل قريبًا! قم بالتنزيل الآن.",
@@ -72,12 +60,8 @@ export const exportStatusViewTranslations: Record<
   es: {
     loadingStatus: "Cargando estado de exportación...",
     errorLoadingStatus: "Error al cargar el estado de exportación",
-    statusProcessing: "Procesando",
-    statusCompleted: "Completado",
-    statusFailed: "Fallido",
     processingMessage:
       "Se está procesando su exportación. Esta página se actualizará automáticamente.",
-    completedMessage: "¡Su exportación está lista para descargar!",
     failedMessage:
       "La exportación falló. Por favor, vuelva a la página de historial de exportaciones y solicite una nueva exportación.",
     urlExpiresSoon: "¡La URL de descarga expira pronto! Descargue ahora.",
@@ -94,12 +78,8 @@ export const exportStatusViewTranslations: Record<
   fr: {
     loadingStatus: "Chargement de l'état de l'exportation...",
     errorLoadingStatus: "Échec du chargement de l'état de l'exportation",
-    statusProcessing: "En cours",
-    statusCompleted: "Terminé",
-    statusFailed: "Échec",
     processingMessage:
       "Votre exportation est en cours de traitement. Cette page se mettra à jour automatiquement.",
-    completedMessage: "Votre exportation est prête à être téléchargée !",
     failedMessage:
       "L'exportation a échoué. Veuillez retourner à la page d'historique des exportations et demander une nouvelle exportation.",
     urlExpiresSoon:
@@ -117,11 +97,7 @@ export const exportStatusViewTranslations: Record<
   "zh-Hans": {
     loadingStatus: "正在加载导出状态...",
     errorLoadingStatus: "加载导出状态失败",
-    statusProcessing: "处理中",
-    statusCompleted: "已完成",
-    statusFailed: "失败",
     processingMessage: "您的导出正在处理中。此页面将自动更新。",
-    completedMessage: "您的导出已准备好下载！",
     failedMessage: "导出失败。请返回导出历史页面并请求新的导出。",
     urlExpiresSoon: "下载URL即将过期！请立即下载。",
     download: "下载导出",
@@ -137,11 +113,7 @@ export const exportStatusViewTranslations: Record<
   "zh-Hant": {
     loadingStatus: "正在載入匯出狀態...",
     errorLoadingStatus: "載入匯出狀態失敗",
-    statusProcessing: "處理中",
-    statusCompleted: "已完成",
-    statusFailed: "失敗",
     processingMessage: "您的匯出正在處理中。此頁面將自動更新。",
-    completedMessage: "您的匯出已準備好下載！",
     failedMessage: "匯出失敗。請返回匯出歷史頁面並請求新的匯出。",
     urlExpiresSoon: "下載URL即將過期！請立即下載。",
     download: "下載匯出",
@@ -157,12 +129,8 @@ export const exportStatusViewTranslations: Record<
   ja: {
     loadingStatus: "エクスポートステータスを読み込んでいます...",
     errorLoadingStatus: "エクスポートステータスの読み込みに失敗しました",
-    statusProcessing: "処理中",
-    statusCompleted: "完了",
-    statusFailed: "失敗",
     processingMessage:
       "エクスポートが処理されています。このページは自動的に更新されます。",
-    completedMessage: "エクスポートのダウンロード準備が整いました！",
     failedMessage:
       "エクスポートが失敗しました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
     urlExpiresSoon:
