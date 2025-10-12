@@ -54,13 +54,21 @@
           "
           class="download-section"
         >
-          <PrimeButton
-            :label="t('download')"
-            icon="pi pi-download"
-            severity="success"
-            size="large"
-            @click="handleDownload(exportStatusQuery.data.value.downloadUrl!)"
-          />
+          <a
+            :href="exportStatusQuery.data.value.downloadUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            class="download-link"
+          >
+            <PrimeButton
+              :label="t('download')"
+              icon="pi pi-download"
+              severity="success"
+              size="large"
+              as="span"
+            />
+          </a>
         </div>
 
         <!-- Export Information Card -->
@@ -69,9 +77,9 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">{{ t("exportId") }}:</span>
-              <span class="info-value"
-                >#{{ exportStatusQuery.data.value.exportSlugId }}</span
-              >
+              <span class="info-value">{{
+                exportStatusQuery.data.value.exportSlugId
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">{{ t("conversationId") }}:</span>
@@ -162,10 +170,6 @@ const exportStatusQuery = useExportStatusQuery({
   enabled: computed(() => isAuthInitialized.value),
 });
 
-function handleDownload(url: string): void {
-  window.open(url, "_blank");
-}
-
 function formatDate(date: Date): string {
   return useDateFormat(date, "MMM D, YYYY HH:mm z").value;
 }
@@ -245,6 +249,10 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
   display: flex;
   justify-content: center;
   padding: 1rem 0;
+
+  .download-link {
+    text-decoration: none;
+  }
 }
 
 .info-card {

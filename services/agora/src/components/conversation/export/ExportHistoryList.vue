@@ -80,6 +80,5 @@ function formatDate(date: Date): string {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-bottom: 5rem;
 }
 </style>
