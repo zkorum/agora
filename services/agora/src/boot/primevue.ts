@@ -47,7 +47,7 @@ export default defineBoot(({ app }) => {
       preset: customPreset,
       options: {
         darkModeSelector: "light",
-        cssLayer: false,
+        cssLayer: true,
       },
     },
     zIndex: {
