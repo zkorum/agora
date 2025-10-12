@@ -1,25 +1,9 @@
 <template>
   <RouterLink
     v-if="item.type === 'navigation'"
-    v-slot="{ navigate }"
     :to="item.to"
-    custom
+    class="settings-item settings-item--link"
   >
-    <!-- TODO: ACCESSIBILITY - Change <div> to semantic <button> element for keyboard accessibility -->
-    <!-- Settings navigation items should be keyboard navigable for users with motor disabilities -->
-    <div class="settings-item" @click="handleItemClick($event, navigate)">
-      <SettingsMenuItem
-        :label="item.label"
-        :value="item.value"
-        :style="item.style"
-        :show-separator="showSeparator"
-        :border-radius="borderRadius"
-      />
-    </div>
-  </RouterLink>
-  <!-- TODO: ACCESSIBILITY - Change <div> to semantic <button> element for keyboard accessibility -->
-  <!-- Settings action items should be keyboard navigable for users with motor disabilities -->
-  <div v-else class="settings-item" @click="handleItemClick($event)">
     <SettingsMenuItem
       :label="item.label"
       :value="item.value"
@@ -27,7 +11,21 @@
       :show-separator="showSeparator"
       :border-radius="borderRadius"
     />
-  </div>
+  </RouterLink>
+  <button
+    v-else
+    type="button"
+    class="settings-item settings-item--button"
+    @click="handleItemClick"
+  >
+    <SettingsMenuItem
+      :label="item.label"
+      :value="item.value"
+      :style="item.style"
+      :show-separator="showSeparator"
+      :border-radius="borderRadius"
+    />
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -40,13 +38,8 @@ const props = defineProps<{
   borderRadius?: "none" | "top" | "bottom" | "both";
 }>();
 
-function handleItemClick(event: Event, navigate?: () => void) {
-  if (props.item.type === "navigation") {
-    if (navigate) {
-      navigate();
-    }
-  } else {
-    // Handle action items
+function handleItemClick(): void {
+  if (props.item.type === "action") {
     props.item.action();
   }
 }
@@ -58,5 +51,18 @@ function handleItemClick(event: Event, navigate?: () => void) {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+
+  // Ensure focus indicators are visible for keyboard navigation
+  &:focus-visible {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+    border-radius: 20px;
+  }
 }
 </style>
