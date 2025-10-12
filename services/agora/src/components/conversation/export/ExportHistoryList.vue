@@ -18,6 +18,7 @@
 import { computed } from "vue";
 import { useDateFormat, useTimeAgo } from "@vueuse/core";
 import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
@@ -27,6 +28,7 @@ import {
   exportHistoryListTranslations,
   type ExportHistoryListTranslations,
 } from "./ExportHistoryList.i18n";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 interface Props {
   conversationSlugId: string;
@@ -39,9 +41,12 @@ const { t } = useComponentI18n<ExportHistoryListTranslations>(
 );
 const router = useRouter();
 
+const authStore = useAuthenticationStore();
+const { isAuthInitialized } = storeToRefs(authStore);
+
 const exportHistoryQuery = useExportHistoryQuery({
   conversationSlugId: props.conversationSlugId,
-  enabled: true,
+  enabled: computed(() => isAuthInitialized.value),
 });
 
 const exportSettingsItems = computed<SettingsInterface[]>(() => {
