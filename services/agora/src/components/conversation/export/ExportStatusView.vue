@@ -9,33 +9,20 @@
       }"
     >
       <div v-if="exportStatusQuery.data.value" class="status-content">
-        <!-- Status Badge -->
-        <div class="status-header">
-          <q-chip
-            :color="getStatusColor(exportStatusQuery.data.value.status)"
-            text-color="white"
-            :icon="getStatusIcon(exportStatusQuery.data.value.status)"
-            size="lg"
-          >
-            {{ getStatusLabel(exportStatusQuery.data.value.status) }}
-          </q-chip>
-        </div>
-
         <!-- Status Message -->
-        <div class="status-message">
+        <div
+          v-if="
+            exportStatusQuery.data.value.status === 'processing' ||
+            exportStatusQuery.data.value.status === 'failed'
+          "
+          class="status-message"
+        >
           <div
             v-if="exportStatusQuery.data.value.status === 'processing'"
             class="processing-message"
           >
             <q-spinner color="primary" size="md" />
             <p>{{ t("processingMessage") }}</p>
-          </div>
-          <div
-            v-else-if="exportStatusQuery.data.value.status === 'completed'"
-            class="completed-message"
-          >
-            <q-icon name="check_circle" color="positive" size="md" />
-            <p>{{ t("completedMessage") }}</p>
           </div>
           <div
             v-else-if="exportStatusQuery.data.value.status === 'failed'"
@@ -155,7 +142,6 @@ import {
   exportStatusViewTranslations,
   type ExportStatusViewTranslations,
 } from "./ExportStatusView.i18n";
-import type { ExportStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 
 interface Props {
@@ -197,39 +183,6 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
   const now = Date.now();
   const thirtyMinutesInMs = 30 * 60 * 1000;
   return expiryTime - now < thirtyMinutesInMs && expiryTime > now;
-}
-
-function getStatusColor(status: ExportStatus): string {
-  switch (status) {
-    case "processing":
-      return "blue";
-    case "completed":
-      return "green";
-    case "failed":
-      return "red";
-  }
-}
-
-function getStatusIcon(status: ExportStatus): string {
-  switch (status) {
-    case "processing":
-      return "hourglass_empty";
-    case "completed":
-      return "check_circle";
-    case "failed":
-      return "error";
-  }
-}
-
-function getStatusLabel(status: ExportStatus): string {
-  switch (status) {
-    case "processing":
-      return t("statusProcessing");
-    case "completed":
-      return t("statusCompleted");
-    case "failed":
-      return t("statusFailed");
-  }
 }
 </script>
 
