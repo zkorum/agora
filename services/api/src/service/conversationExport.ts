@@ -10,7 +10,9 @@ import {
     opinionModerationTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { format } from "fast-csv";
+import { format as formatCsv } from "fast-csv";
+import { format as formatDate } from "date-fns";
+import { TZDate } from "@date-fns/tz";
 import { uploadToS3, generatePresignedUrl } from "./s3.js";
 import { nanoid } from "nanoid";
 import type {
@@ -107,8 +109,7 @@ async function processConversationExport({
 
         // Generate S3 key
         const timestamp = Date.now();
-        const random = nanoid(8);
-        const s3Key = `${config.AWS_S3_CONVERSATION_EXPORTS_PATH}${conversationSlugId}/export-${timestamp.toString()}-${random}.csv`;
+        const s3Key = `${config.AWS_S3_CONVERSATION_EXPORTS_PATH}${conversationSlugId}/${conversationSlugId}-${timestamp.toString()}-comments.csv`;
 
         // Upload to S3
         if (
@@ -191,10 +192,16 @@ function escapeCsvField(text: string): string {
 
 /**
  * Format date as human-readable string for Polis export.
- * Example: "Sat Nov 17 05:09:36 WIB 2018"
+ * Formats in UTC timezone following Polis specification.
+ * Example: "Sat Nov 17 05:09:36 UTC 2018"
  */
 function formatDatetime(date: Date): string {
-    return date.toString();
+    // Convert to UTC TZDate for proper timezone handling
+    const utcDate = new TZDate(date, "UTC");
+
+    // Format: EEE MMM dd HH:mm:ss zzz yyyy
+    // Example: "Sat Nov 17 05:09:36 UTC 2018"
+    return formatDate(utcDate, "EEE MMM dd HH:mm:ss zzz yyyy");
 }
 
 /**
@@ -240,7 +247,7 @@ async function generateConversationCsv({
         "comment-body": escapeCsvField(opinion.content),
     }));
 
-    const csvStream = format({ headers: true });
+    const csvStream = formatCsv({ headers: true });
     const chunks: Buffer[] = [];
 
     csvStream.on("data", (chunk: Buffer) => {
