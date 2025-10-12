@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+import { computed, type MaybeRefOrGetter, toValue } from "vue";
 import { useBackendConversationExportApi } from "./conversationExport";
 
 export function useExportHistoryQuery({
@@ -6,14 +7,14 @@ export function useExportHistoryQuery({
   enabled = true,
 }: {
   conversationSlugId: string;
-  enabled?: boolean;
+  enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchExportHistory } = useBackendConversationExportApi();
 
   return useQuery({
     queryKey: ["exportHistory", conversationSlugId],
     queryFn: () => fetchExportHistory(conversationSlugId),
-    enabled: enabled && conversationSlugId.length > 0,
+    enabled: computed(() => toValue(enabled) && conversationSlugId.length > 0),
     staleTime: 0, // Always stale - exports can change frequently
     retry: false,
   });
@@ -41,14 +42,14 @@ export function useExportStatusQuery({
   enabled = true,
 }: {
   exportSlugId: string;
-  enabled?: boolean;
+  enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchExportStatus } = useBackendConversationExportApi();
 
   return useQuery({
     queryKey: ["exportStatus", exportSlugId],
     queryFn: () => fetchExportStatus(exportSlugId),
-    enabled: enabled && exportSlugId.length > 0,
+    enabled: computed(() => toValue(enabled) && exportSlugId.length > 0),
     staleTime: 0, // Always stale
     refetchInterval: (query) => {
       // Auto-refetch every 2 seconds if status is processing
