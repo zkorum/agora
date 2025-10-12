@@ -1,7 +1,11 @@
 <template>
   <div class="settings-section">
-    <div class="settings-background">
-      <template v-for="(item, index) in settingsItemList" :key="item.label">
+    <ul class="settings-background" role="list">
+      <li
+        v-for="(item, index) in settingsItemList"
+        :key="item.label"
+        role="listitem"
+      >
         <SettingsItem
           :item="item"
           :show-separator="index < settingsItemList.length - 1"
@@ -15,8 +19,8 @@
                   : 'none'
           "
         />
-      </template>
-    </div>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -36,8 +40,12 @@ defineProps<{
 
 .settings-background {
   background-color: white;
-  border-radius: 20px;
+  border-radius: 15px;
   display: flex;
   flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 0.5rem;
 }
 </style>
