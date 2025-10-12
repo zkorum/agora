@@ -1222,26 +1222,7 @@ export interface ApiV1ConversationExportRequestPost200Response {
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
     'exportSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportRequestPost200Response
-     */
-    'status': ApiV1ConversationExportRequestPost200ResponseStatusEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportRequestPost200Response
-     */
-    'estimatedCompletionTime': string;
 }
-
-export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
-    Processing: 'processing'
-} as const;
-
-export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum];
-
 /**
  * 
  * @export
