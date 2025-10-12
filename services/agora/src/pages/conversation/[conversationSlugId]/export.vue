@@ -14,17 +14,34 @@
 
     <WidthWrapper :enable="true">
       <div class="export-page">
-        <div class="page-description">
-          {{ t("pageDescription") }}
+        <AsyncStateHandler
+          :query="conversationQuery"
+          :config="{
+            error: { title: t('conversationLoadError') },
+          }"
+        >
+          <ConversationInfoCard
+            v-if="conversationQuery.data.value"
+            :conversation-data="conversationQuery.data.value"
+          />
+        </AsyncStateHandler>
+
+        <div class="export-actions">
+          <div class="page-description">
+            {{ t("pageDescription") }}
+          </div>
+
+          <RequestExportButton
+            :loading="requestExportMutation.isPending.value"
+            :disabled="requestExportMutation.isPending.value"
+            @request="handleRequestExport"
+          />
         </div>
 
-        <RequestExportButton
-          :loading="requestExportMutation.isPending.value"
-          :disabled="requestExportMutation.isPending.value"
-          @request="handleRequestExport"
-        />
-
-        <ExportHistoryList :conversation-slug-id="conversationSlugId" />
+        <div class="export-history-section">
+          <h2 class="section-title">{{ t("previousExports") }}</h2>
+          <ExportHistoryList :conversation-slug-id="conversationSlugId" />
+        </div>
       </div>
     </WidthWrapper>
   </DrawerLayout>
@@ -39,7 +56,10 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExportHistoryList from "src/components/conversation/export/ExportHistoryList.vue";
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
+import ConversationInfoCard from "src/components/conversation/ConversationInfoCard.vue";
+import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useRequestExportMutation } from "src/utils/api/conversationExport/useConversationExportQueries";
+import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   exportPageTranslations,
@@ -56,6 +76,11 @@ const conversationSlugId = computed(() => {
     return value[0] || "";
   }
   return value || "";
+});
+
+const conversationQuery = useConversationQuery({
+  conversationSlugId: conversationSlugId,
+  loadUserPollResponse: false,
 });
 
 const requestExportMutation = useRequestExportMutation();
@@ -82,10 +107,29 @@ async function handleRequestExport(): Promise<void> {
   padding: 1rem 0;
 }
 
+.export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .page-description {
   font-size: 1rem;
   color: $color-text-strong;
   line-height: 1.5;
-  margin-bottom: 1rem;
+}
+
+.export-history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-semibold);
+  color: $color-text-strong;
+  margin: 0;
 }
 </style>

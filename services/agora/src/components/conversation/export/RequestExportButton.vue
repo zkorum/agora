@@ -44,7 +44,6 @@ function handleClick(): void {
 .request-section {
   display: flex;
   flex-direction: column;
-  align-items: end;
   gap: 1rem;
 }
 </style>
