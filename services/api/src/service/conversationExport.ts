@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, count, desc, eq, lt } from "drizzle-orm";
+import { and, count, desc, eq, isNull, lt, ne, or } from "drizzle-orm";
 import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
@@ -47,11 +47,23 @@ export async function requestConversationExport({
 
     const conversationId = conversation[0].id;
 
-    // Check if conversation has any opinions
+    // Check if conversation has any opinions (excluding those moderated as "moved")
     const [{ count: opinionCount }] = await db
         .select({ count: count() })
         .from(opinionTable)
-        .where(eq(opinionTable.conversationId, conversationId));
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionTable.id, opinionModerationTable.opinionId),
+        )
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversationId),
+                or(
+                    isNull(opinionModerationTable.moderationAction),
+                    ne(opinionModerationTable.moderationAction, "move"),
+                ),
+            ),
+        );
 
     if (opinionCount === 0) {
         throw httpErrors.badRequest(

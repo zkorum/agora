@@ -60,6 +60,7 @@ import ConversationInfoCard from "src/components/conversation/ConversationInfoCa
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useRequestExportMutation } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
+import { axiosInstance } from "src/utils/api/client";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   exportPageTranslations,
@@ -104,8 +105,20 @@ async function handleRequestExport(): Promise<void> {
         exportId: result.exportSlugId,
       },
     });
-  } catch {
-    showNotifyMessage(t("exportRequestError"));
+  } catch (error) {
+    console.error(error);
+
+    if (axiosInstance.isAxiosError(error)) {
+      if (error.response?.status === 400 && error.response?.data?.message) {
+        // Display the specific error message from the server for bad requests
+        showNotifyMessage(error.response.data.message);
+      } else {
+        // Display generic error for other cases
+        showNotifyMessage(t("exportRequestError"));
+      }
+    } else {
+      showNotifyMessage(t("exportRequestError"));
+    }
   }
 }
 </script>
