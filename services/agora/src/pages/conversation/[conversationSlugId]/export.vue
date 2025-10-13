@@ -33,7 +33,6 @@
 
           <RequestExportButton
             :loading="requestExportMutation.isPending.value"
-            :disabled="requestExportMutation.isPending.value"
             @request="handleRequestExport"
           />
         </div>
@@ -51,6 +50,7 @@
 import { computed } from "vue";
 import { useRouteParams } from "@vueuse/router";
 import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -65,9 +65,15 @@ import {
   exportPageTranslations,
   type ExportPageTranslations,
 } from "./export.i18n";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useNotify } from "src/utils/ui/notify";
 
 const { t } = useComponentI18n<ExportPageTranslations>(exportPageTranslations);
 const router = useRouter();
+const { showNotifyMessage } = useNotify();
+
+const authStore = useAuthenticationStore();
+const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
 const conversationSlugIdParam = useRouteParams("conversationSlugId");
 const conversationSlugId = computed(() => {
@@ -81,21 +87,26 @@ const conversationSlugId = computed(() => {
 const conversationQuery = useConversationQuery({
   conversationSlugId: conversationSlugId,
   loadUserPollResponse: false,
+  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
 const requestExportMutation = useRequestExportMutation();
 
 async function handleRequestExport(): Promise<void> {
-  const result = await requestExportMutation.mutateAsync(
-    conversationSlugId.value
-  );
-  await router.push({
-    name: "/conversation/[conversationSlugId]/export.[exportId]",
-    params: {
-      conversationSlugId: conversationSlugId.value,
-      exportId: result.exportSlugId,
-    },
-  });
+  try {
+    const result = await requestExportMutation.mutateAsync(
+      conversationSlugId.value
+    );
+    await router.push({
+      name: "/conversation/[conversationSlugId]/export.[exportId]",
+      params: {
+        conversationSlugId: conversationSlugId.value,
+        exportId: result.exportSlugId,
+      },
+    });
+  } catch {
+    showNotifyMessage(t("exportRequestError"));
+  }
 }
 </script>
 

@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, count, desc, eq, lt } from "drizzle-orm";
 import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
@@ -46,6 +46,18 @@ export async function requestConversationExport({
     }
 
     const conversationId = conversation[0].id;
+
+    // Check if conversation has any opinions
+    const [{ count: opinionCount }] = await db
+        .select({ count: count() })
+        .from(opinionTable)
+        .where(eq(opinionTable.conversationId, conversationId));
+
+    if (opinionCount === 0) {
+        throw httpErrors.badRequest(
+            "Cannot export conversation with no opinions",
+        );
+    }
 
     // Create export record
     const now = new Date();
