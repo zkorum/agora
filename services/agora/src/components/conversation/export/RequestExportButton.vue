@@ -3,7 +3,6 @@
     <PrimeButton
       :label="t('requestNewExport')"
       icon="pi pi-download"
-      :loading="loading"
       :disabled="disabled"
       @click="handleClick"
     />
