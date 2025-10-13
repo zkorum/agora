@@ -42,11 +42,11 @@ const { t } = useComponentI18n<ExportHistoryListTranslations>(
 const router = useRouter();
 
 const authStore = useAuthenticationStore();
-const { isAuthInitialized } = storeToRefs(authStore);
+const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
 const exportHistoryQuery = useExportHistoryQuery({
   conversationSlugId: props.conversationSlugId,
-  enabled: computed(() => isAuthInitialized.value),
+  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
 const exportSettingsItems = computed<SettingsInterface[]>(() => {

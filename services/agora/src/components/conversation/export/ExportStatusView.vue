@@ -163,11 +163,11 @@ const { t } = useComponentI18n<ExportStatusViewTranslations>(
 );
 
 const authStore = useAuthenticationStore();
-const { isAuthInitialized } = storeToRefs(authStore);
+const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
 const exportStatusQuery = useExportStatusQuery({
   exportSlugId: props.exportSlugId,
-  enabled: computed(() => isAuthInitialized.value),
+  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
 function formatDate(date: Date): string {
