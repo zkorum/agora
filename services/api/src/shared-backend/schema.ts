@@ -579,6 +579,15 @@ export const exportStatusEnum = pgEnum("export_status_enum", [
     "failed",
 ]);
 
+// Export file types
+export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
+    "comments",
+    "votes",
+    "participants",
+    "summary",
+    "stats",
+]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -1769,14 +1778,8 @@ export const conversationExportTable = pgTable(
             .references(() => conversationTable.id)
             .notNull(),
         status: exportStatusEnum("status").notNull().default("processing"),
-        s3Key: text("s3_key"), // null until completed
-        s3Url: text("s3_url"), // null until completed (pre-signed URL)
-        s3UrlExpiresAt: timestamp("s3_url_expires_at", {
-            mode: "date",
-            precision: 0,
-        }), // when pre-signed URL expires
-        fileSize: integer("file_size"), // bytes, null until completed
-        opinionCount: integer("opinion_count"), // null until completed
+        totalFileSize: integer("total_file_size"), // null until completed
+        totalFileCount: integer("total_file_count"), // null until completed
         errorMessage: text("error_message"), // populated if status="failed"
         expiresAt: timestamp("expires_at", {
             mode: "date",
@@ -1802,5 +1805,36 @@ export const conversationExportTable = pgTable(
         index("conversation_export_status_idx").on(t.status),
         index("conversation_export_deleted_idx").on(t.isDeleted),
         index("conversation_export_created_idx").on(t.createdAt),
+    ],
+);
+
+// Individual files within a conversation export
+export const conversationExportFileTable = pgTable(
+    "conversation_export_file",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        exportId: integer("export_id")
+            .references(() => conversationExportTable.id)
+            .notNull(),
+        fileType: exportFileTypeEnum("file_type").notNull(),
+        fileName: varchar("file_name", { length: 100 }).notNull(),
+        fileSize: integer("file_size").notNull(),
+        recordCount: integer("record_count").notNull(),
+        s3Key: text("s3_key").notNull(),
+        s3Url: text("s3_url").notNull(),
+        s3UrlExpiresAt: timestamp("s3_url_expires_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_export_file_export_idx").on(t.exportId),
+        index("conversation_export_file_type_idx").on(t.fileType),
     ],
 );

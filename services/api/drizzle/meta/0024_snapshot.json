@@ -1,5 +1,5 @@
 {
-  "id": "407621c4-3699-4a99-8b7c-1c44b9e4cefd",
+  "id": "fb38a4e7-9da7-4c85-a106-98cd11be1a2b",
   "prevId": "4d9181dc-df5a-4979-82f9-76bf1048f92b",
   "version": "7",
   "dialect": "postgresql",
@@ -233,6 +233,137 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.conversation_export_file": {
+      "name": "conversation_export_file",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_export_file_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "export_id": {
+          "name": "export_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_type": {
+          "name": "file_type",
+          "type": "export_file_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_size": {
+          "name": "file_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_count": {
+          "name": "record_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3_key": {
+          "name": "s3_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3_url": {
+          "name": "s3_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3_url_expires_at": {
+          "name": "s3_url_expires_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_export_file_export_idx": {
+          "name": "conversation_export_file_export_idx",
+          "columns": [
+            {
+              "expression": "export_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_file_type_idx": {
+          "name": "conversation_export_file_type_idx",
+          "columns": [
+            {
+              "expression": "file_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_export_file_export_id_conversation_export_id_fk": {
+          "name": "conversation_export_file_export_id_conversation_export_id_fk",
+          "tableFrom": "conversation_export_file",
+          "tableTo": "conversation_export",
+          "columnsFrom": [
+            "export_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.conversation_export": {
       "name": "conversation_export",
       "schema": "",
@@ -274,32 +405,14 @@
           "notNull": true,
           "default": "'processing'"
         },
-        "s3_key": {
-          "name": "s3_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "s3_url": {
-          "name": "s3_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "s3_url_expires_at": {
-          "name": "s3_url_expires_at",
-          "type": "timestamp (0)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "file_size": {
-          "name": "file_size",
+        "total_file_size": {
+          "name": "total_file_size",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "opinion_count": {
-          "name": "opinion_count",
+        "total_file_count": {
+          "name": "total_file_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -4699,6 +4812,17 @@
         "backup",
         "secondary",
         "other"
+      ]
+    },
+    "public.export_file_type_enum": {
+      "name": "export_file_type_enum",
+      "schema": "public",
+      "values": [
+        "comments",
+        "votes",
+        "participants",
+        "summary",
+        "stats"
       ]
     },
     "public.export_status_enum": {

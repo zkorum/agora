@@ -37,6 +37,23 @@ export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
 export const zodExportStatus = z.enum(["processing", "completed", "failed"]);
+export const zodExportFileType = z.enum([
+    "comments",
+    "votes",
+    "participants",
+    "summary",
+    "stats",
+]);
+export const zodExportFileInfo = z
+    .object({
+        fileType: zodExportFileType,
+        fileName: z.string(),
+        fileSize: z.number().int().positive(),
+        recordCount: z.number().int().nonnegative(),
+        downloadUrl: z.string().url(),
+        urlExpiresAt: z.date(),
+    })
+    .strict();
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -1003,3 +1020,5 @@ export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;
+export type ExportFileType = z.infer<typeof zodExportFileType>;
+export type ExportFileInfo = z.infer<typeof zodExportFileInfo>;

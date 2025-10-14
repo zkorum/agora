@@ -39,8 +39,7 @@ export function useBackendConversationExportApi() {
       exportSlugId: item.exportSlugId,
       status: item.status,
       createdAt: new Date(item.createdAt),
-      downloadUrl: item.downloadUrl,
-      urlExpiresAt: item.urlExpiresAt ? new Date(item.urlExpiresAt) : undefined,
+      totalFileCount: item.totalFileCount,
     }));
   }
 
@@ -99,12 +98,16 @@ export function useBackendConversationExportApi() {
       exportSlugId: response.data.exportSlugId,
       status: response.data.status,
       conversationSlugId: response.data.conversationSlugId,
-      downloadUrl: response.data.downloadUrl,
-      urlExpiresAt: response.data.urlExpiresAt
-        ? new Date(response.data.urlExpiresAt)
-        : undefined,
-      fileSize: response.data.fileSize,
-      opinionCount: response.data.opinionCount,
+      totalFileSize: response.data.totalFileSize,
+      totalFileCount: response.data.totalFileCount,
+      files: response.data.files?.map((file) => ({
+        fileType: file.fileType,
+        fileName: file.fileName,
+        fileSize: file.fileSize,
+        recordCount: file.recordCount,
+        downloadUrl: file.downloadUrl,
+        urlExpiresAt: new Date(file.urlExpiresAt),
+      })),
       errorMessage: response.data.errorMessage,
       createdAt: new Date(response.data.createdAt),
     };
