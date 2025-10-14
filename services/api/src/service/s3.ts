@@ -3,6 +3,7 @@ import {
     PutObjectCommand,
     GetObjectCommand,
     HeadBucketCommand,
+    DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { config, log } from "@/app.js";
@@ -73,4 +74,22 @@ export async function generatePresignedUrl({
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
     return { url, expiresAt };
+}
+
+/**
+ * Delete object from S3.
+ */
+export async function deleteFromS3({
+    s3Key,
+    bucketName,
+}: {
+    s3Key: string;
+    bucketName: string;
+}): Promise<void> {
+    await s3Client.send(
+        new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: s3Key,
+        }),
+    );
 }
