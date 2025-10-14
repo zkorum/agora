@@ -20,9 +20,11 @@
             error: { title: t('conversationLoadError') },
           }"
         >
-          <ConversationInfoCard
+          <PostDetails
             v-if="conversationQuery.data.value"
             :conversation-data="conversationQuery.data.value"
+            :compact-mode="true"
+            @click="navigateToConversation"
           />
         </AsyncStateHandler>
 
@@ -56,7 +58,7 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExportHistoryList from "src/components/conversation/export/ExportHistoryList.vue";
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
-import ConversationInfoCard from "src/components/conversation/ConversationInfoCard.vue";
+import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useRequestExportMutation } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
@@ -92,6 +94,13 @@ const conversationQuery = useConversationQuery({
 });
 
 const requestExportMutation = useRequestExportMutation();
+
+async function navigateToConversation(): Promise<void> {
+  await router.push({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: conversationSlugId.value },
+  });
+}
 
 async function handleRequestExport(): Promise<void> {
   try {
