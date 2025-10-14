@@ -94,6 +94,7 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
+import { useUserStore } from "src/stores/user";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -110,6 +111,7 @@ const webShare = useWebShare();
 const { getConversationUrl } = useConversationUrl();
 const { invalidateAnalysis, forceRefreshAnalysis } =
   useInvalidateCommentQueries();
+const userStore = useUserStore();
 
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
@@ -142,7 +144,7 @@ const commentsModeratedQuery = useCommentsQuery({
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  enabled: !props.compactMode,
+  enabled: !props.compactMode && userStore.profileData.isModerator,
 });
 
 const isPostLocked = computed((): boolean => {
@@ -222,8 +224,12 @@ watch(currentTab, async (newTab) => {
         commentsDiscoverQuery,
         commentsNewQuery,
         commentsModeratedQuery,
-        hiddenCommentsQuery,
       ];
+
+      // Only include hiddenCommentsQuery if user is a moderator
+      if (userStore.profileData.isModerator) {
+        commentQueries.push(hiddenCommentsQuery);
+      }
 
       const staleQueries = commentQueries.filter(
         (query) => query.isStale.value
