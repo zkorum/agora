@@ -9,7 +9,7 @@ import {
     opinionTable,
     opinionModerationTable,
 } from "@/shared-backend/schema.js";
-import { uploadToS3, generatePresignedUrl } from "../s3.js";
+import { uploadToS3, generatePresignedUrl, deleteFromS3 } from "../s3.js";
 import { nanoid } from "nanoid";
 import type {
     RequestConversationExportResponse,
@@ -117,17 +117,17 @@ async function processConversationExport({
 }: ProcessConversationExportParams): Promise<void> {
     try {
         // Get export ID for file records
-        const [exportRecord] = await db
+        const exportRecordList = await db
             .select({ id: conversationExportTable.id })
             .from(conversationExportTable)
             .where(eq(conversationExportTable.slugId, exportSlugId))
             .limit(1);
 
-        if (!exportRecord) {
+        if (exportRecordList.length !== 1) {
             throw new Error(`Export record not found: ${exportSlugId}`);
         }
 
-        const exportId = exportRecord.id;
+        const exportId = exportRecordList[0].id;
 
         // Initialize generator factory
         const factory = new ExportGeneratorFactory();
@@ -399,18 +399,18 @@ export async function cleanupExpiredExports({
                     eq(conversationExportFileTable.exportId, exportRecord.id),
                 );
 
-            // TODO: Delete from S3 (requires implementing deleteFromS3 function in s3.ts)
-            // for (const file of fileRecords) {
-            //     if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
-            //         await deleteFromS3({
-            //             s3Key: file.s3Key,
-            //             bucketName: config.AWS_S3_BUCKET_NAME,
-            //         });
-            //     }
-            // }
-            // For now, just log the files that would be deleted
+            // Delete from S3
+            for (const file of fileRecords) {
+                if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+                    await deleteFromS3({
+                        s3Key: file.s3Key,
+                        bucketName: config.AWS_S3_BUCKET_NAME,
+                    });
+                }
+            }
+
             log.info(
-                `Would delete ${fileRecords.length.toString()} files from S3 for export ${exportRecord.id.toString()}`,
+                `Deleted ${fileRecords.length.toString()} files from S3 for export ${exportRecord.id.toString()}`,
             );
 
             // Mark as deleted in database (cascade will handle file records if needed)
