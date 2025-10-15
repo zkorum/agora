@@ -2541,17 +2541,12 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                },
-            );
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
             return await conversationExportService.requestConversationExport({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
             });
         },
     });
@@ -2566,17 +2561,12 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                },
-            );
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
             return await conversationExportService.getConversationExportStatus({
                 db: db,
                 exportSlugId: request.params.exportSlugId,
-                userId: deviceStatus.userId,
             });
         },
     });
@@ -2591,20 +2581,48 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                },
-            );
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
             return await conversationExportService.getConversationExportHistory(
                 {
                     db: db,
                     conversationSlugId: request.params.conversationSlugId,
-                    userId: deviceStatus.userId,
                 },
             );
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "DELETE",
+        url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+        schema: {
+            params: Dto.deleteConversationExportRequest,
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
+            }
+
+            await conversationExportService.deleteConversationExport({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
+            });
         },
     });
 });

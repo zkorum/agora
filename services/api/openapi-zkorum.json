@@ -6717,6 +6717,26 @@
                     }
                 }
             }
+        },
+        "/api/v1/conversation/export/{exportSlugId}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 10
+                        },
+                        "in": "path",
+                        "name": "exportSlugId",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
         }
     },
     "servers": [],

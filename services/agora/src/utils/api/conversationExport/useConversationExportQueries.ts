@@ -37,6 +37,31 @@ export function useRequestExportMutation() {
   });
 }
 
+export function useDeleteExportMutation() {
+  const { deleteExport } = useBackendConversationExportApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      exportSlugId,
+    }: {
+      exportSlugId: string;
+      conversationSlugId: string;
+    }) => deleteExport(exportSlugId),
+    onSuccess: (_data, variables) => {
+      // Invalidate export history to remove the deleted export
+      void queryClient.invalidateQueries({
+        queryKey: ["exportHistory", variables.conversationSlugId],
+      });
+      // Remove the export status query from cache to prevent 404 refetch
+      queryClient.removeQueries({
+        queryKey: ["exportStatus", variables.exportSlugId],
+      });
+    },
+    retry: false,
+  });
+}
+
 export function useExportStatusQuery({
   exportSlugId,
   enabled = true,
