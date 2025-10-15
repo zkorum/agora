@@ -5,7 +5,6 @@ export interface ExportStatusViewTranslations {
   errorLoadingStatus: string;
   processingMessage: string;
   failedMessage: string;
-  urlExpiresSoon: string;
   download: string;
   exportInfo: string;
   exportId: string;
@@ -37,7 +36,6 @@ export const exportStatusViewTranslations: Record<
       "Your export is being processed. This page will update automatically.",
     failedMessage:
       "The export failed. Please return to the export history page and request a new export.",
-    urlExpiresSoon: "Download URL expires soon! Download now.",
     download: "Download",
     exportInfo: "Export Information",
     exportId: "Export ID",
@@ -65,7 +63,6 @@ export const exportStatusViewTranslations: Record<
       "جارٍ معالجة التصدير الخاص بك. سيتم تحديث هذه الصفحة تلقائيًا.",
     failedMessage:
       "فشل التصدير. يرجى العودة إلى صفحة سجل التصدير وطلب تصدير جديد.",
-    urlExpiresSoon: "ينتهي رابط التنزيل قريبًا! قم بالتنزيل الآن.",
     download: "تنزيل",
     exportInfo: "معلومات التصدير",
     exportId: "معرف التصدير",
@@ -93,7 +90,6 @@ export const exportStatusViewTranslations: Record<
       "Se está procesando su exportación. Esta página se actualizará automáticamente.",
     failedMessage:
       "La exportación falló. Por favor, vuelva a la página de historial de exportaciones y solicite una nueva exportación.",
-    urlExpiresSoon: "¡La URL de descarga expira pronto! Descargue ahora.",
     download: "Descargar",
     exportInfo: "Información de Exportación",
     exportId: "ID de Exportación",
@@ -121,8 +117,6 @@ export const exportStatusViewTranslations: Record<
       "Votre exportation est en cours de traitement. Cette page se mettra à jour automatiquement.",
     failedMessage:
       "L'exportation a échoué. Veuillez retourner à la page d'historique des exportations et demander une nouvelle exportation.",
-    urlExpiresSoon:
-      "L'URL de téléchargement expire bientôt ! Téléchargez maintenant.",
     download: "Télécharger",
     exportInfo: "Informations sur l'Exportation",
     exportId: "ID de l'Exportation",
@@ -148,7 +142,6 @@ export const exportStatusViewTranslations: Record<
     errorLoadingStatus: "加载导出状态失败",
     processingMessage: "您的导出正在处理中。此页面将自动更新。",
     failedMessage: "导出失败。请返回导出历史页面并请求新的导出。",
-    urlExpiresSoon: "下载URL即将过期！请立即下载。",
     download: "下载",
     exportInfo: "导出信息",
     exportId: "导出ID",
@@ -173,7 +166,6 @@ export const exportStatusViewTranslations: Record<
     errorLoadingStatus: "載入匯出狀態失敗",
     processingMessage: "您的匯出正在處理中。此頁面將自動更新。",
     failedMessage: "匯出失敗。請返回匯出歷史頁面並請求新的匯出。",
-    urlExpiresSoon: "下載URL即將過期！請立即下載。",
     download: "下載",
     exportInfo: "匯出資訊",
     exportId: "匯出ID",
@@ -200,8 +192,6 @@ export const exportStatusViewTranslations: Record<
       "エクスポートが処理されています。このページは自動的に更新されます。",
     failedMessage:
       "エクスポートが失敗しました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
-    urlExpiresSoon:
-      "ダウンロードURLの有効期限が近づいています！今すぐダウンロードしてください。",
     download: "ダウンロード",
     exportInfo: "エクスポート情報",
     exportId: "エクスポートID",
