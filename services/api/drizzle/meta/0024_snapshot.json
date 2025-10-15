@@ -1,5 +1,5 @@
 {
-  "id": "fb38a4e7-9da7-4c85-a106-98cd11be1a2b",
+  "id": "0eef78a4-0ee8-4dd4-b4c8-a07d41748f65",
   "prevId": "4d9181dc-df5a-4979-82f9-76bf1048f92b",
   "version": "7",
   "dialect": "postgresql",
@@ -288,18 +288,6 @@
         "s3_key": {
           "name": "s3_key",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "s3_url": {
-          "name": "s3_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "s3_url_expires_at": {
-          "name": "s3_url_expires_at",
-          "type": "timestamp (0)",
           "primaryKey": false,
           "notNull": true
         },

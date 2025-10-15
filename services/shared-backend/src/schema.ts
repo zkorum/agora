@@ -1819,12 +1819,7 @@ export const conversationExportFileTable = pgTable(
         fileName: varchar("file_name", { length: 100 }).notNull(),
         fileSize: integer("file_size").notNull(),
         recordCount: integer("record_count").notNull(),
-        s3Key: text("s3_key").notNull(),
-        s3Url: text("s3_url").notNull(),
-        s3UrlExpiresAt: timestamp("s3_url_expires_at", {
-            mode: "date",
-            precision: 0,
-        }).notNull(),
+        s3Key: text("s3_key").notNull(), // Presigned URLs are generated on-demand in getConversationExportStatus
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
