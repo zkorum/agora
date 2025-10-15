@@ -8,6 +8,7 @@
  * - requestConversationExport: Initiate a new export
  * - getConversationExportStatus: Check export status and get download URLs
  * - getConversationExportHistory: Get export history for a conversation
+ * - deleteConversationExport: Manually delete an export (moderator action)
  * - cleanupExpiredExports: Cleanup job for expired exports
  */
 
@@ -15,5 +16,6 @@ export {
     requestConversationExport,
     getConversationExportStatus,
     getConversationExportHistory,
+    deleteConversationExport,
     cleanupExpiredExports,
 } from "./core.js";

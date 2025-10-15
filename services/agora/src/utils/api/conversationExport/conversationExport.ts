@@ -113,9 +113,30 @@ export function useBackendConversationExportApi() {
     };
   }
 
+  async function deleteExport(exportSlugId: string): Promise<void> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportExportSlugIdDelete(
+        exportSlugId
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationExportExportSlugIdDelete(
+      exportSlugId,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "standard",
+      })
+    );
+  }
+
   return {
     fetchExportHistory,
     requestNewExport,
     fetchExportStatus,
+    deleteExport,
   };
 }

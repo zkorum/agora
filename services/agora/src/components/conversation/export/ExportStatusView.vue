@@ -86,6 +86,19 @@
               }}</span>
             </div>
           </div>
+
+          <!-- Delete Button (Moderator Only) -->
+          <div v-if="isModerator" class="delete-section">
+            <PrimeButton
+              :label="t('deleteExport')"
+              icon="pi pi-trash"
+              severity="danger"
+              outlined
+              :loading="deleteExportMutation.isPending.value"
+              :disabled="deleteExportMutation.isPending.value"
+              @click="handleDeleteExport"
+            />
+          </div>
         </div>
 
         <!-- Available Files Section -->
@@ -166,14 +179,21 @@
 import { computed } from "vue";
 import { useDateFormat } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import { useExportStatusQuery } from "src/utils/api/conversationExport/useConversationExportQueries";
+import {
+  useExportStatusQuery,
+  useDeleteExportMutation,
+} from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   exportStatusViewTranslations,
   type ExportStatusViewTranslations,
 } from "./ExportStatusView.i18n";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
+import { useNotify } from "src/utils/ui/notify";
 
 interface Props {
   exportSlugId: string;
@@ -188,10 +208,54 @@ const { t } = useComponentI18n<ExportStatusViewTranslations>(
 const authStore = useAuthenticationStore();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
+const userStore = useUserStore();
+const { profileData } = storeToRefs(userStore);
+
+const $q = useQuasar();
+const router = useRouter();
+const { showNotifyMessage } = useNotify();
+
 const exportStatusQuery = useExportStatusQuery({
   exportSlugId: props.exportSlugId,
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
+
+const deleteExportMutation = useDeleteExportMutation();
+
+const isModerator = computed(() => profileData.value.isModerator);
+
+function handleDeleteExport(): void {
+  if (!exportStatusQuery.data.value) return;
+
+  $q.dialog({
+    title: t("deleteConfirmTitle"),
+    message: t("deleteConfirmMessage"),
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    deleteExportMutation.mutate(
+      {
+        exportSlugId: props.exportSlugId,
+        conversationSlugId: exportStatusQuery.data.value!.conversationSlugId,
+      },
+      {
+        onSuccess: () => {
+          showNotifyMessage(t("deleteSuccess"));
+          void router.push({
+            name: "/conversation/[conversationSlugId]/export",
+            params: {
+              conversationSlugId:
+                exportStatusQuery.data.value!.conversationSlugId,
+            },
+          });
+        },
+        onError: () => {
+          showNotifyMessage(t("deleteError"));
+        },
+      }
+    );
+  });
+}
 
 function formatDate(date: Date): string {
   return useDateFormat(date, "MMM D, YYYY HH:mm z").value;
@@ -290,6 +354,14 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
   font-size: 1.25rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
+}
+
+.delete-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $color-border-weak;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .info-grid {
