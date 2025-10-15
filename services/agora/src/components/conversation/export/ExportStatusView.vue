@@ -20,58 +20,71 @@
           <div
             v-if="exportStatusQuery.data.value.status === 'processing'"
             class="processing-message"
+            role="status"
+            aria-live="polite"
           >
-            <q-spinner color="primary" size="md" />
+            <q-spinner
+              color="primary"
+              size="md"
+              :aria-label="t('processingMessage')"
+            />
             <p>{{ t("processingMessage") }}</p>
           </div>
           <div
             v-else-if="exportStatusQuery.data.value.status === 'failed'"
             class="failed-message"
+            role="alert"
+            aria-live="assertive"
           >
-            <q-icon name="error" color="negative" size="md" />
+            <q-icon
+              name="error"
+              color="negative"
+              size="md"
+              aria-hidden="true"
+            />
             <p>{{ t("failedMessage") }}</p>
           </div>
         </div>
 
         <!-- Export Information Card -->
         <div class="info-card">
-          <h3 class="info-title">{{ t("exportInfo") }}</h3>
-          <div class="info-grid">
+          <h2 class="info-title">{{ t("exportInfo") }}</h2>
+          <dl class="info-grid">
             <div class="info-item">
-              <span class="info-label">{{ t("exportId") }}:</span>
-              <span class="info-value">{{
-                exportStatusQuery.data.value.exportSlugId
-              }}</span>
+              <dt class="info-label">{{ t("exportId") }}:</dt>
+              <dd class="info-value">
+                {{ exportStatusQuery.data.value.exportSlugId }}
+              </dd>
             </div>
             <div class="info-item">
-              <span class="info-label">{{ t("conversationId") }}:</span>
-              <span class="info-value">{{
-                exportStatusQuery.data.value.conversationSlugId
-              }}</span>
+              <dt class="info-label">{{ t("conversationId") }}:</dt>
+              <dd class="info-value">
+                {{ exportStatusQuery.data.value.conversationSlugId }}
+              </dd>
             </div>
             <div class="info-item">
-              <span class="info-label">{{ t("createdAt") }}:</span>
-              <span class="info-value">{{
-                formatDateTime(exportStatusQuery.data.value.createdAt)
-              }}</span>
+              <dt class="info-label">{{ t("createdAt") }}:</dt>
+              <dd class="info-value">
+                {{ formatDateTime(exportStatusQuery.data.value.createdAt) }}
+              </dd>
             </div>
             <div
               v-if="exportStatusQuery.data.value.totalFileCount"
               class="info-item"
             >
-              <span class="info-label">{{ t("totalFiles") }}:</span>
-              <span class="info-value">{{
-                exportStatusQuery.data.value.totalFileCount
-              }}</span>
+              <dt class="info-label">{{ t("totalFiles") }}:</dt>
+              <dd class="info-value">
+                {{ exportStatusQuery.data.value.totalFileCount }}
+              </dd>
             </div>
             <div
               v-if="exportStatusQuery.data.value.totalFileSize"
               class="info-item"
             >
-              <span class="info-label">{{ t("totalSize") }}:</span>
-              <span class="info-value">{{
-                formatFileSize(exportStatusQuery.data.value.totalFileSize)
-              }}</span>
+              <dt class="info-label">{{ t("totalSize") }}:</dt>
+              <dd class="info-value">
+                {{ formatFileSize(exportStatusQuery.data.value.totalFileSize) }}
+              </dd>
             </div>
             <div
               v-if="
@@ -80,12 +93,12 @@
               "
               class="info-item error-item"
             >
-              <span class="info-label">{{ t("errorMessage") }}:</span>
-              <span class="info-value">{{
-                exportStatusQuery.data.value.errorMessage
-              }}</span>
+              <dt class="info-label">{{ t("errorMessage") }}:</dt>
+              <dd class="info-value">
+                {{ exportStatusQuery.data.value.errorMessage }}
+              </dd>
             </div>
-          </div>
+          </dl>
 
           <!-- Delete Button (Moderator Only) -->
           <div v-if="isModerator" class="delete-section">
@@ -110,7 +123,7 @@
           "
           class="files-section"
         >
-          <h3 class="section-title">{{ t("availableFiles") }}</h3>
+          <h2 class="section-title">{{ t("availableFiles") }}</h2>
           <div class="files-list">
             <div
               v-for="file in exportStatusQuery.data.value.files"
@@ -118,32 +131,41 @@
               class="file-card"
             >
               <div class="file-header">
-                <q-icon name="description" size="md" color="primary" />
+                <q-icon
+                  name="description"
+                  size="md"
+                  color="primary"
+                  aria-hidden="true"
+                />
                 <span class="file-name">{{ file.fileName }}</span>
               </div>
 
-              <div class="file-details">
+              <dl class="file-details">
                 <div class="file-detail-item">
-                  <span class="detail-label">{{ t("fileSize") }}:</span>
-                  <span class="detail-value">{{
-                    formatFileSize(file.fileSize)
-                  }}</span>
+                  <dt class="detail-label">{{ t("fileSize") }}:</dt>
+                  <dd class="detail-value">
+                    {{ formatFileSize(file.fileSize) }}
+                  </dd>
                 </div>
                 <div class="file-detail-item">
-                  <span class="detail-label">{{ t("recordCount") }}:</span>
-                  <span class="detail-value">{{ file.recordCount }}</span>
+                  <dt class="detail-label">{{ t("recordCount") }}:</dt>
+                  <dd class="detail-value">{{ file.recordCount }}</dd>
                 </div>
                 <div class="file-detail-item">
-                  <span class="detail-label">{{ t("urlExpiresAt") }}:</span>
-                  <span class="detail-value">{{
-                    formatDateTime(file.urlExpiresAt)
-                  }}</span>
+                  <dt class="detail-label">{{ t("urlExpiresAt") }}:</dt>
+                  <dd class="detail-value">
+                    {{ formatDateTime(file.urlExpiresAt) }}
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
               <div class="file-actions">
                 <PrimeButton
-                  :label="t('download')"
+                  :label="
+                    isUrlExpired(file.urlExpiresAt)
+                      ? t('downloadExpired')
+                      : t('download')
+                  "
                   icon="pi pi-download"
                   :disabled="isUrlExpired(file.urlExpiresAt)"
                   :aria-label="`${t('download')} ${file.fileName}`"
@@ -329,6 +351,14 @@ function handleDownload(downloadUrl: string): void {
   &.error-item {
     grid-column: 1 / -1;
   }
+
+  dt {
+    margin: 0;
+  }
+
+  dd {
+    margin: 0;
+  }
 }
 
 .info-label {
@@ -405,6 +435,14 @@ function handleDownload(downloadUrl: string): void {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+
+  dt {
+    margin: 0;
+  }
+
+  dd {
+    margin: 0;
+  }
 }
 
 .file-detail-item {
