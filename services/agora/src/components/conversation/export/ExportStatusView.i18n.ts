@@ -19,6 +19,11 @@ export interface ExportStatusViewTranslations {
   recordCount: string;
   urlExpiresAt: string;
   errorMessage: string;
+  deleteExport: string;
+  deleteConfirmTitle: string;
+  deleteConfirmMessage: string;
+  deleteSuccess: string;
+  deleteError: string;
 }
 
 export const exportStatusViewTranslations: Record<
@@ -46,6 +51,12 @@ export const exportStatusViewTranslations: Record<
     recordCount: "Records",
     urlExpiresAt: "Expires",
     errorMessage: "Error",
+    deleteExport: "Delete Export",
+    deleteConfirmTitle: "Delete Export",
+    deleteConfirmMessage:
+      "Are you sure you want to delete this export? This action cannot be undone.",
+    deleteSuccess: "Export deleted successfully",
+    deleteError: "Failed to delete export",
   },
   ar: {
     loadingStatus: "جارٍ تحميل حالة التصدير...",
@@ -68,6 +79,12 @@ export const exportStatusViewTranslations: Record<
     recordCount: "السجلات",
     urlExpiresAt: "ينتهي",
     errorMessage: "خطأ",
+    deleteExport: "حذف التصدير",
+    deleteConfirmTitle: "حذف التصدير",
+    deleteConfirmMessage:
+      "هل أنت متأكد من رغبتك في حذف هذا التصدير؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteSuccess: "تم حذف التصدير بنجاح",
+    deleteError: "فشل حذف التصدير",
   },
   es: {
     loadingStatus: "Cargando estado de exportación...",
@@ -90,6 +107,12 @@ export const exportStatusViewTranslations: Record<
     recordCount: "Registros",
     urlExpiresAt: "Expira",
     errorMessage: "Error",
+    deleteExport: "Eliminar Exportación",
+    deleteConfirmTitle: "Eliminar Exportación",
+    deleteConfirmMessage:
+      "¿Está seguro de que desea eliminar esta exportación? Esta acción no se puede deshacer.",
+    deleteSuccess: "Exportación eliminada con éxito",
+    deleteError: "Error al eliminar la exportación",
   },
   fr: {
     loadingStatus: "Chargement de l'état de l'exportation...",
@@ -113,6 +136,12 @@ export const exportStatusViewTranslations: Record<
     recordCount: "Enregistrements",
     urlExpiresAt: "Expire",
     errorMessage: "Erreur",
+    deleteExport: "Supprimer l'Exportation",
+    deleteConfirmTitle: "Supprimer l'Exportation",
+    deleteConfirmMessage:
+      "Êtes-vous sûr de vouloir supprimer cette exportation ? Cette action ne peut pas être annulée.",
+    deleteSuccess: "Exportation supprimée avec succès",
+    deleteError: "Échec de la suppression de l'exportation",
   },
   "zh-Hans": {
     loadingStatus: "正在加载导出状态...",
@@ -133,6 +162,11 @@ export const exportStatusViewTranslations: Record<
     recordCount: "记录数",
     urlExpiresAt: "过期于",
     errorMessage: "错误",
+    deleteExport: "删除导出",
+    deleteConfirmTitle: "删除导出",
+    deleteConfirmMessage: "您确定要删除此导出吗？此操作无法撤销。",
+    deleteSuccess: "导出删除成功",
+    deleteError: "删除导出失败",
   },
   "zh-Hant": {
     loadingStatus: "正在載入匯出狀態...",
@@ -153,6 +187,11 @@ export const exportStatusViewTranslations: Record<
     recordCount: "記錄數",
     urlExpiresAt: "過期於",
     errorMessage: "錯誤",
+    deleteExport: "刪除匯出",
+    deleteConfirmTitle: "刪除匯出",
+    deleteConfirmMessage: "您確定要刪除此匯出嗎？此操作無法撤銷。",
+    deleteSuccess: "匯出刪除成功",
+    deleteError: "刪除匯出失敗",
   },
   ja: {
     loadingStatus: "エクスポートステータスを読み込んでいます...",
@@ -176,5 +215,11 @@ export const exportStatusViewTranslations: Record<
     recordCount: "レコード数",
     urlExpiresAt: "有効期限",
     errorMessage: "エラー",
+    deleteExport: "エクスポートを削除",
+    deleteConfirmTitle: "エクスポートを削除",
+    deleteConfirmMessage:
+      "このエクスポートを削除してもよろしいですか？この操作は元に戻せません。",
+    deleteSuccess: "エクスポートが正常に削除されました",
+    deleteError: "エクスポートの削除に失敗しました",
   },
 };

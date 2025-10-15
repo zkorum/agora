@@ -631,6 +631,11 @@ export class Dto {
             })
             .strict(),
     );
+    static deleteConversationExportRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -743,4 +748,7 @@ export type GetConversationExportHistoryRequest = z.infer<
 >;
 export type GetConversationExportHistoryResponse = z.infer<
     typeof Dto.getConversationExportHistoryResponse
+>;
+export type DeleteConversationExportRequest = z.infer<
+    typeof Dto.deleteConversationExportRequest
 >;
