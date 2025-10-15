@@ -116,15 +116,6 @@
               :key="file.fileType"
               class="file-card"
             >
-              <!-- Expiration Warning for this file -->
-              <div
-                v-if="isUrlExpiringSoon(file.urlExpiresAt)"
-                class="file-warning"
-              >
-                <q-icon name="warning" size="xs" />
-                <span>{{ t("urlExpiresSoon") }}</span>
-              </div>
-
               <div class="file-header">
                 <q-icon name="description" size="md" color="primary" />
                 <span class="file-name">{{ file.fileName }}</span>
@@ -150,19 +141,12 @@
               </div>
 
               <div class="file-actions">
-                <a
-                  :href="file.downloadUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  class="download-link"
-                >
-                  <PrimeButton
-                    :label="t('download')"
-                    icon="pi pi-download"
-                    as="span"
-                  />
-                </a>
+                <PrimeButton
+                  :label="t('download')"
+                  icon="pi pi-download"
+                  :disabled="isUrlExpired(file.urlExpiresAt)"
+                  @click="handleDownload(file.downloadUrl)"
+                />
               </div>
             </div>
           </div>
@@ -266,11 +250,12 @@ function formatFileSize(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 
-function isUrlExpiringSoon(expiresAt: Date): boolean {
-  const expiryTime = new Date(expiresAt).getTime();
-  const now = Date.now();
-  const thirtyMinutesInMs = 30 * 60 * 1000;
-  return expiryTime - now < thirtyMinutesInMs && expiryTime > now;
+function isUrlExpired(expiresAt: Date): boolean {
+  return expiresAt.getTime() < Date.now();
+}
+
+function handleDownload(downloadUrl: string): void {
+  window.open(downloadUrl, "_blank", "noopener,noreferrer");
 }
 </script>
 
@@ -314,28 +299,6 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
       font-size: 1.1rem;
       color: $color-text-strong;
     }
-  }
-}
-
-.warning-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 8px;
-  background-color: rgba($warning, 0.1);
-  border: 1px solid $warning;
-  color: $warning;
-  font-weight: var(--font-weight-semibold);
-}
-
-.download-section {
-  display: flex;
-  justify-content: center;
-  padding: 1rem 0;
-
-  .download-link {
-    text-decoration: none;
   }
 }
 
@@ -436,19 +399,6 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
   }
 }
 
-.file-warning {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  background-color: rgba($warning, 0.1);
-  border: 1px solid $warning;
-  color: $warning;
-  font-size: 0.875rem;
-  font-weight: var(--font-weight-semibold);
-}
-
 .file-header {
   display: flex;
   align-items: center;
@@ -495,14 +445,9 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
   padding-top: 0.75rem;
   border-top: 1px solid $color-border-weak;
 
-  .download-link {
-    text-decoration: none;
+  :deep(.p-button) {
     width: 100%;
-
-    :deep(.p-button) {
-      width: 100%;
-      justify-content: center;
-    }
+    justify-content: center;
   }
 }
 </style>
