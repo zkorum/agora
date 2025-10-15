@@ -28,8 +28,23 @@ export function generateS3Key({
 }
 
 /**
- * Generate file name for an export file
+ * Generate file name for an export file (stored in database and S3 key)
  */
 export function generateFileName(fileType: string): string {
     return `${fileType}.csv`;
+}
+
+/**
+ * Generate download filename with timestamp for Content-Disposition header
+ */
+export function generateDownloadFileName({
+    fileType,
+    createdAt,
+}: {
+    fileType: string;
+    createdAt: Date;
+}): string {
+    const utcDate = new TZDate(createdAt, "UTC");
+    const timestamp = formatDate(utcDate, "yyyyMMdd-HHmmss");
+    return `${fileType}-${timestamp}.csv`;
 }
