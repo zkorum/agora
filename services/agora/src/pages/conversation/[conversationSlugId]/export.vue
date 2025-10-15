@@ -20,29 +20,43 @@
             error: { title: t('conversationLoadError') },
           }"
         >
-          <PostDetails
+          <div
             v-if="conversationQuery.data.value"
-            :conversation-data="conversationQuery.data.value"
-            :compact-mode="true"
+            tabindex="0"
+            role="button"
+            :aria-label="t('viewConversation')"
             @click="navigateToConversation"
-          />
+            @keydown.enter="navigateToConversation"
+            @keydown.space.prevent="navigateToConversation"
+          >
+            <PostDetails
+              :conversation-data="conversationQuery.data.value"
+              :compact-mode="true"
+            />
+          </div>
         </AsyncStateHandler>
 
-        <div class="export-actions">
-          <div class="page-description">
+        <section class="export-actions">
+          <p class="page-description">
             {{ t("pageDescription") }}
-          </div>
+          </p>
 
           <RequestExportButton
             :loading="requestExportMutation.isPending.value"
+            :aria-label="t('requestExportAriaLabel')"
             @request="handleRequestExport"
           />
-        </div>
+        </section>
 
-        <div class="export-history-section">
-          <h2 class="section-title">{{ t("previousExports") }}</h2>
+        <section
+          class="export-history-section"
+          aria-labelledby="previous-exports-heading"
+        >
+          <h2 id="previous-exports-heading" class="section-title">
+            {{ t("previousExports") }}
+          </h2>
           <ExportHistoryList :conversation-slug-id="conversationSlugId" />
-        </div>
+        </section>
       </div>
     </WidthWrapper>
   </DrawerLayout>
@@ -150,6 +164,7 @@ async function handleRequestExport(): Promise<void> {
   font-size: 1rem;
   color: $color-text-strong;
   line-height: 1.5;
+  margin: 0;
 }
 
 .export-history-section {
