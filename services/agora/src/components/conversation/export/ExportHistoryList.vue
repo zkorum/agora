@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useDateFormat, useTimeAgo } from "@vueuse/core";
+import { useTimeAgo } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
@@ -29,6 +29,7 @@ import {
   type ExportHistoryListTranslations,
 } from "./ExportHistoryList.i18n";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { formatDateTime } from "src/utils/format";
 
 interface Props {
   conversationSlugId: string;
@@ -56,7 +57,7 @@ const exportSettingsItems = computed<SettingsInterface[]>(() => {
 
   return exportHistoryQuery.data.value.map((exportItem) => ({
     type: "action",
-    label: formatDate(exportItem.createdAt),
+    label: formatDateTime(exportItem.createdAt),
     value: useTimeAgo(exportItem.createdAt).value,
     action: () => {
       void router.push({
@@ -69,10 +70,6 @@ const exportSettingsItems = computed<SettingsInterface[]>(() => {
     },
   }));
 });
-
-function formatDate(date: Date): string {
-  return useDateFormat(date, "MMM D, YYYY hh:mm A").value;
-}
 </script>
 
 <style scoped lang="scss">
