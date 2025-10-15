@@ -52,7 +52,7 @@
             <div class="info-item">
               <span class="info-label">{{ t("createdAt") }}:</span>
               <span class="info-value">{{
-                formatDate(exportStatusQuery.data.value.createdAt)
+                formatDateTime(exportStatusQuery.data.value.createdAt)
               }}</span>
             </div>
             <div
@@ -95,6 +95,7 @@
               severity="danger"
               :loading="deleteExportMutation.isPending.value"
               :disabled="deleteExportMutation.isPending.value"
+              :aria-label="t('deleteExport')"
               @click="handleDeleteExport"
             />
           </div>
@@ -135,7 +136,7 @@
                 <div class="file-detail-item">
                   <span class="detail-label">{{ t("urlExpiresAt") }}:</span>
                   <span class="detail-value">{{
-                    formatDate(file.urlExpiresAt)
+                    formatDateTime(file.urlExpiresAt)
                   }}</span>
                 </div>
               </div>
@@ -145,6 +146,7 @@
                   :label="t('download')"
                   icon="pi pi-download"
                   :disabled="isUrlExpired(file.urlExpiresAt)"
+                  :aria-label="`${t('download')} ${file.fileName}`"
                   @click="handleDownload(file.downloadUrl)"
                 />
               </div>
@@ -158,7 +160,6 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useDateFormat } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
@@ -175,6 +176,7 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useNotify } from "src/utils/ui/notify";
+import { formatDateTime, formatFileSize, isUrlExpired } from "src/utils/format";
 
 interface Props {
   exportSlugId: string;
@@ -206,7 +208,8 @@ const deleteExportMutation = useDeleteExportMutation();
 const isModerator = computed(() => profileData.value.isModerator);
 
 function handleDeleteExport(): void {
-  if (!exportStatusQuery.data.value) return;
+  const exportData = exportStatusQuery.data.value;
+  if (!exportData) return;
 
   $q.dialog({
     title: t("deleteConfirmTitle"),
@@ -217,7 +220,7 @@ function handleDeleteExport(): void {
     deleteExportMutation.mutate(
       {
         exportSlugId: props.exportSlugId,
-        conversationSlugId: exportStatusQuery.data.value!.conversationSlugId,
+        conversationSlugId: exportData.conversationSlugId,
       },
       {
         onSuccess: () => {
@@ -225,33 +228,17 @@ function handleDeleteExport(): void {
           void router.push({
             name: "/conversation/[conversationSlugId]/export",
             params: {
-              conversationSlugId:
-                exportStatusQuery.data.value!.conversationSlugId,
+              conversationSlugId: exportData.conversationSlugId,
             },
           });
         },
-        onError: () => {
+        onError: (error) => {
+          console.error("Failed to delete export:", error);
           showNotifyMessage(t("deleteError"));
         },
       }
     );
   });
-}
-
-function formatDate(date: Date): string {
-  return useDateFormat(date, "MMM D, YYYY HH:mm z").value;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-}
-
-function isUrlExpired(expiresAt: Date): boolean {
-  return expiresAt.getTime() < Date.now();
 }
 
 function handleDownload(downloadUrl: string): void {
