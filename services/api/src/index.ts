@@ -584,6 +584,14 @@ async function verifyUcanAndKnownDeviceStatus(
 
 const apiVersion = "v1";
 
+function checkConversationExportEnabled(): void {
+    if (!config.CONVERSATION_EXPORT_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "Conversation export feature is currently disabled",
+        );
+    }
+}
+
 // const awsMailConf = {
 //     accessKeyId: config.AWS_ACCESS_KEY_ID,
 //     secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
@@ -2541,6 +2549,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            checkConversationExportEnabled();
             await verifyUcanAndKnownDeviceStatus(db, request, {
                 expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
             });
@@ -2561,6 +2570,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            checkConversationExportEnabled();
             await verifyUcanAndKnownDeviceStatus(db, request, {
                 expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
             });
@@ -2581,6 +2591,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            checkConversationExportEnabled();
             await verifyUcanAndKnownDeviceStatus(db, request, {
                 expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
             });
@@ -2600,6 +2611,7 @@ server.after(() => {
             params: Dto.deleteConversationExportRequest,
         },
         handler: async (request) => {
+            checkConversationExportEnabled();
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
                 db,
                 request,
