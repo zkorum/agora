@@ -93,6 +93,11 @@ const configSchema = sharedConfigSchema.extend({
         .string()
         .default("exports/conversations/"),
     CONVERSATION_EXPORT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
+    CONVERSATION_EXPORT_ENABLED: z
+        .enum(["true", "false"])
+        .optional()
+        .default("true")
+        .transform((val) => val === "true"),
 });
 
 export const config = configSchema.parse(process.env);
