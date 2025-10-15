@@ -372,6 +372,7 @@ export async function deleteConversationExport({
         .select({
             id: conversationExportTable.id,
             isDeleted: conversationExportTable.isDeleted,
+            status: conversationExportTable.status,
         })
         .from(conversationExportTable)
         .where(eq(conversationExportTable.slugId, exportSlugId))
@@ -385,6 +386,16 @@ export async function deleteConversationExport({
 
     if (exportRecord.isDeleted) {
         throw httpErrors.badRequest("Export already deleted");
+    }
+
+    // Only allow deletion of completed or failed exports
+    if (
+        exportRecord.status !== "completed" &&
+        exportRecord.status !== "failed"
+    ) {
+        throw httpErrors.badRequest(
+            "Cannot delete export while it is still processing",
+        );
     }
 
     try {
