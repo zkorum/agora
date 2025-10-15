@@ -27,7 +27,7 @@
             :aria-label="t('viewConversation')"
             @click="navigateToConversation"
             @keydown.enter="navigateToConversation"
-            @keydown.space.prevent="navigateToConversation"
+            @keydown.space="navigateToConversation"
           >
             <PostDetails
               :conversation-data="conversationQuery.data.value"
