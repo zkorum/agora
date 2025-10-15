@@ -25,6 +25,9 @@ import {
 } from "./utils.js";
 import type { ProcessConversationExportParams } from "./types.js";
 
+// Maximum number of exports to keep per conversation
+const MAX_EXPORTS_PER_CONVERSATION = 7;
+
 interface RequestConversationExportParams {
     db: PostgresDatabase;
     conversationSlugId: string;
@@ -71,6 +74,26 @@ export async function requestConversationExport({
     if (opinionCount === 0) {
         throw httpErrors.badRequest(
             "Cannot export conversation with no opinions",
+        );
+    }
+
+    // Cleanup old exports
+    try {
+        const deletedCount = await cleanupOldExports({
+            db,
+            conversationId,
+            maxExportsToKeep: MAX_EXPORTS_PER_CONVERSATION - 1,
+        });
+        if (deletedCount > 0) {
+            log.info(
+                `Cleaned up ${deletedCount.toString()} old exports for conversation ${conversationId.toString()} before creating new export`,
+            );
+        }
+    } catch (error: unknown) {
+        // Log error but don't block export creation
+        log.error(
+            `Error cleaning up old exports for conversation ${conversationId.toString()}:`,
+            error,
         );
     }
 
@@ -376,7 +399,7 @@ export async function getConversationExportHistory({
             ),
         )
         .orderBy(desc(conversationExportTable.createdAt))
-        .limit(10);
+        .limit(MAX_EXPORTS_PER_CONVERSATION);
 
     return exports.map((exp) => ({
         exportSlugId: exp.exportSlugId,
@@ -545,4 +568,97 @@ export async function cleanupExpiredExports({
             );
         }
     }
+}
+
+interface CleanupOldExportsParams {
+    db: PostgresDatabase;
+    conversationId: number;
+    maxExportsToKeep: number;
+}
+
+/**
+ * Cleanup old exports for a conversation, keeping only the most recent ones.
+ * This is called before creating a new export to enforce the limit.
+ */
+async function cleanupOldExports({
+    db,
+    conversationId,
+    maxExportsToKeep,
+}: CleanupOldExportsParams): Promise<number> {
+    const now = new Date();
+
+    // Find all non-deleted exports for this conversation, ordered by creation date (newest first)
+    const existingExports = await db
+        .select({
+            id: conversationExportTable.id,
+        })
+        .from(conversationExportTable)
+        .where(
+            and(
+                eq(conversationExportTable.conversationId, conversationId),
+                eq(conversationExportTable.isDeleted, false),
+            ),
+        )
+        .orderBy(desc(conversationExportTable.createdAt));
+
+    // If we have more than the max, delete the oldest ones
+    if (existingExports.length > maxExportsToKeep) {
+        const exportsToDelete = existingExports.slice(maxExportsToKeep);
+
+        log.info(
+            `Cleaning up ${exportsToDelete.length.toString()} old exports for conversation ${conversationId.toString()}`,
+        );
+
+        for (const exportRecord of exportsToDelete) {
+            try {
+                // Fetch all S3 keys for this export
+                const fileRecords = await db
+                    .select({
+                        s3Key: conversationExportFileTable.s3Key,
+                    })
+                    .from(conversationExportFileTable)
+                    .where(
+                        eq(
+                            conversationExportFileTable.exportId,
+                            exportRecord.id,
+                        ),
+                    );
+
+                // Delete from S3
+                for (const file of fileRecords) {
+                    if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+                        await deleteFromS3({
+                            s3Key: file.s3Key,
+                            bucketName: config.AWS_S3_BUCKET_NAME,
+                        });
+                    }
+                }
+
+                log.info(
+                    `Deleted ${fileRecords.length.toString()} files from S3 for export ${exportRecord.id.toString()}`,
+                );
+
+                // Mark as deleted in database
+                await db
+                    .update(conversationExportTable)
+                    .set({
+                        isDeleted: true,
+                        deletedAt: now,
+                        updatedAt: now,
+                    })
+                    .where(eq(conversationExportTable.id, exportRecord.id));
+
+                log.info(`Cleaned up old export ${exportRecord.id.toString()}`);
+            } catch (error: unknown) {
+                log.error(
+                    `Error cleaning up old export ${exportRecord.id.toString()}:`,
+                    error,
+                );
+            }
+        }
+
+        return exportsToDelete.length;
+    }
+
+    return 0;
 }
