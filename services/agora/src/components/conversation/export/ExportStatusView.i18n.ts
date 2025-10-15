@@ -6,6 +6,7 @@ export interface ExportStatusViewTranslations {
   processingMessage: string;
   failedMessage: string;
   download: string;
+  downloadExpired: string;
   exportInfo: string;
   exportId: string;
   conversationId: string;
@@ -37,6 +38,7 @@ export const exportStatusViewTranslations: Record<
     failedMessage:
       "The export failed. Please return to the export history page and request a new export.",
     download: "Download",
+    downloadExpired: "Download Expired",
     exportInfo: "Export Information",
     exportId: "Export ID",
     conversationId: "Conversation ID",
@@ -64,6 +66,7 @@ export const exportStatusViewTranslations: Record<
     failedMessage:
       "فشل التصدير. يرجى العودة إلى صفحة سجل التصدير وطلب تصدير جديد.",
     download: "تنزيل",
+    downloadExpired: "انتهت صلاحية التنزيل",
     exportInfo: "معلومات التصدير",
     exportId: "معرف التصدير",
     conversationId: "معرف المحادثة",
@@ -91,6 +94,7 @@ export const exportStatusViewTranslations: Record<
     failedMessage:
       "La exportación falló. Por favor, vuelva a la página de historial de exportaciones y solicite una nueva exportación.",
     download: "Descargar",
+    downloadExpired: "Descarga Expirada",
     exportInfo: "Información de Exportación",
     exportId: "ID de Exportación",
     conversationId: "ID de Conversación",
@@ -118,6 +122,7 @@ export const exportStatusViewTranslations: Record<
     failedMessage:
       "L'exportation a échoué. Veuillez retourner à la page d'historique des exportations et demander une nouvelle exportation.",
     download: "Télécharger",
+    downloadExpired: "Téléchargement Expiré",
     exportInfo: "Informations sur l'Exportation",
     exportId: "ID de l'Exportation",
     conversationId: "ID de la Conversation",
@@ -143,6 +148,7 @@ export const exportStatusViewTranslations: Record<
     processingMessage: "您的导出正在处理中。此页面将自动更新。",
     failedMessage: "导出失败。请返回导出历史页面并请求新的导出。",
     download: "下载",
+    downloadExpired: "下载已过期",
     exportInfo: "导出信息",
     exportId: "导出ID",
     conversationId: "对话ID",
@@ -167,6 +173,7 @@ export const exportStatusViewTranslations: Record<
     processingMessage: "您的匯出正在處理中。此頁面將自動更新。",
     failedMessage: "匯出失敗。請返回匯出歷史頁面並請求新的匯出。",
     download: "下載",
+    downloadExpired: "下載已過期",
     exportInfo: "匯出資訊",
     exportId: "匯出ID",
     conversationId: "對話ID",
@@ -193,6 +200,7 @@ export const exportStatusViewTranslations: Record<
     failedMessage:
       "エクスポートが失敗しました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
     download: "ダウンロード",
+    downloadExpired: "ダウンロード期限切れ",
     exportInfo: "エクスポート情報",
     exportId: "エクスポートID",
     conversationId: "会話ID",
