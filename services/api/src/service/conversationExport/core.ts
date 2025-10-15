@@ -23,7 +23,6 @@ import type { ProcessConversationExportParams } from "./types.js";
 interface RequestConversationExportParams {
     db: PostgresDatabase;
     conversationSlugId: string;
-    userId: string;
 }
 
 /**
@@ -234,7 +233,6 @@ async function processConversationExport({
 interface GetConversationExportStatusParams {
     db: PostgresDatabase;
     exportSlugId: string;
-    userId: string;
 }
 
 /**
@@ -318,7 +316,6 @@ export async function getConversationExportStatus({
 interface GetConversationExportHistoryParams {
     db: PostgresDatabase;
     conversationSlugId: string;
-    userId: string;
 }
 
 /**
@@ -355,6 +352,80 @@ export async function getConversationExportHistory({
         createdAt: exp.createdAt,
         totalFileCount: exp.totalFileCount ?? undefined,
     }));
+}
+
+interface DeleteConversationExportParams {
+    db: PostgresDatabase;
+    exportSlugId: string;
+}
+
+/**
+ * Delete a conversation export manually (moderator action).
+ * Marks the export as deleted and cleans up S3 files.
+ */
+export async function deleteConversationExport({
+    db,
+    exportSlugId,
+}: DeleteConversationExportParams): Promise<void> {
+    // Find the export
+    const exportRecordList = await db
+        .select({
+            id: conversationExportTable.id,
+            isDeleted: conversationExportTable.isDeleted,
+        })
+        .from(conversationExportTable)
+        .where(eq(conversationExportTable.slugId, exportSlugId))
+        .limit(1);
+
+    if (exportRecordList.length === 0) {
+        throw httpErrors.notFound("Export not found");
+    }
+
+    const exportRecord = exportRecordList[0];
+
+    if (exportRecord.isDeleted) {
+        throw httpErrors.badRequest("Export already deleted");
+    }
+
+    try {
+        // Fetch all S3 keys for this export
+        const fileRecords = await db
+            .select({
+                s3Key: conversationExportFileTable.s3Key,
+            })
+            .from(conversationExportFileTable)
+            .where(eq(conversationExportFileTable.exportId, exportRecord.id));
+
+        // Delete from S3
+        for (const file of fileRecords) {
+            if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+                await deleteFromS3({
+                    s3Key: file.s3Key,
+                    bucketName: config.AWS_S3_BUCKET_NAME,
+                });
+            }
+        }
+
+        log.info(
+            `Deleted ${fileRecords.length.toString()} files from S3 for export ${exportSlugId}`,
+        );
+
+        // Mark as deleted in database
+        const now = new Date();
+        await db
+            .update(conversationExportTable)
+            .set({
+                isDeleted: true,
+                deletedAt: now,
+                updatedAt: now,
+            })
+            .where(eq(conversationExportTable.id, exportRecord.id));
+
+        log.info(`Manually deleted export ${exportSlugId}`);
+    } catch (error: unknown) {
+        log.error(`Error deleting export ${exportSlugId}:`, error);
+        throw error;
+    }
 }
 
 interface CleanupExpiredExportsParams {
