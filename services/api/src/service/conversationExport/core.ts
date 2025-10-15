@@ -162,8 +162,9 @@ async function processConversationExport({
             // Generate filename for database/S3 storage (without timestamp)
             const fileName = generateFileName(fileType);
 
-            // Generate download filename with timestamp for Content-Disposition
+            // Generate download filename with conversation slug ID and timestamp for Content-Disposition
             const downloadFileName = generateDownloadFileName({
+                conversationSlugId,
                 fileType,
                 createdAt: exportCreatedAt,
             });
