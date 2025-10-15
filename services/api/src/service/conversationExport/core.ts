@@ -17,7 +17,11 @@ import type {
     GetConversationExportHistoryResponse,
 } from "@/shared/types/dto.js";
 import { ExportGeneratorFactory } from "./generators/factory.js";
-import { generateS3Key, generateFileName } from "./utils.js";
+import {
+    generateS3Key,
+    generateFileName,
+    generateDownloadFileName,
+} from "./utils.js";
 import type { ProcessConversationExportParams } from "./types.js";
 
 interface RequestConversationExportParams {
@@ -115,9 +119,12 @@ async function processConversationExport({
     conversationSlugId,
 }: ProcessConversationExportParams): Promise<void> {
     try {
-        // Get export ID for file records
+        // Get export ID and createdAt for file records
         const exportRecordList = await db
-            .select({ id: conversationExportTable.id })
+            .select({
+                id: conversationExportTable.id,
+                createdAt: conversationExportTable.createdAt,
+            })
             .from(conversationExportTable)
             .where(eq(conversationExportTable.slugId, exportSlugId))
             .limit(1);
@@ -127,6 +134,7 @@ async function processConversationExport({
         }
 
         const exportId = exportRecordList[0].id;
+        const exportCreatedAt = exportRecordList[0].createdAt;
 
         // Initialize generator factory
         const factory = new ExportGeneratorFactory();
@@ -151,6 +159,15 @@ async function processConversationExport({
                 conversationSlugId,
             });
 
+            // Generate filename for database/S3 storage (without timestamp)
+            const fileName = generateFileName(fileType);
+
+            // Generate download filename with timestamp for Content-Disposition
+            const downloadFileName = generateDownloadFileName({
+                fileType,
+                createdAt: exportCreatedAt,
+            });
+
             // Generate S3 key
             const s3Key = generateS3Key({
                 conversationSlugId,
@@ -158,11 +175,12 @@ async function processConversationExport({
                 fileType,
             });
 
-            // Upload to S3
+            // Upload to S3 with download filename for Content-Disposition
             await uploadToS3({
                 s3Key,
                 buffer: csvBuffer,
                 bucketName: config.AWS_S3_BUCKET_NAME,
+                fileName: downloadFileName,
             });
 
             // Generate pre-signed URL (valid for 7 days)
@@ -172,13 +190,13 @@ async function processConversationExport({
                 expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
             });
 
-            // Insert file record
+            // Insert file record (store simple filename without timestamp)
             const [fileRecord] = await db
                 .insert(conversationExportFileTable)
                 .values({
                     exportId: exportId,
                     fileType: fileType,
-                    fileName: generateFileName(fileType),
+                    fileName: fileName,
                     fileSize: csvBuffer.length,
                     recordCount: recordCount,
                     s3Key: s3Key,
