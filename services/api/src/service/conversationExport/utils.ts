@@ -35,16 +35,18 @@ export function generateFileName(fileType: string): string {
 }
 
 /**
- * Generate download filename with timestamp for Content-Disposition header
+ * Generate download filename with conversation slug ID and timestamp for Content-Disposition header
  */
 export function generateDownloadFileName({
+    conversationSlugId,
     fileType,
     createdAt,
 }: {
+    conversationSlugId: string;
     fileType: string;
     createdAt: Date;
 }): string {
     const utcDate = new TZDate(createdAt, "UTC");
     const timestamp = formatDate(utcDate, "yyyyMMdd-HHmmss");
-    return `${fileType}-${timestamp}.csv`;
+    return `${conversationSlugId}-${fileType}-${timestamp}.csv`;
 }
