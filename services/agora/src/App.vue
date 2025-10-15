@@ -9,7 +9,6 @@ import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
-import "primeicons/primeicons.css";
 
 swiperElement.register();
 

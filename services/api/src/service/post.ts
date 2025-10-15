@@ -24,6 +24,7 @@ import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processHtmlBody } from "@/shared-app-api/html.js";
+import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -351,7 +352,7 @@ export async function deletePostBySlugId({
     proof,
     didWrite,
 }: DeletePostBySlugIdProps): Promise<void> {
-    await db.transaction(async (tx) => {
+    const conversationId = await db.transaction(async (tx) => {
         // Delete the conversation
         const updatedConversationIdResponse = await tx
             .update(conversationTable)
@@ -399,7 +400,29 @@ export async function deletePostBySlugId({
                 currentContentId: null,
             })
             .where(eq(opinionTable.conversationId, conversationId));
+
+        return conversationId;
     });
+
+    // Delete all conversation exports after the transaction completes
+    // This is done outside the transaction to prevent S3 failures from blocking conversation deletion
+    try {
+        const deletedExportCount = await deleteAllConversationExports({
+            db,
+            conversationId,
+        });
+        if (deletedExportCount > 0) {
+            log.info(
+                `Deleted ${deletedExportCount.toString()} exports for conversation ${conversationId.toString()}`,
+            );
+        }
+    } catch (error: unknown) {
+        // Log error but don't throw - conversation deletion should succeed even if export deletion fails
+        log.error(
+            `Error deleting exports for conversation ${conversationId.toString()}:`,
+            error,
+        );
+    }
 }
 
 // interface CreateConversationFromPolisProps {

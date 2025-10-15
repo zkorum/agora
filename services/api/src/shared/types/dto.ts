@@ -38,6 +38,8 @@ import {
     zodPolisUrl,
     zodLanguagePreferences,
     zodPolisClusters,
+    zodExportStatus,
+    zodExportFileInfo,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -551,6 +553,55 @@ export class Dto {
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
         })
         .strict();
+
+    // Conversation export
+    static requestConversationExportRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static requestConversationExportResponse = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationExportStatusRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationExportStatusResponse = z
+        .object({
+            exportSlugId: zodSlugId,
+            status: zodExportStatus,
+            conversationSlugId: zodSlugId,
+            totalFileSize: z.number().int().positive().optional(),
+            totalFileCount: z.number().int().positive().optional(),
+            files: z.array(zodExportFileInfo).optional(),
+            errorMessage: z.string().optional(),
+            createdAt: z.date(),
+        })
+        .strict();
+    static getConversationExportHistoryRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationExportHistoryResponse = z.array(
+        z
+            .object({
+                exportSlugId: zodSlugId,
+                status: zodExportStatus,
+                createdAt: z.date(),
+                totalFileCount: z.number().int().positive().optional(),
+            })
+            .strict(),
+    );
+    static deleteConversationExportRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -641,3 +692,24 @@ export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
+export type RequestConversationExportRequest = z.infer<
+    typeof Dto.requestConversationExportRequest
+>;
+export type RequestConversationExportResponse = z.infer<
+    typeof Dto.requestConversationExportResponse
+>;
+export type GetConversationExportStatusRequest = z.infer<
+    typeof Dto.getConversationExportStatusRequest
+>;
+export type GetConversationExportStatusResponse = z.infer<
+    typeof Dto.getConversationExportStatusResponse
+>;
+export type GetConversationExportHistoryRequest = z.infer<
+    typeof Dto.getConversationExportHistoryRequest
+>;
+export type GetConversationExportHistoryResponse = z.infer<
+    typeof Dto.getConversationExportHistoryResponse
+>;
+export type DeleteConversationExportRequest = z.infer<
+    typeof Dto.deleteConversationExportRequest
+>;
