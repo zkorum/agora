@@ -93,7 +93,6 @@
               :label="t('deleteExport')"
               icon="pi pi-trash"
               severity="danger"
-              outlined
               :loading="deleteExportMutation.isPending.value"
               :disabled="deleteExportMutation.isPending.value"
               @click="handleDeleteExport"
@@ -161,8 +160,6 @@
                   <PrimeButton
                     :label="t('download')"
                     icon="pi pi-download"
-                    severity="success"
-                    size="small"
                     as="span"
                   />
                 </a>
