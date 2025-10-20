@@ -351,6 +351,7 @@ export const zodOpinionItem = z
     .strict();
 export const zodClusterMetadata = z
     .object({
+        id: z.number().int().nonnegative(),
         key: zodPolisKey,
         numUsers: z.number().int().nonnegative(),
         aiLabel: z.string().optional(),

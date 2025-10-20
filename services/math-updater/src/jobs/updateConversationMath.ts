@@ -4,12 +4,16 @@
 
 import { log } from "@/app.js";
 import { config } from "@/config.js";
-import { conversationTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
+import {
+    conversationTable,
+    conversationUpdateQueueTable,
+} from "@/shared-backend/schema.js";
 import {
     getPolisVotes,
     getAndUpdatePolisMath,
 } from "@/services/polisMathUpdater.js";
 import { recalculateAndUpdateConversationCounters } from "@/conversationCounters.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { eq, and, sql } from "drizzle-orm";
 import type PgBoss from "pg-boss";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -88,15 +92,14 @@ export async function updateConversationMathHandler(
     job: PgBoss.Job<UpdateConversationMathData>,
     db: PostgresJsDatabase,
     axiosPolis: AxiosInstance,
+    googleCloudCredentials?: GoogleCloudCredentials,
 ): Promise<void> {
-    const { conversationId, conversationSlugId, requestedAt } =
-        job.data;
+    const { conversationId, conversationSlugId, requestedAt } = job.data;
 
     // Convert requestedAt from ISO string to Date if needed
     // (pg-boss serializes Date objects to strings)
-    const requestedAtDate = typeof requestedAt === 'string'
-        ? new Date(requestedAt)
-        : requestedAt;
+    const requestedAtDate =
+        typeof requestedAt === "string" ? new Date(requestedAt) : requestedAt;
 
     log.info(
         `[Math Updater] Starting math update for conversation ${conversationSlugId} (id: ${conversationId})`,
@@ -114,11 +117,19 @@ export async function updateConversationMathHandler(
             })
             .where(
                 and(
-                    eq(conversationUpdateQueueTable.conversationId, conversationId),
-                    eq(conversationUpdateQueueTable.requestedAt, requestedAtDate),
+                    eq(
+                        conversationUpdateQueueTable.conversationId,
+                        conversationId,
+                    ),
+                    eq(
+                        conversationUpdateQueueTable.requestedAt,
+                        requestedAtDate,
+                    ),
                 ),
             )
-            .returning({ conversationId: conversationUpdateQueueTable.conversationId });
+            .returning({
+                conversationId: conversationUpdateQueueTable.conversationId,
+            });
 
         if (lockResult.length === 0) {
             log.info(
@@ -170,6 +181,7 @@ export async function updateConversationMathHandler(
             awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
             awsAiLabelSummaryMaxTokens: config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
             awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
+            googleCloudCredentials,
         });
 
         // Update lastMathUpdateAt since math was successfully calculated
@@ -180,7 +192,9 @@ export async function updateConversationMathHandler(
             .set({
                 lastMathUpdateAt: completionTime,
             })
-            .where(eq(conversationUpdateQueueTable.conversationId, conversationId));
+            .where(
+                eq(conversationUpdateQueueTable.conversationId, conversationId),
+            );
 
         log.debug(
             `[Math Updater] Updated lastMathUpdateAt for conversation ${conversationSlugId}`,
@@ -204,12 +218,19 @@ export async function updateConversationMathHandler(
                     requestedAt: conversationUpdateQueueTable.requestedAt,
                 })
                 .from(conversationUpdateQueueTable)
-                .where(eq(conversationUpdateQueueTable.conversationId, conversationId))
+                .where(
+                    eq(
+                        conversationUpdateQueueTable.conversationId,
+                        conversationId,
+                    ),
+                )
                 .limit(1);
 
             if (queueEntry.length > 0) {
                 const currentRequestedAt = queueEntry[0].requestedAt;
-                const currentRequestedAtTime = new Date(currentRequestedAt).getTime();
+                const currentRequestedAtTime = new Date(
+                    currentRequestedAt,
+                ).getTime();
                 const jobRequestedAtTime = requestedAtDate.getTime();
 
                 if (currentRequestedAtTime > jobRequestedAtTime) {

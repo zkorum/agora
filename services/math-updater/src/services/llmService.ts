@@ -101,7 +101,11 @@ async function getConversationInsightsFrom({
     };
 }
 
-export async function updateAiLabelsAndSummaries({
+/**
+ * Phase 2: Generate AI labels and summaries by calling LLM (no DB writes)
+ * Returns the AI-generated labels and summaries for each cluster
+ */
+export async function generateAiLabelsAndSummaries({
     db,
     conversationId,
     polisContentId,
@@ -112,7 +116,9 @@ export async function updateAiLabelsAndSummaries({
     awsAiLabelSummaryTopP,
     awsAiLabelSummaryMaxTokens,
     awsAiLabelSummaryPrompt,
-}: UpdateAiLabelsAndSummariesProps): Promise<void> {
+}: UpdateAiLabelsAndSummariesProps): Promise<
+    GenLabelSummaryOutputClusterStrict | GenLabelSummaryOutputClusterLoose
+> {
     const conversationInsights = await getConversationInsightsFrom({
         db,
         conversationInsightsWithOpinionIds,
@@ -139,12 +145,7 @@ export async function updateAiLabelsAndSummaries({
             conversationId,
         )}' and polisContentId='${String(polisContentId)}': ${JSON.stringify(genLabelSummaryOutput)}`,
     );
-    await updateClustersLabelsAndSummaries({
-        db,
-        conversationId,
-        polisContentId,
-        aiClustersLabelsAndSummaries: genLabelSummaryOutput.clusters,
-    });
+    return genLabelSummaryOutput.clusters;
 }
 
 interface UpdateClustersLabelsAndSummariesProps {
@@ -156,7 +157,11 @@ interface UpdateClustersLabelsAndSummariesProps {
         | GenLabelSummaryOutputClusterLoose;
 }
 
-async function updateClustersLabelsAndSummaries({
+/**
+ * Phase 3: Write AI labels and summaries to polisClusterTable
+ * Should be called inside a transaction
+ */
+export async function updateClustersLabelsAndSummaries({
     db,
     conversationId,
     polisContentId,

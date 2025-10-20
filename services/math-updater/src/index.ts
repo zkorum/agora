@@ -12,6 +12,10 @@ import {
 } from "./jobs/updateConversationMath.js";
 import axios, { AxiosInstance } from "axios";
 import { createDb } from "./shared-backend/db.js";
+import {
+    initializeGoogleCloudCredentials,
+    type GoogleCloudCredentials,
+} from "./shared-backend/googleCloudAuth.js";
 import { sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import pLimit from "p-limit";
@@ -73,6 +77,39 @@ async function main() {
     // Initialize database connection
     const db = await createDb(config, log);
     log.info("[Math Updater] Database connection established");
+
+    // Initialize Google Cloud Translation credentials (optional)
+    let googleCloudCredentials: GoogleCloudCredentials | undefined = undefined;
+    if (
+        config.GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY !== undefined ||
+        config.GOOGLE_APPLICATION_CREDENTIALS !== undefined
+    ) {
+        try {
+            googleCloudCredentials = await initializeGoogleCloudCredentials({
+                googleCloudServiceAccountAwsSecretKey:
+                    config.GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY,
+                awsSecretRegion: config.AWS_SECRET_REGION,
+                googleApplicationCredentialsPath:
+                    config.GOOGLE_APPLICATION_CREDENTIALS,
+                googleCloudTranslationLocation:
+                    config.GOOGLE_CLOUD_TRANSLATION_LOCATION,
+                log,
+            });
+            log.info(
+                "[Math Updater] Google Cloud Translation initialized successfully",
+            );
+        } catch (error) {
+            log.error(
+                error,
+                "[Math Updater] Failed to initialize Google Cloud Translation - translations will be disabled",
+            );
+            // Continue without translations - this is not a fatal error
+        }
+    } else {
+        log.info(
+            "[Math Updater] Google Cloud Translation not configured - translations disabled",
+        );
+    }
 
     // Initialize pg-boss with AWS Secrets support
     const pgBossCommonConfig = {
@@ -187,7 +224,12 @@ async function main() {
             await Promise.all(
                 jobs.map((job) =>
                     limit(() =>
-                        updateConversationMathHandler(job, db, axiosPolis),
+                        updateConversationMathHandler(
+                            job,
+                            db,
+                            axiosPolis,
+                            googleCloudCredentials,
+                        ),
                     ),
                 ),
             );

@@ -14,6 +14,8 @@ import {
     polisClusterOpinionTable,
     conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
+import { generateClusterTranslationsOnDemand } from "./clusterTranslation.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import type {
     ConversationAnalysis,
     CreateCommentResponse,
@@ -956,16 +958,21 @@ export async function fetchAnalysisByConversationSlugId({
     db,
     conversationSlugId,
     personalizationUserId,
+    displayLanguage = "en",
+    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     personalizationUserId?: string;
+    displayLanguage?: string;
+    googleCloudCredentials?: GoogleCloudCredentials;
 }): Promise<ConversationAnalysis> {
     const { getPolisMetadata } = useCommonPost();
     const polisMetadata = await getPolisMetadata({
         db: db,
         conversationSlugId,
         personalizationUserId,
+        displayLanguage,
     });
     if (polisMetadata === undefined) {
         return {
@@ -974,6 +981,35 @@ export async function fetchAnalysisByConversationSlugId({
             controversial: [],
             clusters: {},
         };
+    }
+
+    // Phase 2: Calling external APIs for conversationId
+    // If translations are requested (non-English), trigger on-demand translation
+    // generation for any missing translations in the background
+    if (displayLanguage !== "en" && polisMetadata.missingTranslations.size > 0) {
+        if (googleCloudCredentials !== undefined) {
+            log.info(
+                `[Phase 2] Calling Google Cloud Translation API for conversationSlugId=${conversationSlugId}, displayLanguage=${displayLanguage}, missingTranslationsCount=${polisMetadata.missingTranslations.size}`,
+            );
+            // Fire and forget - don't block the response on translation generation
+            // The translations will be available on the next request
+            generateClusterTranslationsOnDemand(
+                db,
+                polisMetadata.missingTranslations,
+                displayLanguage,
+                googleCloudCredentials,
+                "en",
+            ).catch((err: unknown) => {
+                log.error(
+                    err,
+                    `Failed to generate translations for ${conversationSlugId}`,
+                );
+            });
+        } else {
+            log.warn(
+                `[Phase 2] Skipping Google Cloud Translation API call for conversationSlugId=${conversationSlugId}, displayLanguage=${displayLanguage}: Google Cloud credentials not configured (GOOGLE_CLOUD_* environment variables missing)`,
+            );
+        }
     }
     const consensusOpinions = await fetchOpinionsByConversationSlugId({
         db: db,
@@ -1001,17 +1037,20 @@ export async function fetchAnalysisByConversationSlugId({
             clusterKey: clusterKey,
             personalizationUserId,
         });
+        // Destructure to exclude 'id' field since the response schema doesn't expect it
+        const { id: _id, ...clusterWithoutId } = clusterMetadata;
         polisClusters[clusterKey] = {
-            ...clusterMetadata,
+            ...clusterWithoutId,
             representative: Array.from(representativeOpinions.values()),
         };
     }
-    return {
+    const result: ConversationAnalysis = {
         polisContentId: polisMetadata.polisContentId,
         consensus: Array.from(consensusOpinions.values()),
         controversial: Array.from(controversialOpinions.values()),
         clusters: polisClusters,
     };
+    return result;
 }
 
 async function getPostIdFromPostSlugId(

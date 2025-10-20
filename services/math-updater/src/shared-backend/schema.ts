@@ -1671,6 +1671,41 @@ export const polisClusterTable = pgTable("polis_cluster", {
         .notNull(),
 });
 
+// Translations for cluster labels and summaries in different display languages
+// English version is stored in polisClusterTable.aiLabel/aiSummary
+// Other languages are stored here for permanent reference
+export const polisClusterTranslationTable = pgTable(
+    "polis_cluster_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        polisClusterId: integer("polis_cluster_id")
+            .notNull()
+            .references(() => polisClusterTable.id),
+        languageCode: varchar("language_code", { length: 10 }).notNull(), // BCP 47 format
+        aiLabel: varchar("ai_label", { length: 100 }),
+        aiSummary: varchar("ai_summary", { length: 1000 }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        unique("unique_cluster_language").on(t.polisClusterId, t.languageCode),
+        index("polis_cluster_translation_lookup_idx").on(
+            t.polisClusterId,
+            t.languageCode,
+        ),
+    ],
+);
+
 // one user can belong to only one cluster per polisContent
 // one user can belong to many cluster across conversations (across polisContent)
 // many users can belong to one cluster per polisContent

@@ -162,6 +162,38 @@ interface UpdateLanguagePreferencesOptions {
     preferences: UpdateLanguagePreferencesRequest;
 }
 
+/**
+ * Get user's display language from database, or fall back to a provided default
+ * @param db - Database instance
+ * @param userId - User ID to fetch display language for
+ * @param defaultLanguage - Fallback language if user has no preference (default: "en")
+ * @returns Display language code
+ */
+export async function getUserDisplayLanguage(
+    db: PostgresDatabase,
+    userId: string,
+    defaultLanguage: string = "en",
+): Promise<string> {
+    const displayLanguageResult = await db
+        .select({
+            languageCode: userDisplayLanguageTable.languageCode,
+        })
+        .from(userDisplayLanguageTable)
+        .where(
+            and(
+                eq(userDisplayLanguageTable.userId, userId),
+                eq(userDisplayLanguageTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
+
+    if (displayLanguageResult.length > 0) {
+        return displayLanguageResult[0].languageCode;
+    }
+
+    return defaultLanguage;
+}
+
 export async function updateLanguagePreferences({
     db,
     userId,

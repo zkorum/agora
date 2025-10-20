@@ -108,7 +108,15 @@ import {
     getLanguagePreferences,
     updateLanguagePreferences,
 } from "./service/language.js";
+import {
+    ZodSupportedDisplayLanguageCodes,
+    type SupportedDisplayLanguageCodes,
+} from "./shared/languages.js";
 import { createDb } from "./shared-backend/db.js";
+import {
+    initializeGoogleCloudCredentials,
+    type GoogleCloudCredentials,
+} from "./shared-backend/googleCloudAuth.js";
 import { nowZeroMs } from "./shared/util.js";
 // import { Protocols, createLightNode } from "@waku/sdk";
 // import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
@@ -280,6 +288,37 @@ server.setErrorHandler((error, _request, reply) => {
 // await node.waitForPeers([Protocols.LightPush]);
 
 const db = await createDb(config, log);
+
+// Initialize Google Cloud Translation credentials (optional)
+let googleCloudCredentials: GoogleCloudCredentials | undefined = undefined;
+if (
+    config.GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY !== undefined ||
+    config.GOOGLE_APPLICATION_CREDENTIALS !== undefined
+) {
+    try {
+        googleCloudCredentials = await initializeGoogleCloudCredentials({
+            googleCloudServiceAccountAwsSecretKey:
+                config.GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY,
+            awsSecretRegion: config.AWS_SECRET_REGION,
+            googleApplicationCredentialsPath:
+                config.GOOGLE_APPLICATION_CREDENTIALS,
+            googleCloudTranslationLocation:
+                config.GOOGLE_CLOUD_TRANSLATION_LOCATION,
+            log,
+        });
+        log.info("[API] Google Cloud Translation initialized successfully");
+    } catch (error) {
+        log.error(
+            error,
+            "[API] Failed to initialize Google Cloud Translation - translations will be disabled",
+        );
+        // Continue without translations - this is not a fatal error
+    }
+} else {
+    log.info(
+        "[API] Google Cloud Translation not configured - translations disabled",
+    );
+}
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -1362,16 +1401,41 @@ server.after(() => {
                     },
                 );
 
+                // Get display language from validated header or use default "en"
+                const parsedHeaderDisplayLanguage =
+                    ZodSupportedDisplayLanguageCodes.safeParse(
+                        request.headers["accept-language"],
+                    );
+                const headerDisplayLanguage: SupportedDisplayLanguageCodes =
+                    parsedHeaderDisplayLanguage.success
+                        ? parsedHeaderDisplayLanguage.data
+                        : "en";
+
+                // Get user's display language from DB (falls back to header language)
+                const displayLanguage = await getLanguagePreferences({
+                    db,
+                    userId: deviceStatus.userId,
+                    request: { currentDisplayLanguage: headerDisplayLanguage },
+                }).then((prefs) => prefs.displayLanguage);
+
                 const analysis = await fetchAnalysisByConversationSlugId({
                     db: db,
                     conversationSlugId: request.body.conversationSlugId,
                     personalizationUserId: deviceStatus.userId,
+                    displayLanguage,
+                    googleCloudCredentials,
                 });
                 return analysis;
             } else {
+                // Get display language from validated header or use default "en"
+                const displayLanguage =
+                    request.headers["accept-language"] ?? "en";
+
                 const analysis = await fetchAnalysisByConversationSlugId({
                     db: db,
                     conversationSlugId: request.body.conversationSlugId,
+                    displayLanguage,
+                    googleCloudCredentials,
                 });
                 return analysis;
             }

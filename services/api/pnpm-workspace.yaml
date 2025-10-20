@@ -1,4 +1,7 @@
+ignoredBuiltDependencies:
+  - protobufjs
+
 onlyBuiltDependencies:
-    - esbuild
-    - "@nestjs/core"
-    - "@openapitools/openapi-generator-cli"
+  - esbuild
+  - '@nestjs/core'
+  - '@openapitools/openapi-generator-cli'
