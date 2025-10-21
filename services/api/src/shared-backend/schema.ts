@@ -1098,17 +1098,6 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         importAuthor: text("import_author"),
-        needsMathUpdate: boolean("needs_math_update").notNull().default(false), // set by API when votes/opinions change
-        mathUpdateRequestedAt: timestamp("math_update_requested_at", {
-            // timestamp when math update was last requested (set when needsMathUpdate becomes true)
-            mode: "date",
-            precision: 0,
-        }),
-        lastMathUpdateAt: timestamp("last_math_update_at", {
-            // timestamp of last successful math calculation
-            mode: "date",
-            precision: 0,
-        }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1131,11 +1120,6 @@ export const conversationTable = pgTable(
     },
     (table) => [
         index("conversation_createdAt_idx").on(table.createdAt),
-        // Partial index for math-updater scan query optimization
-        // Only indexes conversations that need math updates for efficient scanning
-        index("conversation_math_update_scan_idx")
-            .on(table.needsMathUpdate, table.lastMathUpdateAt)
-            .where(sql`${table.needsMathUpdate} = true`),
     ],
 );
 
@@ -1749,5 +1733,40 @@ export const polisClusterOpinionTable = pgTable(
             "check_perc_btwn_0_and_1",
             sql`${table.probabilityAgreement} BETWEEN 0 and 1`,
         ),
+    ],
+);
+
+// Queue table for signaling that a conversation needs math update
+// This eliminates the need to UPDATE conversation table (which causes row locks)
+export const conversationUpdateQueueTable = pgTable(
+    "conversation_update_queue",
+    {
+        conversationId: integer("conversation_id")
+            .primaryKey()
+            .notNull()
+            .references(() => conversationTable.id, { onDelete: "cascade" }),
+        requestedAt: timestamp("requested_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        processedAt: timestamp("processed_at", {
+            mode: "date",
+            precision: 0,
+        }), // NULL = pending, NOT NULL = processed
+        lastMathUpdateAt: timestamp("last_math_update_at", {
+            mode: "date",
+            precision: 0,
+        }), // Timestamp of last successful math calculation (used for rate limiting)
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        index("idx_conversation_update_queue_pending").on(table.lastMathUpdateAt).where(sql`${table.processedAt} IS NULL`),
     ],
 );

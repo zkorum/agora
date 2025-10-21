@@ -350,10 +350,13 @@ interface VerifyUcanReturn {
 }
 async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
     const encodedUcan = getEncodedUcan(request);
+
     const { scheme, hierPart } = httpUrlToResourcePointer(
         new URL(request.originalUrl, SERVER_URL),
     );
-    const rootIssuerDid = ucans.parse(encodedUcan).payload.iss;
+
+    const parsedUcan = ucans.parse(encodedUcan);
+    const rootIssuerDid = parsedUcan.payload.iss;
     const result = await ucans.verify(encodedUcan, {
         audience: SERVER_DID,
         isRevoked: () =>
@@ -371,15 +374,13 @@ async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
         ],
     });
     if (!result.ok) {
-        for (const err of result.error) {
-            if (err instanceof Error) {
-                log.error(`Error verifying UCAN - ${err.name}: ${err.message}`);
-                log.error(err.cause);
-                log.error(err.stack);
-            } else {
-                log.error(`Unknown Error verifying UCAN:`);
-                log.error(err);
-            }
+        log.error(
+            `UCAN verification failed - encodedUcan: ${encodedUcan}, SERVER_DID: ${SERVER_DID}, scheme: ${scheme}, hierPart: ${hierPart}, parsedUcan: ${JSON.stringify(parsedUcan)}, result: ${JSON.stringify(result)}`,
+        );
+        if (Array.isArray(result.error)) {
+            result.error.forEach((err, i) => {
+                log.error(`UCAN verification error ${String(i)}: ${err instanceof Error ? `${err.name} - ${err.message}` : String(err)}`);
+            });
         }
         throw server.httpErrors.createError(
             401,

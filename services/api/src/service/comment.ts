@@ -12,6 +12,7 @@ import {
     polisClusterTable,
     polisClusterUserTable,
     polisClusterOpinionTable,
+    conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
 import type {
     ConversationAnalysis,
@@ -1056,19 +1057,16 @@ export async function postNewOpinion({
     voteNotifMilestones,
     isSeed,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
-    const { getPostMetadataFromSlugId, getOpinionCountBypassCache } =
-        useCommonPost();
+    const { getPostMetadataFromSlugId } = useCommonPost();
     const {
         id: conversationId,
         contentId: conversationContentId,
         authorId: conversationAuthorId,
         isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
-        opinionCount: conversationOpinionCount,
     } = await getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
-        useCache: false,
     });
     if (conversationContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
@@ -1105,11 +1103,6 @@ export async function postNewOpinion({
     });
 
     const opinionSlugId = generateRandomSlugId();
-    const userOpinionCountBeforeAction = await getOpinionCountBypassCache({
-        db,
-        conversationId,
-        userId,
-    });
 
     await db.transaction(async (tx) => {
         const insertCommentResponse = await tx
@@ -1156,22 +1149,11 @@ export async function postNewOpinion({
             })
             .where(eq(opinionTable.id, opinionId));
 
-        // Update the conversation's opinion count
-        await tx
-            .update(conversationTable)
-            .set({
-                opinionCount: conversationOpinionCount + 1,
-                lastReactedAt: now,
-                needsMathUpdate: true,
-                mathUpdateRequestedAt: now,
-            })
-            .where(eq(conversationTable.slugId, conversationSlugId));
-
-        // Update the user profile's comment count
+        // Update the user profile's comment count using atomic increment
         await tx
             .update(userTable)
             .set({
-                totalOpinionCount: userOpinionCountBeforeAction + 1,
+                totalOpinionCount: sql`total_opinion_count + 1`,
             })
             .where(eq(userTable.id, userId));
 
@@ -1200,21 +1182,37 @@ export async function postNewOpinion({
                 });
             }
         }
-
-        if (!isSeed) {
-            // opinion author agrees automatically on its own opinion
-            await castVoteForOpinionSlugId({
-                db: tx,
-                opinionSlugId: opinionSlugId,
-                didWrite: didWrite,
-                proof: proof,
-                votingAction: "agree",
-                userAgent: userAgent,
-                voteNotifMilestones,
-                now: now,
+        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
+        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
+        await tx
+            .insert(conversationUpdateQueueTable)
+            .values({
+                conversationId: conversationId,
+                requestedAt: now,
+                processedAt: null,
+            })
+            .onConflictDoUpdate({
+                target: conversationUpdateQueueTable.conversationId,
+                set: {
+                    requestedAt: now,
+                    processedAt: null,
+                },
             });
-        }
     });
+
+    // Auto-vote outside transaction to reduce lock duration
+    if (!isSeed) {
+        await castVoteForOpinionSlugId({
+            db: db,
+            opinionSlugId: opinionSlugId,
+            didWrite: didWrite,
+            proof: proof,
+            votingAction: "agree",
+            userAgent: userAgent,
+            voteNotifMilestones,
+            now: now,
+        });
+    }
 
     return {
         success: true,
@@ -1261,6 +1259,7 @@ export async function deleteOpinionBySlugId({
             )
             .returning({
                 updateCommentId: opinionTable.id,
+                conversationId: opinionTable.conversationId,
             });
 
         if (updatedCommentIdResponse.length != 1) {
@@ -1272,6 +1271,7 @@ export async function deleteOpinionBySlugId({
         }
 
         const commentId = updatedCommentIdResponse[0].updateCommentId;
+        const conversationId = updatedCommentIdResponse[0].conversationId;
 
         await tx.insert(opinionProofTable).values({
             type: "deletion",
@@ -1280,27 +1280,32 @@ export async function deleteOpinionBySlugId({
             proof: proof,
             proofVersion: 1,
         });
-    });
-    const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
-    const { conversationSlugId, conversationId } =
-        await getOpinionMetadataFromOpinionSlugId({
-            db,
-            opinionSlugId,
-        });
-    const { updateCountsBypassCache } = useCommonPost();
-    await updateCountsBypassCache({
-        db,
-        conversationSlugId,
-        lastReactedAt: now,
-    });
 
-    await db
-        .update(conversationTable)
-        .set({
-            needsMathUpdate: true,
-            mathUpdateRequestedAt: now,
-        })
-        .where(eq(conversationTable.id, conversationId));
+        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
+        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
+        await tx
+            .insert(conversationUpdateQueueTable)
+            .values({
+                conversationId: conversationId,
+                requestedAt: now,
+                processedAt: null,
+            })
+            .onConflictDoUpdate({
+                target: conversationUpdateQueueTable.conversationId,
+                set: {
+                    requestedAt: now,
+                    processedAt: null,
+                },
+            });
+
+        // Decrement user's total opinion count
+        await tx
+            .update(userTable)
+            .set({
+                totalOpinionCount: sql`total_opinion_count - 1`,
+            })
+            .where(eq(userTable.id, userId));
+    });
 }
 
 export async function bulkInsertOpinionsFromExternalPolisConvo({

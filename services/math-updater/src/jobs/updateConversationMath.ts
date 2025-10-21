@@ -4,20 +4,22 @@
 
 import { log } from "@/app.js";
 import { config } from "@/config.js";
-import { conversationTable } from "@/shared-backend/schema.js";
+import { conversationTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
 import {
     getPolisVotes,
     getAndUpdatePolisMath,
 } from "@/services/polisMathUpdater.js";
-import { eq, and } from "drizzle-orm";
+import { recalculateAndUpdateConversationCounters } from "@/conversationCounters.js";
+import { eq, and, sql } from "drizzle-orm";
 import type PgBoss from "pg-boss";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { AxiosInstance } from "axios";
+import { nowZeroMs } from "@/shared/util.js";
 
 export interface UpdateConversationMathData {
     conversationId: number;
     conversationSlugId: string;
-    mathUpdateRequestedAt: string | null; // Will be an ISO string after pg-boss serialization
+    requestedAt: Date | string; // Date object or ISO string (pg-boss serializes Dates to strings)
 }
 
 export async function updateConversationMathHandler(
@@ -25,21 +27,34 @@ export async function updateConversationMathHandler(
     db: PostgresJsDatabase,
     axiosPolis: AxiosInstance,
 ): Promise<void> {
-    const { conversationId, conversationSlugId, mathUpdateRequestedAt } =
+    const { conversationId, conversationSlugId, requestedAt } =
         job.data;
 
-    // Convert mathUpdateRequestedAt from ISO string to Date if present
+    // Convert requestedAt from ISO string to Date if needed
     // (pg-boss serializes Date objects to strings)
-    const mathUpdateRequestedAtDate = mathUpdateRequestedAt
-        ? new Date(mathUpdateRequestedAt)
-        : null;
+    const requestedAtDate = typeof requestedAt === 'string'
+        ? new Date(requestedAt)
+        : requestedAt;
 
     log.info(
         `[Math Updater] Starting math update for conversation ${conversationSlugId} (id: ${conversationId})`,
     );
 
     try {
-        // Get votes for the conversation
+        // STEP 1: Recalculate and fix counters before processing math
+        // This ensures counters are accurate and eliminates the need for expensive
+        // count queries in the API endpoints (opinion creation, vote casting)
+        log.info(
+            `[Math Updater] Recalculating counters for conversation ${conversationSlugId}`,
+        );
+        await recalculateAndUpdateConversationCounters(
+            db,
+            conversationId,
+            conversationSlugId,
+            (message, data) => log.info(data, message),
+        );
+
+        // STEP 2: Get votes for the conversation
         const votes = await getPolisVotes({
             db,
             conversationId,
@@ -67,32 +82,40 @@ export async function updateConversationMathHandler(
             awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
         });
 
-        // Clear the needsMathUpdate flag only if mathUpdateRequestedAt hasn't changed
-        // This prevents race conditions where new votes arrive during processing
-        const updateConditions = [eq(conversationTable.id, conversationId)];
+        // Always update lastMathUpdateAt since math was successfully calculated
+        const now = nowZeroMs();
+        await db
+            .update(conversationUpdateQueueTable)
+            .set({
+                lastMathUpdateAt: now,
+            })
+            .where(eq(conversationUpdateQueueTable.conversationId, conversationId));
 
-        // If mathUpdateRequestedAt was set when we started, only clear if it hasn't changed
-        if (mathUpdateRequestedAtDate !== null) {
-            updateConditions.push(
-                eq(
-                    conversationTable.mathUpdateRequestedAt,
-                    mathUpdateRequestedAtDate,
+        // Mark queue entry as processed
+        // RACE-CONDITION SAFE: Only mark as processed if requestedAt hasn't changed
+        // If requestedAt changed, it means a new update was requested while we were processing
+        const updateResult = await db
+            .update(conversationUpdateQueueTable)
+            .set({
+                processedAt: now,
+            })
+            .where(
+                and(
+                    eq(conversationUpdateQueueTable.conversationId, conversationId),
+                    eq(conversationUpdateQueueTable.requestedAt, requestedAtDate),
                 ),
+            )
+            .returning({ conversationId: conversationUpdateQueueTable.conversationId });
+
+        if (updateResult.length === 0) {
+            log.info(
+                `[Math Updater] Queue entry for conversation ${conversationSlugId} was updated during processing (new request arrived) - will be picked up in next scan`,
+            );
+        } else {
+            log.debug(
+                `[Math Updater] Marked queue entry as processed for conversation ${conversationSlugId}`,
             );
         }
-
-        await db
-            .update(conversationTable)
-            .set({
-                lastMathUpdateAt: new Date(),
-            })
-            .where(eq(conversationTable.id, conversationId));
-        await db
-            .update(conversationTable)
-            .set({
-                needsMathUpdate: false,
-            })
-            .where(and(...updateConditions));
 
         log.info(
             `[Math Updater] Successfully updated math for conversation ${conversationSlugId}`,

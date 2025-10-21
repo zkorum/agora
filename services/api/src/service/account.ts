@@ -1,5 +1,5 @@
 import { log } from "@/app.js";
-import { conversationTable, userTable } from "@/shared-backend/schema.js";
+import { conversationTable, userTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { getAllUserComments, getUserPosts, getUserVotes } from "./user.js";
@@ -733,22 +733,22 @@ export async function deleteUserAccount({
         await logout(tx, didWrite);
     });
 
-    // Recalculate counts for affected conversations
-    // Recalculate math for affected conversations
+    // Trigger math update for affected conversations
+    // The math-updater will reconcile counts automatically
     for (const affectedConversation of affectedConversations) {
-        const { updateCountsBypassCache } = useCommonPost();
-        await updateCountsBypassCache({
-            db,
-            conversationSlugId: affectedConversation.conversationSlugId,
-        });
         await db
-            .update(conversationTable)
-            .set({
-                needsMathUpdate: true,
-                mathUpdateRequestedAt: nowZeroMs(),
+            .insert(conversationUpdateQueueTable)
+            .values({
+                conversationId: affectedConversation.conversationId,
+                requestedAt: nowZeroMs(),
+                processedAt: null,
             })
-            .where(
-                eq(conversationTable.id, affectedConversation.conversationId),
-            );
+            .onConflictDoUpdate({
+                target: conversationUpdateQueueTable.conversationId,
+                set: {
+                    requestedAt: nowZeroMs(),
+                    processedAt: null,
+                },
+            });
     }
 }

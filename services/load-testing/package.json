@@ -1,0 +1,34 @@
+{
+    "name": "@zkorum/agora-load-testing",
+    "version": "1.0.0",
+    "description": "k6 load testing suite for Agora voting system",
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "test:single-conversation": "k6 run dist/scenario1-single-conversation.cjs",
+        "test:multiple-conversations": "k6 run dist/scenario2-multiple-conversations.cjs",
+        "test:all": "pnpm run build && pnpm run test:single-conversation && pnpm run test:multiple-conversations",
+        "lint": "eslint .",
+        "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
+        "format:check": "prettier . --check"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.27.0",
+        "@types/k6": "^0.53.0",
+        "@types/node": "^20.17.47",
+        "eslint": "^9.27.0",
+        "eslint-config-prettier": "^9.1.0",
+        "globals": "^15.15.0",
+        "prettier": "^3.5.3",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.32.1",
+        "vite": "^7.1.10"
+    },
+    "dependencies": {
+        "@ucans/ucans": "^0.12.0",
+        "@zkorum/keystore-idb": "^0.17.1",
+        "fast-text-encoding": "^1.0.6",
+        "tweetnacl": "^1.0.3",
+        "uint8arrays": "^5.1.0"
+    }
+}

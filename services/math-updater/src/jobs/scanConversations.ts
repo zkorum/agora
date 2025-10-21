@@ -1,8 +1,12 @@
 import { log } from "@/app.js";
-import { conversationTable } from "@/shared-backend/schema.js";
-import { and, eq, or, isNull, lt, sql } from "drizzle-orm";
+import {
+    conversationTable,
+    conversationUpdateQueueTable,
+} from "@/shared-backend/schema.js";
+import { and, eq, or, isNull, lt } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type PgBoss from "pg-boss";
+import { nowZeroMs } from "@/shared/util.js";
+import PgBoss from "pg-boss";
 
 export const SCAN_CONVERSATIONS_SINGLETON_KEY = "scan-conversations-loop";
 
@@ -35,52 +39,76 @@ export async function scanConversationsJob(
     );
 
     try {
-        // Find conversations that need updates
-        const conversations = await db
+        // Calculate cutoff time for rate limiting
+        const now = nowZeroMs();
+        const cutoffTime = new Date(now);
+        cutoffTime.setMilliseconds(
+            cutoffTime.getMilliseconds() - minTimeBetweenUpdatesMs,
+        );
+
+        // Find conversations that need updates from the queue table
+        const queueEntries = await db
             .select({
-                id: conversationTable.id,
-                slugId: conversationTable.slugId,
-                lastMathUpdateAt: conversationTable.lastMathUpdateAt,
-                mathUpdateRequestedAt: conversationTable.mathUpdateRequestedAt,
+                conversationId: conversationUpdateQueueTable.conversationId,
+                requestedAt: conversationUpdateQueueTable.requestedAt,
             })
-            .from(conversationTable)
+            .from(conversationUpdateQueueTable)
+            .innerJoin(
+                conversationTable,
+                eq(
+                    conversationUpdateQueueTable.conversationId,
+                    conversationTable.id,
+                ),
+            )
             .where(
                 and(
-                    eq(conversationTable.needsMathUpdate, true),
-                    // Rate limiting: at least minTimeBetweenUpdatesMs since last update
+                    isNull(conversationUpdateQueueTable.processedAt),
+                    // Rate limiting: at least minTimeBetweenUpdatesMs since last math update
+                    // If never updated (NULL), allow immediate update
                     or(
-                        isNull(conversationTable.lastMathUpdateAt),
+                        isNull(conversationUpdateQueueTable.lastMathUpdateAt),
                         lt(
-                            conversationTable.lastMathUpdateAt,
-                            sql`NOW() - INTERVAL '${sql.raw(minTimeBetweenUpdatesMs.toString())} milliseconds'`,
+                            conversationUpdateQueueTable.lastMathUpdateAt,
+                            cutoffTime,
                         ),
                     ),
                 ),
             );
 
         log.info(
-            `[Scan] Found ${conversations.length} conversation(s) needing math updates`,
+            `[Scan] Found ${queueEntries.length} conversation(s) needing math updates`,
         );
 
         // Enqueue each conversation for processing
-        for (const conversation of conversations) {
+        for (const entry of queueEntries) {
+            // Get conversation slug for logging
+            const convResult = await db
+                .select({ slugId: conversationTable.slugId })
+                .from(conversationTable)
+                .where(eq(conversationTable.id, entry.conversationId));
+
+            const conversationSlugId =
+                convResult[0]?.slugId || `id-${entry.conversationId}`;
+
             await boss.send(
                 "update-conversation-math",
                 {
-                    conversationId: conversation.id,
-                    conversationSlugId: conversation.slugId,
-                    mathUpdateRequestedAt: conversation.mathUpdateRequestedAt,
+                    conversationId: entry.conversationId,
+                    conversationSlugId: conversationSlugId,
+                    requestedAt: entry.requestedAt, // Pass captured requestedAt for race-condition-safe update
                 },
                 {
                     // Use singletonKey to prevent duplicate jobs for the same conversation
-                    singletonKey: `update-math-${conversation.id}`,
-                    // if a job is throttled it will be sent in the next slot (debounced)
-                    singletonSeconds: 15, // same conversation events will be ignored for the next 15 seconds
+                    // Queue uses 'singleton' policy: only 1 job per singletonKey (created OR active)
+                    // This prevents any concurrent execution or duplicate jobs for the same conversation
+                    // Multiple different conversations can still be processed in parallel
+                    singletonKey: `update-math-${entry.conversationId}`,
+                    // Rate limiting is handled by the scan query (minTimeBetweenUpdatesMs)
                 },
             );
 
             log.debug(
-                `[Scan] Enqueued conversation ${conversation.slugId} (id: ${conversation.id})`,
+                `[Scan] Enqueued conversation ${conversationSlugId} (id: ${entry.conversationId})`,
             );
         }
 

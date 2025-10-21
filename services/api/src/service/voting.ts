@@ -6,6 +6,7 @@ import {
     voteTable,
     notificationTable,
     notificationOpinionVoteTable,
+    conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, sql, and, desc, isNotNull, SQL, inArray } from "drizzle-orm";
@@ -91,8 +92,6 @@ interface CastVoteForOpinionSlugIdFromUserIdProps {
     optionalConversationSlugId?: string;
     optionalConversationId?: number;
     optionalConversationContentId?: number | null;
-    optionalConversationParticipantCount?: number;
-    optionalConversationVoteCount?: number;
 }
 
 export async function castVoteForOpinionSlugIdFromUserId({
@@ -107,8 +106,6 @@ export async function castVoteForOpinionSlugIdFromUserId({
     optionalConversationId,
     optionalConversationSlugId,
     optionalConversationContentId,
-    optionalConversationParticipantCount,
-    optionalConversationVoteCount,
 }: CastVoteForOpinionSlugIdFromUserIdProps): Promise<boolean> {
     let conversationId: number;
     let conversationSlugId: string;
@@ -130,34 +127,20 @@ export async function castVoteForOpinionSlugIdFromUserId({
         conversationSlugId = optionalConversationSlugId;
     }
 
+    // Check if conversation is deleted
     let conversationContentId: number | null;
-    let conversationParticipantCount: number;
-    let conversationVoteCount: number;
-    // "update through cache" recalculate existing counts before taking into account new vote
-    if (
-        optionalConversationContentId === undefined ||
-        optionalConversationParticipantCount === undefined ||
-        optionalConversationVoteCount === undefined
-    ) {
-        const {
-            contentId: fetchedConversationContentId,
-            participantCount: fetchedConversationParticipantCount,
-            voteCount: fetchedConversationVoteCount,
-        } = await useCommonPost().getPostMetadataFromSlugId({
-            db: db,
-            conversationSlugId: conversationSlugId,
-            useCache: false,
-        });
+    if (optionalConversationContentId === undefined) {
+        const { contentId: fetchedConversationContentId } =
+            await useCommonPost().getPostMetadataFromSlugId({
+                db: db,
+                conversationSlugId: conversationSlugId,
+            });
         conversationContentId = fetchedConversationContentId;
-        conversationParticipantCount = fetchedConversationParticipantCount;
-        conversationVoteCount = fetchedConversationVoteCount;
     } else {
         conversationContentId = optionalConversationContentId;
-        conversationParticipantCount = optionalConversationParticipantCount;
-        conversationVoteCount = optionalConversationVoteCount;
     }
     if (conversationContentId === null) {
-        throw httpErrors.gone("Cannot comment on a deleted post");
+        throw httpErrors.gone("Cannot vote on a deleted post");
     }
 
     // Check if the post is locked
@@ -271,18 +254,6 @@ export async function castVoteForOpinionSlugIdFromUserId({
         throw httpErrors.internalServerError("Database relation error");
     }
 
-    // update conversation counts
-    // "update through cache" recalculate existing counts before taking into account new vote
-    // both values are 0 if the user is a new participant!
-    // IMPORTANT to select this BEFORE inserting vote
-    const { voteCount: participantVoteCountBeforeAction } =
-        await useCommonComment().getCountsForParticipant({
-            db: db,
-            conversationId,
-            userId,
-            useCache: false,
-        });
-
     async function doUpdateCastVote(db: PostgresJsDatabase): Promise<void> {
         let voteTableId = 0;
 
@@ -325,57 +296,6 @@ export async function castVoteForOpinionSlugIdFromUserId({
                 proofVersion: 1,
             })
             .returning({ voteProofTableId: voteProofTable.id });
-
-        if (votingAction === "cancel") {
-            // NOTE: could have been done with a subquery but drizzle !#?! with subqueries
-            const participantVoteCountAfterDeletion =
-                participantVoteCountBeforeAction - 1;
-            /* <= to account for potential sync errors though it should not happen with db transactions... */
-            const isParticipantDeleted = participantVoteCountAfterDeletion <= 0;
-            if (isParticipantDeleted) {
-                await db
-                    .update(conversationTable)
-                    .set({
-                        voteCount: conversationVoteCount - 1,
-                        participantCount: conversationParticipantCount - 1,
-                        lastReactedAt: now,
-                        needsMathUpdate: true,
-                        mathUpdateRequestedAt: now,
-                    })
-                    .where(eq(conversationTable.id, conversationId));
-            } else {
-                await db
-                    .update(conversationTable)
-                    .set({
-                        voteCount: conversationVoteCount - 1,
-                        participantCount: conversationParticipantCount,
-                        lastReactedAt: now,
-                    })
-                    .where(eq(conversationTable.id, conversationId));
-            }
-        } else {
-            if (participantVoteCountBeforeAction === 0) {
-                // new participant!
-                await db
-                    .update(conversationTable)
-                    .set({
-                        voteCount: conversationVoteCount + 1,
-                        participantCount: conversationParticipantCount + 1,
-                        lastReactedAt: now,
-                    })
-                    .where(eq(conversationTable.slugId, conversationSlugId));
-            } else {
-                // existing participant!
-                await db
-                    .update(conversationTable)
-                    .set({
-                        voteCount: conversationVoteCount + 1,
-                        participantCount: conversationParticipantCount,
-                        lastReactedAt: now,
-                    })
-                    .where(eq(conversationTable.slugId, conversationSlugId));
-            }
-        }
 
         const voteProofTableId = voteProofTableResponse[0].voteProofTableId;
 
@@ -498,13 +418,22 @@ export async function castVoteForOpinionSlugIdFromUserId({
             }
         }
 
+        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
+        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
         await db
-            .update(conversationTable)
-            .set({
-                needsMathUpdate: true,
-                mathUpdateRequestedAt: now,
+            .insert(conversationUpdateQueueTable)
+            .values({
+                conversationId: conversationId,
+                requestedAt: now,
+                processedAt: null,
             })
-            .where(eq(conversationTable.id, conversationId));
+            .onConflictDoUpdate({
+                target: conversationUpdateQueueTable.conversationId,
+                set: {
+                    requestedAt: now,
+                    processedAt: null,
+                },
+            });
     }
 
     let doTransaction = true;
@@ -794,12 +723,9 @@ export async function castVoteForOpinionSlugId({
         isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
         contentId: conversationContentId,
-        participantCount: conversationParticipantCount,
-        voteCount: conversationVoteCount,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
-        useCache: false,
     });
     const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
@@ -822,7 +748,5 @@ export async function castVoteForOpinionSlugId({
         optionalConversationId: conversationId,
         optionalConversationSlugId: conversationSlugId,
         optionalConversationContentId: conversationContentId,
-        optionalConversationParticipantCount: conversationParticipantCount,
-        optionalConversationVoteCount: conversationVoteCount,
     });
 }

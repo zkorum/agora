@@ -3,6 +3,7 @@ import {
     opinionModerationTable,
     conversationModerationTable,
     conversationTable,
+    conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
@@ -13,7 +14,7 @@ import type {
     ConversationModerationProperties,
     ModerationReason,
 } from "@/shared/types/zod.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 
@@ -97,8 +98,14 @@ export async function moderateByCommentSlugId({
         db: db,
         commentSlugId: commentSlugId,
     });
+    const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
+        db,
+        opinionSlugId: commentSlugId,
+    });
+
     await db.transaction(async (tx) => {
         if (moderationStatus.status == "moderated") {
+            // Already moderated - just update the moderation record (no count change)
             await tx
                 .update(opinionModerationTable)
                 .set({
@@ -110,6 +117,7 @@ export async function moderateByCommentSlugId({
                 })
                 .where(eq(opinionModerationTable.opinionId, opinionId));
         } else {
+            // New moderation - insert record and decrement count
             await tx.insert(opinionModerationTable).values({
                 opinionId: opinionId,
                 authorId: userId,
@@ -117,25 +125,26 @@ export async function moderateByCommentSlugId({
                 moderationReason: moderationReason,
                 moderationExplanation: moderationExplanation,
             });
+
+            // Enqueue math update (eliminates conversation table UPDATE and row lock!)
+            // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
+            const now = nowZeroMs();
+            await tx
+                .insert(conversationUpdateQueueTable)
+                .values({
+                    conversationId: conversationId,
+                    requestedAt: now,
+                    processedAt: null,
+                })
+                .onConflictDoUpdate({
+                    target: conversationUpdateQueueTable.conversationId,
+                    set: {
+                        requestedAt: now,
+                        processedAt: null,
+                    },
+                });
         }
     });
-
-    // recalculate and update counts, ignoring cache
-    // moderated opinions and votes on them will not be counted
-    const { updateCountsBypassCache } = useCommonPost();
-    await updateCountsBypassCache({ db, conversationSlugId });
-
-    const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
-        db,
-        opinionSlugId: commentSlugId,
-    });
-    await db
-        .update(conversationTable)
-        .set({
-            needsMathUpdate: true,
-            mathUpdateRequestedAt: nowZeroMs(),
-        })
-        .where(eq(conversationTable.id, conversationId));
 }
 
 interface FetchModerationReportByPostSlugIdProps {
@@ -266,37 +275,43 @@ export async function withdrawModerationReportByCommentSlugId({
         commentSlugId: commentSlugId,
     });
 
-    const moderationCommentsTableResponse = await db
-        .delete(opinionModerationTable)
-        .where(eq(opinionModerationTable.opinionId, commentId))
-        .returning();
-
-    if (moderationCommentsTableResponse.length != 1) {
-        throw httpErrors.notFound(
-            "Failed to delete moderation action for opinion slug ID: " +
-                commentSlugId,
-        );
-    }
-
     const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
-    const { conversationSlugId } = await getOpinionMetadataFromOpinionSlugId({
-        db: db,
-        opinionSlugId: commentSlugId,
-    });
-    const { updateCountsBypassCache } = useCommonPost();
-    await updateCountsBypassCache({ db, conversationSlugId });
-
     const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
         db,
         opinionSlugId: commentSlugId,
     });
-    await db
-        .update(conversationTable)
-        .set({
-            needsMathUpdate: true,
-            mathUpdateRequestedAt: nowZeroMs(),
-        })
-        .where(eq(conversationTable.id, conversationId));
+
+    await db.transaction(async (tx) => {
+        const moderationCommentsTableResponse = await tx
+            .delete(opinionModerationTable)
+            .where(eq(opinionModerationTable.opinionId, commentId))
+            .returning();
+
+        if (moderationCommentsTableResponse.length != 1) {
+            throw httpErrors.notFound(
+                "Failed to delete moderation action for opinion slug ID: " +
+                    commentSlugId,
+            );
+        }
+
+        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
+        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
+        const now = nowZeroMs();
+        await tx
+            .insert(conversationUpdateQueueTable)
+            .values({
+                conversationId: conversationId,
+                requestedAt: now,
+                processedAt: null,
+            })
+            .onConflictDoUpdate({
+                target: conversationUpdateQueueTable.conversationId,
+                set: {
+                    requestedAt: now,
+                    processedAt: null,
+                },
+            });
+    });
 }
 
 export function createPostModerationPropertyObject(

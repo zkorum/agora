@@ -42,7 +42,35 @@ Configuration is managed via environment variables. See `env.example` for requir
 
 ### Database
 
-- `CONNECTION_STRING`: PostgreSQL connection string
+**Primary Database (Required):**
+- `CONNECTION_STRING`: PostgreSQL connection string for primary database
+  - Used by pg-boss for job queue management (writes)
+  - Used for all database writes (opinion updates, counter updates, math results)
+
+**Alternative: AWS Production Mode**
+- `DB_HOST`: Primary database host (e.g., `primary.region.rds.amazonaws.com`)
+- `DB_PORT`: Database port (default: 5432)
+- `DB_NAME`: Database name
+- `AWS_SECRET_ID`: AWS Secrets Manager secret ID containing database credentials
+- `AWS_SECRET_REGION`: AWS region for Secrets Manager
+
+**Read Replica (Optional):**
+- `CONNECTION_STRING_READ`: PostgreSQL connection string for read replica
+  - Used for SELECT queries (fetching votes, reading conversation data)
+  - Falls back to primary if not configured
+- `DB_HOST_READ`: Read replica host (e.g., `replica.region.rds.amazonaws.com`)
+- `DB_PORT_READ`: Read replica port (default: 5432)
+- `AWS_SECRET_ID_READ`: AWS Secrets Manager secret ID for read replica credentials
+- `AWS_SECRET_REGION_READ`: AWS region for read replica secrets
+
+**Important Notes:**
+- **pg-boss always uses the primary database** (via `CONNECTION_STRING` or `DB_HOST`)
+  - pg-boss manages its own connection pool independently
+  - The `pgboss` schema must exist on the primary database
+- **Business logic queries (via `db` object) use read replica for SELECTs when configured**
+  - `getPolisVotes()` reads from replica (acceptable ~1s staleness)
+  - All writes (updates, inserts) automatically route to primary via `withReplicas()`
+- **Replication lag**: Typically <1 second, acceptable for math updates (20s minimum rate limit)
 
 ### Polis Service
 

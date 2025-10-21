@@ -9,7 +9,7 @@ SHARED_DIR="$(dirname "$SCRIPT_DIR")"
 SERVICES_DIR="$(dirname "$SHARED_DIR")"
 
 # List of ALL services to sync to
-ALL_SERVICES=("agora" "api" "math-updater" "export-worker")
+ALL_SERVICES=("agora" "api" "math-updater" "export-worker" "load-testing")
 
 # Warning comment to add to synced files
 COMMENT="/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/"
