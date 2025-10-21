@@ -11,7 +11,7 @@ import {
     MAX_LENGTH_TITLE,
     toUnionUndefined,
 } from "@/shared/shared.js";
-import { conversationTable } from "@/shared-backend/schema.js";
+import { conversationTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { eq } from "drizzle-orm";
 
@@ -180,12 +180,19 @@ export async function loadImportedPolisConversation({
             voteCount: voteCount,
         });
         await db
-            .update(conversationTable)
-            .set({
-                needsMathUpdate: true,
-                mathUpdateRequestedAt: now,
+            .insert(conversationUpdateQueueTable)
+            .values({
+                conversationId: conversationId,
+                requestedAt: now,
+                processedAt: null,
             })
-            .where(eq(conversationTable.id, conversationId));
+            .onConflictDoUpdate({
+                target: conversationUpdateQueueTable.conversationId,
+                set: {
+                    requestedAt: now,
+                    processedAt: null,
+                },
+            });
         return { conversationSlugId, conversationId, conversationContentId };
     } catch (e) {
         // TODO: make incremental transactions, implement batch mechanisms to allow for resuming importing that failed midway

@@ -16,6 +16,7 @@ import {
     userTable,
     opinionModerationTable,
     polisClusterTable,
+    conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
 import { and, eq, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
@@ -1094,7 +1095,6 @@ export async function updateMathAllConversations({
     doUpdateCounts,
 }: UpdateMathAllConversationsProps): Promise<void> {
     log.info("[Math] Updating polis math in all conversations...");
-    const { updateCountsBypassCache } = useCommonPost();
     const results = await db
         .select({
             conversationId: conversationTable.id,
@@ -1104,12 +1104,23 @@ export async function updateMathAllConversations({
     for (const result of results) {
         if (doUpdateCounts) {
             log.info(
-                "[Math] Updating conversation counts prior to recalculating math...",
+                "[Math] Triggering math update (math-updater will reconcile counts)...",
             );
-            await updateCountsBypassCache({
-                db,
-                conversationSlugId: result.conversationSlugId,
-            });
+            // Trigger math update - the math-updater will reconcile counts automatically
+            await db
+                .insert(conversationUpdateQueueTable)
+                .values({
+                    conversationId: result.conversationId,
+                    requestedAt: nowZeroMs(),
+                    processedAt: null,
+                })
+                .onConflictDoUpdate({
+                    target: conversationUpdateQueueTable.conversationId,
+                    set: {
+                        requestedAt: nowZeroMs(),
+                        processedAt: null,
+                    },
+                });
         }
         const votes = await getPolisVotes({
             db,

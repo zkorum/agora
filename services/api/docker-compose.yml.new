@@ -1,0 +1,88 @@
+# when connecting to the database from pgadmin,
+# use `docker container ls`, the identify postgres's ID, then
+# `docker inspect <id>` then copy `"IPAddress": "some.ip.address.toCopy"`
+# paste the ip address in `hostname` in pgadmin when connecting to the server
+#
+#
+# Follow that guide https://aws.amazon.com/blogs/database/managing-postgresql-users-and-roles/
+# create a prisma user with superuser privilege - use this one for the prisma commands
+# create an app user with readwrite role - use this one for the app
+# create an appread user with readonly role - use this one to inspect the DB locally
+
+services:
+    postgres:
+        container_name: postgres_container
+        image: postgres:16
+        command: postgres -c config_file=/etc/postgresql/postgresql.conf
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: 7QPgtYETx4EdzvqUeNfo
+            POSTGRES_DB: agora
+            PGDATA: /data/postgres
+        volumes:
+            - postgres:/data/postgres
+            - ./database/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+            - ./postgresql-monitoring.conf:/etc/postgresql/postgresql.conf:ro
+        ports:
+            - "5432:5432"
+        restart: always
+    pgadmin:
+        container_name: pgadmin_container
+        image: dpage/pgadmin4:latest
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+            PGADMIN_DEFAULT_PASSWORD: UsXWq98V68DxGEhfGvBa
+        volumes:
+            - pgadmin:/var/lib/pgadmin
+        ports:
+            - "5050:80"
+        restart: always
+
+    postgres-exporter:
+        container_name: postgres_exporter
+        image: prometheuscommunity/postgres-exporter:latest
+        environment:
+            DATA_SOURCE_NAME: "postgresql://postgres:7QPgtYETx4EdzvqUeNfo@postgres:5432/agora?sslmode=disable"
+        ports:
+            - "9187:9187"
+        depends_on:
+            - postgres
+        restart: always
+
+    prometheus:
+        container_name: prometheus
+        image: prometheus/prometheus:latest
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus-data:/prometheus
+        ports:
+            - "9090:9090"
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-remote-write-receiver"
+        depends_on:
+            - postgres-exporter
+        restart: always
+
+    grafana:
+        container_name: grafana
+        image: grafana/grafana:latest
+        environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+            GF_INSTALL_PLUGINS: grafana-piechart-panel
+        volumes:
+            - grafana-data:/var/lib/grafana
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+        ports:
+            - "3000:3000"
+        depends_on:
+            - prometheus
+        restart: always
+
+volumes:
+    postgres:
+    pgadmin:
+    prometheus-data:
+    grafana-data:

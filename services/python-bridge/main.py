@@ -4,10 +4,28 @@ from flask import Flask, jsonify, request, abort
 from reddwarf.data_loader import Loader
 from reddwarf.implementations.polis import run_pipeline
 import logging
+import sys
+import traceback
+from datetime import datetime
+from logging.handlers import RotatingFileHandler
 
 from pprint import pprint
 
+# Configure logging to both file and console
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        RotatingFileHandler("flask.log", maxBytes=10 * 1024 * 1024, backupCount=5),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
+
+logger.info("Flask app initialized")
 
 
 def assert_fully_populated(loader, ignore=[]):
@@ -60,9 +78,12 @@ def importConversation():
             }
         )
     if conversation_id is not None:
-        print(f"Loading Polis conversation from conversation_id={conversation_id}")
+        logger.info(
+            f"Loading Polis conversation from conversation_id={conversation_id}"
+        )
         loader = Loader(polis_id=conversation_id)
         assert_fully_populated(loader, ignore=["math_data"])
+        logger.info("Polis conversation loaded")
         # print_summary(loader)
         return jsonify(
             {
@@ -109,8 +130,7 @@ class MathResult(TypedDict):
 
 
 def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
-    print("Votes", votes)
-    print(
+    logger.info(
         f"Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
     )
 
@@ -121,13 +141,12 @@ def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
             max_group_count=max_group_count,
         )
     except Exception as err:
-        print(
+        logger.error(
             "Error while running pipeline. If TypeError, it's likely there aren't enough participants and votes yet"
         )
-        print("\n")
-        print(err)
-        print("\n")
-        print("Returning an object with empty values")
+        logger.error(f"Error: {err}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        logger.info("Returning an object with empty values")
         return {
             "statements_df": [],
             "participants_df": [],
@@ -159,12 +178,12 @@ def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
             has_group_with_strictly_less_than_two_members = True
             if num_members != 1:
                 # 0 participant
-                print(f"Warning: a cluster has {num_members} participant!")
+                logger.warning(f"Warning: a cluster has {num_members} participant!")
 
     number_of_groups = len(group_comment_stats.keys())
     if number_of_groups >= 3 and has_group_with_strictly_less_than_two_members:
         new_max_group_count = number_of_groups - 1
-        print(
+        logger.info(
             f"'{number_of_groups}' clusters found with at least one of them having 1 participant or less, recalculating maths by enforcing '{new_max_group_count}' groups maximum"
         )
         return get_maths(
@@ -203,29 +222,77 @@ def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
 
 @app.route("/math", methods=["POST"])
 def get_math_results():
+    start_time = datetime.now()
+
+    # Log request details
+    content_length = request.content_length
+    logger.info(f"Received POST /math request (Content-Length: {content_length} bytes)")
+
     try:
-        payload = MathRequest(**request.get_json())
+        # Parse the request body
+        json_data = request.get_json()
+        if json_data is None:
+            logger.error("Request body is empty or not valid JSON")
+            abort(400, description="Request body must be valid JSON")
+
+        logger.info("Successfully parsed JSON body")
+
+        # Validate with Pydantic
+        payload = MathRequest(**json_data)
+        logger.info(
+            f"Processing math results for conversation '{payload.conversation_slug_id}' "
+            f"(ID: {payload.conversation_id}) with {len(payload.votes)} votes."
+        )
+
     except ValidationError as e:
+        logger.error(f"Validation error: {e}")
         abort(400, description=f"Validation error: {e}")
-    logging.info(
-        f"Processing math results for conversation '{payload.conversation_slug_id}' "
-        f"(ID: {payload.conversation_id}) with {len(payload.votes)} votes."
+    except Exception as e:
+        logger.error(f"Error parsing request: {e}", exc_info=True)
+        abort(400, description=f"Error parsing request: {str(e)}")
+
+    try:
+        votes = [vote.model_dump() for vote in payload.votes]
+        min_user_vote_threshold = 7  # same value as polis
+
+        logger.info(
+            f"Starting math calculation with min_user_vote_threshold={min_user_vote_threshold}"
+        )
+        result = get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
+
+        elapsed = (datetime.now() - start_time).total_seconds()
+        logger.info(f"Successfully completed math calculation in {elapsed:.2f}s")
+
+        return jsonify(result)
+
+    except Exception as e:
+        elapsed = (datetime.now() - start_time).total_seconds()
+        logger.error(
+            f"Error during math calculation (after {elapsed:.2f}s): {e}", exc_info=True
+        )
+        abort(500, description=f"Error during math calculation: {str(e)}")
+
+
+@app.before_request
+def log_request_info():
+    logger.info(
+        f"Incoming request: {request.method} {request.path} from {request.remote_addr}"
     )
-    # print("Payload", payload)
-    votes = [vote.model_dump() for vote in payload.votes]
 
-    # For fewer than 14 statements, gradually increase min_user_vote_threshold from 4 up to 7.
-    # At 14 statements and above (round(14/2) = 7), the threshold stays at 7.
-    # total_statement_ids = {vote.statement_id for vote in payload.votes}
-    # statement_count = len(total_statement_ids)
-    # potential_threshold = round(statement_count / 2)
-    # if potential_threshold == 0:
-    #     min_user_vote_threshold = 1
-    # else:
-    #     min_user_vote_threshold = max(4, min(potential_threshold, 7))
 
-    min_user_vote_threshold = 7  # same value as polis
+@app.after_request
+def log_response_info(response):
+    logger.info(f"Response: {response.status_code} for {request.method} {request.path}")
+    return response
 
-    return jsonify(
-        get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
-    )
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    logger.error(f"Request entity too large: {request.content_length} bytes")
+    return jsonify({"error": "Request entity too large"}), 413
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.error(f"Unhandled exception: {e}", exc_info=True)
+    return jsonify({"error": str(e)}), 500

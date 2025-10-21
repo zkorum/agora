@@ -169,6 +169,13 @@
       "when": 1760023067845,
       "tag": "0023_friendly_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1761031302052,
+      "tag": "0024_easy_mindworm",
+      "breakpoints": true
     }
   ]
 }

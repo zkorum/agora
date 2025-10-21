@@ -6,6 +6,11 @@ generate:
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
 		-o /local/services/agora/src/api
+	docker run --rm \
+		-v ${PWD}:/local openapitools/openapi-generator-cli:v7.12.0 generate \
+		-i /local/services/api/openapi-zkorum.json \
+		-g typescript-axios \
+		-o /local/services/load-testing/src/api
 
 sync: sync-all sync-app-api sync-backend
 
@@ -40,4 +45,4 @@ dev-math-updater:
 	cd services/math-updater && pnpm start:dev
 
 dev-polis:
-	cd services/python-bridge && source .venv/bin/activate && flask --app main run
+	cd services/python-bridge && source .venv/bin/activate && flask --app main run --host 0.0.0.0 --port 5001
