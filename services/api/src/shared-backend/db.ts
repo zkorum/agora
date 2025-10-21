@@ -14,7 +14,7 @@ import type { FastifyBaseLogger } from "fastify";
 async function createPostgresClient(
     config: SharedConfigSchema,
     log: pino.Logger | FastifyBaseLogger,
-    useReadReplica = false,
+    useReadReplica: boolean = false,
 ) {
     const awsSecretId = useReadReplica && config.AWS_SECRET_ID_READ
         ? config.AWS_SECRET_ID_READ
@@ -128,7 +128,7 @@ export async function createDb(
 
     // Check if read replica config exists
     const hasReadReplica = !!(
-        config.CONNECTION_STRING_READ ??
+        config.CONNECTION_STRING_READ ||
         (config.AWS_SECRET_ID_READ && config.AWS_SECRET_REGION_READ && config.DB_HOST_READ)
     );
 
