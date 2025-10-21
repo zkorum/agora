@@ -115,9 +115,13 @@ async function main() {
             ssl: { rejectUnauthorized: false },
         };
     } else {
+        const sslConfig = config.NODE_ENV === "production"
+            ? { rejectUnauthorized: false }
+            : undefined;
         pgBossConfig = {
             ...pgBossCommonConfig,
             connectionString: config.CONNECTION_STRING,
+            ssl: sslConfig,
         };
     }
 

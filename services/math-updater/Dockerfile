@@ -4,7 +4,8 @@ RUN npm install -g pnpm
 ENV PATH=/app/node_modules/.bin:$PATH
 COPY package.json ./
 COPY pnpm-lock.yaml ./
-RUN pnpm install
+COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
+RUN pnpm install --frozen-lockfile
 COPY . ./
 RUN pnpm build
 

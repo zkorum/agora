@@ -102,6 +102,7 @@ async function createPostgresClient(
         try {
             return postgres(connectionString, {
                 connect_timeout: 10,
+                ssl: config.NODE_ENV === "production" ? "require" : undefined,
             });
         } catch (e) {
             log.error(`Unable to connect to the database (${useReadReplica ? 'read replica' : 'primary'})`);
