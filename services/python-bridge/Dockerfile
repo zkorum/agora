@@ -18,8 +18,8 @@ RUN apt-get update && \
 # Install dependencies
 RUN pip install --no-cache-dir .
 
-# Expose the port you want waitress to serve on
+# Expose the port
 EXPOSE 8004
 
-# Run the app using waitress
-CMD ["waitress-serve", "--host", "0.0.0.0", "--port", "8004", "main:app"]
+# Run the app using Gunicorn with configuration file
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "-b", "0.0.0.0:8004", "main:app"]

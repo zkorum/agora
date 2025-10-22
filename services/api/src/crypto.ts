@@ -20,11 +20,27 @@ export function generateRandomHex(): string {
     return Buffer.from(randomBytes).toString("hex");
 }
 
-// Used to generate cryptographically random, url-safe and short identifier for post/comment and presenting it in a url
+/**
+ * Generates a cryptographically random, URL-safe, short identifier for conversations, opinions, and notifications.
+ *
+ * Uses 5 random bytes encoded in base64url, generating 7-8 character slugs.
+ *
+ * Keyspace: 2^40 = ~1.1 trillion possibilities
+ *
+ * Collision probability (Birthday paradox):
+ * - 50% chance after ~1.3 million slugs
+ * - 0.001% chance after ~40,000 slugs
+ * - Negligible with typical usage patterns
+ *
+ * Note: For defense-in-depth, insert operations should catch unique constraint violations
+ * and retry with a new slugId if a collision occurs (extremely rare).
+ *
+ * @returns A 7-8 character URL-safe string
+ */
 export function generateRandomSlugId(): string {
-    const randomBytes = new Uint8Array(4); // this accounts to pow(2, 8*4) = 429 Billions possibilities
+    const randomBytes = new Uint8Array(5);
     crypto.webcrypto.getRandomValues(randomBytes);
-    return encode(randomBytes); // generates a 6 char-long slug
+    return encode(randomBytes);
 }
 
 // Generate cryptographically random 6 digits code for email validation.

@@ -204,25 +204,26 @@ async function doLoadPolisMathResults({
     if (sqlChunksMajorityProbability.length > 0) {
         // no else clause, anything not part of the received data is not a majority opinion!
         sqlChunksMajorityProbability.push(sql`END)`);
+        const finalSqlMajorityProbability = sql.join(
+            sqlChunksMajorityProbability,
+            sql.raw(" "),
+        );
+        setClauseMajorityProbability = {
+            polisMajorityProbabilitySuccess: finalSqlMajorityProbability,
+        };
     }
     if (sqlChunksMajorityType.length > 0) {
         // no else clause, anything not part of the received data is not a majority opinion!
         sqlChunksMajorityType.push(sql`END)`);
+        const finalSqlMajorityType = sql.join(sqlChunksMajorityType, sql.raw(" "));
+        setClauseMajorityType = {
+            polisMajorityType: finalSqlMajorityType,
+        };
     }
-    const finalSqlMajorityProbability = sql.join(
-        sqlChunksMajorityProbability,
-        sql.raw(" "),
-    );
-    setClauseMajorityProbability = {
-        polisMajorityProbabilitySuccess: finalSqlMajorityProbability,
-    };
-    // no else clause, anything not part of the received data is not a majority opinion!
-    const finalSqlMajorityType = sql.join(sqlChunksMajorityType, sql.raw(" "));
-    setClauseMajorityType = {
-        polisMajorityType: finalSqlMajorityType,
-    };
 
-    if (sqlChunksMajorityProbability.length !== sqlChunksMajorityType.length) {
+    // Only check consistency if both arrays have content (they should be in sync)
+    if (sqlChunksMajorityProbability.length > 0 && sqlChunksMajorityType.length > 0 &&
+        sqlChunksMajorityProbability.length !== sqlChunksMajorityType.length) {
         throw new Error(
             `[Math] Some majority opinions are not assigned to their type for polisContentId=${String(
                 polisContentId,
@@ -273,26 +274,31 @@ async function doLoadPolisMathResults({
                 }
             }
 
-            sqlChunksPriorities.push(sql`ELSE polis_priority END)`);
-            sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa END)`);
-            sqlChunksGroupAwareConsensusDisagree.push(sql`ELSE polis_ga_consensus_pd END)`);
-            sqlChunksExtremities.push(sql`ELSE polis_divisiveness END)`);
+            // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+            if (sqlChunksPriorities.length > 1) {
+                sqlChunksPriorities.push(sql`ELSE polis_priority END)`);
+                sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa END)`);
+                sqlChunksGroupAwareConsensusDisagree.push(sql`ELSE polis_ga_consensus_pd END)`);
+                sqlChunksExtremities.push(sql`ELSE polis_divisiveness END)`);
 
-            const finalSqlCommentPriorities = sql.join(sqlChunksPriorities, sql.raw(" "));
-            const finalSqlGroupAwareConsensusAgree = sql.join(sqlChunksGroupAwareConsensusAgree, sql.raw(" "));
-            const finalSqlGroupAwareConsensusDisagree = sql.join(sqlChunksGroupAwareConsensusDisagree, sql.raw(" "));
-            const finalSqlCommentExtremities = sql.join(sqlChunksExtremities, sql.raw(" "));
+                const finalSqlCommentPriorities = sql.join(sqlChunksPriorities, sql.raw(" "));
+                const finalSqlGroupAwareConsensusAgree = sql.join(sqlChunksGroupAwareConsensusAgree, sql.raw(" "));
+                const finalSqlGroupAwareConsensusDisagree = sql.join(sqlChunksGroupAwareConsensusDisagree, sql.raw(" "));
+                const finalSqlCommentExtremities = sql.join(sqlChunksExtremities, sql.raw(" "));
 
-            await db
-                .update(opinionTable)
-                .set({
-                    polisPriority: finalSqlCommentPriorities,
-                    polisGroupAwareConsensusProbabilityAgree: finalSqlGroupAwareConsensusAgree,
-                    polisGroupAwareConsensusProbabilityDisagree: finalSqlGroupAwareConsensusDisagree,
-                    polisDivisiveness: finalSqlCommentExtremities,
-                    updatedAt: nowZeroMs(),
-                })
-                .where(inArray(opinionTable.id, batchIds));
+                await db
+                    .update(opinionTable)
+                    .set({
+                        polisPriority: finalSqlCommentPriorities,
+                        polisGroupAwareConsensusProbabilityAgree: finalSqlGroupAwareConsensusAgree,
+                        polisGroupAwareConsensusProbabilityDisagree: finalSqlGroupAwareConsensusDisagree,
+                        polisDivisiveness: finalSqlCommentExtremities,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.id, batchIds));
+            } else {
+                log.warn(`[Math] No statement data found for batch ${batchIndex + 1}, skipping polis updates for this batch`);
+            }
         }
     } else {
         for (const [batchIndex, batchIds] of opinionIdBatches.entries()) {
@@ -322,28 +328,33 @@ async function doLoadPolisMathResults({
                 }
             }
 
-            sqlChunksPriorities.push(sql`ELSE polis_priority END)`);
-            sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa END)`);
-            sqlChunksGroupAwareConsensusDisagree.push(sql`ELSE polis_ga_consensus_pd END)`);
-            sqlChunksExtremities.push(sql`ELSE polis_divisiveness END)`);
+            // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+            if (sqlChunksPriorities.length > 1) {
+                sqlChunksPriorities.push(sql`ELSE polis_priority END)`);
+                sqlChunksGroupAwareConsensusAgree.push(sql`ELSE polis_ga_consensus_pa END)`);
+                sqlChunksGroupAwareConsensusDisagree.push(sql`ELSE polis_ga_consensus_pd END)`);
+                sqlChunksExtremities.push(sql`ELSE polis_divisiveness END)`);
 
-            const finalSqlCommentPriorities = sql.join(sqlChunksPriorities, sql.raw(" "));
-            const finalSqlGroupAwareConsensusAgree = sql.join(sqlChunksGroupAwareConsensusAgree, sql.raw(" "));
-            const finalSqlGroupAwareConsensusDisagree = sql.join(sqlChunksGroupAwareConsensusDisagree, sql.raw(" "));
-            const finalSqlCommentExtremities = sql.join(sqlChunksExtremities, sql.raw(" "));
+                const finalSqlCommentPriorities = sql.join(sqlChunksPriorities, sql.raw(" "));
+                const finalSqlGroupAwareConsensusAgree = sql.join(sqlChunksGroupAwareConsensusAgree, sql.raw(" "));
+                const finalSqlGroupAwareConsensusDisagree = sql.join(sqlChunksGroupAwareConsensusDisagree, sql.raw(" "));
+                const finalSqlCommentExtremities = sql.join(sqlChunksExtremities, sql.raw(" "));
 
-            await db
-                .update(opinionTable)
-                .set({
-                    polisPriority: finalSqlCommentPriorities,
-                    polisGroupAwareConsensusProbabilityAgree: finalSqlGroupAwareConsensusAgree,
-                    polisGroupAwareConsensusProbabilityDisagree: finalSqlGroupAwareConsensusDisagree,
-                    polisDivisiveness: finalSqlCommentExtremities,
-                    ...setClauseMajorityProbability,
-                    ...setClauseMajorityType,
-                    updatedAt: nowZeroMs(),
-                })
-                .where(inArray(opinionTable.id, batchIds));
+                await db
+                    .update(opinionTable)
+                    .set({
+                        polisPriority: finalSqlCommentPriorities,
+                        polisGroupAwareConsensusProbabilityAgree: finalSqlGroupAwareConsensusAgree,
+                        polisGroupAwareConsensusProbabilityDisagree: finalSqlGroupAwareConsensusDisagree,
+                        polisDivisiveness: finalSqlCommentExtremities,
+                        ...setClauseMajorityProbability,
+                        ...setClauseMajorityType,
+                        updatedAt: nowZeroMs(),
+                    })
+                    .where(inArray(opinionTable.id, batchIds));
+            } else {
+                log.warn(`[Math] No statement data found for batch ${batchIndex + 1}, skipping polis updates for this batch`);
+            }
         }
     }
     /////
@@ -554,24 +565,29 @@ async function doLoadPolisMathResults({
                         }
                     }
 
-                    sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
+                    // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+                    if (sqlChunksForNumAgrees.length > 1) {
+                        sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
 
-                    const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
-                    const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
-                    const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
+                        const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
+                        const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
+                        const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
 
-                    await db
-                        .update(opinionTable)
-                        .set({
-                            polisCluster0Id: polisClusterId,
-                            polisCluster0NumAgrees: finalSqlNumAgrees,
-                            polisCluster0NumDisagrees: finalSqlNumDisagrees,
-                            polisCluster0NumPasses: finalSqlNumPasses,
-                            updatedAt: nowZeroMs(),
-                        })
-                        .where(inArray(opinionTable.id, batchIds));
+                        await db
+                            .update(opinionTable)
+                            .set({
+                                polisCluster0Id: polisClusterId,
+                                polisCluster0NumAgrees: finalSqlNumAgrees,
+                                polisCluster0NumDisagrees: finalSqlNumDisagrees,
+                                polisCluster0NumPasses: finalSqlNumPasses,
+                                updatedAt: nowZeroMs(),
+                            })
+                            .where(inArray(opinionTable.id, batchIds));
+                    } else {
+                        log.warn(`[Math] Cluster 0: No stats found for batch ${batchIndex + 1}, skipping cluster updates for this batch`);
+                    }
                 }
                 break;
             }
@@ -598,24 +614,29 @@ async function doLoadPolisMathResults({
                         }
                     }
 
-                    sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
+                    // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+                    if (sqlChunksForNumAgrees.length > 1) {
+                        sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
 
-                    const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
-                    const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
-                    const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
+                        const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
+                        const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
+                        const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
 
-                    await db
-                        .update(opinionTable)
-                        .set({
-                            polisCluster1Id: polisClusterId,
-                            polisCluster1NumAgrees: finalSqlNumAgrees,
-                            polisCluster1NumDisagrees: finalSqlNumDisagrees,
-                            polisCluster1NumPasses: finalSqlNumPasses,
-                            updatedAt: nowZeroMs(),
-                        })
-                        .where(inArray(opinionTable.id, batchIds));
+                        await db
+                            .update(opinionTable)
+                            .set({
+                                polisCluster1Id: polisClusterId,
+                                polisCluster1NumAgrees: finalSqlNumAgrees,
+                                polisCluster1NumDisagrees: finalSqlNumDisagrees,
+                                polisCluster1NumPasses: finalSqlNumPasses,
+                                updatedAt: nowZeroMs(),
+                            })
+                            .where(inArray(opinionTable.id, batchIds));
+                    } else {
+                        log.warn(`[Math] Cluster 1: No stats found for batch ${batchIndex + 1}, skipping cluster updates for this batch`);
+                    }
                 }
                 break;
             }
@@ -642,24 +663,29 @@ async function doLoadPolisMathResults({
                         }
                     }
 
-                    sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
+                    // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+                    if (sqlChunksForNumAgrees.length > 1) {
+                        sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
 
-                    const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
-                    const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
-                    const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
+                        const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
+                        const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
+                        const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
 
-                    await db
-                        .update(opinionTable)
-                        .set({
-                            polisCluster2Id: polisClusterId,
-                            polisCluster2NumAgrees: finalSqlNumAgrees,
-                            polisCluster2NumDisagrees: finalSqlNumDisagrees,
-                            polisCluster2NumPasses: finalSqlNumPasses,
-                            updatedAt: nowZeroMs(),
-                        })
-                        .where(inArray(opinionTable.id, batchIds));
+                        await db
+                            .update(opinionTable)
+                            .set({
+                                polisCluster2Id: polisClusterId,
+                                polisCluster2NumAgrees: finalSqlNumAgrees,
+                                polisCluster2NumDisagrees: finalSqlNumDisagrees,
+                                polisCluster2NumPasses: finalSqlNumPasses,
+                                updatedAt: nowZeroMs(),
+                            })
+                            .where(inArray(opinionTable.id, batchIds));
+                    } else {
+                        log.warn(`[Math] Cluster 2: No stats found for batch ${batchIndex + 1}, skipping cluster updates for this batch`);
+                    }
                 }
                 break;
             }
@@ -686,24 +712,29 @@ async function doLoadPolisMathResults({
                         }
                     }
 
-                    sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
+                    // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+                    if (sqlChunksForNumAgrees.length > 1) {
+                        sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
 
-                    const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
-                    const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
-                    const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
+                        const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
+                        const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
+                        const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
 
-                    await db
-                        .update(opinionTable)
-                        .set({
-                            polisCluster3Id: polisClusterId,
-                            polisCluster3NumAgrees: finalSqlNumAgrees,
-                            polisCluster3NumDisagrees: finalSqlNumDisagrees,
-                            polisCluster3NumPasses: finalSqlNumPasses,
-                            updatedAt: nowZeroMs(),
-                        })
-                        .where(inArray(opinionTable.id, batchIds));
+                        await db
+                            .update(opinionTable)
+                            .set({
+                                polisCluster3Id: polisClusterId,
+                                polisCluster3NumAgrees: finalSqlNumAgrees,
+                                polisCluster3NumDisagrees: finalSqlNumDisagrees,
+                                polisCluster3NumPasses: finalSqlNumPasses,
+                                updatedAt: nowZeroMs(),
+                            })
+                            .where(inArray(opinionTable.id, batchIds));
+                    } else {
+                        log.warn(`[Math] Cluster 3: No stats found for batch ${batchIndex + 1}, skipping cluster updates for this batch`);
+                    }
                 }
                 break;
             }
@@ -730,24 +761,29 @@ async function doLoadPolisMathResults({
                         }
                     }
 
-                    sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
+                    // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+                    if (sqlChunksForNumAgrees.length > 1) {
+                        sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
 
-                    const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
-                    const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
-                    const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
+                        const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
+                        const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
+                        const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
 
-                    await db
-                        .update(opinionTable)
-                        .set({
-                            polisCluster4Id: polisClusterId,
-                            polisCluster4NumAgrees: finalSqlNumAgrees,
-                            polisCluster4NumDisagrees: finalSqlNumDisagrees,
-                            polisCluster4NumPasses: finalSqlNumPasses,
-                            updatedAt: nowZeroMs(),
-                        })
-                        .where(inArray(opinionTable.id, batchIds));
+                        await db
+                            .update(opinionTable)
+                            .set({
+                                polisCluster4Id: polisClusterId,
+                                polisCluster4NumAgrees: finalSqlNumAgrees,
+                                polisCluster4NumDisagrees: finalSqlNumDisagrees,
+                                polisCluster4NumPasses: finalSqlNumPasses,
+                                updatedAt: nowZeroMs(),
+                            })
+                            .where(inArray(opinionTable.id, batchIds));
+                    } else {
+                        log.warn(`[Math] Cluster 4: No stats found for batch ${batchIndex + 1}, skipping cluster updates for this batch`);
+                    }
                 }
                 break;
             }
@@ -774,24 +810,29 @@ async function doLoadPolisMathResults({
                         }
                     }
 
-                    sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
-                    sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
+                    // Only add ELSE clause if we have at least one WHEN clause (length > 1 because we already added the CASE)
+                    if (sqlChunksForNumAgrees.length > 1) {
+                        sqlChunksForNumAgrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumDisagrees.push(sql`ELSE 0::int END)`);
+                        sqlChunksForNumPasses.push(sql`ELSE 0::int END)`);
 
-                    const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
-                    const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
-                    const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
+                        const finalSqlNumAgrees = sql.join(sqlChunksForNumAgrees, sql.raw(" "));
+                        const finalSqlNumDisagrees = sql.join(sqlChunksForNumDisagrees, sql.raw(" "));
+                        const finalSqlNumPasses = sql.join(sqlChunksForNumPasses, sql.raw(" "));
 
-                    await db
-                        .update(opinionTable)
-                        .set({
-                            polisCluster5Id: polisClusterId,
-                            polisCluster5NumAgrees: finalSqlNumAgrees,
-                            polisCluster5NumDisagrees: finalSqlNumDisagrees,
-                            polisCluster5NumPasses: finalSqlNumPasses,
-                            updatedAt: nowZeroMs(),
-                        })
-                        .where(inArray(opinionTable.id, batchIds));
+                        await db
+                            .update(opinionTable)
+                            .set({
+                                polisCluster5Id: polisClusterId,
+                                polisCluster5NumAgrees: finalSqlNumAgrees,
+                                polisCluster5NumDisagrees: finalSqlNumDisagrees,
+                                polisCluster5NumPasses: finalSqlNumPasses,
+                                updatedAt: nowZeroMs(),
+                            })
+                            .where(inArray(opinionTable.id, batchIds));
+                    } else {
+                        log.warn(`[Math] Cluster 5: No stats found for batch ${batchIndex + 1}, skipping cluster updates for this batch`);
+                    }
                 }
                 break;
             }

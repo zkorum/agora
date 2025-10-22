@@ -22,19 +22,23 @@ The service consists of two main job types:
 ### 1. Scan Conversations Job
 
 - Runs on a self-scheduling loop (default: every 2 seconds)
-- Scans the database for conversations needing math updates
+- Scans `conversation_update_queue` table for pending math updates
 - Queues `update-conversation-math` jobs for eligible conversations
-- Respects minimum time between updates to avoid excessive recalculation
+- **Rate limiting**: Respects 20-second minimum between updates per conversation
+- **Singleton protection**: Uses pg-boss singleton keys to prevent duplicate jobs per conversation
 - Uses self-scheduling pattern: each job schedules the next run after completion
 - Error-resilient: continues scheduling even if scan encounters errors
 
 ### 2. Update Conversation Math Job
 
+- **Counter reconciliation**: Recalculates accurate counters from actual database records (self-healing)
 - Fetches voting data for a specific conversation
 - Calls external Polis service to compute clustering mathematics
+- **Batch processing**: Handles large conversations (19K+ opinions) via batching to avoid stack overflow
 - Processes and stores math results (priorities, consensus, clusters, etc.)
 - Optionally generates AI labels and summaries for clusters
-- Updates database with latest math results
+- Updates conversation table counters and marks queue entry as processed
+- **Race-condition safe**: Only marks processed if no newer update arrived during processing
 
 ## Configuration
 
@@ -153,28 +157,66 @@ pnpm format:write
 
 ## How It Works
 
-1. **Initialization**: Service connects to database and initializes pg-boss job queue
+1. **Initialization**: Service connects to database and initializes pg-boss job queue with **singleton policy**
+   - Queue policy ensures only 1 job per conversation (created OR active) to prevent duplicate processing
+
 2. **Loop Kickoff**: Sends initial `scan-conversations` job with singleton key to start the self-scheduling loop
-3. **Conversation Scanning**: Scan job queries database for conversations that need math updates
+
+3. **Conversation Scanning**: Scan job queries `conversation_update_queue` table for pending updates
+   - Reads conversations where `processed_at IS NULL`
+   - Respects rate limiting via `last_math_update_at` (20s minimum between updates)
+   - Orders by `last_math_update_at ASC NULLS FIRST` (prioritizes never-updated and oldest)
+
 4. **Job Queueing**: Eligible conversations are queued as `update-conversation-math` jobs
+   - Each job includes captured `requestedAt` timestamp for race-condition detection
+   - Uses `singletonKey: update-math-${conversationId}` per conversation
+   - Dynamic `singletonSeconds` based on conversation size (15s-120s)
+
 5. **Self-Scheduling**: After each scan, the job schedules itself to run again after `MATH_UPDATER_SCAN_INTERVAL_MS`
    - Uses `singletonKey` to prevent duplicate loops
    - Always reschedules, even if the scan encounters errors
    - Creates a continuous, reliable scanning loop
-6. **Math Processing**: Worker jobs fetch votes, call Polis service, process results
-7. **Database Updates**: Math results are stored in database, updating:
+
+6. **Counter Reconciliation** (services/math-updater/src/conversationCounters.ts):
+   - Recalculates `opinion_count`, `vote_count`, `participant_count` from actual DB records
+   - Self-healing: fixes drift from soft deletes, moderation, user deletion
+   - Updates `lastReactedAt` for activity tracking
+   - Logs any discrepancies found
+
+7. **Math Processing**: Worker jobs fetch votes, call Polis service, process results
+   - Batches large conversations (1000 opinions per batch) to avoid stack overflow
+   - Handles conversations with 100K+ votes and 19K+ opinions
+
+8. **Database Updates**: Math results are stored in database, updating:
+   - Conversation counters (opinion_count, vote_count, participant_count, lastReactedAt)
    - Opinion priorities, consensus levels, divisiveness scores
    - Cluster assignments for participants
    - Cluster statistics (agreement/disagreement counts per opinion)
    - Representative opinions for each cluster
-8. **AI Enhancement**: If enabled, generates AI-powered cluster labels and summaries
-9. **Completion**: Conversation's `currentPolisContentId` is updated to point to latest math results
+
+9. **AI Enhancement**: If enabled, generates AI-powered cluster labels and summaries
+
+10. **Queue Completion** (race-condition safe):
+    - Marks queue entry as `processedAt = NOW()` only if `requestedAt` unchanged
+    - If `requestedAt` changed during processing → new update arrived → this is now stale
+    - Always updates `last_math_update_at` for rate limiting
+    - Newer updates automatically picked up by next scan
 
 ## Database Schema
 
 The service interacts with several database tables:
 
-- `conversation`: Stores conversation metadata and current math content reference
+### Queue Management
+- `conversation_update_queue`: Tracks pending math updates with rate limiting
+  - `conversation_id` (PRIMARY KEY): Deduplicates queue entries
+  - `requested_at`: When update was requested (used for race-condition detection)
+  - `processed_at`: NULL = pending, NOT NULL = processed
+  - `last_math_update_at`: Tracks actual processing time (enables 20s rate limiting)
+
+### Core Data
+- `conversation`: Stores conversation metadata, counters, and current math content reference
+  - Counters: `opinion_count`, `vote_count`, `participant_count`, `lastReactedAt`
+  - Updated by math-updater via counter reconciliation
 - `opinion`: Stores opinions with math-computed statistics (priority, consensus, divisiveness)
 - `vote`: Stores user votes on opinions
 - `polis_content`: Stores raw Polis math results
@@ -195,9 +237,18 @@ The service logs important events:
 
 - Service startup and shutdown
 - Job registrations and scheduling
-- Conversation scans and math updates
+- Conversation scans with slugIds: `[Scan] Found 3 conversation(s) needing math updates: [SIP3Kg, sfoFIQ, 15I-Jw]`
+- Enqueued vs skipped conversations: `[Scan] Successfully enqueued 2 conversation(s): [sfoFIQ, 15I-Jw]`
+- Counter reconciliation discrepancies: `[Counter] Fixing counters for R3NBkA: diff { opinions: -2, votes: -3 }`
+- Math processing times for large conversations (113K votes: 50-85 seconds)
 - AI label/summary generation
 - Errors and warnings
+
+**Key Metrics to Watch**:
+- Counter drift frequency (should be occasional, not every update)
+- Large conversations processing time (>60s indicates heavy load)
+- Singleton job rejections (normal behavior, prevents duplicate work)
+- Queue depth (pending updates in `conversation_update_queue`)
 
 Use structured logging output to monitor service health and performance.
 

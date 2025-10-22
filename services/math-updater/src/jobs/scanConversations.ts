@@ -51,6 +51,8 @@ export async function scanConversationsJob(
             .select({
                 conversationId: conversationUpdateQueueTable.conversationId,
                 requestedAt: conversationUpdateQueueTable.requestedAt,
+                slugId: conversationTable.slugId,
+                voteCount: conversationTable.voteCount,
             })
             .from(conversationUpdateQueueTable)
             .innerJoin(
@@ -75,40 +77,79 @@ export async function scanConversationsJob(
                 ),
             );
 
-        log.info(
-            `[Scan] Found ${queueEntries.length} conversation(s) needing math updates`,
+        // Log conversations that need updates with their slugIds
+        const conversationSlugs = queueEntries.map(
+            (entry) => entry.slugId || `id-${entry.conversationId}`,
         );
+        log.info(
+            `[Scan] Found ${queueEntries.length} conversation(s) needing math updates: [${conversationSlugs.join(", ")}]`,
+        );
+
+        // Track which conversations are actually enqueued (not rejected by singleton)
+        const enqueuedConversations: string[] = [];
+        const rejectedConversations: string[] = [];
 
         // Enqueue each conversation for processing
         for (const entry of queueEntries) {
-            // Get conversation slug for logging
-            const convResult = await db
-                .select({ slugId: conversationTable.slugId })
-                .from(conversationTable)
-                .where(eq(conversationTable.id, entry.conversationId));
-
             const conversationSlugId =
-                convResult[0]?.slugId || `id-${entry.conversationId}`;
+                entry.slugId || `id-${entry.conversationId}`;
 
-            await boss.send(
+            // Calculate dynamic singletonSeconds based on conversation size
+            // Prevents duplicate jobs while conversation is processing
+            const voteCount = entry.voteCount || 0;
+            let singletonSeconds: number;
+            if (voteCount < 100) {
+                singletonSeconds = 15; // Small conversations: 15s
+            } else if (voteCount < 10000) {
+                singletonSeconds = 30; // Medium conversations: 30s
+            } else if (voteCount < 100000) {
+                singletonSeconds = 60; // Large conversations: 60s
+            } else {
+                singletonSeconds = 120; // Huge conversations (like SIP3Kg): 120s
+            }
+
+            // Send job with singletonKey to prevent duplicates
+            const jobId = await boss.send(
                 "update-conversation-math",
                 {
                     conversationId: entry.conversationId,
                     conversationSlugId: conversationSlugId,
-                    requestedAt: entry.requestedAt, // Pass captured requestedAt for race-condition-safe update
+                    requestedAt: entry.requestedAt,
                 },
                 {
                     // Use singletonKey to prevent duplicate jobs for the same conversation
-                    // Queue uses 'singleton' policy: only 1 job per singletonKey (created OR active)
-                    // This prevents any concurrent execution or duplicate jobs for the same conversation
+                    // Queue has 'singleton' policy: only 1 job per singletonKey (created OR active)
+                    // This prevents concurrent execution and duplicate jobs for the same conversation
                     // Multiple different conversations can still be processed in parallel
                     singletonKey: `update-math-${entry.conversationId}`,
-                    // Rate limiting is handled by the scan query (minTimeBetweenUpdatesMs)
+                    // Dynamic singletonSeconds: how long to keep rejecting duplicate job submissions
+                    // 15s-120s based on conversation size (prevents overwhelming Python service)
+                    singletonSeconds: singletonSeconds,
                 },
             );
 
-            log.debug(
-                `[Scan] Enqueued conversation ${conversationSlugId} (id: ${entry.conversationId})`,
+            if (jobId) {
+                enqueuedConversations.push(conversationSlugId);
+                log.info(
+                    `[Scan] Enqueued conversation ${conversationSlugId} (id: ${entry.conversationId}, votes: ${voteCount}, singleton: ${singletonSeconds}s, job: ${jobId})`,
+                );
+            } else {
+                rejectedConversations.push(conversationSlugId);
+                log.debug(
+                    `[Scan] Skipped conversation ${conversationSlugId} (id: ${entry.conversationId}) - singleton job already exists`,
+                );
+            }
+        }
+
+        // Summary of what was actually enqueued vs rejected
+        if (enqueuedConversations.length > 0) {
+            log.info(
+                `[Scan] Successfully enqueued ${enqueuedConversations.length} conversation(s): [${enqueuedConversations.join(", ")}]`,
+            );
+        }
+        if (rejectedConversations.length > 0) {
+            log.info(
+                `[Scan] Skipped ${rejectedConversations.length} conversation(s) due to existing singleton jobs: [${rejectedConversations.join(", ")}]`,
             );
         }
 

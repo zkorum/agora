@@ -6,24 +6,52 @@ import { sharedConfigSchema } from "./shared-backend/config.js";
  * Math updater specific configuration
  */
 const mathUpdaterConfigSchema = sharedConfigSchema.extend({
-    // Database
-
     // Polis Service
     POLIS_BASE_URL: z.string().url(),
 
     // Math Updater Settings
+
+    /**
+     * How often to scan conversation_update_queue for pending updates (in milliseconds)
+     * Default: 2000ms (2 seconds)
+     * Minimum: 2000ms
+     */
     MATH_UPDATER_SCAN_INTERVAL_MS: z.coerce
         .number()
         .int()
         .min(2000)
         .default(2000),
-    MATH_UPDATER_BATCH_SIZE: z.coerce.number().int().min(1).max(50).default(10),
+
+    /**
+     * Maximum number of jobs to fetch per batch from pg-boss queue
+     * Also determines database connection pool size (batch size + 5)
+     * Default: 20
+     * Range: 1-100
+     */
+    MATH_UPDATER_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
+
+    /**
+     * Number of jobs that execute concurrently within each batch
+     * Limits concurrent heavy database operations to protect the database server
+     * Should be <= MATH_UPDATER_BATCH_SIZE
+     * Default: 10 (processes up to 10 different conversations simultaneously)
+     * Range: 1-50
+     */
     MATH_UPDATER_JOB_CONCURRENCY: z.coerce
         .number()
         .int()
         .min(1)
-        .max(10)
-        .default(3),
+        .max(50)
+        .default(10),
+
+    /**
+     * Minimum time between math updates for a single conversation (in milliseconds)
+     * Rate limiting prevents overwhelming the Python polis math service
+     * Updates requested more frequently are queued until this interval passes
+     * Default: 20000ms (20 seconds)
+     * Minimum: 5000ms (5 seconds)
+     * Note: Large conversations (100K+ votes) take 50-85 seconds to process
+     */
     MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS: z.coerce
         .number()
         .int()

@@ -33,14 +33,23 @@ async function deleteOldJobs(db: PostgresJsDatabase): Promise<void> {
             `[Math Updater] Deleted ${scanResult.count} old scan-conversations job(s)`,
         );
 
-        // Delete old update-conversation-math jobs (from before useSingletonQueue was added)
-        // Only delete jobs that are pending (created/retry state), not active jobs
+        // Delete ALL update-conversation-math jobs to clear stuck singletonKey jobs
         const updateResult = await db.execute(
-            sql`DELETE FROM pgboss.job WHERE name = 'update-conversation-math' AND state IN ('created', 'retry')`,
+            sql`DELETE FROM pgboss.job WHERE name = 'update-conversation-math'`,
         );
 
         log.info(
             `[Math Updater] Deleted ${updateResult.count} old update-conversation-math job(s)`,
+        );
+
+        // Clear singleton tracking for update-conversation-math jobs
+        // This ensures singletonKey can be reused immediately
+        const singletonResult = await db.execute(
+            sql`DELETE FROM pgboss.schedule WHERE name LIKE 'update-math-%'`,
+        );
+
+        log.info(
+            `[Math Updater] Cleared ${singletonResult.count} singleton schedule entries`,
         );
     } catch (error) {
         log.warn(
@@ -115,9 +124,10 @@ async function main() {
             ssl: { rejectUnauthorized: false },
         };
     } else {
-        const sslConfig = config.NODE_ENV === "production"
-            ? { rejectUnauthorized: false }
-            : undefined;
+        const sslConfig =
+            config.NODE_ENV === "production"
+                ? { rejectUnauthorized: false }
+                : undefined;
         pgBossConfig = {
             ...pgBossCommonConfig,
             connectionString: config.CONNECTION_STRING,
@@ -163,7 +173,9 @@ async function main() {
     await boss.createQueue("scan-conversations");
     log.info("[Math Updater] Created/verified scan-conversations queue");
 
-    // Register job handlers
+    // Register single worker with batch processing and controlled concurrency
+    // Uses pLimit to process multiple conversations concurrently while protecting the database
+    // singletonKey in scanner ensures one job per conversation
     await boss.work(
         "update-conversation-math",
         {
@@ -171,7 +183,6 @@ async function main() {
         },
         async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
             // Process jobs with controlled concurrency to protect the database
-            // No deduplication needed - singletonKey ensures one job per conversation
             const limit = pLimit(config.MATH_UPDATER_JOB_CONCURRENCY);
             await Promise.all(
                 jobs.map((job) =>

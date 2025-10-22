@@ -1,7 +1,12 @@
 all: dev
 
-dev:
+# Run with Flask development server (single-threaded, for simple debugging only)
+dev-simple:
 	flask --app main run
+
+# Run with Gunicorn (multi-worker, production-like, handles concurrent requests)
+dev:
+	gunicorn -c gunicorn.conf.py main:app
 image-buildx:
 	docker buildx build --platform linux/amd64 -t quay.io/zkorum/agora-python-bridge:latest .
 
