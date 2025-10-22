@@ -833,7 +833,7 @@ const zodGenLabelSummaryOutputClusterValue = z.object({
         .string()
         .max(60)
         .regex(/^\S+(?:\s\S+)?$/, "Label must be exactly 1 or 2 words"),
-    summary: z.string().max(300),
+    summary: z.string().max(1000),
 });
 
 const zodGenLabelSummaryOutputClusterKey = z.enum([

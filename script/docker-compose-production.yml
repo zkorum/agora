@@ -1,59 +1,78 @@
-version: "3.8"
+x-logging-options: &aws-logging-options
+  awslogs-region: eu-west-1
+  awslogs-group: agora-prod-docker
+
 services:
-  postgres:
-    container_name: agora_postgres
-    image: postgres:16
+  polis-server:
+    container_name: polis-server
+    image: quay.io/zkorum/agora-python-bridge:2.0.0
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: CHANGEME
-      POSTGRES_DB: agora
-      PGDATA: /data/postgres
-    volumes:
-      - postgres:/data/postgres
-      - ./services/back/database/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      TOTAL_VCPUS: "2"  # t3.medium = 2 vCPUs (adjust for your instance type)
     expose:
-      - "5432"
+      - 8004
     restart: unless-stopped
-  pgadmin:
-    container_name: agora_pgadmin
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@zkorum.com
-      PGADMIN_DEFAULT_PASSWORD: CHANGEME
-    volumes:
-      - pgadmin:/var/lib/pgadmin
-    expose:
-      - "80"
-    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: polis-server
   api:
     container_name: agora_api
-    image: zkorum/agora-api:0.1.26
+    image: quay.io/zkorum/agora-api:4.0.1
     environment:
       CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
-      CORS_ORIGIN_LIST: "http://localhost:9000,http://127.0.0.1:9000,http://172.19.0.1:9000,http://192.168.1.22:9000"
+      CORS_ORIGIN_LIST: "https://www.agoracitizen.network,https://agoracitizen.network,https://agoracitizen.app,https://www.agoracitizen.app"
       PEPPERS: "fmgXvsChQsx9fAlq0DPiVg=="
       NODE_ENV: "production"
       VERIFICATOR_SVC_BASE_URL: "http://verificator-svc:8000"
+      POLIS_BASE_URL: "http://polis-server:8004"
+      TWILIO_ACCOUNT_SID: "CHANGEME"
+      TWILIO_AUTH_TOKEN: "CHANGEME"
+      TWILIO_SERVICE_SID: "CHANGEME"
+      SERVER_DID_PROD: "did:web:agoracitizen.app"
     expose:
       - "8080"
     restart: unless-stopped
+  math-updater:
+    container_name: agora_math_updater
+    image: quay.io/zkorum/agora-math-updater:2.0.2
+    environment:
+      CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      NODE_ENV: "production"
+      POLIS_BASE_URL: "http://polis-server:8004"
+      TOTAL_VCPUS: "2"  # t3.medium = 2 vCPUs (adjust for your instance type)
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
   verificator-svc:
     container_name: verificator_svc
-    image: zkorum/verificator-svc:0.2.2
+    image: ghcr.io/rarimo/verificator-svc:v0.2.13
     command: run service
     environment:
       KV_VIPER_FILE: "/config/config.yaml"
-    volumes: 
-      - ./script/rarimo/config:/config
+    volumes:
+      - /home/ec2-user/rarimo:/config
     expose:
       - "8000"
     restart: unless-stopped
-  agora:
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: verificator-svc
+  app:
     container_name: agora_app
-    image: zkorum/agora-app:0.1.0
+    image: quay.io/zkorum/agora-app-production:4.0.0
     expose:
       - "80"
     restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: app
   nginx:
     image: nginx:stable-alpine
     container_name: agora_nginx
@@ -61,11 +80,18 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 5050:5050
+      - 8443:8443
     volumes:
+      #  - ./nginx.conf:/etc/nginx/nginx.conf
       - ./vhosts:/etc/nginx/conf.d
       - ./certbot/www/:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
+      - /var/log/nginx:/var/log/nginx/
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: nginx
   certbot:
     image: certbot/certbot:latest
     command: certonly --webroot --webroot-path=/var/www/certbot/ --email admin@zkorum.com --agree-tos --no-eff-email -d agoracitizen.network
@@ -73,7 +99,4 @@ services:
       - ./certbot/www/:/var/www/certbot/:rw
       - ./certbot/conf/:/etc/letsencrypt/:rw
       - ./certbot/logs:/var/log/letsencrypt
-
-volumes:
-  postgres:
-  pgadmin:
+    restart: unless-stopped

@@ -9,6 +9,14 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
     // Polis Service
     POLIS_BASE_URL: z.string().url(),
 
+    // Infrastructure Configuration
+    /**
+     * Total vCPUs available to the system (used to auto-calculate concurrency settings)
+     * Examples: t3.medium=2, t3.xlarge=4, t3.2xlarge=8
+     * Default: 2 (conservative for small instances)
+     */
+    TOTAL_VCPUS: z.coerce.number().int().min(1).max(128).default(2),
+
     // Math Updater Settings
 
     /**
@@ -25,16 +33,25 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
     /**
      * Maximum number of jobs to fetch per batch from pg-boss queue
      * Also determines database connection pool size (batch size + 5)
-     * Default: 20
+     *
+     * Auto-calculated from TOTAL_VCPUS if not explicitly set:
+     *   2 vCPUs → batch_size=5
+     *   4 vCPUs → batch_size=10
+     *   8 vCPUs → batch_size=20
+     *
      * Range: 1-100
      */
-    MATH_UPDATER_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
+    MATH_UPDATER_BATCH_SIZE: z.coerce.number().int().min(1).max(100).optional(),
 
     /**
      * Number of jobs that execute concurrently within each batch
-     * Limits concurrent heavy database operations to protect the database server
+     * Limits concurrent requests to Python bridge (polis service)
+     * Should match number of Gunicorn workers in polis service
      * Should be <= MATH_UPDATER_BATCH_SIZE
-     * Default: 10 (processes up to 10 different conversations simultaneously)
+     *
+     * Auto-calculated from TOTAL_VCPUS if not explicitly set:
+     *   Concurrency = TOTAL_VCPUS (match polis worker count)
+     *
      * Range: 1-50
      */
     MATH_UPDATER_JOB_CONCURRENCY: z.coerce
@@ -42,7 +59,7 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
         .int()
         .min(1)
         .max(50)
-        .default(10),
+        .optional(),
 
     /**
      * Minimum time between math updates for a single conversation (in milliseconds)
@@ -147,6 +164,40 @@ Now analyze the following JSON input and generate precise, neutral labels and su
 `,
     ),
 });
-export const config = mathUpdaterConfigSchema.parse(process.env);
+
+// Parse base config
+const parsedConfig = mathUpdaterConfigSchema.parse(process.env);
+
+// Auto-calculate concurrency settings from TOTAL_VCPUS if not explicitly provided
+const totalVcpus = parsedConfig.TOTAL_VCPUS;
+
+// Job concurrency: How many concurrent requests to send to Python-bridge
+// We can send slightly more than available workers because:
+// 1. Gunicorn queues excess requests (backlog=2048)
+// 2. As soon as a worker finishes, queued request starts immediately (no gap)
+// 3. Improves throughput without overwhelming the service
+//
+// Formula: workers + small buffer (1-2 extra requests)
+// Examples:
+//   2 vCPUs → concurrency = 3 (2 workers + 1 buffer)
+//   4 vCPUs → concurrency = 5 (4 workers + 1 buffer)
+//   8 vCPUs → concurrency = 10 (8 workers + 2 buffer)
+const jobConcurrency = parsedConfig.MATH_UPDATER_JOB_CONCURRENCY ??
+    (totalVcpus + Math.min(2, Math.ceil(totalVcpus * 0.25)));
+
+// Batch size: How many jobs to fetch from pg-boss queue at once
+// Should be larger than concurrency to keep pipeline full
+// Formula: 2x concurrency, ensures we always have work ready
+// Examples:
+//   concurrency=3 → batch=6
+//   concurrency=5 → batch=10
+//   concurrency=10 → batch=20
+const batchSize = parsedConfig.MATH_UPDATER_BATCH_SIZE ?? (jobConcurrency * 2);
+
+export const config = {
+    ...parsedConfig,
+    MATH_UPDATER_JOB_CONCURRENCY: jobConcurrency,
+    MATH_UPDATER_BATCH_SIZE: batchSize,
+};
 
 export type MathUpdaterConfig = z.infer<typeof mathUpdaterConfigSchema>;
