@@ -129,17 +129,146 @@ class MathResult(TypedDict):
     consensus: Consensus
 
 
-def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
+def calculate_distribution_imbalance(member_counts):
+    """
+    Calculate how imbalanced the distribution is across groups.
+    Returns a coefficient where:
+    - 0 means perfectly balanced
+    - Higher values mean more imbalanced
+
+    Uses coefficient of variation (std dev / mean) as a measure.
+    """
+    if len(member_counts) < 2:
+        return 0
+
+    total_members = sum(member_counts)
+    if total_members == 0:
+        return 0
+
+    mean = total_members / len(member_counts)
+
+    # Calculate standard deviation
+    variance = sum((x - mean) ** 2 for x in member_counts) / len(member_counts)
+    std_dev = variance**0.5
+
+    # Coefficient of variation
+    cv = std_dev / mean
+    return cv
+
+
+def should_scale_based_on_distribution(member_counts, total_members):
+    """
+    Determine if we should scale up or down based on distribution.
+
+    Returns:
+    - "up": should add a group
+    - "down": should remove a group
+    - None: distribution is acceptable
+    """
+    if len(member_counts) < 2:
+        return None
+
+    num_groups = len(member_counts)
+    min_members = min(member_counts)
+
+    # Special case: very small populations (< 10 total)
+    # Don't worry about distribution, only about minimum group size
+    if total_members < 10:
+        # Only scale down if there's a group with < 2 members and we have 3+ groups
+        if min_members < 2 and num_groups >= 3:
+            return "down"
+        return None
+
+    # For larger populations, check distribution balance
+    imbalance = calculate_distribution_imbalance(member_counts)
+
+    # Scale down if:
+    # 1. There's a group with < 2 members and we have 3+ groups
+    # 2. OR smallest group has < 10 members when total > 100 (too tiny relatively)
+    if min_members < 2 and num_groups >= 3:
+        logger.info(f"Scaling down: group with {min_members} members (< 2)")
+        return "down"
+
+    if total_members > 100 and min_members < 10 and imbalance > 0.9:
+        logger.info(
+            f"Scaling down: severe imbalance (CV={imbalance:.2f}), "
+            f"smallest group has only {min_members}/{total_members} members"
+        )
+        return "down"
+
+    # Scale up if we can improve distribution (favor more groups):
+    # 1. For 10-20 members: if we have 2 groups, imbalance > 0.8, and min < 2, try 3 groups
+    # 2. For 20-30 members: if we have 2 groups and imbalance > 0.6, try 3 groups
+    # 3. For 30-50 members: if imbalance > 0.6, add a group (up to 4)
+    # 4. For 50+ members: if imbalance > 0.5, add a group (up to max)
+
+    if (
+        total_members >= 10
+        and total_members < 20
+        and num_groups == 2
+        and imbalance > 0.8
+        and min_members < 2
+    ):
+        logger.info(
+            f"Scaling up: {total_members} members with severe imbalance (CV={imbalance:.2f}) "
+            f"and tiny group ({min_members} member) - trying 3 groups"
+        )
+        return "up"
+
+    if (
+        total_members >= 20
+        and total_members < 30
+        and num_groups == 2
+        and imbalance > 0.6
+    ):
+        logger.info(
+            f"Scaling up: {total_members} members with high imbalance (CV={imbalance:.2f}) "
+            f"in {num_groups} groups - trying 3 groups"
+        )
+        return "up"
+
+    if total_members >= 30 and num_groups < 4 and imbalance > 0.6:
+        logger.info(
+            f"Scaling up: {total_members} members with imbalance (CV={imbalance:.2f}) "
+            f"in {num_groups} groups - adding another group"
+        )
+        return "up"
+
+    if total_members >= 50 and num_groups < 6 and imbalance > 0.5:
+        logger.info(
+            f"Scaling up: {total_members} members with imbalance (CV={imbalance:.2f}) "
+            f"in {num_groups} groups - adding another group for better distribution"
+        )
+        return "up"
+
+    return None
+
+
+def get_maths(
+    votes,
+    min_user_vote_threshold,
+    max_group_count=6,
+    force_group_count=None,
+    just_scaled_down=False,
+    just_scaled_up=False,
+) -> MathResult:
     logger.info(
         f"Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
     )
 
     try:
-        result = run_pipeline(
-            votes=votes,
-            min_user_vote_threshold=min_user_vote_threshold,
-            max_group_count=max_group_count,
-        )
+        if force_group_count is not None:
+            result = run_pipeline(
+                votes=votes,
+                min_user_vote_threshold=min_user_vote_threshold,
+                force_group_count=force_group_count,
+            )
+        else:
+            result = run_pipeline(
+                votes=votes,
+                min_user_vote_threshold=min_user_vote_threshold,
+                max_group_count=max_group_count,
+            )
     except Exception as err:
         logger.error(
             "Error while running pipeline. If TypeError, it's likely there aren't enough participants and votes yet"
@@ -167,30 +296,60 @@ def get_maths(votes, min_user_vote_threshold, max_group_count=6) -> MathResult:
             orient="records"
         )
 
-    has_group_with_strictly_less_than_two_members = False
     # Drop participants without a cluster_id (unclustered)
     df = result.participants_df.dropna(subset=["cluster_id"]).copy()
-    # Loop through each unique cluster
+    # Loop through each unique cluster and collect member counts
+    member_counts = []
     for cluster_id in sorted(df["cluster_id"].unique()):
         members = df[df["cluster_id"] == cluster_id].index.tolist()
         num_members = len(members)
-        if num_members < 2:
-            has_group_with_strictly_less_than_two_members = True
-            if num_members != 1:
-                # 0 participant
-                logger.warning(f"Warning: a cluster has {num_members} participant!")
+        member_counts.append(num_members)
+        if num_members == 0:
+            # 0 participant - should not happen but log if it does
+            logger.warning(
+                f"Warning: cluster {cluster_id} has {num_members} participants!"
+            )
 
+    total_members = sum(member_counts)
     number_of_groups = len(group_comment_stats.keys())
-    if number_of_groups >= 3 and has_group_with_strictly_less_than_two_members:
-        new_max_group_count = number_of_groups - 1
-        logger.info(
-            f"'{number_of_groups}' clusters found with at least one of them having 1 participant or less, recalculating maths by enforcing '{new_max_group_count}' groups maximum"
-        )
-        return get_maths(
-            votes=votes,
-            min_user_vote_threshold=min_user_vote_threshold,
-            max_group_count=new_max_group_count,
-        )
+
+    logger.info(
+        f"Distribution: {number_of_groups} groups with member counts {member_counts} "
+        f"(total: {total_members} members)"
+    )
+
+    # Determine if we should scale based on distribution
+    # Only scale if we haven't just scaled (prevent oscillation)
+    if not just_scaled_down and not just_scaled_up:
+        scale_action = should_scale_based_on_distribution(member_counts, total_members)
+
+        if scale_action == "down":
+            new_force_group_count = number_of_groups - 1
+            logger.info(
+                f"Recalculating with max {new_force_group_count} groups (scaling down)"
+            )
+            return get_maths(
+                votes=votes,
+                min_user_vote_threshold=min_user_vote_threshold,
+                force_group_count=new_force_group_count,
+                just_scaled_down=True,
+            )
+        elif scale_action == "up":
+            new_force_group_count = number_of_groups + 1
+            logger.info(
+                f"Recalculating with min {new_force_group_count} groups (scaling up)"
+            )
+            return get_maths(
+                votes=votes,
+                min_user_vote_threshold=min_user_vote_threshold,
+                force_group_count=new_force_group_count,
+                just_scaled_up=True,
+            )
+    else:
+        if just_scaled_down:
+            logger.info("Already scaled down once, accepting current distribution")
+        if just_scaled_up:
+            logger.info("Already scaled up once, accepting current distribution")
 
     # print("\n\n")
     # print(
