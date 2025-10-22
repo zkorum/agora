@@ -127,9 +127,41 @@ Rules:
 - Use conversationTitle and conversationBody as context.
 - Detect sarcasm/irony; avoid literal misreadings.
 - For each cluster *independently*:
-    - agreesWith = opinions that most members of this specific cluster *support*.
-    - disagreesWith = opinions that most members of this specific cluster *reject*.
-    - Make sure to consider whether the specific cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
+    - CRITICAL: agreesWith = opinions that members of this cluster AGREE WITH and SUPPORT.
+    - CRITICAL: disagreesWith = opinions that members of this cluster DISAGREE WITH and REJECT.
+    - Do NOT confuse the meaning: if an opinion is in "disagreesWith", the cluster OPPOSES it.
+    - Do NOT confuse the meaning: if an opinion is in "agreesWith", the cluster SUPPORTS it.
+
+Examples showing correct interpretation:
+
+Example 1 - Basic case:
+Input:
+  cluster "0": {
+    "agreesWith": ["Climate change is real"],
+    "disagreesWith": ["Climate change is a hoax"]
+  }
+CORRECT: "This cluster believes climate change is real and rejects the idea that it is a hoax."
+WRONG: "This cluster believes climate change is a hoax."
+
+Example 2 - Empty agreesWith (only disagrees):
+Input:
+  cluster "1": {
+    "agreesWith": [],
+    "disagreesWith": ["Technology always improves society", "Innovation is always beneficial"]
+  }
+CORRECT: "This cluster is skeptical of technology and innovation, rejecting the notion that they always improve society or provide benefits."
+WRONG: "This cluster believes technology and innovation always improve society."
+
+Example 3 - Complex statement with negation:
+Input:
+  cluster "2": {
+    "agreesWith": [],
+    "disagreesWith": ["Wealth concentration is not a problem", "Democratic tools don't threaten traditional voting"]
+  }
+CORRECT: "This cluster believes wealth concentration IS a problem and that democratic tools DO threaten traditional voting."
+WRONG: "This cluster believes wealth concentration is not a problem."
+
+Remember: If an opinion is in disagreesWith, the cluster OPPOSES that opinion, regardless of how the opinion is worded.
 
 Labels:
 1. Length and Format:
@@ -148,7 +180,7 @@ Labels:
     - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
     - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
 5. Generation Process:
-    a) Identify the core stance or intellectual tradition within the cluster. IMPORTANT: Remember to make sure to consider whether the specific cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
+    a) Identify the core stance or intellectual tradition within the cluster. CRITICAL: Opinions in "agreesWith" are what the cluster SUPPORTS. Opinions in "disagreesWith" are what the cluster OPPOSES.
     b) Abstract this stance into a general term using agentive suffixes.
     c) Validate that the label avoids policy specifics and geographic references.
     d) Validate that the label is either 1 or 2 words.
@@ -157,7 +189,7 @@ Summaries:
 - ≤300 chars, neutral, concise
 - Reflect cluster perspective and disagreements
 - Grounded in cluster "agreesWith" and "disagreesWith" opinions and conversation context
-- IMPORTANT: Remember to make sure to consider whether the specific cluster agrees or disagrees with the provided opinions, so as not to change the intended meaning.
+- CRITICAL: Opinions in "agreesWith" are positions the cluster SUPPORTS. Opinions in "disagreesWith" are positions the cluster REJECTS.
 - Summarize the cluster's perspective fully and precisely, covering all representative opinions of that cluster, concisely and without repetition.
 
 Now analyze the following JSON input and generate precise, neutral labels and summaries for clusters "0"–"5" independently following the above rules.
