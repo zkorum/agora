@@ -45,4 +45,4 @@ dev-math-updater:
 	cd services/math-updater && pnpm start:dev
 
 dev-polis:
-	cd services/python-bridge && source .venv/bin/activate && flask --app main run --host 0.0.0.0 --port 5001
+	cd services/python-bridge && source .venv/bin/activate && gunicorn -c gunicorn.conf.py main:app

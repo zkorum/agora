@@ -125,6 +125,42 @@ export async function updateConversationMathHandler(
             error,
             `[Math Updater] Error updating math for conversation ${conversationSlugId}`,
         );
-        throw error; // Re-throw to let pg-boss handle retry logic
+
+        // Check if there's a newer update request waiting
+        // If so, don't retry this job - let it fail and move to the fresh one
+        // If not, retry this job to ensure the calculation completes
+        try {
+            const queueEntry = await db
+                .select({
+                    requestedAt: conversationUpdateQueueTable.requestedAt,
+                })
+                .from(conversationUpdateQueueTable)
+                .where(eq(conversationUpdateQueueTable.conversationId, conversationId))
+                .limit(1);
+
+            if (queueEntry.length > 0) {
+                const currentRequestedAt = queueEntry[0].requestedAt;
+                const currentRequestedAtTime = new Date(currentRequestedAt).getTime();
+                const jobRequestedAtTime = requestedAtDate.getTime();
+
+                if (currentRequestedAtTime > jobRequestedAtTime) {
+                    // A newer update request exists - don't retry this stale job
+                    log.info(
+                        `[Math Updater] Newer update request exists for conversation ${conversationSlugId}, skipping retry of stale job`,
+                    );
+                    // Don't throw - let the job complete with failure status
+                    // The newer job will be picked up by the scanner
+                    return;
+                }
+            }
+        } catch (checkError) {
+            log.warn(
+                checkError,
+                `[Math Updater] Failed to check for newer update request for conversation ${conversationSlugId}`,
+            );
+        }
+
+        // No newer request exists, or check failed - retry this job
+        throw error;
     }
 }
