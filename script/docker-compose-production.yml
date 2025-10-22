@@ -5,9 +5,9 @@ x-logging-options: &aws-logging-options
 services:
   polis-server:
     container_name: polis-server
-    image: quay.io/zkorum/agora-python-bridge:2.0.0
+    image: quay.io/zkorum/agora-python-bridge:2.0.2
     environment:
-      TOTAL_VCPUS: "2"  # t3.medium = 2 vCPUs (adjust for your instance type)
+      TOTAL_VCPUS: "2" # t3.medium = 2 vCPUs (adjust for your instance type)
     expose:
       - 8004
     restart: unless-stopped
@@ -18,7 +18,7 @@ services:
         awslogs-stream: polis-server
   api:
     container_name: agora_api
-    image: quay.io/zkorum/agora-api:4.0.1
+    image: quay.io/zkorum/agora-api:4.0.2
     environment:
       CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       CORS_ORIGIN_LIST: "https://www.agoracitizen.network,https://agoracitizen.network,https://agoracitizen.app,https://www.agoracitizen.app"
@@ -35,12 +35,12 @@ services:
     restart: unless-stopped
   math-updater:
     container_name: agora_math_updater
-    image: quay.io/zkorum/agora-math-updater:2.0.2
+    image: quay.io/zkorum/agora-math-updater:2.0.3
     environment:
       CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       NODE_ENV: "production"
       POLIS_BASE_URL: "http://polis-server:8004"
-      TOTAL_VCPUS: "2"  # t3.medium = 2 vCPUs (adjust for your instance type)
+      TOTAL_VCPUS: "2" # t3.medium = 2 vCPUs (adjust for your instance type)
     restart: unless-stopped
     logging:
       driver: awslogs
@@ -64,7 +64,7 @@ services:
         awslogs-stream: verificator-svc
   app:
     container_name: agora_app
-    image: quay.io/zkorum/agora-app-production:4.0.0
+    image: quay.io/zkorum/agora-app-production:4.0.1
     expose:
       - "80"
     restart: unless-stopped
