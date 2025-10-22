@@ -832,7 +832,7 @@ export const zodSupportedCountryCallingCode = z.enum([
 const zodGenLabelSummaryOutputClusterValue = z.object({
     label: z
         .string()
-        .max(60)
+        .max(100)
         .regex(/^\S+(?:\s\S+)?$/, "Label must be exactly 1 or 2 words"),
     summary: z.string().max(1000),
 });

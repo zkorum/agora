@@ -15,4 +15,3 @@ dist/
 tests/
 
 Makefile
-gunicorn.conf.py
