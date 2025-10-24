@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ValidationError
-from typing import Optional, Union, List, TypedDict
-from flask import Flask, jsonify, request, abort
+from typing import Optional, Union, List, TypedDict, cast
+from flask import Flask, jsonify, request, abort, Response
 from reddwarf.data_loader import Loader
 from reddwarf.implementations.polis import run_pipeline
 import logging
@@ -8,6 +8,7 @@ import sys
 import traceback
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
+import pandas as pd
 
 from pprint import pprint
 
@@ -54,7 +55,7 @@ def print_summary(loader: Loader):
 
 
 @app.route("/import")
-def importConversation():
+def importConversation() -> Response:
     report_id = request.args.get("report_id")
     conversation_id = request.args.get("conversation_id")
     if report_id is None and conversation_id is None:
@@ -77,7 +78,7 @@ def importConversation():
                 "votes_data": loader.votes_data,
             }
         )
-    if conversation_id is not None:
+    else:  # conversation_id is not None
         logger.info(
             f"Loading Polis conversation from conversation_id={conversation_id}"
         )
@@ -116,17 +117,61 @@ class MathRequest(BaseModel):
     votes: List[VoteRecord]
 
 
+class ConsensusStatement(TypedDict):
+    tid: int
+    n_success: int
+    n_trials: int
+    p_success: float
+    p_test: float
+    cons_for: str
+
+
 class Consensus(TypedDict):
-    agree: List
-    disagree: List
+    agree: List[ConsensusStatement]
+    disagree: List[ConsensusStatement]
+
+
+class RepnessStatement(TypedDict):
+    tid: int
+    n_success: int
+    n_trials: int
+    p_success: float
+    p_test: float
+    repness: float
+    repness_test: float
+    repful_for: str  # Literal["agree", "disagree"] but simplified for compatibility
+    best_agree: Union[bool, None]  # NotRequired in TypedDict
+    n_agree: Union[int, None]  # NotRequired in TypedDict
+
+
+# PolisRepness is dict[str | GroupId, list[PolisRepnessStatement]]
+# GroupId is an int, so the key can be str or int
+Repness = dict[Union[str, int], List[RepnessStatement]]
 
 
 class MathResult(TypedDict):
-    statements_df: List
-    participants_df: List
-    repness: dict
+    statements_df: List[dict]
+    participants_df: List[dict]
+    repness: Repness
     group_comment_stats: dict
     consensus: Consensus
+
+
+def convert_to_json_serializable(obj):
+    """
+    Recursively converts pandas Series, DataFrames, and other non-JSON-serializable
+    types to JSON-serializable formats.
+    """
+    if isinstance(obj, pd.Series):
+        return obj.to_dict()
+    elif isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient="records")
+    elif isinstance(obj, dict):
+        return {key: convert_to_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_json_serializable(item) for item in obj]
+    else:
+        return obj
 
 
 def calculate_distribution_imbalance(member_counts):
@@ -373,9 +418,9 @@ def get_maths(
         "participants_df": result.participants_df.reset_index().to_dict(
             orient="records"
         ),
-        "repness": result.repness,
+        "repness": cast(Repness, convert_to_json_serializable(result.repness)),
         "group_comment_stats": group_comment_stats,
-        "consensus": result.consensus,
+        "consensus": cast(Consensus, convert_to_json_serializable(result.consensus)),
     }
 
 
