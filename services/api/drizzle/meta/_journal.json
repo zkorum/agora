@@ -176,6 +176,27 @@
       "when": 1761031302052,
       "tag": "0024_easy_mindworm",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1761559397158,
+      "tag": "0025_hesitant_the_spike",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1761580600709,
+      "tag": "0026_clean_baron_strucker",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1761639811793,
+      "tag": "0027_certain_nighthawk",
+      "breakpoints": true
     }
   ]
 }

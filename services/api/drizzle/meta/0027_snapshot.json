@@ -1,6 +1,6 @@
 {
-  "id": "8b4877a8-c2ac-4396-9378-3ecb3dc705ee",
-  "prevId": "4d9181dc-df5a-4979-82f9-76bf1048f92b",
+  "id": "5cad9907-568e-4c93-b192-9d1a2c814755",
+  "prevId": "a1cf6ae9-1362-46ae-9788-21990390763a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -301,7 +301,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "conversation_moderation_conversation_id_moderation_action_idx": {
+          "name": "conversation_moderation_conversation_id_moderation_action_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "moderation_action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "conversation_moderation_conversation_id_conversation_id_fk": {
           "name": "conversation_moderation_conversation_id_conversation_id_fk",
@@ -930,6 +952,12 @@
           "name": "idx_conversation_update_queue_pending",
           "columns": [
             {
+              "expression": "requested_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "last_math_update_at",
               "isExpression": false,
               "asc": true,
@@ -937,7 +965,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"conversation_update_queue\".\"processed_at\" IS NULL",
+          "where": "\"conversation_update_queue\".\"requested_at\" > \"conversation_update_queue\".\"last_math_update_at\" OR \"conversation_update_queue\".\"last_math_update_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2346,6 +2374,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "opinion_conversationId_idx": {
+          "name": "opinion_conversationId_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -2752,7 +2795,38 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "polis_cluster_opinion_opinionId_idx": {
+          "name": "polis_cluster_opinion_opinionId_idx",
+          "columns": [
+            {
+              "expression": "opinion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "polis_cluster_opinion_polisClusterId_idx": {
+          "name": "polis_cluster_opinion_polisClusterId_idx",
+          "columns": [
+            {
+              "expression": "polis_cluster_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "polis_cluster_opinion_polis_content_id_polis_content_id_fk": {
           "name": "polis_cluster_opinion_polis_content_id_polis_content_id_fk",
@@ -2896,6 +2970,119 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.polis_cluster_translation": {
+      "name": "polis_cluster_translation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "polis_cluster_translation_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "polis_cluster_id": {
+          "name": "polis_cluster_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language_code": {
+          "name": "language_code",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ai_label": {
+          "name": "ai_label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_summary": {
+          "name": "ai_summary",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "polis_cluster_translation_lookup_idx": {
+          "name": "polis_cluster_translation_lookup_idx",
+          "columns": [
+            {
+              "expression": "polis_cluster_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "language_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk": {
+          "name": "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
+          "tableFrom": "polis_cluster_translation",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "polis_cluster_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_cluster_language": {
+          "name": "unique_cluster_language",
+          "nullsNotDistinct": false,
+          "columns": [
+            "polis_cluster_id",
+            "language_code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -4359,7 +4546,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "vote_opinionId_idx": {
+          "name": "vote_opinionId_idx",
+          "columns": [
+            {
+              "expression": "opinion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "vote_author_id_user_id_fk": {
           "name": "vote_author_id_user_id_fk",

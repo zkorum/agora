@@ -1300,6 +1300,7 @@ export const opinionTable = pgTable(
     (table) => [
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
+        index("opinion_conversationId_idx").on(table.conversationId),
         check(
             "check_polis_majority",
             sql`(
@@ -1373,7 +1374,10 @@ export const voteTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [unique().on(t.authorId, t.opinionId)],
+    (t) => [
+        unique().on(t.authorId, t.opinionId),
+        index("vote_opinionId_idx").on(t.opinionId),
+    ],
 );
 
 export const voteProofTable = pgTable("vote_proof", {
@@ -1492,34 +1496,43 @@ export const opinionReportTable = pgTable(
     (table) => [index("opinion_id_idx").on(table.opinionId)],
 );
 
-export const conversationModerationTable = pgTable("conversation_moderation", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    conversationId: integer("conversation_id") // one moderation action per conversation
-        .references(() => conversationTable.id)
-        .unique()
-        .notNull(),
-    authorId: uuid("author_id")
-        .references(() => userTable.id)
-        .notNull(),
-    moderationAction:
-        conversationModerationActionEnum("moderation_action").notNull(),
-    moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
-    moderationExplanation: varchar("moderation_explanation", {
-        length: MAX_LENGTH_BODY,
-    }),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const conversationModerationTable = pgTable(
+    "conversation_moderation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id") // one moderation action per conversation
+            .references(() => conversationTable.id)
+            .unique()
+            .notNull(),
+        authorId: uuid("author_id")
+            .references(() => userTable.id)
+            .notNull(),
+        moderationAction:
+            conversationModerationActionEnum("moderation_action").notNull(),
+        moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
+        moderationExplanation: varchar("moderation_explanation", {
+            length: MAX_LENGTH_BODY,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        index("conversation_moderation_conversation_id_moderation_action_idx").on(
+            table.conversationId,
+            table.moderationAction,
+        ),
+    ],
+);
 
 export const opinionModerationTable = pgTable("opinion_moderation", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1670,6 +1683,41 @@ export const polisClusterTable = pgTable("polis_cluster", {
         .notNull(),
 });
 
+// Translations for cluster labels and summaries in different display languages
+// English version is stored in polisClusterTable.aiLabel/aiSummary
+// Other languages are stored here for permanent reference
+export const polisClusterTranslationTable = pgTable(
+    "polis_cluster_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        polisClusterId: integer("polis_cluster_id")
+            .notNull()
+            .references(() => polisClusterTable.id),
+        languageCode: varchar("language_code", { length: 10 }).notNull(), // BCP 47 format
+        aiLabel: varchar("ai_label", { length: 100 }),
+        aiSummary: varchar("ai_summary", { length: 1000 }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        unique("unique_cluster_language").on(t.polisClusterId, t.languageCode),
+        index("polis_cluster_translation_lookup_idx").on(
+            t.polisClusterId,
+            t.languageCode,
+        ),
+    ],
+);
+
 // one user can belong to only one cluster per polisContent
 // one user can belong to many cluster across conversations (across polisContent)
 // many users can belong to one cluster per polisContent
@@ -1728,6 +1776,8 @@ export const polisClusterOpinionTable = pgTable(
             .notNull(),
     },
     (table) => [
+        index("polis_cluster_opinion_opinionId_idx").on(table.opinionId),
+        index("polis_cluster_opinion_polisClusterId_idx").on(table.polisClusterId),
         check(
             "check_perc_btwn_0_and_1",
             sql`${table.probabilityAgreement} BETWEEN 0 and 1`,
@@ -1766,6 +1816,14 @@ export const conversationUpdateQueueTable = pgTable(
             .notNull(),
     },
     (table) => [
-        index("idx_conversation_update_queue_pending").on(table.lastMathUpdateAt).where(sql`${table.processedAt} IS NULL`),
+        // Partial index for scanner query: finds conversations needing math updates
+        // Only indexes rows where requestedAt > lastMathUpdateAt (fresh data) or never processed (NULL)
+        // This keeps the index small (only conversations needing updates) and very fast
+        // Composite (requestedAt, lastMathUpdateAt) supports all scanner conditions efficiently
+        index("idx_conversation_update_queue_pending")
+            .on(table.requestedAt, table.lastMathUpdateAt)
+            .where(
+                sql`${table.requestedAt} > ${table.lastMathUpdateAt} OR ${table.lastMathUpdateAt} IS NULL`,
+            ),
     ],
 );

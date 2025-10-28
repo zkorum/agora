@@ -1,6 +1,6 @@
 {
-  "id": "8b4877a8-c2ac-4396-9378-3ecb3dc705ee",
-  "prevId": "4d9181dc-df5a-4979-82f9-76bf1048f92b",
+  "id": "73305c09-6abb-4494-a86c-3660c9099131",
+  "prevId": "8b4877a8-c2ac-4396-9378-3ecb3dc705ee",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2896,6 +2896,119 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.polis_cluster_translation": {
+      "name": "polis_cluster_translation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "polis_cluster_translation_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "polis_cluster_id": {
+          "name": "polis_cluster_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language_code": {
+          "name": "language_code",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ai_label": {
+          "name": "ai_label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_summary": {
+          "name": "ai_summary",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "polis_cluster_translation_lookup_idx": {
+          "name": "polis_cluster_translation_lookup_idx",
+          "columns": [
+            {
+              "expression": "polis_cluster_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "language_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk": {
+          "name": "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
+          "tableFrom": "polis_cluster_translation",
+          "tableTo": "polis_cluster",
+          "columnsFrom": [
+            "polis_cluster_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_cluster_language": {
+          "name": "unique_cluster_language",
+          "nullsNotDistinct": false,
+          "columns": [
+            "polis_cluster_id",
+            "language_code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

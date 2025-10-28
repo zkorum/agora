@@ -139,6 +139,26 @@ await tx.insert(conversationUpdateQueueTable)
 
 ---
 
+## Recent Optimizations (October 2025)
+
+### Composite Index for Moderation Queries
+**Status:** ✅ Completed (October 28, 2025)
+
+**Change:** Added composite index on `conversation_moderation(conversation_id, moderation_action)`
+- Migration: `V0027__certain_nighthawk.sql`
+- Schema: `services/shared-backend/src/schema.ts:1529-1534`
+
+**Analysis:** Load test revealed 4,950 moderation lock checks during 72s test
+- Query: `SELECT moderation_action FROM conversation_moderation WHERE conversation_id = $1 AND moderation_action = $2`
+- Previous index: Only on `conversation_id` (unique constraint)
+- New index: Composite on both `conversation_id` and `moderation_action`
+
+**Note:** Since `conversation_id` is UNIQUE (one moderation per conversation), the performance gain is marginal (~1-2%). The composite index provides better query plan but doesn't eliminate the need for caching (see Known Limitations #3 below).
+
+**Impact:** Minor optimization, mainly sets foundation for query plan improvements. Major gains will come from caching layer.
+
+---
+
 ## Known Limitations
 
 ### 1. Python Polis Math Performance
@@ -172,7 +192,168 @@ await tx.insert(conversationUpdateQueueTable)
 - Incremental/approximate updates for very large datasets
 - Smart caching (skip recalculation if <5% vote delta)
 
-### 2. Queue Table Write Contention
+### 2. Expensive Opinion Query with Multiple Cluster Joins
+
+**Issue**: Opinion listing query joins 11+ tables including 6 polis_cluster tables
+- Location: `services/api/src/service/comment.ts:146` in `fetchOpinionsByPostId()`
+- Joins: 6 polis_cluster tables + 6 polis_cluster_opinion tables + user, conversation, opinion_content, opinion_moderation, polis_content
+- Called 100 times during typical load test
+- Each query returns massive result sets with cluster statistics for all 6 possible clusters
+
+**Impact**:
+- Higher CPU usage on read replica
+- More data transferred over the wire
+- Slower opinion page loads when displaying cluster-filtered views
+
+**Future optimization options**:
+1. **Denormalize cluster data** - Add `cluster_0_ai_label`, `cluster_1_ai_label`, etc. to opinion table
+   - Eliminates 6 LEFT JOINs
+   - Requires math-updater to populate denormalized fields
+   - Trade-off: Increased storage vs faster queries
+
+2. **Lazy load cluster data** - Split into two queries:
+   - First: Fetch opinions WITHOUT cluster joins (fast)
+   - Second: Fetch only displayed cluster data separately
+   - Reduces query complexity from O(n × 14) to O(n + m)
+   - Requires frontend changes to handle loading states
+
+3. **Materialized view** - Pre-join cluster data into a view:
+   - Create view with all cluster joins
+   - Refresh when math-updater completes
+   - Query the view instead of doing live joins
+   - Requires infrastructure for view refresh management
+
+**Blocked by**: Requires frontend changes (loading states, data fetching pattern), extensive testing, and coordination between API/math-updater/frontend teams.
+
+**Recommended**: Start with option 1 (denormalization) as it's backend-only and has minimal frontend impact.
+
+### 3. Implement Read Replica Caching Layer
+
+**Issue**: High query volume on read replica despite optimizations
+- Load test shows 34,716 queries in 72 seconds (~485 queries/second)
+- Many queries are repetitive: same conversation fetched 9,902 times
+- Queries for slowly-changing data (moderation status, conversation metadata)
+
+**Analysis from Load Test** (72 seconds, 100 VUs):
+1. **Conversation metadata lookup** - 9,902 queries (28.5%)
+   - Query: `SELECT id, current_content_id, author_id, participant_count... FROM conversation WHERE slug_id = $1`
+   - Changes every 20s (math-updater)
+   - Same conversation hit repeatedly
+
+2. **Moderation lock check** - 4,950 queries (14.3%)
+   - Query: `SELECT moderation_action FROM conversation_moderation WHERE conversation_id = $1 AND moderation_action = $2`
+   - Changes rarely (manual admin action)
+   - Checked on every vote/opinion submission
+
+3. **Device authentication** - 4,951 queries (14.3%)
+   - Query: `SELECT device.session_expiry, phone.id... FROM device JOIN user WHERE device.did_write = $1`
+   - Changes on login/logout only
+   - Checked on every authenticated request
+
+4. **Vote existence check** - 4,900 queries (14.1%)
+   - Query: `SELECT vote_content.vote FROM vote WHERE author_id = $1 AND opinion_id = $2`
+   - Changes when user votes
+   - Prevents duplicate votes
+
+**Total cacheable queries:** ~34,700 / 72s = 481 queries/second
+
+**Recommended Solution: ElastiCache Redis**
+
+**Why Redis over Memcached:**
+- Persistence (survives restarts)
+- TTL per key (fine-grained expiration)
+- Pub/Sub for cache invalidation across API instances
+- Better AWS integration and CloudWatch metrics
+- Data structures for future use cases
+
+**Why NOT cache everything:**
+1. **Stale data risk** - User's own actions need immediate feedback
+2. **Cache invalidation complexity** - More cache keys = more invalidation code = more bugs
+3. **Memory cost** - Caching all opinions/votes = 100s of MB per conversation
+4. **Consistency** - Multiple related caches can get out of sync
+
+**Cache Selection Criteria** (only cache if ALL true):
+- ✅ Read-heavy (100+ reads per write)
+- ✅ Write-light (changes infrequently or predictably)
+- ✅ Stale tolerance (acceptable 30-60s delay)
+- ✅ Simple invalidation (single key or small set)
+- ✅ High query frequency (1000+ per minute)
+
+**Implementation Plan:**
+
+**Phase 1: Conversation + Moderation Cache** (Quick Win - 2-3 hours)
+```typescript
+// Cache Keys:
+// - conversation:metadata:{slugId} (30s TTL)
+// - conversation:locked:{conversationId} (60s TTL)
+
+// Expected Impact:
+// - 14,500 fewer queries (~42% of total)
+// - ~30-40% replica CPU reduction
+```
+
+**Phase 2: Device Authentication Cache** (+1-2 hours)
+```typescript
+// Cache Key: device:auth:{didWrite} (5min TTL)
+// Expected Impact: 4,900 fewer queries (~14% reduction)
+```
+
+**Phase 3: Vote Existence Cache** (+1-2 hours)
+```typescript
+// Cache Key: vote:exists:{authorId}:{opinionId} (30s TTL)
+// Expected Impact: 4,800 fewer queries (~14% reduction)
+```
+
+**Total Expected Impact:**
+- **~34,000 fewer queries** (~70% query reduction)
+- **~50-60% replica CPU reduction**
+- **Cost:** cache.t4g.micro (~$15/month) handles moderate traffic
+
+**Cache Invalidation Strategy:**
+- Conversation metadata: Invalidate when math-updater completes
+- Moderation lock: Invalidate on lock/unlock action
+- Device auth: Invalidate on logout
+- Vote existence: Invalidate when user votes
+
+**Anti-Patterns (DO NOT cache):**
+- ❌ Opinion lists (high write frequency, pagination complexity)
+- ❌ User's own vote (requires immediate consistency)
+- ❌ Real-time counters (change constantly)
+- ❌ Search results (complex invalidation, user-specific)
+
+**Infrastructure Requirements:**
+- ElastiCache Redis cluster (cache.t4g.micro for dev/staging, larger for production)
+- Same VPC as RDS
+- Security group: Allow port 6379 from API instances
+- CloudWatch monitoring for cache hit rate
+
+**Fail-Safe Design:**
+- All cache functions fail open (return null → query DB)
+- Redis connection errors don't break API
+- Optional feature (controlled by REDIS_URL env var)
+- Can disable without code changes
+
+**Memory Estimate:**
+- Conversation metadata: ~500 bytes × 1000 conversations = 500KB
+- Moderation locks: ~50 bytes × 1000 = 50KB
+- Device auth: ~200 bytes × 5000 sessions = 1MB
+- Vote checks: ~100 bytes × 10000 = 1MB
+- **Total: ~2.5MB for typical workload**
+- cache.t4g.micro (512MB) = plenty of headroom
+
+**Testing Plan:**
+1. Setup ElastiCache in staging
+2. Implement Phase 1 caches
+3. Run load test, measure cache hit rate (target: >95%)
+4. Compare replica CPU metrics before/after
+5. Monitor for stale data issues (check CloudWatch + user reports)
+6. Roll out Phase 2-3 incrementally
+
+**Blocked by:** Requires AWS infrastructure setup, testing across multiple API instances, monitoring cache hit rates in production.
+
+**Priority:** High - Significant performance improvement with low risk and reasonable cost.
+
+### 4. Queue Table Write Contention
 
 **Issue**: High concurrent write volume to `conversation_update_queue` table
 - Every opinion/vote operation upserts queue entry

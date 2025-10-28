@@ -86,6 +86,8 @@ async function createPostgresClient(
                     password: credentials.password,
                     ssl: "require",
                     connect_timeout: 10,
+                    // Using postgres-js default max: 10 (optimal for our 4 vCPU database)
+                    // Connection lifecycle managed automatically (45-90 min lifetime)
                 });
             } catch (error) {
                 log.error(error);
@@ -103,6 +105,8 @@ async function createPostgresClient(
         try {
             return postgres(connectionString, {
                 connect_timeout: 10,
+                // Using postgres-js default max: 10 (optimal for our 4 vCPU database)
+                // Connection lifecycle managed automatically (45-90 min lifetime)
                 ssl: config.NODE_ENV === "production" ? "require" : undefined,
             });
         } catch (e) {
