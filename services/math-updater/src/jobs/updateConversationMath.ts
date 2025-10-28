@@ -14,7 +14,7 @@ import {
 } from "@/services/polisMathUpdater.js";
 import { recalculateAndUpdateConversationCounters } from "@/conversationCounters.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, or, isNull, gt } from "drizzle-orm";
 import type PgBoss from "pg-boss";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { AxiosInstance } from "axios";
@@ -106,40 +106,21 @@ export async function updateConversationMathHandler(
     );
 
     try {
-        // STEP 0: Immediately mark as processing to prevent scanner from re-enqueueing
-        // This prevents duplicate jobs when new votes arrive during processing
-        // See production issue documentation above for why this is necessary
+        // STEP 0: Lock by setting lastMathUpdateAt immediately
+        // This makes requestedAt <= lastMathUpdateAt, preventing scanner from re-enqueueing
+        // Since lastMathUpdateAt is only touched by math-updater (not API), this prevents race conditions
         const now = nowZeroMs();
-        const lockResult = await db
+        await db
             .update(conversationUpdateQueueTable)
             .set({
-                processedAt: now,
+                lastMathUpdateAt: now, // Lock! Makes requestedAt <= lastMathUpdateAt
             })
             .where(
-                and(
-                    eq(
-                        conversationUpdateQueueTable.conversationId,
-                        conversationId,
-                    ),
-                    eq(
-                        conversationUpdateQueueTable.requestedAt,
-                        requestedAtDate,
-                    ),
-                ),
-            )
-            .returning({
-                conversationId: conversationUpdateQueueTable.conversationId,
-            });
-
-        if (lockResult.length === 0) {
-            log.info(
-                `[Math Updater] Queue entry for conversation ${conversationSlugId} was already processed or modified - skipping`,
+                eq(conversationUpdateQueueTable.conversationId, conversationId),
             );
-            return; // Another job already processed this or requestedAt changed
-        }
 
-        log.debug(
-            `[Math Updater] Locked queue entry for conversation ${conversationSlugId}`,
+        log.info(
+            `[Math Updater] Locked queue entry for conversation ${conversationSlugId} by setting lastMathUpdateAt`,
         );
 
         // STEP 1: Recalculate and fix counters before processing math
@@ -184,21 +165,37 @@ export async function updateConversationMathHandler(
             googleCloudCredentials,
         });
 
-        // Update lastMathUpdateAt since math was successfully calculated
-        // Note: processedAt was already set at the start to lock the entry
+        // Set processedAt ONLY if requestedAt didn't change during processing
+        // This confirms we processed the exact data that was requested
+        // If requestedAt changed, new data arrived and needs another processing cycle
         const completionTime = nowZeroMs();
-        await db
+        const processedResult = await db
             .update(conversationUpdateQueueTable)
             .set({
-                lastMathUpdateAt: completionTime,
+                processedAt: completionTime,
             })
             .where(
-                eq(conversationUpdateQueueTable.conversationId, conversationId),
+                and(
+                    eq(
+                        conversationUpdateQueueTable.conversationId,
+                        conversationId,
+                    ),
+                    eq(
+                        conversationUpdateQueueTable.requestedAt,
+                        requestedAtDate,
+                    ), // Must match!
+                ),
             );
 
-        log.debug(
-            `[Math Updater] Updated lastMathUpdateAt for conversation ${conversationSlugId}`,
-        );
+        if (processedResult.length > 0) {
+            log.info(
+                `[Math Updater] Marked as processed for conversation ${conversationSlugId} (requestedAt unchanged)`,
+            );
+        } else {
+            log.info(
+                `[Math Updater] New data arrived during processing for conversation ${conversationSlugId} - will be picked up in next cycle`,
+            );
+        }
 
         log.info(
             `[Math Updater] Successfully updated math for conversation ${conversationSlugId}`,

@@ -68,6 +68,17 @@ services:
             - postgres
         restart: always
 
+    postgres-exporter-replica:
+        container_name: postgres_exporter_replica
+        image: docker.io/prometheuscommunity/postgres-exporter:latest
+        environment:
+            DATA_SOURCE_NAME: "postgresql://postgres:7QPgtYETx4EdzvqUeNfo@postgres-replica:5432/agora?sslmode=disable"
+        ports:
+            - "9188:9187"
+        depends_on:
+            - postgres-replica
+        restart: always
+
     prometheus:
         container_name: prometheus
         image: docker.io/prom/prometheus:latest

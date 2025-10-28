@@ -1,0 +1,1 @@
+CREATE INDEX "conversation_moderation_conversation_id_moderation_action_idx" ON "conversation_moderation" USING btree ("conversation_id","moderation_action");

@@ -230,16 +230,25 @@ def should_scale_based_on_distribution(member_counts, total_members):
     # Scale down if:
     # 1. There's a group with < 2 members and we have 3+ groups
     # 2. OR smallest group has < 10 members when total > 100 (too tiny relatively)
+    # IMPORTANT: Never scale down to fewer than 2 groups (2 is minimum for meaningful clustering)
     if min_members < 2 and num_groups >= 3:
         logger.info(f"Scaling down: group with {min_members} members (< 2)")
         return "down"
 
-    if total_members > 100 and min_members < 10 and imbalance > 0.9:
+    if total_members > 100 and min_members < 10 and imbalance > 0.9 and num_groups > 2:
         logger.info(
             f"Scaling down: severe imbalance (CV={imbalance:.2f}), "
             f"smallest group has only {min_members}/{total_members} members"
         )
         return "down"
+
+    # If we have 2 groups with severe imbalance, try scaling UP instead
+    if num_groups == 2 and total_members > 100 and min_members < 10 and imbalance > 0.9:
+        logger.info(
+            f"Scaling up: 2 groups with severe imbalance (CV={imbalance:.2f}), "
+            f"trying 3 groups to improve distribution"
+        )
+        return "up"
 
     # Scale up if we can improve distribution (favor more groups):
     # 1. For 10-20 members: if we have 2 groups, imbalance > 0.8, and min < 2, try 3 groups
@@ -296,6 +305,7 @@ def get_maths(
     force_group_count=None,
     just_scaled_down=False,
     just_scaled_up=False,
+    previous_result=None,  # Store previous attempt for comparison
 ) -> MathResult:
     logger.info(
         f"Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
@@ -363,6 +373,46 @@ def get_maths(
         f"(total: {total_members} members)"
     )
 
+    # Build current result
+    current_result = {
+        "statements_df": result.statements_df.reset_index().to_dict(orient="records"),
+        "participants_df": result.participants_df.reset_index().to_dict(
+            orient="records"
+        ),
+        "repness": cast(Repness, convert_to_json_serializable(result.repness)),
+        "group_comment_stats": group_comment_stats,
+        "consensus": cast(Consensus, convert_to_json_serializable(result.consensus)),
+    }
+
+    current_imbalance = calculate_distribution_imbalance(member_counts)
+
+    # If we just scaled, compare with previous result and pick the better one
+    if (just_scaled_down or just_scaled_up) and previous_result is not None:
+        previous_member_counts = previous_result["member_counts"]
+        previous_imbalance = previous_result["imbalance"]
+
+        logger.info(
+            f"Comparing results: previous imbalance={previous_imbalance:.2f} "
+            f"with {len(previous_member_counts)} groups {previous_member_counts}, "
+            f"current imbalance={current_imbalance:.2f} "
+            f"with {len(member_counts)} groups {member_counts}"
+        )
+
+        # Choose the result with better (lower) imbalance
+        if previous_imbalance < current_imbalance:
+            logger.info(
+                f"Previous distribution was better (CV {previous_imbalance:.2f} < {current_imbalance:.2f}), "
+                f"reverting to {len(previous_member_counts)} groups"
+            )
+            # Return the previous result's data (without metadata)
+            return previous_result["data"]
+        else:
+            logger.info(
+                f"Current distribution is better (CV {current_imbalance:.2f} <= {previous_imbalance:.2f}), "
+                f"keeping {len(member_counts)} groups"
+            )
+            return current_result
+
     # Determine if we should scale based on distribution
     # Only scale if we haven't just scaled (prevent oscillation)
     if not just_scaled_down and not just_scaled_up:
@@ -373,55 +423,38 @@ def get_maths(
             logger.info(
                 f"Recalculating with max {new_force_group_count} groups (scaling down)"
             )
+            # Pass current result + metadata for comparison
             return get_maths(
                 votes=votes,
                 min_user_vote_threshold=min_user_vote_threshold,
                 force_group_count=new_force_group_count,
                 just_scaled_down=True,
+                previous_result={
+                    "data": current_result,
+                    "member_counts": member_counts,
+                    "imbalance": current_imbalance,
+                },
             )
         elif scale_action == "up":
             new_force_group_count = number_of_groups + 1
             logger.info(
                 f"Recalculating with min {new_force_group_count} groups (scaling up)"
             )
+            # Pass current result + metadata for comparison
             return get_maths(
                 votes=votes,
                 min_user_vote_threshold=min_user_vote_threshold,
                 force_group_count=new_force_group_count,
                 just_scaled_up=True,
+                previous_result={
+                    "data": current_result,
+                    "member_counts": member_counts,
+                    "imbalance": current_imbalance,
+                },
             )
-    else:
-        if just_scaled_down:
-            logger.info("Already scaled down once, accepting current distribution")
-        if just_scaled_up:
-            logger.info("Already scaled up once, accepting current distribution")
 
-    # print("\n\n")
-    # print(
-    #     "statements_df",
-    #     result.statements_df.reset_index().to_dict(orient="records"),
-    # )
-    # print("\n\n")
-    # print(
-    #     "participants_df",
-    #     result.participants_df.reset_index().to_dict(orient="records"),
-    # )
-    # print("\n\n")
-    # print("group_comment_stats", group_comment_stats)
-    # print("\n\n")
-    # print("consensus", result.consensus)
-    # print("\n\n")
-    # print("repness", result.repness)
-    # print("\n\n")
-    return {
-        "statements_df": result.statements_df.reset_index().to_dict(orient="records"),
-        "participants_df": result.participants_df.reset_index().to_dict(
-            orient="records"
-        ),
-        "repness": cast(Repness, convert_to_json_serializable(result.repness)),
-        "group_comment_stats": group_comment_stats,
-        "consensus": cast(Consensus, convert_to_json_serializable(result.consensus)),
-    }
+    # No scaling needed, return current result
+    return current_result
 
 
 @app.route("/math", methods=["POST"])

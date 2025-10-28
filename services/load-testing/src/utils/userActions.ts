@@ -6,6 +6,8 @@ import { sleep } from "k6";
 import {
     createOpinion,
     castVote,
+    fetchMainPage,
+    fetchConversationPage,
     type CreateOpinionResponse,
     type VoteResponse,
 } from "./api.js";
@@ -20,9 +22,10 @@ export interface UserActionConfig {
     conversationSlugIds: string[]; // Can be single or multiple conversations
     opinionTexts: string[];
     votingOptions: ("agree" | "disagree" | "pass")[];
-    minSleepBetweenActions: number;
-    maxSleepBetweenActions: number;
+    sleepBetweenActions: number;
     allAvailableOpinions: string[]; // Shared cache of all opinion slugs across all VUs
+    fetchMainPageProbability?: number; // Probability (0-1) of fetching main page during actions
+    fetchConversationPageProbability?: number; // Probability (0-1) of fetching conversation page during actions
 }
 
 export interface UserActionResult {
@@ -36,12 +39,16 @@ export interface UserActionResult {
         opinionsFailed: number;
         votesSucceeded: number;
         votesFailed: number;
+        mainPageFetches: number;
+        totalMainPageResponseTime: number;
+        conversationPageFetches: number;
+        totalConversationPageResponseTime: number;
     };
 }
 
 /**
- * Simulate realistic user behavior: interleave opinion creation and voting
- * Users don't do all opinions first then all votes - they mix both actions
+ * Perform user actions: first create all opinions, then cast all votes
+ * Simplified sequential approach
  */
 export async function performUserActions(
     config: UserActionConfig,
@@ -63,16 +70,16 @@ export async function performUserActions(
         conversationSlugIds,
         opinionTexts,
         votingOptions,
-        minSleepBetweenActions,
-        maxSleepBetweenActions,
+        sleepBetweenActions,
         allAvailableOpinions,
+        fetchMainPageProbability,
+        fetchConversationPageProbability,
     } = config;
 
     const opinionsCreated: {
         slugId: string;
         conversationSlugId: string;
     }[] = [];
-    // Track opinions this user has voted on (including their own via auto-vote)
     const votedOpinions = new Set<string>();
 
     const metrics = {
@@ -80,140 +87,124 @@ export async function performUserActions(
         opinionsFailed: 0,
         votesSucceeded: 0,
         votesFailed: 0,
+        mainPageFetches: 0,
+        totalMainPageResponseTime: 0,
+        conversationPageFetches: 0,
+        totalConversationPageResponseTime: 0,
     };
 
-    let opinionsCreatedCount = 0;
-    let votesCastCount = 0;
-
-    const totalActions = numOpinionsToCreate + numVotesToCast;
-
-    // Interleave opinion creation and voting
-    for (let i = 0; i < totalActions; i++) {
-        // If we've completed all required actions, stop
-        if (
-            opinionsCreatedCount >= numOpinionsToCreate &&
-            votesCastCount >= numVotesToCast
-        ) {
-            console.log(
-                `User ${userId} finished all its required actions, stopping`,
-            );
-            break;
+    // Phase 1: Create all opinions first
+    for (let i = 0; i < numOpinionsToCreate; i++) {
+        // Randomly fetch pages to simulate realistic browsing behavior
+        if (fetchMainPageProbability && Math.random() < fetchMainPageProbability) {
+            console.log(`[${userId}] Fetching main page (during opinion creation)`);
+            const mainPageResult = await fetchMainPage();
+            metrics.mainPageFetches++;
+            metrics.totalMainPageResponseTime += mainPageResult.responseTime;
         }
 
-        // Calculate unvoted opinions fresh each iteration
+        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+            const conversationSlugId =
+                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+            console.log(`[${userId}] Fetching conversation page (during opinion creation)`);
+            const conversationPageResult = await fetchConversationPage({
+                conversationSlugId,
+            });
+            metrics.conversationPageFetches++;
+            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+        }
+
+        const conversationSlugId =
+            conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+        const opinionText =
+            opinionTexts[Math.floor(Math.random() * opinionTexts.length)];
+
+        const result = await createOpinion({
+            conversationSlugId,
+            opinionText,
+            did,
+            prefixedKey,
+            backendDid,
+        });
+
+        onOpinionCreated(result);
+
+        if (result.success && result.opinionSlugId) {
+            opinionsCreated.push({
+                slugId: result.opinionSlugId,
+                conversationSlugId,
+            });
+            // User auto-votes on their own opinion
+            votedOpinions.add(result.opinionSlugId);
+            metrics.opinionsSucceeded++;
+        } else {
+            metrics.opinionsFailed++;
+        }
+
+        sleep(sleepBetweenActions);
+    }
+
+    // Phase 2: Cast all votes
+    let votesAttempted = 0;
+    while (votesAttempted < numVotesToCast) {
+        // Randomly fetch pages to simulate realistic browsing behavior
+        if (fetchMainPageProbability && Math.random() < fetchMainPageProbability) {
+            console.log(`[${userId}] Fetching main page (during voting)`);
+            const mainPageResult = await fetchMainPage();
+            metrics.mainPageFetches++;
+            metrics.totalMainPageResponseTime += mainPageResult.responseTime;
+        }
+
+        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+            const conversationSlugId =
+                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+            console.log(`[${userId}] Fetching conversation page (during voting)`);
+            const conversationPageResult = await fetchConversationPage({
+                conversationSlugId,
+            });
+            metrics.conversationPageFetches++;
+            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+        }
+
+        // Get unvoted opinions
         const unvotedOpinions = allAvailableOpinions.filter(
             (opinionSlugId) => !votedOpinions.has(opinionSlugId),
         );
 
-        // Decide: create opinion or cast vote or pass?
-        let shouldDoAction: "opinion" | "vote";
-
-        // First check for creating opinions (we need opinion to vote on at the beginning)
-        if (
-            allAvailableOpinions.length < 30 &&
-            opinionsCreatedCount < numOpinionsToCreate
-        ) {
-            shouldDoAction = "opinion";
-        } else if (
-            // else consider votes
-            votesCastCount < numVotesToCast &&
-            unvotedOpinions.length !== 0
-        ) {
-            // if user can also create opinions, use a random variable with bias towards voting
-            if (
-                opinionsCreatedCount < numOpinionsToCreate &&
-                Math.random() > 0.7
-            ) {
-                shouldDoAction = "opinion";
-            } else {
-                shouldDoAction = "vote";
-            }
-        } else {
-            console.log(
-                `[2] User ${userId} finished all its required actions, stopping`,
-            );
+        if (unvotedOpinions.length === 0) {
+            console.log(`User ${userId} has no more unvoted opinions (voted: ${String(votedOpinions.size)}/${String(allAvailableOpinions.length)})`);
             break;
         }
 
-        switch (shouldDoAction) {
-            case "opinion": {
-                // Create an opinion
-                const conversationSlugId =
-                    conversationSlugIds[
-                        Math.floor(Math.random() * conversationSlugIds.length)
-                    ];
-                const opinionText =
-                    opinionTexts[
-                        Math.floor(Math.random() * opinionTexts.length)
-                    ];
+        // Randomly select an unvoted opinion
+        const targetOpinionSlugId =
+            unvotedOpinions[Math.floor(Math.random() * unvotedOpinions.length)];
 
-                const result = await createOpinion({
-                    conversationSlugId,
-                    opinionText,
-                    did,
-                    prefixedKey,
-                    backendDid,
-                });
+        const votingAction =
+            votingOptions[Math.floor(Math.random() * votingOptions.length)];
 
-                onOpinionCreated(result);
+        const result = await castVote({
+            commentSlugId: targetOpinionSlugId,
+            votingAction,
+            did,
+            prefixedKey,
+            backendDid,
+        });
 
-                if (result.success && result.opinionSlugId) {
-                    opinionsCreated.push({
-                        slugId: result.opinionSlugId,
-                        conversationSlugId,
-                    });
-                    // User auto-votes on their own opinion, so mark it as voted
-                    votedOpinions.add(result.opinionSlugId);
-                    metrics.opinionsSucceeded++;
-                } else {
-                    metrics.opinionsFailed++;
-                }
+        onVoteCast({ ...result, targetOpinionSlugId, userId });
 
-                opinionsCreatedCount++;
-                break;
-            }
-            case "vote": {
-                // Cast a vote on ANY unvoted opinion from the shared pool (created by any VU)
-
-                // Randomly select from unvoted opinions
-                const targetOpinionSlugId =
-                    unvotedOpinions[
-                        Math.floor(Math.random() * unvotedOpinions.length)
-                    ];
-
-                const votingAction =
-                    votingOptions[
-                        Math.floor(Math.random() * votingOptions.length)
-                    ];
-
-                const result = await castVote({
-                    commentSlugId: targetOpinionSlugId,
-                    votingAction,
-                    did,
-                    prefixedKey,
-                    backendDid,
-                });
-
-                onVoteCast({ ...result, targetOpinionSlugId, userId });
-
-                if (result.success) {
-                    votedOpinions.add(targetOpinionSlugId);
-                    metrics.votesSucceeded++;
-                } else {
-                    metrics.votesFailed++;
-                }
-
-                votesCastCount++;
-                break;
-            }
+        if (result.success) {
+            votedOpinions.add(targetOpinionSlugId);
+            metrics.votesSucceeded++;
+        } else {
+            metrics.votesFailed++;
         }
 
-        // Sleep between actions (simulates user thinking time)
-        sleep(
-            Math.random() * (maxSleepBetweenActions - minSleepBetweenActions) +
-                minSleepBetweenActions,
-        );
+        votesAttempted++;
+        sleep(sleepBetweenActions);
     }
+
+    console.log(`User ${userId} finished (opinions: ${String(metrics.opinionsSucceeded)}/${String(numOpinionsToCreate)}, votes: ${String(metrics.votesSucceeded)}/${String(numVotesToCast)})`);
 
     return {
         opinionsCreated,

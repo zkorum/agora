@@ -1,17 +1,16 @@
 /**
- * Scenario 1: Single Conversation Heavy Voting Stress Test
+ * Scenario 1: Single Conversation Load Test (Simplified)
  *
- * This scenario tests a single conversation with:
- * - MANY guest users (each with unique DID) operating IN PARALLEL
- * - Each user CREATES MANY opinions/comments dynamically
- * - Each user votes on ANY opinion from a SHARED POOL (created by any user)
- * - Users auto-vote on their own opinions when creating them (so they're excluded from voting)
- * - Users can't change votes (vote once per opinion)
- * - Users operate independently and concurrently (k6 VUs run in parallel)
- * - Sleep delays are per-user to simulate human behavior (thinking time between actions)
- * - Tests heavy load on a single conversation to identify database contention,
- *   locking issues, and transaction throughput limits
- * - Includes teardown phase to clean up user accounts (conversation must be deleted manually)
+ * Sequential test flow:
+ * 1. First X users (OPINION_CREATOR_COUNT, default 50) each create 1 opinion
+ * 2. Then these X users each vote on 50-100% of all opinions
+ * 3. Finally Y additional users (ADDITIONAL_VOTERS, default 50) join and each vote on 50-100% of opinions
+ *
+ * Total participants: OPINION_CREATOR_COUNT + ADDITIONAL_VOTERS (default: 100)
+ * Total opinions: OPINION_CREATOR_COUNT (default: 50)
+ * Each user votes on: 50-100% of opinions
+ *
+ * - Includes teardown phase to clean up user accounts
  */
 
 // Polyfill for TextEncoder/TextDecoder (k6 doesn't provide these globally)
@@ -20,30 +19,34 @@ import "fast-text-encoding";
 import { sleep } from "k6";
 import { Counter, Trend, Rate } from "k6/metrics";
 import { SharedArray } from "k6/data";
+import execution from "k6/execution";
 import { createDidIfDoesNotExist } from "./crypto/ucan/operation.js";
 import {
     deleteUser,
+    fetchOpinions,
+    fetchConversationPage,
     type CreateOpinionResponse,
     type VoteResponse,
     type DeleteUserResponse,
 } from "./utils/api.js";
 import { performUserActions } from "./utils/userActions.js";
 
-// Configuration constants
-// Reduced opinions per user to ensure users can vote on others' opinions
-// With fewer opinions created per user, the shared pool contains more opinions from OTHER users
-const MIN_OPINIONS_PER_USER = 1;
-const MAX_OPINIONS_PER_USER = 3;
-const MIN_VOTES_PER_USER = 10;
-const MAX_VOTES_PER_USER = 20;
+// Configuration constants - Simple and configurable
+const OPINION_CREATOR_COUNT = Number(__ENV.OPINION_CREATOR_COUNT) || 50; // Users who create opinions
+const ADDITIONAL_VOTERS = Number(__ENV.ADDITIONAL_VOTERS) || 50; // Additional users who only vote
+const TOTAL_USERS = OPINION_CREATOR_COUNT + ADDITIONAL_VOTERS;
+const MIN_VOTE_PERCENTAGE = 0.5; // Each user votes on at least 50% of opinions
+const MAX_VOTE_PERCENTAGE = 1.0; // Each user votes on at most 100% of opinions
 
 // Sleep timing configuration (in seconds)
-// These delays are PER USER to simulate human thinking time
-// Multiple users operate in parallel (k6 VUs are concurrent)
-const MIN_SLEEP_BETWEEN_OPINIONS = 0.5;
-const MAX_SLEEP_BETWEEN_VOTES = 2.0;
-const MIN_SLEEP_AFTER_USER_ACTIONS = 1.0;
-const MAX_SLEEP_AFTER_USER_ACTIONS = 4.0;
+const SLEEP_BETWEEN_ACTIONS = 0.5;
+const INITIAL_WAIT_FOR_OPINIONS_SECONDS = 10; // Initial wait for opinion creators to finish
+const OPINION_FETCH_RETRY_ATTEMPTS = 5; // Number of times to retry fetching opinions
+const OPINION_FETCH_RETRY_DELAY = 2; // Seconds between fetch retries
+
+// Page fetching configuration
+const MAIN_PAGE_FETCH_PROBABILITY = Number(__ENV.MAIN_PAGE_FETCH_PROBABILITY) || 0.1; // 10% chance to fetch main page during actions
+const CONVERSATION_PAGE_FETCH_PROBABILITY = Number(__ENV.CONVERSATION_PAGE_FETCH_PROBABILITY) || 0.15; // 15% chance to fetch conversation page during actions (higher because users refresh to see updates)
 
 // Cleanup configuration
 const CLEANUP_BATCH_PAUSE_SIZE = 50; // Pause after this many deletions
@@ -55,29 +58,36 @@ const opinionsFailed = new Counter("opinions_failed");
 const votesSuccessful = new Counter("votes_successful");
 const votesFailed = new Counter("votes_failed");
 const usersDeleted = new Counter("users_deleted");
+const conversationPageFetches = new Counter("conversation_page_fetches");
+const mainPageFetches = new Counter("main_page_fetches");
 const opinionResponseTime = new Trend("opinion_response_time");
 const voteResponseTime = new Trend("vote_response_time");
 const deleteResponseTime = new Trend("delete_response_time");
+const conversationPageResponseTime = new Trend("conversation_page_response_time");
+const mainPageResponseTime = new Trend("main_page_response_time");
 const opinionSuccessRate = new Rate("opinion_success_rate");
 const voteSuccessRate = new Rate("vote_success_rate");
 
-// Test configuration
+// Track failure reasons for debugging
+const opinionFailureReasons: { [key: string]: number } = {};
+
+// Test configuration - Single VU scenario, each VU does everything sequentially
 export const options = {
-    stages: [
-        { duration: "2m", target: 50 }, // Ramp up to 50 concurrent users
-        { duration: "5m", target: 200 }, // Ramp up to 200 concurrent users
-        { duration: "10m", target: 200 }, // Stay at 200 concurrent users
-        { duration: "3m", target: 0 }, // Ramp down
-    ],
-    thresholds: {
-        opinion_success_rate: ["rate>0.95"], // 95% success rate for opinion creation
-        vote_success_rate: ["rate>0.95"], // 95% success rate for voting
-        opinion_response_time: ["p(95)<5000"], // 95% under 5s
-        vote_response_time: ["p(95)<5000"], // 95% under 5s
-        http_req_failed: ["rate<0.05"], // Less than 5% failed requests
+    scenarios: {
+        sequential_users: {
+            executor: "shared-iterations",
+            vus: TOTAL_USERS,
+            iterations: TOTAL_USERS,
+            maxDuration: "30m",
+        },
     },
-    // Enable teardown for cleanup
-    setupTimeout: "60s",
+    thresholds: {
+        opinion_success_rate: ["rate>0.95"],
+        vote_success_rate: ["rate>0.95"],
+        opinion_response_time: ["p(95)<5000"],
+        vote_response_time: ["p(95)<5000"],
+        http_req_failed: ["rate<0.05"],
+    },
     teardownTimeout: "10m",
 };
 
@@ -118,123 +128,200 @@ const VOTING_OPTIONS: ("agree" | "disagree" | "pass")[] = [
     "pass",
 ];
 
-// Shared arrays to store created data for cleanup and voting
-// These arrays are shared across ALL VUs (Virtual Users) for cross-user voting
-const allOpinionSlugs: string[] = []; // All opinion slugs created by any user
-
-const createdUsers: {
-    did: string;
-    prefixedKey: string;
-}[] = [];
-
 // Backend DID from environment variable
 // Default to localhost for local development
 const BACKEND_DID = __ENV.BACKEND_DID || "did:web:localhost%3A8084";
 
 /**
- * Main test function - executed by each VU (Virtual User) in parallel
- * Each VU represents one guest user performing actions
+ * Main test function - each VU executes this sequentially
+ * First 50 VUs create opinions, all 100 VUs vote
  */
 export default async function () {
-    // Each VU (virtual user) represents a unique guest user
-    // Generate a unique keypair for this guest user with a unique ID
-    // Use VU ID + iteration to ensure uniqueness across all virtual users
-    const uniqueUserId = `vu${String(__VU)}-iter${String(__ITER)}`;
-    const { did, prefixedKey } = await createDidIfDoesNotExist(uniqueUserId);
+    const iterationIndex = execution.scenario.iterationInTest;
+    const isOpinionCreator = iterationIndex < OPINION_CREATOR_COUNT;
+    const userId = isOpinionCreator
+        ? `creator-${String(iterationIndex)}`
+        : `voter-${String(iterationIndex - OPINION_CREATOR_COUNT)}`;
 
-    // Track this user for cleanup
-    createdUsers.push({ did, prefixedKey });
+    console.log(`[${userId}] Starting (iteration ${String(iterationIndex)})`);
 
-    // Determine actions for this user
-    const numOpinionsToCreate =
-        Math.floor(
-            Math.random() * (MAX_OPINIONS_PER_USER - MIN_OPINIONS_PER_USER + 1),
-        ) + MIN_OPINIONS_PER_USER;
-    const numVotesToCast =
-        Math.floor(
-            Math.random() * (MAX_VOTES_PER_USER - MIN_VOTES_PER_USER + 1),
-        ) + MIN_VOTES_PER_USER;
+    // Step 1: Create user credentials
+    const userCreds = await createDidIfDoesNotExist(userId);
+    const { did, prefixedKey } = userCreds;
 
-    // Perform user actions (interleaved opinion creation and voting)
-    await performUserActions(
+    // Step 2: Fetch conversation page (simulates user landing on the frontend page)
+    // This will trigger the frontend to make multiple API calls to the backend
+    console.log(`[${userId}] Fetching conversation page...`);
+    const conversationPageResult = await fetchConversationPage({
+        conversationSlugId: CONVERSATION_SLUG_ID,
+    });
+
+    conversationPageFetches.add(1);
+    conversationPageResponseTime.add(conversationPageResult.responseTime);
+
+    if (!conversationPageResult.success) {
+        console.error(`[${userId}] Failed to fetch conversation page: ${String(conversationPageResult.error)}`);
+    }
+
+    sleep(1); // Brief pause after page load
+
+    // Step 3: Opinion creators create 1 opinion
+    let numOpinionsToCreate = 0;
+    if (isOpinionCreator) {
+        numOpinionsToCreate = 1;
+        console.log(`[${userId}] Will create ${String(numOpinionsToCreate)} opinion`);
+    }
+
+    // Step 4: Wait for opinions to be created (voters wait longer than creators)
+    const waitTime = isOpinionCreator ? 2 : INITIAL_WAIT_FOR_OPINIONS_SECONDS;
+    console.log(`[${userId}] Waiting ${String(waitTime)}s for opinions to be created...`);
+    sleep(waitTime);
+
+    // Step 5: Fetch available opinions from API (both creators and voters need this)
+    let fetchedOpinionSlugs: string[] = [];
+    for (let attempt = 1; attempt <= OPINION_FETCH_RETRY_ATTEMPTS; attempt++) {
+        console.log(`[${userId}] Fetching opinions (attempt ${String(attempt)}/${String(OPINION_FETCH_RETRY_ATTEMPTS)})...`);
+
+        const fetchResult = await fetchOpinions({
+            conversationSlugId: CONVERSATION_SLUG_ID,
+        });
+
+        if (fetchResult.success) {
+            fetchedOpinionSlugs = fetchResult.opinions.map(o => o.opinionSlugId);
+            console.log(`[${userId}] Fetched ${String(fetchedOpinionSlugs.length)} opinions from API`);
+
+            // Check if we have enough opinions (at least close to expected count)
+            const expectedMinimum = isOpinionCreator ? 10 : OPINION_CREATOR_COUNT * 0.9;
+            if (fetchedOpinionSlugs.length >= expectedMinimum) {
+                console.log(`[${userId}] Got sufficient opinions (${String(fetchedOpinionSlugs.length)}/${String(OPINION_CREATOR_COUNT)})`);
+                break;
+            } else if (attempt < OPINION_FETCH_RETRY_ATTEMPTS) {
+                console.log(`[${userId}] Only got ${String(fetchedOpinionSlugs.length)}/${String(OPINION_CREATOR_COUNT)} opinions, retrying in ${String(OPINION_FETCH_RETRY_DELAY)}s...`);
+                sleep(OPINION_FETCH_RETRY_DELAY);
+            }
+        } else {
+            console.error(`[${userId}] Failed to fetch opinions: ${String(fetchResult.error)}`);
+            if (attempt < OPINION_FETCH_RETRY_ATTEMPTS) {
+                sleep(OPINION_FETCH_RETRY_DELAY);
+            }
+        }
+    }
+
+    // Step 6: Calculate how many votes to cast
+    const availableOpinions = fetchedOpinionSlugs.length;
+    const minVotes = Math.floor(availableOpinions * MIN_VOTE_PERCENTAGE);
+    const maxVotes = Math.floor(availableOpinions * MAX_VOTE_PERCENTAGE);
+    const numVotesToCast = availableOpinions > 0
+        ? Math.floor(Math.random() * (maxVotes - minVotes + 1)) + minVotes
+        : 0;
+
+    console.log(`[${userId}] Will vote on ${String(numVotesToCast)} opinions (${String(availableOpinions)} available)`);
+
+    // Step 7: Perform actions (create opinion + vote)
+    const userActionResult = await performUserActions(
         {
             did,
             prefixedKey,
             backendDid: BACKEND_DID,
-            userId: uniqueUserId,
+            userId,
             numOpinionsToCreate,
             numVotesToCast,
             conversationSlugIds: [CONVERSATION_SLUG_ID],
             opinionTexts: opinionTexts as unknown as string[],
             votingOptions: VOTING_OPTIONS,
-            minSleepBetweenActions: MIN_SLEEP_BETWEEN_OPINIONS,
-            maxSleepBetweenActions: MAX_SLEEP_BETWEEN_VOTES,
-            allAvailableOpinions: allOpinionSlugs, // Pass shared opinion cache
+            sleepBetweenActions: SLEEP_BETWEEN_ACTIONS,
+            allAvailableOpinions: fetchedOpinionSlugs,
+            fetchMainPageProbability: MAIN_PAGE_FETCH_PROBABILITY,
+            fetchConversationPageProbability: CONVERSATION_PAGE_FETCH_PROBABILITY,
         },
         (opinionResult: CreateOpinionResponse & { userId?: string }) => {
-            // Callback for opinion creation
             if (opinionResult.success && opinionResult.opinionSlugId) {
                 opinionsCreated.add(1);
                 opinionSuccessRate.add(1);
-                // Add to shared cache so ALL users can vote on it
-                allOpinionSlugs.push(opinionResult.opinionSlugId);
-                console.log(
-                    `User ${uniqueUserId} created opinion: ${opinionResult.opinionSlugId}`,
-                );
+                console.log(`[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${opinionResult.responseTime}ms)`);
             } else {
                 opinionsFailed.add(1);
                 opinionSuccessRate.add(0);
-                console.error(
-                    `User ${uniqueUserId} opinion creation failed: ${String(opinionResult.reason)}`,
-                );
+                const reason = String(opinionResult.reason || "Unknown error");
+                console.error(`[${userId}] ❌ OPINION CREATION FAILED - Reason: ${reason} - Response time: ${opinionResult.responseTime}ms`);
+
+                // Track failure reason
+                if (!opinionFailureReasons[reason]) {
+                    opinionFailureReasons[reason] = 0;
+                }
+                opinionFailureReasons[reason]++;
             }
             opinionResponseTime.add(opinionResult.responseTime);
         },
-        (
-            voteResult: VoteResponse & {
-                targetOpinionSlugId?: string;
-                userId?: string;
-            },
-        ) => {
-            // Callback for voting
+        (voteResult: VoteResponse & { targetOpinionSlugId?: string; userId?: string }) => {
             if (voteResult.success) {
                 votesSuccessful.add(1);
                 voteSuccessRate.add(1);
-                console.log(
-                    `User ${String(voteResult.userId)} voted on opinion: ${String(voteResult.targetOpinionSlugId)}`,
-                );
+                console.log(`[${userId}] Voted on opinion: ${String(voteResult.targetOpinionSlugId)}`);
             } else {
                 votesFailed.add(1);
                 voteSuccessRate.add(0);
-                console.error(`Vote failed: ${String(voteResult.error)}`);
+                console.error(`[${userId}] Vote failed: ${String(voteResult.error)}`);
             }
             voteResponseTime.add(voteResult.responseTime);
         },
     );
 
-    // Final sleep before this user's session ends
-    sleep(
-        Math.random() *
-            (MAX_SLEEP_AFTER_USER_ACTIONS - MIN_SLEEP_AFTER_USER_ACTIONS) +
-            MIN_SLEEP_AFTER_USER_ACTIONS,
-    );
+    // Track page fetch metrics
+    if (userActionResult.metrics.mainPageFetches > 0) {
+        mainPageFetches.add(userActionResult.metrics.mainPageFetches);
+        for (let i = 0; i < userActionResult.metrics.mainPageFetches; i++) {
+            mainPageResponseTime.add(
+                userActionResult.metrics.totalMainPageResponseTime / userActionResult.metrics.mainPageFetches
+            );
+        }
+    }
+
+    if (userActionResult.metrics.conversationPageFetches > 0) {
+        conversationPageFetches.add(userActionResult.metrics.conversationPageFetches);
+        for (let i = 0; i < userActionResult.metrics.conversationPageFetches; i++) {
+            conversationPageResponseTime.add(
+                userActionResult.metrics.totalConversationPageResponseTime / userActionResult.metrics.conversationPageFetches
+            );
+        }
+    }
+
+    console.log(`[${userId}] Completed`);
 }
 
 /**
  * Teardown phase - clean up user accounts
  * Note: Opinions will be deleted automatically when the conversation is deleted
  * or can be cleaned up manually via the admin interface
+ *
+ * K6 limitation: teardown can't access VU variables, so we recreate the user list
  */
 export async function teardown() {
     console.log("=== Starting Teardown ===");
-    console.log(`Deleting ${String(createdUsers.length)} users...`);
+    console.log(`Deleting ${String(TOTAL_USERS)} users...`);
+
+    // Recreate user credentials for cleanup (k6 teardown can't access VU variables)
+    const usersToDelete: {
+        did: string;
+        prefixedKey: string;
+    }[] = [];
+
+    // Recreate all user credentials using the same pattern from the test
+    for (let i = 0; i < TOTAL_USERS; i++) {
+        const userId = i < OPINION_CREATOR_COUNT
+            ? `creator-${String(i)}`
+            : `voter-${String(i - OPINION_CREATOR_COUNT)}`;
+
+        const userCreds = await createDidIfDoesNotExist(userId);
+        usersToDelete.push(userCreds);
+    }
 
     // Delete all user accounts
     let usersDeletedCount = 0;
     let usersFailedCount = 0;
 
     console.log("Deleting user accounts...");
-    for (const user of createdUsers) {
+    for (const user of usersToDelete) {
         const result: DeleteUserResponse = await deleteUser({
             did: user.did,
             prefixedKey: user.prefixedKey,
@@ -262,8 +349,22 @@ export async function teardown() {
     console.log(
         `Users: ${String(usersDeletedCount)} deleted, ${String(usersFailedCount)} failed`,
     );
+
+    // Print opinion failure summary
+    const totalOpinionFailures = Object.values(opinionFailureReasons).reduce((a, b) => a + b, 0);
+    console.log("\n=== Opinion Failure Summary ===");
+    if (totalOpinionFailures > 0) {
+        console.log(`Total failed opinions: ${String(totalOpinionFailures)}`);
+        console.log("Failure reasons:");
+        for (const [reason, count] of Object.entries(opinionFailureReasons)) {
+            console.log(`  - ${reason}: ${String(count)} occurrence(s)`);
+        }
+    } else {
+        console.log("No opinion failures detected (all opinions created successfully)");
+    }
+
     console.log(
-        `To clean up the conversation, delete it via the admin interface or API`,
+        `\nTo clean up the conversation, delete it via the admin interface or API`,
     );
     console.log("=== Teardown Complete ===");
 }

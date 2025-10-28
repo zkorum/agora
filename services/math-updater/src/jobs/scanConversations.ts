@@ -3,7 +3,7 @@ import {
     conversationTable,
     conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, or, isNull, lt } from "drizzle-orm";
+import { and, eq, or, isNull, lt, gt, sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { nowZeroMs } from "@/shared/util.js";
 import PgBoss from "pg-boss";
@@ -47,6 +47,8 @@ export async function scanConversationsJob(
         );
 
         // Find conversations that need updates from the queue table
+        // New logic: Use requestedAt > lastMathUpdateAt to determine if processing is needed
+        // This prevents race conditions since lastMathUpdateAt is only touched by math-updater
         const queueEntries = await db
             .select({
                 conversationId: conversationUpdateQueueTable.conversationId,
@@ -64,8 +66,16 @@ export async function scanConversationsJob(
             )
             .where(
                 and(
-                    isNull(conversationUpdateQueueTable.processedAt),
-                    // Rate limiting: at least minTimeBetweenUpdatesMs since last math update
+                    // Condition 1: New data arrived since last math update
+                    // (or never processed)
+                    or(
+                        isNull(conversationUpdateQueueTable.lastMathUpdateAt),
+                        gt(
+                            conversationUpdateQueueTable.requestedAt,
+                            conversationUpdateQueueTable.lastMathUpdateAt,
+                        ),
+                    ),
+                    // Condition 2: Rate limiting - at least minTimeBetweenUpdatesMs since last update
                     // If never updated (NULL), allow immediate update
                     or(
                         isNull(conversationUpdateQueueTable.lastMathUpdateAt),
@@ -135,9 +145,78 @@ export async function scanConversationsJob(
                 );
             } else {
                 rejectedConversations.push(conversationSlugId);
-                log.debug(
-                    `[Scan] Skipped conversation ${conversationSlugId} (id: ${entry.conversationId}) - singleton job already exists`,
-                );
+
+                // When jobId is null, it means pg-boss rejected due to singleton constraint
+                // Query the existing job to understand its state
+                const singletonKey = `update-math-${entry.conversationId}`;
+
+                try {
+                    // Query pg-boss tables directly to find the blocking job
+                    const result = await db.execute<{
+                        state: string;
+                        created_on: string;
+                        started_on: string | null;
+                        completed_on: string | null;
+                        keep_until: string;
+                    }>(sql`
+                        SELECT state, created_on, started_on, completed_on, keep_until
+                        FROM pgboss.job
+                        WHERE name = 'update-conversation-math'
+                        AND singleton_key = ${singletonKey}
+                        AND keep_until > NOW()
+                        ORDER BY created_on DESC
+                        LIMIT 1
+                    `);
+
+                    if (result.length > 0) {
+                        const job = result[0];
+                        const createdAt = new Date(job.created_on);
+                        const ageMs = Date.now() - createdAt.getTime();
+                        const ageSeconds = (ageMs / 1000).toFixed(1);
+
+                        let reason = "";
+                        let timing = "";
+
+                        if (job.state === "active") {
+                            if (job.started_on) {
+                                const startedAt = new Date(job.started_on);
+                                const runningMs = Date.now() - startedAt.getTime();
+                                timing = `running for ${(runningMs / 1000).toFixed(1)}s`;
+                            } else {
+                                timing = `marked active but started_on is null`;
+                            }
+                            reason = `job RUNNING (${timing})`;
+                        } else if (job.state === "created") {
+                            timing = `queued for ${ageSeconds}s`;
+                            reason = `job QUEUED (${timing}, waiting to start)`;
+                        } else if (job.state === "completed") {
+                            if (job.completed_on) {
+                                const completedAt = new Date(job.completed_on);
+                                const completedMs = Date.now() - completedAt.getTime();
+                                timing = `completed ${(completedMs / 1000).toFixed(1)}s ago`;
+                            } else {
+                                timing = `completed but completed_on is null`;
+                            }
+                            reason = `job COMPLETED (${timing}, still in ${singletonSeconds}s window)`;
+                        } else {
+                            reason = `job in state '${job.state}' (age: ${ageSeconds}s)`;
+                        }
+
+                        log.info(
+                            `[Scan] Skipped ${conversationSlugId} - ${reason}`,
+                        );
+                    } else {
+                        // This shouldn't happen but log it if it does
+                        log.warn(
+                            `[Scan] Skipped ${conversationSlugId} - singleton rejected but no matching job found in pgboss.job (singletonKey: ${singletonKey})`,
+                        );
+                    }
+                } catch (queryError) {
+                    log.error(
+                        { error: queryError },
+                        `[Scan] Skipped ${conversationSlugId} - singleton rejected but failed to query job state`,
+                    );
+                }
             }
         }
 
