@@ -1090,6 +1090,13 @@ interface PostNewOpinionProps {
     userAgent: string;
     now: Date;
     isSeed: boolean;
+    conversationMetadata?: {
+        conversationId: number;
+        conversationContentId: number;
+        conversationAuthorId: string;
+        conversationIsIndexed: boolean;
+        conversationIsLoginRequired: boolean;
+    };
 }
 
 export async function postNewOpinion({
@@ -1102,31 +1109,51 @@ export async function postNewOpinion({
     userAgent,
     now,
     isSeed,
+    conversationMetadata,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
-    const { getPostMetadataFromSlugId } = useCommonPost();
-    const {
-        id: conversationId,
-        contentId: conversationContentId,
-        authorId: conversationAuthorId,
-        isIndexed: conversationIsIndexed,
-        isLoginRequired: conversationIsLoginRequired,
-    } = await getPostMetadataFromSlugId({
-        db: db,
-        conversationSlugId: conversationSlugId,
-    });
+    // Use provided metadata if available (for seed opinions), otherwise fetch from DB
+    let conversationId: number;
+    let conversationContentId: number | null;
+    let conversationAuthorId: string;
+    let conversationIsIndexed: boolean;
+    let conversationIsLoginRequired: boolean;
+
+    if (conversationMetadata) {
+        conversationId = conversationMetadata.conversationId;
+        conversationContentId = conversationMetadata.conversationContentId;
+        conversationAuthorId = conversationMetadata.conversationAuthorId;
+        conversationIsIndexed = conversationMetadata.conversationIsIndexed;
+        conversationIsLoginRequired =
+            conversationMetadata.conversationIsLoginRequired;
+    } else {
+        const { getPostMetadataFromSlugId } = useCommonPost();
+        const metadata = await getPostMetadataFromSlugId({
+            db: db,
+            conversationSlugId: conversationSlugId,
+        });
+        conversationId = metadata.id;
+        conversationContentId = metadata.contentId;
+        conversationAuthorId = metadata.authorId;
+        conversationIsIndexed = metadata.isIndexed;
+        conversationIsLoginRequired = metadata.isLoginRequired;
+    }
+
     if (conversationContentId == null) {
         throw httpErrors.gone("Cannot comment on a deleted post");
     }
 
-    const isLocked = await useCommonPost().isPostSlugIdLocked({
-        postSlugId: conversationSlugId,
-        db: db,
-    });
-    if (isLocked) {
-        return {
-            success: false,
-            reason: "conversation_locked",
-        };
+    // Skip lock check if metadata provided (seed opinions on just-created conversations)
+    if (!conversationMetadata) {
+        const isLocked = await useCommonPost().isPostSlugIdLocked({
+            postSlugId: conversationSlugId,
+            db: db,
+        });
+        if (isLocked) {
+            return {
+                success: false,
+                reason: "conversation_locked",
+            };
+        }
     }
 
     try {
