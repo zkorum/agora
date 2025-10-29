@@ -122,39 +122,87 @@
 
         <h3>Third-party services</h3>
         <p>
-          Agora enables interaction with third-party services such as external
-          verification providers and security providers (e.g.
-          <a
-            href="https://rarime.com/privacy-notice.html"
-            target="_blank"
-            rel="noopener"
-            >RariMe</a
-          >
-          for zero-knowledge identity proofs,
-          <a
-            href="https://www.twilio.com/en-us/legal/privacy"
-            target="_blank"
-            rel="noopener"
-            >Twilio</a
-          >
-          for verification of the phone numbers,
-          <a
-            href="https://www.cloudflare.com/privacypolicy/"
-            target="_blank"
-            rel="noopener"
-            >Cloudflare</a
-          >
-          for security (e.g. protection against distributed denial-of-service
-          attacks (DDoS)) and
-          <a
-            href="https://aws.amazon.com/privacy/"
-            target="_blank"
-            rel="noopener"
-            >Amazon Cloud</a
-          >
-          for hosting infrastructure, data storage, and computing resources).
-          These services have their own privacy policies, and users are
-          encouraged to review them before opting in.
+          Agora uses third-party services that may process IP addresses and
+          other personal data. Where possible, Agora configures services to use
+          EU regional endpoints or uses EU-based providers. These services have
+          their own privacy policies, and users are encouraged to review them.
+        </p>
+        <ul>
+          <li>
+            <a
+              href="https://rarime.com/privacy-notice.html"
+              target="_blank"
+              rel="noopener"
+              >RariMe</a
+            >
+            (global) for zero-knowledge identity proofs. May process IP
+            addresses for security and service operations.
+          </li>
+          <li>
+            <a
+              href="https://www.twilio.com/en-us/legal/privacy"
+              target="_blank"
+              rel="noopener"
+              >Twilio</a
+            >
+            (global) for phone number verification. Processes IP addresses for
+            fraud prevention.
+          </li>
+          <li>
+            <a
+              href="https://www.cloudflare.com/privacypolicy/"
+              target="_blank"
+              rel="noopener"
+              >Cloudflare</a
+            >
+            (global) for DDoS protection and security. Processes IP addresses.
+          </li>
+          <li>
+            <a
+              href="https://aws.amazon.com/privacy/"
+              target="_blank"
+              rel="noopener"
+              >Amazon Web Services</a
+            >
+            (EU: Dublin and Paris) for hosting infrastructure, data storage, and
+            computing resources. Processes IP addresses for infrastructure
+            operations.
+          </li>
+          <li>
+            <a
+              href="https://cloud.google.com/terms/cloud-privacy-notice"
+              target="_blank"
+              rel="noopener"
+              >Google Cloud Platform</a
+            >
+            (EU region) for AI-powered translation of user posts and
+            platform-generated content. May process IP addresses for
+            infrastructure operations.
+          </li>
+          <li>
+            <a
+              href="https://plausible.io/data-policy"
+              target="_blank"
+              rel="noopener"
+              >Plausible Analytics</a
+            >
+            (EU-based) for privacy-friendly web analytics. Temporarily processes
+            IP addresses for visitor counting but does not store them (see their
+            data policy for details).
+          </li>
+          <li>
+            <a href="https://sentry.io/privacy/" target="_blank" rel="noopener"
+              >Sentry</a
+            >
+            (EU servers) for error tracking and crash reporting. Processes IP
+            addresses for debugging purposes.
+          </li>
+        </ul>
+        <p>
+          Services marked as "global" operate with appropriate GDPR safeguards
+          as described in Article 3. Users concerned about IP address privacy
+          are encouraged to use Tor or other mixnet solutions when accessing
+          Agora.
         </p>
 
         <h3>Cookies and analytics</h3>
@@ -210,12 +258,25 @@
           <tbody>
             <tr>
               <td>
-                <strong>Authentication Data</strong> (Phone Number,
-                Cryptographic Proofs from Passport Verification via RariMe)
+                <strong>Authentication Data - Phone Number</strong>
               </td>
               <td>
-                To confirm and verify identity for eligibility without storing
-                sensitive data.
+                To authenticate users and deliver one-time verification codes.
+                Phone numbers are stored as cryptographic hashes in our
+                database. Twilio (our SMS provider) processes and stores phone
+                numbers in cleartext to deliver verification codes.
+              </td>
+              <td>Legitimate interest</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Authentication Data - Zero-Knowledge Proof</strong>
+                (Cryptographic Proofs from Passport Verification via RariMe)
+              </td>
+              <td>
+                To verify user eligibility through privacy-preserving
+                cryptographic proofs. Agora receives only the proof, not
+                passport details.
               </td>
               <td>Legitimate interest</td>
             </tr>
@@ -466,6 +527,12 @@
             and cloud service providers for DDoS protection.
           </li>
           <li>
+            <strong>Anonymized AI translation:</strong> Content sent to Google
+            Cloud Platform for translation is transmitted as-is without any
+            accompanying metadata (user identifiers, etc.) and processed in EU
+            region.
+          </li>
+          <li>
             <strong
               >Use of
               <a
@@ -664,10 +731,6 @@
           <a href="mailto:legal@zkorum.com">legal@zkorum.com</a>.
         </p>
       </section>
-
-      <p class="last-updated">
-        This privacy policy was last updated on 01/03/2025
-      </p>
     </article>
   </DrawerLayout>
 </template>
@@ -741,11 +804,6 @@ const { t } = useComponentI18n<PrivacyPolicyTranslations>(
       background-color: rgba($primary, 0.1);
       font-weight: 600;
     }
-  }
-
-  .last-updated {
-    margin-top: 2rem;
-    font-style: italic;
   }
 
   a {

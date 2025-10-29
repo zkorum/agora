@@ -13,7 +13,7 @@
     </template>
 
     <article class="terms-content">
-      <p><strong>Last updated on</strong>: 07/10/2025</p>
+      <p><strong>Last updated on</strong>: 2025/10/07 (YYYY/MM/DD)</p>
 
       <p>
         Welcome to Agora Citizen Network ("Agora")! These Terms and Conditions
