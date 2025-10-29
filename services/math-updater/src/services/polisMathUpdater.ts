@@ -286,7 +286,7 @@ async function phase1CreateClusterStructure({
         clusterIdsByKey[polisClusterKeyStr] = polisClusterId;
         groupCommentStatsByKey[polisClusterKeyStr] = groupCommentStatsEntry;
 
-        // Insert cluster users
+        // Insert cluster users (batched to avoid parameter limit)
         const members = participants.map((participant) => {
             return {
                 polisContentId: polisContentId,
@@ -295,7 +295,16 @@ async function phase1CreateClusterStructure({
             };
         });
         if (members.length > 0) {
-            await db.insert(polisClusterUserTable).values(members);
+            const MEMBER_BATCH_SIZE = 5000; // 3 columns per row = max ~21,000 rows before hitting 65k param limit
+            const memberBatches = batchArray(members, MEMBER_BATCH_SIZE);
+
+            log.info(
+                `[Math] Inserting ${members.length} cluster users in ${memberBatches.length} batches for clusterKey=${polisClusterKeyStr}`,
+            );
+
+            for (const memberBatch of memberBatches) {
+                await db.insert(polisClusterUserTable).values(memberBatch);
+            }
         } else {
             log.warn(
                 `[Math] No members to insert in polisClusterUserTable for clusterKey=${polisClusterKeyStr}, polisClusterId=${String(polisClusterId)} and polisContentId=${String(polisContentId)}`,
@@ -330,7 +339,16 @@ async function phase1CreateClusterStructure({
             )}' and for polisContentId='${String(polisContentId)}', clustersInsightsForLlm=${JSON.stringify(clustersInsightsForLlm)}\n${repnesses.map((rep) => JSON.stringify(rep)).join(", ")}`,
         );
         if (repnesses.length > 0) {
-            await db.insert(polisClusterOpinionTable).values(repnesses);
+            const REPNESS_BATCH_SIZE = 2000; // 6 columns per row = max ~10,000 rows before hitting 65k param limit
+            const repnessBatches = batchArray(repnesses, REPNESS_BATCH_SIZE);
+
+            log.info(
+                `[Math] Inserting ${repnesses.length} cluster opinions in ${repnessBatches.length} batches for clusterKey=${polisClusterKeyStr}`,
+            );
+
+            for (const repnessBatch of repnessBatches) {
+                await db.insert(polisClusterOpinionTable).values(repnessBatch);
+            }
         } else {
             log.warn(
                 `[Math] No repnesses to insert in polisClusterOpinionTable for conversationId='${String(

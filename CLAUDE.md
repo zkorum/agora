@@ -266,6 +266,119 @@ if (probabilities.length !== types.length) {
 - Data from untyped sources (raw SQL, environment variables)
 - Legacy code integration where types cannot be guaranteed
 
+### Functional Programming Style: Closure Pattern (Zustand-style)
+
+**Preferred Pattern**: Closure-based state encapsulation with immutable API
+
+When implementing stateful services (buffers, caches, managers), use the **Zustand-style closure pattern** instead of classes or mutable parameters:
+
+```typescript
+// ✅ GOOD: Closure pattern (Zustand-style)
+export interface VoteBuffer {
+    add: (vote: BufferedVote) => void;
+    flush: () => Promise<void>;
+    shutdown: () => Promise<void>;
+}
+
+export function createVoteBuffer(db: PostgresJsDatabase): VoteBuffer {
+    // Encapsulated mutable state (private to closure)
+    let pendingVotes = new Map<string, BufferedVote>();
+    let isShuttingDown = false;
+
+    const add = (vote: BufferedVote): void => {
+        // Mutate internal state, never external parameters
+        pendingVotes.set(getKey(vote), vote);
+    };
+
+    // Return immutable API
+    return { add, flush, shutdown };
+}
+```
+
+**Why this pattern:**
+- ✅ **Encapsulation**: State is private, cannot be accessed from outside
+- ✅ **Immutable API**: Exposed functions never mutate external parameters
+- ✅ **No side effects**: Pure functional interface from caller's perspective
+- ✅ **Simple**: No `this`, no `new`, no class boilerplate
+- ✅ **Testable**: Easy to mock, no hidden dependencies
+
+**Avoid these alternatives:**
+
+```typescript
+// ❌ BAD: Class with mutable state (verbose, `this` confusion)
+export class VoteBuffer {
+    private pendingVotes = new Map();
+
+    public add(vote: BufferedVote): void {
+        this.pendingVotes.set(getKey(vote), vote); // `this` required
+    }
+}
+
+// ❌ BAD: Mutable parameter pattern (breaks referential transparency)
+export function addVote(state: VoteBufferState, vote: BufferedVote): void {
+    state.pendingVotes.set(getKey(vote), vote); // Mutates external parameter!
+}
+```
+
+**When to use each pattern:**
+- **Closure pattern** (Zustand-style): Stateful services with long lifecycle (buffers, caches, managers)
+- **Pure functions**: Stateless utilities, transformations, calculations
+- **Class**: Only when OOP is required for interface compatibility (e.g., extending framework classes)
+
+### Function Parameters: Always Use Object Parameters
+
+**Rule**: ALL functions with 2+ parameters MUST use object parameters (named parameters) instead of positional parameters.
+
+**Why:**
+- ✅ **Self-documenting**: Call site shows parameter names
+- ✅ **Prevents errors**: Can't mix up parameter order
+- ✅ **Easy to extend**: Add optional parameters without breaking calls
+- ✅ **TypeScript autocomplete**: Better IDE support
+
+**Pattern:**
+
+```typescript
+// ✅ GOOD: Object parameters (named parameters)
+interface CreateVoteBufferParams {
+    db: PostgresJsDatabase;
+    redis?: Redis;
+    flushIntervalMs?: number;
+}
+
+export function createVoteBuffer({
+    db,
+    redis = undefined,
+    flushIntervalMs = 1000,
+}: CreateVoteBufferParams): VoteBuffer {
+    // ...
+}
+
+// Call site is clear
+const buffer = createVoteBuffer({ db, redis, flushIntervalMs: 1000 });
+```
+
+```typescript
+// ❌ BAD: Positional parameters (easy to mix up)
+export function createVoteBuffer(
+    db: PostgresJsDatabase,
+    redis: Redis | undefined = undefined,
+    flushIntervalMs = 1000,
+): VoteBuffer {
+    // ...
+}
+
+// Call site unclear - what is 1000?
+const buffer = createVoteBuffer(db, redis, 1000);
+```
+
+**Exception**: Single parameter functions can use direct parameter:
+```typescript
+// OK for single parameter
+export function getUserById(userId: string): User {
+    // ...
+}
+```
+
 ### Logging Guidelines
 
 **Important:** Do NOT use `log.debug()` in this codebase. Always use `log.info()`, `log.warn()`, or `log.error()` instead.

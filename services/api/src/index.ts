@@ -86,6 +86,8 @@ import {
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 import twilio from "twilio";
+import { initializeRedis } from "./shared-backend/redis.js";
+import { createVoteBuffer } from "./service/voteBuffer.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -319,6 +321,20 @@ if (
         "[API] Google Cloud Translation not configured - translations disabled",
     );
 }
+
+// Initialize Redis (optional - for vote buffer persistence)
+const redis = initializeRedis({ redisUrl: config.REDIS_URL, log });
+
+// Initialize VoteBuffer (batches votes to reduce DB contention)
+const voteBuffer = createVoteBuffer({
+    db,
+    redis,
+    redisVoteBufferKey: config.REDIS_VOTE_BUFFER_KEY,
+    flushIntervalMs: 1000
+});
+log.info(
+    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${redis !== undefined ? "Redis" : "in-memory only"})`,
+);
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -1142,12 +1158,12 @@ server.after(() => {
             const now = nowZeroMs();
             const castVoteResponse = await castVoteForOpinionSlugId({
                 db: db,
+                voteBuffer: voteBuffer,
                 opinionSlugId: request.body.opinionSlugId,
                 didWrite: didWrite,
                 proof: encodedUcan,
                 votingAction: request.body.chosenOption,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
-                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 now: now,
             });
             reply.send(castVoteResponse);
@@ -1251,10 +1267,8 @@ server.after(() => {
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
-            const now = nowZeroMs();
             await deleteOpinionBySlugId({
                 db: db,
-                now: now,
                 opinionSlugId: request.body.opinionSlugId,
                 userId: deviceStatus.userId,
                 proof: encodedUcan,
@@ -1296,12 +1310,12 @@ server.after(() => {
             const now = nowZeroMs();
             const newOpinionResponse = await postNewOpinion({
                 db: db,
+                voteBuffer: voteBuffer,
                 commentBody: request.body.opinionBody,
                 conversationSlugId: request.body.conversationSlugId,
                 didWrite: didWrite,
                 proof: encodedUcan,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
-                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 now: now,
                 isSeed: false,
             });
@@ -1780,6 +1794,7 @@ server.after(() => {
 
             const { conversationSlugId } = await postService.createNewPost({
                 db: db,
+                voteBuffer: voteBuffer,
                 conversationTitle: request.body.conversationTitle,
                 conversationBody: request.body.conversationBody ?? null,
                 pollingOptionList: request.body.pollingOptionList ?? null,
@@ -1847,6 +1862,7 @@ server.after(() => {
 
             return await postService.importConversation({
                 db: db,
+                voteBuffer: voteBuffer,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
                 proof: encodedUcan,
@@ -1966,11 +1982,11 @@ server.after(() => {
             await deleteUserAccount({
                 proof: encodedUcan,
                 db: db,
+                voteBuffer: voteBuffer,
                 now: now,
                 didWrite: didWrite,
                 userId: deviceStatus.userId,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
             });
             reply.send();
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -2592,6 +2608,35 @@ if (
             process.exit(1);
         }
     });
+
+    // Graceful shutdown handling
+    const shutdown = async (signal: string) => {
+        log.info(`[API] ${signal} received, shutting down gracefully...`);
+
+        try {
+            // Flush pending votes before shutdown
+            await voteBuffer.shutdown();
+
+            // Close Redis connection
+            if (redis !== undefined) {
+                await redis.quit();
+                log.info("[Redis] Connection closed");
+            }
+
+            // Close server
+            await server.close();
+            log.info("[API] Server closed");
+
+            process.exit(0);
+        } catch (error) {
+            log.error(error, "[API] Error during shutdown");
+            process.exit(1);
+        }
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+
     // await migrationService.fixNullPassInOpinionTable({ db });
     // await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
     // if (axiosPolis !== undefined) {

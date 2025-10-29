@@ -59,6 +59,7 @@
         "extract-first-json": "^2.0.2",
         "fastify": "^5.3.3",
         "fastify-type-provider-zod": "^4.0.2",
+        "ioredis": "^5.8.2",
         "keystore-idb": "^0.15.5",
         "libphonenumber-js": "^1.12.8",
         "linkify-html": "^4.3.1",
