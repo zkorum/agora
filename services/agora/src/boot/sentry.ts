@@ -6,8 +6,8 @@ export default defineBoot(({ app, router }) => {
   Sentry.init({
     app,
     dsn: "https://1a115ad14fb74824a573dce151352b58@o4510068006780928.ingest.de.sentry.io/4510068713979984",
-    // Setting this option to true will send default PII data to Sentry.
-    // For example, automatic IP address collection on events
+    // With sendDefaultPii: false, Sentry still infers IP addresses from HTTP requests
+    // for debugging purposes, but does not collect cookies or user credentials
     // Note: users who want to maintain their privacy are encouraged to use Tor
     sendDefaultPii: false,
     // Filter out default `Vue` integration
