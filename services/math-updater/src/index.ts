@@ -16,8 +16,6 @@ import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
 } from "./shared-backend/googleCloudAuth.js";
-import { sql } from "drizzle-orm";
-import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import pLimit from "p-limit";
 
 /**
@@ -272,16 +270,16 @@ async function main() {
         log.info("[Math Updater] Shutting down gracefully...");
 
         // Delete any pending jobs before stopping
-        await deleteOldJobs(db);
+        // await deleteOldJobs(db);
 
         await boss.stop();
         log.info("[Math Updater] pg-boss stopped");
         process.exit(0);
     };
 
-    process.on("SIGTERM", shutdown);
-    process.on("SIGINT", shutdown);
-    process.on("SIGHUP", shutdown);
+    process.on("SIGTERM", () => void shutdown());
+    process.on("SIGINT", () => void shutdown());
+    process.on("SIGHUP", () => void shutdown());
 }
 
 main().catch((error) => {

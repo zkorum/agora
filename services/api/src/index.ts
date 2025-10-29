@@ -2634,8 +2634,8 @@ if (
         }
     };
 
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => void shutdown("SIGTERM"));
+    process.on("SIGINT", () => void shutdown("SIGINT"));
 
     // await migrationService.fixNullPassInOpinionTable({ db });
     // await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
