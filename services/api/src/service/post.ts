@@ -282,6 +282,13 @@ export async function createNewPost({
                 userAgent: "Seed Opinion Creation",
                 now,
                 isSeed: true,
+                conversationMetadata: {
+                    conversationId,
+                    conversationContentId,
+                    conversationAuthorId: authorId,
+                    conversationIsIndexed: isIndexed,
+                    conversationIsLoginRequired: isIndexed ? true : isLoginRequired,
+                },
             });
         }
     }
