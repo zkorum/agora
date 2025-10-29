@@ -336,8 +336,6 @@ async function onSubmit() {
     });
 
     if (response.status == "success") {
-      conversationDraft.value = createEmptyDraft();
-
       await loadPostData();
 
       // Set navigation context to indicate user came from conversation creation
@@ -347,6 +345,9 @@ async function onSubmit() {
         name: "/conversation/[postSlugId]",
         params: { postSlugId: response.data.conversationSlugId },
       });
+
+      // Clear draft after navigation to prevent re-render with empty data
+      conversationDraft.value = createEmptyDraft();
 
       // Don't stop loading - let component unmount with loading state active
     } else {
