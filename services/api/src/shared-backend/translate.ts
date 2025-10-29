@@ -52,10 +52,97 @@ export async function translateText(
     projectId: string,
     location: string,
 ): Promise<string> {
+    // Handle empty string early - no translation needed
+    if (!text) {
+        return "";
+    }
+
     // Convert BCP 47 codes to Google Cloud Translation language codes
     const googleSourceCode = convertToGoogleLanguageCode(sourceLanguageCode);
     const googleTargetCode = convertToGoogleLanguageCode(targetLanguageCode);
 
+    // For Traditional Chinese (zh-TW): use two-step translation for LLM quality
+    if (googleTargetCode === "zh-TW") {
+        // Case 1: Source is already Simplified Chinese → just convert to Traditional
+        if (googleSourceCode === "zh-CN") {
+            const request = {
+                parent: `projects/${projectId}/locations/${location}`,
+                contents: [text],
+                mimeType: "text/plain" as const,
+                sourceLanguageCode: "zh-CN",
+                targetLanguageCode: "zh-TW",
+                // Omit model parameter to use default NMT for zh-CN → zh-TW conversion
+            };
+
+            const [response] = await client.translateText(request);
+
+            if (
+                !response.translations ||
+                response.translations.length === 0 ||
+                !response.translations[0].translatedText
+            ) {
+                throw new Error(
+                    `Translation failed for zh-CN → zh-TW conversion: "${text}"`,
+                );
+            }
+
+            return response.translations[0].translatedText;
+        }
+
+        // Case 2: Source is not Simplified Chinese → translate to Simplified first, then convert
+        // Step 1: Translate source → Simplified Chinese using LLM
+        const simplifiedRequest = {
+            parent: `projects/${projectId}/locations/${location}`,
+            contents: [text],
+            mimeType: "text/plain" as const,
+            sourceLanguageCode: googleSourceCode,
+            targetLanguageCode: "zh-CN",
+            model: `projects/${projectId}/locations/${location}/models/general/translation-llm`,
+        };
+
+        const [simplifiedResponse] =
+            await client.translateText(simplifiedRequest);
+
+        if (
+            !simplifiedResponse.translations ||
+            simplifiedResponse.translations.length === 0 ||
+            !simplifiedResponse.translations[0].translatedText
+        ) {
+            throw new Error(
+                `Translation failed at Simplified Chinese step for "${text}"`,
+            );
+        }
+
+        const simplifiedText =
+            simplifiedResponse.translations[0].translatedText;
+
+        // Step 2: Convert Simplified Chinese → Traditional Chinese using NMT
+        const traditionalRequest = {
+            parent: `projects/${projectId}/locations/${location}`,
+            contents: [simplifiedText],
+            mimeType: "text/plain" as const,
+            sourceLanguageCode: "zh-CN",
+            targetLanguageCode: "zh-TW",
+            // Omit model parameter to use default NMT for zh-CN → zh-TW conversion
+        };
+
+        const [traditionalResponse] =
+            await client.translateText(traditionalRequest);
+
+        if (
+            !traditionalResponse.translations ||
+            traditionalResponse.translations.length === 0 ||
+            !traditionalResponse.translations[0].translatedText
+        ) {
+            throw new Error(
+                `Translation failed at Traditional Chinese conversion step for "${simplifiedText}"`,
+            );
+        }
+
+        return traditionalResponse.translations[0].translatedText;
+    }
+
+    // For all other languages: use Translation LLM directly
     const request = {
         parent: `projects/${projectId}/locations/${location}`,
         contents: [text],
