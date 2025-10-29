@@ -115,7 +115,7 @@ export async function scanConversationsJob(
             } else if (voteCount < 100000) {
                 singletonSeconds = 60; // Large conversations: 60s
             } else {
-                singletonSeconds = 120; // Huge conversations (like SIP3Kg): 120s
+                singletonSeconds = 120; // Huge conversations: 120s
             }
 
             // Send job with singletonKey to prevent duplicates
@@ -180,7 +180,8 @@ export async function scanConversationsJob(
                         if (job.state === "active") {
                             if (job.started_on) {
                                 const startedAt = new Date(job.started_on);
-                                const runningMs = Date.now() - startedAt.getTime();
+                                const runningMs =
+                                    Date.now() - startedAt.getTime();
                                 timing = `running for ${(runningMs / 1000).toFixed(1)}s`;
                             } else {
                                 timing = `marked active but started_on is null`;
@@ -192,7 +193,8 @@ export async function scanConversationsJob(
                         } else if (job.state === "completed") {
                             if (job.completed_on) {
                                 const completedAt = new Date(job.completed_on);
-                                const completedMs = Date.now() - completedAt.getTime();
+                                const completedMs =
+                                    Date.now() - completedAt.getTime();
                                 timing = `completed ${(completedMs / 1000).toFixed(1)}s ago`;
                             } else {
                                 timing = `completed but completed_on is null`;

@@ -12,8 +12,13 @@
   >
     <!--  TODO: proper icon color -->
     <!-- :color="isHighlighted ? 'primary' : '#7D7A85'" -->
+    <q-spinner
+      v-if="isLoading"
+      :color="isHighlighted ? 'primary' : '#7D7A85'"
+      size="1rem"
+    />
     <ZKIcon
-      v-if="iconCode !== undefined"
+      v-else-if="iconCode !== undefined"
       :color="isHighlighted ? '#6b4eff' : '#7D7A85'"
       :name="iconCode"
       size="1rem"
@@ -31,6 +36,7 @@ defineProps<{
   iconCode?: string;
   isHighlighted: boolean;
   shouldUnderlineOnHighlight: boolean;
+  isLoading?: boolean;
 }>();
 </script>
 

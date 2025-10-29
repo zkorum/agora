@@ -10,7 +10,6 @@
     </div>
 
     <div class="rightSection">
-
       <div class="voteCountContainer">
         <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
         <span>{{ formatAmount(voteCount) }}</span>
@@ -21,7 +20,7 @@
         <span>{{ formatAmount(participantCount) }}</span>
       </div>
       <ZKButton
-        button-type="standardButton"
+        button-type="compactButton"
         @click.stop.prevent="$emit('share')"
       >
         <div class="shareButtonContentContainer">

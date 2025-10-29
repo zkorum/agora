@@ -13,7 +13,11 @@
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <div class="topBar">
+      <div v-if="isLoading" class="loadingContainer">
+        <q-spinner color="primary" size="3em" />
+      </div>
+
+      <div v-else class="topBar">
         <div class="usernameBar">
           <UserAvatar :user-identity="profileData.userName" :size="35" />
 
@@ -38,7 +42,7 @@
         </div>
       </div>
 
-      <div class="tabCluster">
+      <div v-if="!isLoading" class="tabCluster">
         <div v-for="tabItem in tabList" :key="tabItem.value">
           <ZKTab
             :text="tabItem.label"
@@ -49,7 +53,7 @@
         </div>
       </div>
 
-      <router-view />
+      <router-view v-if="!isLoading" />
     </q-pull-to-refresh>
   </DrawerLayout>
 </template>
@@ -105,17 +109,18 @@ const { profileData } = storeToRefs(useUserStore());
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const currentTab = ref(0);
+const isLoading = ref(true);
 
 const route = useRoute();
 
 applyCurrentTab();
 
-onMounted(async () => {
-  await initialize();
+onMounted(() => {
+  void initialize();
 });
 
-watch(isAuthInitialized, async () => {
-  await initialize();
+watch(isAuthInitialized, () => {
+  void initialize();
 });
 
 watch(route, () => {
@@ -124,7 +129,14 @@ watch(route, () => {
 
 async function initialize() {
   if (isAuthInitialized.value) {
-    await loadUserProfile();
+    try {
+      isLoading.value = true;
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    } finally {
+      isLoading.value = false;
+    }
   }
 }
 
@@ -209,5 +221,13 @@ async function selectedTab(routeName: RouteRecordName) {
   padding-bottom: 1rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 2rem;
 }
 </style>

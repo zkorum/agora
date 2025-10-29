@@ -103,10 +103,10 @@ function selectDisplayLanguage(
 }
 
 // Load user's language preferences on page mount
-onMounted(async () => {
-  // If authenticated, sync with backend in background
+onMounted(() => {
+  // If authenticated, sync with backend in background (non-blocking)
   if (authStore.isLoggedIn) {
-    await loadLanguagePreferencesFromBackend();
+    void loadLanguagePreferencesFromBackend();
   }
 });
 </script>
