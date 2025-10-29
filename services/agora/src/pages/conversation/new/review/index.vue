@@ -312,50 +312,49 @@ async function onSubmit() {
 
     isSubmitButtonLoading.value = true;
 
-    try {
-      const response = await createNewPost({
-        postTitle: conversationDraft.value.title,
-        postBody:
-          conversationDraft.value.content == ""
-            ? undefined
-            : conversationDraft.value.content,
-        pollingOptionList: conversationDraft.value.poll.enabled
-          ? conversationDraft.value.poll.options
-          : undefined,
-        postAsOrganizationName: conversationDraft.value.postAs.postAsOrganization
-          ? conversationDraft.value.postAs.organizationName
-          : "",
-        targetIsoConvertDateString: conversationDraft.value
-          .privateConversationSettings.hasScheduledConversion
-          ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-          : undefined,
-        isIndexed: !conversationDraft.value.isPrivate,
-        isLoginRequired: !conversationDraft.value.isPrivate
-          ? false
-          : conversationDraft.value.privateConversationSettings.requiresLogin,
-        seedOpinionList: conversationDraft.value.seedOpinions,
+    const response = await createNewPost({
+      postTitle: conversationDraft.value.title,
+      postBody:
+        conversationDraft.value.content == ""
+          ? undefined
+          : conversationDraft.value.content,
+      pollingOptionList: conversationDraft.value.poll.enabled
+        ? conversationDraft.value.poll.options
+        : undefined,
+      postAsOrganizationName: conversationDraft.value.postAs.postAsOrganization
+        ? conversationDraft.value.postAs.organizationName
+        : "",
+      targetIsoConvertDateString: conversationDraft.value
+        .privateConversationSettings.hasScheduledConversion
+        ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+        : undefined,
+      isIndexed: !conversationDraft.value.isPrivate,
+      isLoginRequired: !conversationDraft.value.isPrivate
+        ? false
+        : conversationDraft.value.privateConversationSettings.requiresLogin,
+      seedOpinionList: conversationDraft.value.seedOpinions,
+    });
+
+    if (response.status == "success") {
+      conversationDraft.value = createEmptyDraft();
+
+      await loadPostData();
+
+      // Set navigation context to indicate user came from conversation creation
+      navigationStore.setConversationCreationContext(true);
+
+      await router.replace({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.data.conversationSlugId },
       });
 
-      if (response.status == "success") {
-        conversationDraft.value = createEmptyDraft();
-
-        await loadPostData();
-
-        // Set navigation context to indicate user came from conversation creation
-        navigationStore.setConversationCreationContext(true);
-
-        await router.replace({
-          name: "/conversation/[postSlugId]",
-          params: { postSlugId: response.data.conversationSlugId },
-        });
-      } else {
-        handleAxiosErrorStatusCodes({
-          axiosErrorCode: response.code,
-          defaultMessage: t("errorCreatingConversation"),
-        });
-      }
-    } finally {
+      // Don't stop loading - let component unmount with loading state active
+    } else {
       isSubmitButtonLoading.value = false;
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: t("errorCreatingConversation"),
+      });
     }
   }
 }
