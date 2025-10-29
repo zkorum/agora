@@ -30,6 +30,9 @@ services:
       TWILIO_AUTH_TOKEN: "CHANGEME"
       TWILIO_SERVICE_SID: "CHANGEME"
       SERVER_DID_PROD: "did:web:agoracitizen.app"
+      GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
+    volumes:
+      - ./<name of service account>.json:/secrets/service-account.json:ro
     expose:
       - "8080"
     restart: unless-stopped
@@ -41,6 +44,9 @@ services:
       NODE_ENV: "production"
       POLIS_BASE_URL: "http://polis-server:8004"
       TOTAL_VCPUS: "2" # t3.medium = 2 vCPUs (adjust for your instance type)
+      GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
+    volumes:
+      - ./<name of service account>.json:/secrets/service-account.json:ro
     restart: unless-stopped
     logging:
       driver: awslogs

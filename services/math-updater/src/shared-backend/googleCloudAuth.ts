@@ -96,7 +96,8 @@ function parseServiceAccountJson(
  * @param googleCloudServiceAccountAwsSecretKey - AWS secret key containing service account JSON (optional)
  * @param awsSecretRegion - AWS region for Secrets Manager (required if using AWS Secrets Manager)
  * @param googleApplicationCredentialsPath - Path to service account JSON file (for local development)
- * @param googleCloudTranslationLocation - Translation API location (e.g., "global", "us-central1")
+ * @param googleCloudTranslationLocation - Translation API location (e.g., "global", "europe-west1")
+ * @param googleCloudTranslationEndpoint - API endpoint (e.g., "translate-eu.googleapis.com" for EU data residency)
  * @param log - Pino or Fastify logger instance
  * @returns GoogleCloudCredentials with initialized client and config
  * @throws Error if authentication fails or required parameters are missing
@@ -106,12 +107,14 @@ export async function initializeGoogleCloudCredentials({
     awsSecretRegion,
     googleApplicationCredentialsPath,
     googleCloudTranslationLocation,
+    googleCloudTranslationEndpoint,
     log,
 }: {
     googleCloudServiceAccountAwsSecretKey?: string;
     awsSecretRegion?: string;
     googleApplicationCredentialsPath?: string;
     googleCloudTranslationLocation: string;
+    googleCloudTranslationEndpoint?: string;
     log: pino.Logger | FastifyBaseLogger;
 }): Promise<GoogleCloudCredentials> {
     let serviceAccount: ServiceAccountCredentials;
@@ -165,10 +168,13 @@ export async function initializeGoogleCloudCredentials({
             client_email: serviceAccount.client_email,
             private_key: serviceAccount.private_key,
         },
+        ...(googleCloudTranslationEndpoint && {
+            apiEndpoint: googleCloudTranslationEndpoint,
+        }),
     });
 
     log.info(
-        `[Google Cloud Auth] Initialized Translation client for project: ${serviceAccount.project_id}`,
+        `[Google Cloud Auth] Initialized Translation client for project: ${serviceAccount.project_id}${googleCloudTranslationEndpoint ? ` with endpoint: ${googleCloudTranslationEndpoint}` : ""}`,
     );
 
     return {

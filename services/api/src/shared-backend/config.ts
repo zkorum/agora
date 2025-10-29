@@ -19,8 +19,12 @@ export const sharedConfigSchema = z.object({
     AWS_SECRET_REGION_READ: z.string().optional(),
     DB_HOST_READ: z.string().optional(),
     DB_PORT_READ: z.coerce.number().int().nonnegative().default(5433),
-    // Google Cloud Translation
-    GOOGLE_CLOUD_TRANSLATION_LOCATION: z.string().default("global"),
+    // Google Cloud Translation (defaults to EU for GDPR compliance)
+    GOOGLE_CLOUD_TRANSLATION_LOCATION: z.string().default("europe-west1"),
+    // API endpoint for Google Cloud Translation (defaults to EU endpoint for data residency)
+    GOOGLE_CLOUD_TRANSLATION_ENDPOINT: z
+        .string()
+        .default("translate-eu.googleapis.com"),
     // AWS Secret Manager key for Google Cloud service account JSON (production)
     // If set, this takes precedence over GOOGLE_APPLICATION_CREDENTIALS
     GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY: z.string().optional(),
