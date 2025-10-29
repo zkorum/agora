@@ -9,7 +9,7 @@ export default defineBoot(({ app, router }) => {
     // Setting this option to true will send default PII data to Sentry.
     // For example, automatic IP address collection on events
     // Note: users who want to maintain their privacy are encouraged to use Tor
-    sendDefaultPii: true,
+    sendDefaultPii: false,
     // Filter out default `Vue` integration
     // see https://docs.sentry.io/platforms/javascript/guides/vue/#configuration-for-late-defined-vue-apps
     // integrations: (integrations) =>
