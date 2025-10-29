@@ -91,6 +91,8 @@ async function main() {
                     config.GOOGLE_APPLICATION_CREDENTIALS,
                 googleCloudTranslationLocation:
                     config.GOOGLE_CLOUD_TRANSLATION_LOCATION,
+                googleCloudTranslationEndpoint:
+                    config.GOOGLE_CLOUD_TRANSLATION_ENDPOINT,
                 log,
             });
             log.info(
