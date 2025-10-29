@@ -14,9 +14,11 @@ import {
 import { conversationTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { eq } from "drizzle-orm";
+import type { VoteBuffer } from "./voteBuffer.js";
 
 interface LoadImportedPolisConversationProps {
     db: PostgresDatabase;
+    voteBuffer: VoteBuffer;
     polisUrl: string;
     polisUrlType: "report" | "conversation";
     importedPolisConversation: ImportPolisResults;
@@ -31,6 +33,7 @@ interface LoadImportedPolisConversationProps {
 
 export async function loadImportedPolisConversation({
     db,
+    voteBuffer,
     importedPolisConversation,
     polisUrl,
     polisUrlType,
@@ -110,6 +113,7 @@ export async function loadImportedPolisConversation({
     const { conversationSlugId, conversationId, conversationContentId } =
         await postService.createNewPost({
             db: db,
+            voteBuffer: voteBuffer,
             conversationTitle: trimmedTitle,
             conversationBody: conversationBody,
             pollingOptionList: null,

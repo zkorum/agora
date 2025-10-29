@@ -12,8 +12,11 @@ import {
     polisClusterTable,
     polisClusterUserTable,
     polisClusterOpinionTable,
-    conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
+import {
+    updateOpinionCount,
+    reconcileConversationCounters,
+} from "@/shared-backend/conversationCounters.js";
 import { generateClusterTranslationsOnDemand } from "./clusterTranslation.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import type {
@@ -53,6 +56,7 @@ import { getUserMutePreferences } from "./muteUser.js";
 import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
+import type { VoteBuffer } from "./voteBuffer.js";
 import {
     isSqlWhereMajority,
     isSqlOrderByMajority,
@@ -986,10 +990,13 @@ export async function fetchAnalysisByConversationSlugId({
     // Phase 2: Calling external APIs for conversationId
     // If translations are requested (non-English), trigger on-demand translation
     // generation for any missing translations in the background
-    if (displayLanguage !== "en" && polisMetadata.missingTranslations.size > 0) {
+    if (
+        displayLanguage !== "en" &&
+        polisMetadata.missingTranslations.size > 0
+    ) {
         if (googleCloudCredentials !== undefined) {
             log.info(
-                `[Phase 2] Calling Google Cloud Translation API for conversationSlugId=${conversationSlugId}, displayLanguage=${displayLanguage}, missingTranslationsCount=${polisMetadata.missingTranslations.size}`,
+                `[Phase 2] Calling Google Cloud Translation API for conversationSlugId=${conversationSlugId}, displayLanguage=${displayLanguage}, missingTranslationsCount=${String(polisMetadata.missingTranslations.size)}`,
             );
             // Fire and forget - don't block the response on translation generation
             // The translations will be available on the next request
@@ -1075,25 +1082,25 @@ async function getPostIdFromPostSlugId(
 
 interface PostNewOpinionProps {
     db: PostgresJsDatabase;
+    voteBuffer: VoteBuffer;
     commentBody: string;
     conversationSlugId: string;
     didWrite: string;
     proof: string;
     userAgent: string;
-    voteNotifMilestones: number[];
     now: Date;
     isSeed: boolean;
 }
 
 export async function postNewOpinion({
     db,
+    voteBuffer,
     commentBody,
     conversationSlugId,
     didWrite,
     proof,
     userAgent,
     now,
-    voteNotifMilestones,
     isSeed,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     const { getPostMetadataFromSlugId } = useCommonPost();
@@ -1221,34 +1228,28 @@ export async function postNewOpinion({
                 });
             }
         }
-        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
-        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
-        await tx
-            .insert(conversationUpdateQueueTable)
-            .values({
-                conversationId: conversationId,
-                requestedAt: now,
-                processedAt: null,
-            })
-            .onConflictDoUpdate({
-                target: conversationUpdateQueueTable.conversationId,
-                set: {
-                    requestedAt: now,
-                    processedAt: null,
-                },
-            });
+
+        // Update conversation opinionCount (+1 for new opinion)
+        // Note: voteCount and participantCount will be updated by vote buffer
+        // when the automatic vote is processed
+        await updateOpinionCount({
+            db: tx,
+            conversationId,
+            delta: 1,
+            doUpdateLastReactedAt: true,
+        });
     });
 
     // Auto-vote outside transaction to reduce lock duration
     if (!isSeed) {
         await castVoteForOpinionSlugId({
             db: db,
+            voteBuffer: voteBuffer,
             opinionSlugId: opinionSlugId,
             didWrite: didWrite,
             proof: proof,
             votingAction: "agree",
             userAgent: userAgent,
-            voteNotifMilestones,
             now: now,
         });
     }
@@ -1261,7 +1262,6 @@ export async function postNewOpinion({
 
 interface DeleteCommentBySlugIdProps {
     db: PostgresJsDatabase;
-    now: Date;
     opinionSlugId: string;
     userId: string;
     proof: string;
@@ -1270,7 +1270,6 @@ interface DeleteCommentBySlugIdProps {
 
 export async function deleteOpinionBySlugId({
     db,
-    now,
     opinionSlugId,
     userId,
     proof,
@@ -1320,22 +1319,10 @@ export async function deleteOpinionBySlugId({
             proofVersion: 1,
         });
 
-        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
-        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
-        await tx
-            .insert(conversationUpdateQueueTable)
-            .values({
-                conversationId: conversationId,
-                requestedAt: now,
-                processedAt: null,
-            })
-            .onConflictDoUpdate({
-                target: conversationUpdateQueueTable.conversationId,
-                set: {
-                    requestedAt: now,
-                    processedAt: null,
-                },
-            });
+        // Reconcile all counters (automatically enqueues math update)
+        // Deleting opinion affects opinionCount, voteCount, and participantCount
+        // (since all votes on this opinion become invalid)
+        await reconcileConversationCounters({ db: tx, conversationId });
 
         // Decrement user's total opinion count
         await tx

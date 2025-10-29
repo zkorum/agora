@@ -24,9 +24,11 @@ import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processHtmlBody } from "@/shared-app-api/html.js";
+import type { VoteBuffer } from "./voteBuffer.js";
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
+    voteBuffer: VoteBuffer;
     conversationTitle: string;
     conversationBody: string | null;
     pollingOptionList: string[] | null;
@@ -47,6 +49,7 @@ interface CreateNewPostProps {
 
 interface ImportPostProps {
     db: PostgresDatabase;
+    voteBuffer: VoteBuffer;
     authorId: string;
     didWrite: string;
     proof: string;
@@ -61,6 +64,7 @@ interface ImportPostProps {
 
 export async function importConversation({
     db,
+    voteBuffer,
     authorId,
     didWrite,
     proof,
@@ -101,6 +105,7 @@ export async function importConversation({
     const { conversationSlugId } =
         await importService.loadImportedPolisConversation({
             db,
+            voteBuffer,
             importedPolisConversation,
             polisUrlType,
             polisUrl,
@@ -119,6 +124,7 @@ export async function importConversation({
 
 export async function createNewPost({
     db,
+    voteBuffer,
     conversationTitle,
     conversationBody,
     authorId,
@@ -268,12 +274,12 @@ export async function createNewPost({
         for (const seedOpinionText of seedOpinionList) {
             await postNewOpinion({
                 db,
+                voteBuffer,
                 commentBody: seedOpinionText,
                 conversationSlugId,
                 didWrite,
                 proof,
                 userAgent: "Seed Opinion Creation",
-                voteNotifMilestones: config.VOTE_NOTIF_MILESTONES,
                 now,
                 isSeed: true,
             });

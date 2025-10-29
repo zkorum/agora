@@ -83,7 +83,7 @@ import {
 } from "./CommentComposer.i18n";
 
 const emit = defineEmits<{
-  (e: "submittedComment", conversationSlugId: string): void;
+  (e: "submittedComment", conversationSlugId: string): Promise<void>;
 }>();
 
 const props = defineProps<{
@@ -215,17 +215,24 @@ async function submitPostClicked() {
         props.postSlugId
       );
 
-      isSubmissionLoading.value = false;
-
       if (response.success && response.opinionSlugId) {
         // Successfully created comment
-        emit("submittedComment", response.opinionSlugId);
+        // Note: The backend automatically votes "agree" when creating an opinion
+        // Wait 1.3 seconds for the vote buffer to flush (buffer flushes every 1 second)
+        // This ensures the backend has processed the auto-agree vote before we refresh
+        await new Promise((resolve) => setTimeout(resolve, 1300));
+
+        // Emit to parent to refresh and highlight the opinion
+        await emit("submittedComment", response.opinionSlugId);
+
+        isSubmissionLoading.value = false;
         innerFocus.value = false;
         opinionBody.value = "";
         characterCount.value = 0;
         unlockRoute(); // Clear the draft since we successfully submitted
         deleteOpinionDraft(props.postSlugId);
       } else {
+        isSubmissionLoading.value = false;
         // Business logic failure (e.g., conversation_locked)
         if (response.reason === "conversation_locked") {
           showNotifyMessage(t("conversationLockedError"));

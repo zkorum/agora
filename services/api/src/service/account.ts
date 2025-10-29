@@ -1,5 +1,5 @@
 import { log } from "@/app.js";
-import { conversationTable, userTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
+import { conversationTable, userTable } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { getAllUserComments, getUserPosts, getUserVotes } from "./user.js";
@@ -11,6 +11,7 @@ import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import { castVoteForOpinionSlugIdFromUserId } from "./voting.js";
 import { useCommonPost } from "./common.js";
+import type { VoteBuffer } from "./voteBuffer.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -607,22 +608,22 @@ export async function submitUsernameChange({
 
 interface DeleteAccountProps {
     db: PostgresJsDatabase;
+    voteBuffer: VoteBuffer;
     now: Date;
     proof: string;
     didWrite: string;
     userId: string;
     baseImageServiceUrl: string;
-    voteNotifMilestones: number[];
 }
 
 export async function deleteUserAccount({
     db,
+    voteBuffer,
     now,
     userId,
     proof,
     didWrite,
     baseImageServiceUrl,
-    voteNotifMilestones,
 }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
     // 2. proof should be recorded once only
@@ -630,10 +631,6 @@ export async function deleteUserAccount({
     // 3. old proofs should be set to be deleted as well, except the deletion proof and the proofs binding the devices together
     // 4. conversation deletion should not necessarily delete other people's opinion
     // 5. opinion deletion should not necessarily delete other people's replies
-    const affectedConversations: {
-        conversationId: number;
-        conversationSlugId: string;
-    }[] = [];
     await db.transaction(async (tx) => {
         const updatedUserTableResponse = await tx
             .update(userTable)
@@ -660,13 +657,13 @@ export async function deleteUserAccount({
         for (const vote of userVotes) {
             await castVoteForOpinionSlugIdFromUserId({
                 db: tx,
+                voteBuffer,
                 now: now,
                 opinionSlugId: vote.opinionSlugId,
                 didWrite,
                 proof,
                 userId,
                 votingAction: "cancel",
-                voteNotifMilestones,
             });
         }
 
@@ -679,7 +676,6 @@ export async function deleteUserAccount({
         for (const comment of userComments) {
             await deleteOpinionBySlugId({
                 db: tx,
-                now: now,
                 proof: proof,
                 opinionSlugId: comment.opinionItem.opinionSlugId,
                 didWrite: didWrite,
@@ -703,52 +699,9 @@ export async function deleteUserAccount({
             });
         }
 
-        // calculate affectedConversations
-        const affectedConversationIds: number[] = [];
-        for (const comment of userComments) {
-            const conversationId =
-                comment.conversationData.metadata.conversationId;
-            const conversationSlugId =
-                comment.conversationData.metadata.conversationSlugId;
-            if (!affectedConversationIds.includes(conversationId)) {
-                affectedConversationIds.push(conversationId);
-                affectedConversations.push({
-                    conversationId,
-                    conversationSlugId,
-                });
-            }
-        }
-        for (const userVote of userVotes) {
-            const conversationId = userVote.conversationId;
-            const conversationSlugId = userVote.conversationSlugId;
-            if (!affectedConversationIds.includes(conversationId)) {
-                affectedConversationIds.push(conversationId);
-                affectedConversations.push({
-                    conversationId,
-                    conversationSlugId,
-                });
-            }
-        }
-
         await logout(tx, didWrite);
     });
 
-    // Trigger math update for affected conversations
-    // The math-updater will reconcile counts automatically
-    for (const affectedConversation of affectedConversations) {
-        await db
-            .insert(conversationUpdateQueueTable)
-            .values({
-                conversationId: affectedConversation.conversationId,
-                requestedAt: nowZeroMs(),
-                processedAt: null,
-            })
-            .onConflictDoUpdate({
-                target: conversationUpdateQueueTable.conversationId,
-                set: {
-                    requestedAt: nowZeroMs(),
-                    processedAt: null,
-                },
-            });
-    }
+    // Note: Math updates are already enqueued by deleteOpinionBySlugId and deletePostBySlugId
+    // No need to manually enqueue here
 }

@@ -187,9 +187,9 @@ function decrementOpinionCount(): void {
 
 async function submittedComment(opinionSlugId: string): Promise<void> {
   opinionCountOffset.value += 1;
-  // Note: The backend auto-agrees on opinion submission, but with the new local state
-  // management approach, each CommentActionBar will handle its own vote state independently
-  // when the user votes on their newly created opinion.
+
+  // The 1.3s wait for vote buffer flush happens in CommentComposer
+  // before this function is called, so the vote is already in the database
 
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(opinionSlugId);

@@ -91,6 +91,14 @@ export function useTargetOpinion(
 
     // Fetch the target opinion again
     await fetchTargetOpinion(opinionSlugId);
+
+    // Scroll to the highlighted opinion with a delay to ensure DOM has updated
+    setTimeout(() => {
+      const element = document.getElementById(`comment-${opinionSlugId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 300);
   }
 
   // Banner management functions

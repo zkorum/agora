@@ -5,20 +5,17 @@
 import { log } from "@/app.js";
 import { config } from "@/config.js";
 import {
-    conversationTable,
-    conversationUpdateQueueTable,
-} from "@/shared-backend/schema.js";
-import {
-    getPolisVotes,
     getAndUpdatePolisMath,
+    getPolisVotes,
 } from "@/services/polisMathUpdater.js";
-import { recalculateAndUpdateConversationCounters } from "@/conversationCounters.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { eq, and, sql, or, isNull, gt } from "drizzle-orm";
-import type PgBoss from "pg-boss";
-import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { AxiosInstance } from "axios";
+import { conversationUpdateQueueTable } from "@/shared-backend/schema.js";
+import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
 import { nowZeroMs } from "@/shared/util.js";
+import { AxiosInstance } from "axios";
+import { and, eq } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type PgBoss from "pg-boss";
 
 export interface UpdateConversationMathData {
     conversationId: number;
@@ -106,7 +103,7 @@ export async function updateConversationMathHandler(
     );
 
     try {
-        // STEP 0: Lock by setting lastMathUpdateAt immediately
+        // Lock by setting lastMathUpdateAt immediately
         // This makes requestedAt <= lastMathUpdateAt, preventing scanner from re-enqueueing
         // Since lastMathUpdateAt is only touched by math-updater (not API), this prevents race conditions
         const now = nowZeroMs();
@@ -123,20 +120,16 @@ export async function updateConversationMathHandler(
             `[Math Updater] Locked queue entry for conversation ${conversationSlugId} by setting lastMathUpdateAt`,
         );
 
-        // STEP 1: Recalculate and fix counters before processing math
-        // This ensures counters are accurate and eliminates the need for expensive
-        // count queries in the API endpoints (opinion creation, vote casting)
+        // Reconcile conversation counters (safety net)
+        // This ensures opinionCount, voteCount, and participantCount are accurate
+        // before calculating math, in case of any drift from real-time updates
+        await reconcileConversationCounters({ db, conversationId });
+
         log.info(
-            `[Math Updater] Recalculating counters for conversation ${conversationSlugId}`,
-        );
-        await recalculateAndUpdateConversationCounters(
-            db,
-            conversationId,
-            conversationSlugId,
-            (message, data) => log.info(data, message),
+            `[Math Updater] Reconciled conversation counters for conversation ${conversationSlugId}`,
         );
 
-        // STEP 2: Get votes for the conversation
+        // Get votes for the conversation
         const votes = await getPolisVotes({
             db,
             conversationId,

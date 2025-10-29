@@ -3,8 +3,8 @@ import {
     opinionModerationTable,
     conversationModerationTable,
     conversationTable,
-    conversationUpdateQueueTable,
 } from "@/shared-backend/schema.js";
+import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import type {
@@ -14,7 +14,7 @@ import type {
     ConversationModerationProperties,
     ModerationReason,
 } from "@/shared/types/zod.js";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 
@@ -88,11 +88,10 @@ export async function moderateByCommentSlugId({
     moderationAction,
 }: ModerateByCommentSlugIdProps) {
     const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
-    const { opinionId, conversationSlugId } =
-        await getOpinionMetadataFromOpinionSlugId({
-            db: db,
-            opinionSlugId: commentSlugId,
-        });
+    const { opinionId } = await getOpinionMetadataFromOpinionSlugId({
+        db: db,
+        opinionSlugId: commentSlugId,
+    });
 
     const moderationStatus = await fetchModerationReportByCommentSlugId({
         db: db,
@@ -117,7 +116,7 @@ export async function moderateByCommentSlugId({
                 })
                 .where(eq(opinionModerationTable.opinionId, opinionId));
         } else {
-            // New moderation - insert record and decrement count
+            // New moderation - insert record
             await tx.insert(opinionModerationTable).values({
                 opinionId: opinionId,
                 authorId: userId,
@@ -126,23 +125,9 @@ export async function moderateByCommentSlugId({
                 moderationExplanation: moderationExplanation,
             });
 
-            // Enqueue math update (eliminates conversation table UPDATE and row lock!)
-            // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
-            const now = nowZeroMs();
-            await tx
-                .insert(conversationUpdateQueueTable)
-                .values({
-                    conversationId: conversationId,
-                    requestedAt: now,
-                    processedAt: null,
-                })
-                .onConflictDoUpdate({
-                    target: conversationUpdateQueueTable.conversationId,
-                    set: {
-                        requestedAt: now,
-                        processedAt: null,
-                    },
-                });
+            // Reconcile counters (automatically enqueues math update)
+            // Moderation affects opinionCount, voteCount, and participantCount
+            await reconcileConversationCounters({ db: tx, conversationId });
         }
     });
 }
@@ -294,23 +279,9 @@ export async function withdrawModerationReportByCommentSlugId({
             );
         }
 
-        // Enqueue math update (eliminates conversation table UPDATE and row lock!)
-        // Math-updater will recalculate counters and update lastReactedAt (activity timestamp)
-        const now = nowZeroMs();
-        await tx
-            .insert(conversationUpdateQueueTable)
-            .values({
-                conversationId: conversationId,
-                requestedAt: now,
-                processedAt: null,
-            })
-            .onConflictDoUpdate({
-                target: conversationUpdateQueueTable.conversationId,
-                set: {
-                    requestedAt: now,
-                    processedAt: null,
-                },
-            });
+        // Reconcile counters (automatically enqueues math update)
+        // Removing moderation affects opinionCount, voteCount, and participantCount
+        await reconcileConversationCounters({ db: tx, conversationId });
     });
 }
 
