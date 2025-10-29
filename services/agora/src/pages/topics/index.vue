@@ -14,7 +14,11 @@
       </HomeMenuBar>
     </template>
 
-    <div class="topicContainer">
+    <div v-if="isLoading" class="loadingContainer">
+      <q-spinner color="primary" size="3em" />
+    </div>
+
+    <div v-else class="topicContainer">
       <div v-for="topic in fullTopicList" :key="topic.code" class="topicItem">
         <PrimeChip
           :label="topic.name"
@@ -68,10 +72,22 @@ const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const showLoginDialog = ref(false);
+const isLoading = ref(true);
 
-onMounted(async () => {
-  await loadTopicsData();
+onMounted(() => {
+  void loadInitialData();
 });
+
+async function loadInitialData() {
+  try {
+    isLoading.value = true;
+    await loadTopicsData();
+  } catch (error) {
+    console.error('Failed to load topics:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
 
 async function clickedFollowButton(
   topicCode: string,
@@ -120,5 +136,13 @@ async function clickedFollowButton(
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 2rem;
 }
 </style>

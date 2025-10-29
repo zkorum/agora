@@ -3,9 +3,10 @@
     <div class="container">
       <ZKTab
         icon-code="meteor-icons:comment"
-        :text="String(opinionCount)"
+        :text="formatAmount(opinionCount)"
         :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
+        :is-loading="isLoading && model === 'comment'"
         @click="clickedTab('comment')"
       />
       <ZKTab
@@ -14,13 +15,9 @@
         :text="t('analysis')"
         :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
+        :is-loading="isLoading && model === 'analysis'"
         @click="clickedTab('analysis')"
       />
-
-      <!-- Loading indicator -->
-      <div v-if="isLoading" class="loadingIndicator">
-        <q-spinner color="primary" size="1.2rem" />
-      </div>
     </div>
   </div>
 </template>
@@ -32,6 +29,7 @@ import {
   interactionTabTranslations,
   type InteractionTabTranslations,
 } from "./InteractionTab.i18n";
+import { formatAmount } from "src/utils/common";
 
 const model = defineModel<"comment" | "analysis">({ required: true });
 const props = defineProps<{
@@ -57,11 +55,5 @@ function clickedTab(tabKey: "comment" | "analysis") {
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-}
-
-.loadingIndicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 </style>

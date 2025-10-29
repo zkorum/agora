@@ -25,43 +25,43 @@ import pLimit from "p-limit";
  * pg-boss doesn't provide a direct API to clear all jobs in a queue,
  * so we use raw SQL through Drizzle
  */
-async function deleteOldJobs(db: PostgresJsDatabase): Promise<void> {
-    try {
-        // Delete ALL scan-conversations jobs regardless of singleton_key
-        // This catches jobs with the singleton key, NULL, or any other value
-        const scanResult = await db.execute(
-            sql`DELETE FROM pgboss.job WHERE name = 'scan-conversations'`,
-        );
-
-        log.info(
-            `[Math Updater] Deleted ${scanResult.count} old scan-conversations job(s)`,
-        );
-
-        // Delete ALL update-conversation-math jobs to clear stuck singletonKey jobs
-        const updateResult = await db.execute(
-            sql`DELETE FROM pgboss.job WHERE name = 'update-conversation-math'`,
-        );
-
-        log.info(
-            `[Math Updater] Deleted ${updateResult.count} old update-conversation-math job(s)`,
-        );
-
-        // Clear singleton tracking for update-conversation-math jobs
-        // This ensures singletonKey can be reused immediately
-        const singletonResult = await db.execute(
-            sql`DELETE FROM pgboss.schedule WHERE name LIKE 'update-math-%'`,
-        );
-
-        log.info(
-            `[Math Updater] Cleared ${singletonResult.count} singleton schedule entries`,
-        );
-    } catch (error) {
-        log.warn(
-            { error },
-            "[Math Updater] Failed to delete old jobs, continuing anyway",
-        );
-    }
-}
+// async function deleteOldJobs(db: PostgresJsDatabase): Promise<void> {
+//     try {
+//         // Delete ALL scan-conversations jobs regardless of singleton_key
+//         // This catches jobs with the singleton key, NULL, or any other value
+//         const scanResult = await db.execute(
+//             sql`DELETE FROM pgboss.job WHERE name = 'scan-conversations'`,
+//         );
+//
+//         log.info(
+//             `[Math Updater] Deleted ${scanResult.count} old scan-conversations job(s)`,
+//         );
+//
+//         // Delete ALL update-conversation-math jobs to clear stuck singletonKey jobs
+//         const updateResult = await db.execute(
+//             sql`DELETE FROM pgboss.job WHERE name = 'update-conversation-math'`,
+//         );
+//
+//         log.info(
+//             `[Math Updater] Deleted ${updateResult.count} old update-conversation-math job(s)`,
+//         );
+//
+//         // Clear singleton tracking for update-conversation-math jobs
+//         // This ensures singletonKey can be reused immediately
+//         const singletonResult = await db.execute(
+//             sql`DELETE FROM pgboss.schedule WHERE name LIKE 'update-math-%'`,
+//         );
+//
+//         log.info(
+//             `[Math Updater] Cleared ${singletonResult.count} singleton schedule entries`,
+//         );
+//     } catch (error) {
+//         log.warn(
+//             { error },
+//             "[Math Updater] Failed to delete old jobs, continuing anyway",
+//         );
+//     }
+// }
 
 async function main() {
     log.info(
@@ -115,9 +115,6 @@ async function main() {
     const pgBossCommonConfig = {
         application_name: "agora-math-updater",
         max: config.MATH_UPDATER_BATCH_SIZE + 5, // Batch size + overhead for pg-boss operations
-        // NOTE: If migrating from v10 to v11 fails, drop the pgboss schema:
-        // DROP SCHEMA IF EXISTS pgboss CASCADE;
-        // Then restart with migrate: true to create fresh v11 schema
     };
 
     let pgBossConfig;
@@ -182,20 +179,20 @@ async function main() {
     log.info("[Math Updater] pg-boss started");
 
     // Clean up any old/stale jobs before starting new loop
-    await deleteOldJobs(db);
+    // await deleteOldJobs(db);
 
     // Delete and recreate update-conversation-math queue with proper policy
     // Policy cannot be changed once set, so we delete and recreate
-    try {
-        await boss.deleteQueue("update-conversation-math");
-        log.info(
-            "[Math Updater] Deleted existing update-conversation-math queue",
-        );
-    } catch (error) {
-        log.info(
-            "[Math Updater] No existing update-conversation-math queue to delete",
-        );
-    }
+    // try {
+    //     await boss.deleteQueue("update-conversation-math");
+    //     log.info(
+    //         "[Math Updater] Deleted existing update-conversation-math queue",
+    //     );
+    // } catch (error) {
+    //     log.info(
+    //         "[Math Updater] No existing update-conversation-math queue to delete",
+    //     );
+    // }
 
     // Create queues with proper policies
     // 'singleton' policy: only allows 1 job per singletonKey (created OR active)

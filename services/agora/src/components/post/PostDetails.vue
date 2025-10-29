@@ -94,6 +94,8 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "src/stores/user";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -115,9 +117,12 @@ const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
 
+const { profileData } = storeToRefs(useUserStore());
+
 // Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode,
 });
 
@@ -142,7 +147,7 @@ const commentsModeratedQuery = useCommentsQuery({
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  enabled: !props.compactMode,
+  enabled: !props.compactMode && profileData.value.isModerator,
 });
 
 const isPostLocked = computed((): boolean => {

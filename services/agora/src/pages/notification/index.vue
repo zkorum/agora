@@ -17,8 +17,12 @@
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
+      <div v-if="isLoading" class="loadingContainer">
+        <q-spinner color="primary" size="3em" />
+      </div>
+
       <q-infinite-scroll
-        v-if="isAuthInitialized"
+        v-else-if="isAuthInitialized"
         :offset="2000"
         :disable="!hasMore"
         @load="onLoad"
@@ -111,6 +115,7 @@ const { loadNotificationData } = useNotificationStore();
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
 const hasMore = ref(true);
+const isLoading = ref(true);
 
 const router = useRouter();
 
@@ -118,10 +123,21 @@ const { t } = useComponentI18n<NotificationTranslations>(
   notificationTranslations
 );
 
-onMounted(async () => {
-  await markAllNotificationsAsRead();
-  await loadNotificationData(false);
+onMounted(() => {
+  void loadInitialData();
 });
+
+async function loadInitialData() {
+  try {
+    isLoading.value = true;
+    await markAllNotificationsAsRead();
+    await loadNotificationData(false);
+  } catch (error) {
+    console.error('Failed to load notifications:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
 
 async function onLoad(index: number, done: () => void) {
   hasMore.value = await loadNotificationData(true);
@@ -222,5 +238,13 @@ async function redirectPage(routeTarget: RouteTarget) {
 
 .titleStyle {
   color: #0a0714;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 2rem;
 }
 </style>

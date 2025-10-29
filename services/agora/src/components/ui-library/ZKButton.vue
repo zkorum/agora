@@ -8,6 +8,7 @@
         extraButtonPadding: buttonType == 'largeButton',
         lessButtonPadding: buttonType == 'standardButton',
         iconButtonPadding: buttonType == 'icon',
+        compactButtonPadding: buttonType == 'compactButton',
       }"
     >
       <slot />
@@ -19,7 +20,7 @@
 import { type QBtnProps } from "quasar";
 
 type ZKBtnProps = Partial<QBtnProps> & {
-  buttonType: "icon" | "standardButton" | "largeButton";
+  buttonType: "icon" | "standardButton" | "largeButton" | "compactButton";
 };
 
 const props = defineProps<ZKBtnProps>();
@@ -40,6 +41,20 @@ const props = defineProps<ZKBtnProps>();
   padding-right: 0.8rem;
   padding-top: 0.6rem;
   padding-bottom: 0.6rem;
+}
+
+.compactButtonPadding {
+  border-radius: 16px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+
+  // Add horizontal padding on tablet and up
+  @media (min-width: 600px) {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
 }
 
 .extraButtonPadding {
