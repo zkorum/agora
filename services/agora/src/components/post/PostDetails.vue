@@ -83,7 +83,9 @@ import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import { ref, computed, watch, onMounted } from "vue";
-import { useWebShare } from "src/utils/share/WebShare";
+// import { useWebShare } from "src/utils/share/WebShare";
+import { useQuasar } from "quasar";
+import ShareDialog from "./ShareDialog.vue";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -108,7 +110,8 @@ const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
-const webShare = useWebShare();
+// const webShare = useWebShare();
+const $q = useQuasar();
 const { getConversationUrl } = useConversationUrl();
 const { invalidateAnalysis, forceRefreshAnalysis } =
   useInvalidateCommentQueries();
@@ -200,14 +203,28 @@ async function submittedComment(opinionSlugId: string): Promise<void> {
   forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
 }
 
-async function shareClicked(): Promise<void> {
+function shareClicked(): void {
   const sharePostUrl = getConversationUrl(
     props.conversationData.metadata.conversationSlugId
   );
+  const shareTitle = "Agora - " + props.conversationData.payload.title;
+
+  // Always open the QR code dialog
+  $q.dialog({
+    component: ShareDialog,
+    componentProps: {
+      url: sharePostUrl,
+      title: shareTitle,
+    },
+  });
+
+  /*
+  // Original Web Share logic is kept here, commented out.
   await webShare.share(
-    "Agora - " + props.conversationData.payload.title,
+    shareTitle,
     sharePostUrl
   );
+  */
 }
 
 onMounted(() => {
