@@ -110,6 +110,11 @@ import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useNotify } from "src/utils/ui/notify";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  postDetailsTranslations,
+  type PostDetailsTranslations,
+} from "./PostDetails.i18n";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -129,6 +134,7 @@ const { invalidateAnalysis, forceRefreshAnalysis } =
   useInvalidateCommentQueries();
 const shareActions = useShareActions();
 const notify = useNotify();
+const { t } = useComponentI18n<PostDetailsTranslations>(postDetailsTranslations);
 
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
@@ -234,7 +240,7 @@ function shareClicked(): void {
     targetAuthor: props.conversationData.metadata.authorUsername,
     copyLinkCallback: async () => {
       await copyToClipboard(sharePostUrl);
-      notify.showNotifyMessage("Copied link to clipboard");
+      notify.showNotifyMessage(t("copiedToClipboard"));
     },
     openQrCodeCallback: () => {
       $q.dialog({
