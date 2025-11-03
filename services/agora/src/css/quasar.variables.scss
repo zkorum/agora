@@ -87,6 +87,8 @@ $feed-flex-gap: 0.5rem;
 }
 
 $gradient-hero: linear-gradient(#6b4eff, #4f92f6);
+$gradient-hover: linear-gradient(#836bff, #5c9dff);
+$gradient-pressed: linear-gradient(#5c43dd, #4582dd);
 $container-padding: 1.5rem;
 
 // Import hover effects styles to make mixins available globally
