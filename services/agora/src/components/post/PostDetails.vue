@@ -73,6 +73,14 @@
         "
       />
     </FloatingBottomContainer>
+
+    <!-- Share Actions Dialog -->
+    <ZKActionDialog
+      v-model="shareActions.dialogState.value.isVisible"
+      :actions="shareActions.dialogState.value.actions"
+      @action-selected="handleShareActionSelected"
+      @dialog-closed="shareActions.closeDialog"
+    />
   </div>
 </template>
 
@@ -83,12 +91,14 @@ import PostActionBar from "./interactionBar/PostActionBar.vue";
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import { ref, computed, watch, onMounted } from "vue";
-// import { useWebShare } from "src/utils/share/WebShare";
-import { useQuasar } from "quasar";
+import { useWebShare } from "src/utils/share/WebShare";
+import { useQuasar, copyToClipboard } from "quasar";
 import ShareDialog from "./ShareDialog.vue";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
+import ZKActionDialog from "../ui-library/ZKActionDialog.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ContentAction } from "src/utils/actions/core/types";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 import {
   useAnalysisQuery,
@@ -98,6 +108,8 @@ import {
 } from "src/utils/api/comment/useCommentQueries";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "src/stores/user";
+import { useShareActions } from "src/composables/share/useShareActions";
+import { useNotify } from "src/utils/ui/notify";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -110,11 +122,13 @@ const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
-// const webShare = useWebShare();
+const webShare = useWebShare();
 const $q = useQuasar();
 const { getConversationUrl } = useConversationUrl();
 const { invalidateAnalysis, forceRefreshAnalysis } =
   useInvalidateCommentQueries();
+const shareActions = useShareActions();
+const notify = useNotify();
 
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
@@ -209,22 +223,37 @@ function shareClicked(): void {
   );
   const shareTitle = "Agora - " + props.conversationData.payload.title;
 
-  // Always open the QR code dialog
-  $q.dialog({
-    component: ShareDialog,
-    componentProps: {
-      url: sharePostUrl,
-      title: shareTitle,
-    },
-  });
+  // Check if Web Share API is available
+  const isWebShareAvailable =
+    typeof navigator !== "undefined" && navigator.share !== undefined;
 
-  /*
-  // Original Web Share logic is kept here, commented out.
-  await webShare.share(
-    shareTitle,
-    sharePostUrl
-  );
-  */
+  // Show share actions menu
+  shareActions.showShareActions({
+    targetType: "post",
+    targetId: props.conversationData.metadata.conversationSlugId,
+    targetAuthor: props.conversationData.metadata.authorUsername,
+    copyLinkCallback: async () => {
+      await copyToClipboard(sharePostUrl);
+      notify.showNotifyMessage("Copied link to clipboard");
+    },
+    openQrCodeCallback: () => {
+      $q.dialog({
+        component: ShareDialog,
+        componentProps: {
+          url: sharePostUrl,
+          title: shareTitle,
+        },
+      });
+    },
+    shareViaCallback: async () => {
+      await webShare.share(shareTitle, sharePostUrl);
+    },
+    isWebShareAvailable,
+  });
+}
+
+async function handleShareActionSelected(action: ContentAction): Promise<void> {
+  await shareActions.executeAction(action);
 }
 
 onMounted(() => {

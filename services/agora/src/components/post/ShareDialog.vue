@@ -1,38 +1,39 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide">
-    <q-card class="share-dialog-card">
-      <q-btn
-        icon="close"
-        flat
-        round
-        dense
-        class="close-button"
-        @click="onDialogCancel"
-      />
+    <div class="dialog-container">
+      <div class="dialog-header">
+        <ZKButton
+          button-type="icon"
+          icon="mdi-close"
+          size="1rem"
+          @click="onDialogCancel"
+        />
+      </div>
 
       <div class="dialog-content">
         <div class="qr-code-container">
           <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" />
         </div>
 
-        <q-btn
-          no-caps
-          class="copy-button"
-          @click="copyUrl"
-        >
-          <div class="flex items-center no-wrap">
-            <div>Copy link to conversation</div>
-          </div>
-        </q-btn>
+        <ZKButton button-type="largeButton" class="copy-link-button" @click="copyUrl">
+          {{ t("copyLink") }}
+        </ZKButton>
       </div>
-    </q-card>
+    </div>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent, useQuasar, copyToClipboard } from "quasar";
+import { useDialogPluginComponent, copyToClipboard } from "quasar";
 import QRCode from "qrcode";
 import { ref, onMounted } from "vue";
+import { useNotify } from "src/utils/ui/notify";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import {
+  shareDialogTranslations,
+  type ShareDialogTranslations,
+} from "./ShareDialog.i18n";
 
 const props = defineProps<{
   url: string;
@@ -42,7 +43,10 @@ const props = defineProps<{
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
-const $q = useQuasar();
+const { showNotifyMessage } = useNotify();
+const { t } = useComponentI18n<ShareDialogTranslations>(
+  shareDialogTranslations
+);
 
 const qrCodeDataUrl = ref("");
 
@@ -61,60 +65,46 @@ onMounted(async () => {
   }
 });
 
-function copyUrl() {
-  copyToClipboard(props.url)
-    .then(() => {
-      $q.notify({
-        message: "Copied to clipboard!",
-        color: "positive",
-        position: "top",
-        icon: "check",
-      });
-    })
-    .catch(() => {
-      $q.notify({
-        message: "Could not copy to clipboard.",
-        color: "negative",
-        position: "top",
-        icon: "warning",
-      });
-    });
+async function copyUrl(): Promise<void> {
+  try {
+    await copyToClipboard(props.url);
+    showNotifyMessage(t("copiedToClipboard"));
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+    showNotifyMessage(t("couldNotCopy"));
+  }
 }
 </script>
 
 <style scoped lang="scss">
-.share-dialog-card {
-  width: 428px;
-  height: 450px;
-  border-radius: 32px;
-  background: linear-gradient(114.81deg, #f1eeff 46.45%, #e8f1ff 100.1%);
-  padding: 24px;
-  position: relative;
+.dialog-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  background: linear-gradient(114.81deg, #f1eeff 46.45%, #e8f1ff 100.1%);
+  border-radius: 25px;
+  width: min(100vw, 428px);
+  max-height: 80vh;
+  overflow: hidden;
 }
 
-.close-button {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background-color: rgba(0, 0, 0, 0.05);
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1.5rem 1.5rem 0 1.5rem;
 }
 
 .dialog-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  width: 100%;
-  flex-grow: 1; /* Allow container to grow */
-  justify-content: center; /* Center content vertically */
+  gap: 1.5rem;
+  padding: 1.5rem;
+  padding-top: 1rem;
+  overflow-y: auto;
+  flex: 1;
+  justify-content: center;
 }
-
 
 .qr-code-container {
   width: 218px;
@@ -124,15 +114,18 @@ function copyUrl() {
   justify-content: center;
 }
 
-.copy-button {
-  width: 241px;
+.copy-link-button :deep(.q-btn) {
+  width: 227px;
   height: 48px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #6b4eff 30.96%, #4f92f6 99.99%);
+  background: $gradient-hero;
   color: white;
-  font-family: "Albert Sans", sans-serif;
-  font-weight: 500;
-  font-size: 16px; // Adjusted to fit better
-  line-height: 24px;
+}
+
+.copy-link-button :deep(.q-btn:hover) {
+  background: $gradient-hover;
+}
+
+.copy-link-button :deep(.q-btn:active) {
+  background: $gradient-pressed;
 }
 </style>

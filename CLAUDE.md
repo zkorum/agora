@@ -105,13 +105,19 @@ duplicate updates and database contention."
 - **Be exhaustive in the body**: explain what changed, why it changed, and any important implementation details
 - Use the body to provide context that reviewers and future maintainers will need
 - Reference issue numbers, design decisions, or related PRs in the body or footer
-- **Do NOT mention AI assistants or tools** (e.g., "Claude", "AI-generated") in commit messages
+- **Do NOT mention AI assistants or tools in commit messages** (e.g., "Claude", "AI-generated", "with assistance from")
+  - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
 
 **Before committing:**
 1. **Review all staged changes** with `git status` and `git diff --staged`
 2. **Verify nothing is staged by mistake** (secrets, debug code, unrelated changes, etc.)
-3. **If suspicious files are found**, report them to the user and abort the commit
-4. **Wait for user confirmation** before proceeding with the commit
+3. **Check for poor quality comments**:
+   - Remove redundant comments that state the obvious (e.g., `// Set variable to true` above `flag = true`)
+   - Remove outdated or incorrect comments
+   - Remove commented-out code unless there's a specific reason to keep it
+   - Ensure remaining comments explain "why" not "what"
+4. **If suspicious files are found**, report them to the user and abort the commit
+5. **Wait for user confirmation** before proceeding with the commit
 
 ### Database Operations
 
