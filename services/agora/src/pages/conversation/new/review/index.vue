@@ -92,6 +92,7 @@
     </div>
 
     <NewConversationRouteGuard
+      ref="routeGuard"
       :allowed-routes="['/conversation/new/create/', '/welcome/']"
     />
 
@@ -136,7 +137,7 @@ import { useNavigationStore } from "src/stores/navigation";
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
 
-const { createEmptyDraft, validateForReview } = useNewPostDraftsStore();
+const { validateForReview } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewPost } = useBackendPostApi();
@@ -146,6 +147,7 @@ const { handleAxiosErrorStatusCodes } = useCommonApi();
 const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
 const currentActiveOpinionIndex = ref(-1);
+const routeGuard = ref<{ unlockRoute: () => void } | undefined>(undefined);
 
 // Validation state
 const opinionErrors = ref<Record<number, string>>({});
@@ -341,13 +343,13 @@ async function onSubmit() {
       // Set navigation context to indicate user came from conversation creation
       navigationStore.setConversationCreationContext(true);
 
+      // Unlock route to prevent "save draft" dialog
+      routeGuard.value?.unlockRoute();
+
       await router.replace({
         name: "/conversation/[postSlugId]",
         params: { postSlugId: response.data.conversationSlugId },
       });
-
-      // Clear draft after navigation to prevent re-render with empty data
-      conversationDraft.value = createEmptyDraft();
 
       // Don't stop loading - let component unmount with loading state active
     } else {

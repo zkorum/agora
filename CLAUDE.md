@@ -98,14 +98,19 @@ duplicate updates and database contention."
 ```
 
 **Guidelines:**
-- Keep the subject line concise (50-72 characters)
+- Keep the subject line under 50 characters (hard limit: 72 characters)
+  - Git and GitHub truncate titles longer than ~72 characters with "..."
+  - Aim for 50 characters to ensure full visibility in all tools
+  - If the title is too long, move specific details to the body
+  - Good: `fix(frontend): prevent seed opinion page flash`
+  - Bad: `fix(frontend): prevent flash of empty seed opinion page during conversation creation`
 - Use imperative mood ("add" not "added" or "adds")
 - Don't capitalize the first letter after the colon
 - No period at the end of the subject line
-- **Be exhaustive in the body**: explain what changed, why it changed, and any important implementation details
+- Be exhaustive in the body: explain what changed, why it changed, and any important implementation details
 - Use the body to provide context that reviewers and future maintainers will need
 - Reference issue numbers, design decisions, or related PRs in the body or footer
-- **Do NOT mention AI assistants or tools in commit messages** (e.g., "Claude", "AI-generated", "with assistance from")
+- Do NOT mention AI assistants or tools in commit messages (e.g., "Claude", "AI-generated", "with assistance from")
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
 
 **Before committing:**
