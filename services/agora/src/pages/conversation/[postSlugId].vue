@@ -31,13 +31,15 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import { useConversationData } from "src/composables/conversation/useConversationData";
-import { ref, onBeforeUnmount } from "vue";
+import { ref, onBeforeUnmount, onMounted } from "vue";
 import { useNavigationStore } from "src/stores/navigation";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 
 const postDetailsRef = ref<InstanceType<typeof PostDetails>>();
 const { conversationData, hasConversationData, refreshConversation } =
   useConversationData();
 const navigationStore = useNavigationStore();
+const { resetDraft } = useNewPostDraftsStore();
 
 function handleRefresh(done: () => void): void {
   refreshConversation(() => {
@@ -48,6 +50,13 @@ function handleRefresh(done: () => void): void {
     done();
   });
 }
+
+// Clear draft only after successfully navigating from conversation creation
+onMounted(() => {
+  if (navigationStore.cameFromConversationCreation) {
+    resetDraft();
+  }
+});
 
 // Clear conversation creation context when leaving this page
 onBeforeUnmount(() => {
