@@ -142,34 +142,39 @@ const participantCountLocal = ref(
 
 const { profileData } = storeToRefs(useUserStore());
 
-// Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
+// Lazy load analysis data only when user clicks Analysis tab
+const isAnalysisEnabled = computed(() => !props.compactMode && currentTab.value === 'analysis');
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: isAnalysisEnabled,
 });
 
 // Preload comment queries for all filter types (only if not in compact mode)
 const commentsDiscoverQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "discover",
+  voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode,
 });
 
 const commentsNewQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "new",
+  voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode,
 });
 
 const commentsModeratedQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "moderated",
+  voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode,
 });
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode && profileData.value.isModerator,
 });
 

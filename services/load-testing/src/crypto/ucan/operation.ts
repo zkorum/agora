@@ -100,3 +100,22 @@ export function buildAuthorizationHeader(encodedUcan: string) {
     Authorization: `Bearer ${encodedUcan}`,
   };
 }
+
+export interface ExportedKeys {
+  write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+  exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+}
+
+export async function exportKeys(prefixedKey: string): Promise<ExportedKeys> {
+  const cryptoStore = await getNodeCryptoStore();
+  const writeName = `${prefixedKey}/write`;
+  const exchangeName = `${prefixedKey}/exchange`;
+  return await cryptoStore.keystore.exportKeys(writeName, exchangeName);
+}
+
+export async function importKeys(prefixedKey: string, exportedKeys: ExportedKeys): Promise<void> {
+  const cryptoStore = await getNodeCryptoStore();
+  const writeName = `${prefixedKey}/write`;
+  const exchangeName = `${prefixedKey}/exchange`;
+  await cryptoStore.keystore.importKeys(writeName, exchangeName, exportedKeys);
+}

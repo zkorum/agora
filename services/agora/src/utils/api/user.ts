@@ -146,7 +146,6 @@ export function useBackendUserApi() {
                 responseItem.opinionItem.moderation.updatedAt
               ),
             },
-            clustersStats: responseItem.opinionItem.clustersStats,
           },
         };
         extendedCommentList.push(extendedComment);

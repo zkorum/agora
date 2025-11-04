@@ -20,7 +20,7 @@ import { sleep } from "k6";
 import { Counter, Trend, Rate } from "k6/metrics";
 import { SharedArray } from "k6/data";
 import execution from "k6/execution";
-import { createDidIfDoesNotExist } from "./crypto/ucan/operation.js";
+import { createDidIfDoesNotExist, exportKeys, importKeys, type ExportedKeys } from "./crypto/ucan/operation.js";
 import {
     deleteUser,
     fetchOpinions,
@@ -132,22 +132,63 @@ const VOTING_OPTIONS: ("agree" | "disagree" | "pass")[] = [
 // Default to localhost for local development
 const BACKEND_DID = __ENV.BACKEND_DID || "did:web:localhost%3A8084";
 
+interface UserData {
+    userId: string;
+    did: string;
+    prefixedKey: string;
+    exportedKeys: ExportedKeys;
+}
+
+interface SetupData {
+    users: UserData[];
+}
+
+/**
+ * Setup function - generates all user keypairs and exports them
+ * This runs once before the test starts and shares data with default() and teardown()
+ */
+export async function setup(): Promise<SetupData> {
+    console.log("=== Setup: Generating keypairs for all users ===");
+    const users: UserData[] = [];
+
+    for (let i = 0; i < TOTAL_USERS; i++) {
+        const userId = i < OPINION_CREATOR_COUNT
+            ? `creator-${String(i)}`
+            : `voter-${String(i - OPINION_CREATOR_COUNT)}`;
+
+        // Generate keypair
+        const { did, prefixedKey } = await createDidIfDoesNotExist(userId);
+
+        // Export keys so they can be shared with VUs and teardown
+        const exportedKeys = await exportKeys(prefixedKey);
+
+        users.push({ userId, did, prefixedKey, exportedKeys });
+
+        if ((i + 1) % 10 === 0) {
+            console.log(`Generated ${String(i + 1)}/${String(TOTAL_USERS)} users`);
+        }
+    }
+
+    console.log(`=== Setup complete: ${String(TOTAL_USERS)} users ready ===`);
+    return { users };
+}
+
 /**
  * Main test function - each VU executes this sequentially
  * First 50 VUs create opinions, all 100 VUs vote
  */
-export default async function () {
+export default async function (data: SetupData) {
     const iterationIndex = execution.scenario.iterationInTest;
     const isOpinionCreator = iterationIndex < OPINION_CREATOR_COUNT;
-    const userId = isOpinionCreator
-        ? `creator-${String(iterationIndex)}`
-        : `voter-${String(iterationIndex - OPINION_CREATOR_COUNT)}`;
+
+    // Get user data from setup
+    const user = data.users[iterationIndex];
+    const { userId, did, prefixedKey, exportedKeys } = user;
 
     console.log(`[${userId}] Starting (iteration ${String(iterationIndex)})`);
 
-    // Step 1: Create user credentials
-    const userCreds = await createDidIfDoesNotExist(userId);
-    const { did, prefixedKey } = userCreds;
+    // Step 1: Import user credentials into this VU's keystore
+    await importKeys(prefixedKey, exportedKeys);
 
     // Step 2: Fetch conversation page (simulates user landing on the frontend page)
     // This will trigger the frontend to make multiple API calls to the backend
@@ -293,35 +334,20 @@ export default async function () {
  * Teardown phase - clean up user accounts
  * Note: Opinions will be deleted automatically when the conversation is deleted
  * or can be cleaned up manually via the admin interface
- *
- * K6 limitation: teardown can't access VU variables, so we recreate the user list
  */
-export async function teardown() {
+export async function teardown(data: SetupData) {
     console.log("=== Starting Teardown ===");
     console.log(`Deleting ${String(TOTAL_USERS)} users...`);
-
-    // Recreate user credentials for cleanup (k6 teardown can't access VU variables)
-    const usersToDelete: {
-        did: string;
-        prefixedKey: string;
-    }[] = [];
-
-    // Recreate all user credentials using the same pattern from the test
-    for (let i = 0; i < TOTAL_USERS; i++) {
-        const userId = i < OPINION_CREATOR_COUNT
-            ? `creator-${String(i)}`
-            : `voter-${String(i - OPINION_CREATOR_COUNT)}`;
-
-        const userCreds = await createDidIfDoesNotExist(userId);
-        usersToDelete.push(userCreds);
-    }
 
     // Delete all user accounts
     let usersDeletedCount = 0;
     let usersFailedCount = 0;
 
     console.log("Deleting user accounts...");
-    for (const user of usersToDelete) {
+    for (const user of data.users) {
+        // Import keys into teardown's keystore so we can sign the deletion request
+        await importKeys(user.prefixedKey, user.exportedKeys);
+
         const result: DeleteUserResponse = await deleteUser({
             did: user.did,
             prefixedKey: user.prefixedKey,

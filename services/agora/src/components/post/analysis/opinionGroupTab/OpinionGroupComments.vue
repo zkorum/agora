@@ -36,6 +36,9 @@
         :conversation-slug-id="props.conversationSlugId"
         :opinion-item="comment"
         :opinion-item-for-visualizer="getModifiedOpinionItem(comment)"
+        :vote-count="props.voteCount"
+        :polis-clusters="props.polisClusters"
+        :cluster-labels="props.clusterLabels"
       />
     </div>
   </div>
@@ -43,8 +46,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import type { OpinionItem } from "src/shared/types/zod";
-import type { PolisKey } from "src/shared/types/zod";
+import type {
+  AnalysisOpinionItem,
+  PolisClusters,
+  PolisKey,
+} from "src/shared/types/zod";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -54,9 +60,12 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
-  itemList: OpinionItem[];
+  itemList: AnalysisOpinionItem[];
   currentClusterTab: PolisKey;
   hasUngroupedParticipants: boolean;
+  voteCount: number;
+  polisClusters: Partial<PolisClusters>;
+  clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 
 const { t } = useComponentI18n<OpinionGroupCommentsTranslations>(
@@ -74,7 +83,7 @@ watch(
   }
 );
 
-function getActiveVotes(comment: OpinionItem) {
+function getActiveVotes(comment: AnalysisOpinionItem) {
   const currentClusterStats = comment.clustersStats.find(
     (cv) => cv.key === props.currentClusterTab
   );
@@ -136,7 +145,7 @@ function getActiveVotes(comment: OpinionItem) {
   }
 }
 
-function getModifiedOpinionItem(comment: OpinionItem): OpinionItem {
+function getModifiedOpinionItem(comment: AnalysisOpinionItem): AnalysisOpinionItem {
   const activeVotes = getActiveVotes(comment);
   return {
     ...comment,

@@ -10,25 +10,28 @@ import {
   useCommentQueriesTranslations,
   type UseCommentQueriesTranslations,
 } from "./useCommentQueries.i18n";
+import type { Ref } from "vue";
 
 export function useCommentsQuery({
   conversationSlugId,
   filter,
   clusterKey,
+  voteCount,
   enabled = true,
 }: {
   conversationSlugId: string;
   filter: CommentTabFilters;
   clusterKey?: PolisKey;
-  enabled?: boolean;
+  voteCount?: number;
+  enabled?: boolean | Ref<boolean>;
 }) {
   const { fetchCommentsForPost } = useBackendCommentApi();
 
   return useQuery({
     queryKey: ["comments", conversationSlugId, filter, clusterKey],
     queryFn: () => fetchCommentsForPost(conversationSlugId, filter, clusterKey),
-    enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 2, // 2 minutes - primarily for internal filter switching
+    enabled: enabled,
+    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
@@ -36,18 +39,20 @@ export function useCommentsQuery({
 
 export function useHiddenCommentsQuery({
   conversationSlugId,
+  voteCount,
   enabled = true,
 }: {
   conversationSlugId: string;
-  enabled?: boolean;
+  voteCount?: number;
+  enabled?: boolean | Ref<boolean>;
 }) {
   const { fetchHiddenCommentsForPost } = useBackendCommentApi();
 
   return useQuery({
     queryKey: ["hiddenComments", conversationSlugId],
     queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
-    enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 5, // 5 minutes - primarily for internal filter switching
+    enabled: enabled,
+    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
@@ -93,14 +98,14 @@ export function useAnalysisQuery({
 }: {
   conversationSlugId: string;
   voteCount?: number;
-  enabled?: boolean;
+  enabled?: boolean | Ref<boolean>;
 }) {
   const { fetchAnalysisData } = useBackendCommentApi();
 
   return useQuery({
     queryKey: ["analysis", conversationSlugId],
     queryFn: () => fetchAnalysisData({ conversationSlugId }),
-    enabled: enabled && conversationSlugId.length > 0,
+    enabled: enabled,
     staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
