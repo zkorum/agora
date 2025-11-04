@@ -71,6 +71,88 @@ export const MemoryKeyStore = {
         return this;
     },
 
+    async exportKeys(writeName: string, exchangeName: string): Promise<{
+        write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+        exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+    }> {
+        const writeKeypair = keypairStore.get(writeName);
+        const exchangeKeypair = keypairStore.get(exchangeName);
+
+        if (!writeKeypair || !exchangeKeypair) {
+            throw new Error(`Keys not found: ${writeName} or ${exchangeName}`);
+        }
+
+        const [writePrivateJwk, writePublicJwk, exchangePrivateJwk, exchangePublicJwk] = await Promise.all([
+            crypto.subtle.exportKey("jwk", writeKeypair.privateKey),
+            crypto.subtle.exportKey("jwk", writeKeypair.publicKey),
+            crypto.subtle.exportKey("jwk", exchangeKeypair.privateKey),
+            crypto.subtle.exportKey("jwk", exchangeKeypair.publicKey),
+        ]);
+
+        return {
+            write: {
+                privateKey: writePrivateJwk,
+                publicKey: writePublicJwk,
+            },
+            exchange: {
+                privateKey: exchangePrivateJwk,
+                publicKey: exchangePublicJwk,
+            },
+        };
+    },
+
+    async importKeys(
+        writeName: string,
+        exchangeName: string,
+        exportedKeys: {
+            write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+            exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+        }
+    ): Promise<typeof MemoryKeyStore> {
+        const [writePrivate, writePublic, exchangePrivate, exchangePublic] = await Promise.all([
+            crypto.subtle.importKey(
+                "jwk",
+                exportedKeys.write.privateKey,
+                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+                true,
+                ["sign"]
+            ),
+            crypto.subtle.importKey(
+                "jwk",
+                exportedKeys.write.publicKey,
+                { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+                true,
+                ["verify"]
+            ),
+            crypto.subtle.importKey(
+                "jwk",
+                exportedKeys.exchange.privateKey,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                true,
+                ["decrypt"]
+            ),
+            crypto.subtle.importKey(
+                "jwk",
+                exportedKeys.exchange.publicKey,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                true,
+                ["encrypt"]
+            ),
+        ]);
+
+        keypairStore.set(writeName, {
+            privateKey: writePrivate,
+            publicKey: writePublic,
+        });
+
+        keypairStore.set(exchangeName, {
+            privateKey: exchangePrivate,
+            publicKey: exchangePublic,
+        });
+
+        return this;
+    },
+
     // Configuration object to match RSAKeyStore interface
     cfg: {
         charSize: 8,

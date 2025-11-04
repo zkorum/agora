@@ -126,7 +126,7 @@
                   >
                     <td class="group-name">
                       {{
-                        `${formatClusterLabel(group.key, true, group.aiLabel)} (${formatAmount(group.numUsers)})`
+                        `${formatClusterLabel(group.key, true, getClusterLabel(group.key))} (${formatAmount(group.numUsers)})`
                       }}
                     </td>
                     <td class="agree-cell">
@@ -177,7 +177,10 @@
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
-import type { OpinionItem } from "src/shared/types/zod";
+import type {
+  AnalysisOpinionItem,
+  PolisKey,
+} from "src/shared/types/zod";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
@@ -191,7 +194,9 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
-  opinionItem: OpinionItem;
+  opinionItem: AnalysisOpinionItem;
+  voteCount: number;
+  clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 
 const { forceOpenComment } = useRouterNavigation();
@@ -201,6 +206,10 @@ const { t } = useComponentI18n<OpinionAnalysisDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>({ required: true });
+
+function getClusterLabel(key: PolisKey): string | undefined {
+  return props.clusterLabels[key];
+}
 
 const noGroupStats = computed(() => {
   const totalClusteredAgrees = props.opinionItem.clustersStats.reduce(

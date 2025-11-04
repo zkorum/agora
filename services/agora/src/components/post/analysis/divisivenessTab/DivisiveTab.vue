@@ -30,6 +30,9 @@
           :conversation-slug-id="props.conversationSlugId"
           :opinion-item="consensusItem"
           :opinion-item-for-visualizer="consensusItem"
+          :vote-count="props.voteCount"
+          :polis-clusters="props.clusters"
+          :cluster-labels="props.clusterLabels"
         />
       </template>
     </AnalysisSectionWrapper>
@@ -43,7 +46,11 @@ import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
+import type {
+  AnalysisOpinionItem,
+  PolisClusters,
+  PolisKey,
+} from "src/shared/types/zod";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   divisiveTabTranslations,
@@ -52,9 +59,11 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
-  itemList: OpinionItem[];
+  itemList: AnalysisOpinionItem[];
   compactMode: boolean;
   clusters: Partial<PolisClusters>;
+  clusterLabels: Partial<Record<PolisKey, string>>;
+  voteCount: number;
 }>();
 
 const currentTab = defineModel<ShortcutItem>();

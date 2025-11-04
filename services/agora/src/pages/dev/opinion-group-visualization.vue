@@ -70,9 +70,9 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";
 import type {
+  AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
-  OpinionItem,
 } from "src/shared/types/zod";
 import {
   opinionGroupVisualizationTranslations,
@@ -121,8 +121,8 @@ const clusterSummaries = [
   "This group is driven by idealistic principles and long-term vision.",
 ];
 
-function generateMockOpinions(count: number = 3): OpinionItem[] {
-  const mockOpinions: OpinionItem[] = [];
+function generateMockOpinions(count: number = 3): AnalysisOpinionItem[] {
+  const mockOpinions: AnalysisOpinionItem[] = [];
 
   for (let i = 0; i < count; i++) {
     mockOpinions.push({

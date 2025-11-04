@@ -13,6 +13,8 @@
           :item-list="analysisQuery.data.value?.consensus || []"
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :cluster-labels="clusterLabels"
+          :vote-count="props.participantCount"
         />
       </div>
 
@@ -26,6 +28,8 @@
           :item-list="analysisQuery.data.value?.controversial || []"
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :cluster-labels="clusterLabels"
+          :vote-count="props.participantCount"
         />
       </div>
 
@@ -57,11 +61,15 @@ import {
   type AnalysisPageTranslations,
 } from "./AnalysisPage.i18n";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import type { OpinionItem, PolisClusters } from "src/shared/types/zod";
+import type {
+  AnalysisOpinionItem,
+  PolisClusters,
+  PolisKey,
+} from "src/shared/types/zod";
 
 type AnalysisData = {
-  consensus: OpinionItem[];
-  controversial: OpinionItem[];
+  consensus: AnalysisOpinionItem[];
+  controversial: AnalysisOpinionItem[];
   polisClusters: Partial<PolisClusters>;
 };
 
@@ -79,6 +87,19 @@ const currentTab = ref<ShortcutItem>("Summary");
 
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
+
+// Extract only cluster labels for optimal performance (300 bytes instead of 300KB)
+const clusterLabels = computed(() => {
+  const labels: Partial<Record<PolisKey, string>> = {};
+  if (!analysisQuery.data.value?.polisClusters) return labels;
+
+  for (const [key, cluster] of Object.entries(analysisQuery.data.value.polisClusters)) {
+    if (cluster?.aiLabel) {
+      labels[key as PolisKey] = cluster.aiLabel;
+    }
+  }
+  return labels;
+});
 
 const asyncStateConfig = {
   loading: {

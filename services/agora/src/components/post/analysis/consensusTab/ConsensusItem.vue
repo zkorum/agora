@@ -30,6 +30,8 @@
     v-model="showDialog"
     :conversation-slug-id="props.conversationSlugId"
     :opinion-item="props.opinionItem"
+    :vote-count="props.voteCount"
+    :cluster-labels="props.clusterLabels"
   />
 </template>
 
@@ -38,7 +40,11 @@ import { computed, ref } from "vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
-import type { OpinionItem } from "src/shared/types/zod";
+import type {
+  AnalysisOpinionItem,
+  PolisClusters,
+  PolisKey,
+} from "src/shared/types/zod";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -48,8 +54,11 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
-  opinionItem: OpinionItem;
-  opinionItemForVisualizer: OpinionItem;
+  opinionItem: AnalysisOpinionItem;
+  opinionItemForVisualizer: AnalysisOpinionItem;
+  voteCount: number;
+  polisClusters: Partial<PolisClusters>;
+  clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 
 const { t } = useComponentI18n<ConsensusItemTranslations>(

@@ -7,6 +7,7 @@ import {
   type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   type ApiV1OpinionFetchAnalysisByConversationPost200Response,
   type ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
+  type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -14,6 +15,7 @@ import { useCommonApi } from "../common";
 import type {
   PolisKey,
   OpinionItem,
+  AnalysisOpinionItem,
   PolisClusters,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
@@ -56,7 +58,6 @@ export function useBackendCommentApi() {
           createdAt: new Date(item.moderation.createdAt),
           updatedAt: new Date(item.moderation.updatedAt),
         },
-        clustersStats: item.clustersStats,
       });
     });
 
@@ -215,8 +216,8 @@ export function useBackendCommentApi() {
   async function fetchAnalysisData(params: {
     conversationSlugId: string;
   }): Promise<{
-    consensus: OpinionItem[];
-    controversial: OpinionItem[];
+    consensus: AnalysisOpinionItem[];
+    controversial: AnalysisOpinionItem[];
     polisClusters: Partial<PolisClusters>;
   }> {
     let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
@@ -257,7 +258,7 @@ export function useBackendCommentApi() {
         PolisKey,
         ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
       ]) => {
-        const representative: Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem> =
+        const representative: Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner> =
           val.representative;
         const representativeItems = representative.map((item) => ({
           ...item,
@@ -271,15 +272,7 @@ export function useBackendCommentApi() {
       }
     );
 
-    const opinionConsensusItem: OpinionItem[] = data.consensus.map((val) => {
-      return {
-        ...val,
-        createdAt: new Date(val.createdAt),
-        updatedAt: new Date(val.updatedAt),
-      };
-    });
-
-    const opinionControversialItem: OpinionItem[] = data.controversial.map(
+    const opinionConsensusItem: AnalysisOpinionItem[] = data.consensus.map(
       (val) => {
         return {
           ...val,
@@ -288,6 +281,15 @@ export function useBackendCommentApi() {
         };
       }
     );
+
+    const opinionControversialItem: AnalysisOpinionItem[] =
+      data.controversial.map((val) => {
+        return {
+          ...val,
+          createdAt: new Date(val.createdAt),
+          updatedAt: new Date(val.updatedAt),
+        };
+      });
 
     return {
       consensus: opinionConsensusItem,

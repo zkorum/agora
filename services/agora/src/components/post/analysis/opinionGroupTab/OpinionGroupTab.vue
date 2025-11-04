@@ -52,11 +52,13 @@
           <OpinionGroupComments
             :conversation-slug-id="props.conversationSlugId"
             :item-list="
-              props.clusters[currentClusterTab]?.representative ??
-              ([] as OpinionItem[])
+              props.clusters[currentClusterTab]?.representative ?? []
             "
             :current-cluster-tab="currentClusterTab"
             :has-ungrouped-participants="hasUngroupedParticipants"
+            :vote-count="props.totalParticipantCount"
+            :polis-clusters="props.clusters"
+            :cluster-labels="clusterLabels"
             @update:current-cluster-tab="currentClusterTab = $event"
           />
         </template>
@@ -69,7 +71,6 @@
 
 <script setup lang="ts">
 import type {
-  OpinionItem,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
@@ -123,5 +124,16 @@ const currentAiSummary = computed(() => {
     return props.clusters[currentClusterTab.value]?.aiSummary;
   }
   return undefined;
+});
+
+// Extract only cluster labels for optimal performance
+const clusterLabels = computed(() => {
+  const labels: Partial<Record<PolisKey, string>> = {};
+  for (const [key, cluster] of Object.entries(props.clusters)) {
+    if (cluster?.aiLabel) {
+      labels[key as PolisKey] = cluster.aiLabel;
+    }
+  }
+  return labels;
 });
 </script>

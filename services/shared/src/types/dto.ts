@@ -5,6 +5,7 @@ import {
     zodUserId,
     zodSlugId,
     zodOpinionItem,
+    zodAnalysisOpinionItem,
     zodPollOptionTitle,
     zodConversationTitle,
     zodConversationBody,
@@ -146,8 +147,8 @@ export class Dto {
     static fetchAnalysisResponse = z
         .object({
             polisContentId: z.number().int().nonnegative().optional(), // for logging/debugging purpose, undefined if no polis calculated
-            consensus: z.array(zodOpinionItem),
-            controversial: z.array(zodOpinionItem),
+            consensus: z.array(zodAnalysisOpinionItem),
+            controversial: z.array(zodAnalysisOpinionItem),
             clusters: zodPolisClusters,
         })
         .strict();
@@ -158,34 +159,6 @@ export class Dto {
         })
         .strict();
     static fetchHiddenOpinionsResponse = z.array(zodOpinionItem);
-    static fetchConsensusResponse = z.array(zodOpinionItem);
-    static fetchConsensusRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
-        })
-        .strict();
-    static fetchMajorityResponse = z.array(zodOpinionItem);
-    static fetchMajorityRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
-        })
-        .strict();
-    static fetchControversialResponse = z.array(zodOpinionItem);
-    static fetchControversialRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
-        })
-        .strict();
-    static fetchRepresentativeResponse = z.record(
-        zodPolisKey,
-        z.array(zodOpinionItem),
-    );
-    static fetchRepresentativeRequest = z
-        .object({
-            conversationSlugId: zodSlugId,
-        })
-        .strict();
-
     static createNewConversationRequest = z
         .object({
             conversationTitle: zodConversationTitle,

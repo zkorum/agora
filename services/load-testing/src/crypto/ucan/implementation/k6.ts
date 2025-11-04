@@ -276,6 +276,25 @@ export async function implementation({
             getUcanAlgorithm: async (): Promise<string> => {
                 return "RS256";
             },
+            exportKeys: async (
+                writeName: string,
+                exchangeName: string,
+            ): Promise<{
+                write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+                exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+            }> => {
+                return await ks.exportKeys(writeName, exchangeName);
+            },
+            importKeys: async (
+                writeName: string,
+                exchangeName: string,
+                exportedKeys: {
+                    write: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+                    exchange: { privateKey: JsonWebKey; publicKey: JsonWebKey };
+                }
+            ): Promise<any> => {
+                return await ks.importKeys(writeName, exchangeName, exportedKeys);
+            },
         },
     };
 }

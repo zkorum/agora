@@ -8,10 +8,10 @@ import {
     opinionModerationTable,
     notificationTable,
     notificationNewOpinionTable,
-    polisContentTable,
     polisClusterTable,
-    polisClusterUserTable,
     polisClusterOpinionTable,
+    polisClusterUserTable,
+    polisContentTable,
 } from "@/shared-backend/schema.js";
 import {
     updateOpinionCount,
@@ -37,35 +37,30 @@ import {
     inArray,
 } from "drizzle-orm";
 import type {
-    ClusterStats,
-    CommentFeedFilter,
+    AnalysisOpinionItem,
+    AnalysisOpinionItemPerSlugId,
     ModerationReason,
     OpinionItem,
     OpinionItemPerSlugId,
     OpinionModerationAction,
     PolisClusters,
-    PolisKey,
     SlugId,
+    PolisKey,
+    ClusterStats,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
-import { toUnionUndefined } from "@/shared/shared.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
-import { alias } from "drizzle-orm/pg-core";
 import * as authUtilService from "@/service/authUtil.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import {
-    isSqlWhereMajority,
-    isSqlOrderByMajority,
     isSqlOrderByGroupAwareConsensus,
     isSqlOrderByPolisPriority,
     isSqlWhereRepresentative,
     isSqlOrderByRepresentative,
-    isSqlWhereMajorityAgree,
-    isSqlWhereMajorityDisagree,
 } from "@/utils/sqlLogic.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
@@ -76,6 +71,7 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processHtmlBody } from "@/shared-app-api/html.js";
+import { alias } from "drizzle-orm/pg-core";
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -107,16 +103,7 @@ interface FetchOpinionsProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
     personalizationUserId?: string;
-    filterTarget:
-        | "new"
-        | "moderated"
-        | "hidden"
-        | "majority"
-        | "controversial"
-        | "group-aware-consensus"
-        | "discover"
-        | "representative";
-    clusterKey?: PolisKey;
+    filterTarget: "new" | "moderated" | "hidden" | "discover";
     limit: number;
 }
 
@@ -124,18 +111,7 @@ interface FetchOpinionsByPostIdProps {
     db: PostgresJsDatabase;
     postId: number;
     personalizationUserId?: string;
-    filterTarget:
-        | "new"
-        | "moderated"
-        | "hidden"
-        | "majority"
-        | "majority-agree"
-        | "majority-disagree"
-        | "controversial"
-        | "group-aware-consensus"
-        | "discover"
-        | "representative";
-    clusterKey?: PolisKey;
+    filterTarget: "new" | "moderated" | "hidden" | "discover";
     limit: number;
 }
 
@@ -144,120 +120,11 @@ export async function fetchOpinionsByPostId({
     postId,
     personalizationUserId,
     filterTarget,
-    clusterKey,
     limit,
 }: FetchOpinionsByPostIdProps): Promise<OpinionItemPerSlugId> {
-    const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0");
-    const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1");
-    const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2");
-    const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3");
-    const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4");
-    const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5");
-
-    const polisClusterOpinionTableAlias0 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_0",
-    );
-    const polisClusterOpinionTableAlias1 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_1",
-    );
-    const polisClusterOpinionTableAlias2 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_2",
-    );
-    const polisClusterOpinionTableAlias3 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_3",
-    );
-    const polisClusterOpinionTableAlias4 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_4",
-    );
-    const polisClusterOpinionTableAlias5 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_5",
-    );
-
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
     // isNotNull(opinionTable.currentContentId), // filtering out deleted opinions, this is unecessary because of the use of innerJoin
     let orderByClause = [desc(opinionTable.createdAt)]; // default value, shouldn't be needed but ts doesn't understand how to terminate nested switch
-    if (clusterKey != undefined) {
-        switch (clusterKey) {
-            case "0": {
-                whereClause = and(
-                    whereClause,
-                    eq(polisClusterTableAlias0.key, clusterKey),
-                    isNotNull(polisClusterTableAlias0.numUsers),
-                    isNotNull(opinionTable.polisCluster0Id),
-                    isNotNull(opinionTable.polisCluster0NumAgrees),
-                    isNotNull(opinionTable.polisCluster0NumDisagrees),
-                    isNotNull(opinionTable.polisCluster0NumPasses),
-                );
-                break;
-            }
-            case "1": {
-                whereClause = and(
-                    whereClause,
-                    eq(polisClusterTableAlias1.key, clusterKey),
-                    isNotNull(polisClusterTableAlias1.numUsers),
-                    isNotNull(opinionTable.polisCluster1Id),
-                    isNotNull(opinionTable.polisCluster1NumAgrees),
-                    isNotNull(opinionTable.polisCluster1NumDisagrees),
-                    isNotNull(opinionTable.polisCluster1NumPasses),
-                );
-                break;
-            }
-            case "2": {
-                whereClause = and(
-                    whereClause,
-                    eq(polisClusterTableAlias2.key, clusterKey),
-                    isNotNull(polisClusterTableAlias2.numUsers),
-                    isNotNull(opinionTable.polisCluster2Id),
-                    isNotNull(opinionTable.polisCluster2NumAgrees),
-                    isNotNull(opinionTable.polisCluster2NumDisagrees),
-                    isNotNull(opinionTable.polisCluster2NumPasses),
-                );
-                break;
-            }
-            case "3": {
-                whereClause = and(
-                    whereClause,
-                    eq(polisClusterTableAlias3.key, clusterKey),
-                    isNotNull(polisClusterTableAlias3.numUsers),
-                    isNotNull(opinionTable.polisCluster3Id),
-                    isNotNull(opinionTable.polisCluster3NumAgrees),
-                    isNotNull(opinionTable.polisCluster3NumDisagrees),
-                    isNotNull(opinionTable.polisCluster3NumPasses),
-                );
-                break;
-            }
-            case "4": {
-                whereClause = and(
-                    whereClause,
-                    eq(polisClusterTableAlias4.key, clusterKey),
-                    isNotNull(polisClusterTableAlias4.numUsers),
-                    isNotNull(opinionTable.polisCluster4Id),
-                    isNotNull(opinionTable.polisCluster4NumAgrees),
-                    isNotNull(opinionTable.polisCluster4NumDisagrees),
-                    isNotNull(opinionTable.polisCluster4NumPasses),
-                );
-                break;
-            }
-            case "5": {
-                whereClause = and(
-                    whereClause,
-                    eq(polisClusterTableAlias5.key, clusterKey),
-                    isNotNull(polisClusterTableAlias5.numUsers),
-                    isNotNull(opinionTable.polisCluster5Id),
-                    isNotNull(opinionTable.polisCluster5NumAgrees),
-                    isNotNull(opinionTable.polisCluster5NumDisagrees),
-                    isNotNull(opinionTable.polisCluster5NumPasses),
-                );
-                break;
-            }
-        }
-    }
     switch (filterTarget) {
         case "moderated": {
             whereClause = and(
@@ -284,36 +151,163 @@ export async function fetchOpinionsByPostId({
             orderByClause = isSqlOrderByPolisPriority();
             break;
         }
-        case "group-aware-consensus": {
+    }
+    const results = await db
+        .select({
+            // comment payload
+            commentSlugId: opinionTable.slugId,
+            createdAt: opinionTable.createdAt,
+            updatedAt: opinionTable.updatedAt,
+            comment: opinionContentTable.content,
+            authorId: opinionTable.authorId,
+            numParticipants: conversationTable.participantCount,
+            numAgrees: opinionTable.numAgrees,
+            numDisagrees: opinionTable.numDisagrees,
+            numPasses: opinionTable.numPasses,
+            username: userTable.username,
+            isSeed: opinionTable.isSeed,
+            moderationAction: opinionModerationTable.moderationAction,
+            moderationExplanation: opinionModerationTable.moderationExplanation,
+            moderationReason: opinionModerationTable.moderationReason,
+            moderationCreatedAt: opinionModerationTable.createdAt,
+            moderationUpdatedAt: opinionModerationTable.updatedAt,
+        })
+        .from(opinionTable)
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .innerJoin(conversationTable, eq(conversationTable.id, postId))
+        .innerJoin(
+            opinionContentTable,
+            eq(opinionContentTable.id, opinionTable.currentContentId),
+        )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .orderBy(...orderByClause)
+        .where(whereClause)
+        .limit(limit); // TODO: infinite virtual scrolling instead
+
+    const opinionItemMap: OpinionItemPerSlugId = new Map<string, OpinionItem>();
+    results.map((opinionResponse) => {
+        const moderationProperties = createCommentModerationPropertyObject(
+            opinionResponse.moderationAction,
+            opinionResponse.moderationExplanation,
+            opinionResponse.moderationReason,
+            opinionResponse.moderationCreatedAt,
+            opinionResponse.moderationUpdatedAt,
+        );
+
+        const item: OpinionItem = {
+            opinion: opinionResponse.comment,
+            opinionSlugId: opinionResponse.commentSlugId,
+            createdAt: opinionResponse.createdAt,
+            numParticipants: opinionResponse.numParticipants,
+            numDisagrees: opinionResponse.numDisagrees,
+            numAgrees: opinionResponse.numAgrees,
+            numPasses: opinionResponse.numPasses,
+            updatedAt: opinionResponse.updatedAt,
+            username: opinionResponse.username,
+            moderation: moderationProperties,
+            isSeed: opinionResponse.isSeed,
+        };
+        opinionItemMap.set(opinionResponse.commentSlugId, item);
+    });
+
+    if (personalizationUserId) {
+        const mutedUserItems = await getUserMutePreferences({
+            db: db,
+            userId: personalizationUserId,
+        });
+
+        opinionItemMap.forEach((opinionItem, opinionSlugId, map) => {
+            if (
+                mutedUserItems.some(
+                    (muteItem) => muteItem.username === opinionItem.username,
+                )
+            ) {
+                map.delete(opinionSlugId);
+            }
+        });
+    }
+
+    return opinionItemMap;
+}
+
+export async function fetchOpinionsByPostSlugId({
+    db,
+    postSlugId,
+    personalizationUserId,
+    filterTarget,
+    limit,
+}: FetchOpinionsProps): Promise<OpinionItemPerSlugId> {
+    const postId = await getPostIdFromPostSlugId(db, postSlugId);
+    return await fetchOpinionsByPostId({
+        db,
+        postId,
+        personalizationUserId,
+        filterTarget,
+        limit,
+    });
+}
+
+interface FetchAnalysisOpinionsByPostIdProps {
+    db: PostgresJsDatabase;
+    postId: number;
+    personalizationUserId?: string;
+    filterTarget: "consensus" | "controversial" | "representative";
+    clusterKey?: PolisKey;
+    limit: number;
+}
+
+export async function fetchAnalysisOpinionsByPostId({
+    db,
+    postId,
+    personalizationUserId,
+    filterTarget,
+    clusterKey,
+    limit,
+}: FetchAnalysisOpinionsByPostIdProps): Promise<AnalysisOpinionItemPerSlugId> {
+    // Cluster table aliases for joining
+    const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0");
+    const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1");
+    const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2");
+    const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3");
+    const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4");
+    const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5");
+
+    // Cluster opinion table aliases for representative opinions
+    const polisClusterOpinionTableAlias0 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_0",
+    );
+    const polisClusterOpinionTableAlias1 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_1",
+    );
+    const polisClusterOpinionTableAlias2 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_2",
+    );
+    const polisClusterOpinionTableAlias3 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_3",
+    );
+    const polisClusterOpinionTableAlias4 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_4",
+    );
+    const polisClusterOpinionTableAlias5 = alias(
+        polisClusterOpinionTable,
+        "cluster_opinion_5",
+    );
+
+    let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
+    let orderByClause = [desc(opinionTable.createdAt)]; // default value
+
+    switch (filterTarget) {
+        case "consensus": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
             orderByClause = isSqlOrderByGroupAwareConsensus();
-            break;
-        }
-        case "majority": {
-            whereClause = and(
-                whereClause,
-                isNull(opinionModerationTable.id),
-                isSqlWhereMajority(),
-            );
-            orderByClause = isSqlOrderByMajority();
-            break;
-        }
-        case "majority-agree": {
-            whereClause = and(
-                whereClause,
-                isNull(opinionModerationTable.id),
-                isSqlWhereMajorityAgree(),
-            );
-            orderByClause = isSqlOrderByMajority();
-            break;
-        }
-        case "majority-disagree": {
-            whereClause = and(
-                whereClause,
-                isNull(opinionModerationTable.id),
-                isSqlWhereMajorityDisagree(),
-            );
-            orderByClause = isSqlOrderByMajority();
             break;
         }
         case "controversial": {
@@ -324,10 +318,11 @@ export async function fetchOpinionsByPostId({
         case "representative": {
             if (clusterKey === undefined) {
                 throw httpErrors.badRequest(
-                    "Representative opinions only make sense if a clusterKey is selected",
+                    "Representative opinions require a cluster key",
                 );
             }
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            // Filter and sort by the specific cluster's representative scores
             switch (clusterKey) {
                 case "0": {
                     whereClause = and(
@@ -420,11 +415,13 @@ export async function fetchOpinionsByPostId({
                     break;
                 }
             }
+            break;
         }
     }
+
     const results = await db
         .select({
-            // comment payload
+            // Base comment fields
             commentSlugId: opinionTable.slugId,
             createdAt: opinionTable.createdAt,
             updatedAt: opinionTable.updatedAt,
@@ -441,48 +438,49 @@ export async function fetchOpinionsByPostId({
             moderationReason: opinionModerationTable.moderationReason,
             moderationCreatedAt: opinionModerationTable.createdAt,
             moderationUpdatedAt: opinionModerationTable.updatedAt,
-            polisCluster0Id: polisClusterTableAlias0.id,
+            // Cluster 0 fields
+            polisCluster0Id: opinionTable.polisCluster0Id,
             polisCluster0Key: polisClusterTableAlias0.key,
-            polisCluster0AiLabel: polisClusterTableAlias0.aiLabel,
             polisCluster0NumUsers: polisClusterTableAlias0.numUsers,
             polisCluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
             polisCluster0NumDisagrees: opinionTable.polisCluster0NumDisagrees,
             polisCluster0NumPasses: opinionTable.polisCluster0NumPasses,
-            polisCluster1Id: polisClusterTableAlias1.id,
+            // Cluster 1 fields
+            polisCluster1Id: opinionTable.polisCluster1Id,
             polisCluster1Key: polisClusterTableAlias1.key,
-            polisCluster1AiLabel: polisClusterTableAlias1.aiLabel,
             polisCluster1NumUsers: polisClusterTableAlias1.numUsers,
             polisCluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
             polisCluster1NumDisagrees: opinionTable.polisCluster1NumDisagrees,
             polisCluster1NumPasses: opinionTable.polisCluster1NumPasses,
-            polisCluster2Id: polisClusterTableAlias2.id,
+            // Cluster 2 fields
+            polisCluster2Id: opinionTable.polisCluster2Id,
             polisCluster2Key: polisClusterTableAlias2.key,
-            polisCluster2AiLabel: polisClusterTableAlias2.aiLabel,
             polisCluster2NumUsers: polisClusterTableAlias2.numUsers,
             polisCluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
             polisCluster2NumDisagrees: opinionTable.polisCluster2NumDisagrees,
             polisCluster2NumPasses: opinionTable.polisCluster2NumPasses,
-            polisCluster3Id: polisClusterTableAlias3.id,
+            // Cluster 3 fields
+            polisCluster3Id: opinionTable.polisCluster3Id,
             polisCluster3Key: polisClusterTableAlias3.key,
-            polisCluster3AiLabel: polisClusterTableAlias3.aiLabel,
             polisCluster3NumUsers: polisClusterTableAlias3.numUsers,
             polisCluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
             polisCluster3NumDisagrees: opinionTable.polisCluster3NumDisagrees,
             polisCluster3NumPasses: opinionTable.polisCluster3NumPasses,
-            polisCluster4Id: polisClusterTableAlias4.id,
+            // Cluster 4 fields
+            polisCluster4Id: opinionTable.polisCluster4Id,
             polisCluster4Key: polisClusterTableAlias4.key,
-            polisCluster4AiLabel: polisClusterTableAlias4.aiLabel,
             polisCluster4NumUsers: polisClusterTableAlias4.numUsers,
             polisCluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
             polisCluster4NumDisagrees: opinionTable.polisCluster4NumDisagrees,
             polisCluster4NumPasses: opinionTable.polisCluster4NumPasses,
-            polisCluster5Id: polisClusterTableAlias5.id,
+            // Cluster 5 fields
+            polisCluster5Id: opinionTable.polisCluster5Id,
             polisCluster5Key: polisClusterTableAlias5.key,
-            polisCluster5AiLabel: polisClusterTableAlias5.aiLabel,
             polisCluster5NumUsers: polisClusterTableAlias5.numUsers,
             polisCluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
             polisCluster5NumDisagrees: opinionTable.polisCluster5NumDisagrees,
             polisCluster5NumPasses: opinionTable.polisCluster5NumPasses,
+            // Opinion author's cluster
             opinionAuthorPolisClusterId: polisClusterUserTable.polisClusterId,
         })
         .from(opinionTable)
@@ -492,6 +490,11 @@ export async function fetchOpinionsByPostId({
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
         )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        // Join cluster tables for cluster stats
         .leftJoin(
             polisClusterTableAlias0,
             eq(polisClusterTableAlias0.id, opinionTable.polisCluster0Id),
@@ -516,27 +519,13 @@ export async function fetchOpinionsByPostId({
             polisClusterTableAlias5,
             eq(polisClusterTableAlias5.id, opinionTable.polisCluster5Id),
         )
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
-        )
-        .leftJoin(
-            polisContentTable,
-            eq(polisContentTable.id, conversationTable.currentPolisContentId),
-        )
-        .leftJoin(
-            polisClusterUserTable,
-            and(
-                eq(polisClusterUserTable.polisContentId, polisContentTable.id),
-                eq(polisClusterUserTable.userId, opinionTable.authorId),
-            ),
-        )
+        // Join cluster opinion tables for representative opinion scores
         .leftJoin(
             polisClusterOpinionTableAlias0,
             and(
                 eq(
                     polisClusterOpinionTableAlias0.polisClusterId,
-                    polisClusterTableAlias0.id,
+                    opinionTable.polisCluster0Id,
                 ),
                 eq(polisClusterOpinionTableAlias0.opinionId, opinionTable.id),
             ),
@@ -546,7 +535,7 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(
                     polisClusterOpinionTableAlias1.polisClusterId,
-                    polisClusterTableAlias1.id,
+                    opinionTable.polisCluster1Id,
                 ),
                 eq(polisClusterOpinionTableAlias1.opinionId, opinionTable.id),
             ),
@@ -556,7 +545,7 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(
                     polisClusterOpinionTableAlias2.polisClusterId,
-                    polisClusterTableAlias2.id,
+                    opinionTable.polisCluster2Id,
                 ),
                 eq(polisClusterOpinionTableAlias2.opinionId, opinionTable.id),
             ),
@@ -566,7 +555,7 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(
                     polisClusterOpinionTableAlias3.polisClusterId,
-                    polisClusterTableAlias3.id,
+                    opinionTable.polisCluster3Id,
                 ),
                 eq(polisClusterOpinionTableAlias3.opinionId, opinionTable.id),
             ),
@@ -576,7 +565,7 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(
                     polisClusterOpinionTableAlias4.polisClusterId,
-                    polisClusterTableAlias4.id,
+                    opinionTable.polisCluster4Id,
                 ),
                 eq(polisClusterOpinionTableAlias4.opinionId, opinionTable.id),
             ),
@@ -586,155 +575,173 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(
                     polisClusterOpinionTableAlias5.polisClusterId,
-                    polisClusterTableAlias5.id,
+                    opinionTable.polisCluster5Id,
                 ),
                 eq(polisClusterOpinionTableAlias5.opinionId, opinionTable.id),
             ),
         )
+        // Join to get current polis content
+        .leftJoin(
+            polisContentTable,
+            eq(polisContentTable.id, conversationTable.currentPolisContentId),
+        )
+        // Join to get opinion author's cluster
+        .leftJoin(
+            polisClusterUserTable,
+            and(
+                eq(polisClusterUserTable.polisContentId, polisContentTable.id),
+                eq(polisClusterUserTable.userId, opinionTable.authorId),
+            ),
+        )
         .orderBy(...orderByClause)
         .where(whereClause)
-        .limit(limit); // TODO: infinite virtual scrolling instead
+        .limit(limit);
 
-    const opinionItemMap: OpinionItemPerSlugId = new Map<string, OpinionItem>();
-    results.map((opinionResponse) => {
+    const opinionItemMap: AnalysisOpinionItemPerSlugId = new Map<
+        string,
+        AnalysisOpinionItem
+    >();
+    results.map((result) => {
         const moderationProperties = createCommentModerationPropertyObject(
-            opinionResponse.moderationAction,
-            opinionResponse.moderationExplanation,
-            opinionResponse.moderationReason,
-            opinionResponse.moderationCreatedAt,
-            opinionResponse.moderationUpdatedAt,
+            result.moderationAction,
+            result.moderationExplanation,
+            result.moderationReason,
+            result.moderationCreatedAt,
+            result.moderationUpdatedAt,
         );
 
+        // Build cluster stats array
         const clustersStats: ClusterStats[] = [];
+
         if (
-            opinionResponse.polisCluster0Key !== null &&
-            opinionResponse.polisCluster0NumUsers !== null &&
-            opinionResponse.polisCluster0NumAgrees !== null &&
-            opinionResponse.polisCluster0NumDisagrees !== null &&
-            opinionResponse.polisCluster0NumPasses !== null
+            result.polisCluster0Key !== null &&
+            result.polisCluster0NumUsers !== null &&
+            result.polisCluster0NumAgrees !== null &&
+            result.polisCluster0NumDisagrees !== null &&
+            result.polisCluster0NumPasses !== null
         ) {
             clustersStats.push({
-                key: opinionResponse.polisCluster0Key,
-                aiLabel: toUnionUndefined(opinionResponse.polisCluster0AiLabel),
+                key: result.polisCluster0Key,
                 isAuthorInCluster:
-                    opinionResponse.opinionAuthorPolisClusterId ===
-                    opinionResponse.polisCluster0Id,
-                numUsers: opinionResponse.polisCluster0NumUsers,
-                numAgrees: opinionResponse.polisCluster0NumAgrees,
-                numDisagrees: opinionResponse.polisCluster0NumDisagrees,
-                numPasses: opinionResponse.polisCluster0NumPasses,
+                    result.opinionAuthorPolisClusterId ===
+                    result.polisCluster0Id,
+                numUsers: result.polisCluster0NumUsers,
+                numAgrees: result.polisCluster0NumAgrees,
+                numDisagrees: result.polisCluster0NumDisagrees,
+                numPasses: result.polisCluster0NumPasses,
             });
         }
+
         if (
-            opinionResponse.polisCluster1Key !== null &&
-            opinionResponse.polisCluster1NumUsers !== null &&
-            opinionResponse.polisCluster1NumAgrees !== null &&
-            opinionResponse.polisCluster1NumDisagrees !== null &&
-            opinionResponse.polisCluster1NumPasses !== null
+            result.polisCluster1Key !== null &&
+            result.polisCluster1NumUsers !== null &&
+            result.polisCluster1NumAgrees !== null &&
+            result.polisCluster1NumDisagrees !== null &&
+            result.polisCluster1NumPasses !== null
         ) {
             clustersStats.push({
-                key: opinionResponse.polisCluster1Key,
-                aiLabel: toUnionUndefined(opinionResponse.polisCluster1AiLabel),
+                key: result.polisCluster1Key,
                 isAuthorInCluster:
-                    opinionResponse.opinionAuthorPolisClusterId ===
-                    opinionResponse.polisCluster1Id,
-                numUsers: opinionResponse.polisCluster1NumUsers,
-                numAgrees: opinionResponse.polisCluster1NumAgrees,
-                numDisagrees: opinionResponse.polisCluster1NumDisagrees,
-                numPasses: opinionResponse.polisCluster1NumPasses,
+                    result.opinionAuthorPolisClusterId ===
+                    result.polisCluster1Id,
+                numUsers: result.polisCluster1NumUsers,
+                numAgrees: result.polisCluster1NumAgrees,
+                numDisagrees: result.polisCluster1NumDisagrees,
+                numPasses: result.polisCluster1NumPasses,
             });
         }
+
         if (
-            opinionResponse.polisCluster2Key !== null &&
-            opinionResponse.polisCluster2NumUsers !== null &&
-            opinionResponse.polisCluster2NumAgrees !== null &&
-            opinionResponse.polisCluster2NumDisagrees !== null &&
-            opinionResponse.polisCluster2NumPasses !== null
+            result.polisCluster2Key !== null &&
+            result.polisCluster2NumUsers !== null &&
+            result.polisCluster2NumAgrees !== null &&
+            result.polisCluster2NumDisagrees !== null &&
+            result.polisCluster2NumPasses !== null
         ) {
             clustersStats.push({
-                key: opinionResponse.polisCluster2Key,
-                aiLabel: toUnionUndefined(opinionResponse.polisCluster2AiLabel),
+                key: result.polisCluster2Key,
                 isAuthorInCluster:
-                    opinionResponse.opinionAuthorPolisClusterId ===
-                    opinionResponse.polisCluster2Id,
-                numUsers: opinionResponse.polisCluster2NumUsers,
-                numAgrees: opinionResponse.polisCluster2NumAgrees,
-                numDisagrees: opinionResponse.polisCluster2NumDisagrees,
-                numPasses: opinionResponse.polisCluster2NumPasses,
+                    result.opinionAuthorPolisClusterId ===
+                    result.polisCluster2Id,
+                numUsers: result.polisCluster2NumUsers,
+                numAgrees: result.polisCluster2NumAgrees,
+                numDisagrees: result.polisCluster2NumDisagrees,
+                numPasses: result.polisCluster2NumPasses,
             });
         }
+
         if (
-            opinionResponse.polisCluster3Key !== null &&
-            opinionResponse.polisCluster3NumUsers !== null &&
-            opinionResponse.polisCluster3NumAgrees !== null &&
-            opinionResponse.polisCluster3NumDisagrees !== null &&
-            opinionResponse.polisCluster3NumPasses !== null
+            result.polisCluster3Key !== null &&
+            result.polisCluster3NumUsers !== null &&
+            result.polisCluster3NumAgrees !== null &&
+            result.polisCluster3NumDisagrees !== null &&
+            result.polisCluster3NumPasses !== null
         ) {
             clustersStats.push({
-                key: opinionResponse.polisCluster3Key,
-                aiLabel: toUnionUndefined(opinionResponse.polisCluster3AiLabel),
+                key: result.polisCluster3Key,
                 isAuthorInCluster:
-                    opinionResponse.opinionAuthorPolisClusterId ===
-                    opinionResponse.polisCluster3Id,
-                numUsers: opinionResponse.polisCluster3NumUsers,
-                numAgrees: opinionResponse.polisCluster3NumAgrees,
-                numDisagrees: opinionResponse.polisCluster3NumDisagrees,
-                numPasses: opinionResponse.polisCluster3NumPasses,
+                    result.opinionAuthorPolisClusterId ===
+                    result.polisCluster3Id,
+                numUsers: result.polisCluster3NumUsers,
+                numAgrees: result.polisCluster3NumAgrees,
+                numDisagrees: result.polisCluster3NumDisagrees,
+                numPasses: result.polisCluster3NumPasses,
             });
         }
+
         if (
-            opinionResponse.polisCluster4Key !== null &&
-            opinionResponse.polisCluster4NumUsers !== null &&
-            opinionResponse.polisCluster4NumAgrees !== null &&
-            opinionResponse.polisCluster4NumDisagrees !== null &&
-            opinionResponse.polisCluster4NumPasses !== null
+            result.polisCluster4Key !== null &&
+            result.polisCluster4NumUsers !== null &&
+            result.polisCluster4NumAgrees !== null &&
+            result.polisCluster4NumDisagrees !== null &&
+            result.polisCluster4NumPasses !== null
         ) {
             clustersStats.push({
-                key: opinionResponse.polisCluster4Key,
-                aiLabel: toUnionUndefined(opinionResponse.polisCluster4AiLabel),
+                key: result.polisCluster4Key,
                 isAuthorInCluster:
-                    opinionResponse.opinionAuthorPolisClusterId ===
-                    opinionResponse.polisCluster4Id,
-                numUsers: opinionResponse.polisCluster4NumUsers,
-                numAgrees: opinionResponse.polisCluster4NumAgrees,
-                numDisagrees: opinionResponse.polisCluster4NumDisagrees,
-                numPasses: opinionResponse.polisCluster4NumPasses,
+                    result.opinionAuthorPolisClusterId ===
+                    result.polisCluster4Id,
+                numUsers: result.polisCluster4NumUsers,
+                numAgrees: result.polisCluster4NumAgrees,
+                numDisagrees: result.polisCluster4NumDisagrees,
+                numPasses: result.polisCluster4NumPasses,
             });
         }
+
         if (
-            opinionResponse.polisCluster5Key !== null &&
-            opinionResponse.polisCluster5NumUsers !== null &&
-            opinionResponse.polisCluster5NumAgrees !== null &&
-            opinionResponse.polisCluster5NumDisagrees !== null &&
-            opinionResponse.polisCluster5NumPasses !== null
+            result.polisCluster5Key !== null &&
+            result.polisCluster5NumUsers !== null &&
+            result.polisCluster5NumAgrees !== null &&
+            result.polisCluster5NumDisagrees !== null &&
+            result.polisCluster5NumPasses !== null
         ) {
             clustersStats.push({
-                key: opinionResponse.polisCluster5Key,
-                aiLabel: toUnionUndefined(opinionResponse.polisCluster5AiLabel),
+                key: result.polisCluster5Key,
                 isAuthorInCluster:
-                    opinionResponse.opinionAuthorPolisClusterId ===
-                    opinionResponse.polisCluster5Id,
-                numUsers: opinionResponse.polisCluster5NumUsers,
-                numAgrees: opinionResponse.polisCluster5NumAgrees,
-                numDisagrees: opinionResponse.polisCluster5NumDisagrees,
-                numPasses: opinionResponse.polisCluster5NumPasses,
+                    result.opinionAuthorPolisClusterId ===
+                    result.polisCluster5Id,
+                numUsers: result.polisCluster5NumUsers,
+                numAgrees: result.polisCluster5NumAgrees,
+                numDisagrees: result.polisCluster5NumDisagrees,
+                numPasses: result.polisCluster5NumPasses,
             });
         }
-        const item: OpinionItem = {
-            opinion: opinionResponse.comment,
-            opinionSlugId: opinionResponse.commentSlugId,
-            createdAt: opinionResponse.createdAt,
-            numParticipants: opinionResponse.numParticipants,
-            numDisagrees: opinionResponse.numDisagrees,
-            numAgrees: opinionResponse.numAgrees,
-            numPasses: opinionResponse.numPasses,
-            updatedAt: opinionResponse.updatedAt,
-            username: opinionResponse.username,
+
+        const item: AnalysisOpinionItem = {
+            opinion: result.comment,
+            opinionSlugId: result.commentSlugId,
+            createdAt: result.createdAt,
+            numParticipants: result.numParticipants,
+            numDisagrees: result.numDisagrees,
+            numAgrees: result.numAgrees,
+            numPasses: result.numPasses,
+            updatedAt: result.updatedAt,
+            username: result.username,
             moderation: moderationProperties,
+            isSeed: result.isSeed,
             clustersStats: clustersStats,
-            isSeed: opinionResponse.isSeed,
         };
-        opinionItemMap.set(opinionResponse.commentSlugId, item);
+        opinionItemMap.set(result.commentSlugId, item);
     });
 
     if (personalizationUserId) {
@@ -757,16 +764,25 @@ export async function fetchOpinionsByPostId({
     return opinionItemMap;
 }
 
-export async function fetchOpinions({
+interface FetchAnalysisOpinionsByPostSlugIdProps {
+    db: PostgresJsDatabase;
+    postSlugId: SlugId;
+    personalizationUserId?: string;
+    filterTarget: "consensus" | "controversial" | "representative";
+    clusterKey?: PolisKey;
+    limit: number;
+}
+
+export async function fetchAnalysisOpinionsByPostSlugId({
     db,
     postSlugId,
     personalizationUserId,
     filterTarget,
     clusterKey,
     limit,
-}: FetchOpinionsProps): Promise<OpinionItemPerSlugId> {
+}: FetchAnalysisOpinionsByPostSlugIdProps): Promise<AnalysisOpinionItemPerSlugId> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
-    return await fetchOpinionsByPostId({
+    return await fetchAnalysisOpinionsByPostId({
         db,
         postId,
         personalizationUserId,
@@ -774,109 +790,6 @@ export async function fetchOpinions({
         clusterKey,
         limit,
     });
-}
-
-interface FetchOpinionsByConversationSlugIdProps {
-    db: PostgresJsDatabase;
-    postSlugId: SlugId;
-    fetchTarget: CommentFeedFilter; // if cluster, then we filter by clusterKey
-    personalizationUserId?: string;
-    clusterKey?: PolisKey;
-}
-
-export async function fetchOpinionsByConversationSlugId({
-    db,
-    postSlugId,
-    fetchTarget,
-    personalizationUserId,
-    clusterKey,
-}: FetchOpinionsByConversationSlugIdProps): Promise<OpinionItemPerSlugId> {
-    let opinionItemMap: OpinionItemPerSlugId;
-    const limit = 3000; // TODO: infinite scrolling
-    switch (fetchTarget) {
-        case "moderated":
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "moderated",
-                limit: limit,
-            });
-            break;
-        case "hidden":
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "hidden",
-                limit: limit,
-            });
-            break;
-        case "new":
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "new",
-                limit: limit,
-            });
-            break;
-        case "cluster": {
-            if (clusterKey === undefined) {
-                throw httpErrors.badRequest(
-                    "Missing cluster key input for the cluster filter algorithm",
-                );
-            } else {
-                opinionItemMap = await fetchOpinions({
-                    db,
-                    postSlugId,
-                    personalizationUserId,
-                    filterTarget: "representative",
-                    clusterKey: clusterKey,
-                    limit: limit,
-                });
-            }
-            break;
-        }
-        case "group-aware-consensus":
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "group-aware-consensus",
-                limit: limit,
-            });
-            break;
-        case "majority":
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "majority",
-                limit: limit,
-            });
-            break;
-        case "controversial":
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "controversial",
-                limit: limit,
-            });
-            break;
-        case "discover": {
-            opinionItemMap = await fetchOpinions({
-                db,
-                postSlugId,
-                personalizationUserId,
-                filterTarget: "discover",
-                limit: limit,
-            });
-            break;
-        }
-    }
-    return opinionItemMap;
 }
 
 interface FetchOpinionsByOpinionSlugIdListProps {
@@ -949,7 +862,6 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 username: commentResponse.username,
                 moderation: moderationProperties,
                 isSeed: commentResponse.isSeed,
-                clustersStats: [], //TODO: change this!
             };
             opinionItemList.push(item);
         });
@@ -1018,17 +930,19 @@ export async function fetchAnalysisByConversationSlugId({
             );
         }
     }
-    const consensusOpinions = await fetchOpinionsByConversationSlugId({
+    const consensusOpinions = await fetchAnalysisOpinionsByPostSlugId({
         db: db,
         postSlugId: conversationSlugId,
-        fetchTarget: "group-aware-consensus",
+        filterTarget: "consensus",
         personalizationUserId,
+        limit: 3000,
     });
-    const controversialOpinions = await fetchOpinionsByConversationSlugId({
+    const controversialOpinions = await fetchAnalysisOpinionsByPostSlugId({
         db: db,
         postSlugId: conversationSlugId,
-        fetchTarget: "controversial",
+        filterTarget: "controversial",
         personalizationUserId,
+        limit: 3000,
     });
     const polisClusters: PolisClusters = {};
     for (const [key, clusterMetadata] of Object.entries(
@@ -1037,12 +951,13 @@ export async function fetchAnalysisByConversationSlugId({
         // without casting, record key is otherwise always a string
         //
         const clusterKey = key as keyof typeof polisMetadata.clustersMetadata;
-        const representativeOpinions = await fetchOpinionsByConversationSlugId({
+        const representativeOpinions = await fetchAnalysisOpinionsByPostSlugId({
             db: db,
             postSlugId: conversationSlugId,
-            fetchTarget: "cluster",
+            filterTarget: "representative",
             clusterKey: clusterKey,
             personalizationUserId,
+            limit: 50,
         });
         // Destructure to exclude 'id' field since the response schema doesn't expect it
         const { id: _id, ...clusterWithoutId } = clusterMetadata;
