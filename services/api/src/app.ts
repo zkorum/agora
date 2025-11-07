@@ -93,6 +93,11 @@ const configSchema = sharedConfigSchema.extend({
         .string()
         .default("exports/conversations/"),
     CONVERSATION_EXPORT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
+    S3_PRESIGNED_URL_EXPIRY_SECONDS: z.coerce
+        .number()
+        .int()
+        .min(60)
+        .default(3600), // Presigned URL expiry (default: 1 hour)
     CONVERSATION_EXPORT_ENABLED: z
         .enum(["true", "false"])
         .optional()
