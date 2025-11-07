@@ -570,6 +570,119 @@ export async function cleanupExpiredExports({
     }
 }
 
+interface DeleteAllConversationExportsParams {
+    db: PostgresDatabase;
+    conversationId: number;
+}
+
+/**
+ * Delete all exports for a conversation (called when conversation is deleted).
+ * Marks exports as deleted and cleans up S3 files.
+ * This function does not throw errors to allow graceful degradation.
+ */
+export async function deleteAllConversationExports({
+    db,
+    conversationId,
+}: DeleteAllConversationExportsParams): Promise<number> {
+    const now = new Date();
+
+    try {
+        // Find all non-deleted exports for this conversation
+        const existingExports = await db
+            .select({
+                id: conversationExportTable.id,
+            })
+            .from(conversationExportTable)
+            .where(
+                and(
+                    eq(conversationExportTable.conversationId, conversationId),
+                    eq(conversationExportTable.isDeleted, false),
+                ),
+            );
+
+        if (existingExports.length === 0) {
+            log.info(
+                `No exports found for conversation ${conversationId.toString()}`,
+            );
+            return 0;
+        }
+
+        log.info(
+            `Deleting ${existingExports.length.toString()} exports for conversation ${conversationId.toString()}`,
+        );
+
+        let deletedCount = 0;
+
+        for (const exportRecord of existingExports) {
+            try {
+                // Fetch all S3 keys for this export
+                const fileRecords = await db
+                    .select({
+                        s3Key: conversationExportFileTable.s3Key,
+                    })
+                    .from(conversationExportFileTable)
+                    .where(
+                        eq(
+                            conversationExportFileTable.exportId,
+                            exportRecord.id,
+                        ),
+                    );
+
+                // Delete from S3
+                for (const file of fileRecords) {
+                    if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+                        try {
+                            await deleteFromS3({
+                                s3Key: file.s3Key,
+                                bucketName: config.AWS_S3_BUCKET_NAME,
+                            });
+                        } catch (s3Error: unknown) {
+                            log.error(
+                                `Error deleting S3 file ${file.s3Key}:`,
+                                s3Error,
+                            );
+                            // Continue with other files even if one fails
+                        }
+                    }
+                }
+
+                log.info(
+                    `Deleted ${fileRecords.length.toString()} files from S3 for export ${exportRecord.id.toString()}`,
+                );
+
+                // Mark as deleted in database
+                await db
+                    .update(conversationExportTable)
+                    .set({
+                        isDeleted: true,
+                        deletedAt: now,
+                        updatedAt: now,
+                    })
+                    .where(eq(conversationExportTable.id, exportRecord.id));
+
+                deletedCount++;
+                log.info(
+                    `Deleted export ${exportRecord.id.toString()} for conversation ${conversationId.toString()}`,
+                );
+            } catch (error: unknown) {
+                log.error(
+                    `Error deleting export ${exportRecord.id.toString()}:`,
+                    error,
+                );
+                // Continue with other exports even if one fails
+            }
+        }
+
+        return deletedCount;
+    } catch (error: unknown) {
+        log.error(
+            `Error in deleteAllConversationExports for conversation ${conversationId.toString()}:`,
+            error,
+        );
+        return 0;
+    }
+}
+
 interface CleanupOldExportsParams {
     db: PostgresDatabase;
     conversationId: number;
