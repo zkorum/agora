@@ -140,7 +140,9 @@ const { invalidateAnalysis, forceRefreshAnalysis } =
   useInvalidateCommentQueries();
 const shareActions = useShareActions();
 const notify = useNotify();
-const { t } = useComponentI18n<PostDetailsTranslations>(postDetailsTranslations);
+const { t } = useComponentI18n<PostDetailsTranslations>(
+  postDetailsTranslations
+);
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
@@ -151,7 +153,9 @@ const participantCountLocal = ref(
 const { profileData } = storeToRefs(userStore);
 
 // Lazy load analysis data only when user clicks Analysis tab
-const isAnalysisEnabled = computed(() => !props.compactMode && currentTab.value === 'analysis');
+const isAnalysisEnabled = computed(
+  () => !props.compactMode && currentTab.value === "analysis"
+);
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
@@ -182,8 +186,7 @@ const commentsModeratedQuery = useCommentsQuery({
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode && profileData.value.isModerator,
+  enabled: !props.compactMode && userStore.profileData.isModerator,
 });
 
 const { verifiedEventTickets } = storeToRefs(userStore);
@@ -333,8 +336,12 @@ watch(currentTab, async (newTab) => {
         commentsDiscoverQuery,
         commentsNewQuery,
         commentsModeratedQuery,
-        hiddenCommentsQuery,
       ];
+
+      // Only include hiddenCommentsQuery if user is a moderator
+      if (userStore.profileData.isModerator) {
+        commentQueries.push(hiddenCommentsQuery);
+      }
 
       const staleQueries = commentQueries.filter(
         (query) => query.isStale.value
