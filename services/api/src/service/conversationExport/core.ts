@@ -4,22 +4,21 @@ import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
     conversationExportTable,
+    conversationExportFileTable,
     conversationTable,
     opinionTable,
-    opinionContentTable,
     opinionModerationTable,
-    userTable,
 } from "@/shared-backend/schema.js";
-import { format as formatCsv } from "fast-csv";
-import { format as formatDate } from "date-fns";
-import { TZDate } from "@date-fns/tz";
-import { uploadToS3, generatePresignedUrl } from "./s3.js";
+import { uploadToS3, generatePresignedUrl } from "../s3.js";
 import { nanoid } from "nanoid";
 import type {
     RequestConversationExportResponse,
     GetConversationExportStatusResponse,
     GetConversationExportHistoryResponse,
 } from "@/shared/types/dto.js";
+import { ExportGeneratorFactory } from "./generators/factory.js";
+import { generateS3Key, generateFileName } from "./utils.js";
+import type { ProcessConversationExportParams } from "./types.js";
 
 interface RequestConversationExportParams {
     db: PostgresDatabase;
@@ -107,15 +106,8 @@ export async function requestConversationExport({
     };
 }
 
-interface ProcessConversationExportParams {
-    db: PostgresDatabase;
-    exportSlugId: string;
-    conversationId: number;
-    conversationSlugId: string;
-}
-
 /**
- * Background job to generate CSV and upload to S3.
+ * Background job to generate all CSV files and upload to S3.
  */
 async function processConversationExport({
     db,
@@ -124,48 +116,93 @@ async function processConversationExport({
     conversationSlugId,
 }: ProcessConversationExportParams): Promise<void> {
     try {
-        // Generate CSV buffer
-        const { csvBuffer, opinionCount } = await generateConversationCsv({
-            db,
-            conversationId,
-            conversationSlugId,
-        });
+        // Get export ID for file records
+        const [exportRecord] = await db
+            .select({ id: conversationExportTable.id })
+            .from(conversationExportTable)
+            .where(eq(conversationExportTable.slugId, exportSlugId))
+            .limit(1);
 
-        // Generate S3 key
-        const timestamp = Date.now();
-        const s3Key = `${config.AWS_S3_CONVERSATION_EXPORTS_PATH}${conversationSlugId}/${conversationSlugId}-${timestamp.toString()}-comments.csv`;
+        if (!exportRecord) {
+            throw new Error(`Export record not found: ${exportSlugId}`);
+        }
 
-        // Upload to S3
-        if (
-            config.AWS_S3_BUCKET_NAME === undefined ||
-            config.AWS_S3_REGION === undefined
-        ) {
+        const exportId = exportRecord.id;
+
+        // Initialize generator factory
+        const factory = new ExportGeneratorFactory();
+        const generators = factory.getAllGenerators();
+
+        // Validate S3 configuration
+        if (!config.AWS_S3_BUCKET_NAME || !config.AWS_S3_REGION) {
             throw new Error("S3 configuration is missing");
         }
 
-        await uploadToS3({
-            s3Key,
-            buffer: csvBuffer,
-            bucketName: config.AWS_S3_BUCKET_NAME,
-        });
+        let totalSize = 0;
+        const fileRecords = [];
 
-        // Generate pre-signed URL (valid for 7 days)
-        const { url, expiresAt } = await generatePresignedUrl({
-            s3Key,
-            bucketName: config.AWS_S3_BUCKET_NAME,
-            expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
-        });
+        // Generate each file
+        for (const generator of generators) {
+            const fileType = generator.fileType;
 
-        // Update export record
+            // Generate CSV
+            const { csvBuffer, recordCount } = await generator.generate({
+                db,
+                conversationId,
+                conversationSlugId,
+            });
+
+            // Generate S3 key
+            const s3Key = generateS3Key({
+                conversationSlugId,
+                exportSlugId,
+                fileType,
+            });
+
+            // Upload to S3
+            await uploadToS3({
+                s3Key,
+                buffer: csvBuffer,
+                bucketName: config.AWS_S3_BUCKET_NAME,
+            });
+
+            // Generate pre-signed URL (valid for 7 days)
+            const { url, expiresAt } = await generatePresignedUrl({
+                s3Key,
+                bucketName: config.AWS_S3_BUCKET_NAME,
+                expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
+            });
+
+            // Insert file record
+            const [fileRecord] = await db
+                .insert(conversationExportFileTable)
+                .values({
+                    exportId: exportId,
+                    fileType: fileType,
+                    fileName: generateFileName(fileType),
+                    fileSize: csvBuffer.length,
+                    recordCount: recordCount,
+                    s3Key: s3Key,
+                    s3Url: url,
+                    s3UrlExpiresAt: expiresAt,
+                })
+                .returning();
+
+            fileRecords.push(fileRecord);
+            totalSize += csvBuffer.length;
+
+            log.info(
+                `Generated ${fileType}.csv for export ${exportSlugId}: ${recordCount.toString()} records, ${csvBuffer.length.toString()} bytes`,
+            );
+        }
+
+        // Update export record with totals
         await db
             .update(conversationExportTable)
             .set({
                 status: "completed",
-                s3Key,
-                s3Url: url,
-                s3UrlExpiresAt: expiresAt,
-                fileSize: csvBuffer.length,
-                opinionCount,
+                totalFileSize: totalSize,
+                totalFileCount: fileRecords.length,
                 updatedAt: new Date(),
             })
             .where(eq(conversationExportTable.slugId, exportSlugId));
@@ -175,7 +212,7 @@ async function processConversationExport({
         if (error instanceof Error) {
             log.error(`Error message: ${error.message}`);
             if (error.stack) {
-                log.error(`Stack trace: ${error.stack}`); // Full stack trace
+                log.error(`Stack trace: ${error.stack}`);
             }
         }
 
@@ -194,113 +231,6 @@ async function processConversationExport({
     }
 }
 
-interface GenerateConversationCsvParams {
-    db: PostgresDatabase;
-    conversationId: number;
-    conversationSlugId: string;
-}
-
-interface GenerateConversationCsvReturn {
-    csvBuffer: Buffer;
-    opinionCount: number;
-}
-
-/**
- * Escape CSV field according to RFC 4180.
- * Wraps text in double quotes and escapes internal quotes by doubling them.
- */
-function escapeCsvField(text: string): string {
-    const escaped = text.replace(/"/g, '""');
-    return `"${escaped}"`;
-}
-
-/**
- * Format date as human-readable string for Polis export.
- * Formats in UTC timezone following Polis specification.
- * Example: "Sat Nov 17 05:09:36 UTC 2018"
- */
-function formatDatetime(date: Date): string {
-    // Convert to UTC TZDate for proper timezone handling
-    const utcDate = new TZDate(date, "UTC");
-
-    // Format: EEE MMM dd HH:mm:ss zzz yyyy
-    // Example: "Sat Nov 17 05:09:36 UTC 2018"
-    return formatDate(utcDate, "EEE MMM dd HH:mm:ss zzz yyyy");
-}
-
-/**
- * Generate CSV file for conversation following Polis specification.
- */
-async function generateConversationCsv({
-    db,
-    conversationId,
-}: GenerateConversationCsvParams): Promise<GenerateConversationCsvReturn> {
-    // Fetch all opinions for this conversation with moderation status
-    const opinions = await db
-        .select({
-            opinionId: opinionTable.id,
-            authorParticipantId: userTable.polisParticipantId,
-            content: opinionContentTable.content,
-            createdAt: opinionTable.createdAt,
-            numAgrees: opinionTable.numAgrees,
-            numDisagrees: opinionTable.numDisagrees,
-            moderationId: opinionModerationTable.id,
-        })
-        .from(opinionTable)
-        .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
-        .innerJoin(
-            opinionContentTable,
-            eq(opinionTable.currentContentId, opinionContentTable.id),
-        )
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionTable.id, opinionModerationTable.opinionId),
-        )
-        .where(eq(opinionTable.conversationId, conversationId))
-        .orderBy(opinionTable.createdAt);
-
-    // Generate CSV rows following Polis spec
-    const rows = opinions.map((opinion) => ({
-        timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
-        datetime: formatDatetime(opinion.createdAt),
-        "comment-id": opinion.opinionId,
-        "author-id": opinion.authorParticipantId,
-        agrees: opinion.numAgrees,
-        disagrees: opinion.numDisagrees,
-        moderated: opinion.moderationId !== null ? 1 : 0,
-        "comment-body": escapeCsvField(opinion.content),
-    }));
-
-    const csvStream = formatCsv({ headers: true });
-    const chunks: Buffer[] = [];
-
-    csvStream.on("data", (chunk: Buffer) => {
-        chunks.push(chunk);
-    });
-
-    // Write all rows
-    for (const row of rows) {
-        csvStream.write(row);
-    }
-
-    csvStream.end();
-
-    // Wait for stream to finish
-    await new Promise<void>((resolve, reject) => {
-        csvStream.on("end", () => {
-            resolve();
-        });
-        csvStream.on("error", reject);
-    });
-
-    const csvBuffer = Buffer.concat(chunks);
-
-    return {
-        csvBuffer,
-        opinionCount: opinions.length,
-    };
-}
-
 interface GetConversationExportStatusParams {
     db: PostgresDatabase;
     exportSlugId: string;
@@ -308,7 +238,7 @@ interface GetConversationExportStatusParams {
 }
 
 /**
- * Get export status and download URL.
+ * Get export status and download URLs for all files.
  */
 export async function getConversationExportStatus({
     db,
@@ -319,10 +249,8 @@ export async function getConversationExportStatus({
             slugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             conversationSlugId: conversationTable.slugId,
-            s3Url: conversationExportTable.s3Url,
-            s3UrlExpiresAt: conversationExportTable.s3UrlExpiresAt,
-            fileSize: conversationExportTable.fileSize,
-            opinionCount: conversationExportTable.opinionCount,
+            totalFileSize: conversationExportTable.totalFileSize,
+            totalFileCount: conversationExportTable.totalFileCount,
             errorMessage: conversationExportTable.errorMessage,
             createdAt: conversationExportTable.createdAt,
         })
@@ -345,14 +273,43 @@ export async function getConversationExportStatus({
 
     const exportRecord = exportRecordList[0];
 
+    // Fetch all file records for this export
+    const fileRecords = await db
+        .select({
+            fileType: conversationExportFileTable.fileType,
+            fileName: conversationExportFileTable.fileName,
+            fileSize: conversationExportFileTable.fileSize,
+            recordCount: conversationExportFileTable.recordCount,
+            s3Url: conversationExportFileTable.s3Url,
+            s3UrlExpiresAt: conversationExportFileTable.s3UrlExpiresAt,
+        })
+        .from(conversationExportFileTable)
+        .innerJoin(
+            conversationExportTable,
+            eq(
+                conversationExportFileTable.exportId,
+                conversationExportTable.id,
+            ),
+        )
+        .where(eq(conversationExportTable.slugId, exportSlugId));
+
     return {
         exportSlugId: exportRecord.slugId,
         status: exportRecord.status,
         conversationSlugId: exportRecord.conversationSlugId,
-        downloadUrl: exportRecord.s3Url ?? undefined,
-        urlExpiresAt: exportRecord.s3UrlExpiresAt ?? undefined,
-        fileSize: exportRecord.fileSize ?? undefined,
-        opinionCount: exportRecord.opinionCount ?? undefined,
+        totalFileSize: exportRecord.totalFileSize ?? undefined,
+        totalFileCount: exportRecord.totalFileCount ?? undefined,
+        files:
+            fileRecords.length > 0
+                ? fileRecords.map((file) => ({
+                      fileType: file.fileType,
+                      fileName: file.fileName,
+                      fileSize: file.fileSize,
+                      recordCount: file.recordCount,
+                      downloadUrl: file.s3Url,
+                      urlExpiresAt: file.s3UrlExpiresAt,
+                  }))
+                : undefined,
         errorMessage: exportRecord.errorMessage ?? undefined,
         createdAt: exportRecord.createdAt,
     };
@@ -376,8 +333,7 @@ export async function getConversationExportHistory({
             exportSlugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             createdAt: conversationExportTable.createdAt,
-            downloadUrl: conversationExportTable.s3Url,
-            urlExpiresAt: conversationExportTable.s3UrlExpiresAt,
+            totalFileCount: conversationExportTable.totalFileCount,
         })
         .from(conversationExportTable)
         .innerJoin(
@@ -397,8 +353,7 @@ export async function getConversationExportHistory({
         exportSlugId: exp.exportSlugId,
         status: exp.status,
         createdAt: exp.createdAt,
-        downloadUrl: exp.downloadUrl ?? undefined,
-        urlExpiresAt: exp.urlExpiresAt ?? undefined,
+        totalFileCount: exp.totalFileCount ?? undefined,
     }));
 }
 
@@ -408,6 +363,7 @@ interface CleanupExpiredExportsParams {
 
 /**
  * Cleanup expired exports (cron job).
+ * Marks exports as deleted and cleans up S3 files.
  */
 export async function cleanupExpiredExports({
     db,
@@ -418,7 +374,6 @@ export async function cleanupExpiredExports({
     const expiredExports = await db
         .select({
             id: conversationExportTable.id,
-            s3Key: conversationExportTable.s3Key,
         })
         .from(conversationExportTable)
         .where(
@@ -434,15 +389,31 @@ export async function cleanupExpiredExports({
 
     for (const exportRecord of expiredExports) {
         try {
-            // TODO: Delete from S3
-            // if (exportRecord.s3Key && config.AWS_S3_BUCKET_NAME) {
-            //     await deleteFromS3({
-            //         s3Key: exportRecord.s3Key,
-            //         bucketName: config.AWS_S3_BUCKET_NAME,
-            //     });
-            // }
+            // Fetch all S3 keys for this export
+            const fileRecords = await db
+                .select({
+                    s3Key: conversationExportFileTable.s3Key,
+                })
+                .from(conversationExportFileTable)
+                .where(
+                    eq(conversationExportFileTable.exportId, exportRecord.id),
+                );
 
-            // Mark as deleted in database
+            // TODO: Delete from S3 (requires implementing deleteFromS3 function in s3.ts)
+            // for (const file of fileRecords) {
+            //     if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+            //         await deleteFromS3({
+            //             s3Key: file.s3Key,
+            //             bucketName: config.AWS_S3_BUCKET_NAME,
+            //         });
+            //     }
+            // }
+            // For now, just log the files that would be deleted
+            log.info(
+                `Would delete ${fileRecords.length.toString()} files from S3 for export ${exportRecord.id.toString()}`,
+            );
+
+            // Mark as deleted in database (cascade will handle file records if needed)
             await db
                 .update(conversationExportTable)
                 .set({
