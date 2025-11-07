@@ -655,19 +655,19 @@ export class Dto {
         .strict();
     static requestConversationExportResponse = z
         .object({
-            exportId: z.number().int().positive(),
+            exportSlugId: zodSlugId,
             status: z.literal("processing"),
             estimatedCompletionTime: z.date(),
         })
         .strict();
     static getConversationExportStatusRequest = z
         .object({
-            exportId: z.number().int().positive(),
+            exportSlugId: zodSlugId,
         })
         .strict();
     static getConversationExportStatusResponse = z
         .object({
-            exportId: z.number().int().positive(),
+            exportSlugId: zodSlugId,
             status: zodExportStatus,
             conversationSlugId: zodSlugId,
             downloadUrl: z.string().url().optional(),
@@ -686,7 +686,7 @@ export class Dto {
     static getConversationExportHistoryResponse = z.array(
         z
             .object({
-                exportId: z.number().int().positive(),
+                exportSlugId: zodSlugId,
                 status: zodExportStatus,
                 createdAt: z.date(),
                 downloadUrl: z.string().url().optional(),

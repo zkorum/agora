@@ -6527,10 +6527,9 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "exportId": {
-                                            "type": "integer",
-                                            "exclusiveMinimum": true,
-                                            "minimum": 0
+                                        "exportSlugId": {
+                                            "type": "string",
+                                            "maxLength": 10
                                         },
                                         "status": {
                                             "type": "string",
@@ -6544,7 +6543,7 @@
                                         }
                                     },
                                     "required": [
-                                        "exportId",
+                                        "exportSlugId",
                                         "status",
                                         "estimatedCompletionTime"
                                     ],
@@ -6556,17 +6555,16 @@
                 }
             }
         },
-        "/api/v1/conversation/export/status/{exportId}": {
+        "/api/v1/conversation/export/status/{exportSlugId}": {
             "get": {
                 "parameters": [
                     {
                         "schema": {
-                            "type": "integer",
-                            "exclusiveMinimum": true,
-                            "minimum": 0
+                            "type": "string",
+                            "maxLength": 10
                         },
                         "in": "path",
-                        "name": "exportId",
+                        "name": "exportSlugId",
                         "required": true
                     }
                 ],
@@ -6578,10 +6576,9 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "exportId": {
-                                            "type": "integer",
-                                            "exclusiveMinimum": true,
-                                            "minimum": 0
+                                        "exportSlugId": {
+                                            "type": "string",
+                                            "maxLength": 10
                                         },
                                         "status": {
                                             "type": "string",
@@ -6621,7 +6618,7 @@
                                         }
                                     },
                                     "required": [
-                                        "exportId",
+                                        "exportSlugId",
                                         "status",
                                         "conversationSlugId",
                                         "createdAt"
@@ -6657,10 +6654,9 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "exportId": {
-                                                "type": "integer",
-                                                "exclusiveMinimum": true,
-                                                "minimum": 0
+                                            "exportSlugId": {
+                                                "type": "string",
+                                                "maxLength": 10
                                             },
                                             "status": {
                                                 "type": "string",
@@ -6684,7 +6680,7 @@
                                             }
                                         },
                                         "required": [
-                                            "exportId",
+                                            "exportSlugId",
                                             "status",
                                             "createdAt"
                                         ],

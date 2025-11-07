@@ -52,12 +52,12 @@
             <div class="export-list">
               <div
                 v-for="exportItem in exportHistoryQuery.data.value"
-                :key="exportItem.exportId"
+                :key="exportItem.exportSlugId"
                 class="export-item"
               >
                 <div class="export-info">
                   <div class="export-id">
-                    {{ t("exportId") }}: #{{ exportItem.exportId }}
+                    {{ t("exportId") }}: #{{ exportItem.exportSlugId }}
                   </div>
                   <div class="export-date">
                     {{ t("createdAt") }}: {{ formatDate(exportItem.createdAt) }}
@@ -104,6 +104,7 @@
 import { computed } from "vue";
 import { useDateFormat } from "@vueuse/core";
 import { useRouteParams } from "@vueuse/router";
+import { useRouter } from "vue-router";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -120,6 +121,7 @@ import {
 import type { ExportStatus } from "src/shared/types/zod";
 
 const { t } = useComponentI18n<ExportPageTranslations>(exportPageTranslations);
+const router = useRouter();
 
 const conversationSlugIdParam = useRouteParams("conversationSlugId");
 const conversationSlugId = computed(() => {
@@ -138,8 +140,23 @@ const exportHistoryQuery = useExportHistoryQuery({
 
 const requestExportMutation = useRequestExportMutation();
 
-function handleRequestExport(): void {
-  requestExportMutation.mutate(conversationSlugId.value);
+async function handleRequestExport(): Promise<void> {
+  try {
+    const result = await requestExportMutation.mutateAsync(
+      conversationSlugId.value
+    );
+    // Navigate to the export status page to track progress
+    await router.push({
+      name: "/conversation/[conversationSlugId]/export.[exportId]",
+      params: {
+        conversationSlugId: conversationSlugId.value,
+        exportId: result.exportSlugId,
+      },
+    });
+  } catch (error) {
+    // Error handling is managed by the mutation's error state
+    console.error("Failed to request export:", error);
+  }
 }
 
 function handleDownload(url: string): void {
