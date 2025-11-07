@@ -6407,6 +6407,206 @@
                     }
                 }
             }
+        },
+        "/api/v1/conversation/export/request": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "exportId": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "minimum": 0
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "processing"
+                                            ]
+                                        },
+                                        "estimatedCompletionTime": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "required": [
+                                        "exportId",
+                                        "status",
+                                        "estimatedCompletionTime"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/export/status/{exportId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                        },
+                        "in": "path",
+                        "name": "exportId",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "exportId": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "minimum": 0
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "processing",
+                                                "completed",
+                                                "failed"
+                                            ]
+                                        },
+                                        "conversationSlugId": {
+                                            "type": "string",
+                                            "maxLength": 10
+                                        },
+                                        "downloadUrl": {
+                                            "type": "string",
+                                            "format": "uri"
+                                        },
+                                        "urlExpiresAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "fileSize": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "minimum": 0
+                                        },
+                                        "opinionCount": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "errorMessage": {
+                                            "type": "string"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "required": [
+                                        "exportId",
+                                        "status",
+                                        "conversationSlugId",
+                                        "createdAt"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/export/history/{conversationSlugId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 10
+                        },
+                        "in": "path",
+                        "name": "conversationSlugId",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "exportId": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": true,
+                                                "minimum": 0
+                                            },
+                                            "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "processing",
+                                                    "completed",
+                                                    "failed"
+                                                ]
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "downloadUrl": {
+                                                "type": "string",
+                                                "format": "uri"
+                                            },
+                                            "urlExpiresAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        },
+                                        "required": [
+                                            "exportId",
+                                            "status",
+                                            "createdAt"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "servers": [],

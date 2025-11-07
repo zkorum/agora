@@ -23,6 +23,7 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import * as conversationExportService from "@/service/conversationExport.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -2366,6 +2367,84 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 preferences: request.body,
             });
+        },
+    });
+
+    // Conversation Export Routes
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/request`,
+        schema: {
+            body: Dto.requestConversationExportRequest,
+            response: {
+                200: Dto.requestConversationExportResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.requestConversationExport({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/status/:exportId`,
+        schema: {
+            params: Dto.getConversationExportStatusRequest,
+            response: {
+                200: Dto.getConversationExportStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.getConversationExportStatus({
+                db: db,
+                exportId: request.params.exportId,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/history/:conversationSlugId`,
+        schema: {
+            params: Dto.getConversationExportHistoryRequest,
+            response: {
+                200: Dto.getConversationExportHistoryResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.getConversationExportHistory(
+                {
+                    db: db,
+                    conversationSlugId: request.params.conversationSlugId,
+                    userId: deviceStatus.userId,
+                },
+            );
         },
     });
 });

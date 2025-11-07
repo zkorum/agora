@@ -86,6 +86,13 @@ const configSchema = sharedConfigSchema.extend({
             "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
         ),
     IS_ORG_IMPORT_ONLY: z.coerce.boolean().default(false),
+    // S3 configuration for conversation CSV exports
+    AWS_S3_REGION: z.string().optional(),
+    AWS_S3_BUCKET_NAME: z.string().optional(),
+    AWS_S3_CONVERSATION_EXPORTS_PATH: z
+        .string()
+        .default("exports/conversations/"),
+    CONVERSATION_EXPORT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
 });
 
 export const config = configSchema.parse(process.env);
