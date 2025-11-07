@@ -18,4 +18,5 @@ export {
     getConversationExportHistory,
     deleteConversationExport,
     cleanupExpiredExports,
+    deleteAllConversationExports,
 } from "./core.js";
