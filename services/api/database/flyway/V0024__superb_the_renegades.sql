@@ -1,6 +1,7 @@
 CREATE TYPE "public"."export_status_enum" AS ENUM('processing', 'completed', 'failed');--> statement-breakpoint
 CREATE TABLE "conversation_export" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_export_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
 	"conversation_id" integer NOT NULL,
 	"status" "export_status_enum" DEFAULT 'processing' NOT NULL,
 	"s3_key" text,
@@ -13,7 +14,8 @@ CREATE TABLE "conversation_export" (
 	"is_deleted" boolean DEFAULT false NOT NULL,
 	"deleted_at" timestamp (0),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_export_slug_id_unique" UNIQUE("slug_id")
 );
 --> statement-breakpoint
 ALTER TABLE "conversation_export" ADD CONSTRAINT "conversation_export_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

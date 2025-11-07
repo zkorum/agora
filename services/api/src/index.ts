@@ -2398,7 +2398,7 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",
-        url: `/api/${apiVersion}/conversation/export/status/:exportId`,
+        url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
         schema: {
             params: Dto.getConversationExportStatusRequest,
             response: {
@@ -2415,7 +2415,7 @@ server.after(() => {
             );
             return await conversationExportService.getConversationExportStatus({
                 db: db,
-                exportId: request.params.exportId,
+                exportSlugId: request.params.exportSlugId,
                 userId: deviceStatus.userId,
             });
         },

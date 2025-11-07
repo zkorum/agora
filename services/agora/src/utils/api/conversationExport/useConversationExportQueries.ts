@@ -14,16 +14,8 @@ export function useExportHistoryQuery({
     queryKey: ["exportHistory", conversationSlugId],
     queryFn: () => fetchExportHistory(conversationSlugId),
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 0, // Always stale - exports can change frequently during processing
+    staleTime: 0, // Always stale - exports can change frequently
     refetchInterval: (query) => {
-      // Auto-refetch every 5 seconds if there are processing exports
-      const hasProcessing = query.state.data?.some(
-        (item) => item.status === "processing"
-      );
-      if (hasProcessing) {
-        return 5000;
-      }
-
       // Auto-refetch if any completed export has a URL expiring in less than 30 minutes
       const hasExpiringUrl = query.state.data?.some((item) => {
         if (item.status !== "completed" || !item.urlExpiresAt) {
@@ -59,22 +51,22 @@ export function useRequestExportMutation() {
 }
 
 export function useExportStatusQuery({
-  exportId,
+  exportSlugId,
   enabled = true,
 }: {
-  exportId: number;
+  exportSlugId: string;
   enabled?: boolean;
 }) {
   const { fetchExportStatus } = useBackendConversationExportApi();
 
   return useQuery({
-    queryKey: ["exportStatus", exportId],
-    queryFn: () => fetchExportStatus(exportId),
-    enabled: enabled && exportId > 0,
+    queryKey: ["exportStatus", exportSlugId],
+    queryFn: () => fetchExportStatus(exportSlugId),
+    enabled: enabled && exportSlugId.length > 0,
     staleTime: 0, // Always stale
     refetchInterval: (query) => {
-      // Auto-refetch every 10 seconds if status is processing
-      return query.state.data?.status === "processing" ? 10000 : false;
+      // Auto-refetch every 2 seconds if status is processing
+      return query.state.data?.status === "processing" ? 2000 : false;
     },
     retry: false,
   });
@@ -90,9 +82,9 @@ export function useInvalidateExportQueries() {
         queryKey: ["exportHistory", conversationSlugId],
       });
     },
-    invalidateExportStatus: (exportId: number) => {
+    invalidateExportStatus: (exportSlugId: string) => {
       void queryClient.invalidateQueries({
-        queryKey: ["exportStatus", exportId],
+        queryKey: ["exportStatus", exportSlugId],
       });
     },
     invalidateAll: (conversationSlugId: string) => {

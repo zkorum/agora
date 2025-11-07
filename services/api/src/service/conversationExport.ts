@@ -21,7 +21,7 @@ interface RequestConversationExportParams {
 }
 
 interface RequestConversationExportReturn {
-    exportId: number;
+    exportSlugId: string;
     status: "processing";
     estimatedCompletionTime: Date;
 }
@@ -53,15 +53,18 @@ export async function requestConversationExport({
             config.CONVERSATION_EXPORT_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
+    const exportSlugId = nanoid(8);
+
     const [exportRecord] = await db
         .insert(conversationExportTable)
         .values({
+            slugId: exportSlugId,
             conversationId: conversationId,
             status: "processing",
             expiresAt: expiresAt,
         })
         .returning({
-            id: conversationExportTable.id,
+            slugId: conversationExportTable.slugId,
         });
 
     // Estimate completion time (2 minutes for now, can be adjusted based on conversation size)
@@ -70,7 +73,7 @@ export async function requestConversationExport({
     // Start background processing (don't await)
     processConversationExport({
         db,
-        exportId: exportRecord.id,
+        exportSlugId: exportRecord.slugId,
         conversationId,
         conversationSlugId,
     }).catch((error: unknown) => {
@@ -78,7 +81,7 @@ export async function requestConversationExport({
     });
 
     return {
-        exportId: exportRecord.id,
+        exportSlugId: exportRecord.slugId,
         status: "processing",
         estimatedCompletionTime,
     };
@@ -86,7 +89,7 @@ export async function requestConversationExport({
 
 interface ProcessConversationExportParams {
     db: PostgresDatabase;
-    exportId: number;
+    exportSlugId: string;
     conversationId: number;
     conversationSlugId: string;
 }
@@ -96,7 +99,7 @@ interface ProcessConversationExportParams {
  */
 async function processConversationExport({
     db,
-    exportId,
+    exportSlugId,
     conversationId,
     conversationSlugId,
 }: ProcessConversationExportParams): Promise<void> {
@@ -146,11 +149,9 @@ async function processConversationExport({
                 opinionCount,
                 updatedAt: new Date(),
             })
-            .where(eq(conversationExportTable.id, exportId));
+            .where(eq(conversationExportTable.slugId, exportSlugId));
 
-        log.info(
-            `Conversation export ${exportId.toString()} completed successfully`,
-        );
+        log.info(`Conversation export ${exportSlugId} completed successfully`);
     } catch (error: unknown) {
         if (error instanceof Error) {
             log.error(`Error message: ${error.message}`);
@@ -170,7 +171,7 @@ async function processConversationExport({
                         : "Unknown error occurred",
                 updatedAt: new Date(),
             })
-            .where(eq(conversationExportTable.id, exportId));
+            .where(eq(conversationExportTable.slugId, exportSlugId));
     }
 }
 
@@ -277,12 +278,12 @@ async function generateConversationCsv({
 
 interface GetConversationExportStatusParams {
     db: PostgresDatabase;
-    exportId: number;
+    exportSlugId: string;
     userId: string;
 }
 
 interface GetConversationExportStatusReturn {
-    exportId: number;
+    exportSlugId: string;
     status: "processing" | "completed" | "failed";
     conversationSlugId: string;
     downloadUrl?: string;
@@ -298,11 +299,11 @@ interface GetConversationExportStatusReturn {
  */
 export async function getConversationExportStatus({
     db,
-    exportId,
+    exportSlugId,
 }: GetConversationExportStatusParams): Promise<GetConversationExportStatusReturn> {
     const exportRecordList = await db
         .select({
-            id: conversationExportTable.id,
+            slugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             conversationSlugId: conversationTable.slugId,
             s3Url: conversationExportTable.s3Url,
@@ -319,7 +320,7 @@ export async function getConversationExportStatus({
         )
         .where(
             and(
-                eq(conversationExportTable.id, exportId),
+                eq(conversationExportTable.slugId, exportSlugId),
                 eq(conversationExportTable.isDeleted, false),
             ),
         )
@@ -332,7 +333,7 @@ export async function getConversationExportStatus({
     const exportRecord = exportRecordList[0];
 
     return {
-        exportId: exportRecord.id,
+        exportSlugId: exportRecord.slugId,
         status: exportRecord.status,
         conversationSlugId: exportRecord.conversationSlugId,
         downloadUrl: exportRecord.s3Url ?? undefined,
@@ -351,7 +352,7 @@ interface GetConversationExportHistoryParams {
 }
 
 interface ConversationExportHistoryItem {
-    exportId: number;
+    exportSlugId: string;
     status: "processing" | "completed" | "failed";
     createdAt: Date;
     downloadUrl?: string;
@@ -369,7 +370,7 @@ export async function getConversationExportHistory({
 > {
     const exports = await db
         .select({
-            exportId: conversationExportTable.id,
+            exportSlugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             createdAt: conversationExportTable.createdAt,
             downloadUrl: conversationExportTable.s3Url,
@@ -390,7 +391,7 @@ export async function getConversationExportHistory({
         .limit(10);
 
     return exports.map((exp) => ({
-        exportId: exp.exportId,
+        exportSlugId: exp.exportSlugId,
         status: exp.status,
         createdAt: exp.createdAt,
         downloadUrl: exp.downloadUrl ?? undefined,
