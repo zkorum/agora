@@ -1172,10 +1172,10 @@ export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof A
 export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
-    'exportId': number;
+    'exportSlugId': string;
     /**
      * 
      * @type {string}
@@ -1218,10 +1218,10 @@ export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerS
 export interface ApiV1ConversationExportRequestPost200Response {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
-    'exportId': number;
+    'exportSlugId': string;
     /**
      * 
      * @type {string}
@@ -1245,72 +1245,72 @@ export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof Api
 /**
  * 
  * @export
- * @interface ApiV1ConversationExportStatusExportIdGet200Response
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200Response
  */
-export interface ApiV1ConversationExportStatusExportIdGet200Response {
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
-     */
-    'exportId': number;
+export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'status': ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum;
+    'exportSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'conversationSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'downloadUrl'?: string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'urlExpiresAt'?: string;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'fileSize'?: number;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'opinionCount'?: number;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'errorMessage'?: string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'createdAt': string;
 }
 
-export const ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum = {
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = {
     Processing: 'processing',
     Completed: 'completed',
     Failed: 'failed'
 } as const;
 
-export type ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum];
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum];
 
 /**
  * 
@@ -4194,15 +4194,15 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {number} exportId 
+         * @param {string} exportSlugId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationExportStatusExportIdGet: async (exportId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'exportId' is not null or undefined
-            assertParamExists('apiV1ConversationExportStatusExportIdGet', 'exportId', exportId)
-            const localVarPath = `/api/v1/conversation/export/status/{exportId}`
-                .replace(`{${"exportId"}}`, encodeURIComponent(String(exportId)));
+        apiV1ConversationExportStatusExportSlugIdGet: async (exportSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'exportSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportStatusExportSlugIdGet', 'exportSlugId', exportSlugId)
+            const localVarPath = `/api/v1/conversation/export/status/{exportSlugId}`
+                .replace(`{${"exportSlugId"}}`, encodeURIComponent(String(exportSlugId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -5900,14 +5900,14 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {number} exportId 
+         * @param {string} exportSlugId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationExportStatusExportIdGet(exportId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportStatusExportIdGet200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportStatusExportIdGet(exportId, options);
+        async apiV1ConversationExportStatusExportSlugIdGet(exportSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportStatusExportSlugIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportStatusExportSlugIdGet(exportSlugId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportStatusExportIdGet']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportStatusExportSlugIdGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -6538,12 +6538,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {number} exportId 
+         * @param {string} exportSlugId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationExportStatusExportIdGet(exportId: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportStatusExportIdGet200Response> {
-            return localVarFp.apiV1ConversationExportStatusExportIdGet(exportId, options).then((request) => request(axios, basePath));
+        apiV1ConversationExportStatusExportSlugIdGet(exportSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportStatusExportSlugIdGet200Response> {
+            return localVarFp.apiV1ConversationExportStatusExportSlugIdGet(exportSlugId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -7097,13 +7097,13 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {number} exportId 
+     * @param {string} exportSlugId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiV1ConversationExportStatusExportIdGet(exportId: number, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1ConversationExportStatusExportIdGet(exportId, options).then((request) => request(this.axios, this.basePath));
+    public apiV1ConversationExportStatusExportSlugIdGet(exportSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportStatusExportSlugIdGet(exportSlugId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

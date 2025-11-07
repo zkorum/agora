@@ -256,6 +256,12 @@
             "cycle": false
           }
         },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "integer",
@@ -418,7 +424,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "conversation_export_slug_id_unique": {
+          "name": "conversation_export_slug_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
