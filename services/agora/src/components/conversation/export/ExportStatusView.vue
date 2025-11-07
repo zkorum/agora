@@ -33,44 +33,6 @@
           </div>
         </div>
 
-        <!-- URL Expiration Warning -->
-        <div
-          v-if="
-            exportStatusQuery.data.value.status === 'completed' &&
-            exportStatusQuery.data.value.urlExpiresAt &&
-            isUrlExpiringSoon(exportStatusQuery.data.value.urlExpiresAt)
-          "
-          class="warning-banner"
-        >
-          <q-icon name="warning" size="sm" />
-          <span>{{ t("urlExpiresSoon") }}</span>
-        </div>
-
-        <!-- Download Button -->
-        <div
-          v-if="
-            exportStatusQuery.data.value.status === 'completed' &&
-            exportStatusQuery.data.value.downloadUrl
-          "
-          class="download-section"
-        >
-          <a
-            :href="exportStatusQuery.data.value.downloadUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            download
-            class="download-link"
-          >
-            <PrimeButton
-              :label="t('download')"
-              icon="pi pi-download"
-              severity="success"
-              size="large"
-              as="span"
-            />
-          </a>
-        </div>
-
         <!-- Export Information Card -->
         <div class="info-card">
           <h3 class="info-title">{{ t("exportInfo") }}</h3>
@@ -93,31 +55,22 @@
                 formatDate(exportStatusQuery.data.value.createdAt)
               }}</span>
             </div>
-            <div v-if="exportStatusQuery.data.value.fileSize" class="info-item">
-              <span class="info-label">{{ t("fileSize") }}:</span>
+            <div
+              v-if="exportStatusQuery.data.value.totalFileCount"
+              class="info-item"
+            >
+              <span class="info-label">{{ t("totalFiles") }}:</span>
               <span class="info-value">{{
-                formatFileSize(exportStatusQuery.data.value.fileSize)
+                exportStatusQuery.data.value.totalFileCount
               }}</span>
             </div>
             <div
-              v-if="exportStatusQuery.data.value.opinionCount !== undefined"
+              v-if="exportStatusQuery.data.value.totalFileSize"
               class="info-item"
             >
-              <span class="info-label">{{ t("opinionCount") }}:</span>
+              <span class="info-label">{{ t("totalSize") }}:</span>
               <span class="info-value">{{
-                exportStatusQuery.data.value.opinionCount
-              }}</span>
-            </div>
-            <div
-              v-if="
-                exportStatusQuery.data.value.urlExpiresAt &&
-                exportStatusQuery.data.value.status === 'completed'
-              "
-              class="info-item"
-            >
-              <span class="info-label">{{ t("urlExpiresAt") }}:</span>
-              <span class="info-value">{{
-                formatDate(exportStatusQuery.data.value.urlExpiresAt)
+                formatFileSize(exportStatusQuery.data.value.totalFileSize)
               }}</span>
             </div>
             <div
@@ -131,6 +84,76 @@
               <span class="info-value">{{
                 exportStatusQuery.data.value.errorMessage
               }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Available Files Section -->
+        <div
+          v-if="
+            exportStatusQuery.data.value.status === 'completed' &&
+            exportStatusQuery.data.value.files &&
+            exportStatusQuery.data.value.files.length > 0
+          "
+          class="files-section"
+        >
+          <h3 class="section-title">{{ t("availableFiles") }}</h3>
+          <div class="files-list">
+            <div
+              v-for="file in exportStatusQuery.data.value.files"
+              :key="file.fileType"
+              class="file-card"
+            >
+              <!-- Expiration Warning for this file -->
+              <div
+                v-if="isUrlExpiringSoon(file.urlExpiresAt)"
+                class="file-warning"
+              >
+                <q-icon name="warning" size="xs" />
+                <span>{{ t("urlExpiresSoon") }}</span>
+              </div>
+
+              <div class="file-header">
+                <q-icon name="description" size="md" color="primary" />
+                <span class="file-name">{{ file.fileName }}</span>
+              </div>
+
+              <div class="file-details">
+                <div class="file-detail-item">
+                  <span class="detail-label">{{ t("fileSize") }}:</span>
+                  <span class="detail-value">{{
+                    formatFileSize(file.fileSize)
+                  }}</span>
+                </div>
+                <div class="file-detail-item">
+                  <span class="detail-label">{{ t("recordCount") }}:</span>
+                  <span class="detail-value">{{ file.recordCount }}</span>
+                </div>
+                <div class="file-detail-item">
+                  <span class="detail-label">{{ t("urlExpiresAt") }}:</span>
+                  <span class="detail-value">{{
+                    formatDate(file.urlExpiresAt)
+                  }}</span>
+                </div>
+              </div>
+
+              <div class="file-actions">
+                <a
+                  :href="file.downloadUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  class="download-link"
+                >
+                  <PrimeButton
+                    :label="t('download')"
+                    icon="pi pi-download"
+                    severity="success"
+                    size="small"
+                    as="span"
+                  />
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -303,5 +326,114 @@ function isUrlExpiringSoon(expiresAt: Date): boolean {
 
 .error-item .info-value {
   color: $negative;
+}
+
+.files-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-semibold);
+  color: $color-text-strong;
+}
+
+.files-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+.file-card {
+  position: relative;
+  padding: 1.5rem;
+  border: 1px solid $color-border-weak;
+  border-radius: 8px;
+  background-color: $color-background-default;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.file-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: rgba($warning, 0.1);
+  border: 1px solid $warning;
+  color: $warning;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.file-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid $color-border-weak;
+}
+
+.file-name {
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  color: $color-text-strong;
+  word-break: break-word;
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.file-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  color: $color-text-weak;
+  font-weight: var(--font-weight-semibold);
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  color: $color-text-strong;
+  text-align: right;
+}
+
+.file-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid $color-border-weak;
+
+  .download-link {
+    text-decoration: none;
+    width: 100%;
+
+    :deep(.p-button) {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 }
 </style>

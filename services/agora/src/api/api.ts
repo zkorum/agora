@@ -1190,16 +1190,10 @@ export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseI
     'createdAt': string;
     /**
      * 
-     * @type {string}
+     * @type {number}
      * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
-    'downloadUrl'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
-     */
-    'urlExpiresAt'?: string;
+    'totalFileCount'?: number;
 }
 
 export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
@@ -1249,28 +1243,22 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
     'conversationSlugId': string;
     /**
      * 
-     * @type {string}
+     * @type {number}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'downloadUrl'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
-     */
-    'urlExpiresAt'?: string;
+    'totalFileSize'?: number;
     /**
      * 
      * @type {number}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'fileSize'?: number;
+    'totalFileCount'?: number;
     /**
      * 
-     * @type {number}
+     * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner>}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'opinionCount'?: number;
+    'files'?: Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner>;
     /**
      * 
      * @type {string}
@@ -1292,6 +1280,60 @@ export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum =
 } as const;
 
 export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     */
+    'fileType': ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     */
+    'fileName': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     */
+    'fileSize': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     */
+    'recordCount': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     */
+    'downloadUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     */
+    'urlExpiresAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum = {
+    Comments: 'comments',
+    Votes: 'votes',
+    Participants: 'participants',
+    Summary: 'summary',
+    Stats: 'stats'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum];
 
 /**
  * 

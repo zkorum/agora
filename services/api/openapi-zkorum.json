@@ -6491,22 +6491,62 @@
                                             "type": "string",
                                             "maxLength": 10
                                         },
-                                        "downloadUrl": {
-                                            "type": "string",
-                                            "format": "uri"
-                                        },
-                                        "urlExpiresAt": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "fileSize": {
+                                        "totalFileSize": {
                                             "type": "integer",
                                             "exclusiveMinimum": true,
                                             "minimum": 0
                                         },
-                                        "opinionCount": {
+                                        "totalFileCount": {
                                             "type": "integer",
+                                            "exclusiveMinimum": true,
                                             "minimum": 0
+                                        },
+                                        "files": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "fileType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "comments",
+                                                            "votes",
+                                                            "participants",
+                                                            "summary",
+                                                            "stats"
+                                                        ]
+                                                    },
+                                                    "fileName": {
+                                                        "type": "string"
+                                                    },
+                                                    "fileSize": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "minimum": 0
+                                                    },
+                                                    "recordCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0
+                                                    },
+                                                    "downloadUrl": {
+                                                        "type": "string",
+                                                        "format": "uri"
+                                                    },
+                                                    "urlExpiresAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "fileType",
+                                                    "fileName",
+                                                    "fileSize",
+                                                    "recordCount",
+                                                    "downloadUrl",
+                                                    "urlExpiresAt"
+                                                ],
+                                                "additionalProperties": false
+                                            }
                                         },
                                         "errorMessage": {
                                             "type": "string"
@@ -6569,13 +6609,10 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             },
-                                            "downloadUrl": {
-                                                "type": "string",
-                                                "format": "uri"
-                                            },
-                                            "urlExpiresAt": {
-                                                "type": "string",
-                                                "format": "date-time"
+                                            "totalFileCount": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": true,
+                                                "minimum": 0
                                             }
                                         },
                                         "required": [

@@ -41,6 +41,7 @@ import {
     zodPolisClusters,
     zodEventSlug,
     zodExportStatus,
+    zodExportFileInfo,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -608,10 +609,9 @@ export class Dto {
             exportSlugId: zodSlugId,
             status: zodExportStatus,
             conversationSlugId: zodSlugId,
-            downloadUrl: z.string().url().optional(),
-            urlExpiresAt: z.date().optional(),
-            fileSize: z.number().int().positive().optional(),
-            opinionCount: z.number().int().nonnegative().optional(),
+            totalFileSize: z.number().int().positive().optional(),
+            totalFileCount: z.number().int().positive().optional(),
+            files: z.array(zodExportFileInfo).optional(),
             errorMessage: z.string().optional(),
             createdAt: z.date(),
         })
@@ -627,8 +627,7 @@ export class Dto {
                 exportSlugId: zodSlugId,
                 status: zodExportStatus,
                 createdAt: z.date(),
-                downloadUrl: z.string().url().optional(),
-                urlExpiresAt: z.date().optional(),
+                totalFileCount: z.number().int().positive().optional(),
             })
             .strict(),
     );
