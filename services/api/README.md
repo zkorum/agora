@@ -22,10 +22,11 @@ Run a local PostgreSQL instance:
 ```bash
 docker compose up -d
 ```
-Acces pgadmin on ```http://localhost:5050```. Note that Email/Username and password are defined in the docker-compose.yml file
 
+Acces pgadmin on `http://localhost:5050`. Note that Email/Username and password are defined in the docker-compose.yml file
 
 Prepare the databse migration:
+
 ```bash
 pnpm run db:generate
 ```
@@ -35,14 +36,12 @@ Warning: do not use `pnpm drizzle-it generate:pg` directly! We use Flyway to mig
 Potentially modify generated `.sql` files before actually migrating.
 
 Migrate the PostgreSQL schema according to `flyway.conf` config:
+
 ```bash
 pnpm run db:migrate
 ```
 
-
 At this stage, you should have a docker container running, have access to the the pgadmin home page and have a with correct schema's.
-
-
 
 ## Running the api
 
@@ -75,6 +74,83 @@ To visualize how it works, checkout the staging environment.
 ### Nostr Integration
 
 If `NOSTR_PROOF_CHANNEL_EVENT_ID` is undefined, then the proofs won't be broadcast to Nostr.
+
+### S3 Integration
+
+S3 is used for the conversation export feature, allowing users to export conversation data (opinions and votes) as CSV files with secure pre-signed download URLs.
+
+#### Environment Variables
+
+```bash
+AWS_S3_REGION=us-east-1
+AWS_S3_BUCKET_NAME=agora-conversation-exports
+AWS_S3_CONVERSATION_EXPORTS_PATH=exports/conversations/
+```
+
+#### IAM Permissions
+
+The application requires an IAM role/user with the following permissions:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::agora-conversation-exports/*",
+                "arn:aws:s3:::agora-conversation-exports"
+            ]
+        }
+    ]
+}
+```
+
+#### Quick S3 Bucket Setup (AWS CLI)
+
+```bash
+# Create bucket
+aws s3api create-bucket --bucket agora-conversation-exports --region us-east-1
+
+# Enable default encryption (SSE-S3)
+aws s3api put-bucket-encryption --bucket agora-conversation-exports \
+  --server-side-encryption-configuration '{
+    "Rules": [{
+      "ApplyServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+      },
+      "BucketKeyEnabled": true
+    }]
+  }'
+
+# Block public access
+aws s3api put-public-access-block --bucket agora-conversation-exports \
+  --public-access-block-configuration \
+  "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+
+# Set lifecycle policy (auto-delete after 30 days)
+aws s3api put-bucket-lifecycle-configuration --bucket agora-conversation-exports \
+  --lifecycle-configuration '{
+    "Rules": [{
+      "ID": "DeleteOldExports",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "exports/conversations/"
+      },
+      "Expiration": {
+        "Days": 30
+      }
+    }]
+  }'
+```
+
+For detailed AWS Console setup instructions and troubleshooting, see [docs/aws-s3-setup.md](docs/aws-s3-setup.md).
 
 ## Test
 
