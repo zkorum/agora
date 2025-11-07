@@ -8,8 +8,6 @@ CREATE TABLE "conversation_export_file" (
 	"file_size" integer NOT NULL,
 	"record_count" integer NOT NULL,
 	"s3_key" text NOT NULL,
-	"s3_url" text NOT NULL,
-	"s3_url_expires_at" timestamp (0) NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
