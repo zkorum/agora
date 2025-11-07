@@ -16,6 +16,7 @@ import type {
     GetConversationExportStatusResponse,
     GetConversationExportHistoryResponse,
 } from "@/shared/types/dto.js";
+import type { ExportFileInfo } from "@/shared/types/zod.js";
 import { ExportGeneratorFactory } from "./generators/factory.js";
 import {
     generateS3Key,
@@ -184,14 +185,8 @@ async function processConversationExport({
                 fileName: downloadFileName,
             });
 
-            // Generate pre-signed URL (valid for 7 days)
-            const { url, expiresAt } = await generatePresignedUrl({
-                s3Key,
-                bucketName: config.AWS_S3_BUCKET_NAME,
-                expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
-            });
-
             // Insert file record (store simple filename without timestamp)
+            // Note: Presigned URLs are generated on-demand in getConversationExportStatus
             const [fileRecord] = await db
                 .insert(conversationExportFileTable)
                 .values({
@@ -201,8 +196,6 @@ async function processConversationExport({
                     fileSize: csvBuffer.length,
                     recordCount: recordCount,
                     s3Key: s3Key,
-                    s3Url: url,
-                    s3UrlExpiresAt: expiresAt,
                 })
                 .returning();
 
@@ -297,8 +290,7 @@ export async function getConversationExportStatus({
             fileName: conversationExportFileTable.fileName,
             fileSize: conversationExportFileTable.fileSize,
             recordCount: conversationExportFileTable.recordCount,
-            s3Url: conversationExportFileTable.s3Url,
-            s3UrlExpiresAt: conversationExportFileTable.s3UrlExpiresAt,
+            s3Key: conversationExportFileTable.s3Key,
         })
         .from(conversationExportFileTable)
         .innerJoin(
@@ -310,23 +302,44 @@ export async function getConversationExportStatus({
         )
         .where(eq(conversationExportTable.slugId, exportSlugId));
 
+    // Generate presigned URLs on-demand for all files
+    let filesWithUrls: ExportFileInfo[] | undefined = undefined;
+
+    if (fileRecords.length > 0) {
+        if (!config.AWS_S3_BUCKET_NAME) {
+            throw new Error("S3 configuration is missing");
+        }
+
+        const bucketName = config.AWS_S3_BUCKET_NAME;
+
+        filesWithUrls = await Promise.all(
+            fileRecords.map(async (file) => {
+                // Generate fresh presigned URL with configurable expiration
+                const { url, expiresAt } = await generatePresignedUrl({
+                    s3Key: file.s3Key,
+                    bucketName,
+                    expiresIn: config.S3_PRESIGNED_URL_EXPIRY_SECONDS,
+                });
+
+                return {
+                    fileType: file.fileType,
+                    fileName: file.fileName,
+                    fileSize: file.fileSize,
+                    recordCount: file.recordCount,
+                    downloadUrl: url,
+                    urlExpiresAt: expiresAt,
+                };
+            }),
+        );
+    }
+
     return {
         exportSlugId: exportRecord.slugId,
         status: exportRecord.status,
         conversationSlugId: exportRecord.conversationSlugId,
         totalFileSize: exportRecord.totalFileSize ?? undefined,
         totalFileCount: exportRecord.totalFileCount ?? undefined,
-        files:
-            fileRecords.length > 0
-                ? fileRecords.map((file) => ({
-                      fileType: file.fileType,
-                      fileName: file.fileName,
-                      fileSize: file.fileSize,
-                      recordCount: file.recordCount,
-                      downloadUrl: file.s3Url,
-                      urlExpiresAt: file.s3UrlExpiresAt,
-                  }))
-                : undefined,
+        files: filesWithUrls,
         errorMessage: exportRecord.errorMessage ?? undefined,
         createdAt: exportRecord.createdAt,
     };
