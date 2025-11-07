@@ -1167,6 +1167,154 @@ export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof A
 /**
  * 
  * @export
+ * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+ */
+export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'exportId': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'downloadUrl'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'urlExpiresAt'?: string;
+}
+
+export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
+    Processing: 'processing',
+    Completed: 'completed',
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200Response
+ */
+export interface ApiV1ConversationExportRequestPost200Response {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'exportId': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'status': ApiV1ConversationExportRequestPost200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'estimatedCompletionTime': string;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
+    Processing: 'processing'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportIdGet200Response
+ */
+export interface ApiV1ConversationExportStatusExportIdGet200Response {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'exportId': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'status': ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'downloadUrl'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'urlExpiresAt'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'fileSize'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'opinionCount'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportIdGet200Response
+     */
+    'createdAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum = {
+    Processing: 'processing',
+    Completed: 'completed',
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportIdGet200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationFetchRecentPost200Response
  */
 export interface ApiV1ConversationFetchRecentPost200Response {
@@ -4014,6 +4162,119 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportHistoryConversationSlugIdGet: async (conversationSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'conversationSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportHistoryConversationSlugIdGet', 'conversationSlugId', conversationSlugId)
+            const localVarPath = `/api/v1/conversation/export/history/{conversationSlugId}`
+                .replace(`{${"conversationSlugId"}}`, encodeURIComponent(String(conversationSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportRequestPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationExportRequestPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/conversation/export/request`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {number} exportId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportStatusExportIdGet: async (exportId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'exportId' is not null or undefined
+            assertParamExists('apiV1ConversationExportStatusExportIdGet', 'exportId', exportId)
+            const localVarPath = `/api/v1/conversation/export/status/{exportId}`
+                .replace(`{${"exportId"}}`, encodeURIComponent(String(exportId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5725,6 +5986,42 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportHistoryConversationSlugIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportRequestPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportRequestPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {number} exportId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportStatusExportIdGet(exportId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportStatusExportIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportStatusExportIdGet(exportId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportStatusExportIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6355,6 +6652,33 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>> {
+            return localVarFp.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportRequestPost200Response> {
+            return localVarFp.apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {number} exportId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportStatusExportIdGet(exportId: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportStatusExportIdGet200Response> {
+            return localVarFp.apiV1ConversationExportStatusExportIdGet(exportId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6895,6 +7219,39 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} conversationSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {number} exportId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportStatusExportIdGet(exportId: number, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportStatusExportIdGet(exportId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
