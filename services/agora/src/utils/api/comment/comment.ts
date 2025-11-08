@@ -139,7 +139,13 @@ export function useBackendCommentApi() {
   async function createNewComment(
     commentBody: string,
     postSlugId: string
-  ): Promise<{ success: boolean; opinionSlugId?: string; reason?: string }> {
+  ): Promise<{
+    success: boolean;
+    opinionSlugId?: string;
+    reason?: string;
+    authStateChanged?: boolean;
+    needsCacheRefresh?: boolean;
+  }> {
     const params: ApiV1OpinionCreatePostRequest = {
       opinionBody: commentBody,
       conversationSlugId: postSlugId,
@@ -159,10 +165,16 @@ export function useBackendCommentApi() {
 
     if (response.data.success) {
       // TODO: properly manage errors in backend and return login status to update to
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      // Update auth state but defer cache operations to avoid clearing cache before opinion refresh
+      const { authStateChanged, needsCacheRefresh } = await updateAuthState({
+        partialLoginStatus: { isKnown: true },
+        deferCacheOperations: true,
+      });
       return {
         success: true,
         opinionSlugId: response.data.opinionSlugId,
+        authStateChanged,
+        needsCacheRefresh,
       };
     } else {
       return {

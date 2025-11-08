@@ -8,6 +8,8 @@ import type {
 import {
     type LinkType,
     type RarimoStatusAttributes,
+    zodZKProof,
+    zodStatusResponse,
 } from "@/shared/types/zod.js";
 import { type AxiosInstance } from "axios";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
@@ -19,7 +21,11 @@ import {
     loginNewDeviceWithZKP,
     registerWithZKP,
 } from "@/service/auth.js";
+import * as authUtilService from "@/service/authUtil.js";
 import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
+import { log } from "@/app.js";
+import { mergeGuestIntoVerifiedUser } from "./merge.js";
+import { httpErrors } from "@fastify/sensible";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;
@@ -128,17 +134,23 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
             eq(deviceTable.userId, zkPassportTable.userId),
         )
         .where(eq(deviceTable.didWrite, didWrite));
+
+    log.info(`[Rarimo] isLoggedInOrExistsAndAssociatedWithNoNullifier - found ${String(result.length)} device entries`);
+
     if (result.length !== 0) {
         // device was registered
         const resultLoggedIn = result.find((r) => r.sessionExpiry > now);
         if (resultLoggedIn !== undefined) {
+            log.info(`[Rarimo] Device is already logged in - returning already_logged_in`);
             return "already_logged_in";
         }
-        const resultWithNullifier = result.find((r) => r.nullifier !== null);
-        if (resultWithNullifier === undefined) {
-            return "associated_with_another_user";
-        }
+        // NOTE: Removed the "associated_with_another_user" check here to allow guest users
+        // (with no nullifier) to proceed with ZKP verification. The proper authentication
+        // type determination (including merge logic) will happen in getZKPAuthenticationType.
+        // The "associated_with_another_user" case is properly handled later in the flow when
+        // we detect a genuine conflict between two verified users.
     }
+    log.info(`[Rarimo] Returning undefined - proceeding with authentication flow`);
 }
 
 export async function generateVerificationLink({
@@ -197,6 +209,23 @@ export async function generateVerificationLink({
 
 // see https://github.com/rarimo/passport-zk-circuits?tab=readme-ov-file#query-circuit-public-signals
 function extractDataFromPubSignals(pubSignals: string[]): GetUserProofReturn {
+    // Validate array bounds before accessing elements
+    // Based on Rarimo circuit spec: requires at least 8 elements
+    const REQUIRED_PUB_SIGNALS_LENGTH = 8;
+
+    if (pubSignals.length < REQUIRED_PUB_SIGNALS_LENGTH) {
+        log.error(
+            {
+                actualLength: pubSignals.length,
+                requiredLength: REQUIRED_PUB_SIGNALS_LENGTH,
+            },
+            "[Rarimo] Invalid pub_signals array - insufficient elements",
+        );
+        throw httpErrors.badRequest(
+            `Invalid proof: pub_signals array has ${String(pubSignals.length)} elements, expected at least ${String(REQUIRED_PUB_SIGNALS_LENGTH)}`,
+        );
+    }
+
     return {
         nationality: hexToUtf8(decimalToHex(pubSignals[6])),
         nullifier: decimalToHex(pubSignals[0]),
@@ -212,8 +241,23 @@ async function getUserProof({
     const response =
         await axiosVerificatorSvc.get<UserParamsRequest>(getUserProofUrl);
     const userParamsRequest: UserParamsRequest = response.data;
+
+    // Validate proof structure with Zod before processing
+    const validationResult = zodZKProof.safeParse(
+        userParamsRequest.data.attributes.proof,
+    );
+    if (!validationResult.success) {
+        log.error(
+            { error: validationResult.error, didWrite },
+            "[Rarimo] Invalid proof structure from verification service",
+        );
+        throw httpErrors.badRequest(
+            "Invalid proof data received from verification service",
+        );
+    }
+
     const extractedData = extractDataFromPubSignals(
-        userParamsRequest.data.attributes.proof.pub_signals,
+        validationResult.data.pub_signals,
     );
     return extractedData;
 }
@@ -241,62 +285,123 @@ export async function verifyUserStatusAndAuthenticate({
     const verifyUserStatusUrl = `/integrations/verificator-svc/private/verification-status/${didWrite}`;
     const response =
         await axiosVerificatorSvc.get<StatusResponse>(verifyUserStatusUrl);
-    const statusResponse: StatusResponse = response.data;
-    const rarimoStatus = statusResponse.data.attributes.status;
+
+    // Validate status response structure with Zod before processing
+    const validationResult = zodStatusResponse.safeParse(response.data);
+    if (!validationResult.success) {
+        log.error(
+            { error: validationResult.error, didWrite },
+            "[Rarimo] Invalid status response from verification service",
+        );
+        throw httpErrors.badRequest(
+            "Invalid status data received from verification service",
+        );
+    }
+
+    const rarimoStatus = validationResult.data.data.attributes.status;
     if (rarimoStatus !== "verified") {
-        return { success: true, rarimoStatus };
+        return {
+            success: true,
+            rarimoStatus,
+            accountMerged: false,
+        };
     }
     // retrieve the user attributes
     const { nationality, sex, nullifier } = await getUserProof({
         didWrite,
         axiosVerificatorSvc,
     });
-    const { type, userId } = await getZKPAuthenticationType({
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
+    const authResult = await getZKPAuthenticationType({
         db,
         nullifier,
         didWrite,
+        deviceStatus,
     });
     // log-in or register depending on the state
     const loginSessionExpiry = new Date(now);
     loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
-    switch (type) {
-        case "associated_with_another_user":
-            return { success: false, reason: "associated_with_another_user" };
-        case "register":
-            // const parsedCitizenship = zodCountryCodeEnum.safeParse(nationality);
-            // if (!parsedCitizenship.success) {
-            //     throw httpErrors.internalServerError(
-            //         `Received nationality ${nationality} is not part of expected enum`,
-            //     );
-            // }
-            await registerWithZKP({
-                db,
-                didWrite,
-                citizenship: nationality,
-                nullifier,
-                sex: sex,
-                userAgent,
-                userId,
-                sessionExpiry: loginSessionExpiry,
-            });
-            break;
-        case "login_known_device":
-            await loginKnownDeviceWithZKP({
-                db,
-                didWrite,
-                now,
-                sessionExpiry: loginSessionExpiry,
-            });
-            break;
-        case "login_new_device":
-            await loginNewDeviceWithZKP({
-                db,
-                didWrite,
-                userId,
-                userAgent,
-                sessionExpiry: loginSessionExpiry,
-            });
-            break;
+    let accountMerged = false;
+
+    // Wrap all operations in transaction to ensure atomicity
+    // This prevents session corruption if device update fails after merge
+    await db.transaction(async (tx) => {
+        switch (authResult.type) {
+            case "associated_with_another_user":
+                // No database operations needed, handled outside transaction
+                break;
+            case "register":
+                // const parsedCitizenship = zodCountryCodeEnum.safeParse(nationality);
+                // if (!parsedCitizenship.success) {
+                //     throw httpErrors.internalServerError(
+                //         `Received nationality ${nationality} is not part of expected enum`,
+                //     );
+                // }
+                await registerWithZKP({
+                    db: tx,
+                    didWrite,
+                    citizenship: nationality,
+                    nullifier,
+                    sex: sex,
+                    userAgent,
+                    userId: authResult.userId,
+                    sessionExpiry: loginSessionExpiry,
+                });
+                break;
+            case "login_known_device":
+                await loginKnownDeviceWithZKP({
+                    db: tx,
+                    didWrite,
+                    now,
+                    sessionExpiry: loginSessionExpiry,
+                });
+                break;
+            case "login_new_device":
+                await loginNewDeviceWithZKP({
+                    db: tx,
+                    didWrite,
+                    userId: authResult.userId,
+                    userAgent,
+                    sessionExpiry: loginSessionExpiry,
+                });
+                break;
+            case "merge":
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    verifiedUserId: authResult.toUserId,
+                    guestUserId: authResult.fromUserId,
+                });
+                await tx
+                    .update(deviceTable)
+                    .set({
+                        userId: authResult.toUserId,
+                        sessionExpiry: loginSessionExpiry,
+                        updatedAt: now,
+                    })
+                    .where(eq(deviceTable.didWrite, didWrite));
+                log.info(
+                    {
+                        toUserId: authResult.toUserId,
+                        fromUserId: authResult.fromUserId,
+                    },
+                    "[Rarimo] Merged guest into target user and updated device",
+                );
+                accountMerged = true;
+                break;
+        }
+    });
+
+    if (authResult.type === "associated_with_another_user") {
+        return { success: false, reason: "associated_with_another_user" };
     }
-    return { success: true, rarimoStatus };
+
+    // Extract userId based on auth result type
+    const userId =
+        authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+
+    return { success: true, rarimoStatus, accountMerged, userId };
 }

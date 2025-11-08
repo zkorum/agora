@@ -16,6 +16,8 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 
+export const zodEventSlug = z.enum(["devconnect-2025"]);
+
 export const zodUserReportReason = z.enum([
     "misleading",
     "antisocial",
@@ -286,6 +288,7 @@ export const zodConversationMetadata = z
         isIndexed: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
+        requiresEventTicket: zodEventSlug.optional(),
     })
     .strict();
 export const zodConversationMetadataWithId = z
@@ -303,6 +306,7 @@ export const zodConversationMetadataWithId = z
         isIndexed: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
+        requiresEventTicket: zodEventSlug.optional(),
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
@@ -873,12 +877,9 @@ const zodIsKnownTrueLoginStatus = z
         isKnown: z.literal(true),
         isRegistered: z.boolean(),
         isLoggedIn: z.boolean(),
+        userId: z.string(), // User ID for tracking identity changes (account merges)
     })
     .strict();
-
-const zodIsKnownTrueLoginStatusExtended = zodIsKnownTrueLoginStatus.extend({
-    userId: z.string(),
-});
 
 const zodIsKnownFalseLoginStatus = z.object({
     isKnown: z.literal(false),
@@ -888,12 +889,12 @@ const zodIsKnownFalseLoginStatus = z.object({
 
 export const zodGetDeviceStatusResponse = z.discriminatedUnion("isKnown", [
     zodIsKnownFalseLoginStatus,
-    zodIsKnownTrueLoginStatusExtended,
+    zodIsKnownTrueLoginStatus,
 ]);
 
 export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
     zodIsKnownFalseLoginStatus,
-    zodIsKnownTrueLoginStatus,
+    zodIsKnownTrueLoginStatus, // Include userId so frontend can watch for user identity changes
 ]);
 
 export const zodLanguagePreferences = z
@@ -994,9 +995,6 @@ export type DeviceLoginStatusExtended = z.infer<
 export type DeviceIsKnownTrueLoginStatus = z.infer<
     typeof zodIsKnownTrueLoginStatus
 >;
-export type DeviceIsKnownTrueLoginStatusExtended = z.infer<
-    typeof zodIsKnownTrueLoginStatusExtended
->;
 export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
 export type LanguagePreferences = z.infer<typeof zodLanguagePreferences>;
@@ -1006,3 +1004,34 @@ export type AgreementType = z.infer<typeof zodAgreementType>;
 export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
+export type EventSlug = z.infer<typeof zodEventSlug>;
+
+// Rarimo ZK Proof Validation Schemas
+// Based on Rarimo circuit spec: https://github.com/rarimo/passport-zk-circuits
+export const zodProofData = z
+    .object({
+        pi_a: z.array(z.string()).min(2).max(3),
+        pi_b: z.array(z.array(z.string()).min(2).max(2)).min(3).max(3),
+        pi_c: z.array(z.string()).min(2).max(3),
+        protocol: z.string(),
+    })
+    .strict();
+
+export const zodZKProof = z
+    .object({
+        proof: zodProofData,
+        pub_signals: z.array(z.string()).min(8), // Requires at least 8 elements
+    })
+    .strict();
+
+export const zodStatusResponse = z.object({
+    data: z.object({
+        attributes: z.object({
+            status: zodRarimoStatusAttributes,
+        }),
+    }),
+});
+
+export type ProofData = z.infer<typeof zodProofData>;
+export type ZKProof = z.infer<typeof zodZKProof>;
+export type StatusResponse = z.infer<typeof zodStatusResponse>;

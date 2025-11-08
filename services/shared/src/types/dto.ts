@@ -38,6 +38,7 @@ import {
     zodPolisUrl,
     zodLanguagePreferences,
     zodPolisClusters,
+    zodEventSlug,
 } from "./zod.js";
 import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -88,6 +89,8 @@ export class Dto {
         z
             .object({
                 success: z.literal(true),
+                accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
+                userId: z.string(), // User ID (for tracking account merges in frontend)
             })
             .strict(),
         z
@@ -99,6 +102,7 @@ export class Dto {
                     "too_many_wrong_guess",
                     "already_logged_in",
                     "associated_with_another_user",
+                    "auth_state_changed", // Added: auth type changed during OTP flow
                 ]),
             })
             .strict(),
@@ -169,6 +173,7 @@ export class Dto {
             isLoginRequired: z.boolean(),
             pollingOptionList: zodPollOptionTitle.array().optional(),
             seedOpinionList: z.array(z.string()),
+            requiresEventTicket: zodEventSlug.optional(),
         })
         .strict();
     static createNewConversationResponse = z
@@ -181,6 +186,7 @@ export class Dto {
             indexConversationAt: z.string().datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
+            requiresEventTicket: zodEventSlug.optional(),
         })
         .strict();
     static importConversationResponse = z
@@ -214,7 +220,7 @@ export class Dto {
         z
             .object({
                 success: z.literal(false),
-                reason: z.enum(["conversation_locked"]),
+                reason: z.enum(["conversation_locked", "event_ticket_required"]),
             })
             .strict(),
     ]);
@@ -246,7 +252,19 @@ export class Dto {
             chosenOption: zodVotingAction,
         })
         .strict();
-    static castVoteResponse = z.boolean();
+    static castVoteResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum(["event_ticket_required"]),
+            })
+            .strict(),
+    ]);
     static getUserProfileResponse = z
         .object({
             activePostCount: z.number().gte(0),
@@ -254,6 +272,7 @@ export class Dto {
             username: zodUsername,
             isModerator: z.boolean(),
             organizationList: z.array(zodOrganization),
+            verifiedEventTickets: z.array(zodEventSlug), // User's verified event tickets (always returned by backend)
         })
         .strict();
     static fetchUserConversationsRequest = z
@@ -488,6 +507,8 @@ export class Dto {
                 .object({
                     success: z.literal(true),
                     rarimoStatus: zodRarimoStatusAttributes,
+                    accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
+                    userId: z.string(), // User ID (for tracking account merges in frontend)
                 })
                 .strict(),
             z.object({
@@ -499,6 +520,34 @@ export class Dto {
             }),
         ],
     );
+
+    // Zupass event ticket verification
+    static verifyEventTicketRequest = z
+        .object({
+            proof: z.unknown(), // GPC proof data - validated by @pcd/gpc library at runtime
+            eventSlug: zodEventSlug, // Which event to verify for
+        })
+        .strict();
+    static verifyEventTicket200 = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
+                userId: z.string(), // User ID (for tracking account merges in frontend)
+            })
+            .strict(),
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "deserialization_error",
+                "invalid_proof",
+                "invalid_signer",
+                "wrong_event",
+                "ticket_already_used",
+            ]),
+        }),
+    ]);
+
     static zodGetMathRequest = z.object({
         conversation_slug_id: z.string(),
         conversation_id: z.number(),
@@ -570,6 +619,10 @@ export type GenerateVerificationLink200 = z.infer<
 export type VerifyUserStatusAndAuthenticate200 = z.infer<
     typeof Dto.verifyUserStatusAndAuthenticate200
 >;
+export type VerifyEventTicketRequest = z.infer<
+    typeof Dto.verifyEventTicketRequest
+>;
+export type VerifyEventTicket200 = z.infer<typeof Dto.verifyEventTicket200>;
 export type FetchUserReportsByPostSlugIdResponse = z.infer<
     typeof Dto.fetchConversationReportsResponse
 >;
@@ -613,3 +666,4 @@ export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
+export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;

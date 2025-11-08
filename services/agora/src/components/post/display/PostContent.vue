@@ -17,6 +17,12 @@
           :title="extendedPostData.payload.title"
           size="medium"
         />
+
+        <EventTicketRequirementBanner
+          :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
+          :read-only="compactMode"
+          @verified="(payload) => $emit('verified', payload)"
+        />
       </div>
 
       <div
@@ -42,6 +48,7 @@
           :poll-options="extendedPostData.payload.poll"
           :post-slug-id="extendedPostData.metadata.conversationSlugId"
           :user-response="extendedPostData.interaction"
+          :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
         />
       </div>
 
@@ -66,9 +73,15 @@ import PollWrapper from "./poll/PollWrapper.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import EventTicketRequirementBanner from "../EventTicketRequirementBanner.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 
-defineEmits(["openModerationHistory"]);
+defineEmits<{
+  openModerationHistory: [];
+  verified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
+}>();
 
 defineProps<{
   extendedPostData: ExtendedConversation;

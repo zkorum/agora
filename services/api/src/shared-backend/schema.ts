@@ -11,6 +11,7 @@ import {
     text,
     type AnyPgColumn,
     unique,
+    uniqueIndex,
     index,
     jsonb,
     check,
@@ -572,6 +573,10 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
     "5",
 ]);
 
+export const ticketProviderEnum = pgEnum("ticket_provider", ["zupass"]);
+
+export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -579,35 +584,40 @@ export const polisKeyEnum = pgEnum("polis_key_enum", [
 // The association between users and devices/emails can change over time.
 // A user must have at least 1 validated primary email and 1 device associated with it.
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
-export const userTable = pgTable("user", {
-    id: uuid("id").primaryKey(), // enforce the same key for the user in the frontend across email changes
-    polisParticipantId: serial("polis_participant_id"), // temporary work-around until reddwarf supports string ids
-    username: varchar("username", { length: MAX_LENGTH_USERNAME })
-        .notNull()
-        .unique(),
-    isModerator: boolean("is_moderator").notNull().default(false),
-    isImported: boolean("is_imported").notNull().default(false),
-    isDeleted: boolean("is_deleted").notNull().default(false),
-    activeConversationCount: integer("active_conversation_count")
-        .notNull()
-        .default(0), // total conversations (without deleted conversations)
-    totalConversationCount: integer("total_conversation_count")
-        .notNull()
-        .default(0), // total conversations created
-    totalOpinionCount: integer("total_opinion_count").notNull().default(0), // total opinions created
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const userTable = pgTable(
+    "user",
+    {
+        id: uuid("id").primaryKey(), // enforce the same key for the user in the frontend across email changes
+        polisParticipantId: serial("polis_participant_id"), // temporary work-around until reddwarf supports string ids
+        username: varchar("username", { length: MAX_LENGTH_USERNAME })
+            .notNull()
+            .unique(),
+        isModerator: boolean("is_moderator").notNull().default(false),
+        isImported: boolean("is_imported").notNull().default(false),
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }), // Track when soft-delete occurred (hard-deleted after 15 days)
+        activeConversationCount: integer("active_conversation_count")
+            .notNull()
+            .default(0), // total conversations (without deleted conversations)
+        totalConversationCount: integer("total_conversation_count")
+            .notNull()
+            .default(0), // total conversations created
+        totalOpinionCount: integer("total_opinion_count").notNull().default(0), // total opinions created
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [index("user_isDeleted_idx").on(table.isDeleted)],
+);
 
 export const userOrganizationMappingTable = pgTable(
     "user_organization_mapping",
@@ -797,27 +807,86 @@ export const organizationTable = pgTable("organization", {
         .notNull(),
 });
 
-export const zkPassportTable = pgTable("zk_passport", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: uuid("user_id")
-        .references(() => userTable.id)
-        .notNull(),
-    citizenship: varchar("citizenship", { length: 10 }).notNull(), // holds 3-digit country code, in theory but we play safe
-    nullifier: text("nullifier").notNull().unique(),
-    sex: varchar("sex", { length: 50 }).notNull(), // change to enum at some point
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const zkPassportTable = pgTable(
+    "zk_passport",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        citizenship: varchar("citizenship", { length: 10 }).notNull(), // holds 3-digit country code, in theory but we play safe
+        nullifier: text("nullifier").notNull(), // Uniqueness enforced by partial index (only for non-deleted users)
+        sex: varchar("sex", { length: 50 }).notNull(), // change to enum at some point
+        isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table for partial index
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        // Partial unique index: nullifier must be unique among non-deleted users only
+        // This allows deleted users' nullifiers to be reused immediately upon soft-deletion
+        uniqueIndex("zk_passport_nullifier_active_unique")
+            .on(table.nullifier)
+            .where(sql`${table.isDeleted} = false`),
+        // Regular index for nullifier lookups
+        index("zk_passport_nullifier_idx").on(table.nullifier),
+    ],
+);
+
+export const eventTicketTable = pgTable(
+    "event_ticket",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        provider: ticketProviderEnum("provider").notNull(),
+        nullifier: text("nullifier").notNull(), // ZK nullifier - event-specific identifier
+        eventSlug: eventSlugEnum("event_slug").notNull(),
+        isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table for partial index
+        verifiedAt: timestamp("verified_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        pcdType: text("pcd_type"),
+        providerMetadata: jsonb("provider_metadata"), // Optional metadata (e.g., productId if revealed)
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        // Index for frequent gating checks: SELECT * FROM event_ticket
+        // WHERE user_id = ? AND event_slug = ?
+        // Used by hasEventTicket() on every vote/opinion in gated conversations
+        index("user_event_idx").on(table.userId, table.eventSlug),
+        // Partial unique index: nullifier+event must be unique among non-deleted users only
+        uniqueIndex("event_ticket_nullifier_event_active_unique")
+            .on(table.nullifier, table.eventSlug)
+            .where(sql`${table.isDeleted} = false`),
+        // Index for nullifier lookups when verifying tickets
+        index("nullifier_idx").on(table.nullifier),
+    ],
+);
 
 export const phoneTable = pgTable(
     "phone",
@@ -831,6 +900,7 @@ export const phoneTable = pgTable(
         phoneCountryCode: phoneCountryCodeEnum("phone_country_code"),
         phoneHash: text("phone_hash").notNull(), // base64 encoded hash of phone + pepper
         pepperVersion: integer("pepper_version").notNull().default(0), // used pepper version - we rotate app-wide pepper one in a while
+        isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table to enable partial unique index
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -846,6 +916,12 @@ export const phoneTable = pgTable(
     },
     (table) => [
         check("check_two_digits", sql`${table.lastTwoDigits} BETWEEN 0 and 99`),
+        // Partial unique index: only enforce uniqueness for non-deleted users
+        uniqueIndex("phone_hash_active_unique")
+            .on(table.phoneHash)
+            .where(sql`${table.isDeleted} = false`),
+        // Regular index for lookups
+        index("phone_hash_idx").on(table.phoneHash),
     ],
 );
 
@@ -943,6 +1019,9 @@ export const authType = pgEnum("auth_type", [
     "register",
     "login_known_device",
     "login_new_device",
+    "merge",
+    "restore_deleted",
+    "restore_and_merge",
 ]);
 
 // This table serves as a transitory store of information between the intial register attempt and the validation of the one-time code sent to the email address (no multi-factor because it is register)
@@ -1086,6 +1165,7 @@ export const conversationTable = pgTable(
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
         isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
         opinionCount: integer("opinion_count").notNull().default(0),
         voteCount: integer("vote_count").notNull().default(0),
         participantCount: integer("participant_count").notNull().default(0),
@@ -1120,6 +1200,7 @@ export const conversationTable = pgTable(
     },
     (table) => [
         index("conversation_createdAt_idx").on(table.createdAt),
+        index("conversation_authorId_idx").on(table.authorId),
     ],
 );
 
@@ -1302,6 +1383,7 @@ export const opinionTable = pgTable(
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
         index("opinion_conversationId_idx").on(table.conversationId),
+        index("opinion_authorId_idx").on(table.authorId),
         check(
             "check_polis_majority",
             sql`(
@@ -1378,6 +1460,7 @@ export const voteTable = pgTable(
     (t) => [
         unique().on(t.authorId, t.opinionId),
         index("vote_opinionId_idx").on(t.opinionId),
+        index("vote_authorId_idx").on(t.authorId),
     ],
 );
 
@@ -1528,10 +1611,9 @@ export const conversationModerationTable = pgTable(
             .notNull(),
     },
     (table) => [
-        index("conversation_moderation_conversation_id_moderation_action_idx").on(
-            table.conversationId,
-            table.moderationAction,
-        ),
+        index(
+            "conversation_moderation_conversation_id_moderation_action_idx",
+        ).on(table.conversationId, table.moderationAction),
     ],
 );
 
@@ -1778,7 +1860,9 @@ export const polisClusterOpinionTable = pgTable(
     },
     (table) => [
         index("polis_cluster_opinion_opinionId_idx").on(table.opinionId),
-        index("polis_cluster_opinion_polisClusterId_idx").on(table.polisClusterId),
+        index("polis_cluster_opinion_polisClusterId_idx").on(
+            table.polisClusterId,
+        ),
         check(
             "check_perc_btwn_0_and_1",
             sql`${table.probabilityAgreement} BETWEEN 0 and 1`,

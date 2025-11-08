@@ -18,6 +18,7 @@
               ? 0
               : Math.round((optionItem.numResponses * 100) / totalVoteCount)
           "
+          :disabled="isPollLocked"
           @click="clickedVotingOption(optionItem.optionNumber - 1, $event)"
         />
       </div>
@@ -73,7 +74,7 @@
 <script setup lang="ts">
 import ZKButton from "../../../ui-library/ZKButton.vue";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import { onBeforeMount, ref, watch } from "vue";
+import { onBeforeMount, ref, watch, computed } from "vue";
 import { useBackendPollApi } from "src/utils/api/poll";
 import type {
   UserInteraction,
@@ -84,6 +85,7 @@ import { storeToRefs } from "pinia";
 import ZKIcon from "../../../ui-library/ZKIcon.vue";
 import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import PollOption from "./PollOption.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
@@ -93,11 +95,14 @@ import {
   type PollWrapperTranslations,
 } from "./PollWrapper.i18n";
 
+import type { EventSlug } from "src/shared/types/zod";
+
 const props = defineProps<{
   userResponse: UserInteraction;
   pollOptions: PollList;
   postSlugId: string;
   loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
 }>();
 
 const localPollOptionList = ref<PollOptionWithResult[]>([]);
@@ -106,9 +111,22 @@ initializeLocalPoll();
 const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const authStore = useAuthenticationStore();
+const { isLoggedIn } = storeToRefs(authStore);
+const userStore = useUserStore();
+const { verifiedEventTickets } = storeToRefs(userStore);
 const { loadPostData } = useHomeFeedStore();
 const { updateAuthState } = useBackendAuthApi();
+
+// Check if poll is locked due to missing event ticket
+const isPollLocked = computed(() => {
+  if (props.requiresEventTicket === undefined) {
+    return false;
+  }
+  // Convert Set to Array for better reactivity tracking
+  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
+  return !verifiedTicketsArray.includes(props.requiresEventTicket);
+});
 
 const { setVotingIntention } = useConversationLoginIntentions();
 
@@ -204,6 +222,12 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
   if (currentDisplayMode.value === DisplayModes.Results) {
     return;
   }
+
+  // Prevent voting if poll is locked due to missing event ticket
+  if (isPollLocked.value) {
+    return;
+  }
+
   event.stopPropagation();
 
   if (props.loginRequiredToParticipate && !isLoggedIn.value) {

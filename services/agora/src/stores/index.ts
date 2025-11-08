@@ -68,6 +68,7 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
 
   // Redact authentication store sensitive data
   if (redactedState.authentication) {
+    const userId = redactedState.authentication.userId;
     redactedState.authentication = {
       ...redactedState.authentication,
       verificationPhoneNumber: redactString(
@@ -78,6 +79,8 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
         redactedState.authentication.verificationDefaultCallingCode,
         "calling_code"
       ),
+      // Redact userId computed property (exposed from store)
+      userId: userId ? redactString(userId, "user_id") : userId,
     };
   }
 
@@ -153,6 +156,8 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
           ...org,
           name: redactString(org.name, "organization_name"),
         })),
+        // Clear verified event tickets - user privacy
+        verifiedEventTickets: [],
       },
     };
   }

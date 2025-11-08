@@ -192,10 +192,12 @@ export function useBackendAuthApi() {
   async function updateAuthState({
     partialLoginStatus,
     forceRefresh = false,
+    deferCacheOperations = false,
   }: {
     partialLoginStatus: Partial<DeviceLoginStatus>;
     forceRefresh?: boolean;
-  }) {
+    deferCacheOperations?: boolean;
+  }): Promise<{ authStateChanged: boolean; needsCacheRefresh: boolean }> {
     try {
       const {
         oldLoginStatus,
@@ -215,17 +217,34 @@ export function useBackendAuthApi() {
         if (route.name) {
           await firstLoadGuard(route.name);
         }
-        return;
+        return { authStateChanged: true, needsCacheRefresh: false };
       }
 
-      if (forceRefresh || oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn)
+      // Extract userId from old and new status for comparison
+      const oldUserId = oldLoginStatus.isKnown ? oldLoginStatus.userId : undefined;
+      const newUserId = newLoginStatus.isKnown ? newLoginStatus.userId : undefined;
+      const userIdChanged = oldUserId !== newUserId;
+
+      const authStateChanged =
+        oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn || userIdChanged;
+
+      if (forceRefresh || authStateChanged)
         if (newIsGuestOrLoggedIn) {
+          // Check if we should defer cache operations
+          if (deferCacheOperations) {
+            console.log(
+              "Auth state changed but deferring cache operations for caller to handle"
+            );
+            return { authStateChanged: true, needsCacheRefresh: true };
+          }
+
           console.log(
-            "Clearing query cache and loading authenticated modules upon detecting new login or guest user"
+            "Clearing query cache and loading authenticated modules upon detecting new login, guest user, or userId change"
           );
           // Clear all TanStack Query cache data to ensure fresh start for new user session
           queryClient.clear();
           await loadAuthenticatedModules();
+          return { authStateChanged: true, needsCacheRefresh: false };
         } else {
           console.log("Cleaning data from logging out");
           await logoutDataCleanup({
@@ -235,10 +254,13 @@ export function useBackendAuthApi() {
           if (route.name) {
             await firstLoadGuard(route.name);
           }
-          return;
+          return { authStateChanged: true, needsCacheRefresh: false };
         }
+
+      return { authStateChanged: false, needsCacheRefresh: false };
     } catch (e) {
       console.error("Failed to update authentication state", e);
+      return { authStateChanged: false, needsCacheRefresh: false };
     } finally {
       isAuthInitialized.value = true;
     }
@@ -287,5 +309,6 @@ export function useBackendAuthApi() {
     getDeviceLoginStatus,
     updateAuthState,
     initializeAuthState,
+    loadAuthenticatedModules,
   };
 }

@@ -3,7 +3,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface LoginOnboardingTranslations {
   pageTitle: string;
   description: string;
-  loginWithRariMe: string;
+  loginWithRarimo: string;
   loginWithPhone: string;
 }
 
@@ -14,43 +14,43 @@ export const loginOnboardingTranslations: Record<
   en: {
     pageTitle: "Log In",
     description: "Please select a log in method.",
-    loginWithRariMe: "Login with RariMe",
+    loginWithRarimo: "Login with Rarimo",
     loginWithPhone: "Login with my phone number",
   },
   ar: {
     pageTitle: "تسجيل الدخول",
     description: "يرجى اختيار طريقة تسجيل الدخول.",
-    loginWithRariMe: "تسجيل الدخول باستخدام RariMe",
+    loginWithRarimo: "تسجيل الدخول باستخدام Rarimo",
     loginWithPhone: "تسجيل الدخول برقم هاتفي",
   },
   es: {
     pageTitle: "Iniciar sesión",
     description: "Por favor, seleccione un método de inicio de sesión.",
-    loginWithRariMe: "Iniciar sesión con RariMe",
+    loginWithRarimo: "Iniciar sesión con Rarimo",
     loginWithPhone: "Iniciar sesión con mi número de teléfono",
   },
   fr: {
     pageTitle: "Se connecter",
     description: "Veuillez sélectionner une méthode de connexion.",
-    loginWithRariMe: "Se connecter avec RariMe",
+    loginWithRarimo: "Se connecter avec Rarimo",
     loginWithPhone: "Se connecter avec mon numéro de téléphone",
   },
   "zh-Hans": {
     pageTitle: "登录",
     description: "请选择登录方式。",
-    loginWithRariMe: "使用 RariMe 登录",
+    loginWithRarimo: "使用 Rarimo 登录",
     loginWithPhone: "使用手机号登录",
   },
   "zh-Hant": {
     pageTitle: "登入",
     description: "請選擇登入方式。",
-    loginWithRariMe: "使用 RariMe 登入",
+    loginWithRarimo: "使用 Rarimo 登入",
     loginWithPhone: "使用手機號登入",
   },
   ja: {
     pageTitle: "ログイン",
     description: "ログイン方法を選択してください。",
-    loginWithRariMe: "RariMe でログイン",
+    loginWithRarimo: "Rarimo でログイン",
     loginWithPhone: "携帯電話でログイン",
   },
 };

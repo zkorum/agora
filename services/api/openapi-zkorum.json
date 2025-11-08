@@ -70,12 +70,16 @@
                                                         },
                                                         "isLoggedIn": {
                                                             "type": "boolean"
+                                                        },
+                                                        "userId": {
+                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
                                                         "isKnown",
                                                         "isRegistered",
-                                                        "isLoggedIn"
+                                                        "isLoggedIn",
+                                                        "userId"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -544,10 +548,18 @@
                                                     "enum": [
                                                         true
                                                     ]
+                                                },
+                                                "accountMerged": {
+                                                    "type": "boolean"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "success"
+                                                "success",
+                                                "accountMerged",
+                                                "userId"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -567,7 +579,8 @@
                                                         "wrong_guess",
                                                         "too_many_wrong_guess",
                                                         "already_logged_in",
-                                                        "associated_with_another_user"
+                                                        "associated_with_another_user",
+                                                        "auth_state_changed"
                                                     ]
                                                 }
                                             },
@@ -763,6 +776,12 @@
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
+                                                                ]
+                                                            },
+                                                            "requiresEventTicket": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "devconnect-2025"
                                                                 ]
                                                             }
                                                         },
@@ -1376,6 +1395,15 @@
                                                 ],
                                                 "additionalProperties": false
                                             }
+                                        },
+                                        "verifiedEventTickets": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "devconnect-2025"
+                                                ]
+                                            }
                                         }
                                     },
                                     "required": [
@@ -1383,7 +1411,8 @@
                                         "createdAt",
                                         "username",
                                         "isModerator",
-                                        "organizationList"
+                                        "organizationList",
+                                        "verifiedEventTickets"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -1552,6 +1581,12 @@
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
+                                                        ]
+                                                    },
+                                                    "requiresEventTicket": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "devconnect-2025"
                                                         ]
                                                     }
                                                 },
@@ -1809,6 +1844,12 @@
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
+                                                                ]
+                                                            },
+                                                            "requiresEventTicket": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "devconnect-2025"
                                                                 ]
                                                             }
                                                         },
@@ -2133,7 +2174,45 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "boolean"
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "event_ticket_required"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -2310,7 +2389,8 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "conversation_locked"
+                                                        "conversation_locked",
+                                                        "event_ticket_required"
                                                     ]
                                                 }
                                             },
@@ -4607,6 +4687,12 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
+                                    "requiresEventTicket": {
+                                        "type": "string",
+                                        "enum": [
+                                            "devconnect-2025"
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -4668,6 +4754,12 @@
                                     },
                                     "isLoginRequired": {
                                         "type": "boolean"
+                                    },
+                                    "requiresEventTicket": {
+                                        "type": "string",
+                                        "enum": [
+                                            "devconnect-2025"
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -4868,6 +4960,12 @@
                                                                     ],
                                                                     "additionalProperties": false
                                                                 }
+                                                            ]
+                                                        },
+                                                        "requiresEventTicket": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "devconnect-2025"
                                                             ]
                                                         }
                                                     },
@@ -5077,11 +5175,19 @@
                                                         "failed_verification",
                                                         "uniqueness_check_failed"
                                                     ]
+                                                },
+                                                "accountMerged": {
+                                                    "type": "boolean"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
                                                 "success",
-                                                "rarimoStatus"
+                                                "rarimoStatus",
+                                                "accountMerged",
+                                                "userId"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -5099,6 +5205,95 @@
                                                     "enum": [
                                                         "already_logged_in",
                                                         "associated_with_another_user"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/ticket/verify": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "proof": {},
+                                    "eventSlug": {
+                                        "type": "string",
+                                        "enum": [
+                                            "devconnect-2025"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "eventSlug"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "accountMerged": {
+                                                    "type": "boolean"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "accountMerged",
+                                                "userId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "deserialization_error",
+                                                        "invalid_proof",
+                                                        "invalid_signer",
+                                                        "wrong_event",
+                                                        "ticket_already_used"
                                                     ]
                                                 }
                                             },

@@ -422,6 +422,12 @@ export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus {
      * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus
      */
     'isLoggedIn': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus
+     */
+    'userId': string;
 }
 /**
  * 
@@ -451,6 +457,37 @@ export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf {
 /**
  * 
  * @export
+ * @interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf1
+ */
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf1
+     */
+    'isKnown': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf1
+     */
+    'isRegistered': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf1
+     */
+    'isLoggedIn': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusAnyOf1
+     */
+    'userId': string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1AuthPhoneVerifyOtpPost200Response
  */
 export interface ApiV1AuthPhoneVerifyOtpPost200Response {
@@ -460,6 +497,18 @@ export interface ApiV1AuthPhoneVerifyOtpPost200Response {
      * @memberof ApiV1AuthPhoneVerifyOtpPost200Response
      */
     'success': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200Response
+     */
+    'accountMerged': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200Response
+     */
+    'userId': string;
     /**
      * 
      * @type {string}
@@ -473,7 +522,8 @@ export const ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum = {
     WrongGuess: 'wrong_guess',
     TooManyWrongGuess: 'too_many_wrong_guess',
     AlreadyLoggedIn: 'already_logged_in',
-    AssociatedWithAnotherUser: 'associated_with_another_user'
+    AssociatedWithAnotherUser: 'associated_with_another_user',
+    AuthStateChanged: 'auth_state_changed'
 } as const;
 
 export type ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseReasonEnum];
@@ -490,6 +540,18 @@ export interface ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf {
      * @memberof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf
      */
     'success': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf
+     */
+    'accountMerged': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf
+     */
+    'userId': string;
 }
 /**
  * 
@@ -516,7 +578,8 @@ export const ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum = {
     WrongGuess: 'wrong_guess',
     TooManyWrongGuess: 'too_many_wrong_guess',
     AlreadyLoggedIn: 'already_logged_in',
-    AssociatedWithAnotherUser: 'associated_with_another_user'
+    AssociatedWithAnotherUser: 'associated_with_another_user',
+    AuthStateChanged: 'auth_state_changed'
 } as const;
 
 export type ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseAnyOf1ReasonEnum];
@@ -707,6 +770,104 @@ export type ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = typeof Ap
 /**
  * 
  * @export
+ * @interface ApiV1AuthTicketVerifyPost200Response
+ */
+export interface ApiV1AuthTicketVerifyPost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthTicketVerifyPost200Response
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthTicketVerifyPost200Response
+     */
+    'accountMerged': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthTicketVerifyPost200Response
+     */
+    'userId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthTicketVerifyPost200Response
+     */
+    'reason': ApiV1AuthTicketVerifyPost200ResponseReasonEnum;
+}
+
+export const ApiV1AuthTicketVerifyPost200ResponseReasonEnum = {
+    DeserializationError: 'deserialization_error',
+    InvalidProof: 'invalid_proof',
+    InvalidSigner: 'invalid_signer',
+    WrongEvent: 'wrong_event',
+    TicketAlreadyUsed: 'ticket_already_used'
+} as const;
+
+export type ApiV1AuthTicketVerifyPost200ResponseReasonEnum = typeof ApiV1AuthTicketVerifyPost200ResponseReasonEnum[keyof typeof ApiV1AuthTicketVerifyPost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthTicketVerifyPost200ResponseAnyOf
+ */
+export interface ApiV1AuthTicketVerifyPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthTicketVerifyPost200ResponseAnyOf
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthTicketVerifyPost200ResponseAnyOf
+     */
+    'reason': ApiV1AuthTicketVerifyPost200ResponseAnyOfReasonEnum;
+}
+
+export const ApiV1AuthTicketVerifyPost200ResponseAnyOfReasonEnum = {
+    DeserializationError: 'deserialization_error',
+    InvalidProof: 'invalid_proof',
+    InvalidSigner: 'invalid_signer',
+    WrongEvent: 'wrong_event',
+    TicketAlreadyUsed: 'ticket_already_used'
+} as const;
+
+export type ApiV1AuthTicketVerifyPost200ResponseAnyOfReasonEnum = typeof ApiV1AuthTicketVerifyPost200ResponseAnyOfReasonEnum[keyof typeof ApiV1AuthTicketVerifyPost200ResponseAnyOfReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthTicketVerifyPostRequest
+ */
+export interface ApiV1AuthTicketVerifyPostRequest {
+    /**
+     * 
+     * @type {any}
+     * @memberof ApiV1AuthTicketVerifyPostRequest
+     */
+    'proof'?: any;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthTicketVerifyPostRequest
+     */
+    'eventSlug': ApiV1AuthTicketVerifyPostRequestEventSlugEnum;
+}
+
+export const ApiV1AuthTicketVerifyPostRequestEventSlugEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1AuthTicketVerifyPostRequestEventSlugEnum = typeof ApiV1AuthTicketVerifyPostRequestEventSlugEnum[keyof typeof ApiV1AuthTicketVerifyPostRequestEventSlugEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1AuthZkpGenerateVerificationLinkPost200Response
  */
 export interface ApiV1AuthZkpGenerateVerificationLinkPost200Response {
@@ -824,6 +985,18 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response {
     'rarimoStatus': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum;
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
+     */
+    'accountMerged': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
+     */
+    'userId': string;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response
      */
@@ -863,6 +1036,18 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
      * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
      */
     'rarimoStatus': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
+     */
+    'accountMerged': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
+     */
+    'userId': string;
 }
 
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = {
@@ -941,7 +1126,20 @@ export interface ApiV1ConversationCreatePostRequest {
      * @memberof ApiV1ConversationCreatePostRequest
      */
     'seedOpinionList': Array<string>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationCreatePostRequest
+     */
+    'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
 }
+
+export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum];
+
 /**
  * 
  * @export
@@ -1083,7 +1281,20 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
      * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
      */
     'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata
+     */
+    'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum;
 }
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum];
+
 /**
  * 
  * @export
@@ -1385,7 +1596,20 @@ export interface ApiV1ConversationImportPostRequest {
      * @memberof ApiV1ConversationImportPostRequest
      */
     'isLoginRequired': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportPostRequest
+     */
+    'requiresEventTicket'?: ApiV1ConversationImportPostRequestRequiresEventTicketEnum;
 }
+
+export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1ConversationImportPostRequestRequiresEventTicketEnum = typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum];
+
 /**
  * 
  * @export
@@ -1940,7 +2164,8 @@ export interface ApiV1OpinionCreatePost200Response {
 }
 
 export const ApiV1OpinionCreatePost200ResponseReasonEnum = {
-    ConversationLocked: 'conversation_locked'
+    ConversationLocked: 'conversation_locked',
+    EventTicketRequired: 'event_ticket_required'
 } as const;
 
 export type ApiV1OpinionCreatePost200ResponseReasonEnum = typeof ApiV1OpinionCreatePost200ResponseReasonEnum[keyof typeof ApiV1OpinionCreatePost200ResponseReasonEnum];
@@ -1985,7 +2210,8 @@ export interface ApiV1OpinionCreatePost200ResponseAnyOf1 {
 }
 
 export const ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum = {
-    ConversationLocked: 'conversation_locked'
+    ConversationLocked: 'conversation_locked',
+    EventTicketRequired: 'event_ticket_required'
 } as const;
 
 export type ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum = typeof ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1OpinionCreatePost200ResponseAnyOf1ReasonEnum];
@@ -2916,7 +3142,20 @@ export interface ApiV1UserProfileGetPost200Response {
      * @memberof ApiV1UserProfileGetPost200Response
      */
     'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ApiV1UserProfileGetPost200Response
+     */
+    'verifiedEventTickets': Array<ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum>;
 }
+
+export const ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum = typeof ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum[keyof typeof ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum];
+
 /**
  * 
  * @export
@@ -2971,6 +3210,71 @@ export interface ApiV1UserVoteGetByConversationsPostRequest {
      */
     'conversationSlugIdList': Array<string>;
 }
+/**
+ * 
+ * @export
+ * @interface ApiV1VoteCastPost200Response
+ */
+export interface ApiV1VoteCastPost200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1VoteCastPost200Response
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1VoteCastPost200Response
+     */
+    'reason': ApiV1VoteCastPost200ResponseReasonEnum;
+}
+
+export const ApiV1VoteCastPost200ResponseReasonEnum = {
+    EventTicketRequired: 'event_ticket_required'
+} as const;
+
+export type ApiV1VoteCastPost200ResponseReasonEnum = typeof ApiV1VoteCastPost200ResponseReasonEnum[keyof typeof ApiV1VoteCastPost200ResponseReasonEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1VoteCastPost200ResponseAnyOf
+ */
+export interface ApiV1VoteCastPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1VoteCastPost200ResponseAnyOf
+     */
+    'success': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1VoteCastPost200ResponseAnyOf1
+ */
+export interface ApiV1VoteCastPost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1VoteCastPost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1VoteCastPost200ResponseAnyOf1
+     */
+    'reason': ApiV1VoteCastPost200ResponseAnyOf1ReasonEnum;
+}
+
+export const ApiV1VoteCastPost200ResponseAnyOf1ReasonEnum = {
+    EventTicketRequired: 'event_ticket_required'
+} as const;
+
+export type ApiV1VoteCastPost200ResponseAnyOf1ReasonEnum = typeof ApiV1VoteCastPost200ResponseAnyOf1ReasonEnum[keyof typeof ApiV1VoteCastPost200ResponseAnyOf1ReasonEnum];
+
 /**
  * 
  * @export
@@ -3445,6 +3749,45 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthPhoneVerifyOtpPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthTicketVerifyPost: async (apiV1AuthTicketVerifyPostRequest: ApiV1AuthTicketVerifyPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthTicketVerifyPostRequest' is not null or undefined
+            assertParamExists('apiV1AuthTicketVerifyPost', 'apiV1AuthTicketVerifyPostRequest', apiV1AuthTicketVerifyPostRequest)
+            const localVarPath = `/api/v1/auth/ticket/verify`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthTicketVerifyPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -5189,6 +5532,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthTicketVerifyPost(apiV1AuthTicketVerifyPostRequest: ApiV1AuthTicketVerifyPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthTicketVerifyPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthTicketVerifyPost(apiV1AuthTicketVerifyPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthTicketVerifyPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AuthZkpGenerateVerificationLinkPostRequest} apiV1AuthZkpGenerateVerificationLinkPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5678,7 +6033,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<boolean>> {
+        async apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1VoteCastPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VoteCastPost(apiV1VoteCastPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VoteCastPost']?.[localVarOperationServerIndex]?.url;
@@ -5797,6 +6152,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response> {
             return localVarFp.apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthTicketVerifyPost(apiV1AuthTicketVerifyPostRequest: ApiV1AuthTicketVerifyPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthTicketVerifyPost200Response> {
+            return localVarFp.apiV1AuthTicketVerifyPost(apiV1AuthTicketVerifyPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6166,7 +6530,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<boolean> {
+        apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1VoteCastPost200Response> {
             return localVarFp.apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(axios, basePath));
         },
     };
@@ -6305,6 +6669,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest: ApiV1AuthPhoneVerifyOtpPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AuthPhoneVerifyOtpPost(apiV1AuthPhoneVerifyOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AuthTicketVerifyPostRequest} apiV1AuthTicketVerifyPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1AuthTicketVerifyPost(apiV1AuthTicketVerifyPostRequest: ApiV1AuthTicketVerifyPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthTicketVerifyPost(apiV1AuthTicketVerifyPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

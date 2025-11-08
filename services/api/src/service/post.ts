@@ -11,10 +11,14 @@ import {
 import { eq, sql, and } from "drizzle-orm";
 import type { ImportConversationResponse } from "@/shared/types/dto.js";
 import { generateRandomSlugId } from "@/crypto.js";
-import { log, config } from "@/app.js";
+import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation, PolisUrl } from "@/shared/types/zod.js";
+import type {
+    ExtendedConversation,
+    PolisUrl,
+    EventSlug,
+} from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import * as authUtilService from "@/service/authUtil.js";
 import * as polisService from "@/service/polis.js";
@@ -40,6 +44,7 @@ interface CreateNewPostProps {
     isIndexed: boolean;
     isLoginRequired: boolean;
     seedOpinionList: string[];
+    requiresEventTicket?: EventSlug;
     importUrl?: string;
     importConversationUrl?: string;
     importExportUrl?: string;
@@ -59,6 +64,7 @@ interface ImportPostProps {
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    requiresEventTicket?: EventSlug;
     isOrgImportOnly: boolean;
 }
 
@@ -74,6 +80,7 @@ export async function importConversation({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    requiresEventTicket,
     isOrgImportOnly,
 }: ImportPostProps): Promise<ImportConversationResponse> {
     if (
@@ -116,6 +123,7 @@ export async function importConversation({
             indexConversationAt,
             isLoginRequired,
             isIndexed,
+            requiresEventTicket,
         });
     return {
         conversationSlugId: conversationSlugId,
@@ -136,6 +144,7 @@ export async function createNewPost({
     isLoginRequired,
     isIndexed,
     seedOpinionList,
+    requiresEventTicket,
     importUrl,
     importConversationUrl,
     importExportUrl,
@@ -181,6 +190,7 @@ export async function createNewPost({
                     organizationId: organizationId,
                     isIndexed: isIndexed,
                     isLoginRequired: isIndexed ? true : isLoginRequired,
+                    requiresEventTicket: requiresEventTicket,
                     indexConversationAt:
                         indexConversationAt !== undefined
                             ? new Date(indexConversationAt)
@@ -287,7 +297,10 @@ export async function createNewPost({
                     conversationContentId,
                     conversationAuthorId: authorId,
                     conversationIsIndexed: isIndexed,
-                    conversationIsLoginRequired: isIndexed ? true : isLoginRequired,
+                    conversationIsLoginRequired: isIndexed
+                        ? true
+                        : isLoginRequired,
+                    requiresEventTicket: requiresEventTicket ?? null,
                 },
             });
         }

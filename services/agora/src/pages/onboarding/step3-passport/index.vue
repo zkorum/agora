@@ -36,19 +36,19 @@
                     <span v-if="quasar.platform.is.mobile">
                       <a
                         class="hrefColor"
-                        :href="rarimeStoreLink"
+                        :href="rarimoStoreLink"
                         target="_blank"
                         rel="noopener noreferrer"
-                        >RariMe</a
+                        >Rarimo</a
                       >
                     </span>
                     <span v-if="!quasar.platform.is.mobile"
                       ><a
                         class="hrefColor"
-                        :href="rarimeStoreLink"
+                        :href="rarimoStoreLink"
                         target="_blank"
                         rel="noopener noreferrer"
-                        >RariMe</a
+                        >Rarimo</a
                       >
                     </span>
                   </div>
@@ -199,10 +199,12 @@ const verificationLink = ref<string>("");
 
 const qrcode = useQRCode(verificationLink);
 const qrcodeVerificationStatus = ref<RarimoStatusAttributes>("not_verified");
+const accountMerged = ref(false);
+const verifiedUserId = ref<string>("");
 
 const { updateAuthState } = useBackendAuthApi();
 
-const rarimeStoreLink = ref("");
+const rarimoStoreLink = ref("");
 
 const verificationLinkGenerationFailed = ref(false);
 
@@ -210,12 +212,12 @@ const { onboardingMode } = onboardingFlowStore();
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 if (quasar.platform.is.android) {
-  rarimeStoreLink.value =
+  rarimoStoreLink.value =
     "https://play.google.com/store/apps/details?id=com.rarilabs.rarime";
 } else if (quasar.platform.is.ios) {
-  rarimeStoreLink.value = "https://apps.apple.com/us/app/rarime/id6503300598";
+  rarimoStoreLink.value = "https://apps.apple.com/us/app/rarime/id6503300598";
 } else {
-  rarimeStoreLink.value = "https://rarime.com/";
+  rarimoStoreLink.value = "https://rarimo.com/";
 }
 
 async function generateVerificationLink(keyAction?: KeyAction) {
@@ -325,6 +327,8 @@ async function isDeviceLoggedIn() {
       },
     });
     if (response.data.success) {
+      accountMerged.value = response.data.accountMerged;
+      verifiedUserId.value = response.data.userId;
       switch (response.data.rarimoStatus) {
         case "not_verified":
           qrcodeVerificationStatus.value = "not_verified";
@@ -366,9 +370,14 @@ function clickedVerifyButton() {
 
 async function completeVerification() {
   window.clearInterval(isDeviceLoggedInIntervalId);
-  showNotifyMessage(t("verificationSuccessful"));
+  // Show appropriate message based on account state
+  if (accountMerged.value) {
+    showNotifyMessage(t("accountMerged"));
+  } else {
+    showNotifyMessage(t("verificationSuccessful"));
+  }
   await updateAuthState({
-    partialLoginStatus: { isLoggedIn: true },
+    partialLoginStatus: { isLoggedIn: true, userId: verifiedUserId.value },
     forceRefresh: true,
   });
 

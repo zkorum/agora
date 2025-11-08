@@ -1,11 +1,15 @@
 import * as authUtilService from "@/service/authUtil.js";
+import * as zupassService from "@/service/zupass.js";
 import {
     conversationTable,
     opinionTable,
     voteContentTable,
     voteTable,
 } from "@/shared-backend/schema.js";
-import type { FetchUserVotesForPostSlugIdsResponse } from "@/shared/types/dto.js";
+import type {
+    FetchUserVotesForPostSlugIdsResponse,
+    CastVoteResponse,
+} from "@/shared/types/dto.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type { VotingAction, VotingOption } from "@/shared/types/zod.js";
 import { nowZeroMs } from "@/shared/util.js";
@@ -448,7 +452,7 @@ export async function castVoteForOpinionSlugId({
     votingAction,
     userAgent,
     now,
-}: CastVoteForOpinionSlugIdProps): Promise<boolean> {
+}: CastVoteForOpinionSlugIdProps): Promise<CastVoteResponse> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
             opinionSlugId: opinionSlugId,
@@ -458,6 +462,7 @@ export async function castVoteForOpinionSlugId({
         isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
         contentId: conversationContentId,
+        requiresEventTicket,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
@@ -471,7 +476,22 @@ export async function castVoteForOpinionSlugId({
         now,
     });
 
-    return await castVoteForOpinionSlugIdFromUserId({
+    // Check event ticket gating
+    if (requiresEventTicket !== null) {
+        const hasTicket = await zupassService.hasEventTicket({
+            db,
+            userId,
+            eventSlug: requiresEventTicket,
+        });
+        if (!hasTicket) {
+            return {
+                success: false,
+                reason: "event_ticket_required",
+            };
+        }
+    }
+
+    await castVoteForOpinionSlugIdFromUserId({
         db,
         voteBuffer,
         now,
@@ -484,4 +504,6 @@ export async function castVoteForOpinionSlugId({
         optionalConversationSlugId: conversationSlugId,
         optionalConversationContentId: conversationContentId,
     });
+
+    return { success: true };
 }

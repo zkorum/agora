@@ -6,7 +6,8 @@
       class="commonBase commonBefore"
       :class="{
         'gradient-border-result': displayMode == 'result',
-        'gradient-border-option': displayMode == 'option',
+        'gradient-border-option': displayMode == 'option' && !disabled,
+        'gradient-border-disabled': disabled,
       }"
     >
       <div
@@ -42,6 +43,7 @@ defineProps<{
   optionPercentage: number;
   votedByUser: boolean;
   displayMode: "option" | "result";
+  disabled?: boolean;
 }>();
 </script>
 
@@ -118,6 +120,23 @@ defineProps<{
 
 .gradient-border-option::before {
   background: linear-gradient(135deg, #f1eeff, #e8f1ff);
+}
+
+.gradient-border-disabled {
+  color: #999;
+  background:
+    linear-gradient(to right, #f5f5f5, #f5f5f5),
+    linear-gradient(to right, #ddd, #ddd);
+  background-clip: padding-box, border-box;
+  background-origin: padding-box, border-box;
+  position: relative;
+  overflow: hidden;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.gradient-border-disabled::before {
+  background: #e0e0e0;
 }
 
 .progress-bar {

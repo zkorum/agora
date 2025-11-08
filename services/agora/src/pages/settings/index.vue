@@ -55,7 +55,8 @@ import { computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { settingsTranslations, type SettingsTranslations } from "./index.i18n";
 
-const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(useAuthenticationStore());
+const authStore = useAuthenticationStore();
+const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(authStore);
 const { profileData } = storeToRefs(useUserStore());
 
 const { showDeleteAccountDialog } = useDialog();
@@ -154,17 +155,27 @@ const deleteAccountSettings: SettingsInterface[] = [
 ];
 
 function processDeleteAccount() {
-  showDeleteAccountDialog(() => {
-    void (async () => {
-      try {
-        await deleteUserAccount();
-        await updateAuthState({ partialLoginStatus: { isKnown: false } });
-        showNotifyMessage(t("accountDeleted"));
-      } catch (e) {
-        console.error("Failed to delete user account", e);
-        showNotifyMessage(t("accountDeletionFailed"));
-      }
-    })();
+  const message = isLoggedIn.value
+    ? t("deleteAccountDialogMessage")
+    : t("deleteGuestAccountDialogMessage");
+
+  showDeleteAccountDialog({
+    title: t("deleteAccountDialogTitle"),
+    message,
+    placeholder: t("deleteAccountDialogPlaceholder"),
+    errorMessage: t("deleteAccountDialogError"),
+    callbackSuccess: () => {
+      void (async () => {
+        try {
+          await deleteUserAccount();
+          await updateAuthState({ partialLoginStatus: { isKnown: false } });
+          showNotifyMessage(t("accountDeleted"));
+        } catch (e) {
+          console.error("Failed to delete user account", e);
+          showNotifyMessage(t("accountDeletionFailed"));
+        }
+      })();
+    },
   });
 }
 </script>

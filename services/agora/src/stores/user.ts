@@ -4,9 +4,10 @@ import type {
   ExtendedOpinion,
   ExtendedConversation,
   OrganizationProperties,
+  EventSlug,
 } from "src/shared/types/zod";
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 
 export const useUserStore = defineStore("user", () => {
   const { fetchUserProfile, fetchUserPosts, fetchUserComments } =
@@ -22,6 +23,7 @@ export const useUserStore = defineStore("user", () => {
     isModerator: boolean;
     dataLoaded: boolean;
     organizationList: OrganizationProperties[];
+    verifiedEventTickets: EventSlug[];
   }
 
   const emptyProfile: UserProfile = {
@@ -33,6 +35,7 @@ export const useUserStore = defineStore("user", () => {
     isModerator: false,
     dataLoaded: false,
     organizationList: [],
+    verifiedEventTickets: [],
   };
 
   const profileData = ref(emptyProfile);
@@ -58,6 +61,7 @@ export const useUserStore = defineStore("user", () => {
         isModerator: userProfile.isModerator,
         dataLoaded: true,
         organizationList: userProfile.organizationList,
+        verifiedEventTickets: userProfile.verifiedEventTickets,
       };
     }
 
@@ -106,11 +110,35 @@ export const useUserStore = defineStore("user", () => {
     }
   }
 
+  // Computed property to get verified tickets as a Set for efficient lookups
+  const verifiedEventTickets = computed(() => {
+    return new Set(profileData.value.verifiedEventTickets);
+  });
+
+  // Check if a specific event ticket is verified
+  function isTicketVerified(eventSlug: EventSlug): boolean {
+    return verifiedEventTickets.value.has(eventSlug);
+  }
+
+  // Add a verified event ticket (used after successful verification)
+  function addVerifiedTicket(eventSlug?: EventSlug): void {
+    if (eventSlug === undefined) {
+      console.warn("Attempt to add an undefined ticket to the store");
+      return;
+    }
+    if (!profileData.value.verifiedEventTickets.includes(eventSlug)) {
+      profileData.value.verifiedEventTickets.push(eventSlug);
+    }
+  }
+
   return {
     loadUserProfile,
     loadMoreUserPosts,
     loadMoreUserComments,
     clearProfileData,
     profileData,
+    verifiedEventTickets,
+    isTicketVerified,
+    addVerifiedTicket,
   };
 });

@@ -75,7 +75,7 @@ export function createVoteBuffer({
 
     // Helper functions (pure)
     const getVoteKey = (userId: string, opinionId: number): string =>
-        `${userId}:${opinionId}`;
+        `${userId}:${String(opinionId)}`;
 
     const calculateCounterDelta = (
         existingVote: VotingOption | null,
@@ -128,7 +128,7 @@ export function createVoteBuffer({
         if (redis !== undefined) {
             redis
                 .rpush(redisVoteBufferKey, JSON.stringify(vote))
-                .catch((error) => {
+                .catch((error: unknown) => {
                     log.error(
                         error,
                         "[VoteBuffer] Failed to push vote to Redis buffer",
@@ -139,11 +139,11 @@ export function createVoteBuffer({
         // Log vote addition/update
         if (wasExisting) {
             log.info(
-                `[VoteBuffer] Updated buffered vote (${vote.vote}) for user ${vote.userId} on opinion ${vote.opinionId} (duplicate within flush window)`,
+                `[VoteBuffer] Updated buffered vote (${vote.vote}) for user ${vote.userId} on opinion ${String(vote.opinionId)} (duplicate within flush window)`,
             );
         } else {
             log.info(
-                `[VoteBuffer] Added vote (${vote.vote}) for user ${vote.userId} on opinion ${vote.opinionId} (buffer size: ${pendingVotes.size})`,
+                `[VoteBuffer] Added vote (${vote.vote}) for user ${vote.userId} on opinion ${String(vote.opinionId)} (buffer size: ${String(pendingVotes.size)})`,
             );
         }
     };
@@ -168,8 +168,8 @@ export function createVoteBuffer({
                 await redis.del(redisVoteBufferKey);
 
                 const parsedRedisVotes = redisVotes.map((v) =>
-                    JSON.parse(v),
-                ) as BufferedVote[];
+                    JSON.parse(v) as BufferedVote,
+                );
 
                 // Merge with in-memory votes (deduplicate by key, last write wins)
                 const voteMap = new Map(
@@ -193,7 +193,7 @@ export function createVoteBuffer({
                 }
 
                 batch = Array.from(voteMap.values());
-            } catch (error) {
+            } catch (error: unknown) {
                 log.error(
                     error,
                     "[VoteBuffer] Failed to fetch votes from Redis",
@@ -205,7 +205,7 @@ export function createVoteBuffer({
             return;
         }
 
-        log.info(`[VoteBuffer] Flushing ${batch.length} votes`);
+        log.info(`[VoteBuffer] Flushing ${String(batch.length)} votes`);
 
         // PostgreSQL parameter limit: ~65,535
         // vote_proof: 5 columns, vote_content: 4 columns, vote_table: 3 columns
@@ -219,13 +219,13 @@ export function createVoteBuffer({
         }
 
         log.info(
-            `[VoteBuffer] Processing ${batch.length} votes in ${batches.length} transaction(s)`,
+            `[VoteBuffer] Processing ${String(batch.length)} votes in ${String(batches.length)} transaction(s)`,
         );
 
         try {
             for (const [batchIndex, voteBatch] of batches.entries()) {
                 log.info(
-                    `[VoteBuffer] Processing transaction ${batchIndex + 1}/${batches.length} with ${voteBatch.length} votes`,
+                    `[VoteBuffer] Processing transaction ${String(batchIndex + 1)}/${String(batches.length)} with ${String(voteBatch.length)} votes`,
                 );
 
                 await db.transaction(async (tx) => {
@@ -277,7 +277,7 @@ export function createVoteBuffer({
                         }
 
                         log.info(
-                            `[VoteBuffer] Bulk check: ${existingVotesMap.size} existing votes found out of ${voteBatch.length} in batch`,
+                            `[VoteBuffer] Bulk check: ${String(existingVotesMap.size)} existing votes found out of ${String(voteBatch.length)} in batch`,
                         );
                     }
 
@@ -303,12 +303,12 @@ export function createVoteBuffer({
                                     new Set(),
                                 );
                             }
-                            participantCountDeltas
-                                .get(vote.conversationId)!
-                                .add(vote.userId);
+                            const participantSet = participantCountDeltas.get(vote.conversationId);
+                            if (participantSet) {
+                                participantSet.add(vote.userId);
+                            }
                         } else if (
-                            existingVoteData &&
-                            existingVoteData.existingVote === null &&
+                            existingVoteData?.existingVote === null &&
                             vote.vote !== "cancel"
                         ) {
                             // Restoring a previously canceled vote - potentially a returning participant
@@ -320,14 +320,15 @@ export function createVoteBuffer({
                                     new Set(),
                                 );
                             }
-                            participantCountDeltas
-                                .get(vote.conversationId)!
-                                .add(vote.userId);
+                            const participantSet = participantCountDeltas.get(vote.conversationId);
+                            if (participantSet) {
+                                participantSet.add(vote.userId);
+                            }
                         }
                     }
 
                     log.info(
-                        `[VoteBuffer] Detected ${participantCountDeltas.size} conversation(s) with potential new participants`,
+                        `[VoteBuffer] Detected ${String(participantCountDeltas.size)} conversation(s) with potential new participants`,
                     );
 
                     // Query existing participants BEFORE inserting new votes
@@ -400,11 +401,11 @@ export function createVoteBuffer({
                                     newParticipantCount,
                                 );
                                 log.info(
-                                    `[VoteBuffer] Conversation ${conversationId}: ${newParticipantCount} new participant(s) confirmed`,
+                                    `[VoteBuffer] Conversation ${String(conversationId)}: ${String(newParticipantCount)} new participant(s) confirmed`,
                                 );
                             } else {
                                 log.info(
-                                    `[VoteBuffer] Conversation ${conversationId}: 0 new participants (${potentialNewUsers.size} user(s) already participating)`,
+                                    `[VoteBuffer] Conversation ${String(conversationId)}: 0 new participants (${String(potentialNewUsers.size)} user(s) already participating)`,
                                 );
                             }
                         }
@@ -436,7 +437,7 @@ export function createVoteBuffer({
                     }
 
                     log.info(
-                        `[VoteBuffer] Vote breakdown: ${newVotes.length} new, ${existingVotes.length} updates`,
+                        `[VoteBuffer] Vote breakdown: ${String(newVotes.length)} new, ${String(existingVotes.length)} updates`,
                     );
 
                     // Step 2: Bulk INSERT new vote_table rows
@@ -565,12 +566,14 @@ export function createVoteBuffer({
                                 );
                             } else {
                                 const contentIndex =
-                                    voteContentIndexMap.get(i)!;
-                                const contentId =
-                                    voteContentResults[contentIndex].id;
-                                caseStatements.push(
-                                    sql`WHEN ${voteTable.id} = ${data.voteTableId} THEN ${contentId}::int`,
-                                );
+                                    voteContentIndexMap.get(i);
+                                if (contentIndex !== undefined) {
+                                    const contentId =
+                                        voteContentResults[contentIndex].id;
+                                    caseStatements.push(
+                                        sql`WHEN ${voteTable.id} = ${data.voteTableId} THEN ${contentId}::int`,
+                                    );
+                                }
                             }
                         }
 
@@ -615,7 +618,7 @@ export function createVoteBuffer({
                     }
 
                     log.info(
-                        `[VoteBuffer] Updated opinion counters for ${opinionsUpdated} opinion(s) out of ${counterDeltas.size} with changes`,
+                        `[VoteBuffer] Updated opinion counters for ${String(opinionsUpdated)} opinion(s) out of ${String(counterDeltas.size)} with changes`,
                     );
 
                     // Step 8: Update conversation voteCount (delta-based, batched)
@@ -694,7 +697,7 @@ export function createVoteBuffer({
                             delta,
                         }));
                         log.info(
-                            `[VoteBuffer] Updated voteCount for ${voteCountDeltas.size} conversation(s): ${JSON.stringify(voteCountChanges)}`,
+                            `[VoteBuffer] Updated voteCount for ${String(voteCountDeltas.size)} conversation(s): ${JSON.stringify(voteCountChanges)}`,
                         );
                     } else {
                         log.info("[VoteBuffer] No voteCount changes to apply");
@@ -737,7 +740,7 @@ export function createVoteBuffer({
                                 );
 
                         log.info(
-                            `[VoteBuffer] Updated participantCount for ${participantDeltasToApply.size} conversation(s)`,
+                            `[VoteBuffer] Updated participantCount for ${String(participantDeltasToApply.size)} conversation(s)`,
                         );
                     }
 
@@ -761,14 +764,14 @@ export function createVoteBuffer({
                 });
 
                 log.info(
-                    `[VoteBuffer] Transaction ${batchIndex + 1}/${batches.length} completed`,
+                    `[VoteBuffer] Transaction ${String(batchIndex + 1)}/${String(batches.length)} completed`,
                 );
             }
 
             log.info(
-                `[VoteBuffer] Successfully flushed ${batch.length} votes across ${batches.length} transaction(s)`,
+                `[VoteBuffer] Successfully flushed ${String(batch.length)} votes across ${String(batches.length)} transaction(s)`,
             );
-        } catch (error) {
+        } catch (error: unknown) {
             log.error(error, "[VoteBuffer] Failed to flush votes");
             // Re-add failed votes to buffer for retry
             // Keep only the LATEST vote per user/opinion (last write wins)
@@ -802,7 +805,7 @@ export function createVoteBuffer({
             }
 
             log.info(
-                `[VoteBuffer] Re-added ${failedVotesByKey.size} failed votes to buffer (deduplicated from ${batch.length} events)`,
+                `[VoteBuffer] Re-added ${String(failedVotesByKey.size)} failed votes to buffer (deduplicated from ${String(batch.length)} events)`,
             );
 
             throw error;
@@ -817,9 +820,7 @@ export function createVoteBuffer({
 
         log.info("[VoteBuffer] Shutting down, flushing pending votes...");
 
-        if (flushInterval) {
-            clearInterval(flushInterval);
-        }
+        clearInterval(flushInterval);
 
         await flush();
 
@@ -834,18 +835,14 @@ export function createVoteBuffer({
     };
 
     // Start automatic flush interval
-    const flushInterval = setInterval(() => {
-        if (!isShuttingDown) {
-            flush().catch((error) => {
-                log.error(error, "[VoteBuffer] Flush interval error");
-            });
-        }
+    const flushInterval: NodeJS.Timeout = setInterval(() => {
+        flush().catch((error: unknown) => {
+            log.error(error, "[VoteBuffer] Flush interval error");
+        });
     }, flushIntervalMs);
 
-    // Prevent interval from keeping process alive
-    if (flushInterval.unref) {
-        flushInterval.unref();
-    }
+    // Prevent interval from keeping process alive (Node.js specific)
+    flushInterval.unref();
 
     // Return immutable API (Zustand-style closure pattern)
     return {

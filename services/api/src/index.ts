@@ -56,6 +56,7 @@ import {
     generateVerificationLink,
     verifyUserStatusAndAuthenticate,
 } from "./service/rarimo.js";
+import { verifyEventTicket } from "./service/zupass.js";
 import {
     checkUserNameInUse,
     deleteUserAccount,
@@ -97,7 +98,7 @@ import {
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
 import type {
-    DeviceIsKnownTrueLoginStatusExtended,
+    DeviceIsKnownTrueLoginStatus,
     DeviceLoginStatusExtended,
 } from "./shared/types/zod.js";
 import {
@@ -398,7 +399,7 @@ interface VerifyUcanAndDeviceStatusReturn {
 interface VerifyUcanKnownDeviceReturn {
     didWrite: string;
     encodedUcan: string;
-    deviceStatus: DeviceIsKnownTrueLoginStatusExtended;
+    deviceStatus: DeviceIsKnownTrueLoginStatus;
 }
 
 interface VerifyUcanReturn {
@@ -469,7 +470,12 @@ async function verifyUcanAndDeviceStatus(
     let actualOptions = options;
     actualOptions ??= defaultOptions;
     const { encodedUcan, didWrite } = await verifyUcan(request);
-    const deviceStatus = await authUtilService.getDeviceStatus(db, didWrite);
+    const now = nowZeroMs();
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
     if (
         actualOptions.expectedDeviceStatus?.isKnown !== undefined &&
         actualOptions.expectedDeviceStatus.isKnown !== deviceStatus.isKnown
@@ -593,6 +599,7 @@ server.after(() => {
                         isKnown: deviceStatus.isKnown,
                         isLoggedIn: deviceStatus.isLoggedIn,
                         isRegistered: deviceStatus.isRegistered,
+                        userId: deviceStatus.userId,
                     },
                 };
             } else {
@@ -1585,6 +1592,7 @@ server.after(() => {
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
                 seedOpinionList: request.body.seedOpinionList,
+                requiresEventTicket: request.body.requiresEventTicket,
             });
             reply.send({ conversationSlugId });
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -1651,6 +1659,7 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
+                requiresEventTicket: request.body.requiresEventTicket,
                 isOrgImportOnly: config.IS_ORG_IMPORT_ONLY,
             });
         },
@@ -1748,24 +1757,42 @@ server.after(() => {
         },
     });
 
+    // Zupass event ticket verification
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/ticket/verify`,
+        schema: {
+            body: Dto.verifyEventTicketRequest,
+            response: {
+                200: Dto.verifyEventTicket200,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+            return await verifyEventTicket({
+                db,
+                didWrite,
+                proofData: request.body.proof,
+                eventSlug: request.body.eventSlug,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now,
+            });
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/user/delete`,
         schema: {},
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan, deviceStatus } =
+            const { encodedUcan, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
-            const now = nowZeroMs();
             await deleteUserAccount({
-                proof: encodedUcan,
                 db: db,
-                voteBuffer: voteBuffer,
-                now: now,
-                didWrite: didWrite,
                 userId: deviceStatus.userId,
-                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
             });
             reply.send();
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;

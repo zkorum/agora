@@ -40,18 +40,18 @@
         <ul>
           <li>Log-in via phone number (verified through a one-time code)</li>
           <li>
-            Log-in via cryptographic proof from a third-party verification app
-            (RariMe), which verifies your identity using a passport-based
-            Zero-Knowledge Proof (ZKP). This method ensures that your identity
-            is validated while maintaining privacy. Agora does not have access
-            to your passport details, only the cryptographic proof confirming
-            uniqueness and eligibility. Note that is not possible to register
-            via
+            Log-in via cryptographic proof from third-party verification apps
+            (Rarimo, Zupass), which verify your identity using Zero-Knowledge
+            Proofs (ZKP). These methods ensure that your identity is validated
+            while maintaining privacy. Agora receives only cryptographic proofs
+            confirming uniqueness and eligibility, never the underlying identity
+            documents or ticket information. Note that it is not possible to
+            register via
             <a
-              href="https://rarime.com/general-terms.html"
+              href="https://rarimo.com/general-terms.html"
               target="_blank"
               rel="noopener"
-              >RariMe</a
+              >Rarimo</a
             >
             if you're not 18 years or older.
           </li>
@@ -275,7 +275,7 @@
         <h3>How to delete your account:</h3>
         <ul>
           <li>
-            If you verified your account using RariMe (passport verification),
+            If you verified your account using Rarimo (passport verification),
             you must generate a new proof containing only the nullifier
             (excluding nationality and sex) before proceeding with deletion.
           </li>
@@ -293,7 +293,7 @@
         </h3>
         <ol>
           <li>
-            <strong>Generate a new proof with RariMe:</strong> You'll need to
+            <strong>Generate a new proof with Rarimo:</strong> You'll need to
             create a fresh verification proof, but this time it will contain
             only your nullifier and not your nationality or sex.
           </li>

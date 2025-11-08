@@ -27,17 +27,28 @@ export const useDialog = () => {
     });
   }
 
-  function showDeleteAccountDialog(callbackSuccess: () => void) {
+  function showDeleteAccountDialog({
+    title,
+    message,
+    placeholder,
+    errorMessage,
+    callbackSuccess,
+  }: {
+    title: string;
+    message: string;
+    placeholder: string;
+    errorMessage: string;
+    callbackSuccess: () => void;
+  }) {
     quasar
       .dialog({
-        title: "Are you sure? This action cannot be undone",
-        message:
-          "To permanently delete your account, please confirm by typing DELETE into the box.",
+        title,
+        message,
         prompt: {
           model: "",
           isValid: (val) => val == "DELETE",
-          type: "text", // optional
-          placeholder: "Type DELETE to confirm",
+          type: "text",
+          placeholder,
         },
         cancel: true,
         persistent: false,
@@ -46,9 +57,7 @@ export const useDialog = () => {
         if (data == "DELETE") {
           callbackSuccess();
         } else {
-          showNotifyMessage(
-            "Account deletion request failed. Try again later."
-          );
+          showNotifyMessage(errorMessage);
         }
       })
       .onCancel(() => {

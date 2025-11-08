@@ -197,6 +197,13 @@
       "when": 1761639811793,
       "tag": "0027_certain_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1762874583767,
+      "tag": "0028_icy_dexter_bennett",
+      "breakpoints": true
     }
   ]
 }

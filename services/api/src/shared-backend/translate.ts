@@ -186,7 +186,7 @@ export async function batchTranslateTexts(
     targetLanguageCode: string,
     projectId: string,
     location: string,
-    concurrencyLimit: number = 10,
+    concurrencyLimit = 10,
 ): Promise<string[]> {
     const limit = pLimit(concurrencyLimit);
 

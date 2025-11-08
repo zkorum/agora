@@ -335,6 +335,7 @@ async function onSubmit() {
         ? false
         : conversationDraft.value.privateConversationSettings.requiresLogin,
       seedOpinionList: conversationDraft.value.seedOpinions,
+      requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });
 
     if (response.status == "success") {

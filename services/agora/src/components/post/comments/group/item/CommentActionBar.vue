@@ -60,7 +60,7 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import VotingButton from "src/components/features/opinion/VotingButton.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -107,6 +107,18 @@ onMounted(() => {
   );
   localUserVote.value = existingVote?.votingAction;
 });
+
+// Watch for changes in user votes (e.g., after ticket verification, account merge, or login)
+watch(
+  () => props.votingUtilities.userVotes,
+  (newUserVotes) => {
+    const existingVote = newUserVotes.find(
+      (vote) => vote.opinionSlugId === props.commentItem.opinionSlugId
+    );
+    localUserVote.value = existingVote?.votingAction;
+  },
+  { deep: true }
+);
 
 const userCastedVote = computed(() => {
   return localUserVote.value !== undefined;

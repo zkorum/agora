@@ -22,7 +22,7 @@
         <mxCell id="GkvW0CMtngjdruLvTlMq-3" value="Module 3: shared module" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="655" y="670" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="GkvW0CMtngjdruLvTlMq-6" value="Module 6: Integration with RariMe" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="GkvW0CMtngjdruLvTlMq-6" value="Module 6: Integration with Rarimo" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="655" y="400" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="GkvW0CMtngjdruLvTlMq-7" value="Module 7: Integration with Polis" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
@@ -37,13 +37,13 @@
         <mxCell id="GkvW0CMtngjdruLvTlMq-35" value="Module 3: shared module" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="150" y="520" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="GkvW0CMtngjdruLvTlMq-36" value="Module 6: Integration with RariMe" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="GkvW0CMtngjdruLvTlMq-36" value="Module 6: Integration with Rarimo" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="150" y="280" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="GkvW0CMtngjdruLvTlMq-37" value="Module 3: shared module" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="95.61999999999999" y="810" width="228.75" height="310" as="geometry" />
         </mxCell>
-        <mxCell id="GkvW0CMtngjdruLvTlMq-38" value="Module 6: Integration with RariMe" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="GkvW0CMtngjdruLvTlMq-38" value="Module 6: Integration with Rarimo" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="194.37" y="820" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="GkvW0CMtngjdruLvTlMq-39" value="Module 1: local-first authentication" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
@@ -64,7 +64,7 @@
         <mxCell id="GkvW0CMtngjdruLvTlMq-44" value="Module 7: Integration with Polis" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="835" y="665" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="GkvW0CMtngjdruLvTlMq-45" value="Module 6: Integration with RariMe" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="GkvW0CMtngjdruLvTlMq-45" value="Module 6: Integration with Rarimo" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="835" y="600" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="GkvW0CMtngjdruLvTlMq-48" value="Module 7: Integration with Polis" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">

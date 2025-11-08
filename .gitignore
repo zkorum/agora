@@ -71,3 +71,10 @@ lerna-debug.log*
 *.vsix
 
 TODO*
+
+#external repo
+zupass
+parcnet-client
+efdevcon-monorepo
+
+CLAUDE_*.md

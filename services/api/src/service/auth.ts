@@ -4,6 +4,8 @@ import {
     generateUUID,
     hashWithSalt,
 } from "@/crypto.js";
+import { determineAuthType } from "./auth/core/stateHelpers.js";
+import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
 import {
     authAttemptPhoneTable,
     deviceTable,
@@ -17,7 +19,8 @@ import type {
     AuthenticateResponse,
     VerifyOtp200,
 } from "@/shared/types/dto.js";
-import { eq, and, TransactionRollbackError } from "drizzle-orm";
+import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
+import { eq, and, TransactionRollbackError, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import parsePhoneNumberFromString, {
     type CountryCode,
@@ -30,6 +33,7 @@ import * as authUtilService from "@/service/authUtil.js";
 import twilio from "twilio";
 import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
 import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
+import { mergeGuestIntoVerifiedUser } from "./merge.js";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
@@ -53,7 +57,6 @@ interface RegisterWithPhoneNumberProps {
     pepperVersion: number;
     userAgent: string;
     userId: string;
-    now: Date;
     sessionExpiry: Date;
 }
 
@@ -99,10 +102,6 @@ interface LoginNewDeviceWithZKPProps {
     sessionExpiry: Date;
 }
 
-interface AuthTypeAndUserId {
-    userId: string;
-    type: AuthenticateType | "associated_with_another_user";
-}
 
 interface GetPhoneAuthenticationTypeByNumber {
     db: PostgresDatabase;
@@ -115,12 +114,14 @@ interface GetPhoneAuthenticationTypeByHash {
     db: PostgresDatabase;
     phoneHash: string;
     didWrite: string;
+    deviceStatus: DeviceLoginStatusExtended;
 }
 
 interface GetZKPAuthenticationType {
     db: PostgresDatabase;
     nullifier: string;
     didWrite: string;
+    deviceStatus: DeviceLoginStatusExtended;
 }
 
 interface AuthenticateAttemptProps {
@@ -176,9 +177,8 @@ interface SendOtpPhoneNumberProps {
     twilioServiceSid: string;
 }
 
-interface RegisterOrLoginWithPhoneNumberProps {
+interface RegisterOrLoginWithPhoneNumberBaseProps {
     db: PostgresDatabase;
-    type: AuthenticateType;
     didWrite: string;
     lastTwoDigits: number;
     countryCallingCode: string;
@@ -186,29 +186,69 @@ interface RegisterOrLoginWithPhoneNumberProps {
     phoneHash: string;
     pepperVersion: number;
     userAgent: string;
-    userId: string;
     now: Date;
 }
 
-interface RegisterOrLoginWithPhoneNumberReturn {
-    success: true;
-}
+type RegisterOrLoginWithPhoneNumberProps =
+    | (RegisterOrLoginWithPhoneNumberBaseProps & {
+          type:
+              | "register"
+              | "login_known_device"
+              | "login_new_device";
+          userId: string;
+      })
+    | (RegisterOrLoginWithPhoneNumberBaseProps & {
+          type: "merge";
+          toUserId: string;
+          fromUserId: string;
+      });
 
-async function registerOrLoginWithPhoneNumber({
-    db,
-    type,
-    didWrite,
-    lastTwoDigits,
-    countryCallingCode,
-    phoneCountryCode,
-    phoneHash,
-    pepperVersion,
-    userAgent,
-    userId,
-    now,
-}: RegisterOrLoginWithPhoneNumberProps): Promise<RegisterOrLoginWithPhoneNumberReturn> {
+async function registerOrLoginWithPhoneNumber(
+    props: RegisterOrLoginWithPhoneNumberProps,
+): Promise<VerifyOtp200> {
+    const {
+        db,
+        type,
+        didWrite,
+        lastTwoDigits,
+        countryCallingCode,
+        phoneCountryCode,
+        phoneHash,
+        pepperVersion,
+        userAgent,
+        now,
+    } = props;
     const loginSessionExpiry = new Date(now);
     loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
+
+    // CRITICAL: Expire OTP at the entry point to prevent race conditions
+    // This ensures OTP can only be used once across all auth paths
+    const expirationResult = await db
+        .update(authAttemptPhoneTable)
+        .set({
+            codeExpiry: now,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                eq(authAttemptPhoneTable.didWrite, didWrite),
+                gt(authAttemptPhoneTable.codeExpiry, now), // Only update if not expired
+            ),
+        )
+        .returning({ didWrite: authAttemptPhoneTable.didWrite });
+
+    if (expirationResult.length === 0) {
+        // OTP was already used or expired - potential replay attack
+        log.warn(
+            { didWrite },
+            "[Phone] OTP already used or expired - potential replay attack",
+        );
+        return {
+            success: false,
+            reason: "expired_code",
+        };
+    }
+
     switch (type) {
         case "register": {
             await registerWithPhoneNumber({
@@ -220,12 +260,13 @@ async function registerOrLoginWithPhoneNumber({
                 phoneHash: phoneHash,
                 pepperVersion: pepperVersion,
                 userAgent: userAgent,
-                userId: userId,
-                now,
+                userId: props.userId,
                 sessionExpiry: loginSessionExpiry,
             });
             return {
                 success: true,
+                accountMerged: false,
+                userId: props.userId,
             };
         }
         case "login_known_device": {
@@ -237,6 +278,8 @@ async function registerOrLoginWithPhoneNumber({
             });
             return {
                 success: true,
+                accountMerged: false,
+                userId: props.userId,
             };
         }
         case "login_new_device": {
@@ -244,12 +287,39 @@ async function registerOrLoginWithPhoneNumber({
                 db,
                 didWrite,
                 userAgent: userAgent,
-                userId: userId,
+                userId: props.userId,
                 now,
                 sessionExpiry: loginSessionExpiry,
             });
             return {
                 success: true,
+                accountMerged: false,
+                userId: props.userId,
+            };
+        }
+        case "merge": {
+            const { toUserId, fromUserId } = props;
+
+            await mergeGuestIntoVerifiedUser({
+                db,
+                verifiedUserId: toUserId,
+                guestUserId: fromUserId,
+            });
+            await db
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: loginSessionExpiry,
+                    updatedAt: now,
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+            log.info(
+                { verifiedUserId: toUserId, guestUserId: fromUserId },
+                "[Phone] Merged guest into verified user",
+            );
+            return {
+                success: true,
+                accountMerged: true,
+                userId: toUserId,
             };
         }
     }
@@ -295,27 +365,69 @@ export async function verifyPhoneOtp({
             "Device has never made an authentication attempt",
         );
     }
-    // we recalculate type and userId for security reasons
-    const { type, userId } = await getPhoneAuthenticationTypeByHash({
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
+    const authResult = await getPhoneAuthenticationTypeByHash({
         db,
         phoneHash: resultOtp[0].phoneHash,
         didWrite,
+        deviceStatus,
     });
-    if (resultOtp[0].authType !== type) {
-        log.warn(
-            `User was initially identified as trying to "${resultOtp[0].authType}" but is now going to "${type}"`,
-        );
-    }
-    if (resultOtp[0].userId !== userId) {
-        log.warn(
-            `User was initially identified as "${resultOtp[0].userId}" but is now "${userId}"`,
-        );
-    }
-    if (type === "associated_with_another_user") {
+
+    // Handle rejection case first (before narrowing type)
+    if (authResult.type === "associated_with_another_user") {
         return {
             success: false,
-            reason: type,
+            reason: authResult.type,
         };
+    }
+
+    // CRITICAL: Reject if auth type changed during OTP flow to prevent unexpected behavior
+    // This prevents scenarios like: OTP sent for "register" but phone was taken by someone else
+    if (resultOtp[0].authType !== authResult.type) {
+        const currentUserId =
+            authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+        log.error(
+            {
+                didWrite,
+                storedType: resultOtp[0].authType,
+                currentType: authResult.type,
+                storedUserId: resultOtp[0].userId,
+                currentUserId,
+            },
+            "[Phone] Authentication type changed during OTP flow - rejecting for safety",
+        );
+        return {
+            success: false,
+            reason: "auth_state_changed",
+        };
+    }
+
+    // For "register" type, reuse the stored userId instead of the freshly generated one
+    // This prevents false-positive "user changed" errors due to UUID regeneration
+    if (authResult.type === "register") {
+        authResult.userId = resultOtp[0].userId;
+    } else {
+        // For non-register types, check userId consistency (UUIDs are deterministic here)
+        const currentUserId =
+            authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+        if (resultOtp[0].userId !== currentUserId) {
+            log.error(
+                {
+                    didWrite,
+                    storedUserId: resultOtp[0].userId,
+                    currentUserId,
+                },
+                "[Phone] User ID changed during OTP flow - rejecting for safety",
+            );
+            return {
+                success: false,
+                reason: "auth_state_changed",
+            };
+        }
     }
 
     // if we use twilio, we don't use the local code at all.
@@ -373,8 +485,8 @@ export async function verifyPhoneOtp({
                 return { success: false, reason: "expired_code" };
             case "approved":
                 return registerOrLoginWithPhoneNumber({
+                    ...authResult,
                     db,
-                    type,
                     didWrite,
                     lastTwoDigits: resultOtp[0].lastTwoDigits,
                     countryCallingCode: resultOtp[0].countryCallingCode,
@@ -384,7 +496,6 @@ export async function verifyPhoneOtp({
                     phoneHash: resultOtp[0].phoneHash,
                     pepperVersion: resultOtp[0].pepperVersion,
                     userAgent: resultOtp[0].userAgent,
-                    userId: userId,
                     now,
                 });
             default:
@@ -401,8 +512,8 @@ export async function verifyPhoneOtp({
         return { success: false, reason: "expired_code" };
     } else if (resultOtp[0].code === code) {
         return registerOrLoginWithPhoneNumber({
+            ...authResult,
             db,
-            type,
             didWrite,
             lastTwoDigits: resultOtp[0].lastTwoDigits,
             countryCallingCode: resultOtp[0].countryCallingCode,
@@ -410,7 +521,6 @@ export async function verifyPhoneOtp({
             phoneHash: resultOtp[0].phoneHash,
             pepperVersion: resultOtp[0].pepperVersion,
             userAgent: resultOtp[0].userAgent,
-            userId: userId,
             now,
         });
     } else {
@@ -460,7 +570,7 @@ export async function updateCodeGuessAttemptAmount(
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
 }
 
-// WARN: we assume the OTP was verified for registering at this point
+// WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithPhoneNumber entry point
 export async function registerWithPhoneNumber({
     db,
     didWrite,
@@ -471,18 +581,12 @@ export async function registerWithPhoneNumber({
     pepperVersion,
     userAgent,
     userId,
-    now,
     sessionExpiry,
 }: RegisterWithPhoneNumberProps): Promise<void> {
     log.info("Register with phone number");
     await db.transaction(async (tx) => {
-        await tx
-            .update(authAttemptPhoneTable)
-            .set({
-                codeExpiry: now, // this is important to forbid further usage of the same code once it has been successfully guessed
-                updatedAt: now,
-            })
-            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        // Note: OTP expiration happens at registerOrLoginWithPhoneNumber entry point
+        // to prevent race conditions across all auth paths
         await tx.insert(userTable).values({
             username: await generateUnusedRandomUsername({
                 db: db,
@@ -546,10 +650,12 @@ export async function createGuestUser({
         });
     } catch (e) {
         if (e instanceof TransactionRollbackError) {
-            const deviceStatus = await authUtilService.getDeviceStatus(
+            const now = nowZeroMs();
+            const deviceStatus = await authUtilService.getDeviceStatus({
                 db,
                 didWrite,
-            );
+                now,
+            });
             if (!deviceStatus.isKnown) {
                 throw httpErrors.internalServerError(
                     "Rollback occurred for another reason than manually actioning it, or sync error: device was deleted immediately after having seen it existing",
@@ -560,6 +666,8 @@ export async function createGuestUser({
         throw e;
     }
 }
+
+// Recovery system removed - deleted users are permanently deleted
 
 export async function registerWithZKP({
     db,
@@ -684,43 +792,8 @@ export async function loginKnownDeviceWithZKP({
 export type AuthenticateType =
     | "register"
     | "login_known_device"
-    | "login_new_device";
-
-export async function isPhoneNumberAvailable(
-    db: PostgresDatabase,
-    phoneHash: string,
-): Promise<boolean> {
-    const result = await db
-        .select()
-        .from(phoneTable)
-        .innerJoin(userTable, eq(phoneTable.userId, userTable.id))
-        .where(
-            and(
-                eq(phoneTable.phoneHash, phoneHash),
-                eq(userTable.isDeleted, false),
-            ),
-        );
-    if (result.length === 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-export async function isNullifierAvailable(
-    db: PostgresDatabase,
-    nullifier: string,
-): Promise<boolean> {
-    const result = await db
-        .select()
-        .from(zkPassportTable)
-        .where(eq(zkPassportTable.nullifier, nullifier));
-    if (result.length === 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
+    | "login_new_device"
+    | "merge";
 
 type DidAssociationStatus = "does_not_exist" | "associated" | "not_associated";
 
@@ -801,66 +874,203 @@ export async function getDidWriteAssociationWithNullifier({
     }
 }
 
-export async function getOrGenerateUserIdFromPhoneHash(
-    db: PostgresDatabase,
-    phoneHash: string,
-): Promise<string> {
-    const result = await db
-        .select({ userId: userTable.id })
-        .from(userTable)
-        .leftJoin(phoneTable, eq(phoneTable.userId, userTable.id))
-        .where(
+/**
+ * Phone-specific credential auth state
+ * Maps phone authentication data to generic CredentialAuthState
+ */
+type PhoneAuthState = CredentialAuthState & {
+    metadata?: { phoneHash: string };
+};
+
+interface GetPhoneAuthStateParams {
+    db: PostgresDatabase;
+    phoneHash: string;
+    didWrite: string;
+}
+
+async function getPhoneAuthState({
+    db,
+    phoneHash,
+    didWrite,
+}: GetPhoneAuthStateParams): Promise<PhoneAuthState> {
+    // Query 1: Check device association with phone
+    const didAssociationResult = await db
+        .select({
+            phoneHash: phoneTable.phoneHash,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            phoneTable,
             and(
+                eq(phoneTable.userId, deviceTable.userId),
                 eq(phoneTable.phoneHash, phoneHash),
-                eq(userTable.isDeleted, false),
             ),
-        );
-    if (result.length === 0) {
-        // The phone number is not associated with any existing non-deleted user
-        // But maybe it was already used to attempt a register
-        const resultAttempt = await db
-            .select({
-                userId: authAttemptPhoneTable.userId,
-                isDeleted: userTable.isDeleted,
-            })
-            .from(authAttemptPhoneTable)
-            .leftJoin(userTable, eq(userTable.id, authAttemptPhoneTable.userId))
-            .where(eq(authAttemptPhoneTable.phoneHash, phoneHash));
-        if (resultAttempt.length === 0) {
-            // this phone number has never been used to attempt a register
-            return generateUUID();
-        } else {
-            const didLoginAttemptsWithoutUsers = resultAttempt.filter(
-                (user) => user.isDeleted === null,
-            );
-            if (didLoginAttemptsWithoutUsers.length > 0) {
-                // there are attempts that aren't associated with any user
-                // at this point every userId being attempted should be identical, by design
-                return didLoginAttemptsWithoutUsers[0].userId;
-            } else {
-                // there are only attempts from pending deleted users
-                // so we will create a new user for this phone number
-                return generateUUID();
-            }
+        )
+        .where(eq(deviceTable.didWrite, didWrite));
+
+    const deviceExists = didAssociationResult.length > 0;
+    const isAssociated =
+        deviceExists && didAssociationResult[0].phoneHash !== null;
+
+    // Query 2: Check phone user status (only active users, deleted users are ignored)
+    const phoneResults = await db
+        .select({
+            userId: phoneTable.userId,
+            isDeleted: phoneTable.isDeleted,
+        })
+        .from(phoneTable)
+        .innerJoin(userTable, eq(userTable.id, phoneTable.userId))
+        .where(eq(phoneTable.phoneHash, phoneHash));
+
+    const activeUser = phoneResults.find((r) => !r.isDeleted);
+
+    // Handle "device_owns_credential" case first - it guarantees a user exists
+    if (isAssociated) {
+        // Device is associated, so phoneResults MUST have at least one entry
+        if (activeUser) {
+            return {
+                deviceCredentialAssociation: "device_owns_credential",
+                userId: activeUser.userId,
+                metadata: { phoneHash },
+            };
         }
+        // If we reach here, phone row was deleted - shouldn't happen with FK
+        // Fall through to treat as not associated
+    }
+
+    // For non-associated cases, check active user
+    if (activeUser) {
+        const userId = activeUser.userId;
+        // Phone is a hard credential - user with phone is always registered
+        const isRegistered = true;
+
+        if (!deviceExists) {
+            return {
+                deviceCredentialAssociation: "device_unknown_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { phoneHash },
+            };
+        } else {
+            return {
+                deviceCredentialAssociation: "device_missing_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { phoneHash },
+            };
+        }
+    }
+
+    // Phone is available (no active user, deleted users ignored)
+    if (!deviceExists) {
+        return {
+            deviceCredentialAssociation: "device_unknown_credential_available",
+            metadata: { phoneHash },
+        };
     } else {
-        return result[0].userId;
+        return {
+            deviceCredentialAssociation: "device_missing_credential_available",
+            metadata: { phoneHash },
+        };
     }
 }
 
-export async function getOrGenerateUserIdFromNullifier(
-    db: PostgresDatabase,
-    nullifier: string,
-): Promise<string> {
-    const result = await db
-        .select({ userId: userTable.id })
-        .from(userTable)
-        .leftJoin(zkPassportTable, eq(zkPassportTable.userId, userTable.id))
+/**
+ * Rarimo nullifier-specific credential auth state
+ * Maps Rarimo nullifier authentication data to generic CredentialAuthState
+ */
+type NullifierAuthState = CredentialAuthState & {
+    metadata?: { nullifier: string };
+};
+
+interface GetNullifierAuthStateParams {
+    db: PostgresDatabase;
+    nullifier: string;
+    didWrite: string;
+}
+
+async function getNullifierAuthState({
+    db,
+    nullifier,
+    didWrite,
+}: GetNullifierAuthStateParams): Promise<NullifierAuthState> {
+    // Query 1: Check device association with nullifier
+    const didAssociationResult = await db
+        .select({
+            nullifier: zkPassportTable.nullifier,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            zkPassportTable,
+            and(
+                eq(zkPassportTable.userId, deviceTable.userId),
+                eq(zkPassportTable.nullifier, nullifier),
+            ),
+        )
+        .where(eq(deviceTable.didWrite, didWrite));
+
+    const deviceExists = didAssociationResult.length > 0;
+    const isAssociated =
+        deviceExists && didAssociationResult[0].nullifier !== null;
+
+    // Query 2: Check nullifier user status (only active users, deleted users ignored)
+    const nullifierResults = await db
+        .select({
+            userId: zkPassportTable.userId,
+            isDeleted: zkPassportTable.isDeleted,
+        })
+        .from(zkPassportTable)
+        .innerJoin(userTable, eq(userTable.id, zkPassportTable.userId))
         .where(eq(zkPassportTable.nullifier, nullifier));
-    if (result.length === 0) {
-        return generateUUID();
+
+    const activeUser = nullifierResults.find((r) => !r.isDeleted);
+
+    // Handle "device_owns_credential" case first
+    if (isAssociated) {
+        if (activeUser) {
+            return {
+                deviceCredentialAssociation: "device_owns_credential",
+                userId: activeUser.userId,
+                metadata: { nullifier },
+            };
+        }
+        // Fall through if no user found (shouldn't happen with FK)
+    }
+
+    // Check active user
+    if (activeUser) {
+        const userId = activeUser.userId;
+        // Rarimo is a hard credential - user with Rarimo is always registered
+        const isRegistered = true;
+
+        if (!deviceExists) {
+            return {
+                deviceCredentialAssociation: "device_unknown_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { nullifier },
+            };
+        } else {
+            return {
+                deviceCredentialAssociation: "device_missing_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { nullifier },
+            };
+        }
+    }
+
+    // Nullifier is available (no active user, deleted users ignored)
+    if (!deviceExists) {
+        return {
+            deviceCredentialAssociation: "device_unknown_credential_available",
+            metadata: { nullifier },
+        };
     } else {
-        return result[0].userId;
+        return {
+            deviceCredentialAssociation: "device_missing_credential_available",
+            metadata: { nullifier },
+        };
     }
 }
 
@@ -868,33 +1078,19 @@ export async function getPhoneAuthenticationTypeByHash({
     db,
     phoneHash,
     didWrite,
-}: GetPhoneAuthenticationTypeByHash): Promise<AuthTypeAndUserId> {
-    const isPhoneNumberAvailableVal = await isPhoneNumberAvailable(
+    deviceStatus,
+}: GetPhoneAuthenticationTypeByHash): Promise<AuthResult> {
+    const credentialAuthState = await getPhoneAuthState({
         db,
         phoneHash,
-    );
-    const didWriteAssociationWithPhoneStatus: DidAssociationStatus =
-        await getDidWriteAssociationWithPhone({
-            db,
-            didWrite,
-            phoneHash,
-        });
-    const userId = await getOrGenerateUserIdFromPhoneHash(db, phoneHash);
-    switch (didWriteAssociationWithPhoneStatus) {
-        case "does_not_exist":
-            if (isPhoneNumberAvailableVal) {
-                return { type: "register", userId: userId };
-            } else {
-                return { type: "login_new_device", userId: userId };
-            }
-        case "associated":
-            return {
-                type: "login_known_device",
-                userId: userId,
-            };
-        case "not_associated":
-            return { type: "associated_with_another_user", userId: userId };
-    }
+        didWrite,
+    });
+
+    return determineAuthType({
+        credentialAuthState,
+        deviceStatus,
+        authMethod: "phone",
+    });
 }
 
 export async function getPhoneAuthenticationTypeByNumber({
@@ -902,16 +1098,23 @@ export async function getPhoneAuthenticationTypeByNumber({
     phoneNumber,
     didWrite,
     peppers,
-}: GetPhoneAuthenticationTypeByNumber): Promise<AuthTypeAndUserId> {
+}: GetPhoneAuthenticationTypeByNumber): Promise<AuthResult> {
     const phoneHash = await generatePhoneHash({
         phoneNumber: phoneNumber,
         peppers: peppers,
         pepperVersion: PEPPER_VERSION,
     });
+    const now = nowZeroMs();
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
     return getPhoneAuthenticationTypeByHash({
         db,
         phoneHash,
         didWrite,
+        deviceStatus,
     });
 }
 
@@ -919,30 +1122,19 @@ export async function getZKPAuthenticationType({
     db,
     nullifier,
     didWrite,
-}: GetZKPAuthenticationType): Promise<AuthTypeAndUserId> {
-    const isNullifierAvailableVal = await isNullifierAvailable(db, nullifier);
-    const didWriteAssociationWithNullifierStatus: DidAssociationStatus =
-        await getDidWriteAssociationWithNullifier({
-            db,
-            didWrite,
-            nullifier,
-        });
-    const userId = await getOrGenerateUserIdFromNullifier(db, nullifier);
-    switch (didWriteAssociationWithNullifierStatus) {
-        case "does_not_exist":
-            if (isNullifierAvailableVal) {
-                return { type: "register", userId: userId };
-            } else {
-                return { type: "login_new_device", userId: userId };
-            }
-        case "associated":
-            return {
-                type: "login_known_device",
-                userId: userId,
-            };
-        case "not_associated":
-            return { type: "associated_with_another_user", userId: userId };
-    }
+    deviceStatus,
+}: GetZKPAuthenticationType): Promise<AuthResult> {
+    const credentialAuthState = await getNullifierAuthState({
+        db,
+        nullifier,
+        didWrite,
+    });
+
+    return determineAuthType({
+        credentialAuthState,
+        deviceStatus,
+        authMethod: "rarimo",
+    });
 }
 
 export async function authenticateAttempt({
@@ -959,18 +1151,22 @@ export async function authenticateAttempt({
     twilioServiceSid,
 }: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
     const now = nowZeroMs();
-    const { type, userId } = await getPhoneAuthenticationTypeByNumber({
+    const authResult = await getPhoneAuthenticationTypeByNumber({
         db,
         phoneNumber: authenticateRequestBody.phoneNumber,
         didWrite,
         peppers,
     });
-    if (type === "associated_with_another_user") {
+    if (authResult.type === "associated_with_another_user") {
         return {
             success: false,
-            reason: type,
+            reason: authResult.type,
         };
     }
+    // Get userId - for merge type use toUserId (the device user)
+    const userId =
+        authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+    const type = authResult.type;
     const resultHasAttempted = await db
         .select({
             codeExpiry: authAttemptPhoneTable.codeExpiry,
@@ -1355,4 +1551,22 @@ export async function logout(db: PostgresDatabase, didWrite: string) {
             updatedAt: now,
         })
         .where(eq(deviceTable.didWrite, didWrite));
+}
+
+/**
+ * Logout all devices for a user (set session expiry to now)
+ * Used when user deletes their account
+ */
+export async function logoutAllDevicesForUser(
+    db: PostgresDatabase,
+    userId: string,
+) {
+    const now = nowZeroMs();
+    return await db
+        .update(deviceTable)
+        .set({
+            sessionExpiry: now,
+            updatedAt: now,
+        })
+        .where(eq(deviceTable.userId, userId));
 }

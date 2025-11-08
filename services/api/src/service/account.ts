@@ -1,17 +1,20 @@
 import { log } from "@/app.js";
-import { conversationTable, userTable } from "@/shared-backend/schema.js";
+import {
+    userTable,
+    zkPassportTable,
+    eventTicketTable,
+    phoneTable,
+    voteTable,
+    opinionTable,
+    conversationTable,
+} from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
-import { getAllUserComments, getUserPosts, getUserVotes } from "./user.js";
-import { deleteOpinionBySlugId } from "./comment.js";
-import { deletePostBySlugId } from "./post.js";
 import { nowZeroMs } from "@/shared/util.js";
-import { logout } from "./auth.js";
+import { logoutAllDevicesForUser } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
-import { castVoteForOpinionSlugIdFromUserId } from "./voting.js";
-import { useCommonPost } from "./common.js";
-import type { VoteBuffer } from "./voteBuffer.js";
+import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -608,23 +611,10 @@ export async function submitUsernameChange({
 
 interface DeleteAccountProps {
     db: PostgresJsDatabase;
-    voteBuffer: VoteBuffer;
-    now: Date;
-    proof: string;
-    didWrite: string;
     userId: string;
-    baseImageServiceUrl: string;
 }
 
-export async function deleteUserAccount({
-    db,
-    voteBuffer,
-    now,
-    userId,
-    proof,
-    didWrite,
-    baseImageServiceUrl,
-}: DeleteAccountProps) {
+export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
     // 2. proof should be recorded once only
     // delay should be given for people to recover their account - so data should not be set to be deleted immediately even though it should immediately not show on the client anymore
@@ -636,6 +626,7 @@ export async function deleteUserAccount({
             .update(userTable)
             .set({
                 isDeleted: true,
+                deletedAt: nowZeroMs(),
                 updatedAt: nowZeroMs(),
             })
             .where(eq(userTable.id, userId))
@@ -649,59 +640,83 @@ export async function deleteUserAccount({
             tx.rollback();
         }
 
-        // Delete user votes
-        const userVotes = await getUserVotes({
-            db: tx,
-            userId: userId,
-        });
-        for (const vote of userVotes) {
-            await castVoteForOpinionSlugIdFromUserId({
-                db: tx,
-                voteBuffer,
-                now: now,
-                opinionSlugId: vote.opinionSlugId,
-                didWrite,
-                proof,
-                userId,
-                votingAction: "cancel",
-            });
+        // Update denormalized isDeleted flag in credential tables
+        await tx
+            .update(zkPassportTable)
+            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .where(eq(zkPassportTable.userId, userId));
+
+        await tx
+            .update(eventTicketTable)
+            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .where(eq(eventTicketTable.userId, userId));
+
+        await tx
+            .update(phoneTable)
+            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .where(eq(phoneTable.userId, userId));
+
+        // Don't delete votes/opinions/conversations - use soft-delete pattern
+        // Queries already filter by user.isDeleted, so content will be hidden automatically
+
+        // Get all conversations where user participated (voted, commented, or posted)
+        const conversationIdsSet = new Set<number>();
+
+        log.info(
+            `[Account] Finding affected conversations for deleted user: ${userId}`,
+        );
+
+        // From votes - get opinions they voted on, then extract conversationId
+        log.info(`[Account] Querying votes for user: ${userId}`);
+        const votedOpinions = await tx
+            .select()
+            .from(voteTable)
+            .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+            .where(eq(voteTable.authorId, userId));
+        log.info(`[Account] Found ${String(votedOpinions.length)} votes`);
+        votedOpinions.forEach((row) =>
+            conversationIdsSet.add(row.opinion.conversationId),
+        );
+
+        // From opinions
+        log.info(`[Account] Querying opinions for user: ${userId}`);
+        const userOpinions = await tx
+            .select()
+            .from(opinionTable)
+            .where(eq(opinionTable.authorId, userId));
+        log.info(`[Account] Found ${String(userOpinions.length)} opinions`);
+        userOpinions.forEach((opinion) =>
+            conversationIdsSet.add(opinion.conversationId),
+        );
+
+        // From conversations (as author)
+        log.info(`[Account] Querying conversations for user: ${userId}`);
+        const userConversations = await tx
+            .select()
+            .from(conversationTable)
+            .where(eq(conversationTable.authorId, userId));
+        log.info(`[Account] Found ${String(userConversations.length)} conversations`);
+        userConversations.forEach((conversation) =>
+            conversationIdsSet.add(conversation.id),
+        );
+
+        log.info(
+            `[Account] Total affected conversations: ${String(conversationIdsSet.size)}`,
+        );
+
+        // Reconcile counters for each affected conversation
+        // This recalculates counts (excluding deleted user) and enqueues math updates
+        for (const conversationId of conversationIdsSet) {
+            log.info(
+                `[Account] Reconciling counters for conversation: ${String(conversationId)}`,
+            );
+            await reconcileConversationCounters({ db: tx, conversationId });
         }
 
-        // Delete user comments
-        const userComments = await getAllUserComments({
-            db: tx,
-            userId: userId,
-            baseImageServiceUrl,
-        });
-        for (const comment of userComments) {
-            await deleteOpinionBySlugId({
-                db: tx,
-                proof: proof,
-                opinionSlugId: comment.opinionItem.opinionSlugId,
-                didWrite: didWrite,
-                userId: userId,
-            });
-        }
+        log.info(
+            `[Account] Completed counter reconciliation for user: ${userId}`,
+        );
 
-        // Delete user posts
-        const userPosts = await getUserPosts({
-            db: tx,
-            userId: userId,
-            baseImageServiceUrl,
-        });
-        for (const post of userPosts.values()) {
-            await deletePostBySlugId({
-                proof: proof,
-                db: tx,
-                didWrite: didWrite,
-                conversationSlugId: post.metadata.conversationSlugId,
-                userId: userId,
-            });
-        }
-
-        await logout(tx, didWrite);
+        await logoutAllDevicesForUser(tx, userId);
     });
-
-    // Note: Math updates are already enqueued by deleteOpinionBySlugId and deletePostBySlugId
-    // No need to manually enqueue here
 }
