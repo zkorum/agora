@@ -1,7 +1,7 @@
 ![Agora Banner](banner.png)
 
 # Agora @ DevConnect Argentina 2025 🌎
-Join dialogues shaping the ecosystem.
+
 
 ### **💡 What is Agora?**
 
