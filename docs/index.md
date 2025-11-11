@@ -23,6 +23,8 @@
   
 - [Future Cities and Hubs](link-to-agora-conversation)
 
-👋 If you want to know more about Agora, please join our cofounder Yuting’s talk on [d/acc day](https://luma.com/5zs3pvxx?tk=inkOj7).
+
+## Learn more about Agora
+👋 Welcome to join our cofounder Yuting’s talk on [d/acc day](https://luma.com/5zs3pvxx?tk=inkOj7).
 
 🛠️ For any technical issue, please contact us on Telegram: https://t.me/agorabyzkorum
