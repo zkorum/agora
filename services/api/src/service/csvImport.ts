@@ -149,8 +149,9 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
         db: props.db,
         voteBuffer: props.voteBuffer,
         importedPolisConversation,
-        polisUrl: "", // Empty for CSV imports
-        polisUrlType: "conversation",
+        importConfig: {
+            method: "csv",
+        },
         proof: props.proof,
         didWrite: props.didWrite,
         authorId: props.authorId,
@@ -158,6 +159,5 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
         indexConversationAt: props.indexConversationAt,
         isLoginRequired: props.isLoginRequired,
         isIndexed: props.isIndexed,
-        importMethod: "csv",
     });
 }
