@@ -140,8 +140,11 @@ export async function importConversation({
             db,
             voteBuffer,
             importedPolisConversation,
-            polisUrlType,
-            polisUrl,
+            importConfig: {
+                method: "url",
+                polisUrl,
+                polisUrlType,
+            },
             proof: proof,
             didWrite: didWrite,
             authorId: authorId,
@@ -150,7 +153,6 @@ export async function importConversation({
             isLoginRequired,
             isIndexed,
             requiresEventTicket,
-            importMethod: "url",
         });
     return {
         conversationSlugId: conversationSlugId,
