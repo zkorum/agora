@@ -11,20 +11,31 @@ import {
     MAX_LENGTH_TITLE,
     toUnionUndefined,
 } from "@/shared/shared.js";
-import {
-    conversationTable,
-    conversationUpdateQueueTable,
-} from "@/shared-backend/schema.js";
+import { conversationUpdateQueueTable } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { EventSlug } from "@/shared/types/zod.js";
 
+// URL import configuration
+export interface UrlImportConfig {
+    method: "url";
+    polisUrl: string;
+    polisUrlType: "report" | "conversation";
+}
+
+// CSV import configuration
+export interface CsvImportConfig {
+    method: "csv";
+}
+
+// Discriminated union for import configuration
+export type ImportConfig = UrlImportConfig | CsvImportConfig;
+
 interface LoadImportedPolisConversationProps {
     db: PostgresDatabase;
     voteBuffer: VoteBuffer;
-    polisUrl: string;
-    polisUrlType: "report" | "conversation";
     importedPolisConversation: ImportPolisResults;
+    importConfig: ImportConfig;
     proof: string;
     didWrite: string;
     authorId: string;
@@ -33,15 +44,13 @@ interface LoadImportedPolisConversationProps {
     isLoginRequired: boolean;
     isIndexed: boolean;
     requiresEventTicket?: EventSlug;
-    importMethod: "url" | "csv";
 }
 
 export async function loadImportedPolisConversation({
     db,
     voteBuffer,
     importedPolisConversation,
-    polisUrl,
-    polisUrlType,
+    importConfig,
     proof,
     didWrite,
     authorId,
@@ -50,7 +59,6 @@ export async function loadImportedPolisConversation({
     isLoginRequired,
     isIndexed,
     requiresEventTicket,
-    importMethod,
 }: LoadImportedPolisConversationProps): Promise<ConversationIds> {
     const now = nowZeroMs();
     // create conversation
@@ -76,7 +84,7 @@ export async function loadImportedPolisConversation({
     let conversationBody = `${trimmedBody}<br /><br />--------------`;
 
     // Handle messaging based on import method
-    if (importMethod === "csv") {
+    if (importConfig.method === "csv") {
         // CSV imports
         conversationBody = `${conversationBody}<br />This conversation was imported from Polis CSV files.`;
         // For CSV imports, link_url might be available from summary.csv
@@ -87,8 +95,8 @@ export async function loadImportedPolisConversation({
         }
     } else {
         // URL imports (existing behavior)
-        if (polisUrlType === "conversation") {
-            conversationUrl = polisUrl;
+        if (importConfig.polisUrlType === "conversation") {
+            conversationUrl = importConfig.polisUrl;
             conversationBody = `${conversationBody}<br />This conversation was initially imported from ${conversationUrl}.`;
             reportUrl =
                 importedPolisConversation.report_id !== null
@@ -104,7 +112,7 @@ export async function loadImportedPolisConversation({
                 null
                     ? `https://pol.is/${String(importedPolisConversation.conversation_data.conversation_id)}`
                     : undefined); // should never be undefined, but as we rely on external systems we don't control, better safe than sorry
-            reportUrl = polisUrl;
+            reportUrl = importConfig.polisUrl;
             conversationBody = `${conversationBody}<br />This conversation was initially imported from ${reportUrl}.`;
             if (conversationUrl !== undefined) {
                 conversationBody = `${conversationBody}<br />The original conversation url is ${conversationUrl}.`;
@@ -147,12 +155,15 @@ export async function loadImportedPolisConversation({
             isLoginRequired: isLoginRequired,
             seedOpinionList: [],
             requiresEventTicket: requiresEventTicket,
-            importUrl: importMethod === "csv" ? undefined : polisUrl,
+            importUrl:
+                importConfig.method === "csv"
+                    ? undefined
+                    : importConfig.polisUrl,
             importConversationUrl: conversationUrl,
             importExportUrl: reportUrl,
             importCreatedAt: importCreatedAt,
             importAuthor: toUnionUndefined(ownername),
-            importMethod: importMethod,
+            importMethod: importConfig.method,
         });
     try {
         const {
