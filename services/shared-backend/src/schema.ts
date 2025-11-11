@@ -576,6 +576,8 @@ export const ticketProviderEnum = pgEnum("ticket_provider", ["zupass"]);
 
 export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
 
+export const importMethodType = pgEnum("import_method", ["url", "csv"]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -1177,6 +1179,7 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         importAuthor: text("import_author"),
+        importMethod: importMethodType("import_method"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

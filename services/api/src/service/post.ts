@@ -69,6 +69,7 @@ interface CreateNewPostProps {
     importExportUrl?: string;
     importCreatedAt?: Date;
     importAuthor?: string;
+    importMethod?: "url" | "csv";
 }
 
 interface ImportPostProps {
@@ -149,6 +150,7 @@ export async function importConversation({
             isLoginRequired,
             isIndexed,
             requiresEventTicket,
+            importMethod: "url",
         });
     return {
         conversationSlugId: conversationSlugId,
@@ -175,6 +177,7 @@ export async function createNewPost({
     importExportUrl,
     importCreatedAt,
     importAuthor,
+    importMethod,
 }: CreateNewPostProps): Promise<ConversationIds> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
@@ -235,6 +238,7 @@ export async function createNewPost({
                     importExportUrl,
                     importCreatedAt,
                     importAuthor,
+                    importMethod,
                 })
                 .returning({ conversationId: conversationTable.id });
 
