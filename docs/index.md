@@ -1,3 +1,5 @@
+
+
 # Agora @ DevConnect Argentina 2025 🌎
 Join dialogues shaping the ecosystem.
 
@@ -12,11 +14,15 @@ Join dialogues shaping the ecosystem.
 
 ## Join a conversation
 - [Shaping the future of Ethereum](link-to-agora-conversation)
+  
 - [Ethereum in LATAM](link-to-agora-conversation)
+  
 - [Decentralized Governance](link-to-agora-conversation)
+  
 - [d/acc: how to build for human flourishing?](link-to-agora-conversation)
+  
 - [Future Cities and Hubs](link-to-agora-conversation)
 
-If you want to know more about Agora, please join our cofounder Yuting’s talk on [d/acc day](https://luma.com/5zs3pvxx?tk=inkOj7).
+👋 If you want to know more about Agora, please join our cofounder Yuting’s talk on [d/acc day](https://luma.com/5zs3pvxx?tk=inkOj7).
 
-For any technical issue, please contact us on Telegram: https://t.me/agorabyzkorum
+🛠️ For any technical issue, please contact us on Telegram: https://t.me/agorabyzkorum
