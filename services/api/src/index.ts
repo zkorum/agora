@@ -6,6 +6,7 @@ import {
 } from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
+import fastifyMultipart from "@fastify/multipart";
 import fastifySensible from "@fastify/sensible";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
@@ -21,6 +22,7 @@ import fs from "fs";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
+import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 // import * as p2pService from "@/service/p2p.js";
@@ -143,6 +145,14 @@ server.register(fastifyCors, {
             // Generate an error on other origins, disabling access
             cb(new Error("Not allowed"), false);
         }
+    },
+});
+
+// Register multipart plugin for file uploads
+server.register(fastifyMultipart, {
+    limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB max per file
+        files: 3,
     },
 });
 
@@ -1662,6 +1672,95 @@ server.after(() => {
                 requiresEventTicket: request.body.requiresEventTicket,
                 isOrgImportOnly: config.IS_ORG_IMPORT_ONLY,
             });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/import-csv`,
+        schema: {
+            response: {
+                200: Dto.importCsvConversationResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                });
+
+            // Parse multipart request
+            const parts = request.parts();
+            const files: Record<string, string> = {};
+            let formFields: Record<string, string> = {};
+
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    // Read file content as string
+                    const buffer = await part.toBuffer();
+                    files[part.filename] = buffer.toString("utf-8");
+                } else {
+                    // Parse form fields
+                    formFields[part.fieldname] = part.value as string;
+                }
+            }
+
+            // Validate form fields using DTO
+            const parsedFields = Dto.importCsvConversationRequest.parse({
+                postAsOrganization: formFields.postAsOrganization || undefined,
+                indexConversationAt:
+                    formFields.indexConversationAt || undefined,
+                isIndexed: formFields.isIndexed === "true",
+                isLoginRequired: formFields.isLoginRequired === "true",
+            });
+
+            // Check organization restriction (same as URL import)
+            if (
+                (parsedFields.postAsOrganization === undefined ||
+                    parsedFields.postAsOrganization === "") &&
+                config.IS_ORG_IMPORT_ONLY
+            ) {
+                throw server.httpErrors.forbidden(
+                    "CSV import feature restricted to organizations",
+                );
+            }
+
+            // Verify organization membership if specified
+            if (
+                parsedFields.postAsOrganization !== undefined &&
+                parsedFields.postAsOrganization !== ""
+            ) {
+                const organizationId =
+                    await authUtilService.isUserPartOfOrganization({
+                        db,
+                        organizationName: parsedFields.postAsOrganization,
+                        userId: deviceStatus.userId,
+                    });
+                if (organizationId === undefined) {
+                    throw server.httpErrors.forbidden(
+                        `User '${deviceStatus.userId}' is not part of the organization: '${parsedFields.postAsOrganization}'`,
+                    );
+                }
+            }
+
+            // Call CSV import service
+            const { conversationSlugId } =
+                await csvImportService.processCsvImport({
+                    db,
+                    voteBuffer,
+                    files,
+                    proof: encodedUcan,
+                    didWrite,
+                    authorId: deviceStatus.userId,
+                    postAsOrganization: parsedFields.postAsOrganization,
+                    indexConversationAt: parsedFields.indexConversationAt,
+                    isLoginRequired: parsedFields.isLoginRequired,
+                    isIndexed: parsedFields.isIndexed,
+                });
+
+            reply.send({ conversationSlugId });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
