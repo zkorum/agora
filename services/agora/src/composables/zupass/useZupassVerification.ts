@@ -262,6 +262,42 @@ export function useZupassVerification() {
       }
 
       if ("error" in proofResult) {
+        // Debug logging for proof generation failures (privacy-safe)
+        console.error("[Zupass Debug] Proof generation failed");
+        console.error("[Zupass Debug] Error:", proofResult.error);
+
+        // Log schema structure only (no actual values)
+        console.error("[Zupass Debug] Request schema:", {
+          podCount: Object.keys(proofRequest.schema.pods).length,
+          hasExternalNullifier: !!proofRequest.schema.externalNullifier,
+          hasWatermark: !!proofRequest.schema.watermark,
+        });
+
+        // Log POD availability statistics (counts only, no content)
+        try {
+          const podspec = await import("@parcnet-js/podspec");
+          const allPods = await parcnetAPI.value.pod
+            .collection(collectionName)
+            .query(podspec.pod({ entries: {} }));
+
+          console.error("[Zupass Debug] POD statistics:", {
+            totalPods: allPods.length,
+            podsWithOwner: allPods.filter((p) => p.entries.owner).length,
+            podsWithEventId: allPods.filter((p) => p.entries.eventId).length,
+            addOnTickets: allPods.filter(
+              (p) => p.entries.isAddOn?.value === BigInt(1)
+            ).length,
+            podsMatchingEventId: allPods.filter(
+              (p) => p.entries.eventId?.value === config.zupassEventId
+            ).length,
+          });
+        } catch (e) {
+          console.error(
+            "[Zupass Debug] Failed to query PODs:",
+            e instanceof Error ? e.message : String(e)
+          );
+        }
+
         throw new Error(proofResult.error);
       }
 
