@@ -40,7 +40,6 @@ import {
     zodPolisClusters,
     zodEventSlug,
 } from "./zod.js";
-import { zodRarimoStatusAttributes } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
     ZodSupportedSpokenLanguageCodes,
@@ -220,7 +219,10 @@ export class Dto {
         z
             .object({
                 success: z.literal(false),
-                reason: z.enum(["conversation_locked", "event_ticket_required"]),
+                reason: z.enum([
+                    "conversation_locked",
+                    "event_ticket_required",
+                ]),
             })
             .strict(),
     ]);
@@ -500,26 +502,36 @@ export class Dto {
     //             .strict(),
     //     ],
     // );
-    static verifyUserStatusAndAuthenticate200 = z.discriminatedUnion(
-        "success",
-        [
-            z
-                .object({
-                    success: z.literal(true),
-                    rarimoStatus: zodRarimoStatusAttributes,
-                    accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
-                    userId: z.string(), // User ID (for tracking account merges in frontend)
-                })
-                .strict(),
-            z.object({
-                success: z.literal(false),
-                reason: z.enum([
-                    "already_logged_in",
-                    "associated_with_another_user",
+    static verifyUserStatusAndAuthenticate200 = z.union([
+        // Success case: verified - includes userId and accountMerged
+        z
+            .object({
+                success: z.literal(true),
+                rarimoStatus: z.literal("verified"),
+                accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
+                userId: z.string(), // User ID (for tracking account merges in frontend)
+            })
+            .strict(),
+        // Success case: not verified - no userId or accountMerged needed
+        z
+            .object({
+                success: z.literal(true),
+                rarimoStatus: z.enum([
+                    "not_verified",
+                    "failed_verification",
+                    "uniqueness_check_failed",
                 ]),
-            }),
-        ],
-    );
+            })
+            .strict(),
+        // Failure cases
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_logged_in",
+                "associated_with_another_user",
+            ]),
+        }),
+    ]);
 
     // Zupass event ticket verification
     static verifyEventTicketRequest = z
