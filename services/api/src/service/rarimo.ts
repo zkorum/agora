@@ -120,7 +120,7 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
     didWrite,
     now,
 }: IsLoggedInOrExistsAndAssociatedWithNoNullifierProps): Promise<
-    "already_logged_in" | "associated_with_another_user" | undefined
+    "already_logged_in" | undefined
 > {
     const result = await db
         .select({
@@ -135,13 +135,17 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
         )
         .where(eq(deviceTable.didWrite, didWrite));
 
-    log.info(`[Rarimo] isLoggedInOrExistsAndAssociatedWithNoNullifier - found ${String(result.length)} device entries`);
+    log.info(
+        `[Rarimo] isLoggedInOrExistsAndAssociatedWithNoNullifier - found ${String(result.length)} device entries`,
+    );
 
     if (result.length !== 0) {
         // device was registered
         const resultLoggedIn = result.find((r) => r.sessionExpiry > now);
         if (resultLoggedIn !== undefined) {
-            log.info(`[Rarimo] Device is already logged in - returning already_logged_in`);
+            log.info(
+                `[Rarimo] Device is already logged in - returning already_logged_in`,
+            );
             return "already_logged_in";
         }
         // NOTE: Removed the "associated_with_another_user" check here to allow guest users
@@ -150,7 +154,9 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
         // The "associated_with_another_user" case is properly handled later in the flow when
         // we detect a genuine conflict between two verified users.
     }
-    log.info(`[Rarimo] Returning undefined - proceeding with authentication flow`);
+    log.info(
+        `[Rarimo] Returning undefined - proceeding with authentication flow`,
+    );
 }
 
 export async function generateVerificationLink({
@@ -303,7 +309,6 @@ export async function verifyUserStatusAndAuthenticate({
         return {
             success: true,
             rarimoStatus,
-            accountMerged: false,
         };
     }
     // retrieve the user attributes
