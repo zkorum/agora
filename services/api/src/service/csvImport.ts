@@ -4,16 +4,18 @@ import {
     parseSummaryCsv,
     parseCommentsCsv,
     parseVotesCsv,
-    validateCsvFileNames,
-    POLIS_CSV_FILES,
-} from "@/shared-app-api/polisCsvParser.js";
+} from "./polisCsvParser.js";
+import {
+    validateCsvFieldNames,
+    CSV_UPLOAD_FIELD_NAMES,
+} from "@/shared-app-api/csvUpload.js";
 import * as importService from "./import.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
 interface ProcessCsvImportProps {
     db: PostgresJsDatabase;
     voteBuffer: VoteBuffer;
-    files: Record<string, string>; // filename -> content
+    files: Record<string, string>; // fieldname -> content
     proof: string;
     didWrite: string;
     authorId: string;
@@ -25,33 +27,33 @@ interface ProcessCsvImportProps {
 
 /**
  * Process CSV files to import a Polis conversation
- * Validates file names, parses CSV content, transforms to ImportPolisResults format,
+ * Validates field names, parses CSV content, transforms to ImportPolisResults format,
  * and uses existing import logic
  */
 export async function processCsvImport(props: ProcessCsvImportProps) {
-    // 1. Validate file names
-    const fileNames = Object.keys(props.files);
-    const validation = validateCsvFileNames(fileNames);
+    // 1. Validate field names
+    const fieldNames = Object.keys(props.files);
+    const validation = validateCsvFieldNames(fieldNames);
 
     if (!validation.isValid) {
         const errors: string[] = [];
-        if (validation.missingFiles.length > 0) {
+        if (validation.missingFields.length > 0) {
             errors.push(
-                `Missing required files: ${validation.missingFiles.join(", ")}`,
+                `Missing required fields: ${validation.missingFields.join(", ")}`,
             );
         }
-        if (validation.unexpectedFiles.length > 0) {
+        if (validation.unexpectedFields.length > 0) {
             errors.push(
-                `Unexpected files: ${validation.unexpectedFiles.join(", ")}`,
+                `Unexpected fields: ${validation.unexpectedFields.join(", ")}`,
             );
         }
-        throw new Error(`CSV file validation failed: ${errors.join("; ")}`);
+        throw new Error(`CSV field validation failed: ${errors.join("; ")}`);
     }
 
-    // 2. Extract file contents
-    const summaryContent = props.files[POLIS_CSV_FILES.SUMMARY.fileName];
-    const commentsContent = props.files[POLIS_CSV_FILES.COMMENTS.fileName];
-    const votesContent = props.files[POLIS_CSV_FILES.VOTES.fileName];
+    // 2. Extract file contents using type-safe field names
+    const summaryContent = props.files[CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE];
+    const commentsContent = props.files[CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE];
+    const votesContent = props.files[CSV_UPLOAD_FIELD_NAMES.VOTES_FILE];
 
     // 3. Parse and validate all CSV files
     const summary = await parseSummaryCsv(summaryContent);
