@@ -31,13 +31,24 @@ export interface PrivateConversationSettings {
 }
 
 /**
- * Settings for importing conversations from Polis
+ * Type of conversation import method
  */
-export interface ImportConversationSettings {
-  /** Whether this conversation is being imported from Polis */
-  isImportMode: boolean;
-  /** The Polis conversation URL to import from */
+export type ConversationImportType = "polis-url" | "csv-import";
+
+/**
+ * Settings for importing conversations
+ */
+export interface ConversationImportSettings {
+  /** How this conversation is being imported (null for manual creation) */
+  importType: ConversationImportType | null;
+  /** The Polis conversation URL (only relevant for 'polis-url' type) */
   polisUrl: string;
+  /** Metadata for uploaded CSV files (only relevant for 'csv-import' type) */
+  csvFileMetadata: {
+    summary: { name: string; size: number } | null;
+    comments: { name: string; size: number } | null;
+    votes: { name: string; size: number } | null;
+  };
 }
 
 /**
@@ -81,7 +92,7 @@ export interface NewConversationDraft {
   requiresEventTicket?: EventSlug;
 
   // Import Settings
-  importSettings: ImportConversationSettings;
+  importSettings: ConversationImportSettings;
 }
 
 /**
@@ -102,7 +113,7 @@ interface SerializableConversationDraft {
   requiresLogin: boolean;
   privateConversationSettings: SerializablePrivateConversationSettings;
   requiresEventTicket?: EventSlug;
-  importSettings: ImportConversationSettings;
+  importSettings: ConversationImportSettings;
 }
 
 /**
@@ -218,10 +229,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       // Event Ticket Verification
       requiresEventTicket: undefined,
 
-      // Import Settings
+      // Creation Settings
       importSettings: {
-        isImportMode: false,
+        importType: null,
         polisUrl: "",
+        csvFileMetadata: {
+          summary: null,
+          comments: null,
+          votes: null,
+        },
       },
     };
   }
@@ -289,14 +305,32 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       typeof draft.requiresLogin === "boolean" ||
       typeof privateSettingsData.requiresLogin === "boolean";
 
-    // Validate import settings
+    // Validate creation settings
     if (!draft.importSettings || typeof draft.importSettings !== "object") {
       return false;
     }
     const importSettingsData = draft.importSettings as Record<string, unknown>;
-    const hasValidImportSettings =
-      typeof importSettingsData.isImportMode === "boolean" &&
-      typeof importSettingsData.polisUrl === "string";
+
+    // Validate creation type
+    const validImportTypes: (ConversationImportType | null)[] = [
+      null,
+      "polis-url",
+      "csv-import",
+    ];
+    const hasValidCreationType =
+      typeof importSettingsData.importType === "string" &&
+      validImportTypes.includes(
+        importSettingsData.importType as ConversationImportType
+      );
+
+    // Validate polisUrl
+    const hasValidPolisUrl = typeof importSettingsData.polisUrl === "string";
+
+    // Validate csvFileMetadata structure
+    const hasValidCsvMetadata =
+      importSettingsData.csvFileMetadata !== undefined &&
+      typeof importSettingsData.csvFileMetadata === "object" &&
+      importSettingsData.csvFileMetadata !== null;
 
     return (
       hasValidContent &&
@@ -304,7 +338,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasValidPostAs &&
       hasValidPrivateSettings &&
       hasRequiresLogin &&
-      hasValidImportSettings
+      hasValidCreationType &&
+      hasValidPolisUrl &&
+      hasValidCsvMetadata
     );
   }
 
@@ -441,11 +477,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.privateConversationSettings.hasScheduledConversion !==
         emptyDraft.privateConversationSettings.hasScheduledConversion;
 
-    // Check import settings changes
-    const hasImportSettingsChanges =
-      current.importSettings.isImportMode !==
-        emptyDraft.importSettings.isImportMode ||
-      current.importSettings.polisUrl !== emptyDraft.importSettings.polisUrl;
+    // Check creation settings changes
+    const hasCreationSettingsChanges =
+      current.importSettings.importType !==
+        emptyDraft.importSettings.importType ||
+      current.importSettings.polisUrl !== emptyDraft.importSettings.polisUrl ||
+      JSON.stringify(current.importSettings.csvFileMetadata) !==
+        JSON.stringify(emptyDraft.importSettings.csvFileMetadata);
 
     return (
       hasContentChanges ||
@@ -454,7 +492,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasPrivateSettingsChanges ||
-      hasImportSettingsChanges
+      hasCreationSettingsChanges
     );
   }
 
@@ -517,11 +555,16 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function disablePostAsOrganization(): void {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
-    if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
-      // Disable import mode when switching to non-organization account
-      // as import mode should only be available for organization accounts
-      conversationDraft.value.importSettings.isImportMode = false;
+    if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+      // Reset to manual creation when switching to non-organization account
+      // as Polis URL and CSV import should only be available for organization accounts
+      conversationDraft.value.importSettings.importType = null;
       conversationDraft.value.importSettings.polisUrl = "";
+      conversationDraft.value.importSettings.csvFileMetadata = {
+        summary: null,
+        comments: null,
+        votes: null,
+      };
     }
   }
 
@@ -553,7 +596,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Checks if user has content that would be lost when switching to import mode
+   * Checks if user has content that would be lost when switching creation type
    */
   function hasContentThatWouldBeCleared(): boolean {
     const draft = conversationDraft.value;
@@ -566,9 +609,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Clears content fields when switching to import mode
+   * Clears content fields when switching to non-manual creation type
    */
-  function clearContentFieldsForImport(): void {
+  function clearContentFields(): void {
     conversationDraft.value.title = "";
     conversationDraft.value.content = "";
     conversationDraft.value.poll.enabled = false;
@@ -580,52 +623,57 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Toggles import mode and clears URL when disabling
-   */
-  function toggleImportMode(): void {
-    conversationDraft.value.importSettings.isImportMode =
-      !conversationDraft.value.importSettings.isImportMode;
-
-    // Clear Polis URL when disabling import mode
-    if (!conversationDraft.value.importSettings.isImportMode) {
-      conversationDraft.value.importSettings.polisUrl = "";
-    }
-  }
-
-  /**
-   * Sets import mode with optional content clearing
+   * Sets creation type with optional content clearing
    * Returns whether confirmation is needed before proceeding
    */
-  function setImportMode(isImport: boolean): { needsConfirmation: boolean } {
-    // If switching to import mode and user has content, confirmation is needed
+  function setImportType(newType: ConversationImportType | null): {
+    needsConfirmation: boolean;
+  } {
+    const currentType = conversationDraft.value.importSettings.importType;
+
+    // If switching from manual to import type and user has content, confirmation is needed
     if (
-      isImport &&
-      !conversationDraft.value.importSettings.isImportMode &&
+      currentType === null &&
+      newType !== null &&
       hasContentThatWouldBeCleared()
     ) {
       return { needsConfirmation: true };
     }
 
-    // Proceed with mode change
-    setImportModeWithClearing(isImport);
+    // Proceed with type change
+    setImportTypeWithClearing(newType);
     return { needsConfirmation: false };
   }
 
   /**
-   * Sets import mode and performs necessary clearing without confirmation
+   * Sets creation type and performs necessary clearing without confirmation
    */
-  function setImportModeWithClearing(isImport: boolean): void {
-    const wasImportMode = conversationDraft.value.importSettings.isImportMode;
+  function setImportTypeWithClearing(
+    newType: ConversationImportType | null
+  ): void {
+    const oldType = conversationDraft.value.importSettings.importType;
 
-    conversationDraft.value.importSettings.isImportMode = isImport;
+    conversationDraft.value.importSettings.importType = newType;
 
-    if (isImport && !wasImportMode) {
-      // Switching to import mode - clear content fields
-      clearContentFieldsForImport();
-    } else if (!isImport && wasImportMode) {
-      // Switching to regular mode - clear polis URL
+    // Clear type-specific data when switching
+    if (oldType === null && newType !== null) {
+      // Switching from manual to import type - clear content fields
+      clearContentFields();
+    }
+
+    if (newType !== "polis-url") {
+      // Clear Polis URL when not using Polis URL type
       conversationDraft.value.importSettings.polisUrl = "";
       clearValidationError("polisUrl");
+    }
+
+    if (newType !== "csv-import") {
+      // Clear CSV metadata when not using CSV import type
+      conversationDraft.value.importSettings.csvFileMetadata = {
+        summary: null,
+        comments: null,
+        votes: null,
+      };
     }
   }
 
@@ -939,35 +987,54 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     };
 
     const draft = conversationDraft.value;
+    const importType = draft.importSettings.importType;
 
-    // Validate title
-    if (!draft.title.trim()) {
-      result.isValid = false;
-      result.errors.title = "Title is required to continue";
-      if (!result.firstErrorField) result.firstErrorField = "title";
-    }
-
-    // Validate body content length
-    const bodyValidation = validateHtmlStringCharacterCount(
-      draft.content,
-      "conversation"
-    );
-    if (!bodyValidation.isValid) {
-      result.isValid = false;
-      result.errors.body = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
-      if (!result.firstErrorField) result.firstErrorField = "body";
-    }
-
-    // Validate poll if enabled
-    if (draft.poll.enabled) {
-      const pollValidation = validatePoll();
-      if (!pollValidation.isValid) {
+    // For manual creation, validate title and content
+    if (importType === null) {
+      // Validate title
+      if (!draft.title.trim()) {
         result.isValid = false;
-        result.errors.poll =
-          pollValidation.errorMessage || "Poll validation failed";
-        if (!result.firstErrorField) result.firstErrorField = "poll";
+        result.errors.title = "Title is required to continue";
+        if (!result.firstErrorField) result.firstErrorField = "title";
+      }
+
+      // Validate body content length
+      const bodyValidation = validateHtmlStringCharacterCount(
+        draft.content,
+        "conversation"
+      );
+      if (!bodyValidation.isValid) {
+        result.isValid = false;
+        result.errors.body = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+        if (!result.firstErrorField) result.firstErrorField = "body";
+      }
+
+      // Validate poll if enabled
+      if (draft.poll.enabled) {
+        const pollValidation = validatePoll();
+        if (!pollValidation.isValid) {
+          result.isValid = false;
+          result.errors.poll =
+            pollValidation.errorMessage || "Poll validation failed";
+          if (!result.firstErrorField) result.firstErrorField = "poll";
+        }
       }
     }
+
+    // For Polis URL import, validate URL
+    if (importType === "polis-url") {
+      if (
+        !draft.importSettings.polisUrl ||
+        !isValidPolisUrl(draft.importSettings.polisUrl)
+      ) {
+        result.isValid = false;
+        result.errors.polisUrl = "Please enter a valid Polis URL.";
+        if (!result.firstErrorField) result.firstErrorField = "polisUrl";
+      }
+    }
+
+    // For CSV import, validation will be handled by the PolisCsvUpload component
+    // The component will expose an isValid method that the create page can check
 
     return result;
   }
@@ -981,17 +1048,22 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
   if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
     /**
-     * Watcher to automatically disable import mode when switching to non-organization account
-     * Import mode should only be available for organization accounts
+     * Watcher to automatically reset to manual creation when switching to non-organization account
+     * Polis URL and CSV import should only be available for organization accounts
      */
     watch(
       () => conversationDraft.value.postAs.postAsOrganization,
       (newValue, oldValue) => {
         // Only act when switching from true to false (organization to personal)
         if (oldValue === true && newValue === false) {
-          // Disable import mode and clear related settings
-          conversationDraft.value.importSettings.isImportMode = false;
+          // Reset to manual creation and clear related settings
+          conversationDraft.value.importSettings.importType = null;
           conversationDraft.value.importSettings.polisUrl = "";
+          conversationDraft.value.importSettings.csvFileMetadata = {
+            summary: null,
+            comments: null,
+            votes: null,
+          };
         }
       }
     );
@@ -1040,10 +1112,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     setPostAsOrganization,
     disablePostAsOrganization,
     validateSelectedOrganization,
-    toggleImportMode,
-    setImportMode,
-    setImportModeWithClearing,
-    clearContentFieldsForImport,
+    setImportType,
+    setImportTypeWithClearing,
+    clearContentFields,
     validatePolisUrl,
 
     // Poll management functions

@@ -1,10 +1,6 @@
-/** **** WARNING: GENERATED FROM SHARED-APP-API DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
 import { parse } from "fast-csv";
 import { Readable } from "stream";
-
-// File size limit: 50MB
-export const MAX_CSV_FILE_SIZE = 50 * 1024 * 1024;
 
 // CSV file name constants with their corresponding schemas
 export const POLIS_CSV_FILES = {
