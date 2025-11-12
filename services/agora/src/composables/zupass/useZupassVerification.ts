@@ -1,6 +1,5 @@
 import { ref, shallowRef } from "vue";
 import { ticketProofRequest } from "@parcnet-js/ticket-spec";
-import { pod } from "@parcnet-js/podspec";
 import {
   init,
   doConnect,
@@ -210,48 +209,7 @@ export function useZupassVerification() {
         throw new Error("Failed to establish Parcnet connection");
       }
 
-      // STEP 1: Query PODs to see what tickets user actually has
-      console.log(
-        `[Zupass] Querying PODs from ${collectionName} collection...`
-      );
-
-      const query = pod({
-        entries: {
-          eventId: {
-            type: "string",
-            isMemberOf: [{ type: "string", value: config.zupassEventId }],
-          },
-        },
-      });
-
-      const allPods = await parcnetAPI.value.pod
-        .collection(collectionName)
-        .query(query);
-
-      console.log("[Zupass] ✓ POD query complete");
-      console.log("[Zupass] Total PODs found:", allPods.length);
-
-      // Filter out swag tickets (isAddOn)
-      const tickets = allPods.filter(
-        (pod) =>
-          !pod.entries.isAddOn || pod.entries.isAddOn?.value === BigInt(0)
-      );
-
-      console.log("[Zupass] Non-swag tickets:", tickets.length);
-
-      if (tickets.length === 0) {
-        console.warn(
-          `[Zupass] No tickets found! User may not have a ${config.displayName} ticket.`
-        );
-        throw new Error(
-          `No ${config.displayName} tickets found in your Zupass`
-        );
-      }
-
-      console.log("[Zupass] ✓ Found valid ticket for proof generation");
-      console.log("[Zupass] ========================================");
-
-      // STEP 2: Build GPC proof request using ticketProofRequest()
+      // Build GPC proof request using ticketProofRequest()
       // Use ONLY signerPublicKey + eventId WITHOUT productId to match ANY ticket for this event
       console.log("[Zupass] Building ticket proof request...");
       console.log(

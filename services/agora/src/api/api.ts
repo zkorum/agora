@@ -1005,7 +1005,6 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response {
 
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = {
     NotVerified: 'not_verified',
-    Verified: 'verified',
     FailedVerification: 'failed_verification',
     UniquenessCheckFailed: 'uniqueness_check_failed'
 } as const;
@@ -1051,13 +1050,38 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
 }
 
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = {
+    Verified: 'verified'
+} as const;
+
+export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1
+ */
+export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1
+     */
+    'rarimoStatus': ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum;
+}
+
+export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum = {
     NotVerified: 'not_verified',
-    Verified: 'verified',
     FailedVerification: 'failed_verification',
     UniquenessCheckFailed: 'uniqueness_check_failed'
 } as const;
 
-export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum];
+export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum];
 
 /**
  * 
