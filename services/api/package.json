@@ -5,7 +5,7 @@
     "exports": "./index.js",
     "scripts": {
         "build": "NODE_ENV=production rm -rf dist && tsc --sourceMap -p tsconfig.json",
-        "start": "node --loader esm-module-alias/loader --no-warnings dist/index.js",
+        "start": "node --loader esm-module-alias/loader --loader ./esm-loader-lodash-fix.mjs --no-warnings dist/index.js",
         "start:dev": "tsx watch --trace-uncaught src/index.ts",
         "start:import": "tsx src/index.ts",
         "start:dev:capacitor": "MODE=capacitor tsx watch src/index.ts",
