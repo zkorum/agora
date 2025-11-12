@@ -360,15 +360,15 @@ export async function verifyEventTicket({
             "[Zupass] ✓ Validated: ALL tuples match expected eventId and signerPublicKey",
         );
 
-        // Step 3: Extract nullifier from proof
-        // Nullifier is event-specific via externalNullifier = `agora-${eventSlug}-v1`
-        // After deserialization, PODValue has .type and .value properties
-        const nullifierValue = revealedClaims.owner?.externalNullifier;
+        // Step 3: Validate externalNullifier (salt) matches expected value
+        // This ensures nullifiers are event-specific and prevents cross-event tracking
+        const externalNullifier = revealedClaims.owner?.externalNullifier;
+        const expectedExternalNullifier = `agora-${eventSlug}-v1`;
 
-        if (nullifierValue?.type !== "string") {
+        if (!externalNullifier?.type || externalNullifier.type !== "string") {
             log.error(
-                { nullifierValue },
-                "[Zupass] Missing or invalid nullifier type in GPC proof",
+                { externalNullifier },
+                "[Zupass] Missing or invalid externalNullifier type in GPC proof",
             );
             return {
                 success: false,
@@ -376,7 +376,45 @@ export async function verifyEventTicket({
             };
         }
 
-        const nullifier = nullifierValue.value;
+        if (externalNullifier.value !== expectedExternalNullifier) {
+            log.error(
+                {
+                    didWrite,
+                    actual: externalNullifier.value,
+                    expected: expectedExternalNullifier,
+                },
+                "[Zupass] externalNullifier mismatch - proof generated for different event",
+            );
+            return {
+                success: false,
+                reason: "wrong_event",
+            };
+        }
+
+        log.info(
+            { didWrite, externalNullifier: externalNullifier.value },
+            "[Zupass] ✓ externalNullifier validated - nullifier is event-specific",
+        );
+
+        // Step 4: Extract nullifier hash from proof
+        // Nullifier is the actual unique hash (nullifierHashV4), not the externalNullifier
+        // nullifierHashV4 is a bigint, not a PODValue object
+        const nullifierHashV4 = revealedClaims.owner?.nullifierHashV4;
+
+        if (typeof nullifierHashV4 !== "bigint") {
+            log.error(
+                { nullifierHashV4 },
+                "[Zupass] Missing or invalid nullifier hash in GPC proof",
+            );
+            return {
+                success: false,
+                reason: "deserialization_error",
+            };
+        }
+
+        // Convert bigint to hex string (0x-prefixed) for database storage
+        // Using toString(16) with 0x prefix is the standard format for ZK nullifiers
+        const nullifier = `0x${nullifierHashV4.toString(16)}`;
 
         log.info(
             { didWrite, nullifier },
@@ -392,7 +430,7 @@ export async function verifyEventTicket({
         // 3. The nullifier is cryptographically bound to the proof and event-specific,
         //    making it impossible to reuse the same proof twice
 
-        // Step 4: Get device status (may be guest, verified, or non-existent)
+        // Step 5: Get device status (may be guest, verified, or non-existent)
         const deviceStatus = await authUtilService.getDeviceStatus({
             db,
             didWrite,
