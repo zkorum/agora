@@ -5170,10 +5170,7 @@
                                                 "rarimoStatus": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "not_verified",
-                                                        "verified",
-                                                        "failed_verification",
-                                                        "uniqueness_check_failed"
+                                                        "verified"
                                                     ]
                                                 },
                                                 "accountMerged": {
@@ -5188,6 +5185,30 @@
                                                 "rarimoStatus",
                                                 "accountMerged",
                                                 "userId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "rarimoStatus": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_verified",
+                                                        "failed_verification",
+                                                        "uniqueness_check_failed"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "rarimoStatus"
                                             ],
                                             "additionalProperties": false
                                         },
