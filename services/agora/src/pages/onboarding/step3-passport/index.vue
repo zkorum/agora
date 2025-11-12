@@ -327,21 +327,19 @@ async function isDeviceLoggedIn() {
       },
     });
     if (response.data.success) {
-      accountMerged.value = response.data.accountMerged;
-      verifiedUserId.value = response.data.userId;
-      switch (response.data.rarimoStatus) {
-        case "not_verified":
-          qrcodeVerificationStatus.value = "not_verified";
-          break;
-        case "verified":
-          qrcodeVerificationStatus.value = "verified";
-          break;
-        case "failed_verification":
-          qrcodeVerificationStatus.value = "failed_verification";
-          break;
-        case "uniqueness_check_failed":
-          qrcodeVerificationStatus.value = "uniqueness_check_failed";
-          break;
+      // When success is true, check rarimoStatus to distinguish verified vs other statuses
+      if (response.data.rarimoStatus === "not_verified") {
+        qrcodeVerificationStatus.value = "not_verified";
+      } else if (response.data.rarimoStatus === "failed_verification") {
+        qrcodeVerificationStatus.value = "failed_verification";
+      } else if (response.data.rarimoStatus === "uniqueness_check_failed") {
+        qrcodeVerificationStatus.value = "uniqueness_check_failed";
+      } else {
+        // success: true with rarimoStatus: "verified" (TypeScript doesn't see this in enum)
+        // This case means the user is verified
+        qrcodeVerificationStatus.value = "verified";
+        accountMerged.value = response.data.accountMerged;
+        verifiedUserId.value = response.data.userId;
       }
     } else {
       switch (response.data.reason) {

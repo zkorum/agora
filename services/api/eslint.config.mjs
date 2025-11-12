@@ -54,6 +54,8 @@ export default tseslint.config(
             "jest.config.js",
             "tests/**/*",
             "drizzle.config.ts",
+            "esm-loader-lodash-fix.mjs",
+            "vite.config.ts",
         ],
     },
     // {
