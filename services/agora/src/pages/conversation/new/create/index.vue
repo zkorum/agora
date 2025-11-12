@@ -9,7 +9,7 @@
         button-type="largeButton"
         color="primary"
         :label="
-          conversationDraft.importSettings.isImportMode
+          conversationDraft.importSettings.importType !== null
             ? t('importButton')
             : t('nextButton')
         "
@@ -24,7 +24,7 @@
 
       <div class="contentFlexStyle">
         <div
-          v-if="!conversationDraft.importSettings.isImportMode"
+          v-if="conversationDraft.importSettings.importType === null"
           ref="titleInputRef"
           :style="{ paddingLeft: '0.5rem' }"
         >
@@ -56,12 +56,19 @@
         </div>
         <div v-else class="import-section">
           <PolisUrlInput
+            v-if="conversationDraft.importSettings.importType === 'polis-url'"
             ref="polisUrlInputRef"
             v-model="conversationDraft.importSettings.polisUrl"
           />
+          <PolisCsvUpload
+            v-else-if="
+              conversationDraft.importSettings.importType === 'csv-import'
+            "
+            ref="polisCsvUploadRef"
+          />
         </div>
 
-        <div v-if="!conversationDraft.importSettings.isImportMode">
+        <div v-if="conversationDraft.importSettings.importType === null">
           <div class="editor-style">
             <ZKEditor
               v-model="conversationDraft.content"
@@ -122,6 +129,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import PolisUrlInput from "src/components/newConversation/PolisUrlInput.vue";
+import PolisCsvUpload from "src/components/newConversation/PolisCsvUpload.vue";
 import {
   useNewPostDraftsStore,
   type ValidationErrorField,
@@ -167,6 +175,8 @@ const routeGuardRef = ref<InstanceType<
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+const polisCsvUploadRef = ref<InstanceType<typeof PolisCsvUpload> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
 const {
@@ -230,10 +240,17 @@ function validateSubmission(): {
   isValid: boolean;
   errorField?: ValidationErrorField;
 } {
-  if (conversationDraft.value.importSettings.isImportMode) {
+  if (conversationDraft.value.importSettings.importType === "polis-url") {
     const polisValidation = validatePolisUrlField();
     if (!polisValidation.success) {
       return { isValid: false, errorField: "polisUrl" };
+    }
+  } else if (
+    conversationDraft.value.importSettings.importType === "csv-import"
+  ) {
+    // CSV validation is handled by the PolisCsvUpload component
+    if (!polisCsvUploadRef.value?.isValid()) {
+      return { isValid: false };
     }
   } else {
     const validation = validateForReview();
@@ -316,7 +333,7 @@ async function onSubmit(): Promise<void> {
 
   isSubmitButtonLoading.value = true;
   try {
-    if (conversationDraft.value.importSettings.isImportMode) {
+    if (conversationDraft.value.importSettings.importType !== null) {
       await handleImportSubmission();
     } else {
       await handleRegularSubmission();

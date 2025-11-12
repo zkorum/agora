@@ -1694,13 +1694,13 @@ server.after(() => {
             // Parse multipart request
             const parts = request.parts();
             const files: Record<string, string> = {};
-            let formFields: Record<string, string> = {};
+            const formFields: Record<string, string> = {};
 
             for await (const part of parts) {
                 if (part.type === "file") {
-                    // Read file content as string
+                    // Read file content as string, keyed by field name (not filename)
                     const buffer = await part.toBuffer();
-                    files[part.filename] = buffer.toString("utf-8");
+                    files[part.fieldname] = buffer.toString("utf-8");
                 } else {
                     // Parse form fields
                     formFields[part.fieldname] = part.value as string;

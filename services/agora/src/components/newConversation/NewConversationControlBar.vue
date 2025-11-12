@@ -78,7 +78,7 @@ const { t } = useComponentI18n<NewConversationControlBarTranslations>(
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { togglePoll, setImportMode, setImportModeWithClearing } =
+const { togglePoll, setImportType, setImportTypeWithClearing } =
   useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
@@ -108,25 +108,27 @@ const showLoginRequirementDialog = ref(false);
 const showEventTicketRequirementDialog = ref(false);
 
 const showImportModeChangeConfirmation = ref(false);
-const hasPendingImportModeChange = ref(false);
+const hasPendingImportModeChange = ref<"polis-url" | "csv-import" | null>(null);
 
 const showAsDialog = () => {
   showPostAsDialogVisible.value = true;
 };
 
-const handleImportModeChangeRequest = (isImport: boolean) => {
-  const result = setImportMode(isImport);
+const handleImportModeChangeRequest = (
+  importType: "polis-url" | "csv-import" | null
+) => {
+  const result = setImportType(importType);
 
   if (result.needsConfirmation) {
     // Store the pending change and show confirmation dialog
-    hasPendingImportModeChange.value = isImport;
+    hasPendingImportModeChange.value = importType;
     showImportModeChangeConfirmation.value = true;
   }
   // If no confirmation needed, the mode change has already been applied
 };
 
 const handleModeChangeConfirm = () => {
-  setImportModeWithClearing(hasPendingImportModeChange.value);
+  setImportTypeWithClearing(hasPendingImportModeChange.value);
   showImportModeChangeConfirmation.value = false;
 };
 
@@ -208,9 +210,10 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "post-type",
-    label: conversationDraft.value.importSettings.isImportMode
-      ? t("importFromPolis")
-      : t("newConversation"),
+    label:
+      conversationDraft.value.importSettings.importType !== null
+        ? t("importFromPolis")
+        : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible:
       processEnv.VITE_IS_ORG_IMPORT_ONLY === "true"
@@ -267,7 +270,7 @@ const controlButtons = computed((): ControlButton[] => [
       ? t("removePoll")
       : t("addPoll"),
     icon: conversationDraft.value.poll.enabled ? "pi pi-minus" : "pi pi-plus",
-    isVisible: conversationDraft.value.importSettings.isImportMode == false,
+    isVisible: conversationDraft.value.importSettings.importType === null,
     clickHandler: togglePolling,
     clickable: true,
   },

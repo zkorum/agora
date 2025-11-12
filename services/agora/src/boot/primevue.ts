@@ -12,6 +12,7 @@ import InputOtp from "primevue/inputotp";
 import InputText from "primevue/inputtext";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
+import FileUpload from "primevue/fileupload";
 
 const customPreset = definePreset(Aura, {
   semantic: {
@@ -63,4 +64,5 @@ export default defineBoot(({ app }) => {
   app.component("PrimeInputText", InputText);
   app.component("PrimeIconField", IconField);
   app.component("PrimeInputIcon", InputIcon);
+  app.component("PrimeFileUpload", FileUpload);
 });
