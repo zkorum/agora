@@ -194,6 +194,19 @@ export class Dto {
             conversationSlugId: z.string(),
         })
         .strict();
+    static importCsvConversationRequest = z
+        .object({
+            postAsOrganization: z.string().optional(),
+            indexConversationAt: z.string().datetime().optional(),
+            isIndexed: z.boolean(),
+            isLoginRequired: z.boolean(),
+        })
+        .strict();
+    static importCsvConversationResponse = z
+        .object({
+            conversationSlugId: z.string(),
+        })
+        .strict();
     static getConversationRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -606,6 +619,12 @@ export type ImportConversationRequest = z.infer<
 >;
 export type ImportConversationResponse = z.infer<
     typeof Dto.importConversationResponse
+>;
+export type ImportCsvConversationRequest = z.infer<
+    typeof Dto.importCsvConversationRequest
+>;
+export type ImportCsvConversationResponse = z.infer<
+    typeof Dto.importCsvConversationResponse
 >;
 export type GetConversationResponse = z.infer<
     typeof Dto.getConversationResponse

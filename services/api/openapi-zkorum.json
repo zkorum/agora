@@ -4796,6 +4796,31 @@
                 }
             }
         },
+        "/api/v1/conversation/import-csv": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "conversationSlugId": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "conversationSlugId"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversation/get": {
             "post": {
                 "requestBody": {
