@@ -73,8 +73,8 @@ lerna-debug.log*
 TODO*
 
 #external repo
-zupass
-parcnet-client
-efdevcon-monorepo
+/zupass/
+/parcnet-client/
+/efdevcon-monorepo/
 
 CLAUDE_*.md
