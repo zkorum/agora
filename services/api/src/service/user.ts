@@ -6,6 +6,7 @@ import {
     conversationTable,
     userTable,
     voteTable,
+    eventTicketTable,
 } from "@/shared-backend/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type {
@@ -26,6 +27,7 @@ import { getOrganizationsByUsername } from "./administrator/organization.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import { generateUUID } from "@/crypto.js";
 import type { UserIdPerParticipantId } from "@/utils/dataStructure.js";
+import { alias } from "drizzle-orm/pg-core";
 
 interface GetAllUserCommentsProps {
     db: PostgresJsDatabase;
@@ -98,6 +100,8 @@ export async function getUserComments({
         });
 
         // Fetch a list of comment IDs first
+        const conversationAuthorTable = alias(userTable, "conversationAuthor");
+
         const preparedQuery = db
             .select({
                 commentSlugId: opinionTable.slugId,
@@ -129,6 +133,10 @@ export async function getUserComments({
                 conversationTable,
                 eq(conversationTable.id, opinionTable.conversationId),
             )
+            .innerJoin(
+                conversationAuthorTable,
+                eq(conversationAuthorTable.id, conversationTable.authorId),
+            )
             .leftJoin(
                 opinionModerationTable,
                 eq(opinionModerationTable.opinionId, opinionTable.id),
@@ -138,8 +146,12 @@ export async function getUserComments({
                     ? and(
                           eq(opinionTable.authorId, userId),
                           lt(opinionTable.createdAt, lastCreatedAt),
+                          eq(conversationAuthorTable.isDeleted, false),
                       )
-                    : eq(opinionTable.authorId, userId),
+                    : and(
+                          eq(opinionTable.authorId, userId),
+                          eq(conversationAuthorTable.isDeleted, false),
+                      ),
             )
             .orderBy(desc(opinionTable.createdAt));
 
@@ -338,12 +350,30 @@ export async function getUserProfile({
                 baseImageServiceUrl,
             });
 
+            // Fetch verified event tickets for this user
+            const ticketsResponse = await db
+                .select({
+                    eventSlug: eventTicketTable.eventSlug,
+                })
+                .from(eventTicketTable)
+                .where(
+                    and(
+                        eq(eventTicketTable.userId, userId),
+                        eq(eventTicketTable.isDeleted, false),
+                    ),
+                );
+
+            const verifiedEventTickets = ticketsResponse.map(
+                (row) => row.eventSlug,
+            );
+
             return {
                 activePostCount: userTableResponse[0].activePostCount,
                 createdAt: userTableResponse[0].createdAt,
                 username: userTableResponse[0].username,
                 isModerator: userTableResponse[0].isModerator,
                 organizationList: organizationNamesResponse.organizationList,
+                verifiedEventTickets: verifiedEventTickets,
             };
         }
     } catch (err: unknown) {

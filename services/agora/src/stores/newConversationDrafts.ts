@@ -1,7 +1,7 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
-import type { OrganizationProperties } from "src/shared/types/zod";
+import type { OrganizationProperties, EventSlug } from "src/shared/types/zod";
 import {
   validateHtmlStringCharacterCount,
   MAX_LENGTH_BODY,
@@ -75,6 +75,10 @@ export interface NewConversationDraft {
   /** Advanced settings for private conversations (only relevant when isPrivate is true) */
   privateConversationSettings: PrivateConversationSettings;
 
+  // Event Ticket Verification
+  /** If set, requires users to verify ownership of the specified event ticket. If undefined, no verification required. */
+  requiresEventTicket?: EventSlug;
+
   // Import Settings
   importSettings: ImportConversationSettings;
 }
@@ -96,6 +100,7 @@ interface SerializableConversationDraft {
   postAs: PostAsSettings;
   isPrivate: boolean;
   privateConversationSettings: SerializablePrivateConversationSettings;
+  requiresEventTicket?: EventSlug;
   importSettings: ImportConversationSettings;
 }
 
@@ -208,6 +213,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         hasScheduledConversion: false,
         conversionDate: tomorrow,
       },
+
+      // Event Ticket Verification
+      requiresEventTicket: undefined,
 
       // Import Settings
       importSettings: {

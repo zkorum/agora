@@ -1,5 +1,5 @@
 auth:
-  addr: http://rarime-auth
+  addr: http://rarimo-auth
   enabled: false
 callback:
   url: https://staging.agoracitizen.network

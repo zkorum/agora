@@ -12,6 +12,8 @@ export interface NewConversationControlBarTranslations {
   makePublic: string;
   removePoll: string;
   addPoll: string;
+  noVerification: string;
+  devconnect2025: string;
 }
 
 export const newConversationControlBarTranslations: Record<
@@ -30,6 +32,8 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Make public: {date}",
     removePoll: "Remove poll",
     addPoll: "Add poll",
+    noVerification: "No verification",
+    devconnect2025: "Devconnect 2025",
   },
   ar: {
     asLabel: "باسم {name}",
@@ -43,6 +47,8 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "جعله عامًا: {date}",
     removePoll: "إزالة الاستطلاع",
     addPoll: "إضافة استطلاع",
+    noVerification: "بدون تحقق",
+    devconnect2025: "Devconnect 2025",
   },
   es: {
     asLabel: "Como {name}",
@@ -56,6 +62,8 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Hacer público: {date}",
     removePoll: "Eliminar encuesta",
     addPoll: "Agregar encuesta",
+    noVerification: "Sin verificación",
+    devconnect2025: "Devconnect 2025",
   },
   fr: {
     asLabel: "En tant que {name}",
@@ -69,6 +77,8 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Rendre public : {date}",
     removePoll: "Supprimer le sondage",
     addPoll: "Ajouter un sondage",
+    noVerification: "Pas de vérification",
+    devconnect2025: "Devconnect 2025",
   },
   "zh-Hans": {
     asLabel: "作为 {name}",
@@ -82,6 +92,8 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "公开：{date}",
     removePoll: "移除投票",
     addPoll: "添加投票",
+    noVerification: "无需验证",
+    devconnect2025: "Devconnect 2025",
   },
   "zh-Hant": {
     asLabel: "作為 {name}",
@@ -95,6 +107,8 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "公開：{date}",
     removePoll: "移除投票",
     addPoll: "新增投票",
+    noVerification: "無需驗證",
+    devconnect2025: "Devconnect 2025",
   },
   ja: {
     asLabel: "{name} として",
@@ -108,5 +122,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "公開：{date}",
     removePoll: "投票を削除",
     addPoll: "投票を追加",
+    noVerification: "検証不要",
+    devconnect2025: "Devconnect 2025",
   },
 };

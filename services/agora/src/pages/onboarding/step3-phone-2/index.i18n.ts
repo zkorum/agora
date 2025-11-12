@@ -10,9 +10,11 @@ export interface Step3Phone2Translations {
   resendCode: string;
   pleaseEnterValidCode: string;
   verificationSuccessful: string;
+  accountMerged: string;
   codeExpiredResend: string;
   wrongCodeTryAgain: string;
   syncHiccupDetected: string;
+  authStateChanged: string;
   somethingWrong: string;
   tooManyAttempts: string;
   invalidPhoneNumber: string;
@@ -31,9 +33,11 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "Resend Code",
       pleaseEnterValidCode: "Please enter a valid 6-digit code",
       verificationSuccessful: "Verification successful 🎉",
+      accountMerged: "Success! Your accounts have been merged 🎉",
       codeExpiredResend: "Code expired—resend a new code",
       wrongCodeTryAgain: "Wrong code—try again",
       syncHiccupDetected: "Oops! Sync hiccup detected—resend a new code",
+      authStateChanged: "Authentication state changed—please request a new code",
       somethingWrong: "Oops! Something is wrong",
       tooManyAttempts:
         "Too many attempts—please wait before requesting a new code",
@@ -52,10 +56,12 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "إعادة إرسال الرمز",
       pleaseEnterValidCode: "الرجاء إدخال رمز صالح مكون من 6 أرقام",
       verificationSuccessful: "تم التحقق بنجاح 🎉",
+      accountMerged: "نجح! تم دمج حساباتك 🎉",
       codeExpiredResend: "انتهت صلاحية الرمز - أرسل رمزاً جديداً",
       wrongCodeTryAgain: "رمز خاطئ - حاول مرة أخرى",
       syncHiccupDetected:
         "عفواً! تم اكتشاف خلل في المزامنة - أرسل رمزاً جديداً",
+      authStateChanged: "تغيرت حالة المصادقة - يرجى طلب رمز جديد",
       somethingWrong: "عفواً! هناك خطأ ما",
       tooManyAttempts: "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
       invalidPhoneNumber:
@@ -74,10 +80,12 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "Reenviar código",
       pleaseEnterValidCode: "Por favor, ingrese un código válido de 6 dígitos",
       verificationSuccessful: "Verificación exitosa 🎉",
+      accountMerged: "¡Éxito! Sus cuentas han sido fusionadas 🎉",
       codeExpiredResend: "Código expirado—reenvíe un nuevo código",
       wrongCodeTryAgain: "Código incorrecto—intente de nuevo",
       syncHiccupDetected:
         "¡Ups! Error de sincronización detectado—reenvíe un nuevo código",
+      authStateChanged: "El estado de autenticación cambió—solicite un nuevo código",
       somethingWrong: "¡Ups! Algo salió mal",
       tooManyAttempts:
         "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
@@ -97,10 +105,12 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "Renvoyer le Code",
       pleaseEnterValidCode: "Veuillez entrer un code valide à 6 chiffres",
       verificationSuccessful: "Vérification réussie 🎉",
+      accountMerged: "Succès ! Vos comptes ont été fusionnés 🎉",
       codeExpiredResend: "Code expiré—renvoyez un nouveau code",
       wrongCodeTryAgain: "Code incorrect—réessayez",
       syncHiccupDetected:
         "Oups ! Problème de synchronisation détecté—renvoyez un nouveau code",
+      authStateChanged: "L'état d'authentification a changé—demandez un nouveau code",
       somethingWrong: "Oups ! Quelque chose ne va pas",
       tooManyAttempts:
         "Trop de tentatives—veuillez attendre avant de demander un nouveau code",
@@ -119,9 +129,11 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "重新发送代码",
       pleaseEnterValidCode: "请输入有效的6位验证码",
       verificationSuccessful: "验证成功 🎉",
+      accountMerged: "成功！您的账户已合并 🎉",
       codeExpiredResend: "验证码已过期—重新发送一个新代码",
       wrongCodeTryAgain: "验证码错误—请重试",
       syncHiccupDetected: "哎呀！同步问题检测到—重新发送一个新代码",
+      authStateChanged: "认证状态已更改—请请求新代码",
       somethingWrong: "哎呀！出错了",
       tooManyAttempts: "太多尝试—请等待重新请求一个新代码",
       invalidPhoneNumber: "抱歉，这个手机号无效。请检查并重试。",
@@ -137,9 +149,11 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "重新發送代碼",
       pleaseEnterValidCode: "請輸入有效的6位驗證碼",
       verificationSuccessful: "驗證成功 🎉",
+      accountMerged: "成功！您的帳戶已合併 🎉",
       codeExpiredResend: "驗證碼已過期—重新發送一個新代碼",
       wrongCodeTryAgain: "驗證碼錯誤—請重試",
       syncHiccupDetected: "哎呀！同步問題檢測到—重新發送一個新代碼",
+      authStateChanged: "認證狀態已更改—請請求新代碼",
       somethingWrong: "哎呀！出錯了",
       tooManyAttempts: "太多嘗試—請等待重新請求一個新代碼",
       invalidPhoneNumber: "抱歉，這個手機號無效。請檢查並重試。",
@@ -155,10 +169,12 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       resendCode: "コードを再送信",
       pleaseEnterValidCode: "有効な6桁のコードを入力してください",
       verificationSuccessful: "検証成功 🎉",
+      accountMerged: "成功！アカウントが統合されました 🎉",
       codeExpiredResend: "コードが期限切れです—新しいコードを再送信",
       wrongCodeTryAgain: "コードが間違っています—もう一度試してください",
       syncHiccupDetected:
         "おっと！同期の問題が検出されました—新しいコードを再送信",
+      authStateChanged: "認証状態が変更されました—新しいコードをリクエストしてください",
       somethingWrong: "おっと！何かが間違っています",
       tooManyAttempts:
         "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",

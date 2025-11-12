@@ -68,7 +68,7 @@
         <mxCell id="nIAZ2dd3incH0YXqtL2k-75" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" parent="1" vertex="1">
           <mxGeometry x="105" y="960" width="30" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="nIAZ2dd3incH0YXqtL2k-78" value="User&#39;s &lt;span style=&quot;background-color: initial;&quot;&gt;RariMe Wallet&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" parent="1" vertex="1">
+        <mxCell id="nIAZ2dd3incH0YXqtL2k-78" value="User&#39;s &lt;span style=&quot;background-color: initial;&quot;&gt;Rarimo Wallet&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" parent="1" vertex="1">
           <mxGeometry x="30" y="1230" width="142.5" height="150" as="geometry" />
         </mxCell>
         <mxCell id="nIAZ2dd3incH0YXqtL2k-79" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=-0.019;entryY=0.795;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="nIAZ2dd3incH0YXqtL2k-78" target="nIAZ2dd3incH0YXqtL2k-3" edge="1">

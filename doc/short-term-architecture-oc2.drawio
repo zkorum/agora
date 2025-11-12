@@ -52,7 +52,7 @@
         <mxCell id="nIAZ2dd3incH0YXqtL2k-73" value="Local-first auth front module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;align=left;" parent="1" vertex="1">
           <mxGeometry x="570" y="1140" width="117.5" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="nIAZ2dd3incH0YXqtL2k-74" value="1) Chooses to log in with phone number or with RariMe. &lt;br&gt;Self-generates asymmetric key pair." style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#d79b00;fillColor=#ffe6cc;" parent="1" vertex="1">
+        <mxCell id="nIAZ2dd3incH0YXqtL2k-74" value="1) Chooses to log in with phone number or with Rarimo. &lt;br&gt;Self-generates asymmetric key pair." style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#d79b00;fillColor=#ffe6cc;" parent="1" vertex="1">
           <mxGeometry x="150" y="1050" width="320" height="40" as="geometry" />
         </mxCell>
         <mxCell id="nIAZ2dd3incH0YXqtL2k-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=-0.01;entryY=0.086;entryDx=0;entryDy=0;fillColor=#ffe6cc;strokeColor=#d79b00;entryPerimeter=0;" parent="1" source="nIAZ2dd3incH0YXqtL2k-75" target="nIAZ2dd3incH0YXqtL2k-3" edge="1">
@@ -66,7 +66,7 @@
         <mxCell id="nIAZ2dd3incH0YXqtL2k-75" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
           <mxGeometry x="105" y="960" width="30" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="nIAZ2dd3incH0YXqtL2k-78" value="User&#39;s &lt;span style=&quot;background-color: initial;&quot;&gt;RariMe Wallet&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+        <mxCell id="nIAZ2dd3incH0YXqtL2k-78" value="User&#39;s &lt;span style=&quot;background-color: initial;&quot;&gt;Rarimo Wallet&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
           <mxGeometry x="30" y="1230" width="142.5" height="150" as="geometry" />
         </mxCell>
         <mxCell id="nIAZ2dd3incH0YXqtL2k-80" value="2.A) Associates zk proof of passport&amp;nbsp;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;to public key,&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;containing disclosure &lt;br&gt;of citizenship, sex&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;as well as a&amp;nbsp;&lt;br&gt;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;unique &amp;amp; verifiable&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;yet anonymous identifier&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;&lt;div&gt;for the scope of the whole Agora app&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#d79b00;fillColor=#ffe6cc;" parent="1" vertex="1">

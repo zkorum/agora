@@ -5,6 +5,8 @@ export interface CommentComposerTranslations {
   postButton: string;
   conversationLockedError: string;
   createOpinionError: string;
+  eventTicketRequiredTitle: string;
+  eventTicketRequiredMessage: string;
 }
 
 export const commentComposerTranslations: Record<
@@ -17,12 +19,18 @@ export const commentComposerTranslations: Record<
     conversationLockedError:
       "Cannot create opinion because the conversation is locked",
     createOpinionError: "Error while trying to create a new opinion",
+    eventTicketRequiredTitle: "Event Ticket Required",
+    eventTicketRequiredMessage:
+      "You need to verify your Devconnect 2025 ticket to participate in this conversation.",
   },
   ar: {
     placeholder: "أضف رأيك الخاص",
     postButton: "نشر",
     conversationLockedError: "لا يمكن إنشاء رأي لأن المحادثة مقفلة",
     createOpinionError: "خطأ أثناء محاولة إنشاء رأي جديد",
+    eventTicketRequiredTitle: "تذكرة الحدث مطلوبة",
+    eventTicketRequiredMessage:
+      "تحتاج إلى التحقق من تذكرة Devconnect 2025 الخاصة بك للمشاركة في هذه المحادثة.",
   },
   es: {
     placeholder: "Añade tu propia opinión",
@@ -30,6 +38,9 @@ export const commentComposerTranslations: Record<
     conversationLockedError:
       "No se puede crear una opinión porque la conversación está bloqueada",
     createOpinionError: "Error al intentar crear una nueva opinión",
+    eventTicketRequiredTitle: "Entrada del evento requerida",
+    eventTicketRequiredMessage:
+      "Necesitas verificar tu entrada de Devconnect 2025 para participar en esta conversación.",
   },
   fr: {
     placeholder: "Ajoutez votre propre opinion",
@@ -38,23 +49,35 @@ export const commentComposerTranslations: Record<
       "Impossible de créer une opinion car la conversation est verrouillée",
     createOpinionError:
       "Erreur lors de la tentative de création d'une nouvelle opinion",
+    eventTicketRequiredTitle: "Billet d'événement requis",
+    eventTicketRequiredMessage:
+      "Vous devez vérifier votre billet Devconnect 2025 pour participer à cette conversation.",
   },
   "zh-Hans": {
     placeholder: "添加您自己的意见",
     postButton: "发布",
     conversationLockedError: "无法创建意见，因为对话已锁定",
     createOpinionError: "尝试创建新意见时出错",
+    eventTicketRequiredTitle: "需要活动门票",
+    eventTicketRequiredMessage:
+      "您需要验证您的 Devconnect 2025 门票才能参与此对话。",
   },
   "zh-Hant": {
     placeholder: "添加您自己的意見",
     postButton: "發布",
     conversationLockedError: "無法創建意見，因為對話已鎖定",
     createOpinionError: "嘗試創建新意見時出錯",
+    eventTicketRequiredTitle: "需要活動門票",
+    eventTicketRequiredMessage:
+      "您需要驗證您的 Devconnect 2025 門票才能參與此對話。",
   },
   ja: {
     placeholder: "あなた自身の意見を追加",
     postButton: "投稿",
     conversationLockedError: "会話がロックされているため、意見を作成できません",
     createOpinionError: "新しい意見を作成しようとした際にエラーが発生しました",
+    eventTicketRequiredTitle: "イベントチケットが必要",
+    eventTicketRequiredMessage:
+      "この会話に参加するには、Devconnect 2025 チケットを確認する必要があります。",
   },
 };

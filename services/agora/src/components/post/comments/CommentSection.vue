@@ -173,6 +173,7 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
+  targetOpinion,
   isLoading: computed(
     () =>
       activeQuery.value.isPending.value || activeQuery.value.isRefetching.value

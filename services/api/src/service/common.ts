@@ -20,6 +20,7 @@ import type {
     FeedSortAlgorithm,
     PolisClustersMetadata,
     ClusterMetadata,
+    EventSlug,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, sql } from "drizzle-orm";
@@ -155,6 +156,7 @@ export function useCommonPost() {
                 organizationDescription: organizationTable.description,
                 isIndexed: conversationTable.isIndexed,
                 isLoginRequired: conversationTable.isLoginRequired,
+                requiresEventTicket: conversationTable.requiresEventTicket,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
@@ -191,7 +193,7 @@ export function useCommonPost() {
                 eq(organizationTable.id, conversationTable.organizationId),
             )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
-            .where(where)
+            .where(and(where, eq(userTable.isDeleted, false)))
             .orderBy(desc(conversationTable.createdAt));
         if (limit !== undefined) {
             postItems = await postItemsQuery.$dynamic().limit(limit);
@@ -251,6 +253,7 @@ export function useCommonPost() {
                 authorUsername: postItem.authorName,
                 isIndexed: postItem.isIndexed,
                 isLoginRequired: postItem.isLoginRequired,
+                requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
                     postItem.organizationName !== null &&
                     postItem.organizationDescription !== null &&
@@ -912,6 +915,7 @@ export function useCommonPost() {
         voteCount: number;
         isIndexed: boolean;
         isLoginRequired: boolean;
+        requiresEventTicket: EventSlug | null;
     }
 
     interface GetPostMetadataFromSlugIdProps {
@@ -934,6 +938,7 @@ export function useCommonPost() {
                 opinionCount: conversationTable.opinionCount,
                 isIndexed: conversationTable.isIndexed,
                 isLoginRequired: conversationTable.isLoginRequired,
+                requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
             .where(eq(conversationTable.slugId, conversationSlugId));
@@ -949,6 +954,7 @@ export function useCommonPost() {
             opinionCount: postTableResponse[0].opinionCount,
             isIndexed: postTableResponse[0].isIndexed,
             isLoginRequired: postTableResponse[0].isLoginRequired,
+            requiresEventTicket: postTableResponse[0].requiresEventTicket,
         };
     }
 

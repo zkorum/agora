@@ -1,6 +1,7 @@
 import { computed, type Ref } from "vue";
 import { storeToRefs } from "pinia";
 import type { VotingAction, OpinionItem } from "src/shared/types/zod";
+import type { CastVoteResponse } from "src/shared/types/dto";
 import {
   useUserVotesQuery,
   useVoteMutation,
@@ -19,7 +20,7 @@ export interface UseOpinionVotingReturn {
   castVote: (
     opinionSlugId: string,
     voteAction: VotingAction
-  ) => Promise<boolean>;
+  ) => Promise<CastVoteResponse>;
   fetchUserVotingData: () => Promise<void>;
 }
 
@@ -46,22 +47,18 @@ export function useOpinionVoting({
   async function castVote(
     opinionSlugId: string,
     voteAction: VotingAction
-  ): Promise<boolean> {
-    try {
-      await voteMutation.mutateAsync({
-        opinionSlugId,
-        voteAction,
-      });
+  ): Promise<CastVoteResponse> {
+    const result = await voteMutation.mutateAsync({
+      opinionSlugId,
+      voteAction,
+    });
 
-      // Call the callback after successful vote
-      if (onVoteCast) {
-        onVoteCast();
-      }
-
-      return true;
-    } catch {
-      return false;
+    // Call the callback after successful vote
+    if (result.success && onVoteCast) {
+      onVoteCast();
     }
+
+    return result;
   }
 
   async function fetchUserVotingData(): Promise<void> {

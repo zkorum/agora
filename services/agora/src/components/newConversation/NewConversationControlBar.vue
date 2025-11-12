@@ -35,6 +35,10 @@
   <LoginRequirementDialog v-model:show-dialog="showLoginRequirementDialog" />
 
   <MakePublicTimerDialog v-model:show-dialog="showMakePublicDialog" />
+
+  <EventTicketRequirementDialog
+    v-model:show-dialog="showEventTicketRequirementDialog"
+  />
 </template>
 
 <script setup lang="ts">
@@ -51,6 +55,7 @@ import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
+import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import {
   newConversationControlBarTranslations,
@@ -99,6 +104,7 @@ const showPostTypeDialog = ref(false);
 const showVisibilityDialog = ref(false);
 const showMakePublicDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
+const showEventTicketRequirementDialog = ref(false);
 
 const showImportModeChangeConfirmation = ref(false);
 const hasPendingImportModeChange = ref(false);
@@ -147,6 +153,10 @@ const toggleMakePublicTimer = () => {
   showMakePublicDialog.value = true;
 };
 
+const toggleEventTicketRequirement = () => {
+  showEventTicketRequirementDialog.value = true;
+};
+
 const getMakePublicLabel = () => {
   if (
     !conversationDraft.value.privateConversationSettings.hasScheduledConversion
@@ -169,6 +179,19 @@ const getMakePublicLabel = () => {
   const formattedDate = formatter.format(targetDate);
 
   return t("makePublic").replace("{date}", formattedDate);
+};
+
+const getEventTicketLabel = () => {
+  const eventSlug = conversationDraft.value.requiresEventTicket;
+
+  if (eventSlug === undefined) {
+    return t("noVerification");
+  }
+
+  switch (eventSlug) {
+    case "devconnect-2025":
+      return t("devconnect2025");
+  }
 };
 
 const controlButtons = computed((): ControlButton[] => [
@@ -225,6 +248,16 @@ const controlButtons = computed((): ControlButton[] => [
       : "pi pi-chevron-down",
     isVisible: conversationDraft.value.isPrivate,
     clickHandler: toggleMakePublicTimer,
+    clickable: true,
+  },
+  {
+    id: "event-ticket-requirement",
+    label: getEventTicketLabel(),
+    icon: showEventTicketRequirementDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible: true,
+    clickHandler: toggleEventTicketRequirement,
     clickable: true,
   },
   {

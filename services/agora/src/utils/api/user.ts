@@ -45,6 +45,7 @@ export function useBackendUserApi() {
         isModerator: response.data.isModerator,
         username: response.data.username,
         organizationList: response.data.organizationList,
+        verifiedEventTickets: response.data.verifiedEventTickets || [],
       };
     } catch (e) {
       console.error(e);

@@ -13,7 +13,7 @@
     </template>
 
     <article class="privacy-content">
-      <p><strong>Last updated on</strong>: 2025/10/29 (YYYY/MM/DD)</p>
+      <p><strong>Last updated on</strong>: 2025/11/11 (YYYY/MM/DD)</p>
 
       <p>
         Agora Citizen Network is developed by
@@ -50,26 +50,64 @@
           account.
         </p>
         <p>
-          You are not required to create an account to browse Agora. However, to
-          participate in discussions and interact with content, you may need to
-          register using one of the following methods:
+          You are not required to create an account to browse Agora. To
+          participate in discussions and interact with content, you can:
         </p>
         <ul>
-          <li>Log-in via phone number (verified through a one-time code)</li>
           <li>
-            Log-in via cryptographic proof from a third-party verification app
-            (<a
-              href="https://rarime.com/privacy-notice.html"
-              target="_blank"
-              rel="noopener"
-              >RariMe</a
-            >), which verifies your identity using a passport-based
-            Zero-Knowledge Proof (ZKP). This method ensures that your identity
-            is validated while maintaining privacy. Agora does not have access
-            to your passport details, only the cryptographic proof confirming
-            uniqueness and eligibility.
+            <strong>Browse as a guest:</strong> You can explore content and
+            participate in limited interactions without registering. When you
+            first interact with the platform (e.g., posting, voting), a
+            device-specific cryptographic identifier (DID) is automatically
+            generated and stored on your device, then linked to a user account
+            on our servers. This DID serves as a permanent session identifier
+            for your device. Guest accounts are not verified and can only be
+            accessed from the original device.
+          </li>
+          <li>
+            <strong>Soft login (session-based verification):</strong> Verify
+            using
+            <a href="https://zupass.org" target="_blank" rel="noopener"
+              >Zupass</a
+            >
+            for event ticket verification using Group Proof of Credentials
+            (GPC). This adds temporary event-based verification to your account
+            but does NOT create a registered account. Soft login allows you to
+            prove event participation without revealing ticket details. You can
+            upgrade to a permanent registered account at any time by adding
+            phone or passport verification.
+          </li>
+          <li>
+            <strong>Hard login (permanent registered account):</strong> Create a
+            permanent verified account using one of the following methods:
+            <ul>
+              <li>
+                <strong>Phone number:</strong> Verified through a one-time code
+                sent via SMS
+              </li>
+              <li>
+                <a
+                  href="https://rarimo.com/privacy-notice.html"
+                  target="_blank"
+                  rel="noopener"
+                  >Rarimo</a
+                >: Passport-based Zero-Knowledge Proof (ZKP) verification
+              </li>
+            </ul>
+            These methods create a registered account and ensure that your
+            identity is validated while maintaining privacy. Agora receives only
+            cryptographic proofs confirming uniqueness and eligibility, never
+            the underlying identity documents or ticket information.
           </li>
         </ul>
+        <p>
+          <strong>Account upgrades:</strong> When you upgrade from guest or soft
+          login to hard verification (phone or passport), all your existing
+          content (posts, votes, follows, event verifications) is automatically
+          transferred to your verified account, and your previous unverified
+          account is deleted. This merge is permanent and cannot be undone. You
+          cannot merge two verified accounts for security reasons.
+        </p>
         <p>
           Your Agora account will have a username, which can be manually
           selected or automatically generated. Usernames are public but do not
@@ -130,13 +168,22 @@
         <ul>
           <li>
             <a
-              href="https://rarime.com/privacy-notice.html"
+              href="https://rarimo.com/privacy-notice.html"
               target="_blank"
               rel="noopener"
-              >RariMe</a
+              >Rarimo</a
             >
             (global) for zero-knowledge identity proofs. May process IP
             addresses for security and service operations.
+          </li>
+          <li>
+            <a href="https://zupass.org" target="_blank" rel="noopener"
+              >Zupass</a
+            >
+            (global, open-source) for event ticket and identity verification
+            using Group Proof of Credentials (GPC). May process IP addresses
+            for service operations. Zupass uses Simple Analytics for
+            privacy-friendly web analytics.
           </li>
           <li>
             <a
@@ -145,8 +192,11 @@
               rel="noopener"
               >Twilio</a
             >
-            (global) for phone number verification. Processes IP addresses for
-            fraud prevention.
+            (global) for phone number verification. Twilio stores phone numbers
+            in cleartext and processes IP addresses for fraud prevention. Note
+            that Agora only stores hashed phone numbers (never in cleartext) in
+            our database, but Twilio retains phone numbers according to their
+            own privacy policy.
           </li>
           <li>
             <a
@@ -175,8 +225,8 @@
               rel="noopener"
               >Google Cloud Platform</a
             >
-            (EU region) for AI-powered translation of user posts and
-            platform-generated content. May process IP addresses for
+            (U.S. based, us-central1 region) for AI-powered translation of user
+            posts and platform-generated content. May process IP addresses for
             infrastructure operations.
           </li>
           <li>
@@ -258,25 +308,60 @@
           <tbody>
             <tr>
               <td>
+                <strong
+                  >Device Identifier (DID - Decentralized Identifier)</strong
+                >
+              </td>
+              <td>
+                A cryptographic public key (did:key format) generated and stored
+                on your device, then linked to your user account on our servers.
+                DIDs serve as permanent session identifiers that connect your
+                device to your account. DIDs are stored for all users (guest,
+                soft login, and hard login) to maintain device-based sessions.
+              </td>
+              <td>Legitimate interest</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Soft Login - Event Ticket Verification (Zupass)</strong>
+              </td>
+              <td>
+                When you verify using Zupass, we store an event-specific
+                nullifier (privacy-preserving identifier derived from your
+                ticket) and the event slug. This proves event participation
+                without revealing ticket details. Soft login does NOT create a
+                registered account but allows session-based verification that can
+                be upgraded to permanent registration.
+              </td>
+              <td>Legitimate interest</td>
+            </tr>
+            <tr>
+              <td>
                 <strong>Authentication Data - Phone Number</strong>
               </td>
               <td>
                 To authenticate users and deliver one-time verification codes.
                 Phone numbers are stored as cryptographic hashes in our
                 database. Twilio (our SMS provider) processes and stores phone
-                numbers in cleartext to deliver verification codes.
+                numbers in cleartext to deliver verification codes. Phone
+                verification creates a permanent registered account.
               </td>
               <td>Legitimate interest</td>
             </tr>
             <tr>
               <td>
-                <strong>Authentication Data - Zero-Knowledge Proof</strong>
-                (Cryptographic Proofs from Passport Verification via RariMe)
+                <strong
+                  >Authentication Data - Passport Zero-Knowledge Proof
+                  (Rarimo)</strong
+                >
               </td>
               <td>
-                To verify user eligibility through privacy-preserving
-                cryptographic proofs. Agora receives only the proof, not
-                passport details.
+                To verify user eligibility through privacy-preserving passport
+                verification. We store a passport-derived nullifier, citizenship
+                country code, and sex. Agora receives only the cryptographic
+                proof confirming uniqueness and eligibility, never your passport
+                number, name, photo, or other passport details. Passport
+                verification creates a permanent registered account.
               </td>
               <td>Legitimate interest</td>
             </tr>
@@ -310,6 +395,18 @@
                 To safeguard platform infrastructure, prevent malicious
                 activities and ensure operational security (e.g. protection
                 against Distributed Denial-of-Service (DDoS) attacks).
+              </td>
+              <td>Legitimate interest</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Pseudonymous Technical Data</strong> (User UUIDs,
+                usernames, request metadata, error logs, timestamps)
+              </td>
+              <td>
+                For system monitoring, debugging, performance optimization, and
+                improving service reliability. We do NOT log sensitive PII such
+                as phone numbers in application logs.
               </td>
               <td>Legitimate interest</td>
             </tr>
@@ -366,6 +463,20 @@
               <td>
                 Our legitimate interest in entering into business transactions.
               </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Account Upgrade/Merge Data</strong> (User content,
+                devices, event tickets, preferences)
+              </td>
+              <td>
+                When you upgrade from guest or soft login to hard verification
+                (phone or passport), all your data is transferred to your
+                verified account and your previous account is deleted. This
+                ensures continuity of your content and activity history while
+                adding permanent verification.
+              </td>
+              <td>Your consent and our legitimate interest.</td>
             </tr>
           </tbody>
         </table>
@@ -529,8 +640,9 @@
           <li>
             <strong>Anonymized AI translation:</strong> Content sent to Google
             Cloud Platform for translation is transmitted as-is without any
-            accompanying metadata (user identifiers, etc.) and processed in EU
-            region.
+            accompanying metadata (user identifiers, etc.) and processed in the
+            U.S. (us-central1 region). The Google Cloud LLM-based translation
+            service we use is currently not available in the EU region.
           </li>
           <li>
             <strong
@@ -552,6 +664,17 @@
             and user-generated content) before transmission to Sentry, ensuring
             that logs remain anonymized and do not contain personal data. Sentry
             does not use tracking cookies.
+          </li>
+          <li>
+            <strong>Pseudonymous logging for monitoring:</strong> Agora collects
+            pseudonymous technical data for system monitoring, debugging, and
+            performance optimization purposes. This includes user UUIDs,
+            usernames, request metadata, and error logs. We do NOT log sensitive
+            PII such as phone numbers in our application logs. However,
+            third-party services like Twilio, AWS, Cloudflare, and others may
+            retain data (including IP addresses and, in Twilio's case, phone
+            numbers) according to their own privacy policies and retention
+            schedules.
           </li>
         </ul>
       </section>
@@ -603,60 +726,64 @@
           spoken (at least one must remain).
         </p>
 
-        <h3>
-          6.6. To delete the passport proof (if a phone number has already been
-          entered) but keep your account:
-        </h3>
-        <ol>
-          <li>
-            <strong>Generate a new proof with RariMe:</strong> You'll need to
-            create a fresh verification proof, but this time it will contain
-            only your nullifier and not your nationality or sex.
-          </li>
-          <li>
-            <strong>Confirm the deletion:</strong> Once confirmed, your previous
-            passport proof, including nationality and sex, will be permanently
-            deleted.
-          </li>
-        </ol>
+        <h3>6.6. Cryptographic accountability records:</h3>
         <p>
-          Some cryptographic records will still be kept, even if you delete your
-          account, to ensure accountability:
+          Some cryptographic records are retained after account deletion to ensure accountability:
         </p>
         <ul>
           <li>
-            The Zero-Knowledge Proof (ZKP) used for deletion, which contains
-            only the nullifier and cryptographic data (not nationality or sex).
+            Zero-Knowledge Proofs (ZKP) and User Controlled Authorization Network (UCAN) proofs
+            associated with your account actions
           </li>
           <li>
-            The User Controlled Authorization Network (UCAN) proof that signs
-            this ZKP, verifying the request from your device.
-          </li>
-          <li>
-            The UCAN proof confirming the deletion request, ensuring that the
-            request was processed correctly.
+            Cryptographic proofs of deletion requests, verifying that deletions were user-initiated
           </li>
         </ul>
         <p>
           These cryptographic records exist to prove to third-party auditors
-          that Agora did not censor accounts or data but rather deleted the
-          information only upon user request. This ensures transparency and
-          trust in the system.
+          that Agora did not censor accounts or data but rather processed deletions
+          only upon user request. This ensures transparency and trust in the system.
         </p>
 
         <h3>6.7. How to delete your account:</h3>
+        <p>
+          When you delete your account, it is <strong>immediately inaccessible</strong> and cannot be recovered.
+          The deletion process follows this timeline:
+        </p>
+        <ul>
+          <li><strong>Immediate:</strong> Your account is soft-deleted and becomes inaccessible. All devices are logged out.</li>
+          <li><strong>After 15 days:</strong> Your account data is permanently deleted (hard-deleted) from our database.</li>
+          <li><strong>Up to 30 days after that:</strong> Data may persist in encrypted backups for disaster recovery purposes.</li>
+        </ul>
+
+        <h4>What happens upon deletion:</h4>
+        <ul>
+          <li>Your account becomes immediately inaccessible and cannot be restored</li>
+          <li>All devices are logged out and your session is terminated</li>
+          <li>Your verification credentials (phone number, passport proof, event tickets) are invalidated</li>
+          <li>Your content (posts, votes, opinions) remains on the platform but is no longer publicly associated with your account</li>
+          <li>After 15 days, your account data is permanently removed from our database</li>
+          <li>Cryptographic proofs of the deletion request are retained for accountability and audit purposes</li>
+        </ul>
+
+
+        <h4>Third-party data retention:</h4>
         <ul>
           <li>
-            If you verified your account using RariMe (passport verification),
-            you must generate a new proof containing only the nullifier
-            (excluding nationality and sex) before proceeding with deletion.
+            <strong>Database backups:</strong> Data may persist in encrypted AWS backups for up to 30 days after the 15-day hard deletion
           </li>
           <li>
-            If you verified your account using only a phone number, you must
-            re-verify your phone number to confirm and complete the account
-            deletion. Your account will be deleted in 15 days.
+            <strong>Twilio:</strong> Phone verification records are retained according to
+            <a href="https://www.twilio.com/en-us/legal/privacy" target="_blank" rel="noopener">Twilio's privacy policy</a>
+          </li>
+          <li>
+            <strong>Third-party services:</strong> Logs and data in Sentry, Cloudflare, AWS, and Google Cloud may be retained according to their respective privacy policies
           </li>
         </ul>
+
+        <p>
+          <strong>Important:</strong> Deletion is immediate and irreversible. You cannot recover your account after requesting deletion.
+        </p>
 
         <p>
           6.8. If you have a complaint about the processing of your personal

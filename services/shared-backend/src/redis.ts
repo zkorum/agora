@@ -39,7 +39,7 @@ export function initializeRedis({
             // Retry strategy for failover handling
             retryStrategy: (times: number) => {
                 const delay = Math.min(times * 50, 2000);
-                log.warn(`[Redis] Retry attempt ${times}, delay: ${delay}ms`);
+                log.warn(`[Redis] Retry attempt ${String(times)}, delay: ${String(delay)}ms`);
                 return delay;
             },
             // Reconnect on READONLY error (ElastiCache failover)

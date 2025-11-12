@@ -172,7 +172,7 @@ interface UpdateLanguagePreferencesOptions {
 export async function getUserDisplayLanguage(
     db: PostgresDatabase,
     userId: string,
-    defaultLanguage: string = "en",
+    defaultLanguage = "en",
 ): Promise<string> {
     const displayLanguageResult = await db
         .select({

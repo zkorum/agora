@@ -54,6 +54,22 @@
       :ok-callback="onLoginCallback"
       :active-intention="'newOpinion'"
     />
+
+    <q-dialog v-model="showTicketVerificationDialog">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">{{ t('eventTicketRequiredTitle') }}</div>
+          <p class="q-mt-md">{{ t('eventTicketRequiredMessage') }}</p>
+        </q-card-section>
+
+        <q-card-section v-if="props.requiresEventTicket">
+          <ZupassTicketVerification
+            :event-slug="props.requiresEventTicket"
+            @verified="onTicketVerified"
+          />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -64,6 +80,7 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import ZupassTicketVerification from "src/components/zupass/ZupassTicketVerification.vue";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
@@ -81,14 +98,23 @@ import {
   commentComposerTranslations,
   type CommentComposerTranslations,
 } from "./CommentComposer.i18n";
+import type { EventSlug } from "src/shared/types/zod";
 
 const emit = defineEmits<{
-  (e: "submittedComment", conversationSlugId: string): Promise<void>;
+  (
+    e: "submittedComment",
+    data: {
+      opinionSlugId: string;
+      authStateChanged: boolean;
+      needsCacheRefresh: boolean;
+    }
+  ): Promise<void>;
 }>();
 
 const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
 }>();
 
 const dummyInput = ref<HTMLInputElement>();
@@ -121,6 +147,7 @@ if (newOpinionIntention.enabled) {
 const opinionBody = ref(newOpinionIntention.opinionBody);
 
 const showLoginDialog = ref(false);
+const showTicketVerificationDialog = ref(false);
 
 const {
   lockRoute,
@@ -203,6 +230,12 @@ function checkWordCount() {
   ).characterCount;
 }
 
+async function onTicketVerified() {
+  showTicketVerificationDialog.value = false;
+  // After successful verification, retry submitting the opinion
+  await submitPostClicked();
+}
+
 async function submitPostClicked() {
   if (!isLoggedIn.value && props.loginRequiredToParticipate) {
     showLoginDialog.value = true;
@@ -223,7 +256,11 @@ async function submitPostClicked() {
         await new Promise((resolve) => setTimeout(resolve, 1300));
 
         // Emit to parent to refresh and highlight the opinion
-        await emit("submittedComment", response.opinionSlugId);
+        await emit("submittedComment", {
+          opinionSlugId: response.opinionSlugId,
+          authStateChanged: response.authStateChanged ?? false,
+          needsCacheRefresh: response.needsCacheRefresh ?? false,
+        });
 
         isSubmissionLoading.value = false;
         innerFocus.value = false;
@@ -233,9 +270,16 @@ async function submitPostClicked() {
         deleteOpinionDraft(props.postSlugId);
       } else {
         isSubmissionLoading.value = false;
-        // Business logic failure (e.g., conversation_locked)
-        if (response.reason === "conversation_locked") {
-          showNotifyMessage(t("conversationLockedError"));
+        // Business logic failure (e.g., conversation_locked, event_ticket_required)
+        if (response.reason) {
+          switch (response.reason) {
+            case "conversation_locked":
+              showNotifyMessage(t("conversationLockedError"));
+              break;
+            case "event_ticket_required":
+              showTicketVerificationDialog.value = true;
+              break;
+          }
         }
       }
     } catch {

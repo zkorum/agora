@@ -15,6 +15,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
 import * as authService from "@/service/auth.js";
+import { log } from "@/app.js";
 
 interface InfoDevice {
     userAgent: string;
@@ -84,7 +85,11 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     userAgent,
     now,
 }: GetOrRegisterUserIdFromDeviceStatusProps): Promise<string> {
-    const deviceStatus = await getDeviceStatus(db, didWrite);
+    const deviceStatus = await getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
     return await db.transaction(async (tx) => {
         if (conversationIsIndexed || conversationIsLoginRequired) {
             if (!deviceStatus.isKnown) {
@@ -154,11 +159,36 @@ export async function isUserPartOfOrganization({
     return result[0].organizationId;
 }
 
-export async function getDeviceStatus(
-    db: PostgresDatabase,
-    didWrite: string,
-): Promise<DeviceLoginStatusExtended> {
-    const now = nowZeroMs();
+interface GetDeviceStatusParams {
+    db: PostgresDatabase;
+    didWrite: string;
+    now: Date;
+}
+
+/**
+ * Get device authentication status
+ *
+ * AUTHENTICATION TAXONOMY:
+ * - Unknown device: No record in database (isKnown: false)
+ * - Guest (soft login): Device exists, user has NO strong credentials
+ *   - Can be "logged in" with sessionExpiry, but isLoggedIn returns false for guests
+ * - Zupass-only (soft verification): Guest with event tickets, NOT counted as registered
+ * - Registered (hard verification): User has phone OR Rarimo credentials (isRegistered: true)
+ *   - Only registered users can be "logged in" (isLoggedIn: true)
+ *
+ * CREDENTIAL HIERARCHY:
+ * - Strong credentials (phone/Rarimo): Checked by this function, grant isRegistered: true
+ * - Soft credentials (Zupass): NOT checked here, users remain guests (isRegistered: false)
+ *
+ * DELETED USER HANDLING:
+ * - Deleted users are treated as unknown devices (isKnown: false)
+ * - No recovery window - deleted accounts are permanently gone
+ */
+export async function getDeviceStatus({
+    db,
+    didWrite,
+    now,
+}: GetDeviceStatusParams): Promise<DeviceLoginStatusExtended> {
     const resultDevice = await db
         .select({
             sessionExpiry: deviceTable.sessionExpiry,
@@ -175,21 +205,40 @@ export async function getDeviceStatus(
         )
         .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
-    if (resultDevice.length === 0 || resultDevice[0].isDeleted) {
+
+    if (resultDevice.length === 0) {
+        log.info(`[AuthUtil] Device not found in database for didWrite`);
         return { isKnown: false, isLoggedIn: false, isRegistered: false };
-    } else {
-        const sessionExpiry = resultDevice[0].sessionExpiry;
-        const isLoggedIn = sessionExpiry.getTime() > now.getTime();
-        const isRegistered =
-            resultDevice[0].phoneTableId !== null ||
-            resultDevice[0].zkPassportTableId !== null;
-        return {
-            isKnown: true,
-            isLoggedIn: isRegistered && isLoggedIn,
-            isRegistered: isRegistered,
-            userId: resultDevice[0].userId,
-        };
     }
+
+    const device = resultDevice[0];
+
+    // If user is deleted, treat as unknown device (no recovery)
+    if (device.isDeleted) {
+        log.info(`[AuthUtil] User is deleted - returning isKnown: false`);
+        return { isKnown: false, isLoggedIn: false, isRegistered: false };
+    }
+
+    log.info(
+        `[AuthUtil] Device found - userId: ${device.userId}, isDeleted: ${String(device.isDeleted)}`,
+    );
+
+    const sessionExpiry = device.sessionExpiry;
+    const isLoggedIn = sessionExpiry.getTime() > now.getTime();
+    // isRegistered: true if user has phone OR Rarimo (strong credentials)
+    // Zupass tickets are NOT checked here - they are "soft credentials"
+    const isRegistered =
+        device.phoneTableId !== null || device.zkPassportTableId !== null;
+
+    log.info({ userId: device.userId }, "[AuthUtil] Returning device status");
+
+    // Device is known (not deleted)
+    return {
+        isKnown: true,
+        isLoggedIn: isRegistered && isLoggedIn,
+        isRegistered: isRegistered,
+        userId: device.userId,
+    };
 }
 
 export async function getEmailsFromDidWrite(

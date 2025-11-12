@@ -22,7 +22,7 @@
 
         <template #body>
           <ZKGradientButton
-            :label="t('loginWithRariMe')"
+            :label="t('loginWithRarimo')"
             @click="goToPassportLogin()"
           />
 

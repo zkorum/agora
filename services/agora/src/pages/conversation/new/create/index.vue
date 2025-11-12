@@ -277,6 +277,7 @@ async function handleImportSubmission(): Promise<void> {
     isLoginRequired: conversationDraft.value.isPrivate
       ? conversationDraft.value.privateConversationSettings.requiresLogin
       : false,
+    requiresEventTicket: conversationDraft.value.requiresEventTicket,
   });
 
   if (response.status === "success") {

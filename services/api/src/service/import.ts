@@ -11,10 +11,10 @@ import {
     MAX_LENGTH_TITLE,
     toUnionUndefined,
 } from "@/shared/shared.js";
-import { conversationTable, conversationUpdateQueueTable } from "@/shared-backend/schema.js";
+import { conversationUpdateQueueTable } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
-import { eq } from "drizzle-orm";
 import type { VoteBuffer } from "./voteBuffer.js";
+import type { EventSlug } from "@/shared/types/zod.js";
 
 interface LoadImportedPolisConversationProps {
     db: PostgresDatabase;
@@ -29,6 +29,7 @@ interface LoadImportedPolisConversationProps {
     indexConversationAt?: string;
     isLoginRequired: boolean;
     isIndexed: boolean;
+    requiresEventTicket?: EventSlug;
 }
 
 export async function loadImportedPolisConversation({
@@ -44,6 +45,7 @@ export async function loadImportedPolisConversation({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    requiresEventTicket,
 }: LoadImportedPolisConversationProps): Promise<ConversationIds> {
     const now = nowZeroMs();
     // create conversation
@@ -125,6 +127,7 @@ export async function loadImportedPolisConversation({
             isIndexed: isIndexed,
             isLoginRequired: isLoginRequired,
             seedOpinionList: [],
+            requiresEventTicket: requiresEventTicket,
             importUrl: polisUrl,
             importConversationUrl: conversationUrl,
             importExportUrl: reportUrl,

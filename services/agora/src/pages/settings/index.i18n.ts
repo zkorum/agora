@@ -15,6 +15,11 @@ export interface SettingsTranslations {
   componentTesting: string;
   accountDeleted: string;
   accountDeletionFailed: string;
+  deleteAccountDialogTitle: string;
+  deleteAccountDialogMessage: string;
+  deleteGuestAccountDialogMessage: string;
+  deleteAccountDialogPlaceholder: string;
+  deleteAccountDialogError: string;
 }
 
 export const settingsTranslations: Record<
@@ -36,6 +41,11 @@ export const settingsTranslations: Record<
     componentTesting: "🔧 Component Testing",
     accountDeleted: "Account deleted",
     accountDeletionFailed: "Oops! Account deletion failed. Please try again",
+    deleteAccountDialogTitle: "Delete Account",
+    deleteAccountDialogMessage: "Your account will be permanently deleted immediately. This action cannot be undone. Data may remain in third-party backups and services for up to 30 days.\n\nTo confirm, type DELETE below:",
+    deleteGuestAccountDialogMessage: "Your guest account will be permanently deleted immediately. This action cannot be undone. Data may remain in backups for up to 30 days.\n\nTo confirm, type DELETE below:",
+    deleteAccountDialogPlaceholder: "Type DELETE to confirm",
+    deleteAccountDialogError: "Account deletion request failed. Try again later.",
   },
   ar: {
     pageTitle: "الإعدادات",
@@ -52,6 +62,11 @@ export const settingsTranslations: Record<
     componentTesting: "🔧 اختبار المكونات",
     accountDeleted: "تم حذف الحساب",
     accountDeletionFailed: "عذراً! فشل حذف الحساب. يرجى المحاولة مرة أخرى",
+    deleteAccountDialogTitle: "حذف الحساب",
+    deleteAccountDialogMessage: "سيتم حذف حسابك نهائيًا على الفور. لا يمكن التراجع عن هذا الإجراء. قد تبقى البيانات في النسخ الاحتياطية والخدمات الخارجية لمدة تصل إلى 30 يومًا.\n\nللتأكيد، اكتب DELETE أدناه:",
+    deleteGuestAccountDialogMessage: "سيتم حذف حساب الضيف الخاص بك نهائيًا على الفور. لا يمكن التراجع عن هذا الإجراء. قد تبقى البيانات في النسخ الاحتياطية لمدة تصل إلى 30 يومًا.\n\nللتأكيد، اكتب DELETE أدناه:",
+    deleteAccountDialogPlaceholder: "اكتب DELETE للتأكيد",
+    deleteAccountDialogError: "فشل طلب حذف الحساب. حاول مرة أخرى لاحقاً.",
   },
   es: {
     pageTitle: "Configuración",
@@ -69,6 +84,11 @@ export const settingsTranslations: Record<
     accountDeleted: "Cuenta eliminada",
     accountDeletionFailed:
       "¡Ups! Error al eliminar la cuenta. Inténtalo de nuevo",
+    deleteAccountDialogTitle: "Eliminar cuenta",
+    deleteAccountDialogMessage: "Tu cuenta se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad y servicios de terceros hasta 30 días.\n\nPara confirmar, escribe DELETE a continuación:",
+    deleteGuestAccountDialogMessage: "Tu cuenta de invitado se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad hasta 30 días.\n\nPara confirmar, escribe DELETE a continuación:",
+    deleteAccountDialogPlaceholder: "Escribe DELETE para confirmar",
+    deleteAccountDialogError: "Falló la solicitud de eliminación de cuenta. Intenta de nuevo más tarde.",
   },
   fr: {
     pageTitle: "Paramètres",
@@ -86,6 +106,11 @@ export const settingsTranslations: Record<
     accountDeleted: "Compte supprimé",
     accountDeletionFailed:
       "Oups ! Échec de la suppression du compte. Veuillez réessayer",
+    deleteAccountDialogTitle: "Supprimer le compte",
+    deleteAccountDialogMessage: "Votre compte sera définitivement supprimé immédiatement. Cette action ne peut pas être annulée. Les données peuvent rester dans les sauvegardes et services tiers jusqu'à 30 jours.\n\nPour confirmer, tapez DELETE ci-dessous:",
+    deleteGuestAccountDialogMessage: "Votre compte invité sera définitivement supprimé immédiatement. Cette action ne peut pas être annulée. Les données peuvent rester dans les sauvegardes jusqu'à 30 jours.\n\nPour confirmer, tapez DELETE ci-dessous:",
+    deleteAccountDialogPlaceholder: "Tapez DELETE pour confirmer",
+    deleteAccountDialogError: "La demande de suppression du compte a échoué. Réessayez plus tard.",
   },
   "zh-Hans": {
     pageTitle: "设置",
@@ -102,6 +127,11 @@ export const settingsTranslations: Record<
     componentTesting: "🔧 组件测试",
     accountDeleted: "账户已删除",
     accountDeletionFailed: "哎呀！账户删除失败，请重试",
+    deleteAccountDialogTitle: "删除账户",
+    deleteAccountDialogMessage: "您的账户将立即被永久删除。此操作无法撤销。数据可能会在第三方备份和服务中保留最多30天。\n\n要确认，请在下方输入 DELETE:",
+    deleteGuestAccountDialogMessage: "您的访客账户将立即被永久删除。此操作无法撤销。数据可能会在备份中保留最多30天。\n\n要确认，请在下方输入 DELETE:",
+    deleteAccountDialogPlaceholder: "输入 DELETE 确认",
+    deleteAccountDialogError: "账户删除请求失败。请稍后重试。",
   },
   "zh-Hant": {
     pageTitle: "設定",
@@ -118,6 +148,11 @@ export const settingsTranslations: Record<
     componentTesting: "🔧 組件測試",
     accountDeleted: "帳戶已刪除",
     accountDeletionFailed: "哎呀！帳戶刪除失敗，請重試",
+    deleteAccountDialogTitle: "刪除帳戶",
+    deleteAccountDialogMessage: "您的帳戶將立即被永久刪除。此操作無法撤銷。數據可能會在第三方備份和服務中保留最多30天。\n\n要確認，請在下方輸入 DELETE:",
+    deleteGuestAccountDialogMessage: "您的訪客帳戶將立即被永久刪除。此操作無法撤銷。數據可能會在備份中保留最多30天。\n\n要確認，請在下方輸入 DELETE:",
+    deleteAccountDialogPlaceholder: "輸入 DELETE 確認",
+    deleteAccountDialogError: "帳戶刪除請求失敗。請稍後重試。",
   },
   ja: {
     pageTitle: "設定",
@@ -135,5 +170,10 @@ export const settingsTranslations: Record<
     accountDeleted: "アカウントが削除されました",
     accountDeletionFailed:
       "おっと！アカウントの削除に失敗しました。もう一度お試しください",
+    deleteAccountDialogTitle: "アカウントを削除",
+    deleteAccountDialogMessage: "アカウントは即座に完全削除されます。この操作は取り消すことができません。データは最大30日間サードパーティのバックアップとサービスに残る場合があります。\n\n確認するには、以下にDELETEと入力してください:",
+    deleteGuestAccountDialogMessage: "ゲストアカウントは即座に完全削除されます。この操作は取り消すことができません。データは最大30日間バックアップに残る場合があります。\n\n確認するには、以下にDELETEと入力してください:",
+    deleteAccountDialogPlaceholder: "DELETE と入力して確認",
+    deleteAccountDialogError: "アカウント削除リクエストが失敗しました。後でもう一度お試しください。",
   },
 };

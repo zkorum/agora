@@ -20,6 +20,7 @@ import type {
   ExtendedConversation,
   FeedSortAlgorithm,
   moderationStatusOptionsType,
+  EventSlug,
 } from "src/shared/types/zod";
 import type { FetchFeedResponse } from "src/shared/types/dto";
 import { zodExtendedConversationData } from "src/shared/types/zod";
@@ -172,6 +173,7 @@ export function useBackendPostApi() {
     isIndexed: boolean;
     isLoginRequired: boolean;
     seedOpinionList: string[];
+    requiresEventTicket?: EventSlug;
   }
 
   type CreateNewPostSuccessResponse =
@@ -186,6 +188,7 @@ export function useBackendPostApi() {
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    requiresEventTicket?: EventSlug;
   }
 
   type ImportConversationSuccessResponse =
@@ -200,6 +203,7 @@ export function useBackendPostApi() {
     targetIsoConvertDateString,
     isIndexed,
     isLoginRequired,
+    requiresEventTicket,
   }: ImportConversationProps): Promise<ImportConversationResponse> {
     try {
       const params: ApiV1ConversationImportPostRequest = {
@@ -208,6 +212,7 @@ export function useBackendPostApi() {
         indexConversationAt: targetIsoConvertDateString,
         isIndexed,
         isLoginRequired,
+        requiresEventTicket,
       };
 
       const { url, options } =
@@ -243,6 +248,7 @@ export function useBackendPostApi() {
     isIndexed,
     isLoginRequired,
     seedOpinionList,
+    requiresEventTicket,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
@@ -254,6 +260,7 @@ export function useBackendPostApi() {
         postAsOrganization: postAsOrganizationName,
         indexConversationAt: targetIsoConvertDateString,
         seedOpinionList: seedOpinionList,
+        requiresEventTicket,
       };
 
       const { url, options } =

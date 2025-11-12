@@ -5,10 +5,14 @@
 import { defineConfig } from "#q-app/wrappers";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 import "dotenv/config";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig((ctx) => {
   const boot = [];
@@ -78,6 +82,25 @@ export default defineConfig((ctx) => {
         if (viteConf.plugins === undefined) {
           viteConf.plugins = [];
         }
+
+        // Configure resolve.alias to stub out Node.js built-in modules
+        // The @pcd/gpc library (server-side only) has dependencies on Node.js modules
+        // We point them to our stub files since they're never actually called in the browser
+        if (!viteConf.resolve) {
+          viteConf.resolve = {};
+        }
+        if (!viteConf.resolve.alias) {
+          viteConf.resolve.alias = {};
+        }
+
+        // Point Node.js modules to stub files
+        viteConf.resolve.alias = {
+          ...viteConf.resolve.alias,
+          constants: resolve(__dirname, "src/stubs/constants.js"),
+          fs: resolve(__dirname, "src/stubs/fs.js"),
+          path: resolve(__dirname, "src/stubs/path.js"),
+          crypto: resolve(__dirname, "src/stubs/crypto.js"),
+        };
 
         // Add Sentry plugin in production (non-staging) builds
         // Note: Sentry should be added after all other plugins
@@ -254,6 +277,7 @@ export default defineConfig((ctx) => {
     devServer: {
       // https: {},
       open: true, // opens browser window automatically
+      port: 3200, // Use whitelisted port for Zupass Devconnect ARG collection
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

@@ -19,7 +19,7 @@
         <mxCell id="3_2kA8sNUcNBmgr7hW5d-5" value="1) Login with email address&amp;nbsp;&lt;span style=&quot;background-color: initial;&quot;&gt;through&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;OAuth2 or local-first auth&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
           <mxGeometry x="185" y="150" width="220" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="3_2kA8sNUcNBmgr7hW5d-7" value="User&#39;s wallet&lt;div&gt;(RariMe or SSI Wallet)&lt;/div&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" vertex="1" parent="1">
+        <mxCell id="3_2kA8sNUcNBmgr7hW5d-7" value="User&#39;s wallet&lt;div&gt;(Rarimo or SSI Wallet)&lt;/div&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;" vertex="1" parent="1">
           <mxGeometry x="93.75" y="320" width="142.5" height="150" as="geometry" />
         </mxCell>
         <mxCell id="3_2kA8sNUcNBmgr7hW5d-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="3_2kA8sNUcNBmgr7hW5d-7" target="3_2kA8sNUcNBmgr7hW5d-12">

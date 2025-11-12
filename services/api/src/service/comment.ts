@@ -1,4 +1,5 @@
 import { generateRandomSlugId } from "@/crypto.js";
+import * as zupassService from "@/service/zupass.js";
 import {
     opinionContentTable,
     opinionTable,
@@ -47,6 +48,7 @@ import type {
     SlugId,
     PolisKey,
     ClusterStats,
+    EventSlug,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment, useCommonPost } from "./common.js";
@@ -184,7 +186,7 @@ export async function fetchOpinionsByPostId({
             eq(opinionModerationTable.opinionId, opinionTable.id),
         )
         .orderBy(...orderByClause)
-        .where(whereClause)
+        .where(and(whereClause, eq(userTable.isDeleted, false)))
         .limit(limit); // TODO: infinite virtual scrolling instead
 
     const opinionItemMap: OpinionItemPerSlugId = new Map<string, OpinionItem>();
@@ -594,7 +596,7 @@ export async function fetchAnalysisOpinionsByPostId({
             ),
         )
         .orderBy(...orderByClause)
-        .where(whereClause)
+        .where(and(whereClause, eq(userTable.isDeleted, false)))
         .limit(limit);
 
     const opinionItemMap: AnalysisOpinionItemPerSlugId = new Map<
@@ -839,7 +841,12 @@ export async function fetchOpinionsByOpinionSlugIdList({
             .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
             // TODO: join with cluster tables
             .orderBy(desc(opinionTable.createdAt))
-            .where(eq(opinionTable.slugId, opinionSlugId));
+            .where(
+                and(
+                    eq(opinionTable.slugId, opinionSlugId),
+                    eq(userTable.isDeleted, false),
+                ),
+            );
 
         results.map((commentResponse) => {
             const moderationProperties = createCommentModerationPropertyObject(
@@ -1011,6 +1018,7 @@ interface PostNewOpinionProps {
         conversationAuthorId: string;
         conversationIsIndexed: boolean;
         conversationIsLoginRequired: boolean;
+        requiresEventTicket: EventSlug | null;
     };
 }
 
@@ -1032,6 +1040,7 @@ export async function postNewOpinion({
     let conversationAuthorId: string;
     let conversationIsIndexed: boolean;
     let conversationIsLoginRequired: boolean;
+    let requiresEventTicket: EventSlug | null;
 
     if (conversationMetadata) {
         conversationId = conversationMetadata.conversationId;
@@ -1040,6 +1049,7 @@ export async function postNewOpinion({
         conversationIsIndexed = conversationMetadata.conversationIsIndexed;
         conversationIsLoginRequired =
             conversationMetadata.conversationIsLoginRequired;
+        requiresEventTicket = conversationMetadata.requiresEventTicket;
     } else {
         const { getPostMetadataFromSlugId } = useCommonPost();
         const metadata = await getPostMetadataFromSlugId({
@@ -1051,6 +1061,7 @@ export async function postNewOpinion({
         conversationAuthorId = metadata.authorId;
         conversationIsIndexed = metadata.isIndexed;
         conversationIsLoginRequired = metadata.isLoginRequired;
+        requiresEventTicket = metadata.requiresEventTicket;
     }
 
     if (conversationContentId == null) {
@@ -1089,6 +1100,21 @@ export async function postNewOpinion({
         userAgent,
         now,
     });
+
+    // Check event ticket gating (skip for seed opinions on just-created conversations)
+    if (requiresEventTicket !== null && !conversationMetadata) {
+        const hasTicket = await zupassService.hasEventTicket({
+            db,
+            userId,
+            eventSlug: requiresEventTicket,
+        });
+        if (!hasTicket) {
+            return {
+                success: false,
+                reason: "event_ticket_required",
+            };
+        }
+    }
 
     const opinionSlugId = generateRandomSlugId();
 

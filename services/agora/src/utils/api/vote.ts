@@ -8,7 +8,7 @@ import { api } from "./client";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useCommonApi } from "./common";
 import { type VotingAction } from "src/shared/types/zod";
-import type { FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
+import type { FetchUserVotesForPostSlugIdsResponse, CastVoteResponse } from "src/shared/types/dto";
 
 export function useBackendVoteApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -16,7 +16,7 @@ export function useBackendVoteApi() {
   async function castVoteForComment(
     commentSlugId: string,
     votingAction: VotingAction
-  ): Promise<boolean> {
+  ): Promise<CastVoteResponse> {
     const params: ApiV1VoteCastPostRequest = {
       opinionSlugId: commentSlugId,
       chosenOption: votingAction,
@@ -35,7 +35,7 @@ export function useBackendVoteApi() {
       },
     });
 
-    return !!response; // Return true if response exists
+    return response.data;
   }
 
   async function fetchUserVotesForPostSlugIds(

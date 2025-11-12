@@ -201,9 +201,14 @@ async function nextButtonClicked() {
 
   if (response.status == "success") {
     if (response.data.success) {
-      showNotifyMessage(t("verificationSuccessful"));
+      // Show appropriate message based on account state
+      if (response.data.accountMerged) {
+        showNotifyMessage(t("accountMerged"));
+      } else {
+        showNotifyMessage(t("verificationSuccessful"));
+      }
       await updateAuthState({
-        partialLoginStatus: { isLoggedIn: true },
+        partialLoginStatus: { isLoggedIn: true, userId: response.data.userId },
         forceRefresh: true,
       });
       if (onboardingMode == "LOGIN") {
@@ -240,6 +245,13 @@ async function nextButtonClicked() {
           showNotifyMessage(t("syncHiccupDetected"));
           // overwrite key but don't send a request
           await createDidOverwriteIfAlreadyExists(platform);
+          break;
+        }
+        case "auth_state_changed": {
+          // Auth state changed during OTP flow (e.g., phone reassigned, account deleted)
+          showNotifyMessage(t("authStateChanged"));
+          codeExpired();
+          break;
         }
       }
     }

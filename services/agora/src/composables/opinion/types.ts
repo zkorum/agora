@@ -1,4 +1,5 @@
 import type { VotingAction, VotingOption } from "src/shared/types/zod";
+import type { CastVoteResponse } from "src/shared/types/dto";
 
 export interface UserVote {
   opinionSlugId: string;
@@ -10,5 +11,5 @@ export interface OpinionVotingUtilities {
   castVote: (
     opinionSlugId: string,
     voteAction: VotingAction
-  ) => Promise<boolean>;
+  ) => Promise<CastVoteResponse>;
 }
