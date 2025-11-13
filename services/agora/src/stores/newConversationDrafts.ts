@@ -1,13 +1,151 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { z } from "zod";
 import type { OrganizationProperties, EventSlug } from "src/shared/types/zod";
+import { zodEventSlug } from "src/shared/types/zod";
 import {
   validateHtmlStringCharacterCount,
   MAX_LENGTH_BODY,
+  MAX_LENGTH_TITLE,
 } from "src/shared/shared";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { processEnv } from "src/utils/processEnv";
+
+// ============================================================================
+// Zod Schemas for Draft Validation
+// ============================================================================
+
+/**
+ * Zod schema for validating poll options (when poll is enabled)
+ */
+const zodPollOptions = z
+  .array(z.string().trim().min(1, "All poll options must be filled in"))
+  .min(2, "Poll must have at least 2 options")
+  .max(6, "Maximum 6 poll options allowed")
+  .refine(
+    (options) => {
+      const trimmedLower = options.map((opt) => opt.toLowerCase());
+      return new Set(trimmedLower).size === trimmedLower.length;
+    },
+    { message: "Poll options must be unique" }
+  );
+
+/**
+ * Zod schema for poll settings
+ */
+const zodPollSettings = z.object({
+  enabled: z.boolean(),
+  options: z.array(z.string()),
+});
+
+/**
+ * Zod schema for post-as settings
+ */
+const zodPostAsSettings = z.object({
+  postAsOrganization: z.boolean(),
+  organizationName: z.string(),
+});
+
+/**
+ * Zod schema for private conversation settings (serializable version with ISO string)
+ */
+const zodSerializablePrivateConversationSettings = z.object({
+  requiresLogin: z.boolean(),
+  hasScheduledConversion: z.boolean(),
+  conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
+});
+
+/**
+ * Zod schema for CSV file metadata
+ */
+const zodCsvFileMetadata = z
+  .object({
+    name: z.string(),
+    size: z.number().nonnegative(),
+  })
+  .nullable();
+
+/**
+ * Zod schema for CSV file metadata set
+ */
+const zodCsvFileMetadataSet = z.object({
+  summary: zodCsvFileMetadata,
+  comments: zodCsvFileMetadata,
+  votes: zodCsvFileMetadata,
+});
+
+/**
+ * Zod schema for title validation (runtime validation)
+ */
+const zodTitleValidation = z
+  .string()
+  .trim()
+  .min(1, "Title is required to continue")
+  .max(MAX_LENGTH_TITLE);
+
+/**
+ * Zod schema for Polis URL validation (runtime validation)
+ */
+const zodPolisUrlValidation = z
+  .string()
+  .refine((url) => !url || isValidPolisUrl(url), {
+    message: "Please enter a valid Polis URL.",
+  });
+
+/**
+ * Zod schema for conversation import type
+ */
+const zodConversationImportType = z
+  .enum(["polis-url", "csv-import"])
+  .nullable();
+
+/**
+ * Zod schema for conversation import settings
+ */
+const zodConversationImportSettings = z.object({
+  importType: zodConversationImportType,
+  polisUrl: z.string(),
+  csvFileMetadata: zodCsvFileMetadataSet,
+});
+
+/**
+ * Zod schema for serializable conversation draft
+ * This is the main schema used for localStorage validation
+ */
+const zodSerializableConversationDraft = z.object({
+  // Basic content
+  title: z.string().max(MAX_LENGTH_TITLE),
+  content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
+  seedOpinions: z.array(z.string()),
+
+  // Poll configuration
+  poll: zodPollSettings,
+
+  // Publishing options
+  postAs: zodPostAsSettings,
+
+  // Privacy settings
+  isPrivate: z.boolean(),
+  privateConversationSettings: zodSerializablePrivateConversationSettings,
+
+  // Event ticket verification
+  requiresEventTicket: zodEventSlug.optional(),
+
+  // Import settings
+  importSettings: zodConversationImportSettings,
+});
+
+/**
+ * Type inference from zod schema - replaces the SerializableConversationDraft interface
+ */
+type SerializableConversationDraft = z.infer<
+  typeof zodSerializableConversationDraft
+>;
+
+// ============================================================================
+// TypeScript Interfaces (for runtime types with Date objects)
+// ============================================================================
 
 /**
  * Settings for posting as an organization
@@ -96,31 +234,10 @@ export interface NewConversationDraft {
 }
 
 /**
- * Serializable version for localStorage storage (Date objects converted to ISO strings)
- */
-interface SerializablePrivateConversationSettings {
-  hasScheduledConversion: boolean;
-  conversionDate: string; // ISO string instead of Date
-}
-
-interface SerializableConversationDraft {
-  title: string;
-  content: string;
-  seedOpinions: string[];
-  poll: PollSettings;
-  postAs: PostAsSettings;
-  isPrivate: boolean;
-  requiresLogin: boolean;
-  privateConversationSettings: SerializablePrivateConversationSettings;
-  requiresEventTicket?: EventSlug;
-  importSettings: ConversationImportSettings;
-}
-
-/**
  * Comprehensive validation state for all form fields
  */
 export interface ValidationState {
-  title: {
+    title: {
     isValid: boolean;
     error: string;
     showError: boolean;
@@ -243,105 +360,32 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Validates that stored data matches the expected conversation draft structure
+   * Parses and validates stored draft data using zod schema
+   * Returns parsed draft if valid, null otherwise
    */
-  function isValidDraftData(
-    data: unknown
-  ): data is SerializableConversationDraft {
-    if (!data || typeof data !== "object" || data === null) {
-      return false;
-    }
+  function parseStoredDraft(data: unknown): NewConversationDraft | null {
+    const result = zodSerializableConversationDraft.safeParse(data);
 
-    const draft = data as Record<string, unknown>;
-
-    // Validate basic content fields
-    const hasValidContent =
-      typeof draft.title === "string" &&
-      typeof draft.content === "string" &&
-      Array.isArray(draft.seedOpinions) &&
-      draft.seedOpinions.every(
-        (opinion: unknown) => typeof opinion === "string"
+    if (!result.success) {
+      console.warn(
+        "Invalid conversation draft data found in storage:",
+        result.error.format()
       );
-
-    // Validate poll settings
-    if (!draft.poll || typeof draft.poll !== "object") {
-      return false;
+      return null;
     }
-    const pollData = draft.poll as Record<string, unknown>;
-    const hasValidPoll =
-      typeof pollData.enabled === "boolean" &&
-      Array.isArray(pollData.options) &&
-      (pollData.options as unknown[]).every(
-        (option: unknown) => typeof option === "string"
-      );
 
-    // Validate postAs settings
-    if (!draft.postAs || typeof draft.postAs !== "object") {
-      return false;
-    }
-    const postAsData = draft.postAs as Record<string, unknown>;
-    const hasValidPostAs =
-      typeof postAsData.postAsOrganization === "boolean" &&
-      typeof postAsData.organizationName === "string";
+    // Transform serialized format to runtime format (Date conversion and requiresLogin extraction)
+    const { requiresLogin, ...restPrivateSettings } =
+      result.data.privateConversationSettings;
 
-    // Validate private conversation settings
-    if (
-      typeof draft.isPrivate !== "boolean" ||
-      !draft.privateConversationSettings ||
-      typeof draft.privateConversationSettings !== "object"
-    ) {
-      return false;
-    }
-    const privateSettingsData = draft.privateConversationSettings as Record<
-      string,
-      unknown
-    >;
-    const hasValidPrivateSettings =
-      typeof privateSettingsData.hasScheduledConversion === "boolean" &&
-      typeof privateSettingsData.conversionDate === "string";
-
-    // Validate requiresLogin (supports both old and new format for migration)
-    const hasRequiresLogin =
-      typeof draft.requiresLogin === "boolean" ||
-      typeof privateSettingsData.requiresLogin === "boolean";
-
-    // Validate creation settings
-    if (!draft.importSettings || typeof draft.importSettings !== "object") {
-      return false;
-    }
-    const importSettingsData = draft.importSettings as Record<string, unknown>;
-
-    // Validate creation type
-    const validImportTypes: (ConversationImportType | null)[] = [
-      null,
-      "polis-url",
-      "csv-import",
-    ];
-    const hasValidCreationType =
-      typeof importSettingsData.importType === "string" &&
-      validImportTypes.includes(
-        importSettingsData.importType as ConversationImportType
-      );
-
-    // Validate polisUrl
-    const hasValidPolisUrl = typeof importSettingsData.polisUrl === "string";
-
-    // Validate csvFileMetadata structure
-    const hasValidCsvMetadata =
-      importSettingsData.csvFileMetadata !== undefined &&
-      typeof importSettingsData.csvFileMetadata === "object" &&
-      importSettingsData.csvFileMetadata !== null;
-
-    return (
-      hasValidContent &&
-      hasValidPoll &&
-      hasValidPostAs &&
-      hasValidPrivateSettings &&
-      hasRequiresLogin &&
-      hasValidCreationType &&
-      hasValidPolisUrl &&
-      hasValidCsvMetadata
-    );
+    return {
+      ...result.data,
+      requiresLogin,
+      privateConversationSettings: {
+        ...restPrivateSettings,
+        conversionDate: new Date(restPrivateSettings.conversionDate),
+      },
+    };
   }
 
   /**
@@ -356,46 +400,16 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         read: (storedValue: string): NewConversationDraft => {
           try {
             const parsedData = JSON.parse(storedValue);
+            const draft = parseStoredDraft(parsedData);
 
-            // Validate the parsed data structure
-            if (!isValidDraftData(parsedData)) {
+            if (!draft) {
               console.warn(
                 "Invalid conversation draft data found in storage, using default values"
               );
               return createEmptyDraft();
             }
 
-            // Migration: move requiresLogin from privateConversationSettings to top level
-            let requiresLogin = parsedData.requiresLogin;
-            if (requiresLogin === undefined) {
-              // Check old location for backward compatibility
-              const oldSettings = parsedData.privateConversationSettings as {
-                requiresLogin?: boolean;
-                hasScheduledConversion: boolean;
-                conversionDate: string;
-              };
-              if (oldSettings.requiresLogin !== undefined) {
-                requiresLogin = oldSettings.requiresLogin;
-                console.info(
-                  "Migrated requiresLogin from privateConversationSettings to top level"
-                );
-              }
-            }
-
-            // Convert ISO string back to Date object in private conversation settings
-            return {
-              ...parsedData,
-              requiresLogin:
-                requiresLogin !== undefined ? requiresLogin : true,
-              privateConversationSettings: {
-                hasScheduledConversion:
-                  parsedData.privateConversationSettings
-                    .hasScheduledConversion,
-                conversionDate: new Date(
-                  parsedData.privateConversationSettings.conversionDate
-                ),
-              },
-            };
+            return draft;
           } catch (error) {
             console.error(
               "Failed to parse conversation draft from storage:",
@@ -406,11 +420,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         },
         write: (draft: NewConversationDraft): string => {
           try {
-            // Convert Date to ISO string for JSON serialization
+            // Convert runtime format to serialized format
+            // Move requiresLogin into privateConversationSettings and convert Date to ISO string
+            const { requiresLogin, ...restDraft } = draft;
             const serializableDraft: SerializableConversationDraft = {
-              ...draft,
+              ...restDraft,
               privateConversationSettings: {
-                ...draft.privateConversationSettings,
+                requiresLogin,
+                hasScheduledConversion:
+                  draft.privateConversationSettings.hasScheduledConversion,
                 conversionDate:
                   draft.privateConversationSettings.conversionDate.toISOString(),
               },
@@ -420,10 +438,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
             console.error("Failed to serialize conversation draft:", error);
             // Fallback to empty draft
             const emptyDraft = createEmptyDraft();
+            const { requiresLogin, ...restEmptyDraft } = emptyDraft;
             const fallbackData: SerializableConversationDraft = {
-              ...emptyDraft,
+              ...restEmptyDraft,
               privateConversationSettings: {
-                ...emptyDraft.privateConversationSettings,
+                requiresLogin,
+                hasScheduledConversion:
+                  emptyDraft.privateConversationSettings.hasScheduledConversion,
                 conversionDate:
                   emptyDraft.privateConversationSettings.conversionDate.toISOString(),
               },
@@ -685,7 +706,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Validates poll options when polling is enabled
+   * Validates poll options when polling is enabled using Zod
    */
   function validatePoll(): { isValid: boolean; errorMessage?: string } {
     if (!conversationDraft.value.poll.enabled) {
@@ -693,51 +714,34 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
 
     const options = conversationDraft.value.poll.options;
+    const result = zodPollOptions.safeParse(options);
 
-    // Check if there are at least 2 options
-    if (options.length < 2) {
-      return {
-        isValid: false,
-        errorMessage: "Poll must have at least 2 options",
-      };
-    }
-
-    // Check for empty options
-    const emptyOptions = options.filter(
-      (option: string) => option.trim().length === 0
-    );
-    if (emptyOptions.length > 0) {
-      return {
-        isValid: false,
-        errorMessage: "All poll options must be filled in",
-      };
-    }
-
-    // Check for duplicate options
-    const trimmedOptions = options.map((option: string) =>
-      option.trim().toLowerCase()
-    );
-    const uniqueOptions = new Set(trimmedOptions);
-    if (uniqueOptions.size !== trimmedOptions.length) {
-      return { isValid: false, errorMessage: "Poll options must be unique" };
+    if (!result.success) {
+      // Extract the first error message from Zod
+      const errorMessage =
+        result.error.issues[0]?.message || "Poll validation failed";
+      return { isValid: false, errorMessage };
     }
 
     return { isValid: true };
   }
 
   /**
-   * Centralized validation function for title field
+   * Centralized validation function for title field using Zod
    */
   function validateTitleField(): MutationResult {
-    const title = conversationDraft.value.title.trim();
+    const title = conversationDraft.value.title;
+    const result = zodTitleValidation.safeParse(title);
 
-    if (!title) {
+    if (!result.success) {
+      const error =
+        result.error.issues[0]?.message || "Title validation failed";
       validationState.value.title = {
         isValid: false,
-        error: "Title is required to continue",
+        error,
         showError: true,
       };
-      return { success: false, error: "Title is required to continue" };
+      return { success: false, error };
     }
 
     validationState.value.title = {
@@ -776,27 +780,29 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Centralized validation function for Polis URL
+   * Centralized validation function for Polis URL using Zod
    */
   function validatePolisUrlField(): MutationResult {
     const url = conversationDraft.value.importSettings.polisUrl;
+    const result = zodPolisUrlValidation.safeParse(url);
 
-    if (!url || isValidPolisUrl(url)) {
+    if (!result.success) {
+      const error =
+        result.error.issues[0]?.message || "Polis URL validation failed";
       validationState.value.polisUrl = {
-        isValid: true,
-        error: "",
-        showError: false,
+        isValid: false,
+        error,
+        showError: true,
       };
-      return { success: true };
+      return { success: false, error };
     }
 
-    const error = "Please enter a valid Polis URL.";
     validationState.value.polisUrl = {
-      isValid: false,
-      error,
-      showError: true,
+      isValid: true,
+      error: "",
+      showError: false,
     };
-    return { success: false, error };
+    return { success: true };
   }
 
   /**
