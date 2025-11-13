@@ -2,6 +2,7 @@ import { axiosInstance } from "../client";
 import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import type { ApiV1ConversationCreatePost200Response } from "src/api";
 import { useCommonApi } from "../common";
+import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
 
 export interface ImportConversationFromCsvParams {
   summaryFile: File;
@@ -22,9 +23,9 @@ export function useBackendPostApi() {
     const formData = new FormData();
 
     // Add files with correct field names
-    formData.append("summaryFile", params.summaryFile);
-    formData.append("commentsFile", params.commentsFile);
-    formData.append("votesFile", params.votesFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE, params.summaryFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE, params.commentsFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.VOTES_FILE, params.votesFile);
 
     // Add metadata
     formData.append("postAsOrganization", params.postAsOrganizationName);

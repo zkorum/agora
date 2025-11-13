@@ -5,6 +5,8 @@ import type {
   ApiV1ConversationCreatePost200Response,
   ApiV1ConversationImportPostRequest,
 } from "src/api";
+import type { ImportCsvConversationResponse } from "src/shared/types/dto";
+import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
 import {
   type ApiV1ConversationCreatePostRequest,
   type ApiV1ConversationFetchRecentPostRequest,
@@ -197,6 +199,57 @@ export function useBackendPostApi() {
     | ImportConversationSuccessResponse
     | AxiosErrorResponse;
 
+  interface ImportConversationFromCsvParams {
+    summaryFile: File;
+    commentsFile: File;
+    votesFile: File;
+    postAsOrganizationName: string;
+    targetIsoConvertDateString: string | undefined;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+  }
+
+  async function importConversationFromCsv(
+    params: ImportConversationFromCsvParams
+  ): Promise<ImportCsvConversationResponse> {
+    const formData = new FormData();
+
+    // Add files with correct field names
+    formData.append(CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE, params.summaryFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE, params.commentsFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.VOTES_FILE, params.votesFile);
+
+    // Add metadata
+    formData.append("postAsOrganization", params.postAsOrganizationName);
+    formData.append(
+      "indexConversationAt",
+      params.targetIsoConvertDateString || ""
+    );
+    formData.append("isIndexed", String(params.isIndexed));
+    formData.append("isLoginRequired", String(params.isLoginRequired));
+
+    // Get URL from OpenAPI spec
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationImportCsvPost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    // Use createRawAxiosRequestConfig with extended timeout for large files
+    const config = createRawAxiosRequestConfig({
+      encodedUcan,
+      timeoutProfile: "extended",
+    });
+
+    const response = await api.post(url, formData, {
+      ...config,
+      headers: {
+        ...config.headers,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  }
+
   async function importConversation({
     polisUrl,
     postAsOrganizationName,
@@ -357,5 +410,6 @@ export function useBackendPostApi() {
     createInternalPostData,
     deletePostBySlugId,
     importConversation,
+    importConversationFromCsv,
   };
 }

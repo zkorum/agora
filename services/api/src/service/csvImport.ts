@@ -60,7 +60,16 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
     const comments = await parseCommentsCsv(commentsContent);
     const votes = await parseVotesCsv(votesContent);
 
-    // 4. Transform to ImportPolisResults format
+    // 4. Deduplicate votes by (voter-id, comment-id), keeping the last vote
+    // This handles cases where users changed their vote over time in the original Polis conversation
+    const voteMap = new Map<string, (typeof votes)[0]>();
+    for (const vote of votes) {
+        const key = `${String(vote["voter-id"])}_${String(vote["comment-id"])}`;
+        voteMap.set(key, vote); // Later votes overwrite earlier ones
+    }
+    const deduplicatedVotes = Array.from(voteMap.values());
+
+    // 5. Transform to ImportPolisResults format
     const importedPolisConversation: ImportPolisResults = {
         report_id: null,
         conversation_id: null, // Will be generated
@@ -135,7 +144,7 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
             tweet_id: null,
             velocity: null,
         })),
-        votes_data: votes.map((v) => ({
+        votes_data: deduplicatedVotes.map((v) => ({
             statement_id: v["comment-id"],
             participant_id: v["voter-id"],
             vote: v.vote,
@@ -146,7 +155,7 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
         })),
     };
 
-    // 5. Use existing import logic with CSV source
+    // 6. Use existing import logic with CSV source
     return await importService.loadImportedPolisConversation({
         db: props.db,
         voteBuffer: props.voteBuffer,

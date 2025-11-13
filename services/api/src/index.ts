@@ -1678,6 +1678,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/conversation/import-csv`,
         schema: {
+            consumes: ["multipart/form-data"],
             response: {
                 200: Dto.importCsvConversationResponse,
             },
