@@ -70,7 +70,13 @@ export const PolisCommentCsvSchema = z.object({
     "author-id": z.coerce.number().int(),
     agrees: z.coerce.number().int().min(0),
     disagrees: z.coerce.number().int().min(0),
-    moderated: z.coerce.number().int().min(0).max(1),
+    moderated: z.coerce
+        .number()
+        .int()
+        .refine((val) => val === -1 || val === 0 || val === 1, {
+            message: "moderated must be -1, 0, or 1",
+        }),
+    importance: z.coerce.number().int().min(0).optional(),
     "comment-body": z.string(),
 });
 
@@ -79,7 +85,13 @@ export const PolisVoteCsvSchema = z.object({
     datetime: z.string(),
     "comment-id": z.coerce.number().int(),
     "voter-id": z.coerce.number().int(),
-    vote: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
+    vote: z.coerce
+        .number()
+        .int()
+        .refine((val) => val === -1 || val === 0 || val === 1, {
+            message: "vote must be -1, 0, or 1",
+        }),
+    important: z.coerce.number().int().min(0).max(1).optional(),
 });
 
 export type PolisSummaryCsv = z.infer<typeof PolisSummaryCsvSchema>;

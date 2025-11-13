@@ -163,7 +163,7 @@ const isSubmitButtonLoading = ref(false);
 
 const router = useRouter();
 
-const { importConversation } = useBackendPostApi();
+const { importConversation, importConversationFromCsv } = useBackendPostApi();
 
 // Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -286,29 +286,61 @@ function handleValidationError(errorField: ValidationErrorField): void {
 }
 
 async function handleImportSubmission(): Promise<void> {
-  const response = await importConversation({
-    polisUrl: conversationDraft.value.importSettings.polisUrl,
-    postAsOrganizationName: conversationDraft.value.postAs.organizationName,
-    targetIsoConvertDateString: conversationDraft.value
-      .privateConversationSettings.hasScheduledConversion
-      ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-      : undefined,
-    isIndexed: !conversationDraft.value.isPrivate,
-    isLoginRequired: conversationDraft.value.requiresLogin,
-    requiresEventTicket: conversationDraft.value.requiresEventTicket,
-  });
+  if (conversationDraft.value.importSettings.importType === "csv-import") {
+    // CSV Import - use the CSV endpoint
+    const files = polisCsvUploadRef.value?.getFiles();
+    if (!files?.summary || !files?.comments || !files?.votes) {
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: "ERR_BAD_REQUEST",
+        defaultMessage: "Missing required CSV files",
+      });
+      return;
+    }
 
-  if (response.status === "success") {
+    const response = await importConversationFromCsv({
+      summaryFile: files.summary,
+      commentsFile: files.comments,
+      votesFile: files.votes,
+      postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+      targetIsoConvertDateString: conversationDraft.value
+        .privateConversationSettings.hasScheduledConversion
+        ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+        : undefined,
+      isIndexed: !conversationDraft.value.isPrivate,
+      isLoginRequired: conversationDraft.value.requiresLogin,
+    });
+
     conversationDraft.value = createEmptyDraft();
     await router.replace({
       name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.data.conversationSlugId },
+      params: { postSlugId: response.conversationSlugId },
     });
   } else {
-    handleAxiosErrorStatusCodes({
-      axiosErrorCode: response.code,
-      defaultMessage: "Error while trying to import conversation from Polis",
+    // URL Import - use the URL endpoint
+    const response = await importConversation({
+      polisUrl: conversationDraft.value.importSettings.polisUrl,
+      postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+      targetIsoConvertDateString: conversationDraft.value
+        .privateConversationSettings.hasScheduledConversion
+        ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+        : undefined,
+      isIndexed: !conversationDraft.value.isPrivate,
+      isLoginRequired: conversationDraft.value.requiresLogin,
+      requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });
+
+    if (response.status === "success") {
+      conversationDraft.value = createEmptyDraft();
+      await router.replace({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.data.conversationSlugId },
+      });
+    } else {
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to import conversation from Polis",
+      });
+    }
   }
 }
 
