@@ -231,7 +231,7 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "login-requirement",
-    label: conversationDraft.value.privateConversationSettings.requiresLogin
+    label: conversationDraft.value.requiresLogin
       ? t("requiresLogin")
       : t("guestParticipation"),
     icon: showLoginRequirementDialog.value

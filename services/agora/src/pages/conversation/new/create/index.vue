@@ -274,9 +274,7 @@ async function handleImportSubmission(): Promise<void> {
       ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
       : undefined,
     isIndexed: !conversationDraft.value.isPrivate,
-    isLoginRequired: conversationDraft.value.isPrivate
-      ? conversationDraft.value.privateConversationSettings.requiresLogin
-      : false,
+    isLoginRequired: conversationDraft.value.requiresLogin,
     requiresEventTicket: conversationDraft.value.requiresEventTicket,
   });
 
