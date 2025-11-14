@@ -210,6 +210,7 @@ export function useBackendPostApi() {
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    requiresEventTicket?: EventSlug;
   }
 
   async function importConversationFromCsv(
@@ -230,6 +231,7 @@ export function useBackendPostApi() {
     );
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("isLoginRequired", String(params.isLoginRequired));
+    formData.append("requiresEventTicket", params.requiresEventTicket || "");
 
     // Get URL from OpenAPI spec
     const { url, options } =

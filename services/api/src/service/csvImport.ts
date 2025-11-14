@@ -12,6 +12,7 @@ import {
 import * as importService from "./import.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { ValidateCsvResponse } from "@/shared/types/dto.js";
+import type { EventSlug } from "@/shared/types/zod.js";
 
 interface ProcessCsvImportProps {
     db: PostgresJsDatabase;
@@ -24,6 +25,7 @@ interface ProcessCsvImportProps {
     indexConversationAt?: string;
     isLoginRequired: boolean;
     isIndexed: boolean;
+    requiresEventTicket?: EventSlug;
 }
 
 /**
@@ -180,6 +182,7 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
         indexConversationAt: props.indexConversationAt,
         isLoginRequired: props.isLoginRequired,
         isIndexed: props.isIndexed,
+        requiresEventTicket: props.requiresEventTicket,
     });
 }
 
