@@ -53,13 +53,8 @@ export function useHiddenCommentsQuery({
   return useQuery({
     queryKey: ["hiddenComments", conversationSlugId],
     queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
-<<<<<<< HEAD
-    enabled: enabled,
-    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
-=======
     enabled: enabled && conversationSlugId.length > 0,
-    staleTime: 1000 * 60 * 2, // 2 minutes - primarily for internal filter switching
->>>>>>> fafae864 (Fix post data reactivity issue)
+    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });

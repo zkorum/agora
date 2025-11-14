@@ -162,7 +162,7 @@ const isAnalysisEnabled = computed(
 );
 
 // Create a computed property to ensure reactivity for the query's enabled parameter
-const isModerator = computed(() => userStore.profileData.isModerator);
+const isModerator = computed(() => profileData.value.isModerator);
 
 // Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({
@@ -195,6 +195,7 @@ const commentsModeratedQuery = useCommentsQuery({
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode && isModerator.value,
 });
 
@@ -283,7 +284,7 @@ async function submittedComment(data: {
       // This ensures the header/sidebar shows the correct username immediately.
       const targetOpinion = opinionSectionRef.value.targetOpinion;
       if (targetOpinion && targetOpinion.username) {
-        userStore.profileData.userName = targetOpinion.username;
+        profileData.value.userName = targetOpinion.username;
       }
     }
   }
