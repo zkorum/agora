@@ -1,12 +1,16 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useStorage } from '@vueuse/core';
+import type InAppSpy from 'inapp-spy';
+
+// Extract AppKey type from inapp-spy library
+export type AppKey = ReturnType<typeof InAppSpy>['appKey'];
 
 export const useEmbeddedBrowserWarningStore = defineStore('embeddedBrowserWarning', () => {
   // State
   const showWarning = ref(false);
   const appName = ref<string | undefined>(undefined);
-  const appKey = ref<string | undefined>(undefined);
+  const appKey = ref<AppKey>(undefined);
 
   // Session-only dismissal (resets when browser tab is closed)
   const dismissedThisSession = useStorage<boolean>(
@@ -23,7 +27,7 @@ export const useEmbeddedBrowserWarningStore = defineStore('embeddedBrowserWarnin
   );
 
   // Actions
-  function openWarning(name: string | undefined, key: string | undefined) {
+  function openWarning(name: string | undefined, key: AppKey) {
     // Don't show if already dismissed permanently or in this session
     if (dismissedPermanently.value) {
       console.log('[EmbeddedBrowserWarning] Already dismissed permanently');

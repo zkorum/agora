@@ -180,6 +180,12 @@ export async function createNewPost({
         }
     }
 
+    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
+        throw httpErrors.badRequest(
+            "Public conversations must either require login or event ticket verification",
+        );
+    }
+
     const { conversationId, conversationContentId } = await db.transaction(
         async (tx) => {
             const insertPostResponse = await tx
@@ -189,7 +195,10 @@ export async function createNewPost({
                     slugId: conversationSlugId,
                     organizationId: organizationId,
                     isIndexed: isIndexed,
-                    isLoginRequired: isIndexed ? true : isLoginRequired,
+                    isLoginRequired:
+                        isIndexed && !requiresEventTicket
+                            ? true
+                            : isLoginRequired,
                     requiresEventTicket: requiresEventTicket,
                     indexConversationAt:
                         indexConversationAt !== undefined
@@ -297,9 +306,10 @@ export async function createNewPost({
                     conversationContentId,
                     conversationAuthorId: authorId,
                     conversationIsIndexed: isIndexed,
-                    conversationIsLoginRequired: isIndexed
-                        ? true
-                        : isLoginRequired,
+                    conversationIsLoginRequired:
+                        isIndexed && !requiresEventTicket
+                            ? true
+                            : isLoginRequired,
                     requiresEventTicket: requiresEventTicket ?? null,
                 },
             });

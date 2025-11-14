@@ -6,9 +6,7 @@
         <!-- Title -->
         <h3 class="warning-title">
           {{
-            appName
-              ? t("title").replace("{app}", appName)
-              : t("titleGeneric")
+            appName ? t("title").replace("{app}", appName) : t("titleGeneric")
           }}
         </h3>
 
@@ -20,25 +18,11 @@
 
       <!-- Scrollable Content -->
       <q-card-section class="warning-content">
-        <!-- Instructions (always visible on non-Android, collapsible on Android) -->
-        <div v-if="!isAndroid" class="instructions-box">
-          <div class="instructions-title">{{ t("instructionsTitle") }}</div>
-          <!-- iOS: Single step with compass icon -->
-          <ol v-if="isIOS" class="instructions-list">
-            <li>
-              {{ t("instructionStep1iOS") }} <i class="pi pi-compass"></i>
-            </li>
-          </ol>
-          <!-- Non-iOS: Full steps -->
-          <ol v-else class="instructions-list">
-            <li>{{ t("instructionStep1") }}</li>
-            <li>{{ t("instructionStep2") }}</li>
-            <li>{{ t("instructionStep3") }}</li>
-          </ol>
-        </div>
-
-        <!-- Android: Collapsible instructions as backup -->
-        <div v-else class="instructions-collapsible">
+        <!-- Automatic redirect possible: Collapsible instructions as backup -->
+        <div
+          v-if="isAutomaticRedirectPossible"
+          class="instructions-collapsible"
+        >
           <button
             class="instructions-toggle"
             @click="showInstructions = !showInstructions"
@@ -59,6 +43,23 @@
             </ol>
           </div>
         </div>
+
+        <!-- Instructions (non-collapsible when automatic redirect is impossible) -->
+        <div v-else class="instructions-box">
+          <div class="instructions-title">{{ t("instructionsTitle") }}</div>
+          <!-- iOS: Single step with compass icon -->
+          <ol v-if="isIOS" class="instructions-list">
+            <li>
+              {{ t("instructionStep1iOS") }} <i class="pi pi-compass"></i>
+            </li>
+          </ol>
+          <!-- Non-iOS: Full steps -->
+          <ol v-else class="instructions-list">
+            <li>{{ t("instructionStep1") }}</li>
+            <li>{{ t("instructionStep2") }}</li>
+            <li>{{ t("instructionStep3") }}</li>
+          </ol>
+        </div>
       </q-card-section>
 
       <!-- Fixed Footer (Actions) -->
@@ -66,7 +67,7 @@
         <div class="primary-actions">
           <!-- ANDROID ONLY: Retry automatic redirect (MOST PROMINENT) -->
           <PrimeButton
-            v-if="isAndroid"
+            v-if="isAndroid && !isWechat"
             :label="t('retryRedirect')"
             severity="primary"
             :icon="'pi pi-external-link'"
@@ -108,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { Platform } from "quasar";
 import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
@@ -120,13 +121,15 @@ const { t } = useComponentI18n(embeddedBrowserWarningTranslations);
 const { showNotifyMessage } = useNotify();
 
 const store = useEmbeddedBrowserWarningStore();
-const { showWarning, appName } = storeToRefs(store);
+const { showWarning, appName, appKey } = storeToRefs(store);
 const { closeWarning, reportFalsePositive: reportFalsePositiveStore } = store;
 
 const copied = ref(false);
 const showInstructions = ref(false);
 const isAndroid = Platform.is.android;
 const isIOS = Platform.is.ios;
+const isWechat = appKey.value === "wechat";
+const isAutomaticRedirectPossible = computed(() => isAndroid && !isWechat);
 
 async function copyUrl() {
   try {
@@ -154,7 +157,9 @@ function reportFalsePositive() {
 }
 
 function retryAndroidRedirect() {
-  console.log("[EmbeddedBrowserWarning] User manually retrying Android Intent redirect");
+  console.log(
+    "[EmbeddedBrowserWarning] User manually retrying Android Intent redirect"
+  );
 
   try {
     const url = new URL(window.location.href);
@@ -163,7 +168,10 @@ function retryAndroidRedirect() {
     showNotifyMessage(t("retryingRedirect"));
     window.location.href = intentUrl;
   } catch (error) {
-    console.error("[EmbeddedBrowserWarning] Failed to retry Android Intent redirect:", error);
+    console.error(
+      "[EmbeddedBrowserWarning] Failed to retry Android Intent redirect:",
+      error
+    );
     showNotifyMessage(t("redirectFailed"));
   }
 }

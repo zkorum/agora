@@ -203,6 +203,18 @@ export function useCommonPost() {
 
         if (sortAlgorithm == "following") {
             postItems.sort((post1, post2) => {
+                // Pin Devconnect organization conversations to top
+                const isDevconnect1 = post1.organizationName === "Devconnect";
+                const isDevconnect2 = post2.organizationName === "Devconnect";
+
+                if (isDevconnect1 && !isDevconnect2) {
+                    return -1; // post1 comes first (pinned)
+                }
+                if (!isDevconnect1 && isDevconnect2) {
+                    return 1; // post2 comes first (pinned)
+                }
+
+                // Both pinned or both not pinned - sort by engagement score
                 const score1 = getConversationEngagementScore({
                     createdAt: post1.createdAt,
                     lastReactedAt: post1.lastReactedAt,

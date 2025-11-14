@@ -331,9 +331,8 @@ async function onSubmit() {
         ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
         : undefined,
       isIndexed: !conversationDraft.value.isPrivate,
-      isLoginRequired: !conversationDraft.value.isPrivate
-        ? false
-        : conversationDraft.value.privateConversationSettings.requiresLogin,
+      isLoginRequired:
+        conversationDraft.value.privateConversationSettings.requiresLogin,
       seedOpinionList: conversationDraft.value.seedOpinions,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });

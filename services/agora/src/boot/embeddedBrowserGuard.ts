@@ -1,7 +1,7 @@
 import { boot } from "quasar/wrappers";
 import { Platform } from "quasar";
 import InAppSpy from "inapp-spy";
-import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
+import { useEmbeddedBrowserWarningStore, type AppKey } from "src/stores/embeddedBrowserWarning";
 
 /**
  * Boot file to detect embedded/in-app browsers and redirect users to system browser.
@@ -37,7 +37,7 @@ export default boot(({ router }) => {
   // Detect if running in an in-app browser
   const { isInApp, appKey, appName } = InAppSpy();
   let usedIsInApp = isInApp;
-  let usedAppKey = appKey;
+  let usedAppKey: AppKey = appKey;
   let usedAppName: string | undefined = appName;
 
   // DEBUG: Log user-agent for all browsers (helpful for debugging X browser)
@@ -89,7 +89,7 @@ export default boot(({ router }) => {
 
       // Override InAppSpy result
       usedIsInApp = true;
-      usedAppKey = "twitter"; // Use same key as Twitter for consistency (inapp-spy types)
+      usedAppKey = "twitter";
       usedAppName = "X"; // Display as "X" to users
     }
   }
