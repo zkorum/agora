@@ -36,17 +36,21 @@ The frontend (`services/agora`) uses a comprehensive environment variable valida
 - **Single source of truth**: `services/agora/src/utils/processEnv.ts` (zod schema)
 - **TypeScript types**: Auto-derived in `services/agora/src/env.d.ts` using `z.infer<typeof envSchema>`
 - **Build-time validation**: Custom Vite plugin in `quasar.config.ts` runs `validateEnv()` during build
+- **Env object generation**: `quasar.config.ts` generates `env` object from schema keys (line 247-249)
+- **Runtime access**: `processEnv` export casts `import.meta.env` to `ProcessEnv` type for typed access
 - **Production safety**: Enforces rules like dev-only variables must not be set in production (allows staging with `VITE_STAGING=true`)
 
 The build **fails immediately** if required variables are missing or validation fails.
 
 **Environment file structure:**
-- `.env.dev` - Development configuration (loaded by `yarn dev`)
-- `.env.staging` - Staging configuration (production build with `VITE_STAGING=true`)
-- `.env.production` - Production configuration
-- `.env.local.prod` - Temporary file created by build scripts (gitignored)
+- `.env.dev` - Development configuration (automatically loaded by `yarn dev`)
+- `.env.staging` - Staging configuration (must include `VITE_STAGING=true`)
+- `.env.production` - Production configuration (must include `VITE_STAGING=false`)
 
-**Build process:** The build scripts (`yarn build:staging` / `yarn build:production`) copy the appropriate env file to `.env.local.prod` before building. Quasar automatically loads `.env.local.prod` during production builds. The temporary file is cleaned up after the build completes.
+**Build process:** The build scripts use `env-cmd` to load environment variables from the appropriate file before building. This approach is used because:
+- Quasar has no built-in support for staging environments (only dev/production)
+- `env-cmd` is consistent with Docker environments
+- It ensures all variables (including `VITE_STAGING`) are available when `quasar.config.ts` evaluates
 
 For details, see [services/agora/README.md](services/agora/README.md#environment-variables).
 
