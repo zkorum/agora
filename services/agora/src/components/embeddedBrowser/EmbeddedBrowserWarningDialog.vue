@@ -78,7 +78,7 @@
           <!-- PRIMARY: Copy URL (helpful fallback) -->
           <PrimeButton
             :label="copied ? t('urlCopied') : t('copyUrl')"
-            :severity="isAndroid ? 'secondary' : 'primary'"
+            severity="primary"
             outlined
             :icon="copied ? 'pi pi-check' : 'pi pi-copy'"
             class="full-width"
