@@ -28,12 +28,12 @@ export const embeddedBrowserWarningTranslations: Record<
   en: {
     title: "You're in {app} Browser",
     titleGeneric: "You're in an In-App Browser",
-    message:
-      "Please open in your default browser for the best experience.",
+    message: "Please open in your default browser for the best experience.",
     instructionsTitle: "How to open in your default browser:",
     showManualInstructions: "Or try manually",
     instructionStep1: "Tap the menu icon (⋯ or ⋮)",
-    instructionStep1iOS: "Tap the Safari icon at the bottom-right corner to open in your default browser",
+    instructionStep1iOS:
+      "Tap the compass icon at the bottom-right corner to open in your default browser",
     instructionStep2: 'Select "Open in Browser" or similar option',
     instructionStep3: "Or copy the URL below and paste it in your browser app",
     retryRedirect: "Open in Default Browser",
@@ -54,6 +54,8 @@ export const embeddedBrowserWarningTranslations: Record<
     instructionsTitle: "كيفية الفتح في متصفحك الافتراضي:",
     showManualInstructions: "أو حاول يدويًا",
     instructionStep1: "اضغط على أيقونة القائمة (⋯ أو ⋮)",
+    instructionStep1iOS:
+      "اضغط على أيقونة البوصلة في الزاوية السفلية اليمنى للفتح في متصفحك الافتراضي",
     instructionStep2: 'حدد "فتح في المتصفح" أو خيار مماثل',
     instructionStep3: "أو انسخ عنوان URL والصقه في تطبيق المتصفح الخاص بك",
     retryRedirect: "فتح في المتصفح الافتراضي",
@@ -74,6 +76,8 @@ export const embeddedBrowserWarningTranslations: Record<
     instructionsTitle: "Cómo abrir en tu navegador predeterminado:",
     showManualInstructions: "O inténtalo manualmente",
     instructionStep1: "Toca el icono de menú (⋯ o ⋮)",
+    instructionStep1iOS:
+      "Toca el icono de la brújula en la esquina inferior derecha para abrir en tu navegador predeterminado",
     instructionStep2: 'Selecciona "Abrir en navegador" u opción similar',
     instructionStep3: "O copia la URL y pégala en tu aplicación de navegador",
     retryRedirect: "Abrir en navegador predeterminado",
@@ -94,6 +98,8 @@ export const embeddedBrowserWarningTranslations: Record<
     instructionsTitle: "Comment ouvrir dans votre navigateur par défaut:",
     showManualInstructions: "Ou essayez manuellement",
     instructionStep1: "Appuyez sur l'icône de menu (⋯ ou ⋮)",
+    instructionStep1iOS:
+      "Appuyez sur l'icône de la boussole en bas à droite pour ouvrir dans votre navigateur par défaut",
     instructionStep2:
       'Sélectionnez "Ouvrir dans le navigateur" ou option similaire',
     instructionStep3:
@@ -111,11 +117,11 @@ export const embeddedBrowserWarningTranslations: Record<
   "zh-Hans": {
     title: "您在 {app} 浏览器中",
     titleGeneric: "您在应用内浏览器中",
-    message:
-      "请在您设备的默认浏览器中打开此页面以获得最佳体验。",
+    message: "请在您设备的默认浏览器中打开此页面以获得最佳体验。",
     instructionsTitle: "如何在您的默认浏览器中打开：",
     showManualInstructions: "或手动尝试",
     instructionStep1: "点击菜单图标 (⋯ 或 ⋮)",
+    instructionStep1iOS: "点击右下角的指南针图标以在默认浏览器中打开",
     instructionStep2: '选择"在浏览器中打开"或类似选项',
     instructionStep3: "或复制 URL 并粘贴到您的浏览器应用中",
     retryRedirect: "在默认浏览器中打开",
@@ -131,11 +137,11 @@ export const embeddedBrowserWarningTranslations: Record<
   "zh-Hant": {
     title: "您在 {app} 瀏覽器中",
     titleGeneric: "您在應用程式內建瀏覽器中",
-    message:
-      "請在您裝置的預設瀏覽器中開啟此頁面以獲得最佳體驗。",
+    message: "請在您裝置的預設瀏覽器中開啟此頁面以獲得最佳體驗。",
     instructionsTitle: "如何在您的預設瀏覽器中開啟：",
     showManualInstructions: "或手動嘗試",
     instructionStep1: "點擊選單圖示 (⋯ 或 ⋮)",
+    instructionStep1iOS: "點擊右下角的指南針圖示以在預設瀏覽器中開啟",
     instructionStep2: "選擇「在瀏覽器中開啟」或類似選項",
     instructionStep3: "或複製 URL 並貼到您的瀏覽器應用程式中",
     retryRedirect: "在預設瀏覽器中開啟",
@@ -156,6 +162,8 @@ export const embeddedBrowserWarningTranslations: Record<
     instructionsTitle: "デフォルトブラウザで開く方法：",
     showManualInstructions: "または手動で試す",
     instructionStep1: "メニューアイコン (⋯ または ⋮) をタップ",
+    instructionStep1iOS:
+      "右下のコンパスアイコンをタップしてデフォルトブラウザで開く",
     instructionStep2: "「ブラウザで開く」または類似のオプションを選択",
     instructionStep3:
       "または URL をコピーしてブラウザアプリに貼り付けてください",
