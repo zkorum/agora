@@ -25,7 +25,7 @@ import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
-import { validateCsvFieldNames } from "@/shared-app-api/csvUpload.js";
+import { validateCsvFieldNames, MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -1698,8 +1698,19 @@ server.after(() => {
 
             for await (const part of parts) {
                 if (part.type === "file") {
-                    // Read file content as string, keyed by field name
-                    const buffer = await part.toBuffer();
+                    // Validate file size before buffering to prevent memory exhaustion
+                    const chunks: Buffer[] = [];
+                    let totalSize = 0;
+                    for await (const chunk of part.file) {
+                        totalSize += chunk.length;
+                        if (totalSize > MAX_CSV_FILE_SIZE) {
+                            throw server.httpErrors.payloadTooLarge(
+                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                            );
+                        }
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
                     files[part.fieldname] = buffer.toString("utf-8");
                 }
                 // Ignore form fields - validation doesn't need them
@@ -1737,8 +1748,19 @@ server.after(() => {
 
             for await (const part of parts) {
                 if (part.type === "file") {
-                    // Read file content as string, keyed by field name (not filename)
-                    const buffer = await part.toBuffer();
+                    // Validate file size before buffering to prevent memory exhaustion
+                    const chunks: Buffer[] = [];
+                    let totalSize = 0;
+                    for await (const chunk of part.file) {
+                        totalSize += chunk.length;
+                        if (totalSize > MAX_CSV_FILE_SIZE) {
+                            throw server.httpErrors.payloadTooLarge(
+                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                            );
+                        }
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
                     files[part.fieldname] = buffer.toString("utf-8");
                 } else {
                     // Parse form fields

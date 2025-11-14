@@ -149,6 +149,8 @@ export function parseCommentsCsv(
 ): Promise<PolisCommentCsv[]> {
     return new Promise((resolve, reject) => {
         const comments: PolisCommentCsv[] = [];
+        const errors: string[] = [];
+        let rowNumber = 1; // Start at 1 (header row)
         const stream = Readable.from([csvContent]);
 
         stream
@@ -160,23 +162,28 @@ export function parseCommentsCsv(
                 }),
             )
             .on("data", (row: Record<string, string>) => {
+                rowNumber++;
                 try {
                     const validated = PolisCommentCsvSchema.parse(row);
                     comments.push(validated);
                 } catch (error) {
-                    reject(
-                        new Error(
-                            `Invalid comment row: ${
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error)
-                            }`,
-                        ),
+                    errors.push(
+                        `Row ${rowNumber}: ${
+                            error instanceof Error
+                                ? error.message
+                                : String(error)
+                        }`,
                     );
                 }
             })
             .on("end", () => {
-                if (comments.length === 0) {
+                if (errors.length > 0) {
+                    reject(
+                        new Error(
+                            `Comments CSV validation failed:\n${errors.join("\n")}`,
+                        ),
+                    );
+                } else if (comments.length === 0) {
                     reject(new Error("Comments CSV contains no data rows"));
                 } else {
                     resolve(comments);
@@ -196,6 +203,8 @@ export function parseCommentsCsv(
 export function parseVotesCsv(csvContent: string): Promise<PolisVoteCsv[]> {
     return new Promise((resolve, reject) => {
         const votes: PolisVoteCsv[] = [];
+        const errors: string[] = [];
+        let rowNumber = 1; // Start at 1 (header row)
         const stream = Readable.from([csvContent]);
 
         stream
@@ -207,23 +216,28 @@ export function parseVotesCsv(csvContent: string): Promise<PolisVoteCsv[]> {
                 }),
             )
             .on("data", (row: Record<string, string>) => {
+                rowNumber++;
                 try {
                     const validated = PolisVoteCsvSchema.parse(row);
                     votes.push(validated);
                 } catch (error) {
-                    reject(
-                        new Error(
-                            `Invalid vote row: ${
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error)
-                            }`,
-                        ),
+                    errors.push(
+                        `Row ${rowNumber}: ${
+                            error instanceof Error
+                                ? error.message
+                                : String(error)
+                        }`,
                     );
                 }
             })
             .on("end", () => {
-                if (votes.length === 0) {
+                if (errors.length > 0) {
+                    reject(
+                        new Error(
+                            `Votes CSV validation failed:\n${errors.join("\n")}`,
+                        ),
+                    );
+                } else if (votes.length === 0) {
                     reject(new Error("Votes CSV contains no data rows"));
                 } else {
                     resolve(votes);
