@@ -6,19 +6,14 @@ import { z } from "zod";
  * This is the SINGLE SOURCE OF TRUTH for environment variable definitions.
  * TypeScript types in src/env.d.ts are automatically derived from this schema.
  *
- * This utility validates required environment variables,
- * following the same pattern as the backend API (services/api/src/app.ts).
- *
- * Required vars throw an error if missing. Optional vars can be undefined.
- *
  * Environment file structure:
  * - .env.dev: Development configuration (loaded by `yarn dev`)
- * - .env.staging: Staging configuration (production build with VITE_STAGING=true)
- * - .env.production: Production configuration
- * - .env.local.prod: Temporary file created by build scripts (gitignored)
+ * - .env.staging: Staging configuration (includes VITE_STAGING=true)
+ * - .env.production: Production configuration (includes VITE_STAGING=false)
  *
- * Build scripts copy the appropriate env file to .env.local.prod before building,
- * which Quasar automatically loads during production builds.
+ * Build process:
+ * - Build scripts use env-cmd to load the appropriate env file
+ * - This ensures all variables (including VITE_STAGING) are available when quasar.config.ts runs
  */
 
 export const envSchema = z.object({
@@ -31,7 +26,7 @@ export const envSchema = z.object({
   // Optional environment variables
   VUE_ROUTER_MODE: z.enum(["hash", "history", "abstract"]).optional(), // Vue router mode
   VUE_ROUTER_BASE: z.string().optional(), // Base path for router
-  VITE_STAGING: z.enum(["true", "false"]).optional(), // If "true", staging mode is enabled
+  VITE_STAGING: z.enum(["true", "false"]).optional(),
   VITE_DEV_AUTHORIZED_PHONES: z.string().optional(), // Comma-separated list of phone numbers for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_SENTRY_AUTH_TOKEN: z.string().optional(), // Sentry auth token for production builds
 });
@@ -49,7 +44,12 @@ function validateEnvSchema(
 ): ProcessEnv {
   const result = envSchema.parse(env);
 
-  // Production safety check: VITE_DEV_AUTHORIZED_PHONES must not be set in production
+  if (result.NODE_ENV === "production" && result.VITE_STAGING === undefined) {
+    throw new Error(
+      "VITE_STAGING must be set to 'true' or 'false' in production"
+    );
+  }
+
   if (
     result.NODE_ENV === "production" &&
     result.VITE_STAGING !== "true" &&
@@ -80,6 +80,18 @@ export function validateEnv(
   }
 }
 
-// Typed access to process.env
-// Validation happens at build time via Vite plugin in quasar.config.ts
-export const processEnv = process.env as ProcessEnv;
+/**
+ * Typed access to environment variables.
+ *
+ * Validation happens at:
+ * 1. Build time: Vite plugin validates process.env and fails build if invalid
+ * 2. Runtime: This provides typed access to import.meta.env (injected by Vite/Quasar)
+ *
+ * This ensures both compile-time safety and runtime availability.
+ *
+ * Note: In Node.js build context (quasar.config.ts), import.meta.env doesn't exist.
+ * The actual values are only needed at browser runtime, not during config evaluation.
+ */
+export const processEnv = (typeof import.meta !== 'undefined' && import.meta.env
+  ? import.meta.env
+  : {}) as ProcessEnv;

@@ -2,12 +2,17 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface EmbeddedBrowserWarningTranslations {
   title: string;
+  titleGeneric: string;
   message: string;
-  messageGeneric: string;
   instructionsTitle: string;
+  showManualInstructions: string;
   instructionStep1: string;
+  instructionStep1iOS: string;
   instructionStep2: string;
   instructionStep3: string;
+  retryRedirect: string;
+  retryingRedirect: string;
+  redirectFailed: string;
   copyUrl: string;
   urlCopied: string;
   urlCopiedNotification: string;
@@ -21,15 +26,19 @@ export const embeddedBrowserWarningTranslations: Record<
   EmbeddedBrowserWarningTranslations
 > = {
   en: {
-    title: "You're Using an In-App Browser",
+    title: "You're in {app} Browser",
+    titleGeneric: "You're in an In-App Browser",
     message:
-      "{app}'s in-app browser has limitations. Please open this page in your device's default browser for the best experience.",
-    messageGeneric:
-      "You're currently using an in-app browser. For the best experience, please open this page in your device's default browser instead.",
+      "Please open in your default browser for the best experience.",
     instructionsTitle: "How to open in your default browser:",
+    showManualInstructions: "Or try manually",
     instructionStep1: "Tap the menu icon (⋯ or ⋮)",
+    instructionStep1iOS: "Tap the Safari icon at the bottom-right corner to open in your default browser",
     instructionStep2: 'Select "Open in Browser" or similar option',
     instructionStep3: "Or copy the URL below and paste it in your browser app",
+    retryRedirect: "Open in Default Browser",
+    retryingRedirect: "Opening in default browser...",
+    redirectFailed: "Redirect failed. Please try manually.",
     copyUrl: "Copy URL",
     urlCopied: "URL Copied",
     urlCopiedNotification: "URL copied to clipboard",
@@ -38,15 +47,18 @@ export const embeddedBrowserWarningTranslations: Record<
     notInAppBrowser: "I'm already in my browser (Chrome, Safari, etc.)",
   },
   ar: {
-    title: "أنت تستخدم متصفح مدمج في التطبيق",
+    title: "أنت في متصفح {app}",
+    titleGeneric: "أنت في متصفح مدمج",
     message:
-      "متصفح {app} المدمج له قيود. يرجى فتح هذه الصفحة في متصفح جهازك الافتراضي للحصول على أفضل تجربة.",
-    messageGeneric:
-      "أنت تستخدم حاليًا متصفحًا مدمجًا في التطبيق. للحصول على أفضل تجربة، يرجى فتح هذه الصفحة في متصفح جهازك الافتراضي بدلاً من ذلك.",
+      "يرجى فتح هذه الصفحة في متصفح جهازك الافتراضي للحصول على أفضل تجربة.",
     instructionsTitle: "كيفية الفتح في متصفحك الافتراضي:",
+    showManualInstructions: "أو حاول يدويًا",
     instructionStep1: "اضغط على أيقونة القائمة (⋯ أو ⋮)",
     instructionStep2: 'حدد "فتح في المتصفح" أو خيار مماثل',
     instructionStep3: "أو انسخ عنوان URL والصقه في تطبيق المتصفح الخاص بك",
+    retryRedirect: "فتح في المتصفح الافتراضي",
+    retryingRedirect: "جاري الفتح في المتصفح الافتراضي...",
+    redirectFailed: "فشلت إعادة التوجيه. يرجى المحاولة يدويًا.",
     copyUrl: "نسخ الرابط",
     urlCopied: "تم النسخ",
     urlCopiedNotification: "تم نسخ الرابط إلى الحافظة",
@@ -55,15 +67,18 @@ export const embeddedBrowserWarningTranslations: Record<
     notInAppBrowser: "أنا بالفعل في متصفحي (Chrome، Safari، إلخ)",
   },
   es: {
-    title: "Estás usando un navegador integrado",
+    title: "Estás en el navegador de {app}",
+    titleGeneric: "Estás en un navegador integrado",
     message:
-      "El navegador integrado de {app} tiene limitaciones. Por favor, abre esta página en el navegador predeterminado de tu dispositivo para la mejor experiencia.",
-    messageGeneric:
-      "Actualmente estás usando un navegador integrado. Para la mejor experiencia, abre esta página en el navegador predeterminado de tu dispositivo.",
+      "Por favor, abre esta página en tu navegador predeterminado para la mejor experiencia.",
     instructionsTitle: "Cómo abrir en tu navegador predeterminado:",
+    showManualInstructions: "O inténtalo manualmente",
     instructionStep1: "Toca el icono de menú (⋯ o ⋮)",
     instructionStep2: 'Selecciona "Abrir en navegador" u opción similar',
     instructionStep3: "O copia la URL y pégala en tu aplicación de navegador",
+    retryRedirect: "Abrir en navegador predeterminado",
+    retryingRedirect: "Abriendo en navegador predeterminado...",
+    redirectFailed: "Redirección fallida. Por favor, inténtalo manualmente.",
     copyUrl: "Copiar URL",
     urlCopied: "URL Copiada",
     urlCopiedNotification: "URL copiada al portapapeles",
@@ -72,17 +87,20 @@ export const embeddedBrowserWarningTranslations: Record<
     notInAppBrowser: "Ya estoy en mi navegador (Chrome, Safari, etc.)",
   },
   fr: {
-    title: "Vous utilisez un navigateur intégré",
+    title: "Vous êtes dans le navigateur {app}",
+    titleGeneric: "Vous êtes dans un navigateur intégré",
     message:
-      "Le navigateur intégré de {app} a des limitations. Veuillez ouvrir cette page dans le navigateur par défaut de votre appareil pour une meilleure expérience.",
-    messageGeneric:
-      "Vous utilisez actuellement un navigateur intégré. Pour une meilleure expérience, veuillez ouvrir cette page dans le navigateur par défaut de votre appareil.",
+      "Veuillez ouvrir cette page dans votre navigateur par défaut pour une meilleure expérience.",
     instructionsTitle: "Comment ouvrir dans votre navigateur par défaut:",
+    showManualInstructions: "Ou essayez manuellement",
     instructionStep1: "Appuyez sur l'icône de menu (⋯ ou ⋮)",
     instructionStep2:
       'Sélectionnez "Ouvrir dans le navigateur" ou option similaire',
     instructionStep3:
       "Ou copiez l'URL et collez-la dans votre application de navigateur",
+    retryRedirect: "Ouvrir dans le navigateur par défaut",
+    retryingRedirect: "Ouverture dans le navigateur par défaut...",
+    redirectFailed: "Échec de la redirection. Veuillez essayer manuellement.",
     copyUrl: "Copier l'URL",
     urlCopied: "URL Copiée",
     urlCopiedNotification: "URL copiée dans le presse-papiers",
@@ -91,15 +109,18 @@ export const embeddedBrowserWarningTranslations: Record<
     notInAppBrowser: "Je suis déjà dans mon navigateur (Chrome, Safari, etc.)",
   },
   "zh-Hans": {
-    title: "您正在使用应用内浏览器",
+    title: "您在 {app} 浏览器中",
+    titleGeneric: "您在应用内浏览器中",
     message:
-      "{app} 的应用内浏览器有限制。请在您设备的默认浏览器中打开此页面以获得最佳体验。",
-    messageGeneric:
-      "您当前正在使用应用内浏览器。为获得最佳体验，请在您设备的默认浏览器中打开此页面。",
+      "请在您设备的默认浏览器中打开此页面以获得最佳体验。",
     instructionsTitle: "如何在您的默认浏览器中打开：",
+    showManualInstructions: "或手动尝试",
     instructionStep1: "点击菜单图标 (⋯ 或 ⋮)",
     instructionStep2: '选择"在浏览器中打开"或类似选项',
     instructionStep3: "或复制 URL 并粘贴到您的浏览器应用中",
+    retryRedirect: "在默认浏览器中打开",
+    retryingRedirect: "正在默认浏览器中打开...",
+    redirectFailed: "重定向失败。请手动尝试。",
     copyUrl: "复制链接",
     urlCopied: "已复制",
     urlCopiedNotification: "URL 已复制到剪贴板",
@@ -108,15 +129,18 @@ export const embeddedBrowserWarningTranslations: Record<
     notInAppBrowser: "我已经在我的浏览器中 (Chrome, Safari 等)",
   },
   "zh-Hant": {
-    title: "您正在使用應用程式內建瀏覽器",
+    title: "您在 {app} 瀏覽器中",
+    titleGeneric: "您在應用程式內建瀏覽器中",
     message:
-      "{app} 的應用程式內建瀏覽器有限制。請在您裝置的預設瀏覽器中開啟此頁面以獲得最佳體驗。",
-    messageGeneric:
-      "您目前正在使用應用程式內建瀏覽器。為獲得最佳體驗，請在您裝置的預設瀏覽器中開啟此頁面。",
+      "請在您裝置的預設瀏覽器中開啟此頁面以獲得最佳體驗。",
     instructionsTitle: "如何在您的預設瀏覽器中開啟：",
+    showManualInstructions: "或手動嘗試",
     instructionStep1: "點擊選單圖示 (⋯ 或 ⋮)",
     instructionStep2: "選擇「在瀏覽器中開啟」或類似選項",
     instructionStep3: "或複製 URL 並貼到您的瀏覽器應用程式中",
+    retryRedirect: "在預設瀏覽器中開啟",
+    retryingRedirect: "正在預設瀏覽器中開啟...",
+    redirectFailed: "重新導向失敗。請手動嘗試。",
     copyUrl: "複製連結",
     urlCopied: "已複製",
     urlCopiedNotification: "URL 已複製到剪貼簿",
@@ -125,16 +149,19 @@ export const embeddedBrowserWarningTranslations: Record<
     notInAppBrowser: "我已經在我的瀏覽器中 (Chrome, Safari 等)",
   },
   ja: {
-    title: "アプリ内ブラウザを使用しています",
+    title: "{app} ブラウザ内です",
+    titleGeneric: "アプリ内ブラウザ内です",
     message:
-      "{app} のアプリ内ブラウザには制限があります。最適な体験のため、デバイスのデフォルトブラウザでこのページを開いてください。",
-    messageGeneric:
-      "現在、アプリ内ブラウザを使用しています。最適な体験のため、デバイスのデフォルトブラウザでこのページを開いてください。",
+      "最適な体験のため、デバイスのデフォルトブラウザでこのページを開いてください。",
     instructionsTitle: "デフォルトブラウザで開く方法：",
+    showManualInstructions: "または手動で試す",
     instructionStep1: "メニューアイコン (⋯ または ⋮) をタップ",
     instructionStep2: "「ブラウザで開く」または類似のオプションを選択",
     instructionStep3:
       "または URL をコピーしてブラウザアプリに貼り付けてください",
+    retryRedirect: "デフォルトブラウザで開く",
+    retryingRedirect: "デフォルトブラウザで開いています...",
+    redirectFailed: "リダイレクトに失敗しました。手動で試してください。",
     copyUrl: "URL をコピー",
     urlCopied: "コピー完了",
     urlCopiedNotification: "URL をクリップボードにコピーしました",
