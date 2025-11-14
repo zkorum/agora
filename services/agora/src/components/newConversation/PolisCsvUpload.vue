@@ -1,51 +1,101 @@
 <template>
   <div>
-    <ZKCard :padding="'2rem'" class="cardStyle">
+    <ZKCard :padding="'2rem'" class="card-style">
       <div class="content-container">
+        <!-- Header -->
         <div class="header">
           <i class="pi pi-file-import icon" />
           <div class="title">{{ t("uploadTitle") }}</div>
         </div>
 
-        <div class="upload-container">
-          <div class="description">
-            {{ t("description") }}
-          </div>
+        <!-- Description -->
+        <div class="description">
+          {{ t("description") }}
+        </div>
 
-          <div class="required-files-info">
-            <p class="required-files-title">{{ t("requiredFiles") }}</p>
-            <ul class="required-files-list">
-              <li><code>summary.csv</code></li>
-              <li><code>comments.csv</code></li>
-              <li><code>votes.csv</code></li>
-            </ul>
-            <p class="file-size-hint">{{ t("maxFileSize") }}</p>
-          </div>
+        <!-- File Names List -->
+        <div class="file-names-list">
+          <ul>
+            <li>summary.csv</li>
+            <li>comments.csv</li>
+            <li>votes.csv</li>
+          </ul>
+        </div>
 
-          <!-- File Upload Fields -->
-          <CsvFileUploadField
-            v-for="config in fileConfigs"
-            :key="config.type"
-            v-model="config.file.value"
-            :label="config.label"
-            :expected-file-name="config.expectedFileName"
-            :upload-prompt-text="t('fileUploadLabel')"
-            :max-file-size="MAX_CSV_FILE_SIZE"
-            :error-invalid-file-name="t('errorInvalidFileName')"
-            :error-file-too-large="t('errorFileTooLarge')"
-            :custom-error="config.error.value"
-            @error="(error) => handleFileError(config.type, error)"
+        <!-- Drop Zone Section -->
+        <div
+          ref="dropZoneRef"
+          class="drop-zone"
+          :class="{ 'drop-zone-active': isOverDropZone }"
+          @click="handleDropZoneClick"
+        >
+          <svg
+            class="upload-icon"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 5v9m-5 0H5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-2M8 9l4-5 4 5m1 8h.01"
+            />
+          </svg>
+
+          <p class="drop-zone-main-text">{{ t("dropZoneMainText") }}</p>
+          <p class="drop-zone-sub-text">{{ t("dropZoneSubText") }}</p>
+          <p class="file-size-hint">{{ t("maxFileSize") }}</p>
+
+          <!-- Browse Files Button -->
+          <PrimeButton
+            type="button"
+            :label="t('browseFilesButton')"
+            icon="pi pi-folder-open"
+            class="browse-button"
+            @click.stop="handleBrowseClick"
           />
+        </div>
 
-          <!-- General Error Message -->
-          <div v-if="generalError" class="general-error">
-            <q-banner class="bg-negative text-white" rounded>
-              <template #avatar>
-                <q-icon name="mdi-alert-circle" />
-              </template>
-              {{ generalError }}
-            </q-banner>
+        <!-- Hidden File Input -->
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".csv"
+          multiple
+          class="hidden-file-input"
+          @change="handleFileInputChange"
+        />
+
+        <!-- Files Status Section -->
+        <div class="files-status-section">
+          <h3 class="files-status-title">{{ t("filesStatusTitle") }}</h3>
+          <div class="files-status-list">
+            <CsvFileStatusItem
+              v-for="config in fileConfigs"
+              :key="config.type"
+              :file-name="config.expectedFileName"
+              :label="config.label"
+              :status="getFileStatus(config)"
+              :file="config.file.value"
+              :error-message="config.error.value"
+              @remove="handleFileRemove(config.type)"
+            />
           </div>
+        </div>
+
+        <!-- General Error Message -->
+        <div v-if="generalError" class="general-error">
+          <q-banner class="bg-negative text-white" rounded>
+            <template #avatar>
+              <q-icon name="mdi-alert-circle" />
+            </template>
+            {{ generalError }}
+          </q-banner>
         </div>
       </div>
     </ZKCard>
@@ -54,12 +104,13 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import { useDropZone } from "@vueuse/core";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendPostApi } from "src/utils/api/post";
 import type { ValidateCsvResponse } from "src/shared/types/dto";
 import ZKCard from "../ui-library/ZKCard.vue";
-import CsvFileUploadField from "./CsvFileUploadField.vue";
+import CsvFileStatusItem from "./CsvFileStatusItem.vue";
 import {
   polisCsvUploadTranslations,
   type PolisCsvUploadTranslations,
@@ -75,6 +126,18 @@ const { validateCsvFiles } = useBackendPostApi();
 
 // Define file types
 type FileType = "summary" | "comments" | "votes";
+type FileStatus = "pending" | "uploaded" | "validating" | "error";
+
+// Drop zone setup
+const dropZoneRef = ref<HTMLElement>();
+const fileInputRef = ref<HTMLInputElement>();
+
+const { isOverDropZone } = useDropZone(dropZoneRef, {
+  onDrop: handleDrop,
+  dataTypes: ["text/csv"],
+  multiple: true,
+  preventDefaultForUnhandled: false,
+});
 
 // File state (stored in memory, not in the store)
 const summaryFile = ref<File | null>(null);
@@ -122,6 +185,16 @@ const fileConfigs = computed(() => [
 ]);
 
 /**
+ * Determines the status of a file configuration
+ */
+function getFileStatus(config: (typeof fileConfigs.value)[0]): FileStatus {
+  if (config.error.value) return "error";
+  if (config.file.value && isValidating.value) return "validating";
+  if (config.file.value) return "uploaded";
+  return "pending";
+}
+
+/**
  * Updates store with file metadata
  */
 function updateStoreMetadata(): void {
@@ -139,12 +212,90 @@ function updateStoreMetadata(): void {
 }
 
 /**
- * Generic error handler for all file types
+ * Handles files dropped into the drop zone
  */
-function handleFileError(fileType: FileType, error: string): void {
+function handleDrop(files: File[] | null): void {
+  if (!files || files.length === 0) return;
+  processFiles(files);
+}
+
+/**
+ * Handles click on the drop zone (not on the button)
+ */
+function handleDropZoneClick(): void {
+  fileInputRef.value?.click();
+}
+
+/**
+ * Handles click on the browse button
+ */
+function handleBrowseClick(): void {
+  fileInputRef.value?.click();
+}
+
+/**
+ * Handles file input change event
+ */
+function handleFileInputChange(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
+  if (files && files.length > 0) {
+    processFiles(Array.from(files));
+  }
+  // Reset input so the same file can be selected again if needed
+  input.value = "";
+}
+
+/**
+ * Processes uploaded or dropped files
+ */
+function processFiles(files: File[]): void {
+  generalError.value = "";
+  const invalidFiles: string[] = [];
+  const fileSizeErrors: string[] = [];
+
+  files.forEach((file) => {
+    // Validate file size
+    if (file.size > MAX_CSV_FILE_SIZE) {
+      fileSizeErrors.push(file.name);
+      return;
+    }
+
+    // Auto-match files to correct fields based on exact filename
+    switch (file.name) {
+      case "summary.csv":
+        summaryFile.value = file;
+        summaryError.value = "";
+        break;
+      case "comments.csv":
+        commentsFile.value = file;
+        commentsError.value = "";
+        break;
+      case "votes.csv":
+        votesFile.value = file;
+        votesError.value = "";
+        break;
+      default:
+        invalidFiles.push(file.name);
+    }
+  });
+
+  // Display appropriate error messages
+  if (fileSizeErrors.length > 0) {
+    generalError.value = t("errorFileTooLarge");
+  } else if (invalidFiles.length > 0) {
+    generalError.value = t("errorInvalidDroppedFiles");
+  }
+}
+
+/**
+ * Handles file removal
+ */
+function handleFileRemove(fileType: FileType): void {
   const config = fileConfigs.value.find((c) => c.type === fileType);
   if (config) {
-    config.error.value = error;
+    config.file.value = null;
+    config.error.value = "";
   }
   generalError.value = "";
 }
@@ -280,7 +431,7 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-.cardStyle {
+.card-style {
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
 }
@@ -289,7 +440,6 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding-bottom: 1rem;
 }
 
 .header {
@@ -309,58 +459,110 @@ defineExpose({
   color: $color-text-strong;
 }
 
-.upload-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
 .description {
   font-size: 0.95rem;
   color: $color-text-weak;
+  line-height: 1.5;
 }
 
-.required-files-info {
-  padding: 0.75rem;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  border-left: 3px solid $primary;
-}
-
-.required-files-title {
-  font-size: 0.85rem;
-  font-weight: var(--font-weight-semibold);
-  color: $color-text-strong;
-  margin: 0 0 0.5rem 0;
-}
-
-.required-files-list {
-  margin: 0 0 0.5rem 0;
-  padding-left: 1rem;
+.file-names-list {
+  ul {
+    list-style: disc;
+    margin: 0;
+    padding-left: 1.5rem;
+  }
 
   li {
-    font-size: 0.8rem;
-    color: $color-text-weak;
+    font-size: 0.9rem;
+    color: $color-text-strong;
+    font-family: monospace;
     margin-bottom: 0.25rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    code {
-      background-color: #e9ecef;
-      padding: 0.125rem 0.25rem;
-      border-radius: 3px;
-      font-size: 0.75rem;
-      color: #495057;
-    }
   }
+}
+
+/* Drop Zone Styling */
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background-color: #f8f9fa;
+  border: 2px dashed #d0d0d0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary;
+    background-color: rgba($primary, 0.02);
+  }
+
+  &.drop-zone-active {
+    border-color: $primary;
+    border-style: solid;
+    background-color: rgba($primary, 0.05);
+  }
+}
+
+.upload-icon {
+  width: 3rem;
+  height: 3rem;
+  color: $primary;
+  margin-bottom: 1rem;
+}
+
+.drop-zone-main-text {
+  font-size: 0.875rem;
+  color: $color-text-weak;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+}
+
+.drop-zone-sub-text {
+  font-size: 0.75rem;
+  color: $color-text-weak;
+  margin: 0 0 1rem 0;
+  text-align: center;
 }
 
 .file-size-hint {
   font-size: 0.75rem;
   color: $color-text-weak;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+
+  span {
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.browse-button {
+  pointer-events: auto;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+/* Files Status Section */
+.files-status-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.files-status-title {
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-semibold);
+  color: $color-text-strong;
   margin: 0;
+}
+
+.files-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .general-error {
