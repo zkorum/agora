@@ -26,8 +26,8 @@ export const embeddedBrowserWarningTranslations: Record<
   EmbeddedBrowserWarningTranslations
 > = {
   en: {
-    title: "You're in {app} Browser",
-    titleGeneric: "You're in an In-App Browser",
+    title: "You're in {app} browser",
+    titleGeneric: "You're in an in-app browser",
     message: "Please open in your default browser for the best experience.",
     instructionsTitle: "How to open in your default browser:",
     showManualInstructions: "Or try manually",
