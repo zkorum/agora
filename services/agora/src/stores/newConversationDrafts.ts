@@ -237,7 +237,7 @@ export interface NewConversationDraft {
  * Comprehensive validation state for all form fields
  */
 export interface ValidationState {
-    title: {
+  title: {
     isValid: boolean;
     error: string;
     showError: boolean;
@@ -576,7 +576,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function disablePostAsOrganization(): void {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
-    if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+    if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
       // Reset to manual creation when switching to non-organization account
       // as Polis URL and CSV import should only be available for organization accounts
       conversationDraft.value.importSettings.importType = null;
@@ -1052,7 +1052,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return validateForReview().isValid;
   });
 
-  if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+  if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
     /**
      * Watcher to automatically reset to manual creation when switching to non-organization account
      * Polis URL and CSV import should only be available for organization accounts
