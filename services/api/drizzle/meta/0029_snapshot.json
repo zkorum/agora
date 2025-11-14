@@ -1,5 +1,5 @@
 {
-  "id": "d4ec9331-c4c4-41fe-9d73-c20883a84555",
+  "id": "ba1f7565-4796-4e0d-9969-2ea0ee26b883",
   "prevId": "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc",
   "version": "7",
   "dialect": "postgresql",
@@ -226,6 +226,309 @@
           "nullsNotDistinct": false,
           "columns": [
             "conversation_proof_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_export_file": {
+      "name": "conversation_export_file",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_export_file_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "export_id": {
+          "name": "export_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_type": {
+          "name": "file_type",
+          "type": "export_file_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_size": {
+          "name": "file_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_count": {
+          "name": "record_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3_key": {
+          "name": "s3_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_export_file_export_idx": {
+          "name": "conversation_export_file_export_idx",
+          "columns": [
+            {
+              "expression": "export_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_file_type_idx": {
+          "name": "conversation_export_file_type_idx",
+          "columns": [
+            {
+              "expression": "file_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_export_file_export_id_conversation_export_id_fk": {
+          "name": "conversation_export_file_export_id_conversation_export_id_fk",
+          "tableFrom": "conversation_export_file",
+          "tableTo": "conversation_export",
+          "columnsFrom": [
+            "export_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_export": {
+      "name": "conversation_export",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_export_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "export_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'processing'"
+        },
+        "total_file_size": {
+          "name": "total_file_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_file_count": {
+          "name": "total_file_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_export_conversation_idx": {
+          "name": "conversation_export_conversation_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_status_idx": {
+          "name": "conversation_export_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_deleted_idx": {
+          "name": "conversation_export_deleted_idx",
+          "columns": [
+            {
+              "expression": "is_deleted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_created_idx": {
+          "name": "conversation_export_created_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_export_conversation_id_conversation_id_fk": {
+          "name": "conversation_export_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_export",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "conversation_export_slug_id_unique": {
+          "name": "conversation_export_slug_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug_id"
           ]
         }
       },
@@ -692,13 +995,6 @@
         "import_author": {
           "name": "import_author",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_method": {
-          "name": "import_method",
-          "type": "import_method",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -5067,12 +5363,24 @@
         "devconnect-2025"
       ]
     },
-    "public.import_method": {
-      "name": "import_method",
+    "public.export_file_type_enum": {
+      "name": "export_file_type_enum",
       "schema": "public",
       "values": [
-        "url",
-        "csv"
+        "comments",
+        "votes",
+        "participants",
+        "summary",
+        "stats"
+      ]
+    },
+    "public.export_status_enum": {
+      "name": "export_status_enum",
+      "schema": "public",
+      "values": [
+        "processing",
+        "completed",
+        "failed"
       ]
     },
     "public.moderation_reason_enum": {
