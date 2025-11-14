@@ -685,6 +685,7 @@ export function createVoteBuffer({
                             .update(conversationTable)
                             .set({
                                 voteCount: sql`${conversationTable.voteCount} + (CASE ${sql.join(caseClauses, sql` `)} ELSE 0 END)`,
+                                lastReactedAt: nowZeroMs(),
                             })
                             .where(
                                 sql`${conversationTable.id} IN (${inClause})`,
