@@ -8,7 +8,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import type { Plugin } from "vite";
-import { validateEnv } from "./src/utils/processEnv";
+import { validateEnv, envSchema } from "./src/utils/processEnv";
 
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
@@ -16,7 +16,10 @@ import { validateEnv } from "./src/utils/processEnv";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig((ctx) => {
-  const boot = [];
+  // Build the boot files array
+  // Note: VITE_STAGING must be set in the shell environment (not just .env files)
+  // because this code runs before Vite loads .env files
+  const boot: string[] = [];
   if (ctx.prod && process.env.VITE_STAGING !== "true") {
     boot.push("sentry");
   }
@@ -30,7 +33,10 @@ export default defineConfig((ctx) => {
       "embeddedBrowserGuard",
     ]
   );
-  console.log("Loaded boot files", boot);
+
+  if (process.env.NODE_ENV) {
+    console.log("Loaded boot files", boot);
+  }
 
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -237,13 +243,10 @@ export default defineConfig((ctx) => {
       // https://quasar.dev/quasar-cli-webpack/handling-process-env/#using-dotenv
       // https://github.com/quasarframework/quasar/discussions/15303#discussioncomment-5904464
       // https://vite.dev/config/
-      env: {
-        VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
-        VITE_BACK_DID: process.env.VITE_BACK_DID,
-        VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,
-        VITE_IS_ORG_IMPORT_ONLY: process.env.VITE_IS_ORG_IMPORT_ONLY,
-        VITE_STAGING: process.env.VITE_STAGING,
-      },
+      // Generate env object dynamically from Zod schema (single source of truth: src/utils/processEnv.ts)
+      env: Object.fromEntries(
+        Object.keys(envSchema.shape).map((key) => [key, process.env[key]])
+      ),
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -262,13 +265,11 @@ export default defineConfig((ctx) => {
         // Custom plugin to validate environment variables at build time
         {
           name: "validate-env",
-          async config(config, { mode }) {
-            // Load the correct .env file based on mode (development/production)
-            const { loadEnv } = await import("vite");
-            const env = loadEnv(mode, process.cwd(), "");
-
-            // Validate the loaded environment
-            validateEnv(env);
+          configResolved() {
+            // Validate environment after Vite has fully loaded all .env files
+            // This runs after config hook and ensures env vars are available
+            // Note: config.env only contains VITE_* vars, so we use process.env
+            validateEnv(process.env);
           },
         } as Plugin,
         [

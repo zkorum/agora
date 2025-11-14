@@ -34,9 +34,9 @@ yarn prepare
 
 The project uses separate environment files for different build modes:
 
-- `.env.dev` - Development configuration (used by `yarn dev`)
-- `.env.staging` - Staging configuration (production build with `VITE_STAGING=true`)
-- `.env.production` - Production configuration
+- `.env.dev` - Development configuration (automatically loaded by `yarn dev`)
+- `.env.staging` - Staging configuration (must include `VITE_STAGING=true`)
+- `.env.production` - Production configuration (must include `VITE_STAGING=false`)
 
 Copy `env.example` to create your local environment files:
 
@@ -44,9 +44,16 @@ Copy `env.example` to create your local environment files:
 cp env.example .env.dev
 ```
 
-Edit the files with your configuration values. Quasar uses `process.env` (not `import.meta.env`) to access environment variables.
+Edit the files with your configuration values. Environment variables are accessed via the typed `processEnv` export, which wraps `import.meta.env` at runtime.
 
-**Build Process**: The build scripts (`yarn build:staging` / `yarn build:production`) copy the appropriate env file to `.env.local.prod` before building, which Quasar automatically loads during production builds. The temporary file is cleaned up after the build completes.
+**Build Process**:
+- Development: `yarn dev` automatically loads `.env.dev` via Quasar/Vite
+- Production builds: `yarn build:staging` and `yarn build:production` use `env-cmd` to load the appropriate env file before building
+
+We use `env-cmd` because:
+- Quasar has no built-in support for staging environments (only dev/production)
+- It's consistent with Docker environments
+- It ensures all variables (including `VITE_STAGING`) are available when `quasar.config.ts` evaluates
 
 ### Validation System
 
@@ -65,10 +72,12 @@ Environment variables are validated using a multi-layer approach:
    - Runs during `yarn dev` / `yarn build` before app starts
    - Calls `validateEnv()` function during Vite's config phase
    - **Build fails immediately** if validation fails (missing/invalid variables)
+   - Env object generated dynamically from schema keys (line 247-249)
 
-4. **Runtime Validation** ([src/utils/processEnv.ts](src/utils/processEnv.ts) module load):
-   - Additional safety check that runs when app code first imports `processEnv`
-   - Ensures env vars are valid even if build-time check was somehow bypassed
+4. **Runtime Access** ([src/utils/processEnv.ts](src/utils/processEnv.ts)):
+   - Exported `processEnv` object casts `import.meta.env` to `ProcessEnv` type
+   - Provides typed access to environment variables in browser runtime
+   - No validation at import time (validation already completed at build time)
 
 For full documentation including variable descriptions and validation rules, see [src/utils/processEnv.ts](src/utils/processEnv.ts).
 
