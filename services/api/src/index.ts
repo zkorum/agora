@@ -1796,6 +1796,7 @@ server.after(() => {
                     indexConversationAt: parsedFields.indexConversationAt,
                     isLoginRequired: parsedFields.isLoginRequired,
                     isIndexed: parsedFields.isIndexed,
+                    requiresEventTicket: parsedFields.requiresEventTicket,
                 });
 
             reply.send({ conversationSlugId });
