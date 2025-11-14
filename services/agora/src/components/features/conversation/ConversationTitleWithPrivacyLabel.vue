@@ -52,7 +52,6 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
   margin-top: 0.3rem;
 }
 
