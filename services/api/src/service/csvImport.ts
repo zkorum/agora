@@ -72,12 +72,14 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
     const comments = await parseCommentsCsv(commentsContent);
     const votes = await parseVotesCsv(votesContent);
 
-    // 4. Deduplicate votes by (voter-id, comment-id), keeping the last vote
+    // 4. Deduplicate votes by (voter-id, comment-id), keeping the most recent vote by timestamp
     // This handles cases where users changed their vote over time in the original Polis conversation
+    // Sort by timestamp first to ensure chronological order
+    const sortedVotes = votes.sort((a, b) => a.timestamp - b.timestamp);
     const voteMap = new Map<string, (typeof votes)[0]>();
-    for (const vote of votes) {
+    for (const vote of sortedVotes) {
         const key = `${String(vote["voter-id"])}_${String(vote["comment-id"])}`;
-        voteMap.set(key, vote); // Later votes overwrite earlier ones
+        voteMap.set(key, vote); // Later votes (by timestamp) overwrite earlier ones
     }
     const deduplicatedVotes = Array.from(voteMap.values());
 
