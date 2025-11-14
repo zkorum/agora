@@ -308,6 +308,7 @@ async function handleImportSubmission(): Promise<void> {
         : undefined,
       isIndexed: !conversationDraft.value.isPrivate,
       isLoginRequired: conversationDraft.value.requiresLogin,
+      requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });
 
     conversationDraft.value = createEmptyDraft();

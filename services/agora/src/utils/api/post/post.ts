@@ -3,6 +3,7 @@ import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import type { ApiV1ConversationCreatePost200Response } from "src/api";
 import { useCommonApi } from "../common";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
+import type { EventSlug } from "src/shared/types/zod";
 
 export interface ImportConversationFromCsvParams {
   summaryFile: File;
@@ -12,6 +13,7 @@ export interface ImportConversationFromCsvParams {
   targetIsoConvertDateString: string | undefined;
   isIndexed: boolean;
   isLoginRequired: boolean;
+  requiresEventTicket?: EventSlug;
 }
 
 export function useBackendPostApi() {
@@ -35,6 +37,7 @@ export function useBackendPostApi() {
     );
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("isLoginRequired", String(params.isLoginRequired));
+    formData.append("requiresEventTicket", params.requiresEventTicket || "");
 
     // Build UCAN for authorization
     const url = "/api/v1/conversation/import-csv";

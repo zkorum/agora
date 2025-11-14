@@ -220,6 +220,10 @@ export class Dto {
                 (val) => val === "true" || val === true,
                 z.boolean(),
             ),
+            requiresEventTicket: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodEventSlug.optional(),
+            ),
         })
         .strict();
     static importCsvConversationResponse = z
