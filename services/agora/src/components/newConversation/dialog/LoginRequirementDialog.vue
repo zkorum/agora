@@ -37,14 +37,14 @@ const { showNotifyMessage } = useNotify();
 
 const loginRequirementOptions = computed(() => [
   {
-    title: t("guestParticipationTitle"),
-    description: t("guestParticipationDescription"),
-    value: "guestParticipation",
-  },
-  {
     title: t("requiresLoginTitle"),
     description: t("requiresLoginDescription"),
     value: "requiresLogin",
+  },
+  {
+    title: t("guestParticipationTitle"),
+    description: t("guestParticipationDescription"),
+    value: "guestParticipation",
   },
 ]);
 
