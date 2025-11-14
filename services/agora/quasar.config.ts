@@ -7,10 +7,11 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import type { Plugin } from "vite";
+import { validateEnv } from "./src/utils/processEnv";
 
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
-import "dotenv/config";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -19,7 +20,16 @@ export default defineConfig((ctx) => {
   if (ctx.prod && process.env.VITE_STAGING !== "true") {
     boot.push("sentry");
   }
-  boot.push(...["i18n", "axios", "primevue", "maz-ui", "vue-query"]);
+  boot.push(
+    ...[
+      "i18n",
+      "axios",
+      "primevue",
+      "maz-ui",
+      "vue-query",
+      "embeddedBrowserGuard",
+    ]
+  );
   console.log("Loaded boot files", boot);
 
   return {
@@ -249,6 +259,18 @@ export default defineConfig((ctx) => {
       },
 
       vitePlugins: [
+        // Custom plugin to validate environment variables at build time
+        {
+          name: "validate-env",
+          async config(config, { mode }) {
+            // Load the correct .env file based on mode (development/production)
+            const { loadEnv } = await import("vite");
+            const env = loadEnv(mode, process.cwd(), "");
+
+            // Validate the loaded environment
+            validateEnv(env);
+          },
+        } as Plugin,
         [
           "vite-plugin-checker",
           {

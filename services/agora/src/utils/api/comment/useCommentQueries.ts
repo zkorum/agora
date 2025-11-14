@@ -11,6 +11,8 @@ import {
   type UseCommentQueriesTranslations,
 } from "./useCommentQueries.i18n";
 import type { Ref } from "vue";
+import { useUserStore } from "src/stores/user";
+import type { OpinionItem } from "src/shared/types/zod";
 
 export function useCommentsQuery({
   conversationSlugId,
@@ -161,17 +163,36 @@ export function useDeleteCommentMutation() {
   const { t } = useComponentI18n<UseCommentQueriesTranslations>(
     useCommentQueriesTranslations
   );
+  const userStore = useUserStore();
 
   return useMutation({
     mutationFn: (commentSlugId: string) => deleteCommentBySlugId(commentSlugId),
-    onSuccess: (_data, _variables, _context: unknown) => {
-      // Invalidate all comment queries to refresh the data
-      void queryClient.invalidateQueries({
-        queryKey: ["comments"],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["hiddenComments"],
-      });
+    onSuccess: (_data, commentSlugId, _context: unknown) => {
+      // Remove from TanStack Query cache (conversation page - all filters)
+      queryClient.setQueriesData<OpinionItem[]>(
+        { queryKey: ["comments"] },
+        (oldData) =>
+          oldData?.filter(
+            (opinion) => opinion.opinionSlugId !== commentSlugId
+          ) ?? []
+      );
+
+      queryClient.setQueriesData<OpinionItem[]>(
+        { queryKey: ["hiddenComments"] },
+        (oldData) =>
+          oldData?.filter(
+            (opinion) => opinion.opinionSlugId !== commentSlugId
+          ) ?? []
+      );
+
+      // Remove from Pinia store (profile page)
+      const indexToRemove = userStore.profileData.userCommentList.findIndex(
+        (item) => item.opinionItem.opinionSlugId === commentSlugId
+      );
+      if (indexToRemove !== -1) {
+        userStore.profileData.userCommentList.splice(indexToRemove, 1);
+      }
+
       showNotifyMessage(t("commentDeletedSuccessfully"));
     },
     onError: (error: AxiosErrorResponse) => {

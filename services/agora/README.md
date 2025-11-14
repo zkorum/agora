@@ -28,16 +28,51 @@ Run:
 yarn prepare
 ```
 
-## Start the app in development mode (hot-code reloading, error reporting, etc.)
+## Environment Variables
 
-Remember to first load the environment files in `.env` file by running `. ./.env`.
-There is an example file `env.example` which can be used as the reference.
+### Setup
+
+The project uses separate environment files for different build modes:
+
+- `.env.dev` - Development configuration (used by `yarn dev`)
+- `.env.staging` - Staging configuration (production build with `VITE_STAGING=true`)
+- `.env.production` - Production configuration
+
+Copy `env.example` to create your local environment files:
 
 ```bash
-cp env.example .env
+cp env.example .env.dev
 ```
 
-Take note of the two VITE_DEV_AUTHORIZED_PHONES which will enable you to login to the Agora client.
+Edit the files with your configuration values. Quasar uses `process.env` (not `import.meta.env`) to access environment variables.
+
+**Build Process**: The build scripts (`yarn build:staging` / `yarn build:production`) copy the appropriate env file to `.env.local.prod` before building, which Quasar automatically loads during production builds. The temporary file is cleaned up after the build completes.
+
+### Validation System
+
+Environment variables are validated using a multi-layer approach:
+
+1. **Schema Definition** ([src/utils/processEnv.ts](src/utils/processEnv.ts)):
+   - Single source of truth using zod schema
+   - Defines required vs optional variables with types and descriptions
+   - Includes production safety checks (e.g., dev-only variables must not be set in production)
+
+2. **TypeScript Types** ([src/env.d.ts](src/env.d.ts)):
+   - Types automatically derived from zod schema using `z.infer<typeof envSchema>`
+   - Provides IDE autocomplete and compile-time type checking
+
+3. **Build-Time Validation** (custom Vite plugin in [quasar.config.ts](quasar.config.ts)):
+   - Runs during `yarn dev` / `yarn build` before app starts
+   - Calls `validateEnv()` function during Vite's config phase
+   - **Build fails immediately** if validation fails (missing/invalid variables)
+
+4. **Runtime Validation** ([src/utils/processEnv.ts](src/utils/processEnv.ts) module load):
+   - Additional safety check that runs when app code first imports `processEnv`
+   - Ensures env vars are valid even if build-time check was somehow bypassed
+
+For full documentation including variable descriptions and validation rules, see [src/utils/processEnv.ts](src/utils/processEnv.ts).
+
+## Start the app in development mode (hot-code reloading, error reporting, etc.)
 
 Start the app with:
 `yarn dev` in the `services/agora` directory or running `make dev-app` at the root of this project.

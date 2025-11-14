@@ -1,10 +1,12 @@
 <template>
   <router-view />
   <PostSignupPreferencesDialog />
+  <EmbeddedBrowserWarningDialog />
 </template>
 
 <script setup lang="ts">
 import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
+import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedBrowserWarningDialog.vue";
 import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";

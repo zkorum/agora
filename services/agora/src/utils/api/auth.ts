@@ -10,6 +10,7 @@ import {
   type ApiV1AuthPhoneVerifyOtpPost200Response,
   type ApiV1AuthPhoneVerifyOtpPostRequest,
 } from "src/api";
+import { processEnv } from "src/utils/processEnv";
 import type {
   DeviceLoginStatus,
   SupportedCountryCallingCode,
@@ -115,7 +116,7 @@ export function useBackendAuthApi() {
     phoneNumber,
     defaultCallingCode,
   }: VerifyPhoneOtpProps): Promise<VerifyPhoneOtpResponse> {
-    if (process.env.VITE_DEV_AUTHORIZED_PHONES) {
+    if (processEnv.VITE_DEV_AUTHORIZED_PHONES) {
       code = 0;
     }
 

@@ -7,6 +7,7 @@ import {
   MAX_LENGTH_BODY,
 } from "src/shared/shared";
 import { isValidPolisUrl } from "src/shared/utils/polis";
+import { processEnv } from "src/utils/processEnv";
 
 /**
  * Settings for posting as an organization
@@ -490,7 +491,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function disablePostAsOrganization(): void {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
-    if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+    if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
       // Disable import mode when switching to non-organization account
       // as import mode should only be available for organization accounts
       conversationDraft.value.importSettings.isImportMode = false;

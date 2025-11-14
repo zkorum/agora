@@ -38,7 +38,6 @@
                     :post-slug-id="
                       commentItem.conversationData.metadata.conversationSlugId
                     "
-                    @deleted="commentDeleted()"
                   />
                 </div>
               </div>
@@ -94,7 +93,7 @@ import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue"
 import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import { useRouterNavigation } from "src/utils/router/navigation";
 
-const { loadMoreUserComments, loadUserProfile } = useUserStore();
+const { loadMoreUserComments } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
@@ -107,10 +106,6 @@ async function onLoad(index: number, done: () => void) {
     canLoadMore.value = !response.reachedEndOfFeed;
   }
   done();
-}
-
-async function commentDeleted() {
-  await loadUserProfile();
 }
 </script>
 

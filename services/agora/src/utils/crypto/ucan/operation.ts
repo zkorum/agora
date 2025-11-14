@@ -10,6 +10,7 @@ import {
   httpPathnameToResourcePointer,
 } from "src/shared-app-api/ucan/ucan";
 import { base64Decode, base64Encode } from "src/shared-app-api/base64";
+import { processEnv } from "src/utils/processEnv";
 
 interface CreateDidReturn {
   did: string;
@@ -133,7 +134,7 @@ async function buildWebUcan({
       sign: async (msg: Uint8Array) =>
         webCryptoStore.keystore.sign(msg, prefixedKey),
     })
-    .toAudience(process.env.VITE_BACK_DID)
+    .toAudience(processEnv.VITE_BACK_DID)
     .withLifetimeInSeconds(30)
     .claimCapability({
       // with: { scheme: "wnfs", hierPart: "//boris.fission.name/public/photos/" },
@@ -164,7 +165,7 @@ async function buildMobileUcan({
         return base64Decode(signature);
       },
     })
-    .toAudience(process.env.VITE_BACK_DID)
+    .toAudience(processEnv.VITE_BACK_DID)
     .withLifetimeInSeconds(30)
     .claimCapability({
       // with: { scheme: "wnfs", hierPart: "//boris.fission.name/public/photos/" },

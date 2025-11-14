@@ -16,6 +16,7 @@
       <PreferencesDialogTest />
       <OpinionGroupVisualizationTest />
       <AsyncStateHandlerTest />
+      <EmbeddedBrowserWarningTest />
     </div>
   </DrawerLayout>
 </template>
@@ -27,6 +28,7 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
+import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import {
   componentTestingTranslations,
   type ComponentTestingTranslations,

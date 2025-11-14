@@ -108,6 +108,7 @@ import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import { processEnv } from "src/utils/processEnv";
 import {
   zodSupportedCountryCallingCode,
   type SupportedCountryCallingCode,
@@ -160,8 +161,8 @@ async function injectDevelopmentNumber(phoneItem: PhoneNumber) {
 }
 
 function loadDevAuthorizedNumbers() {
-  if (process.env.VITE_DEV_AUTHORIZED_PHONES) {
-    const phoneList = process.env.VITE_DEV_AUTHORIZED_PHONES.split(",");
+  if (processEnv.VITE_DEV_AUTHORIZED_PHONES) {
+    const phoneList = processEnv.VITE_DEV_AUTHORIZED_PHONES.split(",");
     phoneList.forEach((number) => {
       const parsedNumber = parsePhoneNumberFromString(number);
       if (parsedNumber) {
