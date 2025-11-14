@@ -99,18 +99,28 @@
         </div>
       </div>
     </ZKCard>
+
+    <!-- Login Dialog -->
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="() => {}"
+      :active-intention="'newConversation'"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import { storeToRefs } from "pinia";
 import { useDropZone } from "@vueuse/core";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPostApi } from "src/utils/api/post";
 import type { ValidateCsvResponse } from "src/shared/types/dto";
 import ZKCard from "../ui-library/ZKCard.vue";
 import CsvFileStatusItem from "./CsvFileStatusItem.vue";
+import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import {
   polisCsvUploadTranslations,
   type PolisCsvUploadTranslations,
@@ -123,10 +133,14 @@ const { t } = useComponentI18n<PolisCsvUploadTranslations>(
 
 const store = useNewPostDraftsStore();
 const { validateCsvFiles } = useBackendPostApi();
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 // Define file types
 type FileType = "summary" | "comments" | "votes";
 type FileStatus = "pending" | "uploaded" | "validating" | "error";
+
+// Login dialog state
+const showLoginDialog = ref(false);
 
 // Drop zone setup
 const dropZoneRef = ref<HTMLElement>();
@@ -215,6 +229,10 @@ function updateStoreMetadata(): void {
  * Handles files dropped into the drop zone
  */
 function handleDrop(files: File[] | null): void {
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true;
+    return;
+  }
   if (!files || files.length === 0) return;
   processFiles(files);
 }
@@ -223,6 +241,10 @@ function handleDrop(files: File[] | null): void {
  * Handles click on the drop zone (not on the button)
  */
 function handleDropZoneClick(): void {
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true;
+    return;
+  }
   fileInputRef.value?.click();
 }
 
@@ -230,6 +252,10 @@ function handleDropZoneClick(): void {
  * Handles click on the browse button
  */
 function handleBrowseClick(): void {
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true;
+    return;
+  }
   fileInputRef.value?.click();
 }
 
