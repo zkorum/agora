@@ -129,6 +129,16 @@
                       :loading="verificationLink === ''"
                       @click="clickedVerifyButton()"
                     />
+                    <div v-if="verificationLink.length != 0" class="mobileUrlContainer">
+                      <div class="mobileUrl">{{ verificationLink }}</div>
+                      <ZKButton
+                        button-type="standardButton"
+                        :label="t('copy')"
+                        icon="mdi-content-copy"
+                        size="0.9rem"
+                        @click="copyVerificationLink()"
+                      />
+                    </div>
                     <div class="waitingVerificationText">
                       {{ t("waitingForVerification") }}
                     </div>
@@ -165,7 +175,7 @@ import { api } from "src/utils/api/client";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted } from "vue";
-import { useWebShare } from "src/utils/share/WebShare";
+import { copyToClipboard } from "quasar";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import RarimoImageExample from "src/components/onboarding/backgrounds/RarimoImageExample.vue";
@@ -189,15 +199,20 @@ const quasar = useQuasar();
 
 const router = useRouter();
 
-const { share } = useWebShare();
-
 const { buildEncodedUcan } = useCommonApi();
 const { showNotifyMessage } = useNotify();
 
 let isDeviceLoggedInIntervalId: number | undefined = undefined;
 const verificationLink = ref<string>("");
 
-const qrcode = useQRCode(verificationLink);
+const qrcode = useQRCode(verificationLink, {
+  width: 218,
+  margin: 1,
+  color: {
+    dark: "#000000",
+    light: "#0000",
+  },
+});
 const qrcodeVerificationStatus = ref<RarimoStatusAttributes>("not_verified");
 const accountMerged = ref(false);
 const verifiedUserId = ref<string>("");
@@ -309,7 +324,13 @@ onUnmounted(() => {
 });
 
 async function copyVerificationLink() {
-  await share("Verification Link", verificationLink.value);
+  try {
+    await copyToClipboard(verificationLink.value);
+    showNotifyMessage(t("copiedToClipboard"));
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+    showNotifyMessage(t("couldNotCopy"));
+  }
 }
 
 async function isDeviceLoggedIn() {
@@ -447,11 +468,36 @@ async function goToPhoneVerification() {
   font-family: monospace;
 }
 
+.mobileUrlContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.mobileUrl {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
 .verificationProcedureBlock {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   width: 100%;
+  align-items: center;
+}
+
+.verificationProcedureBlock img {
+  max-width: 218px;
+  height: auto;
 }
 
 .waitingVerificationText {

@@ -20,6 +20,8 @@ export interface PassportOnboardingTranslations {
   passportAlreadyLinked: string;
   unexpectedError: string;
   syncHiccup: string;
+  copiedToClipboard: string;
+  couldNotCopy: string;
 }
 
 export const passportOnboardingTranslations: Record<
@@ -49,6 +51,8 @@ export const passportOnboardingTranslations: Record<
     unexpectedError: "Oops! Unexpected error—try refreshing the page",
     syncHiccup:
       "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
+    copiedToClipboard: "Copied link to clipboard",
+    couldNotCopy: "Could not copy to clipboard",
   },
   ar: {
     pageTitle: "احم خصوصيتك",
@@ -73,6 +77,8 @@ export const passportOnboardingTranslations: Record<
     unexpectedError: "عفواً! خطأ غير متوقع - حاول تحديث الصفحة",
     syncHiccup:
       "عفواً! تم اكتشاف خلل في المزامنة. لقد حدثنا رمز الاستجابة السريعة - حاول مسحه مرة أخرى!",
+    copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
+    couldNotCopy: "تعذر النسخ إلى الحافظة",
   },
   es: {
     pageTitle: "Proteja su privacidad",
@@ -99,6 +105,8 @@ export const passportOnboardingTranslations: Record<
     unexpectedError: "¡Ups! Error inesperado—intente refrescar la página",
     syncHiccup:
       "¡Ups! Detectamos un problema de sincronización. Hemos actualizado su código QR—¡intente escanearlo de nuevo!",
+    copiedToClipboard: "Enlace copiado al portapapeles",
+    couldNotCopy: "No se pudo copiar al portapapeles",
   },
   fr: {
     pageTitle: "Maîtrisez votre Confidentialité",
@@ -125,6 +133,8 @@ export const passportOnboardingTranslations: Record<
     unexpectedError: "Oups ! Erreur inattendue—essayez de rafraîchir la page",
     syncHiccup:
       "Oups ! Problème de synchronisation détecté. Nous avons actualisé votre code QR—essayez de le scanner à nouveau !",
+    copiedToClipboard: "Lien copié dans le presse-papiers",
+    couldNotCopy: "Impossible de copier dans le presse-papiers",
   },
   "zh-Hans": {
     pageTitle: "拥有您的隐私",
@@ -148,6 +158,8 @@ export const passportOnboardingTranslations: Record<
       "此护照已与另一个 Rarimo 账户关联。请尝试使用不同的护照。",
     unexpectedError: "哎呀！意外错误——请刷新页面",
     syncHiccup: "哎呀！同步问题检测到。我们已经刷新了您的二维码——请再次扫描！",
+    copiedToClipboard: "已复制链接到剪贴板",
+    couldNotCopy: "无法复制到剪贴板",
   },
   "zh-Hant": {
     pageTitle: "擁有您的隱私",
@@ -171,6 +183,8 @@ export const passportOnboardingTranslations: Record<
       "此護照已與另一個 Rarimo 賬戶關聯。請嘗試使用不同的護照。",
     unexpectedError: "哎呀！意外錯誤——請刷新頁面",
     syncHiccup: "哎呀！同步問題檢測到。我們已經刷新了您的二維碼——請再次掃描！",
+    copiedToClipboard: "已複製連結到剪貼簿",
+    couldNotCopy: "無法複製到剪貼簿",
   },
   ja: {
     pageTitle: "プライバシーを守る",
@@ -197,5 +211,7 @@ export const passportOnboardingTranslations: Record<
       "おっと！予期しないエラーが発生しました—ページを更新してください",
     syncHiccup:
       "おっと！同期の問題が検出されました。QR コードを更新しました—再スキャンしてください！",
+    copiedToClipboard: "リンクをクリップボードにコピーしました",
+    couldNotCopy: "クリップボードにコピーできませんでした",
   },
 };

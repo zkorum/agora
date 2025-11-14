@@ -1,8 +1,9 @@
 import axios from "axios";
+import { processEnv } from "src/utils/processEnv";
 
 // Create axios instances that can be imported
 export const axiosInstance = axios;
-export const api = axios.create({ baseURL: process.env.VITE_API_BASE_URL });
+export const api = axios.create({ baseURL: processEnv.VITE_API_BASE_URL });
 
 // Add request interceptor to include Accept-Language header
 api.interceptors.request.use(

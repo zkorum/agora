@@ -1,6 +1,10 @@
 // This file, along with the integration of the Rarimo protocol into Agora, was originally developed with funding from the European Union’s Horizon Europe 2020 research and innovation program, as part of the NGI SARGASSO project under grant agreement No. 101092887.
 
-import { deviceTable, zkPassportTable } from "@/shared-backend/schema.js";
+import {
+    deviceTable,
+    phoneTable,
+    zkPassportTable,
+} from "@/shared-backend/schema.js";
 import type {
     GenerateVerificationLink200,
     VerifyUserStatusAndAuthenticate200,
@@ -26,6 +30,7 @@ import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
 import { log } from "@/app.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { httpErrors } from "@fastify/sensible";
+import { isUserLoggedIn, isUserRegistered } from "@/shared-backend/util.js";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;
@@ -127,24 +132,29 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
             userId: deviceTable.userId,
             sessionExpiry: deviceTable.sessionExpiry,
             nullifier: zkPassportTable.nullifier,
+            phoneHash: phoneTable.phoneHash,
         })
         .from(deviceTable)
         .leftJoin(
             zkPassportTable,
             eq(deviceTable.userId, zkPassportTable.userId),
         )
+        .leftJoin(phoneTable, eq(deviceTable.userId, phoneTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
 
-    log.info(
-        `[Rarimo] isLoggedInOrExistsAndAssociatedWithNoNullifier - found ${String(result.length)} device entries`,
-    );
-
     if (result.length !== 0) {
-        // device was registered
-        const resultLoggedIn = result.find((r) => r.sessionExpiry > now);
-        if (resultLoggedIn !== undefined) {
+        const deviceMetadata = result[0];
+        const isRegistered = isUserRegistered({
+            nullifier: deviceMetadata.nullifier,
+            phoneHash: deviceMetadata.phoneHash,
+        });
+        const isLoggedIn = isUserLoggedIn({
+            now,
+            sessionExpiry: deviceMetadata.sessionExpiry,
+        });
+        if (isRegistered && isLoggedIn) {
             log.info(
-                `[Rarimo] Device is already logged in - returning already_logged_in`,
+                `[Rarimo] Device is already (hard) logged in - returning already_logged_in`,
             );
             return "already_logged_in";
         }

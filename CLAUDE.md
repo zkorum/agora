@@ -2,9 +2,53 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## External Repository References
+
+When the user mentions needing to understand an external library or repository, **first check if it's cloned locally** in the `external/` directory at the repository root before fetching from GitHub or using web search.
+
+**Important**: The repository root is where CLAUDE.md is located. Claude's working directory may be a subdirectory (e.g., `services/agora/`), so use paths relative to the repository root or use `../../external/` to navigate up from subdirectories.
+
+**Pattern**: External repos are sometimes cloned into `external/` at repository root for analysis. This directory is gitignored.
+
+**Workflow**:
+1. First, check if a directory with the repository name exists in `external/` at repository root (e.g., `../../external/vite-plugin-validate-env/` from `services/agora/`)
+2. If found, read the relevant files directly from the local clone
+3. If not found, fall back to WebSearch or WebFetch from GitHub
+
+**Example**: If analyzing how `vite-plugin-validate-env` works from within `services/agora/`, check `../../external/vite-plugin-validate-env/` first.
+
+## Documentation Convention
+
+When creating investigation documents, technical analysis files, reference documentation, or any temporary files, use the `CLAUDE_` prefix for all filenames (e.g., `CLAUDE_TIMEOUT_CONFIGURATION.md`, `CLAUDE_DATABASE_OPTIMIZATION.md`).
+
+**When in doubt, use the `CLAUDE_` prefix.**
+
+Exception: Only omit the `CLAUDE_` prefix when the user explicitly requests a specific filename or when creating files that should be integrated into the main documentation (e.g., user-requested README updates, official project documentation).
+
 ## Project Overview
 
 Agora Citizen Network is a privacy-preserving social platform using zero-knowledge proofs and bridging-based ranking algorithms. The monorepo contains a Vue.js/Quasar frontend, Fastify backend, background worker, and Python clustering service.
+
+## Environment Variables (Frontend)
+
+The frontend (`services/agora`) uses a comprehensive environment variable validation system:
+
+- **Single source of truth**: `services/agora/src/utils/processEnv.ts` (zod schema)
+- **TypeScript types**: Auto-derived in `services/agora/src/env.d.ts` using `z.infer<typeof envSchema>`
+- **Build-time validation**: Custom Vite plugin in `quasar.config.ts` runs `validateEnv()` during build
+- **Production safety**: Enforces rules like dev-only variables must not be set in production (allows staging with `VITE_STAGING=true`)
+
+The build **fails immediately** if required variables are missing or validation fails.
+
+**Environment file structure:**
+- `.env.dev` - Development configuration (loaded by `yarn dev`)
+- `.env.staging` - Staging configuration (production build with `VITE_STAGING=true`)
+- `.env.production` - Production configuration
+- `.env.local.prod` - Temporary file created by build scripts (gitignored)
+
+**Build process:** The build scripts (`yarn build:staging` / `yarn build:production`) copy the appropriate env file to `.env.local.prod` before building. Quasar automatically loads `.env.local.prod` during production builds. The temporary file is cleaned up after the build completes.
+
+For details, see [services/agora/README.md](services/agora/README.md#environment-variables).
 
 ## Development Commands
 
@@ -94,7 +138,9 @@ Changes:
 - Add comprehensive logging for queue state transitions
 
 This ensures only one worker processes a conversation at a time, preventing
-duplicate updates and database contention."
+duplicate updates and database contention.
+
+Deploy: math-updater"
 ```
 
 **Guidelines:**
@@ -110,6 +156,10 @@ duplicate updates and database contention."
 - Be exhaustive in the body: explain what changed, why it changed, and any important implementation details
 - Use the body to provide context that reviewers and future maintainers will need
 - Reference issue numbers, design decisions, or related PRs in the body or footer
+- **ALWAYS include a deployment footer** listing which services need to be redeployed:
+  - Format: `Deploy: <service1>, <service2>, ...`
+  - Services: `agora` (frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering)
+  - Example: `Deploy: agora, api` or `Deploy: none` (for docs-only changes)
 - Do NOT mention AI assistants or tools in commit messages (e.g., "Claude", "AI-generated", "with assistance from")
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
 
@@ -411,6 +461,21 @@ log.debug(`Processing started`); // ❌ Don't use this
 ```
 
 ## Important Patterns
+
+### Testing Frontend Components
+
+The frontend has a dedicated component testing page at `/dev/component-testing` for manually testing UI components:
+
+**Location**: `services/agora/src/pages/dev/component-testing.vue`
+
+**How to add a test component**:
+1. Create test component in `services/agora/src/pages/dev/test-components/YourComponentTest.vue`
+2. Create translations file `YourComponentTest.i18n.ts` with test descriptions
+3. Import and add to `component-testing.vue`
+
+**Pattern**: Test components provide a button that triggers the component/dialog to open. The actual dialog is typically mounted globally (e.g., in `App.vue`), and the test just calls the store action to open it.
+
+**Example**: See `PreferencesDialogTest.vue` or `EmbeddedBrowserWarningTest.vue`
 
 ### Adding a New API Endpoint
 

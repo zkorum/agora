@@ -25,8 +25,8 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent, copyToClipboard } from "quasar";
-import QRCode from "qrcode";
-import { ref, onMounted } from "vue";
+import { useQRCode } from "@vueuse/integrations/useQRCode";
+import { toRef } from "vue";
 import { useNotify } from "src/utils/ui/notify";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -48,21 +48,13 @@ const { t } = useComponentI18n<ShareDialogTranslations>(
   shareDialogTranslations
 );
 
-const qrCodeDataUrl = ref("");
-
-onMounted(async () => {
-  try {
-    qrCodeDataUrl.value = await QRCode.toDataURL(props.url, {
-      width: 218,
-      margin: 1,
-      color: {
-        dark: "#000000",
-        light: "#0000", // Transparent background
-      },
-    });
-  } catch (err) {
-    console.error(err);
-  }
+const qrCodeDataUrl = useQRCode(toRef(props, "url"), {
+  width: 218,
+  margin: 1,
+  color: {
+    dark: "#000000",
+    light: "#0000",
+  },
 });
 
 async function copyUrl(): Promise<void> {
@@ -107,8 +99,6 @@ async function copyUrl(): Promise<void> {
 }
 
 .qr-code-container {
-  width: 218px;
-  height: 218px;
   display: flex;
   align-items: center;
   justify-content: center;

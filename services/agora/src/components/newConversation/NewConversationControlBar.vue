@@ -57,6 +57,7 @@ import LoginRequirementDialog from "src/components/newConversation/dialog/LoginR
 import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
 import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { processEnv } from "src/utils/processEnv";
 import {
   newConversationControlBarTranslations,
   type NewConversationControlBarTranslations,
@@ -212,7 +213,7 @@ const controlButtons = computed((): ControlButton[] => [
       : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible:
-      process.env.VITE_IS_ORG_IMPORT_ONLY === "true"
+      processEnv.VITE_IS_ORG_IMPORT_ONLY === "true"
         ? conversationDraft.value.postAs.postAsOrganization
         : true,
     clickHandler: togglePostTypeDialog,
