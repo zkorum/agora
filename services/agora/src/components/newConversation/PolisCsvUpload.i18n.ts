@@ -7,13 +7,18 @@ export interface PolisCsvUploadTranslations {
   summaryFile: string;
   commentsFile: string;
   votesFile: string;
-  fileUploadLabel: string;
   maxFileSize: string;
   errorInvalidFileName: string;
   errorFileTooLarge: string;
   errorAllFilesRequired: string;
   validationFailed: string;
   serverError: string;
+  errorInvalidDroppedFiles: string;
+  dropZoneMainText: string;
+  dropZoneSubText: string;
+  orText: string;
+  browseFilesButton: string;
+  filesStatusTitle: string;
 }
 
 export const polisCsvUploadTranslations: Record<
@@ -28,13 +33,19 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "Summary File",
     commentsFile: "Comments File",
     votesFile: "Votes File",
-    fileUploadLabel: "Click or drag file to upload",
-    maxFileSize: "Max file size: 50MB",
+    maxFileSize: "Max. File Size: 50MB",
     errorInvalidFileName: "File must be named exactly: {fileName}",
     errorFileTooLarge: "File size exceeds 50MB limit",
     errorAllFilesRequired: "All three CSV files are required",
     validationFailed: "Validation failed",
     serverError: "Unable to validate files. Please try again.",
+    errorInvalidDroppedFiles:
+      "Invalid files detected. Please use: summary.csv, comments.csv, and votes.csv",
+    dropZoneMainText: "Click the button below to upload",
+    dropZoneSubText: "or drag and drop your 3 CSV files here",
+    orText: "or",
+    browseFilesButton: "Browse Files",
+    filesStatusTitle: "Upload Status",
   },
   ar: {
     uploadTitle: "استيراد من ملفات Polis CSV",
@@ -44,13 +55,19 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "ملف الملخص",
     commentsFile: "ملف التعليقات",
     votesFile: "ملف التصويتات",
-    fileUploadLabel: "انقر أو اسحب الملف للتحميل",
     maxFileSize: "الحد الأقصى لحجم الملف: 50 ميجابايت",
     errorInvalidFileName: "يجب أن يكون اسم الملف بالضبط: {fileName}",
     errorFileTooLarge: "حجم الملف يتجاوز حد 50 ميجابايت",
     errorAllFilesRequired: "جميع ملفات CSV الثلاثة مطلوبة",
     validationFailed: "فشل التحقق",
     serverError: "تعذر التحقق من الملفات. يرجى المحاولة مرة أخرى.",
+    errorInvalidDroppedFiles:
+      "تم اكتشاف ملفات غير صالحة. يرجى استخدام: summary.csv و comments.csv و votes.csv",
+    dropZoneMainText: "انقر على الزر أدناه للتحميل",
+    dropZoneSubText: "أو اسحب وأفلت ملفات CSV الثلاثة هنا",
+    orText: "أو",
+    browseFilesButton: "تصفح الملفات",
+    filesStatusTitle: "حالة التحميل",
   },
   es: {
     uploadTitle: "Importar desde archivos CSV de Polis",
@@ -60,13 +77,19 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "Archivo de resumen",
     commentsFile: "Archivo de comentarios",
     votesFile: "Archivo de votos",
-    fileUploadLabel: "Haga clic o arrastre el archivo para cargar",
     maxFileSize: "Tamaño máximo de archivo: 50MB",
     errorInvalidFileName: "El archivo debe llamarse exactamente: {fileName}",
     errorFileTooLarge: "El tamaño del archivo supera el límite de 50MB",
     errorAllFilesRequired: "Se requieren los tres archivos CSV",
     validationFailed: "Validación fallida",
     serverError: "No se pudieron validar los archivos. Inténtelo de nuevo.",
+    errorInvalidDroppedFiles:
+      "Se detectaron archivos no válidos. Utilice: summary.csv, comments.csv y votes.csv",
+    dropZoneMainText: "Haga clic en el botón de abajo para cargar",
+    dropZoneSubText: "o arrastre y suelte sus 3 archivos CSV aquí",
+    orText: "o",
+    browseFilesButton: "Examinar archivos",
+    filesStatusTitle: "Estado de carga",
   },
   fr: {
     uploadTitle: "Importer depuis des fichiers CSV Polis",
@@ -76,13 +99,19 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "Fichier de résumé",
     commentsFile: "Fichier de commentaires",
     votesFile: "Fichier de votes",
-    fileUploadLabel: "Cliquez ou faites glisser le fichier pour télécharger",
     maxFileSize: "Taille maximale du fichier : 50Mo",
     errorInvalidFileName: "Le fichier doit être nommé exactement : {fileName}",
     errorFileTooLarge: "La taille du fichier dépasse la limite de 50Mo",
     errorAllFilesRequired: "Les trois fichiers CSV sont requis",
     validationFailed: "Échec de la validation",
     serverError: "Impossible de valider les fichiers. Veuillez réessayer.",
+    errorInvalidDroppedFiles:
+      "Fichiers non valides détectés. Veuillez utiliser : summary.csv, comments.csv et votes.csv",
+    dropZoneMainText: "Cliquez sur le bouton ci-dessous pour télécharger",
+    dropZoneSubText: "ou faites glisser et déposez vos 3 fichiers CSV ici",
+    orText: "ou",
+    browseFilesButton: "Parcourir les fichiers",
+    filesStatusTitle: "État du téléchargement",
   },
   "zh-Hans": {
     uploadTitle: "从 Polis CSV 文件导入",
@@ -91,13 +120,19 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "摘要文件",
     commentsFile: "评论文件",
     votesFile: "投票文件",
-    fileUploadLabel: "点击或拖动文件上传",
     maxFileSize: "最大文件大小：50MB",
     errorInvalidFileName: "文件必须命名为：{fileName}",
     errorFileTooLarge: "文件大小超过 50MB 限制",
     errorAllFilesRequired: "需要全部三个 CSV 文件",
     validationFailed: "验证失败",
     serverError: "无法验证文件。请重试。",
+    errorInvalidDroppedFiles:
+      "检测到无效文件。请使用：summary.csv、comments.csv 和 votes.csv",
+    dropZoneMainText: "点击下方按钮上传",
+    dropZoneSubText: "或将 3 个 CSV 文件拖放到此处",
+    orText: "或",
+    browseFilesButton: "浏览文件",
+    filesStatusTitle: "上传状态",
   },
   "zh-Hant": {
     uploadTitle: "從 Polis CSV 檔案匯入",
@@ -106,13 +141,19 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "摘要檔案",
     commentsFile: "評論檔案",
     votesFile: "投票檔案",
-    fileUploadLabel: "點擊或拖動檔案上傳",
     maxFileSize: "最大檔案大小：50MB",
     errorInvalidFileName: "檔案必須命名為：{fileName}",
     errorFileTooLarge: "檔案大小超過 50MB 限制",
     errorAllFilesRequired: "需要全部三個 CSV 檔案",
     validationFailed: "驗證失敗",
     serverError: "無法驗證檔案。請重試。",
+    errorInvalidDroppedFiles:
+      "偵測到無效檔案。請使用：summary.csv、comments.csv 和 votes.csv",
+    dropZoneMainText: "點擊下方按鈕上傳",
+    dropZoneSubText: "或將 3 個 CSV 檔案拖放到此處",
+    orText: "或",
+    browseFilesButton: "瀏覽檔案",
+    filesStatusTitle: "上傳狀態",
   },
   ja: {
     uploadTitle: "Polis CSV ファイルからインポート",
@@ -122,7 +163,6 @@ export const polisCsvUploadTranslations: Record<
     summaryFile: "サマリーファイル",
     commentsFile: "コメントファイル",
     votesFile: "投票ファイル",
-    fileUploadLabel: "クリックまたはファイルをドラッグしてアップロード",
     maxFileSize: "最大ファイルサイズ：50MB",
     errorInvalidFileName:
       "ファイル名は正確に次のようにする必要があります：{fileName}",
@@ -130,5 +170,12 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "3 つの CSV ファイルすべてが必要です",
     validationFailed: "検証に失敗しました",
     serverError: "ファイルを検証できませんでした。もう一度お試しください。",
+    errorInvalidDroppedFiles:
+      "無効なファイルが検出されました。次を使用してください：summary.csv、comments.csv、votes.csv",
+    dropZoneMainText: "下のボタンをクリックしてアップロード",
+    dropZoneSubText: "または 3 つの CSV ファイルをここにドラッグアンドドロップ",
+    orText: "または",
+    browseFilesButton: "ファイルを参照",
+    filesStatusTitle: "アップロード状態",
   },
 };
