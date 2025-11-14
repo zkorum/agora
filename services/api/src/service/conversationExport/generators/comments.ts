@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { and, or, isNull, ne } from "drizzle-orm";
 import { format as formatCsv } from "fast-csv";
 import {
     opinionTable,
@@ -33,6 +32,7 @@ export class CommentsGenerator implements CsvGenerator {
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
                 moderationId: opinionModerationTable.id,
+                moderationAction: opinionModerationTable.moderationAction,
             })
             .from(opinionTable)
             .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
@@ -44,15 +44,7 @@ export class CommentsGenerator implements CsvGenerator {
                 opinionModerationTable,
                 eq(opinionTable.id, opinionModerationTable.opinionId),
             )
-            .where(
-                and(
-                    eq(opinionTable.conversationId, conversationId),
-                    or(
-                        isNull(opinionModerationTable.moderationAction),
-                        ne(opinionModerationTable.moderationAction, "move"),
-                    ),
-                ),
-            )
+            .where(eq(opinionTable.conversationId, conversationId))
             .orderBy(opinionTable.createdAt);
 
         // Generate CSV rows following Polis spec
@@ -64,7 +56,14 @@ export class CommentsGenerator implements CsvGenerator {
             "author-id": opinion.authorParticipantId,
             agrees: opinion.numAgrees,
             disagrees: opinion.numDisagrees,
-            moderated: opinion.moderationId !== null ? 1 : 0,
+            moderated:
+                opinion.moderationId === null
+                    ? 0 // unmoderated
+                    : opinion.moderationAction === "hide"
+                      ? -1 // banned/hidden
+                      : opinion.moderationAction === "move"
+                        ? -1 // moved (also treated as banned)
+                        : 1, // approved (fallback, though no explicit "approve" action exists)
             "comment-body": opinion.content,
         }));
 
