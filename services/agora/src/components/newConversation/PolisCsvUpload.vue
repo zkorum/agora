@@ -22,40 +22,19 @@
             <p class="file-size-hint">{{ t("maxFileSize") }}</p>
           </div>
 
-          <!-- Summary File Upload -->
+          <!-- File Upload Fields -->
           <CsvFileUploadField
-            v-model="summaryFile"
-            :label="t('summaryFile')"
-            expected-file-name="summary.csv"
+            v-for="config in fileConfigs"
+            :key="config.type"
+            v-model="config.file.value"
+            :label="config.label"
+            :expected-file-name="config.expectedFileName"
             :upload-prompt-text="t('fileUploadLabel')"
             :max-file-size="MAX_CSV_FILE_SIZE"
             :error-invalid-file-name="t('errorInvalidFileName')"
             :error-file-too-large="t('errorFileTooLarge')"
-            @error="handleSummaryError"
-          />
-
-          <!-- Comments File Upload -->
-          <CsvFileUploadField
-            v-model="commentsFile"
-            :label="t('commentsFile')"
-            expected-file-name="comments.csv"
-            :upload-prompt-text="t('fileUploadLabel')"
-            :max-file-size="MAX_CSV_FILE_SIZE"
-            :error-invalid-file-name="t('errorInvalidFileName')"
-            :error-file-too-large="t('errorFileTooLarge')"
-            @error="handleCommentsError"
-          />
-
-          <!-- Votes File Upload -->
-          <CsvFileUploadField
-            v-model="votesFile"
-            :label="t('votesFile')"
-            expected-file-name="votes.csv"
-            :upload-prompt-text="t('fileUploadLabel')"
-            :max-file-size="MAX_CSV_FILE_SIZE"
-            :error-invalid-file-name="t('errorInvalidFileName')"
-            :error-file-too-large="t('errorFileTooLarge')"
-            @error="handleVotesError"
+            :custom-error="config.error.value"
+            @error="(error) => handleFileError(config.type, error)"
           />
 
           <!-- General Error Message -->
@@ -74,9 +53,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useBackendPostApi } from "src/utils/api/post";
+import type { ValidateCsvResponse } from "src/shared/types/dto";
 import ZKCard from "../ui-library/ZKCard.vue";
 import CsvFileUploadField from "./CsvFileUploadField.vue";
 import {
@@ -90,6 +71,10 @@ const { t } = useComponentI18n<PolisCsvUploadTranslations>(
 );
 
 const store = useNewPostDraftsStore();
+const { validateCsvFiles } = useBackendPostApi();
+
+// Define file types
+type FileType = "summary" | "comments" | "votes";
 
 // File state (stored in memory, not in the store)
 const summaryFile = ref<File | null>(null);
@@ -101,6 +86,40 @@ const summaryError = ref<string>("");
 const commentsError = ref<string>("");
 const votesError = ref<string>("");
 const generalError = ref<string>("");
+
+// Validation state
+const isValidating = ref<boolean>(false);
+const summaryValidation = ref<ValidateCsvResponse["summaryFile"]>(undefined);
+const commentsValidation = ref<ValidateCsvResponse["commentsFile"]>(undefined);
+const votesValidation = ref<ValidateCsvResponse["votesFile"]>(undefined);
+
+// Configuration array for v-for - maps types to their refs
+const fileConfigs = computed(() => [
+  {
+    type: "summary" as FileType,
+    expectedFileName: "summary.csv",
+    label: t("summaryFile"),
+    file: summaryFile,
+    error: summaryError,
+    validation: summaryValidation,
+  },
+  {
+    type: "comments" as FileType,
+    expectedFileName: "comments.csv",
+    label: t("commentsFile"),
+    file: commentsFile,
+    error: commentsError,
+    validation: commentsValidation,
+  },
+  {
+    type: "votes" as FileType,
+    expectedFileName: "votes.csv",
+    label: t("votesFile"),
+    file: votesFile,
+    error: votesError,
+    validation: votesValidation,
+  },
+]);
 
 /**
  * Updates store with file metadata
@@ -120,26 +139,13 @@ function updateStoreMetadata(): void {
 }
 
 /**
- * Handle summary file error
+ * Generic error handler for all file types
  */
-function handleSummaryError(error: string): void {
-  summaryError.value = error;
-  generalError.value = "";
-}
-
-/**
- * Handle comments file error
- */
-function handleCommentsError(error: string): void {
-  commentsError.value = error;
-  generalError.value = "";
-}
-
-/**
- * Handle votes file error
- */
-function handleVotesError(error: string): void {
-  votesError.value = error;
+function handleFileError(fileType: FileType, error: string): void {
+  const config = fileConfigs.value.find((c) => c.type === fileType);
+  if (config) {
+    config.error.value = error;
+  }
   generalError.value = "";
 }
 
@@ -156,6 +162,20 @@ function isValid(): boolean {
 
   // Check for individual errors
   if (summaryError.value || commentsError.value || votesError.value) {
+    return false;
+  }
+
+  // Check if currently validating
+  if (isValidating.value) {
+    return false;
+  }
+
+  // Check validation results - all must be valid
+  const summaryValid = summaryValidation.value?.isValid ?? false;
+  const commentsValid = commentsValidation.value?.isValid ?? false;
+  const votesValid = votesValidation.value?.isValid ?? false;
+
+  if (!summaryValid || !commentsValid || !votesValid) {
     return false;
   }
 
@@ -188,12 +208,67 @@ function reset(): void {
   commentsError.value = "";
   votesError.value = "";
   generalError.value = "";
+  summaryValidation.value = undefined;
+  commentsValidation.value = undefined;
+  votesValidation.value = undefined;
   updateStoreMetadata();
 }
 
-// Watch for file changes and update store metadata
+/**
+ * Validates uploaded CSV files
+ */
+async function validateFiles(): Promise<void> {
+  // Only validate if all files are present
+  if (!summaryFile.value && !commentsFile.value && !votesFile.value) {
+    return;
+  }
+
+  try {
+    isValidating.value = true;
+    generalError.value = "";
+
+    const response = await validateCsvFiles({
+      summaryFile: summaryFile.value,
+      commentsFile: commentsFile.value,
+      votesFile: votesFile.value,
+    });
+
+    // Store validation results
+    summaryValidation.value = response.summaryFile;
+    commentsValidation.value = response.commentsFile;
+    votesValidation.value = response.votesFile;
+
+    // Set errors for invalid files
+    if (response.summaryFile && !response.summaryFile.isValid) {
+      summaryError.value = response.summaryFile.error || t("validationFailed");
+    } else {
+      summaryError.value = "";
+    }
+
+    if (response.commentsFile && !response.commentsFile.isValid) {
+      commentsError.value =
+        response.commentsFile.error || t("validationFailed");
+    } else {
+      commentsError.value = "";
+    }
+
+    if (response.votesFile && !response.votesFile.isValid) {
+      votesError.value = response.votesFile.error || t("validationFailed");
+    } else {
+      votesError.value = "";
+    }
+  } catch (error) {
+    console.error("CSV validation error:", error);
+    generalError.value = t("serverError");
+  } finally {
+    isValidating.value = false;
+  }
+}
+
+// Watch for file changes and trigger validation
 watch([summaryFile, commentsFile, votesFile], () => {
   updateStoreMetadata();
+  void validateFiles();
 });
 
 // Expose methods to parent
