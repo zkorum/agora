@@ -26,8 +26,15 @@
         />
       </div>
 
-      <div :style="{ fontSize: '0.75rem' }">
+      <div :style="{ fontSize: '0.75rem' }" class="timestamp-container">
         {{ useTimeAgo(new Date(createdAt)) }}
+        <template v-if="isGuestParticipationAllowed === true">
+          <span class="bullet">•</span>
+          <i
+            class="pi pi-user-plus access-icon"
+            :title="t('guestParticipationTooltip')"
+          ></i>
+        </template>
       </div>
     </div>
   </div>
@@ -38,6 +45,11 @@ import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  userIdentityCardTranslations,
+  type UserIdentityCardTranslations,
+} from "./UserIdentityCard.i18n";
 
 defineProps<{
   userIdentity: string;
@@ -45,7 +57,12 @@ defineProps<{
   createdAt: Date;
   showVerifiedText: boolean;
   organizationImageUrl: string;
+  isGuestParticipationAllowed?: boolean;
 }>();
+
+const { t } = useComponentI18n<UserIdentityCardTranslations>(
+  userIdentityCardTranslations
+);
 </script>
 
 <style lang="scss" scoped>
@@ -60,5 +77,20 @@ defineProps<{
   gap: 1rem;
   align-items: center;
   color: $color-text-weak;
+}
+
+.timestamp-container {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bullet {
+  opacity: 0.6;
+}
+
+.access-icon {
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 </style>
