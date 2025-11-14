@@ -24,7 +24,10 @@ import type {
   moderationStatusOptionsType,
   EventSlug,
 } from "src/shared/types/zod";
-import type { FetchFeedResponse } from "src/shared/types/dto";
+import type {
+  FetchFeedResponse,
+  ValidateCsvResponse,
+} from "src/shared/types/dto";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 
 export function useBackendPostApi() {
@@ -403,6 +406,56 @@ export function useBackendPostApi() {
     }
   }
 
+  interface ValidateCsvFilesParams {
+    summaryFile: File | null;
+    commentsFile: File | null;
+    votesFile: File | null;
+  }
+
+  async function validateCsvFiles({
+    summaryFile,
+    commentsFile,
+    votesFile,
+  }: ValidateCsvFilesParams): Promise<ValidateCsvResponse> {
+    try {
+      const formData = new FormData();
+
+      // Only add files that are present
+      if (summaryFile) {
+        formData.append(CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE, summaryFile);
+      }
+      if (commentsFile) {
+        formData.append(CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE, commentsFile);
+      }
+      if (votesFile) {
+        formData.append(CSV_UPLOAD_FIELD_NAMES.VOTES_FILE, votesFile);
+      }
+
+      // Get URL from OpenAPI spec
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1ConversationValidateCsvPost();
+      const encodedUcan = await buildEncodedUcan(url, options);
+
+      // Use standard timeout for validation (should be fast)
+      const config = createRawAxiosRequestConfig({
+        encodedUcan,
+      });
+
+      const response = await api.post(url, formData, {
+        ...config,
+        headers: {
+          ...config.headers,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("CSV validation error:", error);
+      throw error;
+    }
+  }
+
   return {
     createNewPost,
     fetchRecentPost,
@@ -411,5 +464,6 @@ export function useBackendPostApi() {
     deletePostBySlugId,
     importConversation,
     importConversationFromCsv,
+    validateCsvFiles,
   };
 }

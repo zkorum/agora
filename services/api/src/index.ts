@@ -25,6 +25,7 @@ import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import { validateCsvFieldNames } from "@/shared-app-api/csvUpload.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -1676,6 +1677,43 @@ server.after(() => {
     });
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/conversation/validate-csv`,
+        schema: {
+            consumes: ["multipart/form-data"],
+            response: {
+                200: Dto.validateCsvResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: {
+                    isLoggedIn: true,
+                    isRegistered: true,
+                },
+            });
+
+            // Parse multipart request - accept any combination of files
+            const parts = request.parts();
+            const files: Partial<Record<string, string>> = {};
+
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    // Read file content as string, keyed by field name
+                    const buffer = await part.toBuffer();
+                    files[part.fieldname] = buffer.toString("utf-8");
+                }
+                // Ignore form fields - validation doesn't need them
+            }
+
+            // Validate the uploaded files (supports 1, 2, or 3 files)
+            const validationResult =
+                await csvImportService.validateIndividualCsvFiles({ files });
+
+            reply.send(validationResult);
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/conversation/import-csv`,
         schema: {
             consumes: ["multipart/form-data"],
@@ -1694,7 +1732,7 @@ server.after(() => {
 
             // Parse multipart request
             const parts = request.parts();
-            const files: Record<string, string> = {};
+            const files: Partial<Record<string, string>> = {};
             const formFields: Record<string, string> = {};
 
             for await (const part of parts) {
@@ -1708,19 +1746,21 @@ server.after(() => {
                 }
             }
 
-            // Validate form fields using DTO
-            const parsedFields = Dto.importCsvConversationRequest.parse({
-                postAsOrganization: formFields.postAsOrganization || undefined,
-                indexConversationAt:
-                    formFields.indexConversationAt || undefined,
-                isIndexed: formFields.isIndexed === "true",
-                isLoginRequired: formFields.isLoginRequired === "true",
-            });
+            // Validate that all required files are present
+            const fileValidation = validateCsvFieldNames(Object.keys(files));
+            if (!fileValidation.isValid) {
+                throw server.httpErrors.badRequest(
+                    `Missing required CSV files: ${fileValidation.missingFields.join(", ")}`,
+                );
+            }
+
+            // Validate and parse form fields using DTO with preprocessing
+            const parsedFields =
+                Dto.importCsvConversationFormRequest.parse(formFields);
 
             // Check organization restriction (same as URL import)
             if (
-                (parsedFields.postAsOrganization === undefined ||
-                    parsedFields.postAsOrganization === "") &&
+                parsedFields.postAsOrganization === undefined &&
                 config.IS_ORG_IMPORT_ONLY
             ) {
                 throw server.httpErrors.forbidden(
@@ -1729,10 +1769,7 @@ server.after(() => {
             }
 
             // Verify organization membership if specified
-            if (
-                parsedFields.postAsOrganization !== undefined &&
-                parsedFields.postAsOrganization !== ""
-            ) {
+            if (parsedFields.postAsOrganization !== undefined) {
                 const organizationId =
                     await authUtilService.isUserPartOfOrganization({
                         db,

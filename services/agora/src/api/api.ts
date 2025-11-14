@@ -1637,6 +1637,50 @@ export type ApiV1ConversationImportPostRequestRequiresEventTicketEnum = typeof A
 /**
  * 
  * @export
+ * @interface ApiV1ConversationValidateCsvPost200Response
+ */
+export interface ApiV1ConversationValidateCsvPost200Response {
+    /**
+     * 
+     * @type {ApiV1ConversationValidateCsvPost200ResponseSummaryFile}
+     * @memberof ApiV1ConversationValidateCsvPost200Response
+     */
+    'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
+    /**
+     * 
+     * @type {ApiV1ConversationValidateCsvPost200ResponseSummaryFile}
+     * @memberof ApiV1ConversationValidateCsvPost200Response
+     */
+    'commentsFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
+    /**
+     * 
+     * @type {ApiV1ConversationValidateCsvPost200ResponseSummaryFile}
+     * @memberof ApiV1ConversationValidateCsvPost200Response
+     */
+    'votesFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile
+ */
+export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationValidateCsvPost200ResponseSummaryFile
+     */
+    'isValid': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationValidateCsvPost200ResponseSummaryFile
+     */
+    'error'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1ModerationConversationCreatePostRequest
  */
 export interface ApiV1ModerationConversationCreatePostRequest {
@@ -4120,6 +4164,39 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationValidateCsvPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/conversation/validate-csv`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5695,6 +5772,17 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationValidateCsvPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationValidateCsvPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationValidateCsvPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6302,6 +6390,14 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationValidateCsvPost200Response> {
+            return localVarFp.apiV1ConversationValidateCsvPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6842,6 +6938,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationValidateCsvPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

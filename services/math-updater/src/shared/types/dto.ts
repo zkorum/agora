@@ -202,9 +202,52 @@ export class Dto {
             isLoginRequired: z.boolean(),
         })
         .strict();
+    static importCsvConversationFormRequest = z
+        .object({
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                z.string().optional(),
+            ),
+            indexConversationAt: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                z.string().datetime().optional(),
+            ),
+            isIndexed: z.preprocess(
+                (val) => val === "true" || val === true,
+                z.boolean(),
+            ),
+            isLoginRequired: z.preprocess(
+                (val) => val === "true" || val === true,
+                z.boolean(),
+            ),
+        })
+        .strict();
     static importCsvConversationResponse = z
         .object({
             conversationSlugId: z.string(),
+        })
+        .strict();
+    static validateCsvRequest = z.object({}).strict();
+    static validateCsvResponse = z
+        .object({
+            summaryFile: z
+                .object({
+                    isValid: z.boolean(),
+                    error: z.string().optional(),
+                })
+                .optional(),
+            commentsFile: z
+                .object({
+                    isValid: z.boolean(),
+                    error: z.string().optional(),
+                })
+                .optional(),
+            votesFile: z
+                .object({
+                    isValid: z.boolean(),
+                    error: z.string().optional(),
+                })
+                .optional(),
         })
         .strict();
     static getConversationRequest = z
@@ -699,3 +742,4 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
+export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
