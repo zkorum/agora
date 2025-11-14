@@ -52,7 +52,6 @@
     "axios": "^1.12.2",
     "buffer": "^6.0.3",
     "cborg": "^4.2.15",
-    "fast-csv": "^5.0.5",
     "inapp-spy": "^5.0.7",
     "libphonenumber-js": "^1.12.17",
     "linkify-html": "^4.3.2",
