@@ -130,8 +130,8 @@ export default boot(({ router }) => {
   // This runs if:
   // - Android Intent didn't navigate away (non-Android or Intent failed)
   // - Or this is iOS or other platform without programmatic redirect support
-  console.log("[EmbeddedBrowserGuard] Showing warning dialog for:", appName);
+  console.log("[EmbeddedBrowserGuard] Showing warning dialog for:", usedAppName);
 
   const warningStore = useEmbeddedBrowserWarningStore();
-  warningStore.openWarning(appName, usedAppKey);
+  warningStore.openWarning(usedAppName, usedAppKey);
 });

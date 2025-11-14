@@ -184,7 +184,7 @@ function retryAndroidRedirect() {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   text-align: center;
   padding: 1.25rem 1.5rem 0.75rem;
 }
@@ -202,6 +202,7 @@ function retryAndroidRedirect() {
   font-weight: var(--font-weight-bold);
   color: $color-text-strong;
   text-align: center;
+  line-height: 1.3;
 }
 
 .warning-message {
