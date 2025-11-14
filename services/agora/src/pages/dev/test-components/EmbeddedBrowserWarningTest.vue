@@ -25,6 +25,12 @@
           @click="openWarning('Telegram', 'telegram')"
         />
         <PrimeButton
+          label="Test: WeChat"
+          icon="pi pi-comments"
+          class="test-button"
+          @click="openWarning('WeChat', 'wechat')"
+        />
+        <PrimeButton
           label="Test: Instagram"
           icon="pi pi-instagram"
           class="test-button"
@@ -50,7 +56,7 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
+import { useEmbeddedBrowserWarningStore, type AppKey } from "src/stores/embeddedBrowserWarning";
 import {
   embeddedBrowserWarningTestTranslations,
   type EmbeddedBrowserWarningTestTranslations,
@@ -62,7 +68,7 @@ const { t } = useComponentI18n<EmbeddedBrowserWarningTestTranslations>(
 
 const warningStore = useEmbeddedBrowserWarningStore();
 
-const openWarning = (appName: string | undefined, appKey: string | undefined) => {
+const openWarning = (appName: string | undefined, appKey: AppKey) => {
   warningStore.openWarning(appName, appKey);
 };
 </script>
