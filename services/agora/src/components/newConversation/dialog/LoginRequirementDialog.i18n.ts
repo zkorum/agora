@@ -5,6 +5,7 @@ export interface LoginRequirementDialogTranslations {
   requiresLoginDescription: string;
   guestParticipationTitle: string;
   guestParticipationDescription: string;
+  guestParticipationBlockedDescription: string;
 }
 
 export const loginRequirementDialogTranslations: Record<
@@ -18,6 +19,8 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "Guest participation",
     guestParticipationDescription:
       "Anyone with the link can view the conversation, vote and contribute opinions",
+    guestParticipationBlockedDescription:
+      "Disabled. Public conversations require either login or event ticket verification for participation",
   },
   ar: {
     requiresLoginTitle: "يتطلب تسجيل الدخول",
@@ -26,6 +29,8 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "مشاركة الضيوف",
     guestParticipationDescription:
       "يمكن لأي شخص لديه الرابط عرض المحادثة والتصويت وإضافة آراء",
+    guestParticipationBlockedDescription:
+      "معطل. تتطلب المحادثات العامة تسجيل الدخول أو التحقق من تذكرة الحدث للمشاركة",
   },
   es: {
     requiresLoginTitle: "Requiere inicio de sesión",
@@ -34,6 +39,8 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "Participación de invitados",
     guestParticipationDescription:
       "Cualquiera con el enlace puede ver la conversación, votar y contribuir opiniones",
+    guestParticipationBlockedDescription:
+      "Deshabilitado. Las conversaciones públicas requieren inicio de sesión o verificación de entrada para participar",
   },
   fr: {
     requiresLoginTitle: "Connexion requise",
@@ -42,6 +49,8 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "Participation d'invités",
     guestParticipationDescription:
       "Toute personne ayant le lien peut voir la conversation, voter et contribuer des opinions",
+    guestParticipationBlockedDescription:
+      "Désactivé. Les conversations publiques nécessitent une connexion ou une vérification de billet pour participer",
   },
   "zh-Hans": {
     requiresLoginTitle: "需要登录",
@@ -50,6 +59,8 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "访客参与",
     guestParticipationDescription:
       "任何有链接的人都可以查看对话、投票和贡献意见",
+    guestParticipationBlockedDescription:
+      "已禁用。公开对话需要登录或活动门票验证才能参与",
   },
   "zh-Hant": {
     requiresLoginTitle: "需要登入",
@@ -58,6 +69,8 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "訪客參與",
     guestParticipationDescription:
       "任何有連結的人都可以查看對話、投票和貢獻意見",
+    guestParticipationBlockedDescription:
+      "已禁用。公開對話需要登入或活動門票驗證才能參與",
   },
   ja: {
     requiresLoginTitle: "ログインが必要",
@@ -66,5 +79,7 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "ゲスト参加",
     guestParticipationDescription:
       "リンクを持つ人は誰でも会話を閲覧、投票、意見の投稿ができます",
+    guestParticipationBlockedDescription:
+      "無効。公開会話では参加にログインまたはイベントチケットの検証が必要です",
   },
 };

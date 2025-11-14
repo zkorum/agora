@@ -6,7 +6,7 @@
       v-for="(option, index) in options"
       :key="index"
       class="option-item"
-      :class="{ selected: isSelected(option) }"
+      :class="{ selected: isSelected(option), disabled: option.disabled }"
       @click="selectOption(option)"
     >
       <div class="option-header">{{ option.title }}</div>
@@ -20,6 +20,7 @@ interface OptionItem {
   title: string;
   description: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface Props {
@@ -40,6 +41,9 @@ function isSelected(option: OptionItem): boolean {
 }
 
 function selectOption(option: OptionItem): void {
+  if (option.disabled) {
+    return;
+  }
   emit("update:selectedValue", option.value);
   emit("optionSelected", option);
 }
@@ -64,6 +68,12 @@ function selectOption(option: OptionItem): void {
     $hover-background-color,
     $selected-hover-background-color
   );
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .option-header {

@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
@@ -33,18 +34,28 @@ const { t } = useComponentI18n<LoginRequirementDialogTranslations>(
   loginRequirementDialogTranslations
 );
 
-const loginRequirementOptions = [
+const isGuestParticipationBlocked = computed(() => {
+  return (
+    !conversationDraft.value.isPrivate &&
+    conversationDraft.value.requiresEventTicket === undefined
+  );
+});
+
+const loginRequirementOptions = computed(() => [
   {
     title: t("guestParticipationTitle"),
-    description: t("guestParticipationDescription"),
+    description: isGuestParticipationBlocked.value
+      ? t("guestParticipationBlockedDescription")
+      : t("guestParticipationDescription"),
     value: "guestParticipation",
+    disabled: isGuestParticipationBlocked.value,
   },
   {
     title: t("requiresLoginTitle"),
     description: t("requiresLoginDescription"),
     value: "requiresLogin",
   },
-];
+]);
 
 function handleOptionSelected(option: {
   title: string;

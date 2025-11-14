@@ -237,7 +237,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showLoginRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: conversationDraft.value.isPrivate,
+    isVisible: true,
     clickHandler: toggleLoginRequirement,
     clickable: true,
   },
