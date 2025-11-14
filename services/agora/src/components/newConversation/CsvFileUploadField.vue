@@ -49,15 +49,21 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
-const props = defineProps<{
-  label: string;
-  expectedFileName: string;
-  uploadPromptText: string;
-  maxFileSize: number;
-  modelValue: File | null;
-  errorInvalidFileName: string;
-  errorFileTooLarge: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    label: string;
+    expectedFileName: string;
+    uploadPromptText: string;
+    maxFileSize: number;
+    modelValue: File | null;
+    errorInvalidFileName: string;
+    errorFileTooLarge: string;
+    customError?: string;
+  }>(),
+  {
+    customError: "",
+  }
+);
 
 const emit = defineEmits<{
   "update:modelValue": [value: File | null];
@@ -74,6 +80,16 @@ watch(
     selectedFile.value = newValue;
     if (!newValue) {
       errorMessage.value = "";
+    }
+  }
+);
+
+// Watch for custom errors from parent
+watch(
+  () => props.customError,
+  (newError) => {
+    if (newError) {
+      errorMessage.value = newError;
     }
   }
 );

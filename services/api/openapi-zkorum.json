@@ -4796,6 +4796,70 @@
                 }
             }
         },
+        "/api/v1/conversation/validate-csv": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "summaryFile": {
+                                            "type": "object",
+                                            "properties": {
+                                                "isValid": {
+                                                    "type": "boolean"
+                                                },
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "isValid"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        "commentsFile": {
+                                            "type": "object",
+                                            "properties": {
+                                                "isValid": {
+                                                    "type": "boolean"
+                                                },
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "isValid"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        "votesFile": {
+                                            "type": "object",
+                                            "properties": {
+                                                "isValid": {
+                                                    "type": "boolean"
+                                                },
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "isValid"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversation/import-csv": {
             "post": {
                 "responses": {
