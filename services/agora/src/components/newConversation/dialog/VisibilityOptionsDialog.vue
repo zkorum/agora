@@ -16,6 +16,7 @@ import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNotify } from "src/utils/ui/notify";
 import {
   visibilityOptionsDialogTranslations,
   type VisibilityOptionsDialogTranslations,
@@ -30,6 +31,8 @@ const { togglePrivacy } = store;
 const { t } = useComponentI18n<VisibilityOptionsDialogTranslations>(
   visibilityOptionsDialogTranslations
 );
+
+const { showNotifyMessage } = useNotify();
 
 const visibilityOptions = [
   {
@@ -49,6 +52,16 @@ function handleOptionSelected(option: {
   description: string;
   value: string;
 }) {
+  const isPublic = option.value === "public";
+  const hasGuestParticipation = !conversationDraft.value.requiresLogin;
+  const hasTicketVerification =
+    conversationDraft.value.requiresEventTicket !== undefined;
+
+  if (isPublic && hasGuestParticipation && !hasTicketVerification) {
+    conversationDraft.value.requiresLogin = true;
+    showNotifyMessage(t("guestParticipationDisabledForPublic"));
+  }
+
   showDialog.value = false;
   togglePrivacy(option.value === "private");
 }

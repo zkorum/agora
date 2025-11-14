@@ -24,8 +24,6 @@ export interface PostAsSettings {
  * Only relevant when the conversation is private
  */
 export interface PrivateConversationSettings {
-  /** Whether users must be logged in to participate */
-  requiresLogin: boolean;
   /** Whether to automatically convert this conversation on a specific date */
   hasScheduledConversion: boolean;
   /** The target date for automatic conversion */
@@ -73,6 +71,8 @@ export interface NewConversationDraft {
   // Privacy and Advanced Settings
   /** Whether this is a private conversation (enables advanced settings) */
   isPrivate: boolean;
+  /** Whether users must be logged in to participate (applies to both public and private conversations) */
+  requiresLogin: boolean;
   /** Advanced settings for private conversations (only relevant when isPrivate is true) */
   privateConversationSettings: PrivateConversationSettings;
 
@@ -88,7 +88,6 @@ export interface NewConversationDraft {
  * Serializable version for localStorage storage (Date objects converted to ISO strings)
  */
 interface SerializablePrivateConversationSettings {
-  requiresLogin: boolean;
   hasScheduledConversion: boolean;
   conversionDate: string; // ISO string instead of Date
 }
@@ -100,6 +99,7 @@ interface SerializableConversationDraft {
   poll: PollSettings;
   postAs: PostAsSettings;
   isPrivate: boolean;
+  requiresLogin: boolean;
   privateConversationSettings: SerializablePrivateConversationSettings;
   requiresEventTicket?: EventSlug;
   importSettings: ImportConversationSettings;
@@ -209,8 +209,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
       // Privacy and Advanced Settings
       isPrivate: false,
+      requiresLogin: true,
       privateConversationSettings: {
-        requiresLogin: false,
         hasScheduledConversion: false,
         conversionDate: tomorrow,
       },
@@ -281,9 +281,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       unknown
     >;
     const hasValidPrivateSettings =
-      typeof privateSettingsData.requiresLogin === "boolean" &&
       typeof privateSettingsData.hasScheduledConversion === "boolean" &&
       typeof privateSettingsData.conversionDate === "string";
+
+    // Validate requiresLogin (supports both old and new format for migration)
+    const hasRequiresLogin =
+      typeof draft.requiresLogin === "boolean" ||
+      typeof privateSettingsData.requiresLogin === "boolean";
 
     // Validate import settings
     if (!draft.importSettings || typeof draft.importSettings !== "object") {
@@ -299,6 +303,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasValidPoll &&
       hasValidPostAs &&
       hasValidPrivateSettings &&
+      hasRequiresLogin &&
       hasValidImportSettings
     );
   }
@@ -324,11 +329,32 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
               return createEmptyDraft();
             }
 
+            // Migration: move requiresLogin from privateConversationSettings to top level
+            let requiresLogin = parsedData.requiresLogin;
+            if (requiresLogin === undefined) {
+              // Check old location for backward compatibility
+              const oldSettings = parsedData.privateConversationSettings as {
+                requiresLogin?: boolean;
+                hasScheduledConversion: boolean;
+                conversionDate: string;
+              };
+              if (oldSettings.requiresLogin !== undefined) {
+                requiresLogin = oldSettings.requiresLogin;
+                console.info(
+                  "Migrated requiresLogin from privateConversationSettings to top level"
+                );
+              }
+            }
+
             // Convert ISO string back to Date object in private conversation settings
             return {
               ...parsedData,
+              requiresLogin:
+                requiresLogin !== undefined ? requiresLogin : true,
               privateConversationSettings: {
-                ...parsedData.privateConversationSettings,
+                hasScheduledConversion:
+                  parsedData.privateConversationSettings
+                    .hasScheduledConversion,
                 conversionDate: new Date(
                   parsedData.privateConversationSettings.conversionDate
                 ),
@@ -403,15 +429,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.postAs.organizationName !== emptyDraft.postAs.organizationName;
 
     // Check privacy settings changes
-    const hasPrivacyChanges = current.isPrivate !== emptyDraft.isPrivate;
+    const hasPrivacyChanges =
+      current.isPrivate !== emptyDraft.isPrivate ||
+      current.requiresLogin !== emptyDraft.requiresLogin;
 
     // Check private conversation settings changes (only relevant if isPrivate is true)
     // Note: conversionDate is excluded from comparison because the empty draft's date
     // changes constantly (set to "tomorrow"), causing false positives. Only checking
     // hasScheduledConversion is sufficient to detect meaningful user changes.
     const hasPrivateSettingsChanges =
-      current.privateConversationSettings.requiresLogin !==
-        emptyDraft.privateConversationSettings.requiresLogin ||
       current.privateConversationSettings.hasScheduledConversion !==
         emptyDraft.privateConversationSettings.hasScheduledConversion;
 

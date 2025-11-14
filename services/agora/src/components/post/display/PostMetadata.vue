@@ -12,6 +12,7 @@
           "
           :show-verified-text="false"
           :organization-image-url="props.organizationUrl"
+          :is-guest-participation-allowed="!props.isLoginRequired"
         />
       </div>
 
@@ -90,6 +91,7 @@ const props = defineProps<{
   postSlugId: string;
   organizationUrl: string;
   organizationName: string;
+  isLoginRequired: boolean;
 }>();
 
 const router = useRouter();

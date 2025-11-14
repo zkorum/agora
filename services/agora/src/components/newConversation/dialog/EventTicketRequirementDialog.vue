@@ -27,6 +27,7 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import EventTicketSelectionDialog from "./EventTicketSelectionDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNotify } from "src/utils/ui/notify";
 import {
   eventTicketRequirementDialogTranslations,
   type EventTicketRequirementDialogTranslations,
@@ -39,6 +40,8 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 const { t } = useComponentI18n<EventTicketRequirementDialogTranslations>(
   eventTicketRequirementDialogTranslations
 );
+
+const { showNotifyMessage } = useNotify();
 
 const showEventSelectionDialog = ref(false);
 
@@ -61,10 +64,18 @@ function handleOptionSelected(option: {
   value: string;
 }) {
   if (option.value === "noVerification") {
+    const wasGuestParticipationEnabled = !conversationDraft.value.requiresLogin;
+    const isPublic = !conversationDraft.value.isPrivate;
+
     conversationDraft.value.requiresEventTicket = undefined;
+
+    if (isPublic && wasGuestParticipationEnabled) {
+      conversationDraft.value.requiresLogin = true;
+      showNotifyMessage(t("guestParticipationDisabledNotification"));
+    }
+
     showDialog.value = false;
   } else if (option.value === "requiresEventTicket") {
-    // Close this dialog and open event selection dialog
     showDialog.value = false;
     showEventSelectionDialog.value = true;
   }

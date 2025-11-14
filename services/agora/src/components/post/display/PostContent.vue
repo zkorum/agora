@@ -7,6 +7,7 @@
       :author-verified="false"
       :organization-url="extendedPostData.metadata.organization?.imageUrl || ''"
       :organization-name="extendedPostData.metadata.organization?.name || ''"
+      :is-login-required="extendedPostData.metadata.isLoginRequired"
       @open-moderation-history="$emit('openModerationHistory')"
     />
 

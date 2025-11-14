@@ -30,6 +30,25 @@ import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processHtmlBody } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
+/**
+ * Validates that public conversations have either login requirement or event ticket verification.
+ * Returns false if validation fails (public conversation without login or ticket requirement).
+ */
+function isValidPublicConversationAccess({
+    isIndexed,
+    isLoginRequired,
+    requiresEventTicket,
+}: {
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+    requiresEventTicket?: EventSlug;
+}): boolean {
+    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
+        return false;
+    }
+    return true;
+}
+
 interface CreateNewPostProps {
     db: PostgresDatabase;
     voteBuffer: VoteBuffer;
@@ -103,6 +122,12 @@ export async function importConversation({
                 `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
             );
         }
+    }
+
+    if (!isValidPublicConversationAccess({ isIndexed, isLoginRequired, requiresEventTicket })) {
+        throw httpErrors.forbidden(
+            "Public conversations must either require login or event ticket verification",
+        );
     }
     const { importedPolisConversation, polisUrlType } =
         await polisService.importExternalPolisConversation({
@@ -180,8 +205,8 @@ export async function createNewPost({
         }
     }
 
-    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
-        throw httpErrors.badRequest(
+    if (!isValidPublicConversationAccess({ isIndexed, isLoginRequired, requiresEventTicket })) {
+        throw httpErrors.forbidden(
             "Public conversations must either require login or event ticket verification",
         );
     }
@@ -195,10 +220,7 @@ export async function createNewPost({
                     slugId: conversationSlugId,
                     organizationId: organizationId,
                     isIndexed: isIndexed,
-                    isLoginRequired:
-                        isIndexed && !requiresEventTicket
-                            ? true
-                            : isLoginRequired,
+                    isLoginRequired: isLoginRequired,
                     requiresEventTicket: requiresEventTicket,
                     indexConversationAt:
                         indexConversationAt !== undefined
@@ -306,10 +328,7 @@ export async function createNewPost({
                     conversationContentId,
                     conversationAuthorId: authorId,
                     conversationIsIndexed: isIndexed,
-                    conversationIsLoginRequired:
-                        isIndexed && !requiresEventTicket
-                            ? true
-                            : isLoginRequired,
+                    conversationIsLoginRequired: isLoginRequired,
                     requiresEventTicket: requiresEventTicket ?? null,
                 },
             });
