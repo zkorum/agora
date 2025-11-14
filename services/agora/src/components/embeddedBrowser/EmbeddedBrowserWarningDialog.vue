@@ -200,7 +200,7 @@ function retryAndroidRedirect() {
   margin: 0;
   font-size: 1.5rem;
   font-weight: var(--font-weight-bold);
-  color: $color-text-strong;
+  color: $primary;
   text-align: center;
   line-height: 1.3;
 }

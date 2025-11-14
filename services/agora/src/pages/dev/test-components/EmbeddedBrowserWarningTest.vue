@@ -13,10 +13,35 @@
 
       <div class="button-container">
         <PrimeButton
-          :label="t('openWarningButton')"
-          icon="pi pi-exclamation-triangle"
+          label="Test: X Browser"
+          icon="pi pi-twitter"
           class="test-button"
-          @click="openWarning"
+          @click="openWarning('X', 'twitter')"
+        />
+        <PrimeButton
+          label="Test: Telegram"
+          icon="pi pi-telegram"
+          class="test-button"
+          @click="openWarning('Telegram', 'telegram')"
+        />
+        <PrimeButton
+          label="Test: Instagram"
+          icon="pi pi-instagram"
+          class="test-button"
+          @click="openWarning('Instagram', 'instagram')"
+        />
+        <PrimeButton
+          label="Test: Facebook"
+          icon="pi pi-facebook"
+          class="test-button"
+          @click="openWarning('Facebook', 'facebook')"
+        />
+        <PrimeButton
+          label="Test: Generic (no app name)"
+          icon="pi pi-question-circle"
+          class="test-button"
+          severity="secondary"
+          @click="openWarning(undefined, undefined)"
         />
       </div>
     </template>
@@ -37,8 +62,8 @@ const { t } = useComponentI18n<EmbeddedBrowserWarningTestTranslations>(
 
 const warningStore = useEmbeddedBrowserWarningStore();
 
-const openWarning = () => {
-  warningStore.openWarning("Telegram", "telegram");
+const openWarning = (appName: string | undefined, appKey: string | undefined) => {
+  warningStore.openWarning(appName, appKey);
 };
 </script>
 
@@ -68,6 +93,8 @@ const openWarning = () => {
 
 .button-container {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   justify-content: center;
 }
 </style>
