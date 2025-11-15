@@ -45,7 +45,7 @@ export default defineBoot(({ app }) => {
     theme: {
       preset: customPreset,
       options: {
-        darkModeSelector: "light",
+        darkModeSelector: false,
         cssLayer: false,
       },
     },

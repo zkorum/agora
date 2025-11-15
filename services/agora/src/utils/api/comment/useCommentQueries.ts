@@ -53,7 +53,7 @@ export function useHiddenCommentsQuery({
   return useQuery({
     queryKey: ["hiddenComments", conversationSlugId],
     queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
-    enabled: enabled,
+    enabled: enabled && conversationSlugId.length > 0,
     staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
@@ -214,6 +214,11 @@ export function useInvalidateCommentQueries() {
     invalidateComments: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
         queryKey: ["comments", conversationSlugId],
+      });
+    },
+    invalidateHiddenComments: (conversationSlugId: string) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["hiddenComments", conversationSlugId],
       });
     },
     invalidateAnalysis: (conversationSlugId: string) => {

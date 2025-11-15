@@ -23,6 +23,7 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import * as conversationExportService from "@/service/conversationExport/index.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -571,6 +572,14 @@ async function verifyUcanAndKnownDeviceStatus(
 }
 
 const apiVersion = "v1";
+
+function checkConversationExportEnabled(): void {
+    if (!config.CONVERSATION_EXPORT_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "Conversation export feature is currently disabled",
+        );
+    }
+}
 
 // const awsMailConf = {
 //     accessKeyId: config.AWS_ACCESS_KEY_ID,
@@ -2365,6 +2374,106 @@ server.after(() => {
                 db: db,
                 userId: deviceStatus.userId,
                 preferences: request.body,
+            });
+        },
+    });
+
+    // Conversation Export Routes
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/request`,
+        schema: {
+            body: Dto.requestConversationExportRequest,
+            response: {
+                200: Dto.requestConversationExportResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.requestConversationExport({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
+        schema: {
+            params: Dto.getConversationExportStatusRequest,
+            response: {
+                200: Dto.getConversationExportStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.getConversationExportStatus({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/history/:conversationSlugId`,
+        schema: {
+            params: Dto.getConversationExportHistoryRequest,
+            response: {
+                200: Dto.getConversationExportHistoryResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.getConversationExportHistory(
+                {
+                    db: db,
+                    conversationSlugId: request.params.conversationSlugId,
+                },
+            );
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "DELETE",
+        url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+        schema: {
+            params: Dto.deleteConversationExportRequest,
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
+            }
+
+            await conversationExportService.deleteConversationExport({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
             });
         },
     });

@@ -16,7 +16,6 @@ import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
-import "primeicons/primeicons.css";
 
 swiperElement.register();
 
