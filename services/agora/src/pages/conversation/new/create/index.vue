@@ -280,9 +280,27 @@ function handleValidationError(errorField: ValidationErrorField): void {
       break;
     case "polisUrl":
       validatePolisUrlField();
-      // Polis URL validation errors are handled in the PolisUrlInput component
+      scrollToPolisUrlInput();
       break;
   }
+}
+
+function scrollToPolisUrlInput() {
+  setTimeout(function () {
+    polisUrlInputRef.value?.$el?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 100);
+}
+
+function scrollToCsvUpload() {
+  setTimeout(function () {
+    polisCsvUploadRef.value?.$el?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 100);
 }
 
 async function handleImportSubmission(): Promise<void> {
@@ -360,6 +378,11 @@ async function onSubmit(): Promise<void> {
   if (!validation.isValid) {
     if (validation.errorField) {
       handleValidationError(validation.errorField);
+    } else if (
+      conversationDraft.value.importSettings.importType === "csv-import"
+    ) {
+      // CSV validation failed - scroll to the upload component
+      scrollToCsvUpload();
     }
     return;
   }
