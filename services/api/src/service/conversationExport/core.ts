@@ -171,63 +171,97 @@ async function processConversationExport({
 
         let totalSize = 0;
         const fileRecords = [];
+        const uploadedS3Keys: string[] = []; // Track uploaded S3 keys for rollback
 
-        // Generate each file
-        for (const generator of generators) {
-            const fileType = generator.fileType;
+        try {
+            // Generate and upload all files with rollback on failure
+            for (const generator of generators) {
+                const fileType = generator.fileType;
 
-            // Generate CSV
-            const { csvBuffer, recordCount } = await generator.generate({
-                db,
-                conversationId,
-                conversationSlugId,
-            });
+                // Generate CSV
+                const { csvBuffer, recordCount } = await generator.generate({
+                    db,
+                    conversationId,
+                    conversationSlugId,
+                });
 
-            // Generate filename for database/S3 storage (without timestamp)
-            const fileName = generateFileName(fileType);
+                // Generate filename for database/S3 storage (without timestamp)
+                const fileName = generateFileName(fileType);
 
-            // Generate download filename with conversation slug ID and timestamp for Content-Disposition
-            const downloadFileName = generateDownloadFileName({
-                conversationSlugId,
-                fileType,
-                createdAt: exportCreatedAt,
-            });
+                // Generate download filename with conversation slug ID and timestamp for Content-Disposition
+                const downloadFileName = generateDownloadFileName({
+                    conversationSlugId,
+                    fileType,
+                    createdAt: exportCreatedAt,
+                });
 
-            // Generate S3 key
-            const s3Key = generateS3Key({
-                conversationSlugId,
-                exportSlugId,
-                fileType,
-            });
+                // Generate S3 key
+                const s3Key = generateS3Key({
+                    conversationSlugId,
+                    exportSlugId,
+                    fileType,
+                });
 
-            // Upload to S3 with download filename for Content-Disposition
-            await uploadToS3({
-                s3Key,
-                buffer: csvBuffer,
-                bucketName: config.AWS_S3_BUCKET_NAME,
-                fileName: downloadFileName,
-            });
+                // Upload to S3 with download filename for Content-Disposition
+                await uploadToS3({
+                    s3Key,
+                    buffer: csvBuffer,
+                    bucketName: config.AWS_S3_BUCKET_NAME,
+                    fileName: downloadFileName,
+                });
 
-            // Insert file record (store simple filename without timestamp)
-            // Note: Presigned URLs are generated on-demand in getConversationExportStatus
-            const [fileRecord] = await db
-                .insert(conversationExportFileTable)
-                .values({
+                // Track uploaded S3 key for potential rollback
+                uploadedS3Keys.push(s3Key);
+
+                // Store file metadata for database insertion (after all uploads succeed)
+                fileRecords.push({
                     exportId: exportId,
                     fileType: fileType,
                     fileName: fileName,
                     fileSize: csvBuffer.length,
                     recordCount: recordCount,
                     s3Key: s3Key,
-                })
-                .returning();
+                });
 
-            fileRecords.push(fileRecord);
-            totalSize += csvBuffer.length;
+                totalSize += csvBuffer.length;
 
-            log.info(
-                `Generated ${fileType}.csv for export ${exportSlugId}: ${recordCount.toString()} records, ${csvBuffer.length.toString()} bytes`,
+                log.info(
+                    `Generated ${fileType}.csv for export ${exportSlugId}: ${recordCount.toString()} records, ${csvBuffer.length.toString()} bytes`,
+                );
+            }
+
+            // All S3 uploads succeeded - now insert database records
+            for (const fileRecord of fileRecords) {
+                await db
+                    .insert(conversationExportFileTable)
+                    .values(fileRecord)
+                    .returning();
+            }
+        } catch (uploadError: unknown) {
+            // Rollback: delete all successfully uploaded S3 files
+            log.error(
+                `Error during export generation for ${exportSlugId}, rolling back ${uploadedS3Keys.length.toString()} uploaded files`,
+                uploadError,
             );
+
+            for (const s3Key of uploadedS3Keys) {
+                try {
+                    await deleteFromS3({
+                        s3Key,
+                        bucketName: config.AWS_S3_BUCKET_NAME,
+                    });
+                    log.info(`Rolled back S3 file: ${s3Key}`);
+                } catch (deleteError: unknown) {
+                    // Log but don't fail the rollback if individual deletes fail
+                    log.error(
+                        `Failed to rollback S3 file ${s3Key}:`,
+                        deleteError,
+                    );
+                }
+            }
+
+            // Re-throw the original error to trigger the outer catch block
+            throw uploadError;
         }
 
         // Update export record with totals
