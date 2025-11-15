@@ -6,6 +6,7 @@ import {
 } from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
+import fastifyMultipart from "@fastify/multipart";
 import fastifySensible from "@fastify/sensible";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
@@ -21,8 +22,10 @@ import fs from "fs";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
+import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import { validateCsvFieldNames, MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -143,6 +146,14 @@ server.register(fastifyCors, {
             // Generate an error on other origins, disabling access
             cb(new Error("Not allowed"), false);
         }
+    },
+});
+
+// Register multipart plugin for file uploads
+server.register(fastifyMultipart, {
+    limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB max per file
+        files: 3,
     },
 });
 
@@ -1662,6 +1673,155 @@ server.after(() => {
                 requiresEventTicket: request.body.requiresEventTicket,
                 isOrgImportOnly: config.IS_ORG_IMPORT_ONLY,
             });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/validate-csv`,
+        schema: {
+            consumes: ["multipart/form-data"],
+            response: {
+                200: Dto.validateCsvResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: {
+                    isLoggedIn: true,
+                    isRegistered: true,
+                },
+            });
+
+            // Parse multipart request - accept any combination of files
+            const parts = request.parts();
+            const files: Partial<Record<string, string>> = {};
+
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    // Validate file size before buffering to prevent memory exhaustion
+                    const chunks: Buffer[] = [];
+                    let totalSize = 0;
+                    for await (const chunk of part.file) {
+                        totalSize += chunk.length;
+                        if (totalSize > MAX_CSV_FILE_SIZE) {
+                            throw server.httpErrors.payloadTooLarge(
+                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                            );
+                        }
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
+                    files[part.fieldname] = buffer.toString("utf-8");
+                }
+                // Ignore form fields - validation doesn't need them
+            }
+
+            // Validate the uploaded files (supports 1, 2, or 3 files)
+            const validationResult =
+                await csvImportService.validateIndividualCsvFiles({ files });
+
+            reply.send(validationResult);
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/import-csv`,
+        schema: {
+            consumes: ["multipart/form-data"],
+            response: {
+                200: Dto.importCsvConversationResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                });
+
+            // Parse multipart request
+            const parts = request.parts();
+            const files: Partial<Record<string, string>> = {};
+            const formFields: Record<string, string> = {};
+
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    // Validate file size before buffering to prevent memory exhaustion
+                    const chunks: Buffer[] = [];
+                    let totalSize = 0;
+                    for await (const chunk of part.file) {
+                        totalSize += chunk.length;
+                        if (totalSize > MAX_CSV_FILE_SIZE) {
+                            throw server.httpErrors.payloadTooLarge(
+                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                            );
+                        }
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
+                    files[part.fieldname] = buffer.toString("utf-8");
+                } else {
+                    // Parse form fields
+                    formFields[part.fieldname] = part.value as string;
+                }
+            }
+
+            // Validate that all required files are present
+            const fileValidation = validateCsvFieldNames(Object.keys(files));
+            if (!fileValidation.isValid) {
+                throw server.httpErrors.badRequest(
+                    `Missing required CSV files: ${fileValidation.missingFields.join(", ")}`,
+                );
+            }
+
+            // Validate and parse form fields using DTO with preprocessing
+            const parsedFields =
+                Dto.importCsvConversationFormRequest.parse(formFields);
+
+            // Check organization restriction (same as URL import)
+            if (
+                parsedFields.postAsOrganization === undefined &&
+                config.IS_ORG_IMPORT_ONLY
+            ) {
+                throw server.httpErrors.forbidden(
+                    "CSV import feature restricted to organizations",
+                );
+            }
+
+            // Verify organization membership if specified
+            if (parsedFields.postAsOrganization !== undefined) {
+                const organizationId =
+                    await authUtilService.isUserPartOfOrganization({
+                        db,
+                        organizationName: parsedFields.postAsOrganization,
+                        userId: deviceStatus.userId,
+                    });
+                if (organizationId === undefined) {
+                    throw server.httpErrors.forbidden(
+                        `User '${deviceStatus.userId}' is not part of the organization: '${parsedFields.postAsOrganization}'`,
+                    );
+                }
+            }
+
+            // Call CSV import service
+            const { conversationSlugId } =
+                await csvImportService.processCsvImport({
+                    db,
+                    voteBuffer,
+                    files,
+                    proof: encodedUcan,
+                    didWrite,
+                    authorId: deviceStatus.userId,
+                    postAsOrganization: parsedFields.postAsOrganization,
+                    indexConversationAt: parsedFields.indexConversationAt,
+                    isLoginRequired: parsedFields.isLoginRequired,
+                    isIndexed: parsedFields.isIndexed,
+                    requiresEventTicket: parsedFields.requiresEventTicket,
+                });
+
+            reply.send({ conversationSlugId });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({

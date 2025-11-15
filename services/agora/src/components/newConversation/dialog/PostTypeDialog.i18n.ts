@@ -5,6 +5,8 @@ export interface PostTypeDialogTranslations {
   newConversationDescription: string;
   importFromPolis: string;
   importFromPolisDescription: string;
+  importFromCsv: string;
+  importFromCsvDescription: string;
 }
 
 export const postTypeDialogTranslations: Record<
@@ -18,12 +20,17 @@ export const postTypeDialogTranslations: Record<
     importFromPolis: "Import from Polis",
     importFromPolisDescription:
       "Import and continue an existing Polis conversation.",
+    importFromCsv: "Import from CSV",
+    importFromCsvDescription:
+      "Import a Polis conversation from exported CSV files.",
   },
   ar: {
     newConversation: "محادثة جديدة",
     newConversationDescription: "إنشاء موضوع محادثة جديد للنقاش.",
     importFromPolis: "استيراد من بوليس",
     importFromPolisDescription: "استيراد ومتابعة محادثة بوليس موجودة.",
+    importFromCsv: "استيراد من CSV",
+    importFromCsvDescription: "استيراد محادثة بوليس من ملفات CSV المصدرة.",
   },
   es: {
     newConversation: "Nueva Conversación",
@@ -32,6 +39,9 @@ export const postTypeDialogTranslations: Record<
     importFromPolis: "Importar desde Polis",
     importFromPolisDescription:
       "Importar y continuar una conversación de Polis existente.",
+    importFromCsv: "Importar desde CSV",
+    importFromCsvDescription:
+      "Importar una conversación de Polis desde archivos CSV exportados.",
   },
   fr: {
     newConversation: "Nouvelle Conversation",
@@ -40,23 +50,33 @@ export const postTypeDialogTranslations: Record<
     importFromPolis: "Importer depuis Polis",
     importFromPolisDescription:
       "Importer et continuer une conversation Polis existante.",
+    importFromCsv: "Importer depuis CSV",
+    importFromCsvDescription:
+      "Importer une conversation Polis depuis des fichiers CSV exportés.",
   },
   "zh-Hans": {
     newConversation: "新对话",
     newConversationDescription: "创建一个新的话题进行讨论。",
     importFromPolis: "从 Polis 导入",
     importFromPolisDescription: "导入并继续一个现有的 Polis 对话。",
+    importFromCsv: "从 CSV 导入",
+    importFromCsvDescription: "从导出的 CSV 文件导入 Polis 对话。",
   },
   "zh-Hant": {
     newConversation: "新對話",
     newConversationDescription: "創建一個新的话题進行討論。",
     importFromPolis: "從 Polis 導入",
     importFromPolisDescription: "導入並繼續一個現有的 Polis 對話。",
+    importFromCsv: "從 CSV 導入",
+    importFromCsvDescription: "從導出的 CSV 檔案導入 Polis 對話。",
   },
   ja: {
     newConversation: "新しい会話",
     newConversationDescription: "新しいトピックを作成して議論します。",
     importFromPolis: "Polis からインポート",
     importFromPolisDescription: "既存の Polis 会話をインポートして続けます。",
+    importFromCsv: "CSV からインポート",
+    importFromCsvDescription:
+      "エクスポートされた CSV ファイルから Polis 会話をインポートします。",
   },
 };

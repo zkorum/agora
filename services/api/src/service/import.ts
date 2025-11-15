@@ -16,12 +16,26 @@ import { nowZeroMs } from "@/shared/util.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { EventSlug } from "@/shared/types/zod.js";
 
+// URL import configuration
+export interface UrlImportConfig {
+    method: "url";
+    polisUrl: string;
+    polisUrlType: "report" | "conversation";
+}
+
+// CSV import configuration
+export interface CsvImportConfig {
+    method: "csv";
+}
+
+// Discriminated union for import configuration
+export type ImportConfig = UrlImportConfig | CsvImportConfig;
+
 interface LoadImportedPolisConversationProps {
     db: PostgresDatabase;
     voteBuffer: VoteBuffer;
-    polisUrl: string;
-    polisUrlType: "report" | "conversation";
     importedPolisConversation: ImportPolisResults;
+    importConfig: ImportConfig;
     proof: string;
     didWrite: string;
     authorId: string;
@@ -36,8 +50,7 @@ export async function loadImportedPolisConversation({
     db,
     voteBuffer,
     importedPolisConversation,
-    polisUrl,
-    polisUrlType,
+    importConfig,
     proof,
     didWrite,
     authorId,
@@ -69,27 +82,41 @@ export async function loadImportedPolisConversation({
         trimmedBody = `${trimmedBody} [...].`;
     }
     let conversationBody = `${trimmedBody}<br /><br />--------------`;
-    if (polisUrlType === "conversation") {
-        conversationUrl = polisUrl;
-        conversationBody = `${conversationBody}<br />This conversation was initially imported from ${conversationUrl}.`;
-        reportUrl =
-            importedPolisConversation.report_id !== null
-                ? `https://pol.is/report/${importedPolisConversation.report_id}`
-                : undefined;
-        if (reportUrl !== undefined) {
-            conversationBody = `${conversationBody}<br />The original report url is ${reportUrl}.`;
+
+    // Handle messaging based on import method
+    if (importConfig.method === "csv") {
+        // CSV imports
+        conversationBody = `${conversationBody}<br />This conversation was imported from Polis CSV files.`;
+        // For CSV imports, link_url might be available from summary.csv
+        if (importedPolisConversation.conversation_data.link_url) {
+            conversationUrl =
+                importedPolisConversation.conversation_data.link_url;
+            conversationBody = `${conversationBody}<br />The original conversation url is ${conversationUrl}.`;
         }
     } else {
-        conversationUrl =
-            importedPolisConversation.conversation_data.link_url ??
-            (importedPolisConversation.conversation_data.conversation_id !==
-            null
-                ? `https://pol.is/${String(importedPolisConversation.conversation_data.conversation_id)}`
-                : undefined); // should never be undefined, but as we rely on external systems we don't control, better safe than sorry
-        reportUrl = polisUrl;
-        conversationBody = `${conversationBody}<br />This conversation was initially imported from ${reportUrl}.`;
-        if (conversationUrl !== undefined) {
-            conversationBody = `${conversationBody}<br />The original conversation url is ${conversationUrl}.`;
+        // URL imports (existing behavior)
+        if (importConfig.polisUrlType === "conversation") {
+            conversationUrl = importConfig.polisUrl;
+            conversationBody = `${conversationBody}<br />This conversation was initially imported from ${conversationUrl}.`;
+            reportUrl =
+                importedPolisConversation.report_id !== null
+                    ? `https://pol.is/report/${importedPolisConversation.report_id}`
+                    : undefined;
+            if (reportUrl !== undefined) {
+                conversationBody = `${conversationBody}<br />The original report url is ${reportUrl}.`;
+            }
+        } else {
+            conversationUrl =
+                importedPolisConversation.conversation_data.link_url ??
+                (importedPolisConversation.conversation_data.conversation_id !==
+                null
+                    ? `https://pol.is/${String(importedPolisConversation.conversation_data.conversation_id)}`
+                    : undefined); // should never be undefined, but as we rely on external systems we don't control, better safe than sorry
+            reportUrl = importConfig.polisUrl;
+            conversationBody = `${conversationBody}<br />This conversation was initially imported from ${reportUrl}.`;
+            if (conversationUrl !== undefined) {
+                conversationBody = `${conversationBody}<br />The original conversation url is ${conversationUrl}.`;
+            }
         }
     }
     if (ownername !== null) {
@@ -128,11 +155,15 @@ export async function loadImportedPolisConversation({
             isLoginRequired: isLoginRequired,
             seedOpinionList: [],
             requiresEventTicket: requiresEventTicket,
-            importUrl: polisUrl,
+            importUrl:
+                importConfig.method === "csv"
+                    ? undefined
+                    : importConfig.polisUrl,
             importConversationUrl: conversationUrl,
             importExportUrl: reportUrl,
             importCreatedAt: importCreatedAt,
             importAuthor: toUnionUndefined(ownername),
+            importMethod: importConfig.method,
         });
     try {
         const {

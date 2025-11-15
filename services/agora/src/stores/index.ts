@@ -63,7 +63,9 @@ function redactString(value: string, fieldName: string): string {
  *
  * @see https://docs.sentry.io/platforms/javascript/guides/vue/features/pinia/#statetransformer-function
  */
-function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresState> {
+function stateTransformer(
+  state: Partial<AllStoresState>
+): Partial<AllStoresState> {
   const redactedState: Partial<AllStoresState> = { ...state };
 
   // Redact authentication store sensitive data
@@ -94,10 +96,14 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
         ...conversationDraft,
         title: redactString(conversationDraft.title, "title"),
         content: redactString(conversationDraft.content, "content"),
-        seedOpinions: conversationDraft.seedOpinions.map(() => "[REDACTED_SEED_OPINION]"),
+        seedOpinions: conversationDraft.seedOpinions.map(
+          () => "[REDACTED_SEED_OPINION]"
+        ),
         poll: {
           ...conversationDraft.poll,
-          options: conversationDraft.poll.options.map(() => "[REDACTED_POLL_OPTION]"),
+          options: conversationDraft.poll.options.map(
+            () => "[REDACTED_POLL_OPTION]"
+          ),
         },
         postAs: {
           ...conversationDraft.postAs,
@@ -108,7 +114,10 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
         },
         importSettings: {
           ...conversationDraft.importSettings,
-          polisUrl: redactString(conversationDraft.importSettings.polisUrl, "polis_url"),
+          polisUrl: redactString(
+            conversationDraft.importSettings.polisUrl,
+            "polis_url"
+          ),
         },
       },
     };
@@ -137,7 +146,10 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
       fullTopicList: redactedState.topic.fullTopicList,
       // Clear followed topics but preserve count - useful for debugging without revealing interests
       followedTopicCodeSet: new Set(
-        Array.from({ length: followedTopicCount }, (_, i) => `[REDACTED_TOPIC_${i + 1}]`)
+        Array.from(
+          { length: followedTopicCount },
+          (_, i) => `[REDACTED_TOPIC_${i + 1}]`
+        )
       ),
     };
   }
@@ -148,14 +160,19 @@ function stateTransformer(state: Partial<AllStoresState>): Partial<AllStoresStat
       ...redactedState.user,
       profileData: {
         ...redactedState.user.profileData,
-        userName: redactString(redactedState.user.profileData.userName, "username"),
+        userName: redactString(
+          redactedState.user.profileData.userName,
+          "username"
+        ),
         // Clear lists - they contain full post/comment data with sensitive content
         userPostList: [],
         userCommentList: [],
-        organizationList: redactedState.user.profileData.organizationList.map((org) => ({
-          ...org,
-          name: redactString(org.name, "organization_name"),
-        })),
+        organizationList: redactedState.user.profileData.organizationList.map(
+          (org) => ({
+            ...org,
+            name: redactString(org.name, "organization_name"),
+          })
+        ),
         // Clear verified event tickets - user privacy
         verifiedEventTickets: [],
       },

@@ -9,7 +9,7 @@
         button-type="largeButton"
         color="primary"
         :label="
-          conversationDraft.importSettings.isImportMode
+          conversationDraft.importSettings.importType !== null
             ? t('importButton')
             : t('nextButton')
         "
@@ -24,7 +24,7 @@
 
       <div class="contentFlexStyle">
         <div
-          v-if="!conversationDraft.importSettings.isImportMode"
+          v-if="conversationDraft.importSettings.importType === null"
           ref="titleInputRef"
           :style="{ paddingLeft: '0.5rem' }"
         >
@@ -56,12 +56,19 @@
         </div>
         <div v-else class="import-section">
           <PolisUrlInput
+            v-if="conversationDraft.importSettings.importType === 'polis-url'"
             ref="polisUrlInputRef"
             v-model="conversationDraft.importSettings.polisUrl"
           />
+          <PolisCsvUpload
+            v-else-if="
+              conversationDraft.importSettings.importType === 'csv-import'
+            "
+            ref="polisCsvUploadRef"
+          />
         </div>
 
-        <div v-if="!conversationDraft.importSettings.isImportMode">
+        <div v-if="conversationDraft.importSettings.importType === null">
           <div class="editor-style">
             <ZKEditor
               v-model="conversationDraft.content"
@@ -122,6 +129,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import PolisUrlInput from "src/components/newConversation/PolisUrlInput.vue";
+import PolisCsvUpload from "src/components/newConversation/PolisCsvUpload.vue";
 import {
   useNewPostDraftsStore,
   type ValidationErrorField,
@@ -155,7 +163,7 @@ const isSubmitButtonLoading = ref(false);
 
 const router = useRouter();
 
-const { importConversation } = useBackendPostApi();
+const { importConversation, importConversationFromCsv } = useBackendPostApi();
 
 // Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -167,6 +175,8 @@ const routeGuardRef = ref<InstanceType<
 const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+const polisCsvUploadRef = ref<InstanceType<typeof PolisCsvUpload> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
 const {
@@ -230,10 +240,17 @@ function validateSubmission(): {
   isValid: boolean;
   errorField?: ValidationErrorField;
 } {
-  if (conversationDraft.value.importSettings.isImportMode) {
+  if (conversationDraft.value.importSettings.importType === "polis-url") {
     const polisValidation = validatePolisUrlField();
     if (!polisValidation.success) {
       return { isValid: false, errorField: "polisUrl" };
+    }
+  } else if (
+    conversationDraft.value.importSettings.importType === "csv-import"
+  ) {
+    // CSV validation is handled by the PolisCsvUpload component
+    if (!polisCsvUploadRef.value?.isValid()) {
+      return { isValid: false };
     }
   } else {
     const validation = validateForReview();
@@ -263,35 +280,95 @@ function handleValidationError(errorField: ValidationErrorField): void {
       break;
     case "polisUrl":
       validatePolisUrlField();
-      // Polis URL validation errors are handled in the PolisUrlInput component
+      scrollToPolisUrlInput();
       break;
   }
 }
 
-async function handleImportSubmission(): Promise<void> {
-  const response = await importConversation({
-    polisUrl: conversationDraft.value.importSettings.polisUrl,
-    postAsOrganizationName: conversationDraft.value.postAs.organizationName,
-    targetIsoConvertDateString: conversationDraft.value
-      .privateConversationSettings.hasScheduledConversion
-      ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-      : undefined,
-    isIndexed: !conversationDraft.value.isPrivate,
-    isLoginRequired: conversationDraft.value.requiresLogin,
-    requiresEventTicket: conversationDraft.value.requiresEventTicket,
-  });
+function scrollToPolisUrlInput() {
+  setTimeout(function () {
+    polisUrlInputRef.value?.$el?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 100);
+}
 
-  if (response.status === "success") {
-    conversationDraft.value = createEmptyDraft();
-    await router.replace({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.data.conversationSlugId },
+function scrollToCsvUpload() {
+  setTimeout(function () {
+    polisCsvUploadRef.value?.$el?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
     });
+  }, 100);
+}
+
+async function handleImportSubmission(): Promise<void> {
+  if (conversationDraft.value.importSettings.importType === "csv-import") {
+    // CSV Import - use the CSV endpoint
+    const files = polisCsvUploadRef.value?.getFiles();
+    if (!files?.summary || !files?.comments || !files?.votes) {
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: "ERR_BAD_REQUEST",
+        defaultMessage: "Missing required CSV files",
+      });
+      return;
+    }
+
+    try {
+      const response = await importConversationFromCsv({
+        summaryFile: files.summary,
+        commentsFile: files.comments,
+        votesFile: files.votes,
+        postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+        targetIsoConvertDateString: conversationDraft.value
+          .privateConversationSettings.hasScheduledConversion
+          ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+          : undefined,
+        isIndexed: !conversationDraft.value.isPrivate,
+        isLoginRequired: conversationDraft.value.requiresLogin,
+        requiresEventTicket: conversationDraft.value.requiresEventTicket,
+      });
+
+      conversationDraft.value = createEmptyDraft();
+      await router.replace({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.conversationSlugId },
+      });
+    } catch (error) {
+      // Handle backend errors (org restriction, validation failures, etc.)
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: error.code || "ERR_UNKNOWN",
+        defaultMessage: "Error while importing conversation from CSV",
+      });
+      // Don't clear the draft on error - let user fix and retry
+    }
   } else {
-    handleAxiosErrorStatusCodes({
-      axiosErrorCode: response.code,
-      defaultMessage: "Error while trying to import conversation from Polis",
+    // URL Import - use the URL endpoint
+    const response = await importConversation({
+      polisUrl: conversationDraft.value.importSettings.polisUrl,
+      postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+      targetIsoConvertDateString: conversationDraft.value
+        .privateConversationSettings.hasScheduledConversion
+        ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+        : undefined,
+      isIndexed: !conversationDraft.value.isPrivate,
+      isLoginRequired: conversationDraft.value.requiresLogin,
+      requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });
+
+    if (response.status === "success") {
+      conversationDraft.value = createEmptyDraft();
+      await router.replace({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.data.conversationSlugId },
+      });
+    } else {
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: response.code,
+        defaultMessage: "Error while trying to import conversation from Polis",
+      });
+    }
   }
 }
 
@@ -310,13 +387,18 @@ async function onSubmit(): Promise<void> {
   if (!validation.isValid) {
     if (validation.errorField) {
       handleValidationError(validation.errorField);
+    } else if (
+      conversationDraft.value.importSettings.importType === "csv-import"
+    ) {
+      // CSV validation failed - scroll to the upload component
+      scrollToCsvUpload();
     }
     return;
   }
 
   isSubmitButtonLoading.value = true;
   try {
-    if (conversationDraft.value.importSettings.isImportMode) {
+    if (conversationDraft.value.importSettings.importType !== null) {
       await handleImportSubmission();
     } else {
       await handleRegularSubmission();

@@ -4,7 +4,9 @@
       <ZKDialogOptionsList
         :options="postTypeOptions"
         :selected-value="
-          conversationDraft.importSettings.isImportMode ? 'import' : 'regular'
+          conversationDraft.importSettings.importType !== null
+            ? 'import'
+            : 'regular'
         "
         @option-selected="handleOptionSelected"
       />
@@ -30,7 +32,7 @@ const { t } = useComponentI18n<PostTypeDialogTranslations>(
 const showDialog = defineModel<boolean>();
 
 const emit = defineEmits<{
-  modeChangeRequested: [isImport: boolean];
+  modeChangeRequested: [importType: "polis-url" | "csv-import" | null];
 }>();
 
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
@@ -44,7 +46,12 @@ const postTypeOptions = [
   {
     title: t("importFromPolis"),
     description: t("importFromPolisDescription"),
-    value: "import",
+    value: "polis-url",
+  },
+  {
+    title: t("importFromCsv"),
+    description: t("importFromCsvDescription"),
+    value: "csv-import",
   },
 ];
 
@@ -57,7 +64,10 @@ function handleOptionSelected(option: {
     showDialog.value = false;
   }
 
-  const isImport = option.value === "import";
-  emit("modeChangeRequested", isImport);
+  const importType: "polis-url" | "csv-import" | null =
+    option.value === "regular"
+      ? null
+      : (option.value as "polis-url" | "csv-import");
+  emit("modeChangeRequested", importType);
 }
 </script>

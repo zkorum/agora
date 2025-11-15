@@ -69,6 +69,7 @@ interface CreateNewPostProps {
     importExportUrl?: string;
     importCreatedAt?: Date;
     importAuthor?: string;
+    importMethod?: "url" | "csv";
 }
 
 interface ImportPostProps {
@@ -139,8 +140,11 @@ export async function importConversation({
             db,
             voteBuffer,
             importedPolisConversation,
-            polisUrlType,
-            polisUrl,
+            importConfig: {
+                method: "url",
+                polisUrl,
+                polisUrlType,
+            },
             proof: proof,
             didWrite: didWrite,
             authorId: authorId,
@@ -175,6 +179,7 @@ export async function createNewPost({
     importExportUrl,
     importCreatedAt,
     importAuthor,
+    importMethod,
 }: CreateNewPostProps): Promise<ConversationIds> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
@@ -235,6 +240,7 @@ export async function createNewPost({
                     importExportUrl,
                     importCreatedAt,
                     importAuthor,
+                    importMethod,
                 })
                 .returning({ conversationId: conversationTable.id });
 
