@@ -315,25 +315,34 @@ async function handleImportSubmission(): Promise<void> {
       return;
     }
 
-    const response = await importConversationFromCsv({
-      summaryFile: files.summary,
-      commentsFile: files.comments,
-      votesFile: files.votes,
-      postAsOrganizationName: conversationDraft.value.postAs.organizationName,
-      targetIsoConvertDateString: conversationDraft.value
-        .privateConversationSettings.hasScheduledConversion
-        ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-        : undefined,
-      isIndexed: !conversationDraft.value.isPrivate,
-      isLoginRequired: conversationDraft.value.requiresLogin,
-      requiresEventTicket: conversationDraft.value.requiresEventTicket,
-    });
+    try {
+      const response = await importConversationFromCsv({
+        summaryFile: files.summary,
+        commentsFile: files.comments,
+        votesFile: files.votes,
+        postAsOrganizationName: conversationDraft.value.postAs.organizationName,
+        targetIsoConvertDateString: conversationDraft.value
+          .privateConversationSettings.hasScheduledConversion
+          ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
+          : undefined,
+        isIndexed: !conversationDraft.value.isPrivate,
+        isLoginRequired: conversationDraft.value.requiresLogin,
+        requiresEventTicket: conversationDraft.value.requiresEventTicket,
+      });
 
-    conversationDraft.value = createEmptyDraft();
-    await router.replace({
-      name: "/conversation/[postSlugId]",
-      params: { postSlugId: response.conversationSlugId },
-    });
+      conversationDraft.value = createEmptyDraft();
+      await router.replace({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: response.conversationSlugId },
+      });
+    } catch (error) {
+      // Handle backend errors (org restriction, validation failures, etc.)
+      handleAxiosErrorStatusCodes({
+        axiosErrorCode: error.code || "ERR_UNKNOWN",
+        defaultMessage: "Error while importing conversation from CSV",
+      });
+      // Don't clear the draft on error - let user fix and retry
+    }
   } else {
     // URL Import - use the URL endpoint
     const response = await importConversation({
