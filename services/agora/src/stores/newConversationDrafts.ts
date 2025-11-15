@@ -496,7 +496,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // hasScheduledConversion is sufficient to detect meaningful user changes.
     const hasPrivateSettingsChanges =
       current.privateConversationSettings.hasScheduledConversion !==
-        emptyDraft.privateConversationSettings.hasScheduledConversion;
+      emptyDraft.privateConversationSettings.hasScheduledConversion;
 
     // Check creation settings changes
     const hasCreationSettingsChanges =
@@ -784,6 +784,21 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    */
   function validatePolisUrlField(): MutationResult {
     const url = conversationDraft.value.importSettings.polisUrl;
+    const importType = conversationDraft.value.importSettings.importType;
+
+    // When import type is 'polis-url', URL is required and must be valid
+    if (importType === "polis-url") {
+      if (!url || url.trim() === "") {
+        const error = "Please enter a Polis URL to import";
+        validationState.value.polisUrl = {
+          isValid: false,
+          error,
+          showError: true,
+        };
+        return { success: false, error };
+      }
+    }
+
     const result = zodPolisUrlValidation.safeParse(url);
 
     if (!result.success) {
