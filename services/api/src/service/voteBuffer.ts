@@ -440,8 +440,12 @@ export function createVoteBuffer({
                         `[VoteBuffer] Vote breakdown: ${String(newVotes.length)} new, ${String(existingVotes.length)} updates`,
                     );
 
-                    // Step 2: Bulk INSERT new vote_table rows
-                    let newVoteTableIds: number[] = [];
+                    // Step 2: Bulk INSERT new vote_table rows with conflict handling
+                    const successfullyInsertedVotes: {
+                        vote: BufferedVote;
+                        voteTableId: number;
+                    }[] = [];
+
                     if (newVotes.length > 0) {
                         const newVoteTableResults = await tx
                             .insert(voteTable)
@@ -452,9 +456,37 @@ export function createVoteBuffer({
                                     currentContentId: null,
                                 })),
                             )
-                            .returning({ id: voteTable.id });
+                            .onConflictDoNothing()
+                            .returning({
+                                id: voteTable.id,
+                                authorId: voteTable.authorId,
+                                opinionId: voteTable.opinionId,
+                            });
 
-                        newVoteTableIds = newVoteTableResults.map((r) => r.id);
+                        // Check if some votes were skipped due to race condition
+                        if (newVoteTableResults.length < newVotes.length) {
+                            const conflictCount =
+                                newVotes.length - newVoteTableResults.length;
+                            log.warn(
+                                `[VoteBuffer] Race condition: ${String(conflictCount)} vote(s) skipped (already inserted by concurrent batch)`,
+                            );
+                        }
+
+                        // Build map of successfully inserted votes
+                        const voteTableIdMap = new Map<string, number>();
+                        for (const result of newVoteTableResults) {
+                            const key = getVoteKey(result.authorId, result.opinionId);
+                            voteTableIdMap.set(key, result.id);
+                        }
+
+                        // Filter newVotes (only successfully inserted votes)
+                        for (const vote of newVotes) {
+                            const key = getVoteKey(vote.userId, vote.opinionId);
+                            const voteTableId = voteTableIdMap.get(key);
+                            if (voteTableId !== undefined) {
+                                successfullyInsertedVotes.push({ vote, voteTableId });
+                            }
+                        }
                     }
 
                     // Step 3: Combine all vote processing data (existing + new)
@@ -466,9 +498,9 @@ export function createVoteBuffer({
 
                     const voteProcessingData: VoteProcessingData[] = [
                         ...existingVotes,
-                        ...newVotes.map((vote, index) => ({
+                        ...successfullyInsertedVotes.map(({ vote, voteTableId }) => ({
                             vote,
-                            voteTableId: newVoteTableIds[index],
+                            voteTableId,
                             existingVote: null,
                         })),
                     ];

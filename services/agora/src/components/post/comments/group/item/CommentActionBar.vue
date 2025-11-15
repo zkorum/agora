@@ -159,15 +159,10 @@ async function castPersonalVote(
 
   const currentVote = localUserVote.value;
 
-  // Check if user is trying to change their vote (currently disabled)
-  if (currentVote !== undefined && currentVote !== voteAction) {
-    showNotifyMessage(t("voteChangeDisabled"));
-    return;
-  }
-
-  // Don't allow clicking the same vote again
+  // Allow re-clicking the same vote to cancel it
+  // If already voted and clicking same button, treat as cancel
   if (currentVote === voteAction) {
-    return;
+    voteAction = "cancel";
   }
 
   // Store original state for rollback
@@ -177,17 +172,26 @@ async function castPersonalVote(
   const originalNumPasses = localNumPasses.value;
 
   // Apply optimistic updates locally
+  // Helper to update counter
+  const updateCounter = (vote: VotingOption | undefined, delta: number) => {
+    if (vote === "agree") {
+      localNumAgrees.value += delta;
+    } else if (vote === "disagree") {
+      localNumDisagrees.value += delta;
+    } else if (vote === "pass") {
+      localNumPasses.value += delta;
+    }
+  };
+
+  // Remove old vote
+  updateCounter(currentVote, -1);
+
+  // Add new vote (unless canceling)
   if (voteAction !== "cancel") {
     localUserVote.value = voteAction;
-
-    // Update vote counts
-    if (voteAction === "agree") {
-      localNumAgrees.value++;
-    } else if (voteAction === "disagree") {
-      localNumDisagrees.value++;
-    } else if (voteAction === "pass") {
-      localNumPasses.value++;
-    }
+    updateCounter(voteAction, 1);
+  } else {
+    localUserVote.value = undefined;
   }
 
   try {
