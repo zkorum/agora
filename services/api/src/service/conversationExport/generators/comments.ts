@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { format as formatCsv } from "fast-csv";
+import sanitizeHtml from "sanitize-html";
 import {
     opinionTable,
     userTable,
@@ -12,6 +13,34 @@ import type {
     GeneratorParams,
     CsvGeneratorResult,
 } from "./base.js";
+
+/**
+ * Strip all HTML tags from content for CSV export.
+ * Converts HTML to plain text while preserving line breaks.
+ */
+function stripHtmlForCsv(htmlContent: string): string {
+    // First pass: convert <br> and block-level tags to newlines
+    let text = htmlContent
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/div>/gi, "\n")
+        .replace(/<\/p>/gi, "\n");
+
+    // Second pass: strip all remaining HTML tags
+    text = sanitizeHtml(text, {
+        allowedTags: [],
+        allowedAttributes: {},
+    });
+
+    // Clean up excessive whitespace while preserving intentional line breaks
+    text = text
+        .split("\n")
+        .map((line) => line.trim())
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n") // Max 2 consecutive newlines
+        .trim();
+
+    return text;
+}
 
 /**
  * Generator for comments.csv following Polis specification
@@ -64,7 +93,7 @@ export class CommentsGenerator implements CsvGenerator {
                       : opinion.moderationAction === "move"
                         ? -1 // moved (also treated as banned)
                         : 1, // approved (fallback, though no explicit "approve" action exists)
-            "comment-body": opinion.content,
+            "comment-body": stripHtmlForCsv(opinion.content),
         }));
 
         const csvStream = formatCsv({ headers: true });
