@@ -211,8 +211,10 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "post-type",
     label:
-      conversationDraft.value.importSettings.importType !== null
-        ? t("importFromPolis")
+      conversationDraft.value.importSettings.importType === "polis-url"
+        ? t("importFromPolisUrl")
+        : conversationDraft.value.importSettings.importType === "csv-import"
+        ? t("importFromCsv")
         : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible:
