@@ -3,11 +3,13 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useOnboardingPreferencesStore } from "./onboarding/preferences";
 import { onboardingFlowStore } from "./onboarding/flow";
+import type { EventSlug } from "src/shared/types/zod";
 
 interface VotingIntention {
   enabled: boolean;
   conversationSlugId: string;
   isEmbedView: boolean;
+  eventSlug?: EventSlug;
 }
 
 interface OpinionAgreementIntention {
@@ -15,6 +17,7 @@ interface OpinionAgreementIntention {
   conversationSlugId: string;
   opinionSlugId: string;
   isEmbedView: boolean;
+  eventSlug?: EventSlug;
 }
 
 interface NewConversationIntention {
@@ -25,6 +28,7 @@ interface NewOpinionIntention {
   enabled: boolean;
   conversationSlugId: string;
   opinionBody: string;
+  eventSlug?: EventSlug;
 }
 
 interface ReportUserContentIntention {
@@ -32,6 +36,7 @@ interface ReportUserContentIntention {
   conversationSlugId: string;
   opinionSlugId: string;
   isEmbedView: boolean;
+  eventSlug?: EventSlug;
 }
 
 export type PossibleIntentions =
@@ -54,6 +59,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     enabled: false,
     conversationSlugId: "",
     isEmbedView: false,
+    eventSlug: undefined,
   };
 
   let opinionAgreementIntention: OpinionAgreementIntention = {
@@ -61,6 +67,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     conversationSlugId: "",
     opinionSlugId: "",
     isEmbedView: false,
+    eventSlug: undefined,
   };
 
   let newConversationIntention: NewConversationIntention = {
@@ -71,6 +78,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     enabled: false,
     conversationSlugId: "",
     opinionBody: "",
+    eventSlug: undefined,
   };
 
   let reportUserContentIntention: ReportUserContentIntention = {
@@ -78,29 +86,34 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     conversationSlugId: "",
     opinionSlugId: "",
     isEmbedView: false,
+    eventSlug: undefined,
   };
 
   function createVotingIntention(
     conversationSlugId: string,
-    isEmbedView: boolean
+    isEmbedView: boolean,
+    eventSlug?: EventSlug
   ) {
     votingIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       isEmbedView: isEmbedView,
+      eventSlug: eventSlug,
     };
   }
 
   function createOpinionAgreementIntention(
     conversationSlugId: string,
     opinionSlugId: string,
-    isEmbedView: boolean
+    isEmbedView: boolean,
+    eventSlug?: EventSlug
   ) {
     opinionAgreementIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
       isEmbedView: isEmbedView,
+      eventSlug: eventSlug,
     };
   }
 
@@ -112,25 +125,29 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
   function createNewOpinionIntention(
     conversationSlugId: string,
-    opinionBody: string
+    opinionBody: string,
+    eventSlug?: EventSlug
   ) {
     newOpinionIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionBody: opinionBody,
+      eventSlug: eventSlug,
     };
   }
 
   function createReportUserContentIntention(
     conversationSlugId: string,
     opinionSlugId: string,
-    isEmbedView: boolean
+    isEmbedView: boolean,
+    eventSlug?: EventSlug
   ) {
     reportUserContentIntention = {
       enabled: true,
       conversationSlugId: conversationSlugId,
       opinionSlugId: opinionSlugId,
       isEmbedView: isEmbedView,
+      eventSlug: eventSlug,
     };
   }
 
@@ -237,6 +254,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         opinionBody: "",
+        eventSlug: undefined,
       };
     }
   }
@@ -270,6 +288,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         conversationSlugId: "",
         opinionSlugId: "",
         isEmbedView: false,
+        eventSlug: undefined,
       };
     }
   }
@@ -285,6 +304,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         enabled: false,
         conversationSlugId: "",
         isEmbedView: false,
+        eventSlug: undefined,
       };
     }
   }
@@ -303,6 +323,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         conversationSlugId: "",
         opinionSlugId: "",
         isEmbedView: false,
+        eventSlug: undefined,
       };
     }
   }

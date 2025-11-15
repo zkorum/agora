@@ -46,11 +46,14 @@
         :voting-utilities="votingUtilities"
         :is-post-locked="isPostLocked"
         :login-required-to-participate="loginRequiredToParticipate"
+        :requires-event-ticket="props.requiresEventTicket"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
         @change-vote="
           (vote: VotingAction, opinionSlugId: string) =>
             changeVote(vote, opinionSlugId)
+        "
+        @ticket-verified="(payload) => emit('ticketVerified', payload)
         "
       />
     </ZKCard>
@@ -64,7 +67,16 @@ import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 
-const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
+const emit = defineEmits<{
+  deleted: [];
+  mutedComment: [];
+  changeVote: [vote: VotingAction, opinionSlugId: string];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
+}>();
+
+import type { EventSlug } from "src/shared/types/zod";
 
 const props = defineProps<{
   commentItemList: OpinionItem[];
@@ -73,6 +85,7 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
 }>();
 
 const finalCommentList = computed((): OpinionItem[] => {

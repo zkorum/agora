@@ -43,10 +43,8 @@
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
             :is-post-locked="isPostLocked"
-            :login-required-to-participate="
-              conversationData.metadata.isIndexed ||
-              conversationData.metadata.isLoginRequired
-            "
+            :login-required-to-participate="conversationData.metadata.isLoginRequired"
+            :requires-event-ticket="conversationData.metadata.requiresEventTicket"
             :preloaded-queries="{
               commentsDiscoverQuery,
               commentsNewQuery,
@@ -57,20 +55,19 @@
             @participant-count-delta="
               (delta: number) => (participantCountLocal += delta)
             "
+            @ticket-verified="(payload) => handleTicketVerified(payload)"
           />
         </div>
       </div>
     </ZKHoverEffect>
 
-    <FloatingBottomContainer v-if="!compactMode && !isPostLocked">
+    <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :login-required-to-participate="
-          conversationData.metadata.isIndexed ||
-          conversationData.metadata.isLoginRequired
-        "
+        :login-required-to-participate="conversationData.metadata.isLoginRequired"
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         @submitted-comment="submittedComment"
+        @ticket-verified="(payload) => handleTicketVerified(payload)"
       />
     </FloatingBottomContainer>
 

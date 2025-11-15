@@ -42,14 +42,12 @@
 
       <div v-if="extendedPostData.payload.poll" class="pollContainer">
         <PollWrapper
-          :login-required-to-participate="
-            extendedPostData.metadata.isIndexed ||
-            extendedPostData.metadata.isLoginRequired
-          "
+          :login-required-to-participate="extendedPostData.metadata.isLoginRequired"
           :poll-options="extendedPostData.payload.poll"
           :post-slug-id="extendedPostData.metadata.conversationSlugId"
           :user-response="extendedPostData.interaction"
           :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
+          @ticket-verified="(payload) => $emit('verified', payload)"
         />
       </div>
 

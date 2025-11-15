@@ -189,6 +189,9 @@ const { handleAxiosErrorStatusCodes } = useCommonApi();
 const showLoginDialog = ref(false);
 
 function onLoginCallback() {
+  // Unlock route to prevent ExitRoutePrompt from showing
+  // The user already saw "Your draft will be restored" in the login dialog
+  routeGuardRef.value?.unlockRoute();
   createNewConversationIntention();
 }
 

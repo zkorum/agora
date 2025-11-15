@@ -32,6 +32,8 @@
             button-type="largeButton"
             :label="labelOk"
             color="primary"
+            :loading="okLoading"
+            :disable="okLoading"
             @click="clickedOkButton()"
           />
         </div>
@@ -51,6 +53,7 @@ const props = defineProps<{
   okCallback: () => void;
   labelOk: string;
   labelCancel: string;
+  okLoading: boolean;
 }>();
 
 const showDialog = defineModel<boolean>({ required: true });

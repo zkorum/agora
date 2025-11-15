@@ -36,8 +36,10 @@
             }"
             :is-post-locked="isPostLocked"
             :login-required-to-participate="props.loginRequiredToParticipate"
+            :requires-event-ticket="props.requiresEventTicket"
             @deleted="handleOpinionDeleted()"
             @muted-comment="handleOpinionMuted()"
+            @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </AsyncStateHandler>
       </div>
@@ -65,12 +67,22 @@ import { useOpinionPagination } from "src/composables/opinion/useOpinionPaginati
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import type { OpinionItem } from "src/shared/types/zod";
 
-const emit = defineEmits(["deleted", "participantCountDelta", "voteCast"]);
+const emit = defineEmits<{
+  deleted: [];
+  participantCountDelta: [delta: number];
+  voteCast: [];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
+}>();
+
+import type { EventSlug } from "src/shared/types/zod";
 
 const props = defineProps<{
   postSlugId: string;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;

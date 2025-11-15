@@ -42,7 +42,9 @@
             :voting-utilities="votingUtilities"
             :is-post-locked="isPostLocked"
             :login-required-to-participate="loginRequiredToParticipate"
+            :requires-event-ticket="props.requiresEventTicket"
             @change-vote="(vote: VotingAction) => changeVote(vote)"
+            @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </div>
       </div>
@@ -59,7 +61,16 @@ import CommentActionBar from "./CommentActionBar.vue";
 import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 
-const emit = defineEmits(["deleted", "mutedComment", "changeVote"]);
+const emit = defineEmits<{
+  deleted: [];
+  mutedComment: [];
+  changeVote: [vote: VotingAction, opinionSlugId: string];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
+}>();
+
+import type { EventSlug } from "src/shared/types/zod";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -67,6 +78,7 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
 }>();
 
 function changeVote(vote: VotingAction) {

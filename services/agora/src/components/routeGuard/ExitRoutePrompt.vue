@@ -9,6 +9,7 @@
       :ok-callback="saveDraft"
       :label-ok="t('saveAsDraft')"
       :label-cancel="t('discard')"
+      :ok-loading="false"
     >
     </DialogContainer>
   </div>
