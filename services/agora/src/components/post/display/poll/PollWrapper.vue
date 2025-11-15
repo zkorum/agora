@@ -18,7 +18,6 @@
               ? 0
               : Math.round((optionItem.numResponses * 100) / totalVoteCount)
           "
-          :disabled="isPollLocked"
           @click="clickedVotingOption(optionItem.optionNumber - 1, $event)"
         />
       </div>
@@ -67,6 +66,8 @@
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'voting'"
+      :requires-zupass-event-slug="props.requiresEventTicket"
+      :login-required-to-participate="props.loginRequiredToParticipate"
     />
   </div>
 </template>
@@ -96,6 +97,8 @@ import {
 } from "./PollWrapper.i18n";
 
 import type { EventSlug } from "src/shared/types/zod";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 
 const props = defineProps<{
   userResponse: UserInteraction;
@@ -103,6 +106,12 @@ const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
+}>();
+
+const emit = defineEmits<{
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
 }>();
 
 const localPollOptionList = ref<PollOptionWithResult[]>([]);
@@ -117,6 +126,10 @@ const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 const { loadPostData } = useHomeFeedStore();
 const { updateAuthState } = useBackendAuthApi();
+
+// Zupass verification
+const { verifyTicket } = useTicketVerificationFlow();
+const { isVerifying: isVerifyingZupass } = useZupassVerification();
 
 // Check if poll is locked due to missing event ticket
 const isPollLocked = computed(() => {
@@ -223,17 +236,23 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
     return;
   }
 
-  // Prevent voting if poll is locked due to missing event ticket
-  if (isPollLocked.value) {
+  // Prevent multiple clicks while Zupass is verifying
+  if (isVerifyingZupass.value) {
     return;
   }
 
   event.stopPropagation();
 
-  if (props.loginRequiredToParticipate && !isLoggedIn.value) {
+  // Check if user needs login or Zupass verification
+  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  const needsZupass = isPollLocked.value;
+
+  if (needsLogin || needsZupass) {
     showLoginDialog.value = true;
     return;
   }
+
+  // User is allowed to vote - submit response
   const response = await backendPollApi.submitPollResponse(
     selectedIndex,
     props.postSlugId
@@ -251,8 +270,56 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
   }
 }
 
-function onLoginCallback() {
-  setVotingIntention();
+async function onLoginCallback() {
+  // Store the intention with eventSlug
+  setVotingIntention(props.requiresEventTicket);
+
+  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  const hasZupassRequirement = props.requiresEventTicket !== undefined;
+
+  console.log('[PollWrapper] onLoginCallback', {
+    needsLogin,
+    hasZupassRequirement,
+    isLoggedIn: isLoggedIn.value,
+  });
+
+  // If user just needs Zupass verification (no login required), trigger it inline
+  if (!needsLogin && hasZupassRequirement) {
+    console.log('[PollWrapper] Triggering inline Zupass verification');
+    await handleZupassVerification();
+  }
+  // Otherwise, dialog will route user to login via PreLoginIntentionDialog
+}
+
+async function handleZupassVerification() {
+  if (props.requiresEventTicket === undefined) {
+    return;
+  }
+
+  // Dialog will close when Zupass iframe is ready (via callback)
+  const result = await verifyTicket({
+    eventSlug: props.requiresEventTicket,
+    onIframeReady: () => {
+      // Close dialog as soon as Zupass iframe becomes visible
+      showLoginDialog.value = false;
+    },
+    onSuccess: async () => {
+      // Reload poll data after successful verification
+      await Promise.all([loadPostData(), fetchUserPollResponseData(true)]);
+    },
+  });
+
+  if (result.success) {
+    // Emit to parent so banner gets refreshed
+    console.log('[PollWrapper] Emitting ticketVerified event', {
+      userIdChanged: result.userIdChanged,
+      needsCacheRefresh: result.needsCacheRefresh,
+    });
+    emit("ticketVerified", {
+      userIdChanged: result.userIdChanged,
+      needsCacheRefresh: result.needsCacheRefresh,
+    });
+  }
 }
 </script>
 

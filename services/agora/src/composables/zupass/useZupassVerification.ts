@@ -35,27 +35,29 @@ export interface ZupassVerificationResult {
 
 type ConnectionState = "disconnected" | "connecting" | "connected" | "error";
 
+// Global shared state (module-level singletons)
+// This ensures all components share the same Parcnet connection and iframe container
+const isVerifying = ref(false);
+const error = ref<string | null>(null);
+const zupassIframeContainer = ref<HTMLElement | null>(null);
+const parcnetAPI = shallowRef<ParcnetAPI | null>(null);
+const connectionState = ref<ConnectionState>("disconnected");
+const initContext = shallowRef<Awaited<ReturnType<typeof init>> | null>(null);
+
+// Callback fired when Zupass iframe/dialog becomes visible
+let onIframeReadyCallback: (() => void) | null = null;
+
 /**
  * Composable for Zupass event ticket verification using Parcnet
  * Maintains persistent Parcnet connection similar to React's useParcnetClient()
+ * All state is shared at module level - all components use the same Parcnet instance
  */
 export function useZupassVerification() {
-  const isVerifying = ref(false);
-  const error = ref<string | null>(null);
-  const zupassIframeContainer = ref<HTMLElement | null>(null);
-
-  // Persistent connection state (like React's useParcnetClient)
-  const parcnetAPI = shallowRef<ParcnetAPI | null>(null);
-  const connectionState = ref<ConnectionState>("disconnected");
-  const initContext = shallowRef<Awaited<ReturnType<typeof init>> | null>(null);
 
   /**
    * Reset connection state (useful when permissions were denied or connection failed)
    */
   function resetConnection(): void {
-    console.log("[Zupass] ========================================");
-    console.log("[Zupass] Resetting connection state");
-    console.log("[Zupass] ========================================");
     parcnetAPI.value = null;
     connectionState.value = "disconnected";
     error.value = null;
@@ -68,7 +70,6 @@ export function useZupassVerification() {
    */
   async function initParcnetIframe(): Promise<void> {
     if (initContext.value) {
-      console.log("[Zupass] Iframe already initialized, skipping");
       return;
     }
 
@@ -76,27 +77,10 @@ export function useZupassVerification() {
       throw new Error("Zupass iframe container not mounted");
     }
 
-    console.log("[Zupass] ========================================");
-    console.log("[Zupass] Initializing Parcnet iframe and dialog...");
-    console.log("[Zupass] Container element:", zupassIframeContainer.value);
-
-    try {
-      // Step 1: Initialize iframe and dialog
-      // This creates the <dialog> element that will show permissions UI
-      const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
-
-      initContext.value = ctx;
-      console.log("[Zupass] ✓ Iframe and dialog initialized successfully");
-      console.log("[Zupass] - Has iframe?", !!ctx.iframe);
-      console.log("[Zupass] - Has dialog?", !!ctx.dialog);
-      console.log("[Zupass] - Has emitter?", !!ctx.emitter);
-      console.log("[Zupass] ========================================");
-    } catch (err) {
-      console.error("[Zupass] ========================================");
-      console.error("[Zupass] Failed to initialize iframe:", err);
-      console.error("[Zupass] ========================================");
-      throw err;
-    }
+    // Step 1: Initialize iframe and dialog
+    // This creates the <dialog> element that will show permissions UI
+    const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
+    initContext.value = ctx;
   }
 
   /**
@@ -108,18 +92,10 @@ export function useZupassVerification() {
       connectionState.value === "connected" ||
       connectionState.value === "connecting"
     ) {
-      console.log("[Zupass] Already connected or connecting, skipping");
       return;
     }
 
     connectionState.value = "connecting";
-    console.log("[Zupass] ========================================");
-    console.log("[Zupass] Starting connection to Parcnet...");
-    console.log("[Zupass] App name:", ZAPP_CONFIG.name);
-    console.log(
-      "[Zupass] Permissions:",
-      JSON.stringify(ZAPP_CONFIG.permissions, null, 2)
-    );
 
     try {
       // Step 1 Fix: Call init() and doConnect() in sequence, no caching
@@ -127,17 +103,8 @@ export function useZupassVerification() {
         throw new Error("Zupass iframe container not mounted");
       }
 
-      console.log("[Zupass] Initializing iframe and connecting in sequence...");
-      console.log("[Zupass] Container element:", zupassIframeContainer.value);
-
       // Initialize iframe
       const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
-
-      console.log("[Zupass] ✓ Iframe initialized");
-      console.log("[Zupass] Immediately calling doConnect...");
-      console.log(
-        "[Zupass] Waiting for user to approve connection and permissions..."
-      );
 
       // Immediately connect using fresh context (no caching!)
       const z = await doConnect(ZAPP_CONFIG, ctx);
@@ -145,26 +112,29 @@ export function useZupassVerification() {
       parcnetAPI.value = z;
       initContext.value = ctx; // Store only after successful connection
       connectionState.value = "connected";
-      console.log("[Zupass] ========================================");
-      console.log("[Zupass] ✓ Connected successfully! Full flow completed.");
-      console.log("[Zupass] ========================================");
+
+      // Fire callback to signal that Zupass iframe is ready and visible
+      if (onIframeReadyCallback) {
+        onIframeReadyCallback();
+        onIframeReadyCallback = null; // Clear after firing
+      }
     } catch (err) {
-      console.error("[Zupass] ========================================");
-      console.error("[Zupass] Connection error:", err);
+      // Log error with container context for debugging
+      const containerInfo = zupassIframeContainer.value
+        ? `${zupassIframeContainer.value.tagName}`
+        : 'null';
+      console.error(`[Zupass] Connection failed (container: ${containerInfo}):`, err);
 
       // Handle specific Parcnet errors
       if (err instanceof UserCancelledConnectionError) {
         error.value = "Connection cancelled by user";
-        console.log("[Zupass] User cancelled connection");
       } else if (err instanceof UserClosedDialogError) {
         error.value = "Dialog closed without approving permissions";
-        console.log("[Zupass] User closed dialog without approving");
       } else {
         error.value = err instanceof Error ? err.message : "Failed to connect";
       }
 
       connectionState.value = "error";
-      console.error("[Zupass] ========================================");
       throw err;
     }
   }
@@ -181,7 +151,8 @@ export function useZupassVerification() {
     eventSlug: EventSlug;
     platform: SupportedPlatform;
   }): Promise<ZupassVerificationResult> {
-    isVerifying.value = true;
+    // Don't set isVerifying here - it should be managed by caller (useTicketVerificationFlow)
+    // to cover the entire verification flow including backend verification
     error.value = null;
 
     try {
@@ -193,16 +164,15 @@ export function useZupassVerification() {
       const signerPublicKey = getZupassSignerPublicKey(eventSlug);
       const collectionName = getZupassCollectionName(eventSlug);
 
-      console.log("[Zupass] ========================================");
-      console.log("[Zupass] Starting ticket proof request");
-      console.log("[Zupass] Event:", eventSlug);
-      console.log("[Zupass] Event ID:", config.zupassEventId);
-      console.log("[Zupass] Collection:", collectionName);
-
       // Ensure we're connected before proceeding
       if (connectionState.value !== "connected" || !parcnetAPI.value) {
-        console.log("[Zupass] Not connected, initiating connection...");
         await connectToZupass();
+      } else {
+        // Already connected - fire callback immediately since iframe is already ready
+        if (onIframeReadyCallback) {
+          onIframeReadyCallback();
+          onIframeReadyCallback = null;
+        }
       }
 
       if (!parcnetAPI.value) {
@@ -211,14 +181,6 @@ export function useZupassVerification() {
 
       // Build GPC proof request using ticketProofRequest()
       // Use ONLY signerPublicKey + eventId WITHOUT productId to match ANY ticket for this event
-      console.log("[Zupass] Building ticket proof request...");
-      console.log(
-        "[Zupass] Using classification tuple: [signerPublicKey, eventId]"
-      );
-      console.log(
-        "[Zupass] This matches ANY ticket for the event (not filtering by productId)"
-      );
-
       const proofRequest = ticketProofRequest({
         classificationTuples: [
           {
@@ -246,41 +208,25 @@ export function useZupassVerification() {
         },
       });
 
-      console.log("[Zupass] Calling gpc.prove with collectionIds...");
-      console.log(`[Zupass] Collection: ${collectionName}`);
-
       const proofResult = await parcnetAPI.value.gpc.prove({
         request: proofRequest.schema,
         collectionIds: [collectionName],
       });
-
-      console.log("[Zupass] ✓ Proof generated successfully");
-      console.log("[Zupass] ========================================");
 
       if (!proofResult) {
         throw new Error("Failed to generate proof");
       }
 
       if ("error" in proofResult) {
-        // Debug logging for proof generation failures (privacy-safe)
-        console.error("[Zupass Debug] Proof generation failed");
-        console.error("[Zupass Debug] Error:", proofResult.error);
-
-        // Log schema structure only (no actual values)
-        console.error("[Zupass Debug] Request schema:", {
-          podCount: Object.keys(proofRequest.schema.pods).length,
-          hasExternalNullifier: !!proofRequest.schema.externalNullifier,
-          hasWatermark: !!proofRequest.schema.watermark,
-        });
-
-        // Log POD availability statistics (counts only, no content)
+        // Gather POD statistics for debugging (privacy-safe - counts only)
+        let podStats = null;
         try {
           const podspec = await import("@parcnet-js/podspec");
           const allPods = await parcnetAPI.value.pod
             .collection(collectionName)
             .query(podspec.pod({ entries: {} }));
 
-          console.error("[Zupass Debug] POD statistics:", {
+          podStats = {
             totalPods: allPods.length,
             podsWithOwner: allPods.filter((p) => p.entries.owner).length,
             podsWithEventId: allPods.filter((p) => p.entries.eventId).length,
@@ -290,13 +236,18 @@ export function useZupassVerification() {
             podsMatchingEventId: allPods.filter(
               (p) => p.entries.eventId?.value === config.zupassEventId
             ).length,
-          });
+          };
         } catch (e) {
-          console.error(
-            "[Zupass Debug] Failed to query PODs:",
-            e instanceof Error ? e.message : String(e)
-          );
+          podStats = { error: e instanceof Error ? e.message : String(e) };
         }
+
+        // Log for Sentry with diagnostic context
+        console.error("[Zupass] Proof generation failed:", {
+          error: proofResult.error,
+          podStats,
+          eventSlug,
+          collectionName,
+        });
 
         throw new Error(proofResult.error);
       }
@@ -313,13 +264,10 @@ export function useZupassVerification() {
         proof: serializedProof,
       };
     } catch (err) {
-      console.error("[Zupass] ========================================");
       console.error("[Zupass] Error during proof request:", err);
 
       // Handle user cancellation gracefully
       if (err instanceof UserCancelledConnectionError) {
-        console.log("[Zupass] User cancelled proof request");
-        console.error("[Zupass] ========================================");
         error.value = "Proof request cancelled by user";
         return {
           success: false,
@@ -332,14 +280,10 @@ export function useZupassVerification() {
           ? err.message
           : "Unknown error during verification";
       console.error("[Zupass] Error message:", errorMessage);
-      console.error("[Zupass] ========================================");
 
       // If we get "Operation not allowed", permissions were likely denied
       // Reset connection so next attempt will show permissions dialog again
       if (errorMessage.includes("Operation not allowed")) {
-        console.log(
-          "[Zupass] Operation not allowed - resetting connection for retry"
-        );
         resetConnection();
       }
 
@@ -348,9 +292,16 @@ export function useZupassVerification() {
         success: false,
         error: errorMessage,
       };
-    } finally {
-      isVerifying.value = false;
     }
+    // Note: isVerifying is NOT reset here - it's managed by caller (useTicketVerificationFlow)
+  }
+
+  /**
+   * Set callback to be fired when Zupass iframe becomes visible
+   * Used to close loading dialogs at the right moment
+   */
+  function setOnIframeReady(callback: () => void): void {
+    onIframeReadyCallback = callback;
   }
 
   return {
@@ -362,5 +313,6 @@ export function useZupassVerification() {
     connectToZupass,
     requestTicketProof,
     resetConnection,
+    setOnIframeReady,
   };
 }

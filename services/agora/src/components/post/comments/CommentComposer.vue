@@ -33,9 +33,10 @@
           :disable="
             characterProgress > 100 ||
             characterProgress == 0 ||
-            isSubmissionLoading
+            isSubmissionLoading ||
+            isVerifyingZupass
           "
-          :loading="isSubmissionLoading"
+          :loading="isSubmissionLoading || isVerifyingZupass"
           @click="submitPostClicked()"
         />
       </div>
@@ -53,23 +54,9 @@
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'newOpinion'"
+      :requires-zupass-event-slug="props.requiresEventTicket"
+      :login-required-to-participate="props.loginRequiredToParticipate"
     />
-
-    <q-dialog v-model="showTicketVerificationDialog">
-      <q-card>
-        <q-card-section>
-          <div class="text-h6">{{ t('eventTicketRequiredTitle') }}</div>
-          <p class="q-mt-md">{{ t('eventTicketRequiredMessage') }}</p>
-        </q-card-section>
-
-        <q-card-section v-if="props.requiresEventTicket">
-          <ZupassTicketVerification
-            :event-slug="props.requiresEventTicket"
-            @verified="onTicketVerified"
-          />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
   </div>
 </template>
 
@@ -80,12 +67,12 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import ZupassTicketVerification from "src/components/zupass/ZupassTicketVerification.vue";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
@@ -99,16 +86,20 @@ import {
   type CommentComposerTranslations,
 } from "./CommentComposer.i18n";
 import type { EventSlug } from "src/shared/types/zod";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 
 const emit = defineEmits<{
-  (
-    e: "submittedComment",
+  submittedComment: [
     data: {
       opinionSlugId: string;
       authStateChanged: boolean;
       needsCacheRefresh: boolean;
     }
-  ): Promise<void>;
+  ];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
 }>();
 
 const props = defineProps<{
@@ -121,7 +112,10 @@ const dummyInput = ref<HTMLInputElement>();
 
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const authStore = useAuthenticationStore();
+const { isLoggedIn } = storeToRefs(authStore);
+const userStore = useUserStore();
+const { verifiedEventTickets } = storeToRefs(userStore);
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
@@ -129,6 +123,19 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
 const { createNewComment } = useBackendCommentApi();
 
 const { showNotifyMessage } = useNotify();
+
+// Zupass verification
+const { verifyTicket } = useTicketVerificationFlow();
+const { isVerifying: isVerifyingZupass } = useZupassVerification();
+
+// Check if opinion submission is locked due to missing event ticket
+const isOpinionLocked = computed(() => {
+  if (props.requiresEventTicket === undefined) {
+    return false;
+  }
+  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
+  return !verifiedTicketsArray.includes(props.requiresEventTicket);
+});
 
 const characterCount = ref(0);
 
@@ -147,7 +154,6 @@ if (newOpinionIntention.enabled) {
 const opinionBody = ref(newOpinionIntention.opinionBody);
 
 const showLoginDialog = ref(false);
-const showTicketVerificationDialog = ref(false);
 
 const {
   lockRoute,
@@ -199,9 +205,31 @@ async function noSaveDraft() {
   await proceedWithNavigation(() => {});
 }
 
-function onLoginCallback() {
-  unlockRoute();
-  createNewOpinionIntention(props.postSlugId, opinionBody.value);
+async function onLoginCallback() {
+  // Save draft before any async operations
+  saveOpinionDraft(props.postSlugId, opinionBody.value);
+
+  // Don't unlock route yet - keep draft protected until verification completes
+  createNewOpinionIntention(props.postSlugId, opinionBody.value, props.requiresEventTicket);
+
+  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  const hasZupassRequirement = props.requiresEventTicket !== undefined;
+
+  console.log('[CommentComposer] onLoginCallback', {
+    needsLogin,
+    hasZupassRequirement,
+    isLoggedIn: isLoggedIn.value,
+  });
+
+  // If user just needs Zupass verification (no login required), trigger it inline
+  if (!needsLogin && hasZupassRequirement) {
+    console.log('[CommentComposer] Triggering inline Zupass verification');
+    await handleZupassVerification();
+  } else {
+    // Otherwise, unlock route so user can navigate to login
+    console.log('[CommentComposer] Unlocking route for login navigation');
+    unlockRoute();
+  }
 }
 
 function onBeforeRouteLeaveCallback(_to: RouteLocationNormalized): boolean {
@@ -230,14 +258,48 @@ function checkWordCount() {
   ).characterCount;
 }
 
-async function onTicketVerified() {
-  showTicketVerificationDialog.value = false;
-  // After successful verification, retry submitting the opinion
-  await submitPostClicked();
+async function handleZupassVerification() {
+  console.log('[CommentComposer] handleZupassVerification called', {
+    requiresEventTicket: props.requiresEventTicket,
+  });
+
+  if (props.requiresEventTicket === undefined) {
+    console.log('[CommentComposer] No event ticket required, returning');
+    return;
+  }
+
+  console.log('[CommentComposer] Starting verifyTicket call');
+  // Dialog will close when Zupass iframe is ready (via callback)
+  const result = await verifyTicket({
+    eventSlug: props.requiresEventTicket,
+    onIframeReady: () => {
+      // Close dialog as soon as Zupass iframe becomes visible
+      showLoginDialog.value = false;
+    },
+  });
+
+  if (result.success) {
+    // Emit to parent so banner gets refreshed
+    console.log('[CommentComposer] Emitting ticketVerified event', {
+      userIdChanged: result.userIdChanged,
+      needsCacheRefresh: result.needsCacheRefresh,
+    });
+    emit("ticketVerified", {
+      userIdChanged: result.userIdChanged,
+      needsCacheRefresh: result.needsCacheRefresh,
+    });
+
+    // Retry submitting the opinion
+    await submitPostClicked();
+  }
 }
 
 async function submitPostClicked() {
-  if (!isLoggedIn.value && props.loginRequiredToParticipate) {
+  // Check if user needs login or Zupass verification
+  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  const needsZupass = isOpinionLocked.value;
+
+  if (needsLogin || needsZupass) {
     showLoginDialog.value = true;
   } else {
     isSubmissionLoading.value = true;
@@ -256,7 +318,7 @@ async function submitPostClicked() {
         await new Promise((resolve) => setTimeout(resolve, 1300));
 
         // Emit to parent to refresh and highlight the opinion
-        await emit("submittedComment", {
+        emit("submittedComment", {
           opinionSlugId: response.opinionSlugId,
           authStateChanged: response.authStateChanged ?? false,
           needsCacheRefresh: response.needsCacheRefresh ?? false,
@@ -270,14 +332,17 @@ async function submitPostClicked() {
         deleteOpinionDraft(props.postSlugId);
       } else {
         isSubmissionLoading.value = false;
-        // Business logic failure (e.g., conversation_locked, event_ticket_required)
+        // Business logic failure
         if (response.reason) {
           switch (response.reason) {
             case "conversation_locked":
               showNotifyMessage(t("conversationLockedError"));
               break;
             case "event_ticket_required":
-              showTicketVerificationDialog.value = true;
+              // Backend says ticket required, but our local state might be stale
+              // Refresh user profile to get latest verified tickets, then show dialog
+              await userStore.loadUserProfile();
+              showLoginDialog.value = true;
               break;
           }
         }

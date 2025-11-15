@@ -5,7 +5,7 @@
         vote-type="disagree"
         :label="t('disagree')"
         :is-selected="userVoteAction === 'disagree'"
-        :disabled="isPostLocked"
+        :disabled="false"
         :set-aria-label="`${t('disagreeAriaLabel')} ${localNumDisagrees}`"
         :vote-count="localNumDisagrees"
         :percentage="formatPercentage(relativeTotalPercentageDisagrees)"
@@ -17,7 +17,7 @@
         vote-type="pass"
         :label="t('pass')"
         :is-selected="userVoteAction === 'pass'"
-        :disabled="isPostLocked"
+        :disabled="false"
         :set-aria-label="`${t('passAriaLabel')} ${localNumPasses}`"
         :vote-count="localNumPasses"
         :percentage="formatPercentage(relativeTotalPercentagePasses)"
@@ -29,7 +29,7 @@
         vote-type="agree"
         :label="t('agree')"
         :is-selected="userVoteAction === 'agree'"
-        :disabled="isPostLocked"
+        :disabled="false"
         :set-aria-label="`${t('agreeAriaLabel')} ${localNumAgrees}`"
         :vote-count="localNumAgrees"
         :percentage="formatPercentage(relativeTotalPercentageAgrees)"
@@ -42,6 +42,8 @@
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       :active-intention="'agreement'"
+      :requires-zupass-event-slug="props.requiresEventTicket"
+      :login-required-to-participate="props.loginRequiredToParticipate"
     />
   </div>
 </template>
@@ -56,6 +58,7 @@ import {
 } from "src/shared/types/zod";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
@@ -68,6 +71,10 @@ import {
   commentActionBarTranslations,
   type CommentActionBarTranslations,
 } from "./CommentActionBar.i18n";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+
+import type { EventSlug } from "src/shared/types/zod";
 
 const props = defineProps<{
   commentItem: OpinionItem;
@@ -75,6 +82,13 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
+}>();
+
+const emit = defineEmits<{
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
 }>();
 
 // Local state management
@@ -88,11 +102,27 @@ const { setOpinionAgreementIntention } = useConversationLoginIntentions();
 
 const { showNotifyMessage } = useNotify();
 const { updateAuthState } = useBackendAuthApi();
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const authStore = useAuthenticationStore();
+const { isLoggedIn } = storeToRefs(authStore);
+const userStore = useUserStore();
+const { verifiedEventTickets } = storeToRefs(userStore);
 
 const { t } = useComponentI18n<CommentActionBarTranslations>(
   commentActionBarTranslations
 );
+
+// Zupass verification
+const { verifyTicket } = useTicketVerificationFlow();
+const { isVerifying: isVerifyingZupass } = useZupassVerification();
+
+// Check if opinion is locked due to missing event ticket
+const isOpinionLocked = computed(() => {
+  if (props.requiresEventTicket === undefined) {
+    return false;
+  }
+  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
+  return !verifiedTicketsArray.includes(props.requiresEventTicket);
+});
 
 // Initialize local state from props and global user votes
 onMounted(() => {
@@ -144,15 +174,68 @@ const relativeTotalPercentagePasses = computed(() => {
   return calculatePercentage(localNumPasses.value, totalVotes.value);
 });
 
-function onLoginCallback() {
-  setOpinionAgreementIntention(props.commentItem.opinionSlugId);
+async function onLoginCallback() {
+  // Store the intention with eventSlug
+  setOpinionAgreementIntention(props.commentItem.opinionSlugId, props.requiresEventTicket);
+
+  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  const hasZupassRequirement = props.requiresEventTicket !== undefined;
+
+  console.log('[CommentActionBar] onLoginCallback', {
+    needsLogin,
+    hasZupassRequirement,
+    isLoggedIn: isLoggedIn.value,
+  });
+
+  // If user just needs Zupass verification (no login required), trigger it inline
+  if (!needsLogin && hasZupassRequirement) {
+    console.log('[CommentActionBar] Triggering inline Zupass verification');
+    await handleZupassVerification();
+  }
+  // Otherwise, dialog will route user to login via PreLoginIntentionDialog
+}
+
+async function handleZupassVerification() {
+  if (props.requiresEventTicket === undefined) {
+    return;
+  }
+
+  // Dialog will close when Zupass iframe is ready (via callback)
+  const result = await verifyTicket({
+    eventSlug: props.requiresEventTicket,
+    onIframeReady: () => {
+      // Close dialog as soon as Zupass iframe becomes visible
+      showLoginDialog.value = false;
+    },
+  });
+
+  if (result.success) {
+    // Emit to parent so banner gets refreshed
+    console.log('[CommentActionBar] Emitting ticketVerified event', {
+      userIdChanged: result.userIdChanged,
+      needsCacheRefresh: result.needsCacheRefresh,
+    });
+    emit("ticketVerified", {
+      userIdChanged: result.userIdChanged,
+      needsCacheRefresh: result.needsCacheRefresh,
+    });
+  }
 }
 
 async function castPersonalVote(
   opinionSlugId: string,
   voteAction: VotingAction
 ): Promise<void> {
-  if (props.loginRequiredToParticipate && !isLoggedIn.value) {
+  // Prevent multiple clicks while Zupass is verifying
+  if (isVerifyingZupass.value) {
+    return;
+  }
+
+  // Check if user needs login or Zupass verification
+  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  const needsZupass = isOpinionLocked.value;
+
+  if (needsLogin || needsZupass) {
     showLoginDialog.value = true;
     return;
   }

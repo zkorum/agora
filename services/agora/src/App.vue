@@ -2,6 +2,10 @@
   <router-view />
   <PostSignupPreferencesDialog />
   <EmbeddedBrowserWarningDialog />
+
+  <!-- Global Zupass iframe container - shared by all components -->
+  <!-- Parcnet creates its own dialog with overlay, positioned fixed -->
+  <div ref="zupassIframeContainer" class="zupass-iframe-container"></div>
 </template>
 
 <script setup lang="ts">
@@ -11,6 +15,7 @@ import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
+import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import "primeicons/primeicons.css";
 
 swiperElement.register();
@@ -18,6 +23,9 @@ swiperElement.register();
 const authenticationStore = useBackendAuthApi();
 
 useHtmlNodeCssPatch();
+
+// Initialize global Zupass iframe container
+const { zupassIframeContainer } = useZupassVerification();
 
 onMounted(async () => {
   try {
@@ -30,4 +38,9 @@ onMounted(async () => {
 });
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+.zupass-iframe-container {
+  // Empty container - Parcnet will inject iframe and dialog
+  // Dialog is positioned fixed with its own backdrop, doesn't need special styling here
+}
+</style>

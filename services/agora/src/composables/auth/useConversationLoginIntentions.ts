@@ -1,6 +1,7 @@
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useRoute } from "vue-router";
 import { useEmbedMode } from "src/utils/ui/embedMode";
+import type { EventSlug } from "src/shared/types/zod";
 
 export function useConversationLoginIntentions() {
   const route = useRoute();
@@ -13,38 +14,38 @@ export function useConversationLoginIntentions() {
     setActiveUserIntention,
   } = useLoginIntentionStore();
 
-  function setVotingIntention() {
+  function setVotingIntention(eventSlug?: EventSlug) {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
-      createVotingIntention(postSlugId, isEmbedView);
+      createVotingIntention(postSlugId, isEmbedView, eventSlug);
       setActiveUserIntention("voting");
     }
   }
 
-  function setOpinionAgreementIntention(opinionSlugId: string) {
+  function setOpinionAgreementIntention(opinionSlugId: string, eventSlug?: EventSlug) {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
-      createOpinionAgreementIntention(postSlugId, opinionSlugId, isEmbedView);
+      createOpinionAgreementIntention(postSlugId, opinionSlugId, isEmbedView, eventSlug);
       setActiveUserIntention("agreement");
     }
   }
 
-  function setReportIntention(opinionSlugId: string) {
+  function setReportIntention(opinionSlugId: string, eventSlug?: EventSlug) {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
-      createReportUserContentIntention(postSlugId, opinionSlugId, isEmbedView);
+      createReportUserContentIntention(postSlugId, opinionSlugId, isEmbedView, eventSlug);
       setActiveUserIntention("reportUserContent");
     }
   }

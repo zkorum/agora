@@ -13,11 +13,11 @@
 
       <!-- Not verified, error, or verifying state - show button (only in interactive mode) -->
       <ZKButton
-        v-if="verificationState !== 'verified' && !props.readOnly"
+        v-if="verificationState.state !== 'verified' && !props.readOnly"
         button-type="compactButton"
         :label="buttonLabel"
         color="primary"
-        :disable="verificationState === 'verifying'"
+        :disable="verificationState.state === 'verifying'"
         class="banner-button"
         @click.stop="handleVerify"
       />
@@ -26,22 +26,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { computed } from "vue";
 import type { EventSlug } from "src/shared/types/zod";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
-import { useBackendZupassApi } from "src/utils/api/zupass";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNotify } from "src/utils/ui/notify";
 import {
   eventTicketRequirementBannerTranslations,
   type EventTicketRequirementBannerTranslations,
 } from "./EventTicketRequirementBanner.i18n";
 import { getZupassEventConfig } from "src/shared/zupass/eventConfig";
 import { useUserStore } from "src/stores/user";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useBackendAuthApi } from "src/utils/api/auth";
-import { useQuasar } from "quasar";
-import { getPlatform } from "src/utils/common";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 
 const props = defineProps<{
@@ -57,22 +52,22 @@ const { t } = useComponentI18n<EventTicketRequirementBannerTranslations>(
   eventTicketRequirementBannerTranslations
 );
 
-const { isVerifying, zupassIframeContainer, requestTicketProof } =
-  useZupassVerification();
-
-const { verifyEventTicket } = useBackendZupassApi();
-const { showNotifyMessage } = useNotify();
-const { updateAuthState } = useBackendAuthApi();
-const authStore = useAuthenticationStore();
+const { zupassIframeContainer } = useZupassVerification();
+const { verifyTicket } = useTicketVerificationFlow();
 const userStore = useUserStore();
 
-// Get platform at setup level (can't call useQuasar in async functions)
-const $q = useQuasar();
-const platform = getPlatform($q.platform);
+// Get verification state from store
+const verificationState = computed(() => {
+  if (!props.requiresEventTicket) {
+    return { state: 'not_verified' as const };
+  }
+  return userStore.getTicketVerificationState(props.requiresEventTicket);
+});
 
-type VerificationState = "not_verified" | "verifying" | "verified" | "error";
-const verificationState = ref<VerificationState>("not_verified");
-const errorMessage = ref<string | null>(null);
+const errorMessage = computed(() => {
+  const state = verificationState.value;
+  return state.state === 'error' ? state.errorMessage : null;
+});
 
 // Get event display name from shared config
 const eventName = computed(() => {
@@ -94,19 +89,11 @@ const bannerClass = computed(() => {
   }
 
   // In interactive mode, show status-based style
-  switch (verificationState.value) {
-    case "verified":
-      return "banner-verified";
-    case "error":
-      return "banner-error";
-    case "verifying":
-      return "banner-verifying";
-    case "not_verified":
-      return "banner-requirement";
-    default:
-      verificationState.value satisfies never;
-      throw new Error("Unexpected verification state");
-  }
+  const state = verificationState.value.state;
+  if (state === "verified") return "banner-verified";
+  if (state === "error") return "banner-error";
+  if (state === "verifying") return "banner-verifying";
+  return "banner-requirement"; // not_verified
 });
 
 const bannerIcon = computed(() => {
@@ -116,19 +103,11 @@ const bannerIcon = computed(() => {
   }
 
   // In interactive mode, show status-based icon
-  switch (verificationState.value) {
-    case "verified":
-      return "check_circle";
-    case "error":
-      return "error";
-    case "verifying":
-      return "sync";
-    case "not_verified":
-      return "verified_user";
-    default:
-      verificationState.value satisfies never;
-      throw new Error("Unexpected verification state");
-  }
+  const state = verificationState.value.state;
+  if (state === "verified") return "check_circle";
+  if (state === "error") return "error";
+  if (state === "verifying") return "sync";
+  return "verified_user"; // not_verified
 });
 
 const compactBannerText = computed(() => {
@@ -138,150 +117,40 @@ const compactBannerText = computed(() => {
   }
 
   // In interactive mode, show verification status
-  switch (verificationState.value) {
-    case "verified":
-      return t("ticketVerified").replace("{eventName}", eventName.value);
-    case "error":
-      return errorMessage.value || t("errorUnknown");
-    case "verifying":
-      return t("verifyButtonRequirement").replace(
-        "{eventName}",
-        eventName.value
-      );
-    case "not_verified":
-      return t("verifyButtonRequirement").replace(
-        "{eventName}",
-        eventName.value
-      );
-    default:
-      verificationState.value satisfies never;
-      throw new Error("Unexpected verification state");
+  const state = verificationState.value.state;
+  if (state === "verified") {
+    return t("ticketVerified").replace("{eventName}", eventName.value);
   }
+  if (state === "error") {
+    return errorMessage.value || t("errorUnknown");
+  }
+  // verifying or not_verified
+  return t("verifyButtonRequirement").replace("{eventName}", eventName.value);
 });
 
 const buttonLabel = computed(() => {
-  return verificationState.value === "verifying"
+  return verificationState.value.state === "verifying"
     ? t("verifyingButton")
     : t("verifyButton");
 });
 
-// Check if ticket is already verified on mount
-onMounted(() => {
-  if (
-    props.requiresEventTicket &&
-    userStore.isTicketVerified(props.requiresEventTicket)
-  ) {
-    verificationState.value = "verified";
-  }
-});
-
 async function handleVerify() {
-  verificationState.value = "verifying";
-  errorMessage.value = null;
-  isVerifying.value = true;
+  if (!props.requiresEventTicket) return;
 
-  try {
-    console.log("[EventTicketRequirementBanner] Starting verification flow");
-
-    // Request proof from Zupass (Parcnet creates its own dialog)
-    const proofResult = await requestTicketProof({
-      eventSlug: props.requiresEventTicket!,
-      platform,
-    });
-
-    console.log("[EventTicketRequirementBanner] Proof result:", proofResult);
-
-    if (!proofResult.success) {
-      // Handle cancellation gracefully - don't show error
-      if (proofResult.error === "cancelled") {
-        verificationState.value = "not_verified";
-        return;
+  await verifyTicket({
+    eventSlug: props.requiresEventTicket,
+    successMessage: t("ticketVerified").replace("{eventName}", eventName.value),
+    onSuccess: (result) => {
+      // Type narrowing: onSuccess is only called when result.success === true
+      if (result.success) {
+        // Emit verified event with flags for parent to handle cache refresh
+        emit("verified", {
+          userIdChanged: result.userIdChanged,
+          needsCacheRefresh: result.needsCacheRefresh,
+        });
       }
-
-      const message = getErrorMessage(proofResult.error || "unknown");
-      verificationState.value = "error";
-      errorMessage.value = message;
-      showNotifyMessage(message);
-      return;
-    }
-
-    // Send GPC proof to backend for verification
-    console.log("[EventTicketRequirementBanner] Sending proof to backend...");
-    const verifyResult = await verifyEventTicket({
-      proof: proofResult.proof!,
-      eventSlug: props.requiresEventTicket!,
-    });
-
-    console.log(
-      "[EventTicketRequirementBanner] Backend verification result:",
-      verifyResult
-    );
-
-    if (verifyResult.success) {
-      verificationState.value = "verified";
-
-      // Check if userId changed (account merge) or stayed same (just verified ticket)
-      const currentUserId = authStore.userId;
-      const newUserId = verifyResult.userId;
-
-      // Update auth state with deferred cache operations to avoid clearing cache immediately
-      // This ensures conversation/opinion data remains cached and visible
-      const { needsCacheRefresh } = await updateAuthState({
-        partialLoginStatus: { isKnown: true, userId: newUserId },
-        deferCacheOperations: true,
-      });
-
-      // Add verified ticket to user store immediately to unlock gated content
-      userStore.addVerifiedTicket(props.requiresEventTicket);
-
-      // Show appropriate message based on account state
-      if (verifyResult.accountMerged) {
-        showNotifyMessage(t("accountMerged"));
-      } else {
-        showNotifyMessage(
-          t("ticketVerified").replace("{eventName}", eventName.value)
-        );
-      }
-
-      // Emit verified event with flags for parent to handle cache refresh
-      // needsCacheRefresh indicates a new guest was created and cache should be refreshed after data reload
-      emit("verified", {
-        userIdChanged: currentUserId !== newUserId,
-        needsCacheRefresh,
-      });
-    } else {
-      const message = getErrorMessage(verifyResult.reason || "unknown");
-      verificationState.value = "error";
-      errorMessage.value = message;
-      showNotifyMessage(message);
-      console.error(
-        "[EventTicketRequirementBanner] Verification failed:",
-        verifyResult.reason
-      );
-    }
-  } catch (err) {
-    console.error("[EventTicketRequirementBanner] Verification error:", err);
-    const message =
-      err instanceof Error ? err.message : getErrorMessage("unknown");
-    verificationState.value = "error";
-    errorMessage.value = message;
-    showNotifyMessage(message);
-    console.error("[EventTicketRequirementBanner] Error details:", err);
-  } finally {
-    isVerifying.value = false;
-  }
-}
-
-function getErrorMessage(errorCode: string): string {
-  const errorMessages: Record<string, string> = {
-    deserialization_error: t("errorDeserialization"),
-    invalid_proof: t("errorInvalidProof"),
-    invalid_signer: t("errorInvalidSigner"),
-    wrong_event: t("errorWrongEvent"),
-    ticket_already_used: t("errorTicketAlreadyUsed"),
-    unknown: t("errorUnknown"),
-  };
-  return errorMessages[errorCode] || errorMessages.unknown;
+    },
+  });
 }
 </script>
 

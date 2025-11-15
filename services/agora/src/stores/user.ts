@@ -7,7 +7,7 @@ import type {
   EventSlug,
 } from "src/shared/types/zod";
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, reactive } from "vue";
 
 export const useUserStore = defineStore("user", () => {
   const { fetchUserProfile, fetchUserPosts, fetchUserComments } =
@@ -131,6 +131,49 @@ export const useUserStore = defineStore("user", () => {
     }
   }
 
+  // Track transient verification states (verifying, error) in reactive state
+  // These are per-session UI states that don't need persistence
+  type TransientStateInfo =
+    | { state: 'verifying' }
+    | { state: 'error'; errorMessage: string };
+
+  // Use a reactive Map for transient states
+  const ticketVerificationStates = reactive(new Map<EventSlug, TransientStateInfo>());
+
+  function setTicketVerifying(eventSlug: EventSlug): void {
+    ticketVerificationStates.set(eventSlug, { state: 'verifying' });
+  }
+
+  function setTicketError(eventSlug: EventSlug, errorMessage: string): void {
+    ticketVerificationStates.set(eventSlug, { state: 'error', errorMessage });
+  }
+
+  function clearTicketState(eventSlug: EventSlug): void {
+    ticketVerificationStates.delete(eventSlug);
+  }
+
+  // Get the current verification state for an event
+  // Returns: 'verified' | 'verifying' | 'error' | 'not_verified'
+  function getTicketVerificationState(eventSlug: EventSlug):
+    | { state: 'verified' }
+    | { state: 'verifying' }
+    | { state: 'error'; errorMessage: string }
+    | { state: 'not_verified' } {
+
+    // Check if ticket is verified (from backend)
+    if (isTicketVerified(eventSlug)) {
+      return { state: 'verified' };
+    }
+
+    // Check for transient states (verifying or error)
+    const transientState = ticketVerificationStates.get(eventSlug);
+    if (transientState) {
+      return transientState;
+    }
+
+    return { state: 'not_verified' };
+  }
+
   return {
     loadUserProfile,
     loadMoreUserPosts,
@@ -140,5 +183,10 @@ export const useUserStore = defineStore("user", () => {
     verifiedEventTickets,
     isTicketVerified,
     addVerifiedTicket,
+    ticketVerificationStates,
+    setTicketVerifying,
+    setTicketError,
+    clearTicketState,
+    getTicketVerificationState,
   };
 });
