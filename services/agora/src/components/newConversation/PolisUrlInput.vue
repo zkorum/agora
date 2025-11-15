@@ -41,7 +41,7 @@
             >
             </q-input>
             <div class="legal-notice">
-              <i18n-t keypath="importConversation.legalNotice" tag="p">
+              <i18n-t keypath="importConversation.legalNotice" tag="p"> <!-- TODO: move to 't' and v-html. This is loaded from global i18n -->
                 <!-- Polis Terms link -->
                 <template #polisTerms>
                   <a
