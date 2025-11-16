@@ -52,7 +52,6 @@
 
         <!-- Instructions (non-collapsible when automatic redirect is impossible) -->
         <div v-else class="instructions-box">
-          <div class="instructions-title">{{ t("instructionsTitle") }}</div>
           <!-- iOS: Single step with compass icon -->
           <ol v-if="isIOS" class="instructions-list">
             <li>

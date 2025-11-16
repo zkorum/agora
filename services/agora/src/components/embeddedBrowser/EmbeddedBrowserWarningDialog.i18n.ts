@@ -4,7 +4,6 @@ export interface EmbeddedBrowserWarningTranslations {
   title: string;
   titleGeneric: string;
   message: string;
-  instructionsTitle: string;
   showManualInstructions: string;
   instructionStep1: string;
   instructionStep1iOS: string;
@@ -29,7 +28,6 @@ export const embeddedBrowserWarningTranslations: Record<
     title: "You're in {app} browser",
     titleGeneric: "You're in an in-app browser",
     message: "Please open in your default browser for the best experience.",
-    instructionsTitle: "How to open in your default browser:",
     showManualInstructions: "Or try manually",
     instructionStep1: "Tap the menu icon (⋯ or ⋮)",
     instructionStep1iOS:
@@ -51,7 +49,6 @@ export const embeddedBrowserWarningTranslations: Record<
     titleGeneric: "أنت في متصفح مدمج",
     message:
       "يرجى فتح هذه الصفحة في متصفح جهازك الافتراضي للحصول على أفضل تجربة.",
-    instructionsTitle: "كيفية الفتح في متصفحك الافتراضي:",
     showManualInstructions: "أو حاول يدويًا",
     instructionStep1: "اضغط على أيقونة القائمة (⋯ أو ⋮)",
     instructionStep1iOS:
@@ -73,7 +70,6 @@ export const embeddedBrowserWarningTranslations: Record<
     titleGeneric: "Estás en un navegador integrado",
     message:
       "Por favor, abre esta página en tu navegador predeterminado para la mejor experiencia.",
-    instructionsTitle: "Cómo abrir en tu navegador predeterminado:",
     showManualInstructions: "O inténtalo manualmente",
     instructionStep1: "Toca el icono de menú (⋯ o ⋮)",
     instructionStep1iOS:
@@ -95,7 +91,6 @@ export const embeddedBrowserWarningTranslations: Record<
     titleGeneric: "Vous êtes dans un navigateur intégré",
     message:
       "Veuillez ouvrir cette page dans votre navigateur par défaut pour une meilleure expérience.",
-    instructionsTitle: "Comment ouvrir dans votre navigateur par défaut:",
     showManualInstructions: "Ou essayez manuellement",
     instructionStep1: "Appuyez sur l'icône de menu (⋯ ou ⋮)",
     instructionStep1iOS:
@@ -118,7 +113,6 @@ export const embeddedBrowserWarningTranslations: Record<
     title: "您在 {app} 浏览器中",
     titleGeneric: "您在应用内浏览器中",
     message: "请在您设备的默认浏览器中打开此页面以获得最佳体验。",
-    instructionsTitle: "如何在您的默认浏览器中打开：",
     showManualInstructions: "或手动尝试",
     instructionStep1: "点击菜单图标 (⋯ 或 ⋮)",
     instructionStep1iOS: "点击右下角的指南针图标以在默认浏览器中打开",
@@ -138,7 +132,6 @@ export const embeddedBrowserWarningTranslations: Record<
     title: "您在 {app} 瀏覽器中",
     titleGeneric: "您在應用程式內建瀏覽器中",
     message: "請在您裝置的預設瀏覽器中開啟此頁面以獲得最佳體驗。",
-    instructionsTitle: "如何在您的預設瀏覽器中開啟：",
     showManualInstructions: "或手動嘗試",
     instructionStep1: "點擊選單圖示 (⋯ 或 ⋮)",
     instructionStep1iOS: "點擊右下角的指南針圖示以在預設瀏覽器中開啟",
@@ -159,7 +152,6 @@ export const embeddedBrowserWarningTranslations: Record<
     titleGeneric: "アプリ内ブラウザ内です",
     message:
       "最適な体験のため、デバイスのデフォルトブラウザでこのページを開いてください。",
-    instructionsTitle: "デフォルトブラウザで開く方法：",
     showManualInstructions: "または手動で試す",
     instructionStep1: "メニューアイコン (⋯ または ⋮) をタップ",
     instructionStep1iOS:
