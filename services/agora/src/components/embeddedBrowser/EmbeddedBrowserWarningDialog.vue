@@ -36,7 +36,13 @@
             ></i>
           </button>
           <div v-if="showInstructions" class="instructions-box">
-            <ol class="instructions-list">
+            <ol v-if="isIOS" class="instructions-list">
+              <li>
+                {{ t("instructionStep1iOS") }} <i class="pi pi-compass"></i>
+              </li>
+            </ol>
+            <!-- Non-iOS: Full steps -->
+            <ol v-else class="instructions-list">
               <li>{{ t("instructionStep1") }}</li>
               <li>{{ t("instructionStep2") }}</li>
               <li>{{ t("instructionStep3") }}</li>
@@ -65,9 +71,9 @@
       <!-- Fixed Footer (Actions) -->
       <q-card-actions class="warning-actions">
         <div class="primary-actions">
-          <!-- ANDROID ONLY: Retry automatic redirect (MOST PROMINENT) -->
+          <!-- Whenever automatic redirect is possible: show associated button (MOST PROMINENT) -->
           <PrimeButton
-            v-if="isAndroid && !isWechat"
+            v-if="isAutomaticRedirectPossible"
             :label="t('retryRedirect')"
             severity="primary"
             :icon="'pi pi-external-link'"
@@ -129,7 +135,10 @@ const showInstructions = ref(false);
 const isAndroid = Platform.is.android;
 const isIOS = Platform.is.ios;
 const isWechat = appKey.value === "wechat";
-const isAutomaticRedirectPossible = computed(() => isAndroid && !isWechat);
+const isX = appKey.value === "twitter";
+const isAutomaticRedirectPossible = computed(
+  () => isAndroid && !isWechat && !isX
+);
 
 async function copyUrl() {
   try {

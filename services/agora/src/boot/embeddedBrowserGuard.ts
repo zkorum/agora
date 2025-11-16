@@ -1,7 +1,10 @@
 import { boot } from "quasar/wrappers";
 import { Platform } from "quasar";
 import InAppSpy from "inapp-spy";
-import { useEmbeddedBrowserWarningStore, type AppKey } from "src/stores/embeddedBrowserWarning";
+import {
+  useEmbeddedBrowserWarningStore,
+  type AppKey,
+} from "src/stores/embeddedBrowserWarning";
 
 /**
  * Boot file to detect embedded/in-app browsers and redirect users to system browser.
@@ -107,8 +110,11 @@ export default boot(({ router }) => {
     `(${usedAppKey})`
   );
 
-  // ANDROID: Try Intent URI workaround (fragile but worth trying)
-  if (Platform.is.android) {
+  const isWechat = usedAppKey === "wechat";
+  const isX = usedAppKey === "twitter";
+
+  // ANDROID: Try Intent URI workaround except on WeChat (does nothing) and X (X would redirect to... X Browser, causing User-Agent to change, X Browser would then not be detected, and therefore causing blink during openeing and allowing users to stay in X browser!
+  if (Platform.is.android && !isWechat && !isX) {
     console.log(
       "[EmbeddedBrowserGuard] Android detected - trying Intent URI redirect"
     );
@@ -130,7 +136,10 @@ export default boot(({ router }) => {
   // This runs if:
   // - Android Intent didn't navigate away (non-Android or Intent failed)
   // - Or this is iOS or other platform without programmatic redirect support
-  console.log("[EmbeddedBrowserGuard] Showing warning dialog for:", usedAppName);
+  console.log(
+    "[EmbeddedBrowserGuard] Showing warning dialog for:",
+    usedAppName
+  );
 
   const warningStore = useEmbeddedBrowserWarningStore();
   warningStore.openWarning(usedAppName, usedAppKey);
