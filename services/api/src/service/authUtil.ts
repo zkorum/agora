@@ -71,7 +71,6 @@ export async function isLoggedIn(
 interface GetOrRegisterUserIdFromDeviceStatusProps {
     db: PostgresDatabase;
     didWrite: string;
-    conversationIsIndexed: boolean;
     conversationIsLoginRequired: boolean;
     userAgent: string;
     now: Date;
@@ -80,7 +79,6 @@ interface GetOrRegisterUserIdFromDeviceStatusProps {
 export async function getOrRegisterUserIdFromDeviceStatus({
     db,
     didWrite,
-    conversationIsIndexed,
     conversationIsLoginRequired,
     userAgent,
     now,
@@ -90,27 +88,27 @@ export async function getOrRegisterUserIdFromDeviceStatus({
         didWrite,
         now,
     });
+    if (conversationIsLoginRequired) {
+        if (!deviceStatus.isKnown) {
+            throw httpErrors.unauthorized("Device is unknown");
+        } else if (!deviceStatus.isRegistered) {
+            throw httpErrors.unauthorized(
+                "Device is not registered with a verified user",
+            );
+        } else if (!deviceStatus.isLoggedIn) {
+            throw httpErrors.unauthorized("Device is not logged in");
+        }
+        return deviceStatus.userId;
+    }
+    if (deviceStatus.isKnown) {
+        if (deviceStatus.isRegistered && !deviceStatus.isLoggedIn) {
+            throw httpErrors.unauthorized(
+                "Registered device must be logged-in to add or delete content to their account",
+            );
+        }
+        return deviceStatus.userId;
+    }
     return await db.transaction(async (tx) => {
-        if (conversationIsIndexed || conversationIsLoginRequired) {
-            if (!deviceStatus.isKnown) {
-                throw httpErrors.unauthorized("Device is unknown");
-            } else if (!deviceStatus.isRegistered) {
-                throw httpErrors.unauthorized(
-                    "Device is not registered with a verified user",
-                );
-            } else if (!deviceStatus.isLoggedIn) {
-                throw httpErrors.unauthorized("Device is not logged in");
-            }
-            return deviceStatus.userId;
-        }
-        if (deviceStatus.isKnown) {
-            if (deviceStatus.isRegistered && !deviceStatus.isLoggedIn) {
-                throw httpErrors.unauthorized(
-                    "Registered device must be logged-in to add or delete content to their account",
-                );
-            }
-            return deviceStatus.userId;
-        }
         // save device and associate it with a brand new unverified user -- unless the device is already known
         const { userId } = await authService.createGuestUser({
             db: tx,

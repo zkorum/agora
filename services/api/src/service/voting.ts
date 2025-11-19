@@ -459,7 +459,6 @@ export async function castVoteForOpinionSlugId({
             db: db,
         });
     const {
-        isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
         contentId: conversationContentId,
         requiresEventTicket,
@@ -470,7 +469,6 @@ export async function castVoteForOpinionSlugId({
     const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
         didWrite,
-        conversationIsIndexed,
         conversationIsLoginRequired,
         userAgent,
         now,
