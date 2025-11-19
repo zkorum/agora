@@ -91,7 +91,7 @@ import {
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 import twilio from "twilio";
-import { initializeRedis } from "./shared-backend/redis.js";
+import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import {
     addUserOrganizationMapping,
@@ -337,18 +337,17 @@ if (
     );
 }
 
-// Initialize Redis (optional - for vote buffer persistence)
-const redis = initializeRedis({ redisUrl: config.REDIS_URL, log });
+// Initialize Valkey (optional - for vote buffer persistence)
+const valkey = initializeValkey({ valkeyUrl: config.VALKEY_URL, log });
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
-    redis,
-    redisVoteBufferKey: config.REDIS_VOTE_BUFFER_KEY,
+    valkey,
     flushIntervalMs: 1000,
 });
 log.info(
-    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${redis !== undefined ? "Redis" : "in-memory only"})`,
+    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 interface ExpectedDeviceStatus {
@@ -2692,10 +2691,10 @@ if (
             // Flush pending votes before shutdown
             await voteBuffer.shutdown();
 
-            // Close Redis connection
-            if (redis !== undefined) {
-                await redis.quit();
-                log.info("[Redis] Connection closed");
+            // Close Valkey connection
+            if (valkey !== undefined) {
+                await valkey.quit();
+                log.info("[Valkey] Connection closed");
             }
 
             // Close server
