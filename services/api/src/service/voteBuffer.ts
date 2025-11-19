@@ -13,7 +13,8 @@ import {
 import type { VotingOption } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
 import { nowZeroMs } from "@/shared/util.js";
-import type { Redis } from "ioredis";
+import type { Valkey } from "@/shared-backend/valkey.js";
+import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 
 export interface BufferedVote {
     userId: string;
@@ -41,8 +42,7 @@ export interface VoteBuffer {
 
 interface CreateVoteBufferParams {
     db: PostgresJsDatabase;
-    redis?: Redis;
-    redisVoteBufferKey: string;
+    valkey?: Valkey;
     flushIntervalMs?: number;
 }
 
@@ -51,7 +51,7 @@ interface CreateVoteBufferParams {
  *
  * Architecture:
  * - In-memory mode: Fastest, but lost on restart (single instance)
- * - Redis mode: Persistent, works across instances (production)
+ * - Valkey mode: Persistent, works across instances (production)
  *
  * Batching reduces opinion UPDATE frequency from 100x/sec to 1x/sec
  * during heavy voting periods, eliminating hot row contention.
@@ -60,13 +60,10 @@ interface CreateVoteBufferParams {
  * - State encapsulated in closure
  * - Exposed functions never mutate external parameters
  * - Pure functional interface
- *
- * TODO: Evaluate Redis key strategy - per-opinion vs global queue
  */
 export function createVoteBuffer({
     db,
-    redis = undefined,
-    redisVoteBufferKey,
+    valkey = undefined,
     flushIntervalMs = 1000,
 }: CreateVoteBufferParams): VoteBuffer {
     // Encapsulated mutable state (private to closure)
@@ -124,14 +121,14 @@ export function createVoteBuffer({
         const wasExisting = pendingVotes.has(key);
         pendingVotes.set(key, vote);
 
-        // Redis: Add to queue (if configured)
-        if (redis !== undefined) {
-            redis
-                .rpush(redisVoteBufferKey, JSON.stringify(vote))
+        // Valkey: Add to queue (if configured)
+        if (valkey !== undefined) {
+            valkey
+                .rpush(VALKEY_QUEUE_KEYS.VOTE_BUFFER, JSON.stringify(vote))
                 .catch((error: unknown) => {
                     log.error(
                         error,
-                        "[VoteBuffer] Failed to push vote to Redis buffer",
+                        "[VoteBuffer] Failed to push vote to Valkey buffer",
                     );
                 });
         }
@@ -157,18 +154,18 @@ export function createVoteBuffer({
         let batch = Array.from(pendingVotes.values());
         pendingVotes.clear();
 
-        // Get votes from Redis (if configured)
-        if (redis !== undefined) {
+        // Get votes from Valkey (if configured)
+        if (valkey !== undefined) {
             try {
-                const redisVotes = await redis.lrange(
-                    redisVoteBufferKey,
+                const valkeyVotes = await valkey.lrange(
+                    VALKEY_QUEUE_KEYS.VOTE_BUFFER,
                     0,
                     -1,
                 );
-                await redis.del(redisVoteBufferKey);
+                await valkey.del(VALKEY_QUEUE_KEYS.VOTE_BUFFER);
 
-                const parsedRedisVotes = redisVotes.map((v) =>
-                    JSON.parse(v) as BufferedVote,
+                const parsedValkeyVotes = valkeyVotes.map(
+                    (v: string) => JSON.parse(v) as BufferedVote,
                 );
 
                 // Merge with in-memory votes (deduplicate by key, last write wins)
@@ -176,19 +173,19 @@ export function createVoteBuffer({
                     batch.map((v) => [getVoteKey(v.userId, v.opinionId), v]),
                 );
 
-                for (const redisVote of parsedRedisVotes) {
+                for (const valkeyVote of parsedValkeyVotes) {
                     const key = getVoteKey(
-                        redisVote.userId,
-                        redisVote.opinionId,
+                        valkeyVote.userId,
+                        valkeyVote.opinionId,
                     );
-                    // Last write wins (prefer Redis if timestamp newer)
+                    // Last write wins (prefer Valkey if timestamp newer)
                     const existing = voteMap.get(key);
                     if (
                         !existing ||
-                        new Date(redisVote.timestamp) >
+                        new Date(valkeyVote.timestamp) >
                             new Date(existing.timestamp)
                     ) {
-                        voteMap.set(key, redisVote);
+                        voteMap.set(key, valkeyVote);
                     }
                 }
 
@@ -196,7 +193,7 @@ export function createVoteBuffer({
             } catch (error: unknown) {
                 log.error(
                     error,
-                    "[VoteBuffer] Failed to fetch votes from Redis",
+                    "[VoteBuffer] Failed to fetch votes from Valkey",
                 );
             }
         }
@@ -303,7 +300,9 @@ export function createVoteBuffer({
                                     new Set(),
                                 );
                             }
-                            const participantSet = participantCountDeltas.get(vote.conversationId);
+                            const participantSet = participantCountDeltas.get(
+                                vote.conversationId,
+                            );
                             if (participantSet) {
                                 participantSet.add(vote.userId);
                             }
@@ -320,7 +319,9 @@ export function createVoteBuffer({
                                     new Set(),
                                 );
                             }
-                            const participantSet = participantCountDeltas.get(vote.conversationId);
+                            const participantSet = participantCountDeltas.get(
+                                vote.conversationId,
+                            );
                             if (participantSet) {
                                 participantSet.add(vote.userId);
                             }
@@ -332,10 +333,7 @@ export function createVoteBuffer({
                     );
 
                     // Query existing participants BEFORE inserting new votes
-                    const participantDeltasToApply = new Map<
-                        number,
-                        number
-                    >();
+                    const participantDeltasToApply = new Map<number, number>();
 
                     if (participantCountDeltas.size > 0) {
                         for (const [
@@ -475,7 +473,10 @@ export function createVoteBuffer({
                         // Build map of successfully inserted votes
                         const voteTableIdMap = new Map<string, number>();
                         for (const result of newVoteTableResults) {
-                            const key = getVoteKey(result.authorId, result.opinionId);
+                            const key = getVoteKey(
+                                result.authorId,
+                                result.opinionId,
+                            );
                             voteTableIdMap.set(key, result.id);
                         }
 
@@ -484,7 +485,10 @@ export function createVoteBuffer({
                             const key = getVoteKey(vote.userId, vote.opinionId);
                             const voteTableId = voteTableIdMap.get(key);
                             if (voteTableId !== undefined) {
-                                successfullyInsertedVotes.push({ vote, voteTableId });
+                                successfullyInsertedVotes.push({
+                                    vote,
+                                    voteTableId,
+                                });
                             }
                         }
                     }
@@ -498,11 +502,13 @@ export function createVoteBuffer({
 
                     const voteProcessingData: VoteProcessingData[] = [
                         ...existingVotes,
-                        ...successfullyInsertedVotes.map(({ vote, voteTableId }) => ({
-                            vote,
-                            voteTableId,
-                            existingVote: null,
-                        })),
+                        ...successfullyInsertedVotes.map(
+                            ({ vote, voteTableId }) => ({
+                                vote,
+                                voteTableId,
+                                existingVote: null,
+                            }),
+                        ),
                     ];
 
                     // Step 4: Calculate counter deltas
@@ -597,8 +603,7 @@ export function createVoteBuffer({
                                     sql`WHEN ${voteTable.id} = ${data.voteTableId} THEN NULL`,
                                 );
                             } else {
-                                const contentIndex =
-                                    voteContentIndexMap.get(i);
+                                const contentIndex = voteContentIndexMap.get(i);
                                 if (contentIndex !== undefined) {
                                     const contentId =
                                         voteContentResults[contentIndex].id;
@@ -740,37 +745,36 @@ export function createVoteBuffer({
                     // ParticipantCount detection and querying happened BEFORE vote INSERTs
                     // to correctly identify first-time voters
                     if (participantDeltasToApply.size > 0) {
-                            const participantCaseClauses: SQL[] = [];
-                            const conversationIdsToUpdateParticipant: number[] =
-                                [];
+                        const participantCaseClauses: SQL[] = [];
+                        const conversationIdsToUpdateParticipant: number[] = [];
 
-                            for (const [
+                        for (const [
+                            conversationId,
+                            delta,
+                        ] of participantDeltasToApply.entries()) {
+                            conversationIdsToUpdateParticipant.push(
                                 conversationId,
-                                delta,
-                            ] of participantDeltasToApply.entries()) {
-                                conversationIdsToUpdateParticipant.push(
-                                    conversationId,
-                                );
-                                participantCaseClauses.push(
-                                    sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${delta}`,
-                                );
-                            }
-
-                            const participantInClause = sql.join(
-                                conversationIdsToUpdateParticipant.map(
-                                    (id) => sql`${id}`,
-                                ),
-                                sql`, `,
                             );
+                            participantCaseClauses.push(
+                                sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${delta}`,
+                            );
+                        }
 
-                            await tx
-                                .update(conversationTable)
-                                .set({
-                                    participantCount: sql`${conversationTable.participantCount} + (CASE ${sql.join(participantCaseClauses, sql` `)} ELSE 0 END)`,
-                                })
-                                .where(
-                                    sql`${conversationTable.id} IN (${participantInClause})`,
-                                );
+                        const participantInClause = sql.join(
+                            conversationIdsToUpdateParticipant.map(
+                                (id) => sql`${id}`,
+                            ),
+                            sql`, `,
+                        );
+
+                        await tx
+                            .update(conversationTable)
+                            .set({
+                                participantCount: sql`${conversationTable.participantCount} + (CASE ${sql.join(participantCaseClauses, sql` `)} ELSE 0 END)`,
+                            })
+                            .where(
+                                sql`${conversationTable.id} IN (${participantInClause})`,
+                            );
 
                         log.info(
                             `[VoteBuffer] Updated participantCount for ${String(participantDeltasToApply.size)} conversation(s)`,
