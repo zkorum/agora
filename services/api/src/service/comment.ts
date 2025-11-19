@@ -1038,7 +1038,6 @@ export async function postNewOpinion({
     let conversationId: number;
     let conversationContentId: number | null;
     let conversationAuthorId: string;
-    let conversationIsIndexed: boolean;
     let conversationIsLoginRequired: boolean;
     let requiresEventTicket: EventSlug | null;
 
@@ -1046,7 +1045,6 @@ export async function postNewOpinion({
         conversationId = conversationMetadata.conversationId;
         conversationContentId = conversationMetadata.conversationContentId;
         conversationAuthorId = conversationMetadata.conversationAuthorId;
-        conversationIsIndexed = conversationMetadata.conversationIsIndexed;
         conversationIsLoginRequired =
             conversationMetadata.conversationIsLoginRequired;
         requiresEventTicket = conversationMetadata.requiresEventTicket;
@@ -1059,7 +1057,6 @@ export async function postNewOpinion({
         conversationId = metadata.id;
         conversationContentId = metadata.contentId;
         conversationAuthorId = metadata.authorId;
-        conversationIsIndexed = metadata.isIndexed;
         conversationIsLoginRequired = metadata.isLoginRequired;
         requiresEventTicket = metadata.requiresEventTicket;
     }
@@ -1095,7 +1092,6 @@ export async function postNewOpinion({
     const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
         didWrite,
-        conversationIsIndexed,
         conversationIsLoginRequired,
         userAgent,
         now,
