@@ -94,7 +94,6 @@ export async function submitPollResponse({
     const {
         id: postId,
         contentId: postContentId,
-        isIndexed: conversationIsIndexed,
         isLoginRequired: conversationIsLoginRequired,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
@@ -110,7 +109,6 @@ export async function submitPollResponse({
     const authorId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
         didWrite,
-        conversationIsIndexed,
         conversationIsLoginRequired,
         userAgent,
         now,
