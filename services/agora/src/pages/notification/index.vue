@@ -209,12 +209,26 @@ function pullDownTriggered(done: () => void) {
   }, 500);
 }
 
-async function redirectPage(routeTarget: RouteTarget) {
-  await router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: routeTarget.conversationSlugId },
-    query: { opinion: routeTarget.opinionSlugId },
-  });
+async function redirectPage(routeTarget: RouteTarget): Promise<void> {
+  switch (routeTarget.type) {
+    case "opinion":
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: routeTarget.conversationSlugId },
+        query: { opinion: routeTarget.opinionSlugId },
+      });
+      break;
+
+    case "export":
+      await router.push({
+        name: "/conversation/[conversationSlugId]/export.[exportId]",
+        params: {
+          conversationSlugId: routeTarget.conversationSlugId,
+          exportId: routeTarget.exportSlugId,
+        },
+      });
+      break;
+  }
 }
 </script>
 
