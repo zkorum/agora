@@ -5,6 +5,7 @@ export interface ExportStatusViewTranslations {
   errorLoadingStatus: string;
   processingMessage: string;
   failedMessage: string;
+  cancelledMessage: string;
   download: string;
   downloadExpired: string;
   exportInfo: string;
@@ -19,6 +20,7 @@ export interface ExportStatusViewTranslations {
   recordCount: string;
   urlExpiresAt: string;
   errorMessage: string;
+  cancellationReason: string;
   deleteExport: string;
   deleteConfirmTitle: string;
   deleteConfirmMessage: string;
@@ -37,6 +39,8 @@ export const exportStatusViewTranslations: Record<
       "Your export is being processed. This page will update automatically.",
     failedMessage:
       "The export failed. Please return to the export history page and request a new export.",
+    cancelledMessage:
+      "This export was cancelled. Please return to the export history page to request a new export.",
     download: "Download",
     downloadExpired: "Download Expired",
     exportInfo: "Export Information",
@@ -51,6 +55,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "Records",
     urlExpiresAt: "Expires",
     errorMessage: "Error",
+    cancellationReason: "Cancellation Reason",
     deleteExport: "Delete Export",
     deleteConfirmTitle: "Delete Export",
     deleteConfirmMessage:
@@ -65,6 +70,8 @@ export const exportStatusViewTranslations: Record<
       "جارٍ معالجة التصدير الخاص بك. سيتم تحديث هذه الصفحة تلقائيًا.",
     failedMessage:
       "فشل التصدير. يرجى العودة إلى صفحة سجل التصدير وطلب تصدير جديد.",
+    cancelledMessage:
+      "تم إلغاء هذا التصدير. يرجى العودة إلى صفحة سجل التصدير لطلب تصدير جديد.",
     download: "تنزيل",
     downloadExpired: "انتهت صلاحية التنزيل",
     exportInfo: "معلومات التصدير",
@@ -79,6 +86,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "السجلات",
     urlExpiresAt: "ينتهي",
     errorMessage: "خطأ",
+    cancellationReason: "سبب الإلغاء",
     deleteExport: "حذف التصدير",
     deleteConfirmTitle: "حذف التصدير",
     deleteConfirmMessage:
@@ -93,6 +101,8 @@ export const exportStatusViewTranslations: Record<
       "Se está procesando su exportación. Esta página se actualizará automáticamente.",
     failedMessage:
       "La exportación falló. Por favor, vuelva a la página de historial de exportaciones y solicite una nueva exportación.",
+    cancelledMessage:
+      "Esta exportación fue cancelada. Por favor, vuelva a la página de historial de exportaciones para solicitar una nueva exportación.",
     download: "Descargar",
     downloadExpired: "Descarga Expirada",
     exportInfo: "Información de Exportación",
@@ -107,6 +117,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "Registros",
     urlExpiresAt: "Expira",
     errorMessage: "Error",
+    cancellationReason: "Motivo de Cancelación",
     deleteExport: "Eliminar Exportación",
     deleteConfirmTitle: "Eliminar Exportación",
     deleteConfirmMessage:
@@ -121,6 +132,8 @@ export const exportStatusViewTranslations: Record<
       "Votre exportation est en cours de traitement. Cette page se mettra à jour automatiquement.",
     failedMessage:
       "L'exportation a échoué. Veuillez retourner à la page d'historique des exportations et demander une nouvelle exportation.",
+    cancelledMessage:
+      "Cette exportation a été annulée. Veuillez retourner à la page d'historique des exportations pour demander une nouvelle exportation.",
     download: "Télécharger",
     downloadExpired: "Téléchargement Expiré",
     exportInfo: "Informations sur l'Exportation",
@@ -135,6 +148,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "Enregistrements",
     urlExpiresAt: "Expire",
     errorMessage: "Erreur",
+    cancellationReason: "Raison de l'Annulation",
     deleteExport: "Supprimer l'Exportation",
     deleteConfirmTitle: "Supprimer l'Exportation",
     deleteConfirmMessage:
@@ -147,6 +161,7 @@ export const exportStatusViewTranslations: Record<
     errorLoadingStatus: "加载导出状态失败",
     processingMessage: "您的导出正在处理中。此页面将自动更新。",
     failedMessage: "导出失败。请返回导出历史页面并请求新的导出。",
+    cancelledMessage: "此导出已被取消。请返回导出历史页面以请求新的导出。",
     download: "下载",
     downloadExpired: "下载已过期",
     exportInfo: "导出信息",
@@ -161,6 +176,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "记录数",
     urlExpiresAt: "过期于",
     errorMessage: "错误",
+    cancellationReason: "取消原因",
     deleteExport: "删除导出",
     deleteConfirmTitle: "删除导出",
     deleteConfirmMessage: "您确定要删除此导出吗？此操作无法撤销。",
@@ -172,6 +188,7 @@ export const exportStatusViewTranslations: Record<
     errorLoadingStatus: "載入匯出狀態失敗",
     processingMessage: "您的匯出正在處理中。此頁面將自動更新。",
     failedMessage: "匯出失敗。請返回匯出歷史頁面並請求新的匯出。",
+    cancelledMessage: "此匯出已被取消。請返回匯出歷史頁面以請求新的匯出。",
     download: "下載",
     downloadExpired: "下載已過期",
     exportInfo: "匯出資訊",
@@ -186,6 +203,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "記錄數",
     urlExpiresAt: "過期於",
     errorMessage: "錯誤",
+    cancellationReason: "取消原因",
     deleteExport: "刪除匯出",
     deleteConfirmTitle: "刪除匯出",
     deleteConfirmMessage: "您確定要刪除此匯出嗎？此操作無法撤銷。",
@@ -199,6 +217,8 @@ export const exportStatusViewTranslations: Record<
       "エクスポートが処理されています。このページは自動的に更新されます。",
     failedMessage:
       "エクスポートが失敗しました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
+    cancelledMessage:
+      "このエクスポートはキャンセルされました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
     download: "ダウンロード",
     downloadExpired: "ダウンロード期限切れ",
     exportInfo: "エクスポート情報",
@@ -213,6 +233,7 @@ export const exportStatusViewTranslations: Record<
     recordCount: "レコード数",
     urlExpiresAt: "有効期限",
     errorMessage: "エラー",
+    cancellationReason: "キャンセル理由",
     deleteExport: "エクスポートを削除",
     deleteConfirmTitle: "エクスポートを削除",
     deleteConfirmMessage:

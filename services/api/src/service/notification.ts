@@ -251,6 +251,8 @@ export async function getNotifications({
                 notificationType: notificationTable.notificationType,
                 conversationSlugId: conversationTable.slugId,
                 exportSlugId: conversationExportTable.slugId,
+                errorMessage: conversationExportTable.errorMessage,
+                cancellationReason: conversationExportTable.cancellationReason,
                 slugId: notificationTable.slugId,
             })
             .from(notificationTable)
@@ -287,20 +289,63 @@ export async function getNotifications({
                     notificationItem.notificationType === "export_failed" ||
                     notificationItem.notificationType === "export_cancelled")
             ) {
-                const parsedItem: NotificationItem = {
-                    type: notificationItem.notificationType,
-                    slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt,
-                    isRead: notificationItem.isRead,
-                    message: "",
-                    routeTarget: {
-                        type: "export",
-                        conversationSlugId: notificationItem.conversationSlugId,
-                        exportSlugId: notificationItem.exportSlugId,
-                    },
-                };
-
-                notificationItemList.push(parsedItem);
+                // Construct notification based on type
+                if (notificationItem.notificationType === "export_completed") {
+                    const parsedItem: NotificationItem = {
+                        type: "export_completed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "Your export is ready",
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_failed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_failed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "Your export failed",
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                        ...(notificationItem.errorMessage && {
+                            errorMessage: notificationItem.errorMessage,
+                        }),
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_cancelled"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_cancelled",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "Your export was cancelled",
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                        cancellationReason:
+                            notificationItem.cancellationReason ||
+                            "Export was cancelled",
+                    };
+                    notificationItemList.push(parsedItem);
+                }
 
                 if (!notificationItem.isRead) {
                     numNewNotifications += 1;

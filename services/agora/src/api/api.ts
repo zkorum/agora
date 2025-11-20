@@ -1167,43 +1167,74 @@ export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof A
 /**
  * 
  * @export
- * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+ * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200Response
  */
-export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner {
+export interface ApiV1ConversationExportHistoryConversationSlugIdGet200Response {
+    /**
+     * 
+     * @type {Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200Response
+     */
+    'active': Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200Response
+     */
+    'errors': Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
+ */
+export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
      */
     'exportSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
      */
-    'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum;
+    'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
      */
     'createdAt': string;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
      */
     'totalFileCount'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
+     */
+    'cancellationReason'?: string;
 }
 
-export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
+export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum = {
     Processing: 'processing',
     Completed: 'completed',
     Failed: 'failed',
     Cancelled: 'cancelled'
 } as const;
 
-export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum];
+export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum];
 
 /**
  * 
@@ -1266,6 +1297,12 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
     'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'cancellationReason'?: string;
     /**
      * 
      * @type {string}
@@ -2225,6 +2262,18 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
     'username': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'cancellationReason': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = {
@@ -2473,6 +2522,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'errorMessage'?: string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = {
@@ -2523,6 +2578,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'cancellationReason': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = {
@@ -6262,7 +6323,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>>> {
+        async apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportHistoryConversationSlugIdGet200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportHistoryConversationSlugIdGet']?.[localVarOperationServerIndex]?.url;
@@ -6937,7 +6998,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>> {
+        apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportHistoryConversationSlugIdGet200Response> {
             return localVarFp.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options).then((request) => request(axios, basePath));
         },
         /**
