@@ -24,6 +24,7 @@ import {
     generateDownloadFileName,
 } from "./utils.js";
 import type { ProcessConversationExportParams } from "./types.js";
+import { createExportNotification } from "./notifications.js";
 
 // Maximum number of exports to keep per conversation
 const MAX_EXPORTS_PER_CONVERSATION = 7;
@@ -293,6 +294,15 @@ export async function processConversationExport({
             .where(eq(conversationExportTable.slugId, exportSlugId));
 
         log.info(`Conversation export ${exportSlugId} completed successfully`);
+
+        // Create notification for successful export
+        await createExportNotification({
+            db,
+            userId,
+            exportId,
+            conversationId,
+            type: "export_completed",
+        });
     } catch (error: unknown) {
         if (error instanceof Error) {
             log.error(`Error message: ${error.message}`);
@@ -324,6 +334,45 @@ export async function processConversationExport({
             `Failed to process export for conversation ${String(conversationId)}, user ${userId}:`,
             error,
         );
+
+        // Find the failed export ID to create notification
+        try {
+            const failedExportList = await db
+                .select({ id: conversationExportTable.id })
+                .from(conversationExportTable)
+                .where(
+                    and(
+                        eq(
+                            conversationExportTable.conversationId,
+                            conversationId,
+                        ),
+                        eq(conversationExportTable.userId, userId),
+                        eq(conversationExportTable.status, "failed"),
+                    ),
+                )
+                .orderBy(desc(conversationExportTable.createdAt))
+                .limit(1);
+
+            if (failedExportList.length > 0) {
+                const failedExportId = failedExportList[0].id;
+
+                // Create notification for failed export
+                await createExportNotification({
+                    db,
+                    userId,
+                    exportId: failedExportId,
+                    conversationId,
+                    type: "export_failed",
+                    message: error instanceof Error ? error.message : undefined,
+                });
+            }
+        } catch (notificationError: unknown) {
+            // Log but don't fail if notification creation fails
+            log.error(
+                "Failed to create failure notification:",
+                notificationError,
+            );
+        }
     }
 }
 
