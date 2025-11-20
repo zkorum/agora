@@ -68,9 +68,9 @@ export function useBackendConversationExportApi() {
       })
     );
 
-    return {
-      exportSlugId: response.data.exportSlugId,
-    };
+    // Parse and validate response with Zod (handles discriminated union)
+    const parsed = Dto.requestConversationExportResponse.parse(response.data);
+    return parsed;
   }
 
   async function fetchExportStatus(

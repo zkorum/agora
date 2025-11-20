@@ -653,11 +653,20 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
-    static requestConversationExportResponse = z
-        .object({
-            exportSlugId: zodSlugId,
-        })
-        .strict();
+    static requestConversationExportResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("queued"),
+                exportSlugId: zodSlugId,
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("cooldown_active"),
+                cooldownEndsAt: z.string().datetime(),
+            })
+            .strict(),
+    ]);
     static getConversationExportStatusRequest = z
         .object({
             exportSlugId: zodSlugId,

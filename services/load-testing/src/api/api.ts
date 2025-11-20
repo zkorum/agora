@@ -1167,74 +1167,37 @@ export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof A
 /**
  * 
  * @export
- * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200Response
+ * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
  */
-export interface ApiV1ConversationExportHistoryConversationSlugIdGet200Response {
-    /**
-     * 
-     * @type {Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200Response
-     */
-    'active': Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>;
-    /**
-     * 
-     * @type {Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200Response
-     */
-    'errors': Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner>;
-}
-/**
- * 
- * @export
- * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
- */
-export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner {
+export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
     'exportSlugId': string;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
-    'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum;
+    'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
     'createdAt': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
-     */
-    'totalFileCount'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
-     */
-    'errorMessage'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInner
-     */
-    'cancellationReason'?: string;
 }
 
-export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum = {
+export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
     Processing: 'processing',
     Completed: 'completed',
     Failed: 'failed',
     Cancelled: 'cancelled'
 } as const;
 
-export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseActiveInnerStatusEnum];
+export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum];
 
 /**
  * 
@@ -1247,8 +1210,79 @@ export interface ApiV1ConversationExportRequestPost200Response {
      * @type {string}
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
+    'status': ApiV1ConversationExportRequestPost200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'cooldownEndsAt': string;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
+    CooldownActive: 'cooldown_active'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200ResponseAnyOf
+ */
+export interface ApiV1ConversationExportRequestPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf
+     */
+    'status': ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf
+     */
     'exportSlugId': string;
 }
+
+export const ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = {
+    Queued: 'queued'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200ResponseAnyOf1
+ */
+export interface ApiV1ConversationExportRequestPost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
+     */
+    'cooldownEndsAt': string;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = {
+    CooldownActive: 'cooldown_active'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum];
+
 /**
  * 
  * @export
@@ -6323,7 +6357,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportHistoryConversationSlugIdGet200Response>> {
+        async apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportHistoryConversationSlugIdGet']?.[localVarOperationServerIndex]?.url;
@@ -6998,7 +7032,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportHistoryConversationSlugIdGet200Response> {
+        apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>> {
             return localVarFp.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options).then((request) => request(axios, basePath));
         },
         /**

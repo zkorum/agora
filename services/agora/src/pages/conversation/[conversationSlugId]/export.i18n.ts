@@ -6,6 +6,8 @@ export interface ExportPageTranslations {
   previousExports: string;
   conversationLoadError: string;
   exportRequestError: string;
+  exportCooldownMinutes: string; // Expects {minutes} parameter
+  exportCooldownSeconds: string; // Expects {seconds} parameter
   viewConversation: string;
   requestExportAriaLabel: string;
 }
@@ -22,6 +24,10 @@ export const exportPageTranslations: Record<
     conversationLoadError:
       "Failed to load conversation details. Please try again.",
     exportRequestError: "Failed to create export. Please try again.",
+    exportCooldownMinutes:
+      "Export cooldown active. You can request another export in {minutes} minute(s).",
+    exportCooldownSeconds:
+      "Export cooldown active. You can request another export in {seconds} second(s).",
     viewConversation: "View conversation",
     requestExportAriaLabel: "Request export of conversation data",
   },
@@ -31,6 +37,10 @@ export const exportPageTranslations: Record<
     previousExports: "الصادرات السابقة",
     conversationLoadError: "فشل تحميل تفاصيل المحادثة. يرجى المحاولة مرة أخرى.",
     exportRequestError: "فشل إنشاء التصدير. يرجى المحاولة مرة أخرى.",
+    exportCooldownMinutes:
+      "فترة التهدئة للتصدير نشطة. يمكنك طلب تصدير آخر خلال {minutes} دقيقة.",
+    exportCooldownSeconds:
+      "فترة التهدئة للتصدير نشطة. يمكنك طلب تصدير آخر خلال {seconds} ثانية.",
     viewConversation: "عرض المحادثة",
     requestExportAriaLabel: "طلب تصدير بيانات المحادثة",
   },
@@ -43,6 +53,10 @@ export const exportPageTranslations: Record<
       "Error al cargar los detalles de la conversación. Por favor, inténtalo de nuevo.",
     exportRequestError:
       "Error al crear la exportación. Por favor, inténtalo de nuevo.",
+    exportCooldownMinutes:
+      "Período de espera activo. Puedes solicitar otra exportación en {minutes} minuto(s).",
+    exportCooldownSeconds:
+      "Período de espera activo. Puedes solicitar otra exportación en {seconds} segundo(s).",
     viewConversation: "Ver conversación",
     requestExportAriaLabel: "Solicitar exportación de datos de conversación",
   },
@@ -55,6 +69,10 @@ export const exportPageTranslations: Record<
       "Échec du chargement des détails de la conversation. Veuillez réessayer.",
     exportRequestError:
       "Échec de la création de l'exportation. Veuillez réessayer.",
+    exportCooldownMinutes:
+      "Période d'attente active. Vous pouvez demander une autre exportation dans {minutes} minute(s).",
+    exportCooldownSeconds:
+      "Période d'attente active. Vous pouvez demander une autre exportation dans {seconds} seconde(s).",
     viewConversation: "Voir la conversation",
     requestExportAriaLabel:
       "Demander l'exportation des données de conversation",
@@ -65,6 +83,9 @@ export const exportPageTranslations: Record<
     previousExports: "以前的导出",
     conversationLoadError: "无法加载对话详情。请重试。",
     exportRequestError: "无法创建导出。请重试。",
+    exportCooldownMinutes:
+      "导出冷却中。您可以在{minutes}分钟后请求另一个导出。",
+    exportCooldownSeconds: "导出冷却中。您可以在{seconds}秒后请求另一个导出。",
     viewConversation: "查看对话",
     requestExportAriaLabel: "请求导出对话数据",
   },
@@ -74,6 +95,9 @@ export const exportPageTranslations: Record<
     previousExports: "先前的匯出",
     conversationLoadError: "無法載入對話詳情。請重試。",
     exportRequestError: "無法建立匯出。請重試。",
+    exportCooldownMinutes:
+      "匯出冷卻中。您可以在{minutes}分鐘後請求另一個匯出。",
+    exportCooldownSeconds: "匯出冷卻中。您可以在{seconds}秒後請求另一個匯出。",
     viewConversation: "檢視對話",
     requestExportAriaLabel: "請求匯出對話資料",
   },
@@ -86,6 +110,10 @@ export const exportPageTranslations: Record<
       "会話の詳細を読み込めませんでした。もう一度お試しください。",
     exportRequestError:
       "エクスポートの作成に失敗しました。もう一度お試しください。",
+    exportCooldownMinutes:
+      "エクスポートのクールダウン中です。{minutes}分後に別のエクスポートをリクエストできます。",
+    exportCooldownSeconds:
+      "エクスポートのクールダウン中です。{seconds}秒後に別のエクスポートをリクエストできます。",
     viewConversation: "会話を表示",
     requestExportAriaLabel: "会話データのエクスポートをリクエスト",
   },

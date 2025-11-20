@@ -23,10 +23,16 @@ export interface BufferedExport {
 }
 
 export interface ExportBuffer {
-    add: (params: { exportRequest: BufferedExport }) => Promise<{
-        exportSlugId: string;
-        status: "queued" | "duplicate_filtered" | "cooldown_active";
-    }>;
+    add: (params: { exportRequest: BufferedExport }) => Promise<
+        | {
+              exportSlugId: string;
+              status: "queued";
+          }
+        | {
+              status: "cooldown_active";
+              cooldownEndsAt: Date;
+          }
+    >;
     flush: () => Promise<void>;
     shutdown: () => Promise<void>;
     getBufferSize: () => number;
@@ -78,10 +84,16 @@ export function createExportBuffer({
         exportRequest,
     }: {
         exportRequest: BufferedExport;
-    }): Promise<{
-        exportSlugId: string;
-        status: "queued" | "duplicate_filtered" | "cooldown_active";
-    }> => {
+    }): Promise<
+        | {
+              exportSlugId: string;
+              status: "queued";
+          }
+        | {
+              status: "cooldown_active";
+              cooldownEndsAt: Date;
+          }
+    > => {
         if (isShuttingDown) {
             throw new Error(
                 "[ExportBuffer] Cannot add exports during shutdown",
@@ -99,6 +111,41 @@ export function createExportBuffer({
 
         if (conversation.length === 0) {
             throw new Error("Conversation not found");
+        }
+
+        // Check cooldown BEFORE creating export record
+        const nowTime = nowZeroMs();
+        const cooldownTime = new Date(
+            nowTime.getTime() - cooldownSeconds * 1000,
+        );
+
+        const lastExport = await db
+            .select({ createdAt: conversationExportTable.createdAt })
+            .from(conversationExportTable)
+            .where(
+                and(
+                    eq(
+                        conversationExportTable.conversationId,
+                        exportRequest.conversationId,
+                    ),
+                    eq(conversationExportTable.status, "completed"),
+                    eq(conversationExportTable.isDeleted, false),
+                ),
+            )
+            .orderBy(desc(conversationExportTable.createdAt))
+            .limit(1);
+
+        if (lastExport.length > 0 && lastExport[0].createdAt > cooldownTime) {
+            const cooldownEndsAt = new Date(
+                lastExport[0].createdAt.getTime() + cooldownSeconds * 1000,
+            );
+            log.info(
+                `[ExportBuffer] Cooldown active for conversation ${String(exportRequest.conversationId)} (ends at ${cooldownEndsAt.toISOString()})`,
+            );
+            return {
+                status: "cooldown_active",
+                cooldownEndsAt,
+            };
         }
 
         // Check if conversation has any opinions (excluding moderated "move")
@@ -127,9 +174,9 @@ export function createExportBuffer({
         }
 
         // Create export record immediately with "processing" status
-        const now = new Date();
+        const createdAt = new Date();
         const expiresAt = new Date(
-            now.getTime() + exportExpiryDays * 24 * 60 * 60 * 1000,
+            createdAt.getTime() + exportExpiryDays * 24 * 60 * 60 * 1000,
         );
 
         const exportSlugId = nanoid(8);
