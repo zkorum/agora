@@ -1,16 +1,13 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, count, desc, eq, isNull, lt, ne, or } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
     conversationExportTable,
     conversationExportFileTable,
     conversationTable,
-    opinionTable,
-    opinionModerationTable,
 } from "@/shared-backend/schema.js";
 import { uploadToS3, generatePresignedUrl, deleteFromS3 } from "../s3.js";
-import { nanoid } from "nanoid";
 import type {
     RequestConversationExportResponse,
     GetConversationExportStatusResponse,
@@ -25,6 +22,7 @@ import {
 } from "./utils.js";
 import type { ProcessConversationExportParams } from "./types.js";
 import { createExportNotification } from "./notifications.js";
+import type { ExportBuffer } from "../exportBuffer.js";
 
 // Maximum number of exports to keep per conversation
 const MAX_EXPORTS_PER_CONVERSATION = 7;
@@ -33,17 +31,18 @@ interface RequestConversationExportParams {
     db: PostgresDatabase;
     conversationSlugId: string;
     userId: string;
+    exportBuffer: ExportBuffer;
 }
 
 /**
  * Request a new conversation export.
- * This function is now a thin wrapper that delegates to the export buffer.
- * To be replaced by direct buffer.add() calls from the API layer.
+ * This function delegates to the export buffer for cooldown enforcement and batching.
  */
 export async function requestConversationExport({
     db,
     conversationSlugId,
     userId,
+    exportBuffer,
 }: RequestConversationExportParams): Promise<RequestConversationExportResponse> {
     // Verify conversation exists
     const conversation = await db
@@ -58,85 +57,18 @@ export async function requestConversationExport({
 
     const conversationId = conversation[0].id;
 
-    // Check if conversation has any opinions (excluding those moderated as "moved")
-    const [{ count: opinionCount }] = await db
-        .select({ count: count() })
-        .from(opinionTable)
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionTable.id, opinionModerationTable.opinionId),
-        )
-        .where(
-            and(
-                eq(opinionTable.conversationId, conversationId),
-                or(
-                    isNull(opinionModerationTable.moderationAction),
-                    ne(opinionModerationTable.moderationAction, "move"),
-                ),
-            ),
-        );
-
-    if (opinionCount === 0) {
-        throw httpErrors.badRequest(
-            "Cannot export conversation with no opinions",
-        );
-    }
-
-    // Cleanup old exports
-    try {
-        const deletedCount = await cleanupOldExports({
-            db,
+    // Delegate to export buffer - handles cooldown, batching, and processing
+    const { exportSlugId } = await exportBuffer.add({
+        exportRequest: {
+            userId,
             conversationId,
-            maxExportsToKeep: MAX_EXPORTS_PER_CONVERSATION - 1,
-        });
-        if (deletedCount > 0) {
-            log.info(
-                `Cleaned up ${deletedCount.toString()} old exports for conversation ${conversationId.toString()} before creating new export`,
-            );
-        }
-    } catch (error: unknown) {
-        // Log error but don't block export creation
-        log.error(
-            `Error cleaning up old exports for conversation ${conversationId.toString()}:`,
-            error,
-        );
-    }
-
-    // Create export record
-    const now = new Date();
-    const expiresAt = new Date(
-        now.getTime() +
-            config.CONVERSATION_EXPORT_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
-    );
-
-    const exportSlugId = nanoid(8);
-
-    const [exportRecord] = await db
-        .insert(conversationExportTable)
-        .values({
-            slugId: exportSlugId,
-            conversationId: conversationId,
-            userId: userId,
-            status: "processing",
-            expiresAt: expiresAt,
-        })
-        .returning({
-            slugId: conversationExportTable.slugId,
-        });
-
-    // Start background processing (don't await)
-    processConversationExport({
-        db,
-        conversationId,
-        conversationSlugId,
-        userId,
-    }).catch((error: unknown) => {
-        log.error("Error processing conversation export:", error);
+            conversationSlugId,
+            timestamp: new Date(),
+        },
     });
 
-    return {
-        exportSlugId: exportRecord.slugId,
-    };
+    // Return only the exportSlugId to match the API response schema
+    return { exportSlugId };
 }
 
 /**
@@ -792,97 +724,4 @@ export async function deleteAllConversationExports({
         );
         return 0;
     }
-}
-
-interface CleanupOldExportsParams {
-    db: PostgresDatabase;
-    conversationId: number;
-    maxExportsToKeep: number;
-}
-
-/**
- * Cleanup old exports for a conversation, keeping only the most recent ones.
- * This is called before creating a new export to enforce the limit.
- */
-async function cleanupOldExports({
-    db,
-    conversationId,
-    maxExportsToKeep,
-}: CleanupOldExportsParams): Promise<number> {
-    const now = new Date();
-
-    // Find all non-deleted exports for this conversation, ordered by creation date (newest first)
-    const existingExports = await db
-        .select({
-            id: conversationExportTable.id,
-        })
-        .from(conversationExportTable)
-        .where(
-            and(
-                eq(conversationExportTable.conversationId, conversationId),
-                eq(conversationExportTable.isDeleted, false),
-            ),
-        )
-        .orderBy(desc(conversationExportTable.createdAt));
-
-    // If we have more than the max, delete the oldest ones
-    if (existingExports.length > maxExportsToKeep) {
-        const exportsToDelete = existingExports.slice(maxExportsToKeep);
-
-        log.info(
-            `Cleaning up ${exportsToDelete.length.toString()} old exports for conversation ${conversationId.toString()}`,
-        );
-
-        for (const exportRecord of exportsToDelete) {
-            try {
-                // Fetch all S3 keys for this export
-                const fileRecords = await db
-                    .select({
-                        s3Key: conversationExportFileTable.s3Key,
-                    })
-                    .from(conversationExportFileTable)
-                    .where(
-                        eq(
-                            conversationExportFileTable.exportId,
-                            exportRecord.id,
-                        ),
-                    );
-
-                // Delete from S3
-                for (const file of fileRecords) {
-                    if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
-                        await deleteFromS3({
-                            s3Key: file.s3Key,
-                            bucketName: config.AWS_S3_BUCKET_NAME,
-                        });
-                    }
-                }
-
-                log.info(
-                    `Deleted ${fileRecords.length.toString()} files from S3 for export ${exportRecord.id.toString()}`,
-                );
-
-                // Mark as deleted in database
-                await db
-                    .update(conversationExportTable)
-                    .set({
-                        isDeleted: true,
-                        deletedAt: now,
-                        updatedAt: now,
-                    })
-                    .where(eq(conversationExportTable.id, exportRecord.id));
-
-                log.info(`Cleaned up old export ${exportRecord.id.toString()}`);
-            } catch (error: unknown) {
-                log.error(
-                    `Error cleaning up old export ${exportRecord.id.toString()}:`,
-                    error,
-                );
-            }
-        }
-
-        return exportsToDelete.length;
-    }
-
-    return 0;
 }
