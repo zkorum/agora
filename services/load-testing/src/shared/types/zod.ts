@@ -217,12 +217,26 @@ export const zodUserReportItem = z.object({
     id: z.number(),
 });
 
-export const zodRouteTarget = z
+const zodOpinionRouteTarget = z
     .object({
+        type: z.literal("opinion"),
         conversationSlugId: zodSlugId,
         opinionSlugId: zodSlugId,
     })
     .strict();
+
+const zodExportRouteTarget = z
+    .object({
+        type: z.literal("export"),
+        conversationSlugId: zodSlugId,
+        exportSlugId: zodSlugId,
+    })
+    .strict();
+
+export const zodRouteTarget = z.discriminatedUnion("type", [
+    zodOpinionRouteTarget,
+    zodExportRouteTarget,
+]);
 
 export const zodTopicObject = z
     .object({
@@ -239,59 +253,60 @@ export const zodNotificationType = z.enum([
     "export_failed",
     "export_cancelled",
 ]);
+
+// Base notification schema with common fields
+const zodNotificationBase = z.object({
+    slugId: zodSlugId,
+    isRead: z.boolean(),
+    message: z.string(),
+    createdAt: z.date(),
+});
+
+// Opinion notification schemas
+const zodOpinionVoteNotification = zodNotificationBase
+    .extend({
+        type: z.literal("opinion_vote"),
+        routeTarget: zodOpinionRouteTarget,
+        numVotes: z.number().int().min(1),
+    })
+    .strict();
+
+const zodNewOpinionNotification = zodNotificationBase
+    .extend({
+        type: z.literal("new_opinion"),
+        routeTarget: zodOpinionRouteTarget,
+        username: z.string(),
+    })
+    .strict();
+
+// Export notification schemas
+const zodExportCompletedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_completed"),
+        routeTarget: zodExportRouteTarget,
+    })
+    .strict();
+
+const zodExportFailedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_failed"),
+        routeTarget: zodExportRouteTarget,
+    })
+    .strict();
+
+const zodExportCancelledNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_cancelled"),
+        routeTarget: zodExportRouteTarget,
+    })
+    .strict();
+
 export const zodNotificationItem = z.discriminatedUnion("type", [
-    z
-        .object({
-            type: z.literal("opinion_vote"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-            numVotes: z.number().int().min(1),
-        })
-        .strict(),
-    z
-        .object({
-            type: z.literal("new_opinion"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-            username: z.string(),
-        })
-        .strict(),
-    z
-        .object({
-            type: z.literal("export_completed"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-        })
-        .strict(),
-    z
-        .object({
-            type: z.literal("export_failed"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-        })
-        .strict(),
-    z
-        .object({
-            type: z.literal("export_cancelled"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-        })
-        .strict(),
+    zodOpinionVoteNotification,
+    zodNewOpinionNotification,
+    zodExportCompletedNotification,
+    zodExportFailedNotification,
+    zodExportCancelledNotification,
 ]);
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
@@ -1030,6 +1045,8 @@ export type Username = z.infer<typeof zodUsername>;
 export type NotificationItem = z.infer<typeof zodNotificationItem>;
 export type NotificationType = z.infer<typeof zodNotificationType>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
+export type OpinionRouteTarget = z.infer<typeof zodOpinionRouteTarget>;
+export type ExportRouteTarget = z.infer<typeof zodExportRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
 export type SupportedCountryCallingCode = z.infer<

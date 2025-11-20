@@ -1,7 +1,9 @@
 import {
     conversationTable,
+    conversationExportTable,
     notificationNewOpinionTable,
     notificationOpinionVoteTable,
+    notificationExportTable,
     opinionContentTable,
     opinionTable,
     notificationTable,
@@ -154,6 +156,7 @@ export async function getNotifications({
                     ),
                     username: notificationItem.username,
                     routeTarget: {
+                        type: "opinion",
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
@@ -223,10 +226,78 @@ export async function getNotifications({
                         notificationItem.opinionContent,
                     ),
                     routeTarget: {
+                        type: "opinion",
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
                     numVotes: numVotes,
+                };
+
+                notificationItemList.push(parsedItem);
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
+            }
+        });
+    }
+
+    // Fetch export notifications
+    {
+        const notificationTableResponse = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                conversationSlugId: conversationTable.slugId,
+                exportSlugId: conversationExportTable.slugId,
+                slugId: notificationTable.slugId,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                notificationExportTable,
+                eq(
+                    notificationExportTable.notificationId,
+                    notificationTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationExportTable,
+                eq(
+                    conversationExportTable.id,
+                    notificationExportTable.exportId,
+                ),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    notificationExportTable.conversationId,
+                ),
+            )
+            .where(whereClause)
+            .orderBy(orderByClause)
+            .limit(fetchLimit);
+
+        notificationTableResponse.forEach((notificationItem) => {
+            if (
+                notificationItem.conversationSlugId &&
+                notificationItem.exportSlugId &&
+                (notificationItem.notificationType === "export_completed" ||
+                    notificationItem.notificationType === "export_failed" ||
+                    notificationItem.notificationType === "export_cancelled")
+            ) {
+                const parsedItem: NotificationItem = {
+                    type: notificationItem.notificationType,
+                    slugId: notificationItem.slugId,
+                    createdAt: notificationItem.createdAt,
+                    isRead: notificationItem.isRead,
+                    message: "",
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: notificationItem.conversationSlugId,
+                        exportSlugId: notificationItem.exportSlugId,
+                    },
                 };
 
                 notificationItemList.push(parsedItem);
