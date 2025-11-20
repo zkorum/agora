@@ -2,7 +2,8 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface NewConversationControlBarTranslations {
   asLabel: string;
-  importFromPolis: string;
+  importFromPolisUrl: string;
+  importFromCsv: string;
   newConversation: string;
   private: string;
   public: string;
@@ -22,7 +23,8 @@ export const newConversationControlBarTranslations: Record<
 > = {
   en: {
     asLabel: "As {name}",
-    importFromPolis: "Import from Polis",
+    importFromPolisUrl: "Import from Polis URL",
+    importFromCsv: "Import from CSV",
     newConversation: "New Conversation",
     private: "Private",
     public: "Public",
@@ -37,7 +39,8 @@ export const newConversationControlBarTranslations: Record<
   },
   ar: {
     asLabel: "باسم {name}",
-    importFromPolis: "استيراد من بوليس",
+    importFromPolisUrl: "استيراد من رابط بوليس",
+    importFromCsv: "استيراد من CSV",
     newConversation: "محادثة جديدة",
     private: "خاص",
     public: "عام",
@@ -52,7 +55,8 @@ export const newConversationControlBarTranslations: Record<
   },
   es: {
     asLabel: "Como {name}",
-    importFromPolis: "Importar desde Polis",
+    importFromPolisUrl: "Importar desde URL de Polis",
+    importFromCsv: "Importar desde CSV",
     newConversation: "Nueva Conversación",
     private: "Privado",
     public: "Público",
@@ -67,7 +71,8 @@ export const newConversationControlBarTranslations: Record<
   },
   fr: {
     asLabel: "En tant que {name}",
-    importFromPolis: "Importer depuis Polis",
+    importFromPolisUrl: "Importer depuis URL Polis",
+    importFromCsv: "Importer depuis CSV",
     newConversation: "Nouvelle Conversation",
     private: "Privé",
     public: "Public",
@@ -82,7 +87,8 @@ export const newConversationControlBarTranslations: Record<
   },
   "zh-Hans": {
     asLabel: "作为 {name}",
-    importFromPolis: "从 Polis 导入",
+    importFromPolisUrl: "从 Polis URL 导入",
+    importFromCsv: "从 CSV 导入",
     newConversation: "新对话",
     private: "私密",
     public: "公开",
@@ -97,7 +103,8 @@ export const newConversationControlBarTranslations: Record<
   },
   "zh-Hant": {
     asLabel: "作為 {name}",
-    importFromPolis: "從 Polis 匯入",
+    importFromPolisUrl: "從 Polis URL 匯入",
+    importFromCsv: "從 CSV 匯入",
     newConversation: "新對話",
     private: "私密",
     public: "公開",
@@ -112,7 +119,8 @@ export const newConversationControlBarTranslations: Record<
   },
   ja: {
     asLabel: "{name} として",
-    importFromPolis: "Polis からインポート",
+    importFromPolisUrl: "Polis URL からインポート",
+    importFromCsv: "CSV からインポート",
     newConversation: "新しい会話",
     private: "プライベート",
     public: "パブリック",

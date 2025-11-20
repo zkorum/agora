@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -92,6 +93,8 @@ import {
   type PolisUrlInputTranslations,
 } from "./PolisUrlInput.i18n";
 
+// Establish global i18n scope for <i18n-t> component
+useI18n();
 
 const { t } = useComponentI18n<PolisUrlInputTranslations>(
   polisUrlInputTranslations

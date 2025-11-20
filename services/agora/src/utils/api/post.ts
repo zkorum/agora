@@ -5,6 +5,8 @@ import type {
   ApiV1ConversationCreatePost200Response,
   ApiV1ConversationImportPostRequest,
 } from "src/api";
+import type { ImportCsvConversationResponse } from "src/shared/types/dto";
+import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
 import {
   type ApiV1ConversationCreatePostRequest,
   type ApiV1ConversationFetchRecentPostRequest,
@@ -22,7 +24,10 @@ import type {
   moderationStatusOptionsType,
   EventSlug,
 } from "src/shared/types/zod";
-import type { FetchFeedResponse } from "src/shared/types/dto";
+import type {
+  FetchFeedResponse,
+  ValidateCsvResponse,
+} from "src/shared/types/dto";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 
 export function useBackendPostApi() {
@@ -197,6 +202,59 @@ export function useBackendPostApi() {
     | ImportConversationSuccessResponse
     | AxiosErrorResponse;
 
+  interface ImportConversationFromCsvParams {
+    summaryFile: File;
+    commentsFile: File;
+    votesFile: File;
+    postAsOrganizationName: string;
+    targetIsoConvertDateString: string | undefined;
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+    requiresEventTicket?: EventSlug;
+  }
+
+  async function importConversationFromCsv(
+    params: ImportConversationFromCsvParams
+  ): Promise<ImportCsvConversationResponse> {
+    const formData = new FormData();
+
+    // Add files with correct field names
+    formData.append(CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE, params.summaryFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE, params.commentsFile);
+    formData.append(CSV_UPLOAD_FIELD_NAMES.VOTES_FILE, params.votesFile);
+
+    // Add metadata
+    formData.append("postAsOrganization", params.postAsOrganizationName);
+    formData.append(
+      "indexConversationAt",
+      params.targetIsoConvertDateString || ""
+    );
+    formData.append("isIndexed", String(params.isIndexed));
+    formData.append("isLoginRequired", String(params.isLoginRequired));
+    formData.append("requiresEventTicket", params.requiresEventTicket || "");
+
+    // Get URL from OpenAPI spec
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationImportCsvPost();
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    // Use createRawAxiosRequestConfig with extended timeout for large files
+    const config = createRawAxiosRequestConfig({
+      encodedUcan,
+      timeoutProfile: "extended",
+    });
+
+    const response = await api.post(url, formData, {
+      ...config,
+      headers: {
+        ...config.headers,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  }
+
   async function importConversation({
     polisUrl,
     postAsOrganizationName,
@@ -350,6 +408,56 @@ export function useBackendPostApi() {
     }
   }
 
+  interface ValidateCsvFilesParams {
+    summaryFile: File | null;
+    commentsFile: File | null;
+    votesFile: File | null;
+  }
+
+  async function validateCsvFiles({
+    summaryFile,
+    commentsFile,
+    votesFile,
+  }: ValidateCsvFilesParams): Promise<ValidateCsvResponse> {
+    try {
+      const formData = new FormData();
+
+      // Only add files that are present
+      if (summaryFile) {
+        formData.append(CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE, summaryFile);
+      }
+      if (commentsFile) {
+        formData.append(CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE, commentsFile);
+      }
+      if (votesFile) {
+        formData.append(CSV_UPLOAD_FIELD_NAMES.VOTES_FILE, votesFile);
+      }
+
+      // Get URL from OpenAPI spec
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1ConversationValidateCsvPost();
+      const encodedUcan = await buildEncodedUcan(url, options);
+
+      // Use standard timeout for validation (should be fast)
+      const config = createRawAxiosRequestConfig({
+        encodedUcan,
+      });
+
+      const response = await api.post(url, formData, {
+        ...config,
+        headers: {
+          ...config.headers,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("CSV validation error:", error);
+      throw error;
+    }
+  }
+
   return {
     createNewPost,
     fetchRecentPost,
@@ -357,5 +465,7 @@ export function useBackendPostApi() {
     createInternalPostData,
     deletePostBySlugId,
     importConversation,
+    importConversationFromCsv,
+    validateCsvFiles,
   };
 }
