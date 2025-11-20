@@ -2414,6 +2414,7 @@ server.after(() => {
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
+                exportBuffer: exportBuffer,
             });
         },
     });

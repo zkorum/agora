@@ -1682,8 +1682,7 @@ export const notificationOpinionVoteTable = pgTable(
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         notificationId: integer("notification_id")
             .references(() => notificationTable.id)
-            .notNull()
-            .unique(),
+            .notNull(),
         opinionId: integer("opinion_id")
             .references(() => opinionTable.id)
             .notNull(),
@@ -1704,8 +1703,7 @@ export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     notificationId: integer("notification_id")
         .references(() => notificationTable.id)
-        .notNull()
-        .unique(),
+        .notNull(),
     authorId: uuid("author_id")
         .references(() => userTable.id)
         .notNull(),
@@ -1727,8 +1725,7 @@ export const notificationExportTable = pgTable("notification_export", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     notificationId: integer("notification_id")
         .references(() => notificationTable.id)
-        .notNull()
-        .unique(),
+        .notNull(),
     exportId: integer("export_id")
         .references(() => conversationExportTable.id)
         .notNull(),
