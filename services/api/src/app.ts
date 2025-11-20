@@ -89,10 +89,12 @@ const configSchema = sharedConfigSchema.extend({
     // S3 configuration for conversation CSV exports
     AWS_S3_REGION: z.string().optional(),
     AWS_S3_BUCKET_NAME: z.string().optional(),
-    AWS_S3_CONVERSATION_EXPORTS_PATH: z
-        .string()
-        .default("exports/conversations/"),
     CONVERSATION_EXPORT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
+    CONVERSATION_EXPORT_COOLDOWN_SECONDS: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .default(300), // Cooldown between exports for same conversation (default: 5 minutes)
     S3_PRESIGNED_URL_EXPIRY_SECONDS: z.coerce
         .number()
         .int()

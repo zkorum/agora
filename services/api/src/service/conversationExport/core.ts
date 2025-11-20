@@ -31,14 +31,18 @@ const MAX_EXPORTS_PER_CONVERSATION = 7;
 interface RequestConversationExportParams {
     db: PostgresDatabase;
     conversationSlugId: string;
+    userId: string;
 }
 
 /**
  * Request a new conversation export.
+ * This function is now a thin wrapper that delegates to the export buffer.
+ * To be replaced by direct buffer.add() calls from the API layer.
  */
 export async function requestConversationExport({
     db,
     conversationSlugId,
+    userId,
 }: RequestConversationExportParams): Promise<RequestConversationExportResponse> {
     // Verify conversation exists
     const conversation = await db
@@ -111,6 +115,7 @@ export async function requestConversationExport({
         .values({
             slugId: exportSlugId,
             conversationId: conversationId,
+            userId: userId,
             status: "processing",
             expiresAt: expiresAt,
         })
@@ -121,9 +126,9 @@ export async function requestConversationExport({
     // Start background processing (don't await)
     processConversationExport({
         db,
-        exportSlugId: exportRecord.slugId,
         conversationId,
         conversationSlugId,
+        userId,
     }).catch((error: unknown) => {
         log.error("Error processing conversation export:", error);
     });
@@ -135,29 +140,41 @@ export async function requestConversationExport({
 
 /**
  * Background job to generate all CSV files and upload to S3.
+ * Exported for use by exportBuffer.
  */
-async function processConversationExport({
+export async function processConversationExport({
     db,
-    exportSlugId,
     conversationId,
     conversationSlugId,
+    userId,
 }: ProcessConversationExportParams): Promise<void> {
     try {
-        // Get export ID and createdAt for file records
+        // Find the processing export record for this user+conversation
         const exportRecordList = await db
             .select({
                 id: conversationExportTable.id,
+                slugId: conversationExportTable.slugId,
                 createdAt: conversationExportTable.createdAt,
             })
             .from(conversationExportTable)
-            .where(eq(conversationExportTable.slugId, exportSlugId))
+            .where(
+                and(
+                    eq(conversationExportTable.conversationId, conversationId),
+                    eq(conversationExportTable.userId, userId),
+                    eq(conversationExportTable.status, "processing"),
+                ),
+            )
+            .orderBy(desc(conversationExportTable.createdAt))
             .limit(1);
 
-        if (exportRecordList.length !== 1) {
-            throw new Error(`Export record not found: ${exportSlugId}`);
+        if (exportRecordList.length === 0) {
+            throw new Error(
+                `No processing export found for conversation ${String(conversationId)} and user ${userId}`,
+            );
         }
 
         const exportId = exportRecordList[0].id;
+        const exportSlugId = exportRecordList[0].slugId;
         const exportCreatedAt = exportRecordList[0].createdAt;
 
         // Initialize generator factory
@@ -284,7 +301,7 @@ async function processConversationExport({
             }
         }
 
-        // Update export record with error
+        // Update export record with error (find by conversationId and userId)
         await db
             .update(conversationExportTable)
             .set({
@@ -295,7 +312,18 @@ async function processConversationExport({
                         : "Unknown error occurred",
                 updatedAt: new Date(),
             })
-            .where(eq(conversationExportTable.slugId, exportSlugId));
+            .where(
+                and(
+                    eq(conversationExportTable.conversationId, conversationId),
+                    eq(conversationExportTable.userId, userId),
+                    eq(conversationExportTable.status, "processing"),
+                ),
+            );
+
+        log.error(
+            `Failed to process export for conversation ${String(conversationId)}, user ${userId}:`,
+            error,
+        );
     }
 }
 

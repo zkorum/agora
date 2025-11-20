@@ -1,13 +1,14 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 
 /**
- * Parameters for processing a conversation export in the background
+ * Parameters for processing a conversation export in the background.
+ * Called internally by exportBuffer only.
  */
 export interface ProcessConversationExportParams {
     db: PostgresDatabase;
-    exportSlugId: string;
     conversationId: number;
     conversationSlugId: string;
+    userId: string;
 }
 
 /**

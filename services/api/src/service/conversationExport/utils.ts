@@ -1,6 +1,8 @@
 import { format as formatDate } from "date-fns";
 import { TZDate } from "@date-fns/tz";
-import { config } from "@/app.js";
+
+// S3 path for conversation exports (hardcoded as internal implementation detail)
+const S3_EXPORTS_PATH = "exports/conversations/";
 
 /**
  * Format date as human-readable string for Polis export.
@@ -24,7 +26,7 @@ export function generateS3Key({
     exportSlugId: string;
     fileType: string;
 }): string {
-    return `${config.AWS_S3_CONVERSATION_EXPORTS_PATH}${conversationSlugId}/${exportSlugId}/${fileType}.csv`;
+    return `${S3_EXPORTS_PATH}${conversationSlugId}/${exportSlugId}/${fileType}.csv`;
 }
 
 /**

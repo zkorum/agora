@@ -583,6 +583,13 @@ export const exportStatusEnum = pgEnum("export_status_enum", [
     "processing",
     "completed",
     "failed",
+    "cancelled",
+]);
+
+// Export cancellation reasons
+export const exportCancellationReasonEnum = pgEnum("export_cancellation_reason_enum", [
+    "duplicate_in_batch",
+    "cooldown_active",
 ]);
 
 // Export file types
@@ -1666,6 +1673,9 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
 export const notificationTypeEnum = pgEnum("notification_type_enum", [
     "opinion_vote",
     "new_opinion",
+    "export_completed",
+    "export_failed",
+    "export_cancelled",
 ]);
 
 export const notificationOpinionVoteTable = pgTable(
@@ -1701,6 +1711,25 @@ export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
         .notNull(),
     opinionId: integer("opinion_id")
         .references(() => opinionTable.id)
+        .notNull(),
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
+        .notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const notificationExportTable = pgTable("notification_export", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    notificationId: integer("notification_id")
+        .references(() => notificationTable.id)
+        .notNull(),
+    exportId: integer("export_id")
+        .references(() => conversationExportTable.id)
         .notNull(),
     conversationId: integer("conversation_id")
         .references(() => conversationTable.id)
@@ -1940,10 +1969,14 @@ export const conversationExportTable = pgTable(
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
+        userId: uuid("user_id") // User who requested the export
+            .references(() => userTable.id)
+            .notNull(),
         status: exportStatusEnum("status").notNull().default("processing"),
         totalFileSize: integer("total_file_size"), // null until completed
         totalFileCount: integer("total_file_count"), // null until completed
         errorMessage: text("error_message"), // populated if status="failed"
+        cancellationReason: exportCancellationReasonEnum("cancellation_reason"), // populated if status="cancelled"
         expiresAt: timestamp("expires_at", {
             mode: "date",
             precision: 0,
@@ -1968,6 +2001,7 @@ export const conversationExportTable = pgTable(
         index("conversation_export_status_idx").on(t.status),
         index("conversation_export_deleted_idx").on(t.isDeleted),
         index("conversation_export_created_idx").on(t.createdAt),
+        index("conversation_export_user_idx").on(t.userId),
     ],
 );
 

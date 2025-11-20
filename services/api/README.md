@@ -82,21 +82,36 @@ The API provides a conversation export feature that allows users to download con
 #### Environment Variables
 
 **Required for CSV export:**
+
 ```bash
 # S3 bucket configuration
 AWS_S3_REGION=us-east-1                                    # AWS region for S3 bucket
 AWS_S3_BUCKET_NAME=agora-conversation-exports              # S3 bucket name
 
 # Optional configuration (with defaults)
-AWS_S3_CONVERSATION_EXPORTS_PATH=exports/conversations/    # S3 key prefix for exports
-CONVERSATION_EXPORT_EXPIRY_DAYS=30                         # Days until exports auto-delete
-S3_PRESIGNED_URL_EXPIRY_SECONDS=3600                       # Presigned URL validity (1 hour)
-CONVERSATION_EXPORT_ENABLED=true                           # Enable/disable export feature
+CONVERSATION_EXPORT_EXPIRY_DAYS=30                         # Days until exports auto-delete (default: 30)
+CONVERSATION_EXPORT_COOLDOWN_SECONDS=300                   # Cooldown between exports for same conversation (default: 300s/5min)
+S3_PRESIGNED_URL_EXPIRY_SECONDS=3600                       # Presigned URL validity (default: 3600s/1 hour)
+CONVERSATION_EXPORT_ENABLED=true                           # Enable/disable export feature (default: true)
+
+# Optional: Valkey for export queue persistence across instances
+VALKEY_URL=redis://localhost:6379                          # If not set, uses in-memory storage (lost on restart)
 ```
+
+**Export Queue System:**
+
+The export feature uses a queue system to manage load:
+
+- Requests are batched and processed every 1 second (configurable batch size: 100)
+- Duplicate requests within the same batch are automatically filtered
+- Cooldown prevents re-exporting the same conversation too frequently
+- Individual export failures don't affect other exports in the batch
+- Valkey persistence (optional) enables queue survival across server restarts
 
 **AWS Credentials:**
 
 The application uses the AWS SDK default credential provider chain, which checks (in order):
+
 1. Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 2. Shared credentials file (`~/.aws/credentials`)
 3. IAM role attached to EC2 instance (recommended for production)

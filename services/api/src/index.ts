@@ -93,6 +93,7 @@ import {
 import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
+import { createExportBuffer } from "./service/exportBuffer.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -348,6 +349,19 @@ const voteBuffer = createVoteBuffer({
 });
 log.info(
     `[API] Vote buffer initialized (flush interval: 1s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
+
+// Initialize ExportBuffer (batches export requests to reduce system load)
+const exportBuffer = createExportBuffer({
+    db,
+    valkey,
+    flushIntervalMs: 1000,
+    maxBatchSize: 100,
+    cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS ?? 300,
+    exportExpiryDays: config.CONVERSATION_EXPORT_EXPIRY_DAYS,
+});
+log.info(
+    `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS ?? 300)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 interface ExpectedDeviceStatus {
@@ -2549,12 +2563,17 @@ server.after(() => {
         },
         handler: async (request) => {
             checkConversationExportEnabled();
-            await verifyUcanAndKnownDeviceStatus(db, request, {
-                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-            });
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
             return await conversationExportService.requestConversationExport({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
             });
         },
     });
