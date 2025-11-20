@@ -2550,6 +2550,9 @@ if (
             // Flush pending votes before shutdown
             await voteBuffer.shutdown();
 
+            // Flush pending exports before shutdown
+            await exportBuffer.shutdown();
+
             // Close Valkey connection
             if (valkey !== undefined) {
                 await valkey.quit();
