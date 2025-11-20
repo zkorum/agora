@@ -37,7 +37,12 @@ export const zodModerationReason = z.enum([
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
-export const zodExportStatus = z.enum(["processing", "completed", "failed"]);
+export const zodExportStatus = z.enum([
+    "processing",
+    "completed",
+    "failed",
+    "cancelled",
+]);
 export const zodExportFileType = z.enum([
     "comments",
     "votes",
@@ -226,7 +231,13 @@ export const zodTopicObject = z
     .strict();
 
 // WARNING: change this together with the below values!
-export const zodNotificationType = z.enum(["opinion_vote", "new_opinion"]);
+export const zodNotificationType = z.enum([
+    "opinion_vote",
+    "new_opinion",
+    "export_completed",
+    "export_failed",
+    "export_cancelled",
+]);
 export const zodNotificationItem = z.discriminatedUnion("type", [
     z
         .object({
@@ -248,6 +259,36 @@ export const zodNotificationItem = z.discriminatedUnion("type", [
             createdAt: z.date(),
             routeTarget: zodRouteTarget,
             username: z.string(),
+        })
+        .strict(),
+    z
+        .object({
+            type: z.literal("export_completed"),
+            slugId: zodSlugId,
+            isRead: z.boolean(),
+            message: z.string(),
+            createdAt: z.date(),
+            routeTarget: zodRouteTarget,
+        })
+        .strict(),
+    z
+        .object({
+            type: z.literal("export_failed"),
+            slugId: zodSlugId,
+            isRead: z.boolean(),
+            message: z.string(),
+            createdAt: z.date(),
+            routeTarget: zodRouteTarget,
+        })
+        .strict(),
+    z
+        .object({
+            type: z.literal("export_cancelled"),
+            slugId: zodSlugId,
+            isRead: z.boolean(),
+            message: z.string(),
+            createdAt: z.date(),
+            routeTarget: zodRouteTarget,
         })
         .strict(),
 ]);
