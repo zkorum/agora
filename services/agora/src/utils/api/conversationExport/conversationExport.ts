@@ -10,6 +10,7 @@ import type {
   GetConversationExportStatusResponse,
   GetConversationExportHistoryResponse,
 } from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
 
 export function useBackendConversationExportApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
@@ -35,12 +36,11 @@ export function useBackendConversationExportApi() {
       })
     );
 
-    return response.data.map((item) => ({
-      exportSlugId: item.exportSlugId,
-      status: item.status,
-      createdAt: new Date(item.createdAt),
-      totalFileCount: item.totalFileCount,
-    }));
+    // Parse and validate response with Zod
+    const parsed = Dto.getConversationExportHistoryResponse.parse(
+      response.data
+    );
+    return parsed;
   }
 
   async function requestNewExport(

@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt, or, inArray } from "drizzle-orm";
 import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
@@ -328,6 +328,7 @@ export async function getConversationExportStatus({
             totalFileSize: conversationExportTable.totalFileSize,
             totalFileCount: conversationExportTable.totalFileCount,
             errorMessage: conversationExportTable.errorMessage,
+            cancellationReason: conversationExportTable.cancellationReason,
             createdAt: conversationExportTable.createdAt,
         })
         .from(conversationExportTable)
@@ -407,6 +408,7 @@ export async function getConversationExportStatus({
         totalFileCount: exportRecord.totalFileCount ?? undefined,
         files: filesWithUrls,
         errorMessage: exportRecord.errorMessage ?? undefined,
+        cancellationReason: exportRecord.cancellationReason ?? undefined,
         createdAt: exportRecord.createdAt,
     };
 }
@@ -418,17 +420,18 @@ interface GetConversationExportHistoryParams {
 
 /**
  * Get export history for a conversation.
+ * Returns only active exports (processing + completed).
  */
 export async function getConversationExportHistory({
     db,
     conversationSlugId,
 }: GetConversationExportHistoryParams): Promise<GetConversationExportHistoryResponse> {
+    // Fetch active exports (processing + completed)
     const exports = await db
         .select({
             exportSlugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             createdAt: conversationExportTable.createdAt,
-            totalFileCount: conversationExportTable.totalFileCount,
         })
         .from(conversationExportTable)
         .innerJoin(
@@ -439,16 +442,20 @@ export async function getConversationExportHistory({
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 eq(conversationExportTable.isDeleted, false),
+                or(
+                    eq(conversationExportTable.status, "processing"),
+                    eq(conversationExportTable.status, "completed"),
+                ),
             ),
         )
         .orderBy(desc(conversationExportTable.createdAt))
         .limit(MAX_EXPORTS_PER_CONVERSATION);
 
+    // Map results to response format (convert Date to ISO string)
     return exports.map((exp) => ({
         exportSlugId: exp.exportSlugId,
         status: exp.status,
-        createdAt: exp.createdAt,
-        totalFileCount: exp.totalFileCount ?? undefined,
+        createdAt: exp.createdAt.toISOString(),
     }));
 }
 

@@ -612,6 +612,7 @@ export class Dto {
             totalFileCount: z.number().int().positive().optional(),
             files: z.array(zodExportFileInfo).optional(),
             errorMessage: z.string().optional(),
+            cancellationReason: z.string().optional(),
             createdAt: z.date(),
         })
         .strict();
@@ -620,15 +621,16 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
+    // Export history item schema (dates as ISO strings from API)
+    static conversationExportHistoryItem = z
+        .object({
+            exportSlugId: zodSlugId,
+            status: zodExportStatus,
+            createdAt: z.string().datetime(),
+        })
+        .strict();
     static getConversationExportHistoryResponse = z.array(
-        z
-            .object({
-                exportSlugId: zodSlugId,
-                status: zodExportStatus,
-                createdAt: z.date(),
-                totalFileCount: z.number().int().positive().optional(),
-            })
-            .strict(),
+        Dto.conversationExportHistoryItem,
     );
     static deleteConversationExportRequest = z
         .object({
@@ -750,4 +752,7 @@ export type GetConversationExportHistoryResponse = z.infer<
 >;
 export type DeleteConversationExportRequest = z.infer<
     typeof Dto.deleteConversationExportRequest
+>;
+export type ConversationExportHistoryItem = z.infer<
+    typeof Dto.conversationExportHistoryItem
 >;

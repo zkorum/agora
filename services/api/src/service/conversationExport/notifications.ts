@@ -14,6 +14,8 @@ interface CreateExportNotificationParams {
     conversationId: number;
     type: NotificationType;
     message?: string;
+    errorMessage?: string;
+    cancellationReason?: string;
 }
 
 /**
@@ -26,6 +28,8 @@ export async function createExportNotification({
     conversationId,
     type,
     message,
+    errorMessage,
+    cancellationReason,
 }: CreateExportNotificationParams): Promise<void> {
     try {
         // Create notification record

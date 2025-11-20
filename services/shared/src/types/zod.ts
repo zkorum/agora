@@ -290,6 +290,7 @@ const zodExportFailedNotification = zodNotificationBase
     .extend({
         type: z.literal("export_failed"),
         routeTarget: zodExportRouteTarget,
+        errorMessage: z.string().optional(),
     })
     .strict();
 
@@ -297,6 +298,7 @@ const zodExportCancelledNotification = zodNotificationBase
     .extend({
         type: z.literal("export_cancelled"),
         routeTarget: zodExportRouteTarget,
+        cancellationReason: z.string(),
     })
     .strict();
 

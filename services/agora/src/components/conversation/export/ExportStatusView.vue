@@ -13,7 +13,8 @@
         <div
           v-if="
             exportStatusQuery.data.value.status === 'processing' ||
-            exportStatusQuery.data.value.status === 'failed'
+            exportStatusQuery.data.value.status === 'failed' ||
+            exportStatusQuery.data.value.status === 'cancelled'
           "
           class="status-message"
         >
@@ -43,6 +44,20 @@
               aria-hidden="true"
             />
             <p>{{ t("failedMessage") }}</p>
+          </div>
+          <div
+            v-else-if="exportStatusQuery.data.value.status === 'cancelled'"
+            class="cancelled-message"
+            role="alert"
+            aria-live="assertive"
+          >
+            <q-icon
+              name="cancel"
+              color="warning"
+              size="md"
+              aria-hidden="true"
+            />
+            <p>{{ t("cancelledMessage") }}</p>
           </div>
         </div>
 
@@ -96,6 +111,18 @@
               <dt class="info-label">{{ t("errorMessage") }}:</dt>
               <dd class="info-value">
                 {{ exportStatusQuery.data.value.errorMessage }}
+              </dd>
+            </div>
+            <div
+              v-if="
+                exportStatusQuery.data.value.cancellationReason &&
+                exportStatusQuery.data.value.status === 'cancelled'
+              "
+              class="info-item cancellation-item"
+            >
+              <dt class="info-label">{{ t("cancellationReason") }}:</dt>
+              <dd class="info-value">
+                {{ exportStatusQuery.data.value.cancellationReason }}
               </dd>
             </div>
           </dl>
@@ -296,7 +323,8 @@ function handleDownload(downloadUrl: string): void {
 
   .processing-message,
   .completed-message,
-  .failed-message {
+  .failed-message,
+  .cancelled-message {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -375,6 +403,14 @@ function handleDownload(downloadUrl: string): void {
 
 .error-item .info-value {
   color: $negative;
+}
+
+.cancellation-item {
+  grid-column: 1 / -1;
+}
+
+.cancellation-item .info-value {
+  color: $warning;
 }
 
 .files-section {

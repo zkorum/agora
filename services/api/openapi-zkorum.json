@@ -6252,6 +6252,9 @@
                                                                     "exportSlugId"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "errorMessage": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -6311,6 +6314,9 @@
                                                                     "exportSlugId"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "cancellationReason": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -6319,7 +6325,8 @@
                                                             "message",
                                                             "createdAt",
                                                             "type",
-                                                            "routeTarget"
+                                                            "routeTarget",
+                                                            "cancellationReason"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -6743,6 +6750,9 @@
                                         "errorMessage": {
                                             "type": "string"
                                         },
+                                        "cancellationReason": {
+                                            "type": "string"
+                                        },
                                         "createdAt": {
                                             "type": "string",
                                             "format": "date-time"
@@ -6781,40 +6791,98 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "exportSlugId": {
-                                                "type": "string",
-                                                "maxLength": 10
-                                            },
-                                            "status": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "processing",
-                                                    "completed",
-                                                    "failed",
-                                                    "cancelled"
-                                                ]
-                                            },
-                                            "createdAt": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "totalFileCount": {
-                                                "type": "integer",
-                                                "exclusiveMinimum": true,
-                                                "minimum": 0
+                                    "type": "object",
+                                    "properties": {
+                                        "active": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "exportSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "processing",
+                                                            "completed",
+                                                            "failed",
+                                                            "cancelled"
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "totalFileCount": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "minimum": 0
+                                                    },
+                                                    "errorMessage": {
+                                                        "type": "string"
+                                                    },
+                                                    "cancellationReason": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "exportSlugId",
+                                                    "status",
+                                                    "createdAt"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         },
-                                        "required": [
-                                            "exportSlugId",
-                                            "status",
-                                            "createdAt"
-                                        ],
-                                        "additionalProperties": false
-                                    }
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "exportSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "processing",
+                                                            "completed",
+                                                            "failed",
+                                                            "cancelled"
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "totalFileCount": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "minimum": 0
+                                                    },
+                                                    "errorMessage": {
+                                                        "type": "string"
+                                                    },
+                                                    "cancellationReason": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "exportSlugId",
+                                                    "status",
+                                                    "createdAt"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "active",
+                                        "errors"
+                                    ],
+                                    "additionalProperties": false
                                 }
                             }
                         }

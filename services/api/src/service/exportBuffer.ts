@@ -367,7 +367,7 @@ export function createExportBuffer({
                                 exportId: exportRecord.id,
                                 conversationId: exportRequest.conversationId,
                                 type: "export_cancelled",
-                                message: `Export cancelled: conversation was exported recently (cooldown: ${String(cooldownSeconds)}s)`,
+                                cancellationReason: `Export cancelled: cooldown period has not elapsed (${String(cooldownSeconds)}s)`,
                             });
 
                             log.info(
