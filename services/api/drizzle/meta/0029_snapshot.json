@@ -1,5 +1,5 @@
 {
-  "id": "ba1f7565-4796-4e0d-9969-2ea0ee26b883",
+  "id": "6989eff2-08d6-495e-8075-e75ff605fb2a",
   "prevId": "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc",
   "version": "7",
   "dialect": "postgresql",
@@ -385,6 +385,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "status": {
           "name": "status",
           "type": "export_status_enum",
@@ -408,6 +414,13 @@
         "error_message": {
           "name": "error_message",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancellation_reason": {
+          "name": "cancellation_reason",
+          "type": "export_cancellation_reason_enum",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -505,6 +518,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "conversation_export_user_idx": {
+          "name": "conversation_export_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -514,6 +542,19 @@
           "tableTo": "conversation",
           "columnsFrom": [
             "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_export_user_id_user_id_fk": {
+          "name": "conversation_export_user_id_user_id_fk",
+          "tableFrom": "conversation_export",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -1800,6 +1841,101 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notification_export": {
+      "name": "notification_export",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "notification_export_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "notification_id": {
+          "name": "notification_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "export_id": {
+          "name": "export_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notification_export_notification_id_notification_id_fk": {
+          "name": "notification_export_notification_id_notification_id_fk",
+          "tableFrom": "notification_export",
+          "tableTo": "notification",
+          "columnsFrom": [
+            "notification_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_export_export_id_conversation_export_id_fk": {
+          "name": "notification_export_export_id_conversation_export_id_fk",
+          "tableFrom": "notification_export",
+          "tableTo": "conversation_export",
+          "columnsFrom": [
+            "export_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_export_conversation_id_conversation_id_fk": {
+          "name": "notification_export_conversation_id_conversation_id_fk",
+          "tableFrom": "notification_export",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -5363,6 +5499,14 @@
         "devconnect-2025"
       ]
     },
+    "public.export_cancellation_reason_enum": {
+      "name": "export_cancellation_reason_enum",
+      "schema": "public",
+      "values": [
+        "duplicate_in_batch",
+        "cooldown_active"
+      ]
+    },
     "public.export_file_type_enum": {
       "name": "export_file_type_enum",
       "schema": "public",
@@ -5380,7 +5524,8 @@
       "values": [
         "processing",
         "completed",
-        "failed"
+        "failed",
+        "cancelled"
       ]
     },
     "public.moderation_reason_enum": {
@@ -5400,7 +5545,10 @@
       "schema": "public",
       "values": [
         "opinion_vote",
-        "new_opinion"
+        "new_opinion",
+        "export_completed",
+        "export_failed",
+        "export_cancelled"
       ]
     },
     "public.opinion_moderation_action": {
