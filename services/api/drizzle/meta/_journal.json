@@ -204,13 +204,6 @@
       "when": 1762874583767,
       "tag": "0028_icy_dexter_bennett",
       "breakpoints": true
-    },
-    {
-      "idx": 29,
-      "version": "7",
-      "when": 1763605178188,
-      "tag": "0029_clever_expediter",
-      "breakpoints": true
     }
   ]
 }
