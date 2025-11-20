@@ -1199,7 +1199,8 @@ export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseI
 export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
     Processing: 'processing',
     Completed: 'completed',
-    Failed: 'failed'
+    Failed: 'failed',
+    Cancelled: 'cancelled'
 } as const;
 
 export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum];
@@ -1276,7 +1277,8 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = {
     Processing: 'processing',
     Completed: 'completed',
-    Failed: 'failed'
+    Failed: 'failed',
+    Cancelled: 'cancelled'
 } as const;
 
 export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum];
@@ -2183,7 +2185,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = {
     OpinionVote: 'opinion_vote',
-    NewOpinion: 'new_opinion'
+    NewOpinion: 'new_opinion',
+    ExportCompleted: 'export_completed',
+    ExportFailed: 'export_failed',
+    ExportCancelled: 'export_cancelled'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum];
@@ -2299,6 +2304,156 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1Typ
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = {
+    ExportCompleted: 'export_completed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = {
+    ExportFailed: 'export_failed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = {
+    ExportCancelled: 'export_cancelled'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum];
 
 /**
  * 
