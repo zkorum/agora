@@ -58,7 +58,7 @@ export async function requestConversationExport({
     const conversationId = conversation[0].id;
 
     // Delegate to export buffer - handles cooldown, batching, and processing
-    const { exportSlugId } = await exportBuffer.add({
+    const result = await exportBuffer.add({
         exportRequest: {
             userId,
             conversationId,
@@ -67,8 +67,19 @@ export async function requestConversationExport({
         },
     });
 
-    // Return only the exportSlugId to match the API response schema
-    return { exportSlugId };
+    // Handle cooldown response - return it directly instead of throwing error
+    if (result.status === "cooldown_active") {
+        return {
+            status: "cooldown_active",
+            cooldownEndsAt: result.cooldownEndsAt.toISOString(),
+        };
+    }
+
+    // Return success response with exportSlugId
+    return {
+        status: "queued",
+        exportSlugId: result.exportSlugId,
+    };
 }
 
 /**

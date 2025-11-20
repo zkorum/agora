@@ -67,6 +67,7 @@ import { computed } from "vue";
 import { useRouteParams } from "@vueuse/router";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
+import { useNow } from "@vueuse/core";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -116,11 +117,42 @@ async function navigateToConversation(): Promise<void> {
   });
 }
 
+// Reactive time using VueUse
+const now = useNow({ interval: 1000 });
+
 async function handleRequestExport(): Promise<void> {
   try {
     const result = await requestExportMutation.mutateAsync(
       conversationSlugId.value
     );
+
+    // Handle cooldown response
+    if (result.status === "cooldown_active") {
+      // Calculate remaining time
+      const cooldownEnd = new Date(result.cooldownEndsAt);
+      const remainingMs = cooldownEnd.getTime() - now.value.getTime();
+      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+
+      // Format duration message with manual placeholder replacement
+      let message: string;
+      if (remainingSeconds < 60) {
+        message = t("exportCooldownSeconds").replace(
+          "{seconds}",
+          String(remainingSeconds)
+        );
+      } else {
+        const minutes = Math.ceil(remainingSeconds / 60);
+        message = t("exportCooldownMinutes").replace(
+          "{minutes}",
+          String(minutes)
+        );
+      }
+
+      showNotifyMessage(message);
+      return;
+    }
+
+    // Success - navigate to export status page
     await router.push({
       name: "/conversation/[conversationSlugId]/export.[exportId]",
       params: {
