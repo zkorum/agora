@@ -1,10 +1,7 @@
 import { boot } from "quasar/wrappers";
 import { Platform } from "quasar";
 import InAppSpy from "inapp-spy";
-import {
-  useEmbeddedBrowserWarningStore,
-  type AppKey,
-} from "src/stores/embeddedBrowserWarning";
+import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
 
 /**
  * Boot file to detect embedded/in-app browsers and redirect users to system browser.
@@ -39,65 +36,17 @@ export default boot(({ router }) => {
 
   // Detect if running in an in-app browser
   const { isInApp, appKey, appName } = InAppSpy();
-  let usedIsInApp = isInApp;
-  let usedAppKey: AppKey = appKey;
-  let usedAppName: string | undefined = appName;
 
   // DEBUG: Log user-agent for all browsers (helpful for debugging X browser)
   const userAgent = navigator.userAgent;
   console.log("[EmbeddedBrowserGuard] User-Agent:", userAgent);
   console.log("[EmbeddedBrowserGuard] Detection result:", {
-    usedIsInApp,
-    usedAppKey,
-    usedAppName,
+    isInApp,
+    appKey,
+    appName,
   });
 
-  // CUSTOM X BROWSER DETECTION
-  // X browser doesn't identify itself in user-agent, so use multiple heuristics
-  if (!usedIsInApp) {
-    // Method 1: User-agent patterns
-    // iOS: "Twitter for iPhone" (confirmed in testing)
-    // Android: No user-agent identifier (use referrer instead)
-    const xBrowserPatterns = [
-      /\bTwitter for (iPhone|iPad)\b/i, // iOS: "Twitter for iPhone/iPad"
-      /\bTwitter\b/i, // Fallback: just "Twitter" word
-    ];
-
-    const hasXUserAgent = xBrowserPatterns.some((pattern) =>
-      pattern.test(userAgent)
-    );
-
-    // Method 2: Check referrer for X/Twitter
-    // Android app: android-app://com.twitter.android
-    // iOS/Web: https://t.co/, https://x.com/, or https://twitter.com/
-    const referrer = document.referrer || "";
-    const hasXReferrer =
-      /android-app:\/\/com\.twitter/i.test(referrer) || // Android app
-      /\/\/(t\.co|x\.com|twitter\.com)\//i.test(referrer); // Web URLs
-
-    // Method 3: Generic webview detection + heuristics
-    // X uses a generic Chrome webview that doesn't expose typical browser features
-
-    // Method 4: Check if mobile device
-    const isMobileDevice = Platform.is.mobile;
-
-    // Detect X if: (user-agent OR referrer matches) AND it's a mobile device
-    // iOS: "Twitter" in user-agent + mobile
-    // Android: android-app referrer + mobile
-    // Desktop: Never detected (even with t.co referrer, since isMobileDevice=false)
-    const isLikelyXBrowser = (hasXUserAgent || hasXReferrer) && isMobileDevice;
-
-    if (isLikelyXBrowser) {
-      console.log("[EmbeddedBrowserGuard] X browser detected");
-
-      // Override InAppSpy result
-      usedIsInApp = true;
-      usedAppKey = "twitter";
-      usedAppName = "X"; // Display as "X" to users
-    }
-  }
-
-  if (!usedIsInApp) {
+  if (!isInApp) {
     console.log(
       "[EmbeddedBrowserGuard] Not in embedded browser, continuing normally"
     );
@@ -106,12 +55,12 @@ export default boot(({ router }) => {
 
   console.log(
     "[EmbeddedBrowserGuard] Detected embedded browser:",
-    usedAppName,
-    `(${usedAppKey})`
+    appName,
+    `(${appKey})`
   );
 
-  const isWechat = usedAppKey === "wechat";
-  const isX = usedAppKey === "twitter";
+  const isWechat = appKey === "wechat";
+  const isX = appKey === "twitter";
 
   // ANDROID: Try Intent URI workaround except on WeChat (does nothing) and X (X would redirect to... X Browser, causing User-Agent to change, X Browser would then not be detected, and therefore causing blink during openeing and allowing users to stay in X browser!
   if (Platform.is.android && !isWechat && !isX) {
@@ -136,11 +85,8 @@ export default boot(({ router }) => {
   // This runs if:
   // - Android Intent didn't navigate away (non-Android or Intent failed)
   // - Or this is iOS or other platform without programmatic redirect support
-  console.log(
-    "[EmbeddedBrowserGuard] Showing warning dialog for:",
-    usedAppName
-  );
+  console.log("[EmbeddedBrowserGuard] Showing warning dialog for:", appName);
 
   const warningStore = useEmbeddedBrowserWarningStore();
-  warningStore.openWarning(usedAppName, usedAppKey);
+  warningStore.openWarning(appName, appKey);
 });
