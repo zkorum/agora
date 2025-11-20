@@ -346,11 +346,11 @@ const exportBuffer = createExportBuffer({
     valkey,
     flushIntervalMs: 1000,
     maxBatchSize: 100,
-    cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS ?? 300,
+    cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
     exportExpiryDays: config.CONVERSATION_EXPORT_EXPIRY_DAYS,
 });
 log.info(
-    `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS ?? 300)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 interface ExpectedDeviceStatus {
