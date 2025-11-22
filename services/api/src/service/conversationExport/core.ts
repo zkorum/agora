@@ -333,11 +333,9 @@ export async function getConversationExportStatus({
 }: GetConversationExportStatusParams): Promise<GetConversationExportStatusResponse> {
     const exportRecordList = await db
         .select({
-            slugId: conversationExportTable.slugId,
+            exportSlugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             conversationSlugId: conversationTable.slugId,
-            totalFileSize: conversationExportTable.totalFileSize,
-            totalFileCount: conversationExportTable.totalFileCount,
             errorMessage: conversationExportTable.errorMessage,
             cancellationReason: conversationExportTable.cancellationReason,
             createdAt: conversationExportTable.createdAt,
@@ -412,11 +410,9 @@ export async function getConversationExportStatus({
     }
 
     return {
-        exportSlugId: exportRecord.slugId,
+        exportSlugId: exportRecord.exportSlugId,
         status: exportRecord.status,
         conversationSlugId: exportRecord.conversationSlugId,
-        totalFileSize: exportRecord.totalFileSize ?? undefined,
-        totalFileCount: exportRecord.totalFileCount ?? undefined,
         files: filesWithUrls,
         errorMessage: exportRecord.errorMessage ?? undefined,
         cancellationReason: exportRecord.cancellationReason ?? undefined,
