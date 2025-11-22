@@ -617,8 +617,6 @@ export class Dto {
             exportSlugId: zodSlugId,
             status: zodExportStatus,
             conversationSlugId: zodSlugId,
-            totalFileSize: z.number().int().positive().optional(),
-            totalFileCount: z.number().int().positive().optional(),
             files: z.array(zodExportFileInfo).optional(),
             errorMessage: z.string().optional(),
             cancellationReason: z.string().optional(),
