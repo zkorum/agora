@@ -10,6 +10,11 @@ export interface ExportStatusViewTranslations {
   downloadExpired: string;
   exportInfo: string;
   exportId: string;
+  status: string;
+  status_processing: string;
+  status_completed: string;
+  status_failed: string;
+  status_cancelled: string;
   conversationId: string;
   createdAt: string;
   totalFiles: string;
@@ -45,6 +50,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "Download Expired",
     exportInfo: "Export Information",
     exportId: "Export ID",
+    status: "Status",
+    status_processing: "Processing",
+    status_completed: "Completed",
+    status_failed: "Failed",
+    status_cancelled: "Cancelled",
     conversationId: "Conversation ID",
     createdAt: "Created At",
     totalFiles: "Total Files",
@@ -76,6 +86,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "انتهت صلاحية التنزيل",
     exportInfo: "معلومات التصدير",
     exportId: "معرف التصدير",
+    status: "الحالة",
+    status_processing: "قيد المعالجة",
+    status_completed: "مكتمل",
+    status_failed: "فشل",
+    status_cancelled: "ملغى",
     conversationId: "معرف المحادثة",
     createdAt: "تم الإنشاء في",
     totalFiles: "إجمالي الملفات",
@@ -107,6 +122,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "Descarga Expirada",
     exportInfo: "Información de Exportación",
     exportId: "ID de Exportación",
+    status: "Estado",
+    status_processing: "Procesando",
+    status_completed: "Completado",
+    status_failed: "Fallido",
+    status_cancelled: "Cancelado",
     conversationId: "ID de Conversación",
     createdAt: "Creado el",
     totalFiles: "Archivos Totales",
@@ -138,6 +158,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "Téléchargement Expiré",
     exportInfo: "Informations sur l'Exportation",
     exportId: "ID de l'Exportation",
+    status: "Statut",
+    status_processing: "En cours",
+    status_completed: "Terminé",
+    status_failed: "Échoué",
+    status_cancelled: "Annulé",
     conversationId: "ID de la Conversation",
     createdAt: "Créé le",
     totalFiles: "Fichiers Totaux",
@@ -166,6 +191,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "下载已过期",
     exportInfo: "导出信息",
     exportId: "导出ID",
+    status: "状态",
+    status_processing: "处理中",
+    status_completed: "已完成",
+    status_failed: "失败",
+    status_cancelled: "已取消",
     conversationId: "对话ID",
     createdAt: "创建于",
     totalFiles: "文件总数",
@@ -193,6 +223,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "下載已過期",
     exportInfo: "匯出資訊",
     exportId: "匯出ID",
+    status: "狀態",
+    status_processing: "處理中",
+    status_completed: "已完成",
+    status_failed: "失敗",
+    status_cancelled: "已取消",
     conversationId: "對話ID",
     createdAt: "建立於",
     totalFiles: "檔案總數",
@@ -223,6 +258,11 @@ export const exportStatusViewTranslations: Record<
     downloadExpired: "ダウンロード期限切れ",
     exportInfo: "エクスポート情報",
     exportId: "エクスポートID",
+    status: "ステータス",
+    status_processing: "処理中",
+    status_completed: "完了",
+    status_failed: "失敗",
+    status_cancelled: "キャンセル",
     conversationId: "会話ID",
     createdAt: "作成日",
     totalFiles: "ファイル総数",

@@ -19,6 +19,12 @@
               </dd>
             </div>
             <div class="export-info-item">
+              <dt class="export-info-label">{{ t("status") }}:</dt>
+              <dd class="export-info-value">
+                {{ t(`status_${exportStatusQuery.data.value.status}`) }}
+              </dd>
+            </div>
+            <div class="export-info-item">
               <dt class="export-info-label">{{ t("createdAt") }}:</dt>
               <dd class="export-info-value">
                 {{ formatDateTime(exportStatusQuery.data.value.createdAt) }}
