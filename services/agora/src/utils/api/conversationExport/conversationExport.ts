@@ -98,8 +98,6 @@ export function useBackendConversationExportApi() {
       exportSlugId: response.data.exportSlugId,
       status: response.data.status,
       conversationSlugId: response.data.conversationSlugId,
-      totalFileSize: response.data.totalFileSize,
-      totalFileCount: response.data.totalFileCount,
       files: response.data.files?.map((file) => ({
         fileType: file.fileType,
         fileName: file.fileName,
@@ -109,6 +107,7 @@ export function useBackendConversationExportApi() {
         urlExpiresAt: new Date(file.urlExpiresAt),
       })),
       errorMessage: response.data.errorMessage,
+      cancellationReason: response.data.cancellationReason,
       createdAt: new Date(response.data.createdAt),
     };
   }

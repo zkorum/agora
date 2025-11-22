@@ -9,6 +9,24 @@
       }"
     >
       <div v-if="exportStatusQuery.data.value" class="status-content">
+        <!-- Export Info Card -->
+        <div class="export-info-card">
+          <dl class="export-info-grid">
+            <div class="export-info-item">
+              <dt class="export-info-label">{{ t("exportId") }}:</dt>
+              <dd class="export-info-value">
+                {{ exportStatusQuery.data.value.exportSlugId }}
+              </dd>
+            </div>
+            <div class="export-info-item">
+              <dt class="export-info-label">{{ t("createdAt") }}:</dt>
+              <dd class="export-info-value">
+                {{ formatDateTime(exportStatusQuery.data.value.createdAt) }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
         <!-- Status Message -->
         <div
           v-if="
@@ -43,7 +61,15 @@
               size="md"
               aria-hidden="true"
             />
-            <p>{{ t("failedMessage") }}</p>
+            <div>
+              <p>{{ t("failedMessage") }}</p>
+              <p
+                v-if="exportStatusQuery.data.value.errorMessage"
+                class="error-details"
+              >
+                {{ exportStatusQuery.data.value.errorMessage }}
+              </p>
+            </div>
           </div>
           <div
             v-else-if="exportStatusQuery.data.value.status === 'cancelled'"
@@ -57,88 +83,29 @@
               size="md"
               aria-hidden="true"
             />
-            <p>{{ t("cancelledMessage") }}</p>
+            <div>
+              <p>{{ t("cancelledMessage") }}</p>
+              <p
+                v-if="exportStatusQuery.data.value.cancellationReason"
+                class="cancellation-details"
+              >
+                {{ exportStatusQuery.data.value.cancellationReason }}
+              </p>
+            </div>
           </div>
         </div>
 
-        <!-- Export Information Card -->
-        <div class="info-card">
-          <h2 class="info-title">{{ t("exportInfo") }}</h2>
-          <dl class="info-grid">
-            <div class="info-item">
-              <dt class="info-label">{{ t("exportId") }}:</dt>
-              <dd class="info-value">
-                {{ exportStatusQuery.data.value.exportSlugId }}
-              </dd>
-            </div>
-            <div class="info-item">
-              <dt class="info-label">{{ t("conversationId") }}:</dt>
-              <dd class="info-value">
-                {{ exportStatusQuery.data.value.conversationSlugId }}
-              </dd>
-            </div>
-            <div class="info-item">
-              <dt class="info-label">{{ t("createdAt") }}:</dt>
-              <dd class="info-value">
-                {{ formatDateTime(exportStatusQuery.data.value.createdAt) }}
-              </dd>
-            </div>
-            <div
-              v-if="exportStatusQuery.data.value.totalFileCount"
-              class="info-item"
-            >
-              <dt class="info-label">{{ t("totalFiles") }}:</dt>
-              <dd class="info-value">
-                {{ exportStatusQuery.data.value.totalFileCount }}
-              </dd>
-            </div>
-            <div
-              v-if="exportStatusQuery.data.value.totalFileSize"
-              class="info-item"
-            >
-              <dt class="info-label">{{ t("totalSize") }}:</dt>
-              <dd class="info-value">
-                {{ formatFileSize(exportStatusQuery.data.value.totalFileSize) }}
-              </dd>
-            </div>
-            <div
-              v-if="
-                exportStatusQuery.data.value.errorMessage &&
-                exportStatusQuery.data.value.status === 'failed'
-              "
-              class="info-item error-item"
-            >
-              <dt class="info-label">{{ t("errorMessage") }}:</dt>
-              <dd class="info-value">
-                {{ exportStatusQuery.data.value.errorMessage }}
-              </dd>
-            </div>
-            <div
-              v-if="
-                exportStatusQuery.data.value.cancellationReason &&
-                exportStatusQuery.data.value.status === 'cancelled'
-              "
-              class="info-item cancellation-item"
-            >
-              <dt class="info-label">{{ t("cancellationReason") }}:</dt>
-              <dd class="info-value">
-                {{ exportStatusQuery.data.value.cancellationReason }}
-              </dd>
-            </div>
-          </dl>
-
-          <!-- Delete Button (Moderator Only) -->
-          <div v-if="isModerator" class="delete-section">
-            <PrimeButton
-              :label="t('deleteExport')"
-              icon="pi pi-trash"
-              severity="danger"
-              :loading="deleteExportMutation.isPending.value"
-              :disabled="deleteExportMutation.isPending.value"
-              :aria-label="t('deleteExport')"
-              @click="handleDeleteExport"
-            />
-          </div>
+        <!-- Delete Button (Moderator Only) -->
+        <div v-if="isModerator" class="delete-section">
+          <PrimeButton
+            :label="t('deleteExport')"
+            icon="pi pi-trash"
+            severity="danger"
+            :loading="deleteExportMutation.isPending.value"
+            :disabled="deleteExportMutation.isPending.value"
+            :aria-label="t('deleteExport')"
+            @click="handleDeleteExport"
+          />
         </div>
 
         <!-- Available Files Section -->
@@ -177,12 +144,6 @@
                 <div class="file-detail-item">
                   <dt class="detail-label">{{ t("recordCount") }}:</dt>
                   <dd class="detail-value">{{ file.recordCount }}</dd>
-                </div>
-                <div class="file-detail-item">
-                  <dt class="detail-label">{{ t("urlExpiresAt") }}:</dt>
-                  <dd class="detail-value">
-                    {{ formatDateTime(file.urlExpiresAt) }}
-                  </dd>
                 </div>
               </dl>
 
@@ -308,6 +269,49 @@ function handleDownload(downloadUrl: string): void {
   gap: 2rem;
 }
 
+.export-info-card {
+  padding: 1.5rem;
+  border: 1px solid $color-border-weak;
+  border-radius: 8px;
+  background-color: $color-background-default;
+}
+
+.export-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.export-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  dt {
+    margin: 0;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.export-info-label {
+  font-size: 0.9rem;
+  color: $color-text-weak;
+  font-weight: var(--font-weight-semibold);
+}
+
+.export-info-value {
+  font-size: 1rem;
+  color: $color-text-strong;
+  word-break: break-word;
+}
+
 .status-header {
   display: flex;
   justify-content: center;
@@ -336,81 +340,28 @@ function handleDownload(downloadUrl: string): void {
       font-size: 1.1rem;
       color: $color-text-strong;
     }
+
+    .error-details {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      color: $negative;
+    }
+
+    .cancellation-details {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      color: $warning;
+    }
   }
-}
-
-.info-card {
-  padding: 2rem;
-  border: 1px solid $color-border-weak;
-  border-radius: 8px;
-  background-color: $color-background-default;
-}
-
-.info-title {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.25rem;
-  font-weight: var(--font-weight-semibold);
-  color: $color-text-strong;
 }
 
 .delete-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid $color-border-weak;
   display: flex;
   justify-content: flex-end;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-
-  &.error-item {
-    grid-column: 1 / -1;
-  }
-
-  dt {
-    margin: 0;
-  }
-
-  dd {
-    margin: 0;
-  }
-}
-
-.info-label {
-  font-size: 0.9rem;
-  color: $color-text-weak;
-  font-weight: var(--font-weight-semibold);
-}
-
-.info-value {
-  font-size: 1rem;
-  color: $color-text-strong;
-  word-break: break-word;
-}
-
-.error-item .info-value {
-  color: $negative;
-}
-
-.cancellation-item {
-  grid-column: 1 / -1;
-}
-
-.cancellation-item .info-value {
-  color: $warning;
+  padding: 1.5rem;
+  border: 1px solid $color-border-weak;
+  border-radius: 8px;
+  background-color: $color-background-default;
 }
 
 .files-section {
