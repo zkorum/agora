@@ -35,9 +35,9 @@ export const notificationTranslations: Record<
     contributedOpinion: "{username} ساهم برأي في محادثتك:",
     onePersonVoted: "شخص واحد صوت على رأيك:",
     peopleVoted: "{count} أشخاص صوتوا على رأيك:",
-    exportCompleted: "تصدير المحادثة جاهز",
-    exportFailed: "فشل تصدير المحادثة",
-    exportCancelled: "تم إلغاء تصدير المحادثة",
+    exportCompleted: "تصدير محادثتك جاهز",
+    exportFailed: "فشل تصدير محادثتك",
+    exportCancelled: "تم إلغاء تصدير محادثتك",
   },
   es: {
     notifications: "Notificaciones",

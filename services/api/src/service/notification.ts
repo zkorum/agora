@@ -1,5 +1,6 @@
 import {
     conversationTable,
+    conversationContentTable,
     conversationExportTable,
     notificationNewOpinionTable,
     notificationOpinionVoteTable,
@@ -250,6 +251,7 @@ export async function getNotifications({
                 isRead: notificationTable.isRead,
                 notificationType: notificationTable.notificationType,
                 conversationSlugId: conversationTable.slugId,
+                conversationTitle: conversationContentTable.title,
                 exportSlugId: conversationExportTable.slugId,
                 errorMessage: conversationExportTable.errorMessage,
                 cancellationReason: conversationExportTable.cancellationReason,
@@ -277,6 +279,13 @@ export async function getNotifications({
                     notificationExportTable.conversationId,
                 ),
             )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
             .where(whereClause)
             .orderBy(orderByClause)
             .limit(fetchLimit);
@@ -284,6 +293,7 @@ export async function getNotifications({
         notificationTableResponse.forEach((notificationItem) => {
             if (
                 notificationItem.conversationSlugId &&
+                notificationItem.conversationTitle &&
                 notificationItem.exportSlugId &&
                 (notificationItem.notificationType === "export_completed" ||
                     notificationItem.notificationType === "export_failed" ||
@@ -296,7 +306,7 @@ export async function getNotifications({
                         slugId: notificationItem.slugId,
                         createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
-                        message: "Your export is ready",
+                        message: notificationItem.conversationTitle,
                         routeTarget: {
                             type: "export",
                             conversationSlugId:
@@ -313,7 +323,8 @@ export async function getNotifications({
                         slugId: notificationItem.slugId,
                         createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
-                        message: "Your export failed",
+                        message:
+                            notificationItem.errorMessage || "Export failed",
                         routeTarget: {
                             type: "export",
                             conversationSlugId:
@@ -333,7 +344,9 @@ export async function getNotifications({
                         slugId: notificationItem.slugId,
                         createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
-                        message: "Your export was cancelled",
+                        message:
+                            notificationItem.cancellationReason ||
+                            "Export was cancelled",
                         routeTarget: {
                             type: "export",
                             conversationSlugId:
